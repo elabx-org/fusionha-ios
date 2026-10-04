@@ -9,7 +9,7 @@ iOS 26 with Liquid Glass, widgets and Live Activities.
 
 ## Install
 
-1. Download `Fusionha.ipa` from the latest [release](../../releases) (or the
+1. Add this source in Feather: `https://github.com/elabx-org/fusionha-ios/releases/latest/download/source.json` (every merge to `main` publishes a new build), or download `Fusionha.ipa` from the latest [release](../../releases) (or the
    `Fusionha-unsigned-ipa` artifact of a CI run).
 2. Sideload it with Feather (or similar), signing with your own Apple Developer certificate.
 3. Open the app, enter your fusionha server address and sign in. The app creates a

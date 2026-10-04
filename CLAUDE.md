@@ -36,6 +36,9 @@ editions, anime first-class, arr emulation); this repo owns how they look on iOS
 There is no local Mac. CI (`.github/workflows/build.yml`) runs `swift test` on FusionhaKit,
 generates the project with XcodeGen and builds an **unsigned IPA**. It is installed by
 sideloading with Feather, signed on-device with the owner's paid certificate.
+Every push to `main` publishes a `build-N` GitHub release with the IPA and an AltStore-format
+`source.json` (`scripts/make_source.py`); Feather's source URL is
+`https://github.com/elabx-org/fusionha-ios/releases/latest/download/source.json`.
 
 - Keep bundle IDs stable (`org.elabx.fusionha`, `.widgets`, `.notification-service`) and
   the App Group `group.org.elabx.fusionha`: push and widget sign-in depend on them.
