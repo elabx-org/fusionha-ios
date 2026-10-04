@@ -354,6 +354,35 @@ private struct EpisodeCard: View {
         .detailAnimation(.easeInOut(duration: 0.2), value: expanded)
     }
 
+    /// Per-episode monitor toggle: the season toolbar's bookmark (filled =
+    /// monitored), its own tap target. A read-only visitor sees the dot.
+    @ViewBuilder
+    private var monitorToggle: some View {
+        let on = store.episodeMonitored(episode)
+        if model.me?.can("edit") ?? true {
+            let label = "S\(season.seasonNumber)·E\(episode.episodeNumber)"
+            Button {
+                Task { await store.setEpisodeMonitored(episode, seasonNumber: season.seasonNumber, !on) }
+            } label: {
+                Image(systemName: on ? "bookmark.fill" : "bookmark")
+                    .font(.system(size: 15))
+                    .foregroundStyle(on ? Theme.cyan : Theme.dim)
+                    .contentTransition(.symbolEffect(.replace))
+                    .frame(width: 36, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(DetailPressStyle())
+            .accessibilityLabel(on ? "Stop monitoring \(label)" : "Monitor \(label)")
+            .accessibilityAddTraits(on ? .isSelected : [])
+        } else {
+            Circle()
+                .fill(on ? Theme.cyan : .clear)
+                .overlay(Circle().strokeBorder(Theme.mut, lineWidth: 1.5))
+                .frame(width: 9, height: 9)
+                .accessibilityLabel(on ? "Monitored" : "Not monitored")
+        }
+    }
+
     private var numberText: String {
         var text = "E\(episode.episodeNumber)"
         if detail.isAnime == true, let abs = episode.absoluteNumber { text += " · #\(abs)" }
@@ -459,35 +488,6 @@ private struct EpisodeBody: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-        }
-    }
-
-    /// Per-episode monitor toggle: the season toolbar's bookmark (filled =
-    /// monitored), its own tap target. A read-only visitor sees the dot.
-    @ViewBuilder
-    private var monitorToggle: some View {
-        let on = store.episodeMonitored(episode)
-        if model.me?.can("edit") ?? true {
-            let label = "S\(season.seasonNumber)·E\(episode.episodeNumber)"
-            Button {
-                Task { await store.setEpisodeMonitored(episode, seasonNumber: season.seasonNumber, !on) }
-            } label: {
-                Image(systemName: on ? "bookmark.fill" : "bookmark")
-                    .font(.system(size: 15))
-                    .foregroundStyle(on ? Theme.cyan : Theme.dim)
-                    .contentTransition(.symbolEffect(.replace))
-                    .frame(width: 36, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(DetailPressStyle())
-            .accessibilityLabel(on ? "Stop monitoring \(label)" : "Monitor \(label)")
-            .accessibilityAddTraits(on ? .isSelected : [])
-        } else {
-            Circle()
-                .fill(on ? Theme.cyan : .clear)
-                .overlay(Circle().strokeBorder(Theme.mut, lineWidth: 1.5))
-                .frame(width: 9, height: 9)
-                .accessibilityLabel(on ? "Monitored" : "Not monitored")
         }
     }
 
