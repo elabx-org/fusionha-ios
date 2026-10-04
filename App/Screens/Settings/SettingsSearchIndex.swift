@@ -165,6 +165,7 @@ let settingsFieldIndex: [SettingsField] = [
     SettingsField(panel: "notifications", label: "Send test notification", keywords: ["banner", "check", "test push", "try"]),
     SettingsField(panel: "notifications", label: "Delivery", keywords: ["coalesce", "group by title", "grouping", "immediate"]),
     SettingsField(panel: "notifications", label: "Quiet hours", keywords: ["do not disturb", "dnd", "mute", "overnight", "silence"]),
+    SettingsField(panel: "notifications", label: "iOS app push (APNs)", keywords: ["apns", "auth key", "bundle id", "key id", "p8", "team id"]),
     SettingsField(panel: "notifications", label: "Rotate keys", keywords: ["invalidate", "reset", "vapid", "re-subscribe"]),
     SettingsField(panel: "notifications", label: "Request available", keywords: ["fulfilled", "requestor", "requests"]),
     SettingsField(panel: "instances", label: "Copy key", keywords: ["clipboard", "copy api key", "paste", "token"]),

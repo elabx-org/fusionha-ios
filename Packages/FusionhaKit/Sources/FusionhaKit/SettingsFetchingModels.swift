@@ -398,6 +398,15 @@ public struct WebPushSettings: Decodable, Sendable, Hashable {
 public struct PushTestResult: Decodable, Sendable {
     public let sent: Int
     public let delivered: Int
+    /// Per-device outcome (`PushDeviceTestResult`); absent on older servers.
+    public let devices: [PushDeviceTestResult]?
+}
+
+public struct PushDeviceTestResult: Decodable, Sendable, Hashable {
+    public let id: Int
+    public let deviceLabel: String?
+    public let ok: Bool
+    public let detail: String
 }
 
 public struct VapidRotateResult: Decodable, Sendable {

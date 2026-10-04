@@ -1,7 +1,8 @@
 import UserNotifications
 
-/// Attaches the poster/backdrop to a push, using the same payload keys the server's
-/// Web Push already sends (`image`, falling back to `icon`).
+/// Attaches the title's poster to a push. The server's APNs payload sets
+/// `mutable-content` and carries `poster` (TMDB w342); `image` (backdrop) and
+/// `icon` are the Web Push keys, used as fallbacks.
 final class NotificationService: UNNotificationServiceExtension {
     private var contentHandler: ((UNNotificationContent) -> Void)?
     private var bestAttempt: UNMutableNotificationContent?
@@ -15,8 +16,8 @@ final class NotificationService: UNNotificationServiceExtension {
         bestAttempt = content
 
         let info = request.content.userInfo
-        guard let raw = (info["image"] as? String) ?? (info["icon"] as? String),
-              let url = URL(string: raw) else {
+        guard let raw = (info["poster"] as? String) ?? (info["image"] as? String) ?? (info["icon"] as? String),
+              let url = URL(string: raw), url.scheme?.hasPrefix("http") == true else {
             contentHandler(content)
             return
         }

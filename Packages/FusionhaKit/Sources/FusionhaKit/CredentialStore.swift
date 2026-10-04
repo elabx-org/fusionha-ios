@@ -85,13 +85,33 @@ public enum CredentialStore {
             return SecItemCopyMatching(q as CFDictionary, nil) == errSecSuccess
         }
         let shared = found.first == true && queries.count > 1
-        let team = teamGroup.map { group in
+        let team = teamGroups.contains { group in
             var q = recordQuery(group: group)
             q[kSecMatchLimit as String] = kSecMatchLimitOne
             return SecItemCopyMatching(q as CFDictionary, nil) == errSecSuccess
-        } ?? false
+        }
         return "App Group \(group ? "on" : "off") · token \(shared ? "shared" : (found.contains(true) ? "app only" : "missing"))"
             + " · widgets \(group || team ? "on" : "off")"
+            + " · keychain \(teamGroups.isEmpty ? "none (\(teamProbeStatus))" : defaultGroup)"
+    }
+
+    /// What this process can see of the shared sign-in, in a few short codes, for
+    /// the widget's signed-out state: whether the App Group container exists, the
+    /// team prefix the keychain reported, and the keychain status of each place
+    /// the sign-in can be read from (0 = found, -25300 = not there,
+    /// -34018 = this signature lacks the entitlement).
+    public static func sharingReport() -> String {
+        let group = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) != nil
+        let defaults = UserDefaults(suiteName: appGroup)?.string(forKey: serverKey) != nil
+        func status(_ base: [String: Any]) -> OSStatus {
+            var q = base
+            q[kSecMatchLimit as String] = kSecMatchLimitOne
+            return SecItemCopyMatching(q as CFDictionary, nil)
+        }
+        let team = teamGroups.isEmpty ? "none(\(teamProbeStatus))" : defaultGroup
+        let records = recordQueries.map { "\(status($0))" }.joined(separator: "/")
+        let tokens = queries.map { "\(status($0))" }.joined(separator: "/")
+        return "group \(group ? "on" : "off")\(defaults ? "+url" : "") · team \(team) · rec \(records) · tok \(tokens)"
     }
 
     public static func client() -> APIClient? {
@@ -149,11 +169,16 @@ public enum CredentialStore {
 
     private static let recordService = "org.elabx.fusionha.credentials"
 
-    /// A keychain access group every target signed by the same team can use,
-    /// whatever the App Group situation: re-signing tools give the app and its
-    /// extensions the profile's `TEAMID.*` keychain groups. The team prefix is
-    /// read from this process's default access group.
-    static let teamGroup: String? = {
+    nonisolated(unsafe) private static var teamProbeStatus: OSStatus = 0
+    nonisolated(unsafe) private static var defaultGroup: String = "?"
+
+    /// Keychain access groups every target signed by the same team may share,
+    /// whatever the App Group situation. Read from this process's default access
+    /// group (the probe item). Xcode signs with the explicit
+    /// `TEAMID.org.elabx.fusionha.shared`; a re-signing tool that copies the
+    /// profile's entitlements instead gives every target the literal `TEAMID.*`
+    /// group, so that string is tried too.
+    static let teamGroups: [String] = {
         let probe: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: "org.elabx.fusionha.probe",
@@ -170,11 +195,17 @@ public enum CredentialStore {
             add[kSecReturnAttributes as String] = true
             status = SecItemAdd(add as CFDictionary, &out)
         }
+        teamProbeStatus = status
         guard status == errSecSuccess, let dict = out as? [String: Any],
               let group = dict[kSecAttrAccessGroup as String] as? String,
-              let prefix = group.split(separator: ".").first, prefix.count == 10 else { return nil }
-        return "\(prefix).org.elabx.fusionha.shared"
+              let prefix = group.split(separator: ".").first, prefix.count == 10 else { return [] }
+        defaultGroup = group
+        var groups = ["\(prefix).org.elabx.fusionha.shared", "\(prefix).*"]
+        if group.hasSuffix("*"), !groups.contains(group) { groups.append(group) }
+        return groups
     }()
+
+    static var teamGroup: String? { teamGroups.first }
 
     private static func recordQuery(group: String?) -> [String: Any] {
         var q: [String: Any] = [
@@ -192,7 +223,7 @@ public enum CredentialStore {
         #if os(iOS)
         groups.append(appGroup)
         #endif
-        if let teamGroup { groups.append(teamGroup) }
+        groups += teamGroups
         return groups.map(recordQuery(group:))
     }
 
