@@ -203,7 +203,9 @@ struct AddTitleSheet: View {
         }, onOpenLibrary: { id in
             dismiss()
             model.open(id)
-        }, continueAdding: isCurrent(route))
+        }, continueAdding: isCurrent(route), onClose: { dismiss() }, onBack: {
+            if !path.isEmpty { path.removeLast() }
+        })
     }
 
     private func added(_ item: AddedTitle, flow: AddFlow) {

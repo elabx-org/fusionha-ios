@@ -428,16 +428,18 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"detail": "Not Found"}, 404)
 
     def do_POST(self):
+        path = urlparse(self.path).path.rstrip("/")
+        # Ahead of the activity routes, whose catch-all `/check-4k` has no counts.
+        if path == "/api/v1/discover/check-4k":
+            return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [1, 2],
+                                   "best_release_name": "Demo.2160p.WEB-DL.DV.HDR10", "message": None,
+                                   "format_tags": [{"label": "DV", "kind": "hdr"}, {"label": "HDR10", "kind": "hdr"}]})
         hit = self.activity("POST")
         if hit:
             return self.send_json(*hit)
         path = urlparse(self.path).path.rstrip("/")
         if path in NOTIFICATION_POSTS:
             return self.send_json(*NOTIFICATION_POSTS[path]())
-        if path == "/api/v1/discover/check-4k":
-            return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [1, 2],
-                                   "best_release_name": "Demo.2160p.WEB-DL.DV.HDR10", "message": None,
-                                   "format_tags": [{"label": "DV", "kind": "hdr"}, {"label": "HDR10", "kind": "hdr"}]})
         if path.startswith("/api/v1/library/") and path.endswith("/refresh"):
             return self.send_json({"run_id": 1})
         if path == "/api/v1/library":

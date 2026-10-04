@@ -325,6 +325,9 @@ struct AddConfigView: View {
         .padding(.bottom, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassEffect(.regular.tint(Theme.panel.opacity(0.5)), in: .rect(cornerRadius: 0))
+        // A scrim under the glass that runs to the screen edge, so the page
+        // never reads through the bar or shows below it.
+        .background { Theme.bg.opacity(0.88).ignoresSafeArea(edges: .bottom) }
         .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
         .sensoryFeedback(.success, trigger: done)
     }
@@ -405,6 +408,7 @@ struct AddConfigView: View {
         .padding(.horizontal, 12)
         .frame(height: 50)
         .glassEffect(.regular, in: .rect(cornerRadius: 0))
+        .background { Theme.bg.opacity(0.88).ignoresSafeArea(edges: .top) }
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
         .opacity(compact ? 1 : 0)
         .offset(y: compact ? 0 : -8)

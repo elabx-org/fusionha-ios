@@ -47,6 +47,9 @@ struct PreviewPage: View {
     /// The Add sheet's "View details" pushed this page for its current pick:
     /// the add button reads "Continue adding" and goes back to it.
     var continueAdding = false
+    /// Pushed inside the Add sheet: ✕ closes the sheet and ‹ goes back a step.
+    var onClose: (() -> Void)?
+    var onBack: (() -> Void)?
 
     @State private var detail: MediaPreviewDetail?
     @State private var failed = false
@@ -131,7 +134,7 @@ struct PreviewPage: View {
                 .foregroundStyle(Theme.txt)
                 .lineLimit(1)
             Spacer(minLength: 0)
-            Button { dismiss() } label: {
+            Button { (onClose ?? { dismiss() })() } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(Theme.mut)
@@ -156,7 +159,8 @@ struct PreviewPage: View {
 
     private func hero(_ d: MediaPreviewDetail) -> some View {
         PreviewHero(art: d.posterUrl ?? d.backdropUrl, status: d.status, title: d.title, year: d.year,
-                    tagline: d.tagline, meta: heroMeta(d), genres: d.genres ?? [], onClose: { dismiss() })
+                    tagline: d.tagline, meta: heroMeta(d), genres: d.genres ?? [], onClose: { (onClose ?? { dismiss() })() },
+                    onBack: onBack)
     }
 
     private func heroMeta(_ d: MediaPreviewDetail) -> [PreviewHero.Meta] {

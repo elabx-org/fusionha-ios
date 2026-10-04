@@ -93,7 +93,8 @@ struct GrabTimeline: View {
         let lo = bounds.lo.map { width * $0 / 100 + Self.knob } ?? Self.edge
         let hi = bounds.hi.map { width * $0 / 100 - Self.knob } ?? width - Self.edge
         let at = width * pos / 100
-        return lo <= hi ? min(hi, max(lo, at)) : (lo + hi) / 2
+        // CSS clamp(): when the bounds cross, the lower one wins (the web's rule).
+        return max(lo, min(at, hi))
     }
 
     private func stopButton(_ stop: TimelineStop, index: Int) -> some View {
