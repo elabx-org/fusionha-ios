@@ -427,7 +427,7 @@ struct CalendarView: View {
             guard let url = client.calendarFeedURL(apiKey: key) else { throw APIError.invalidServerURL }
             if subscribe, var parts = URLComponents(url: url, resolvingAgainstBaseURL: false) {
                 parts.scheme = "webcal"
-                if let webcal = parts.url { await UIApplication.shared.open(webcal) }
+                if let webcal = parts.url { _ = await UIApplication.shared.open(webcal) }
             } else {
                 UIPasteboard.general.string = url.absoluteString
                 toast = CalToast(message: "iCal feed URL copied — paste it into your calendar app.")
@@ -656,7 +656,7 @@ private struct DayGroup: View {
     private var cal: Calendar { CalendarMath.gregorian() }
 
     var body: some View {
-        let nowIndex = isToday ? entries.firstIndex { !$0.hasAired(now: now) } : nil
+        let nowIndex: Int? = isToday ? entries.firstIndex(where: { !$0.hasAired(now: now) }) : nil
         HStack(alignment: .top, spacing: 0) {
             rail
                 .frame(width: 92, alignment: .trailing)
@@ -885,7 +885,7 @@ struct CalFlow: Layout {
         }
         var y = bounds.minY
         for line in lines {
-            let height = line.map(\.1.height).max() ?? 0
+            let height = line.map { $0.1.height }.max() ?? 0
             var lx = bounds.minX
             for (view, size) in line {
                 view.place(at: CGPoint(x: lx, y: y + (height - size.height) / 2),
