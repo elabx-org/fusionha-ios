@@ -51,6 +51,12 @@ final class ImagePipeline {
         memory.totalCostLimit = 96 << 20
     }
 
+    /// "Reset cache & reload": forget decoded art and the on-disk responses.
+    func removeAll() {
+        memory.removeAllObjects()
+        session.configuration.urlCache?.removeAllCachedResponses()
+    }
+
     func cached(_ url: URL) -> UIImage? {
         memory.object(forKey: url as NSURL)
     }

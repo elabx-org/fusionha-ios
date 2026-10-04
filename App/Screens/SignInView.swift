@@ -22,9 +22,13 @@ struct SignInView: View {
     @State private var plexPin: PlexPin?
     @State private var plexTask: Task<Void, Never>?
     @State private var appeared = false
+    @State private var demoOpen = false
+    @State private var demoUser = ""
+    @State private var demoPass = ""
     @FocusState private var field: Field?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    enum Field { case server, username, password }
+    enum Field { case server, username, password, demoUser, demoPass }
 
     private var status: SetupStatus? { connected?.status }
 
@@ -60,6 +64,10 @@ struct SignInView: View {
             .scrollDismissesKeyboard(.interactively)
             }
         }
+        .overlay(alignment: .bottom) {
+            ToastHost().padding(.bottom, 24)
+        }
+        .environment(\.motionEnabled, !reduceMotion)
         .preferredColorScheme(.dark)
         .sheet(item: $plexURL) { url in
             SafariView(url: url).ignoresSafeArea()
@@ -73,6 +81,7 @@ struct SignInView: View {
             server = login
             await connect()
             if env["FUSIONHA_SCREENSHOT_METHOD"] == "fusionha" { method = .fusionha }
+            if env["FUSIONHA_SCREENSHOT_METHOD"] == "demo" { demoOpen = true }
         }
         #endif
     }
@@ -103,6 +112,7 @@ struct SignInView: View {
                         .padding(.top, 10)
                 } else {
                     chooser(url: connected.url, status: connected.status)
+                    demoSection(url: connected.url, status: connected.status)
                 }
             } else {
                 serverForm
@@ -193,7 +203,7 @@ struct SignInView: View {
     private func chooser(url: URL, status: SetupStatus) -> some View {
         let methods: [SignInMethod] = (status.offersPassword ? [.fusionha] : []) + (status.offersPlex ? [.plex] : [])
         if methods.isEmpty {
-            hint("No sign-in methods are enabled. Ask your admin to turn one on.")
+            hint("No sign-in methods are configured — contact your administrator.")
         } else {
             VStack(spacing: 0) {
                 if methods.count == 1 {
@@ -209,7 +219,7 @@ struct SignInView: View {
                     case .fusionha: passwordForm(url: url)
                     case .plex: plexReveal(url: url)
                     case nil:
-                        if methods.count > 1 { hint("Choose a method above to continue").padding(.top, 18) }
+                        if methods.count > 1 { hint("Choose a method above to continue").padding(.top, 34) }
                     }
                 }
                 .transition(.opacity.combined(with: .offset(y: 8)))
@@ -237,7 +247,8 @@ struct SignInView: View {
                     .onSubmit { Task { await passwordSignIn(url: url) } }
             } focused: { field == .password }
             errorText
-            GradientSubmit(title: "Sign in", working: working, enabled: !username.isEmpty && !password.isEmpty) {
+            GradientSubmit(title: "Sign in", workingTitle: "Signing in…", working: working,
+                           enabled: !username.isEmpty && !password.isEmpty) {
                 Task { await passwordSignIn(url: url) }
             }
         }
@@ -291,6 +302,81 @@ struct SignInView: View {
         }
     }
 
+    // MARK: Demo
+
+    /// "Explore the demo" (setup-status `demo_mode`): a subtle 44pt button that
+    /// enters the read-only demo, or opens the demo credentials form first.
+    @ViewBuilder
+    private func demoSection(url: URL, status: SetupStatus) -> some View {
+        if status.demoMode == true {
+            let needsCredentials = status.demoRequireCredentials == true
+            VStack(spacing: 0) {
+                if demoOpen && needsCredentials {
+                    LoginField(label: "Demo username") {
+                        TextField("", text: $demoUser)
+                            .textContentType(.username)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .submitLabel(.next)
+                            .focused($field, equals: .demoUser)
+                            .onSubmit { field = .demoPass }
+                    } focused: { field == .demoUser }
+                    LoginField(label: "Demo password") {
+                        SecureField("", text: $demoPass)
+                            .textContentType(.password)
+                            .submitLabel(.go)
+                            .focused($field, equals: .demoPass)
+                            .onSubmit { Task { await enterDemo(url: url, credentials: true) } }
+                    } focused: { field == .demoPass }
+                    if method == nil { errorText }
+                    GradientSubmit(title: "Enter demo", workingTitle: "Entering…", working: working,
+                                   enabled: !demoUser.isEmpty && !demoPass.isEmpty) {
+                        Task { await enterDemo(url: url, credentials: true) }
+                    }
+                } else {
+                    Button {
+                        if needsCredentials {
+                            withAnimation(reduceMotion ? nil : .spring(duration: 0.4, bounce: 0.2)) {
+                                error = nil
+                                demoOpen = true
+                            }
+                        } else {
+                            Task { await enterDemo(url: url, credentials: false) }
+                        }
+                    } label: {
+                        Text(working && method == nil ? "Entering…" : "Explore the demo")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Theme.txt)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(.white.opacity(0.08)))
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PressScaleStyle())
+                }
+            }
+            .padding(.top, 28)
+            .padding(.horizontal, demoOpen && needsCredentials ? 0 : 1)
+            .transition(.opacity.combined(with: .offset(y: 8)))
+        }
+    }
+
+    private func enterDemo(url: URL, credentials: Bool) async {
+        working = true
+        error = nil
+        defer { working = false }
+        do {
+            try await model.demoSignIn(server: url, username: credentials ? demoUser : nil,
+                                       password: credentials ? demoPass : nil)
+        } catch APIError.http(401, _) {
+            error = "Incorrect demo username or password."
+        } catch APIError.http(403, _) {
+            error = "The demo isn't available on this server."
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
     @ViewBuilder
     private var errorText: some View {
         if let error {
@@ -341,7 +427,10 @@ struct SignInView: View {
     }
 
     private func startPlex(url: URL) async {
-        await run {
+        working = true
+        error = nil
+        defer { working = false }
+        do {
             let pin = try await model.startPlexSignIn(server: url)
             guard let auth = URL(string: pin.authUrl) else { throw APIError.http(status: 502, body: "") }
             plexPin = pin
@@ -358,13 +447,23 @@ struct SignInView: View {
                 } catch APIError.http(403, _) {
                     plexURL = nil
                     error = "Your Plex account doesn't have access to this server."
+                    model.toast("Your Plex account doesn't have access to this server.", title: "Access denied", variant: .error)
+                } catch PlexSignInError.timedOut {
+                    plexURL = nil
+                    error = "The authorization window expired. Please try again."
+                    model.toast("The authorization window expired. Please try again.", title: "Plex sign-in timed out",
+                                variant: .error)
                 } catch {
                     plexURL = nil
                     self.error = error.localizedDescription
+                    model.toast(error.localizedDescription, title: "Plex sign-in failed", variant: .error)
                 }
                 plexTask = nil
                 plexPin = nil
             }
+        } catch {
+            self.error = "Could not start Plex sign-in"
+            model.toast(error.localizedDescription, title: "Could not start Plex sign-in", variant: .error)
         }
     }
 
@@ -423,6 +522,7 @@ private struct LoginField<Input: View>: View {
 /// The web's primary button with the login gradient and a slow sheen.
 private struct GradientSubmit: View {
     let title: String
+    var workingTitle: String? = nil
     let working: Bool
     let enabled: Bool
     let action: () -> Void
@@ -443,7 +543,9 @@ private struct GradientSubmit: View {
                         startPoint: UnitPoint(x: -0.3 * shift, y: 0.5),
                         endPoint: UnitPoint(x: 1.6 - 0.3 * shift, y: 0.5))
                 }
-                if working {
+                if working, let workingTitle {
+                    Text(workingTitle).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.bg)
+                } else if working {
                     ProgressView().tint(Theme.bg)
                 } else {
                     Text(title).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.bg)

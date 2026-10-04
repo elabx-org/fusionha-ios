@@ -20,10 +20,12 @@ Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`g
 | Mobile bottom nav: Library · Discover · Calendar · Activity · Wanted | `TabView` with the native glass tab bar and **the same five tabs in the same order, with the web's own icons** (SVG template assets copied from `shell/destinations.tsx`) and the cyan active tint. |
 | Discover page (search field + poster rails) | Its own **Discover tab**, like the web: kind filter, TMDB search, Browse rails and Requests. |
 | Mobile top bar: logo · search pill · avatar | The same custom top bar on every tab. The search pill scopes to **This library** (filters the Library grid in place) or **Everything** (library matches plus TMDB titles to add). |
-| Top bar hides on scroll down | `.tabBarMinimizeBehavior(.onScrollDown)` |
-| Activity pulse + queue count in the top bar | A queue-count badge on the Activity tab, plus the Live Activity and widget outside the app. |
+| Top bar hides on scroll down | The custom top bar slides away on scroll down (and the ＋ orb with it); the tab bar uses `.tabBarMinimizeBehavior(.onScrollDown)`. Tapping the logo scrolls to the top. |
+| Activity pulse + queue count in the top bar | A queue-count badge ("99+" cap) on the Activity tab, plus the Live Activity and widget outside the app. **Deviation:** the native tab-bar badge replaces the web's gradient badge and pulsing ring, and Discover gets a native pending-requests badge for approvers. |
 | Mobile FAB (＋ Add) on Library / Discover / Wanted | The same 56pt gradient ＋ orb, bottom right, on those screens. It opens the Add sheet. |
-| Avatar menu → Settings, Log out | An avatar toolbar button (top right on every tab), opening a menu with Settings, Account and Sign out. Settings opens as a full-height sheet. |
+| Avatar menu → Settings, Log out | The avatar (Plex photo or initial, amber attention dot) opens a native `Menu`: username + role, Settings, Reset cache & reload, Log out, then the version and Open web app. Log out ends the session and revokes this device's token. |
+| Omni search (search pill → "Everything") | A full-screen cover: library matches (prefix-first, year-aware, max 8) and the TMDB add lane, with the web's arming copy. On Library the pill filters the grid in place with a This library / Everything scope bar. |
+| Toasts | One app-wide toast stack above the tab bar (`model.toast(_:title:variant:)`), with the web's variants and draining timer bar. |
 | Attention control + health badge | A glass toolbar bell with a badge count, opening an **Attention sheet**. Sources: `GET /api/v1/library/attention`, `/system/runs/attention`, `/system/indexers/unavailable` and `GET /health`. |
 | Requester role (Discover · My requests · You) | Tabs swap to **Discover · My requests · You**, driven by `request_scoped` from `GET /api/v1/auth/me`, the same rule as `REQUESTOR_DESTINATIONS`. |
 | Park & Resume dock | Not in v1. A parked interactive search can later reuse the bottom accessory. |
@@ -38,7 +40,9 @@ Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`g
 - **Toolbar:** a glass **Filter menu** (type, HD/4K, recency, sort and group-by-status, using the same values as `library-filters.ts`), **Select**, **＋**.
 - **Alphabet rail:** when sorted by title, a glass scrubber on the trailing edge, with the same fisheye feel as the web touch scrubber.
 - **Long-press a poster:** a context menu with a preview offering Automatic search (magnifier), Interactive search (person), Monitor/Unmonitor (bookmark), Refresh and Delete. This replaces the web's hover icons.
-- **Select mode:** the tab bar hides and a glass **bottom bar** appears with Monitor, Unmonitor, Quality profile, Min. availability, Root folder, Refresh & scan, Delete and Select all. This is the same set as `BulkActionBar`.
+- **Select mode:** toggled from the toolbar (or a poster's menu). The tab bar and ＋ hide and a glass **bottom bar** (a bottom safe-area inset) shows the count, "of N filtered", Select all / Clear / Done and Monitor, Unmonitor, Refresh & Scan, Quality profile, Minimum availability, Change root…, Delete. This is the same set and copy as `BulkActionBar`.
+- **Delete:** the web's DeleteItemDialog ("Delete {title}?" + delete-files checkbox) as a short sheet presented from the root, so every screen can call `model.confirmDelete`.
+- **A–Z:** letters follow the web's `letterOf` (first character uppercased, non A–Z as #, no article stripping). **Deviation:** no sticky letter headers or rail scroll-spy, to keep scrolling smooth on large libraries.
 - **Opening an item:** `.matchedTransitionSource` + `.navigationTransition(.zoom)`, so the poster grows into the detail page. This is the native form of the locked shared-element motion.
 - **API:** `GET /api/v1/library`, `POST /library/{id}/search` (no `/api/v1` prefix), `POST /api/v1/library/{id}/refresh`, `DELETE /api/v1/library/{id}`, `POST /api/v1/library/bulk/*`.
 
@@ -74,8 +78,8 @@ The web phone layout is a swipe-down bottom sheet because the web has no native 
 
 ### Add flow and preview (`/preview/:kind/:tmdbId`)
 - **Preview:** the same layout as item detail but read-only, with **Add** or **Request** as a `.glassProminent` button in the bottom toolbar. If the title is already in the library, the button is **Open**.
-- **Add sheet:** first a search step, then "Configure editions" as a Form. HD is on by default and 4K is an explicit toggle (core requirement). Each edition has its own root and profile pickers. Then monitor options and search-on-add.
-- **API:** `GET /api/v1/discover/preview`, `GET /api/v1/search`, `/rootfolders`, `/qualityprofiles`, `/config/add-defaults`, `POST /api/v1/discover/check-4k`, `POST /api/v1/library`, `POST /api/v1/requests`.
+- **Add sheet:** step 1 is the web's search: kind tabs, a TMDB / TVDB source switch (TVDB for series), the trending grid (or list) while the field is empty and the "Added as · your default" note. Step 2 mirrors EditionConfig: HD on by default and 4K an explicit toggle (core requirement), each edition with its own root and profile menus, the 4K quick check, folder name with path previews, series type, metadata provider, the per-edition monitor control (Mixed / override), minimum availability for movies, and search-on-add. Native `Menu`s and `Toggle`s replace the web's custom selects.
+- **API:** `GET /api/v1/discover/preview`, `GET /api/v1/search`, `GET /api/v1/search/tvdb`, `/rootfolders`, `/qualityprofiles`, `/config/add-defaults`, `POST /api/v1/discover/check-4k`, `POST /api/v1/library`, `POST /api/v1/requests`.
 
 ### Discover
 - **Layout:** a glass segmented lens **Movies · Series · Anime**, then horizontal poster rails: Trending (Today/Week), Latest trailers, What's popular, Upcoming / On the air, Top rated, Collections. A Filters sheet covers genres and watch providers.
@@ -122,6 +126,7 @@ A glass segmented picker **Queue · History · Blocklist · Tasks**. Audit and I
   2. The app checks `GET /health` and `GET /api/v1/setup-status`.
   3. Sign in with username and password (`POST /api/v1/auth/login`), or Plex (`POST /api/v1/auth/plex/pin`, opening `authUrl` in `ASWebAuthenticationSession` and polling `.../check`).
   4. The app **mints a personal token** (`POST /api/v1/tokens`, named after the device) and stores it in the Keychain in a shared App Group, so widgets and extensions can call the API with `X-Api-Key`.
+- **Demo:** when setup-status has `demo_mode`, an "Explore the demo" button (with the demo credentials form if `demo_require_credentials`) calls `POST /api/v1/demo/login`; the app replays the `fusionha_demo` cookie. OIDC buttons wait on the server's `/auth/providers` endpoint.
 - **Uninitialised server:** if the server isn't set up yet, the first-run wizard opens in the web sheet. No native wizard in v1.
 - **Account:** avatar, role badge, my requests, sign out. Sign out revokes the token (`DELETE /api/v1/tokens/{id}`).
 
