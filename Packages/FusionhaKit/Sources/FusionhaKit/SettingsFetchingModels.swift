@@ -238,7 +238,10 @@ public struct IndexerStatRow: Decodable, Sendable, Hashable {
     public let name: String
     public let health: Health
     public let caps: Caps?
-    public let grabs24h: Int?
+    /// `grabs_24h`: convertFromSnakeCase capitalizes the "24h" component, so the
+    /// key arrives as `grabs24H`.
+    private let grabs24H: Int?
+    public var grabs24h: Int? { grabs24H }
     public let grabsRange: Int?
     public let queriesRange: Int?
     public let successRateRange: Double?
