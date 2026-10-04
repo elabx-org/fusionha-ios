@@ -78,6 +78,7 @@ The web phone layout is a swipe-down bottom sheet because the web has no native 
 
 ### Add flow and preview (`/preview/:kind/:tmdbId`)
 - **Preview:** the same layout as item detail but read-only, with **Add** or **Request** as a `.glassProminent` button in the bottom toolbar. If the title is already in the library, the button is **Open**.
+- **As built (mobile web parity):** Preview opens as a full-height sheet like the web's `PreviewFlyout` (ambient art bleed, bottom-anchored hero, compact bar after 200pt, seasons, inline trailer, More like this pushes another preview, cast). Its "+ Add to library" sits in the body like the web, but opens the Add sheet on its configure step instead of rendering the add options inline (one shared add form on iOS).
 - **Add sheet:** step 1 is the web's search: kind tabs, a TMDB / TVDB source switch (TVDB for series), the trending grid (or list) while the field is empty and the "Added as · your default" note. Step 2 mirrors EditionConfig: HD on by default and 4K an explicit toggle (core requirement), each edition with its own root and profile menus, the 4K quick check, folder name with path previews, series type, metadata provider, the per-edition monitor control (Mixed / override), minimum availability for movies, and search-on-add. Native `Menu`s and `Toggle`s replace the web's custom selects.
 - **API:** `GET /api/v1/discover/preview`, `GET /api/v1/search`, `GET /api/v1/search/tvdb`, `/rootfolders`, `/qualityprofiles`, `/config/add-defaults`, `POST /api/v1/discover/check-4k`, `POST /api/v1/library`, `POST /api/v1/requests`.
 
@@ -85,16 +86,18 @@ The web phone layout is a swipe-down bottom sheet because the web has no native 
 - **Layout:** a glass segmented lens **Movies · Series · Anime**, then horizontal poster rails: Trending (Today/Week), Latest trailers, What's popular, Upcoming / On the air, Top rated, Collections. A Filters sheet covers genres and watch providers.
 - **Cards:** an "In library" badge opens the detail page. Otherwise a glass ＋ corner button adds or requests. Long-press offers View details, Add/Request, Ignore and Check 4K.
 - **Requests and Issues:** a segmented picker at the top (**Browse · Requests · Issues**), shown by permission, with a pending-count badge for approvers. Requests rows swipe to Approve or Reject.
-- Trailers play in a native player sheet.
+- **As built:** the web's mobile layout one to one: Discover title, inline kind segmented control, the search field that opens the Add sheet (an inline search for requesters), "Add as" provider menu, Browse · Requests · Issues tabs with the pending badge, rails (Trending, Latest Trailers, What's Popular, Upcoming/On The Air, Top Rated, Complete your collections, Discover with filters). Cards open the Preview (requesters: the request modal); long-press is a context menu with Add/Request, Check for 4K and View details. Approver rows use a long-press menu for Approve/Reject (they are not in a List, so no swipe). Requesters' "My requests" tab is this page with Requests selected.
+- Trailers play in a YouTube embed sheet.
 - **API:** `GET /api/v1/discover`, `/discover/trailers`, `/discover/filter`, `/collections`, `/requests`, `POST /api/v1/requests/{id}/approve|reject`, `/issues`.
 
 ### Calendar (`/calendar`)
-- **Views:** a glass segmented picker **Month · Week · Day · Agenda**, with the same remembered default as `calendar_default_view` and `first_day_of_week`.
+- **Views:** a glass segmented picker **Month · Week · Forecast · Day · Agenda** (the web's five), opening on the view last chosen on this device, else the server's `calendar_default_view`; grids start on `first_day_of_week`.
 - **Week:** the web mobile `WeekMobile` pattern, a day strip with an agenda list below. The day strip is a glass bar that collapses as you scroll.
-- **Month:** a grid with status-coloured dots for each day. Tapping a day opens its agenda.
+- **Month:** the web's grid: up to two event pills per day (kind strip, code, one unaired-aware dot per edition) and `+N more`. Tapping a pill opens the item; tapping a day's empty space opens that day in the **Day** view.
+- **Agenda / Forecast / Day:** the web's grouped timeline: a date rail, a "now" marker in today's group, rows with a coverage rail per edition, opening scrolled to today.
 - **Events:** poster thumb, SxxEyy (or absolute number), and one status colour per edition.
-- **Toolbar:** a glass **Today** button and a Filter menu (media type, movie release type).
-- **Native bonus:** "Subscribe in Calendar" opens the `webcal://` form of `/api/v1/calendar/feed.ics?apikey=…`, adding fusionha to the iOS Calendar app.
+- **Toolbar:** the web's toolbar: All · Series · Movies · Anime glass chips, ‹ Today ›, **iCal feed** (admins only) and, in Week, the card-style menu (`PUT /api/v1/settings`), then the status and release-type legends.
+- **iCal feed:** a menu with **Copy feed URL** (the web's action) and **Subscribe in Calendar**, which opens the `webcal://` form of `/api/v1/calendar/feed.ics?apikey=…` (the app API key from `GET /api/v1/settings/api-key`).
 - **API:** `GET /api/v1/calendar?start&end`.
 
 ### Wanted (`/wanted`)

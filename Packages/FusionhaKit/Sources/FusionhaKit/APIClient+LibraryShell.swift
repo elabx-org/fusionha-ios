@@ -65,10 +65,6 @@ extension APIClient {
         try await get("/api/v1/system/commands")
     }
 
-    public func requests(status: String) async throws -> [MediaRequest] {
-        try await get("/api/v1/requests", query: [URLQueryItem(name: "status", value: status)])
-    }
-
     public func shellSettings() async throws -> ShellSettings {
         try await get("/api/v1/settings")
     }

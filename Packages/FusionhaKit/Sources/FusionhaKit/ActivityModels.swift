@@ -334,11 +334,6 @@ public struct FourKSeason: Decodable, Sendable, Hashable, Identifiable {
     public var id: Int { seasonNumber }
 }
 
-public struct FormatTag: Decodable, Sendable, Hashable {
-    public let label: String
-    public let kind: String
-}
-
 public struct CheckFourKResult: Decodable, Sendable {
     public let foundUhd: Bool
     public let message: String

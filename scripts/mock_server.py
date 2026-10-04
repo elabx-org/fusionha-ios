@@ -23,15 +23,51 @@ def load(name):
     return json.loads((MOCK / name).read_text())
 
 
-def calendar_this_month():
+# Day offsets from today for each calendar_all.json entry (same order), plus a
+# UTC air time for episodes relative to now (hours; None = date only). Spreads the
+# demo across this week and month so every view (Month, Week, Forecast, Day,
+# Agenda) has aired, airing-soon and upcoming entries, a season drop and a "now" line.
+CALENDAR_PLAN = [
+    (-9, None), (-13, -320), (-6, -150), (-3, -76), (0, -5), (0, -2), (0, 3),
+    (-2, -50), (-1, -25), (0, -1), (1, 22), (-4, None), (2, 48), (5, 120),
+    (1, 20), (1, 20.5), (1, 21), (3, None), (4, 96), (6, 145), (-7, None),
+    (-11, -260), (-5, -122), (8, 190), (9, 214), (2, None), (12, 290), (13, 314),
+]
+RELEASE_TYPES = {0: "digital", 11: "physical", 17: "theatrical", 20: None, 25: "digital"}
+
+
+def calendar_range(start=None, end=None):
     entries = load("calendar_all.json")
+    now = dt.datetime.now(dt.timezone.utc).replace(second=0, microsecond=0)
     today = dt.date.today()
-    start = today.replace(day=1)
     out = []
     for i, entry in enumerate(entries):
-        day = start + dt.timedelta(days=(i * 3 + 1) % 28)
-        out.append({**entry, "date": day.isoformat()})
-    return out
+        offset, hours = CALENDAR_PLAN[i % len(CALENDAR_PLAN)]
+        item = {**entry, "date": (today + dt.timedelta(days=offset)).isoformat()}
+        if entry["type"] == "episode" and hours is not None:
+            air = now + dt.timedelta(hours=hours)
+            item["air_datetime"] = air.strftime("%Y-%m-%dT%H:%M:%SZ")
+            item["date"] = air.date().isoformat()
+            item["runtime"] = 24 if entry["is_anime"] else 50
+        if entry["type"] == "movie":
+            item["release_type"] = RELEASE_TYPES.get(i)
+        if offset > 0:
+            # Not out yet: nothing downloaded or grabbing for future entries.
+            item["editions"] = [{**ed, "status": "wanted"} for ed in entry["editions"]]
+        out.append(item)
+    if start and end:
+        out = [e for e in out if start <= e["date"] <= end]
+    return sorted(out, key=lambda e: e["date"])
+
+
+def settings():
+    return {
+        "first_day_of_week": 0,
+        "calendar_default_view": "month",
+        "calendar_week_card_style": "landscape",
+        "voice_playful": True,
+        "animations_enabled": True,
+    }
 
 
 def queue():
@@ -60,6 +96,150 @@ def queue():
             "phase_percent": None,
         })
     return {"items": items, "total": len(items), "just_finished": []}
+
+
+# Titles the Discover fixtures treat as not yet in the library, so cards show
+# the trending flame, request chips and the Preview's Add action.
+NOT_IN_LIBRARY = {4, 7, 10, 13}
+CAST = [("Timothée Chalamet", "Paul Atreides"), ("Rebecca Ferguson", "Lady Jessica"),
+        ("Oscar Isaac", "Duke Leto"), ("Zendaya", "Chani"), ("Jason Momoa", "Duncan Idaho")]
+TRAILER_KEYS = {4: "n9xhJrPXop4", 1: "vKQi3bBA1y8", 9: "KPLWWIOCOOQ", 8: "HhesaQXLuRY", 14: "LHtdKWJdif4", 2: "YoHD9XEInc0"}
+
+
+def library_by_tmdb():
+    return {item["tmdb_id"]: item for item in load("library.json")}
+
+
+def row(item):
+    owned = item["id"] not in NOT_IN_LIBRARY
+    return {
+        "tmdb_id": item["tmdb_id"] or item["id"],
+        "title": item["title"],
+        "year": item["year"],
+        "kind": item["kind"],
+        "is_anime": item["is_anime"],
+        "overview": None,
+        "in_library": owned,
+        "library_item_id": item["id"] if owned else None,
+        "poster_url": item["poster_url"],
+        "backdrop_url": item["backdrop_url"],
+        "date": f"{item['year']}-06-01" if item["year"] else None,
+        "vote_average": 8.1,
+    }
+
+
+def discover_rows(query):
+    kind = query.get("kind", ["all"])[0]
+    lst = query.get("list", ["trending"])[0]
+    items = load("library.json")
+    if kind == "movie":
+        items = [i for i in items if i["kind"] == "movie" and not i["is_anime"]]
+    elif kind == "series":
+        items = [i for i in items if i["kind"] == "series" and not i["is_anime"]]
+    elif kind == "anime":
+        items = [i for i in items if i["is_anime"]]
+    shift = {"trending": 0, "popular": 2, "top_rated": 1, "upcoming": 3, "on_the_air": 3}.get(lst, 0)
+    shift = shift % max(1, len(items))
+    items = items[shift:] + items[:shift]
+    if kind == "movie" and lst == "trending":
+        items = sorted(items, key=lambda i: i["id"] not in NOT_IN_LIBRARY)
+    return [row(i) for i in items]
+
+
+def trailers(query):
+    rows = []
+    for r in discover_rows(query):
+        if r["backdrop_url"]:
+            rows.append({**r, "trailer_key": TRAILER_KEYS.get(r.get("library_item_id") or 0, "n9xhJrPXop4")})
+    return rows
+
+
+def collections():
+    lib = {i["id"]: i for i in load("library.json")}
+    return [
+        {"collection_tmdb_id": 726871, "name": "Dune Collection", "poster_url": lib[4]["poster_url"],
+         "backdrop_url": lib[4]["backdrop_url"], "owned_count": 1, "total_count": 2},
+        {"collection_tmdb_id": 2344, "name": "The Matrix Collection", "poster_url": lib[1]["poster_url"],
+         "backdrop_url": lib[1]["backdrop_url"], "owned_count": 1, "total_count": 4},
+        {"collection_tmdb_id": 422837, "name": "Blade Runner Collection", "poster_url": lib[3]["poster_url"],
+         "backdrop_url": lib[3]["backdrop_url"], "owned_count": 1, "total_count": 2},
+    ]
+
+
+def collection_detail(cid):
+    summary = next((c for c in collections() if c["collection_tmdb_id"] == cid), collections()[0])
+    parts = [{"tmdb_id": 438631, "title": "Dune", "year": 2021, "in_library": True},
+             {"tmdb_id": 693134, "title": "Dune: Part Two", "year": 2024, "in_library": False}]
+    return {**summary, "present_count": 1, "parts": parts}
+
+
+def preview(kind, tmdb_id):
+    item = library_by_tmdb().get(tmdb_id)
+    if item is None:
+        return None
+    detail = json.loads((MOCK / "items" / f"{item['id']}.json").read_text())
+    owned = item["id"] not in NOT_IN_LIBRARY
+    lib = load("library.json")
+    similar = [{"tmdb_id": i["tmdb_id"], "title": i["title"], "year": i["year"], "poster_url": i["poster_url"],
+                "kind": i["kind"], "in_library": i["id"] not in NOT_IN_LIBRARY}
+               for i in lib if i["kind"] == item["kind"] and i["id"] != item["id"]][:6]
+    seasons = [{"season_number": s["season_number"], "episode_count": max(len(s.get("episodes") or []), 8)}
+               for s in detail.get("seasons") or []]
+    return {
+        "tmdb_id": tmdb_id, "title": item["title"], "year": item["year"], "kind": item["kind"],
+        "is_anime": item["is_anime"], "in_library": owned, "library_item_id": item["id"] if owned else None,
+        "tvdb_id": detail.get("tvdb_id"), "imdb_id": detail.get("imdb_id"),
+        "poster_url": item["poster_url"], "backdrop_url": item["backdrop_url"],
+        "overview": detail.get("overview"), "runtime": detail.get("runtime"), "status": detail.get("status"),
+        "tagline": detail.get("tagline") or ("Beyond fear, destiny awaits." if item["id"] == 4 else None),
+        "vote_average": detail.get("vote_average") or 7.9, "vote_count": detail.get("vote_count") or 12000,
+        "certification": detail.get("certification") or "PG-13", "genres": detail.get("genres") or ["Science Fiction"],
+        "cast": [{"name": n, "character": c, "profile_url": None, "order": k} for k, (n, c) in enumerate(CAST)],
+        "studios": [], "trailer_key": TRAILER_KEYS.get(item["id"], "n9xhJrPXop4"),
+        "similar": similar, "seasons": seasons if item["kind"] == "series" else [],
+    }
+
+
+def requests_rows(query):
+    now = dt.datetime.utcnow()
+    def ago(hours):
+        return (now - dt.timedelta(hours=hours)).isoformat()
+    rows = [
+        {"id": 1, "user_id": 4, "tmdb_id": 438631, "kind": "movie", "media_item_id": None, "tier": "UHD-2160p",
+         "editions": ["UHD-2160p"], "seasons": [], "episodes": [], "status": "pending", "reason": None,
+         "note": "The 4K HDR release please", "requested_at": ago(2)},
+        {"id": 2, "user_id": 4, "tmdb_id": 63639, "kind": "series", "media_item_id": None, "tier": "HD-1080p",
+         "editions": ["HD-1080p"], "seasons": [1, 2], "episodes": [], "status": "pending", "reason": None,
+         "note": None, "requested_at": ago(5)},
+        {"id": 3, "user_id": 6, "tmdb_id": 372058, "kind": "movie", "media_item_id": None, "tier": "HD-1080p",
+         "editions": ["HD-1080p", "UHD-2160p"], "seasons": [], "episodes": [], "status": "approved", "reason": None,
+         "note": None, "requested_at": ago(30)},
+        {"id": 4, "user_id": 4, "tmdb_id": 1399, "kind": "series", "media_item_id": 9, "tier": "HD-1080p",
+         "editions": ["HD-1080p"], "seasons": [], "episodes": [], "status": "fulfilled", "reason": None,
+         "note": None, "requested_at": ago(80)},
+        {"id": 5, "user_id": 6, "tmdb_id": 31911, "kind": "series", "media_item_id": None, "tier": "UHD-2160p",
+         "editions": ["UHD-2160p"], "seasons": [], "episodes": [], "status": "deferred", "reason": "not_available_yet",
+         "note": None, "requested_at": ago(120)},
+    ]
+    status = query.get("status", [None])[0]
+    return [r for r in rows if status is None or r["status"] == status]
+
+
+def issues_rows(query):
+    now = dt.datetime.utcnow()
+    rows = [
+        {"id": 1, "media_item_id": 8, "reporter_user_id": 4, "issue_type": "audio", "scope": "episode", "season": 2,
+         "episode": 5, "description": "Audio drifts out of sync after ten minutes.", "status": "open", "resolved": False,
+         "created_at": (now - dt.timedelta(hours=3)).isoformat(), "comment": None},
+        {"id": 2, "media_item_id": 1, "reporter_user_id": 6, "issue_type": "playback", "scope": "item", "season": None,
+         "episode": None, "description": None, "status": "open", "resolved": False,
+         "created_at": (now - dt.timedelta(days=1)).isoformat(), "comment": None},
+        {"id": 3, "media_item_id": 9, "reporter_user_id": 4, "issue_type": "subtitle", "scope": "season", "season": 1,
+         "episode": None, "description": "No English subtitles.", "status": "resolved", "resolved": True,
+         "created_at": (now - dt.timedelta(days=4)).isoformat(), "comment": "Grabbed a release with subs."},
+    ]
+    status = query.get("status", ["open"])[0]
+    return [r for r in rows if r["status"] == status]
 
 
 def discover():
@@ -118,15 +298,26 @@ class Handler(BaseHTTPRequestHandler):
         routes = {
             "/health": lambda: {"status": "ok", "version": "mock"},
             "/api/v1/setup-status": lambda: load("setup-status.json"),
-            "/api/v1/auth/me": lambda: load("me.json"),
+            "/api/v1/auth/me": lambda: load("me_requestor.json" if REQUESTOR else "me.json"),
             "/api/v1/library": lambda: load("library.json"),
             "/api/v1/queue": queue,
             "/api/v1/history": lambda: load("history.json"),
             "/api/v1/blocklist": lambda: load("blocklist.json"),
-            "/api/v1/calendar": calendar_this_month,
-            "/api/v1/discover": discover,
+            "/api/v1/calendar": lambda: calendar_range(query.get("start", [None])[0], query.get("end", [None])[0]),
+            "/api/v1/settings": settings,
+            "/api/v1/settings/api-key": lambda: {"api_key": "mock-app-api-key"},
+            "/api/v1/discover": lambda: discover_rows(query),
+            "/api/v1/discover/trailers": lambda: trailers(query),
+            "/api/v1/discover/filter": lambda: discover_rows(query),
+            "/api/v1/discover/genres": lambda: [{"id": 878, "name": "Science Fiction"}, {"id": 18, "name": "Drama"},
+                                                {"id": 16, "name": "Animation"}, {"id": 28, "name": "Action"}],
+            "/api/v1/discover/watch-providers": lambda: [{"id": 8, "name": "Netflix", "logo_url": None},
+                                                         {"id": 337, "name": "Disney Plus", "logo_url": None}],
+            "/api/v1/collections": collections,
             "/api/v1/search": discover,
-            "/api/v1/requests": lambda: load("requests.json"),
+            "/api/v1/requests": lambda: requests_rows(query),
+            "/api/v1/requests/offerable": lambda: {"editions": ["HD-1080p", "UHD-2160p"], "mode": "choose", "auto_editions": []},
+            "/api/v1/issues": lambda: issues_rows(query),
             "/api/v1/qualityprofiles": lambda: load("qualityprofiles.json"),
             "/api/v1/rootfolders": lambda: load("rootfolders.json"),
             "/api/v1/config/add-defaults": lambda: load("add-defaults.json"),
@@ -137,6 +328,18 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/v1/library/") and path.rsplit("/", 1)[-1].isdigit():
             item = MOCK / "items" / f"{path.rsplit('/', 1)[-1]}.json"
             return self.send_json(json.loads(item.read_text())) if item.exists() else self.send_json({"detail": "Not Found"}, 404)
+        if path == "/api/v1/discover/preview":
+            body = preview(query.get("kind", ["movie"])[0], int(query.get("tmdb_id", ["0"])[0]))
+            return self.send_json(body) if body else self.send_json({"detail": "Not Found"}, 404)
+        if path.startswith("/api/v1/preview/"):
+            parts = path.split("/")
+            if len(parts) >= 8 and parts[6] == "season":
+                return self.send_json([{"episode_number": e, "title": f"Chapter {e}", "air_date": None, "overview": None}
+                                       for e in range(1, 9)])
+            body = preview(parts[4], int(parts[5])) if len(parts) >= 6 and parts[5].isdigit() else None
+            return self.send_json(body) if body else self.send_json({"detail": "Not Found"}, 404)
+        if path.startswith("/api/v1/collections/") and path.rsplit("/", 1)[-1].isdigit():
+            return self.send_json(collection_detail(int(path.rsplit("/", 1)[-1])))
         if path in SHELL_ROUTES:
             return self.send_json(SHELL_ROUTES[path]())
         if path.startswith("/api/v1/system/runs/") and path.rsplit("/", 1)[-1].isdigit():
@@ -158,10 +361,19 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"run_id": 1})
         if path == "/api/v1/library":
             return self.send_json({"id": 1}, 201)
+        if path.endswith("/check-4k"):
+            return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [],
+                                   "format_tags": [], "message": ""})
         self.send_json({})
 
     def do_PUT(self):
-        self.send_json(*(self.activity("PUT") or ({},)))
+        hit = self.activity("PUT")
+        if hit:
+            return self.send_json(*hit)
+        self.send_json(settings() if self.path.startswith("/api/v1/settings") else {})
+
+    def do_PATCH(self):
+        self.send_json({})
 
     def do_DELETE(self):
         self.send_json(*(self.activity("DELETE") or ({},)))
@@ -185,6 +397,10 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write("mock: " + fmt % args + "\n")
 
 
+REQUESTOR = False
+
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
+    # `requestor` serves a request-scoped account (Discover · My requests · You).
+    REQUESTOR = len(sys.argv) > 2 and sys.argv[2] == "requestor"
     ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()

@@ -1121,15 +1121,6 @@ enum ActFmt {
     }
 }
 
-// MARK: Permissions
-
-extension Me {
-    /// The web's `usePermissions().can(permission)`.
-    func hasPermission(_ permission: String) -> Bool {
-        isAdmin || (permissions ?? []).contains(permission)
-    }
-}
-
 // MARK: Paged feed (the web's useInfiniteList)
 
 @MainActor

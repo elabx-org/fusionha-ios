@@ -110,6 +110,10 @@ public struct Me: Decodable, Sendable {
     /// Requester accounts get the web's reduced nav (Discover, My requests, You).
     public let requestScoped: Bool?
     public let thumb: String?
+    // Account → Sign-in methods.
+    public let plexUsername: String?
+    public let plexLinked: Bool?
+    public let credentials: [UserCredential]?
 
     public var initials: String {
         let parts = username.split(whereSeparator: { $0 == " " || $0 == "." || $0 == "_" || $0 == "-" })
@@ -121,7 +125,20 @@ public struct Me: Decodable, Sendable {
         isAdmin ? "Administrator" : (roleName ?? "User")
     }
 
-    public func can(_ capability: String) -> Bool {
+    /// True for an admin, or when the name is one of the user's capabilities
+    /// (`add`, `request`, …) or permissions (`requests.approve`, `issues.manage`, …).
+    /// The two vocabularies don't overlap, so one check serves both.
+    public func can(_ name: String) -> Bool {
+        hasCapability(name) || hasPermission(name)
+    }
+
+    /// The web's `can(p)`: admin, or `permissions` contains `p`.
+    public func hasPermission(_ permission: String) -> Bool {
+        isAdmin || (permissions ?? []).contains(permission)
+    }
+
+    /// The web's `hasCapability(c)`: admin, or `capabilities` contains `c`.
+    public func hasCapability(_ capability: String) -> Bool {
         isAdmin || (capabilities ?? []).contains(capability)
     }
 }
@@ -357,6 +374,8 @@ public struct MediaSearchResult: Decodable, Sendable, Identifiable, Hashable {
     public let libraryItemId: Int?
     public let posterUrl: String?
     public let backdropUrl: String?
+    /// The full release/air date (`YYYY-MM-DD`); the year falls back to it.
+    public let date: String?
     public let voteAverage: Double?
     public var id: String { "\(kind.rawValue)-\(tmdbId)" }
 }
@@ -372,6 +391,11 @@ public struct MediaRequest: Decodable, Sendable, Identifiable, Hashable {
     public let status: String
     public let note: String?
     public let requestedAt: String?
+    public let userId: Int?
+    public let editions: [QualityTier]?
+    public let seasons: [Int]?
+    public let episodes: [EpisodeRef]?
+    public let reason: String?
 }
 
 public struct MediaRequestCreate: Encodable, Sendable {
@@ -396,6 +420,7 @@ public struct QualityProfile: Decodable, Sendable, Identifiable, Hashable {
     public let id: Int
     public let name: String
     public let mediaKind: String?
+    public let allowedQualities: [String]?
 }
 
 public struct AddDefaultSlot: Decodable, Sendable, Hashable {

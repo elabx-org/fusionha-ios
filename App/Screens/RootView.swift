@@ -49,6 +49,7 @@ struct RootView: View {
                 .presentationCornerRadius(20)
                 .presentationBackground(Theme.panel)
         }
+        .sheet(isPresented: $model.showingAccount) { AccountSheet().presentationBackground(Theme.bg) }
         .sheet(item: $model.deleteTarget) { target in
             DeleteTitleDialog(target: target)
                 .presentationDetents([.height(320)])
