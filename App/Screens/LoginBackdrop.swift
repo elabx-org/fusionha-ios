@@ -347,7 +347,7 @@ private final class WebFX: BackdropFX {
     }
 
     func render(_ c: GraphicsContext, t: Double) {
-        let md = md
+        let md = self.md
         for i in nd.indices {
             for j in (i + 1)..<nd.count {
                 let dx = nd[i].x - nd[j].x, dy = nd[i].y - nd[j].y, d2 = dx * dx + dy * dy

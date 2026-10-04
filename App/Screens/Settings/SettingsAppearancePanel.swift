@@ -138,7 +138,7 @@ struct AppearanceSettingsPanel: View {
                              showWordmark: store.bool("login_show_wordmark"),
                              showTagline: store.bool("login_show_tagline"))
             }
-            .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 4, trailing: 4))
+            .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 4, trailing: 8))
             .listRowBackground(Color.clear)
         }
         SettingsSection("Login layout") {
@@ -153,7 +153,7 @@ struct AppearanceSettingsPanel: View {
                 }
             }
             .id("Login layout")
-            .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 4, trailing: 4))
+            .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 4, trailing: 8))
             .listRowBackground(Color.clear)
         }
         SettingsSection("Login elements") {
@@ -179,7 +179,7 @@ struct AppearanceSettingsPanel: View {
                 }
             }
             .id("Login background")
-            .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 8, trailing: 4))
+            .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 8, trailing: 8))
             .listRowBackground(Color.clear)
         }
     }
