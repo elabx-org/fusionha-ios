@@ -122,35 +122,37 @@ struct ActFlow: Layout {
     var lineSpacing: CGFloat = 8
     var alignment: HorizontalAlignment = .leading
 
-    /// The last arrangement, so a pass that proposes the same width (sizing, then
-    /// placing, then every re-layout of the row) measures each subview once.
+    /// Arrangements per proposed width. Parent stacks probe a child at several
+    /// widths (0, ∞, the real one) in every pass, so remembering only the last
+    /// width re-measured every chip on nearly every call.
     struct Cache {
-        var width: CGFloat = .nan
+        var byWidth: [CGFloat: Arrangement] = [:]
+    }
+
+    struct Arrangement {
         var rows: [Row] = []
         var sizes: [CGSize] = []
     }
 
     func makeCache(subviews: Subviews) -> Cache { Cache() }
 
-    func updateCache(_ cache: inout Cache, subviews: Subviews) { cache = Cache() }
+    func updateCache(_ cache: inout Cache, subviews: Subviews) { cache.byWidth.removeAll(keepingCapacity: true) }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) -> CGSize {
         PerfCount.hit("ActFlow.sizeThatFits")
-        let width = proposal.width ?? .infinity
-        arrange(width: width, subviews: subviews, cache: &cache)
-        let rows = cache.rows
+        let rows = arrangement(width: proposal.width ?? .infinity, subviews: subviews, cache: &cache).rows
         let height = rows.reduce(0) { $0 + $1.height } + CGFloat(max(rows.count - 1, 0)) * lineSpacing
         let natural = rows.map(\.width).max() ?? 0
         return CGSize(width: proposal.width ?? natural, height: height)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) {
-        arrange(width: bounds.width, subviews: subviews, cache: &cache)
+        let arranged = arrangement(width: bounds.width, subviews: subviews, cache: &cache)
         var y = bounds.minY
-        for row in cache.rows {
+        for row in arranged.rows {
             var x = alignment == .trailing ? bounds.maxX - row.width : bounds.minX
             for index in row.indices {
-                let size = cache.sizes[index]
+                let size = arranged.sizes[index]
                 subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: ProposedViewSize(size))
                 x += size.width + spacing
             }
@@ -167,8 +169,9 @@ struct ActFlow: Layout {
         return subview.sizeThatFits(ProposedViewSize(width: width, height: nil))
     }
 
-    private func arrange(width: CGFloat, subviews: Subviews, cache: inout Cache) {
-        if cache.width == width, cache.sizes.count == subviews.count { return }
+    private func arrangement(width: CGFloat, subviews: Subviews, cache: inout Cache) -> Arrangement {
+        if let hit = cache.byWidth[width], hit.sizes.count == subviews.count { return hit }
+        PerfCount.hit("ActFlow.arrange")
         var rows: [Row] = []
         var sizes: [CGSize] = []
         sizes.reserveCapacity(subviews.count)
@@ -186,7 +189,10 @@ struct ActFlow: Layout {
             row.indices.append(index)
         }
         if !row.indices.isEmpty { rows.append(row) }
-        cache = Cache(width: width, rows: rows, sizes: sizes)
+        let arranged = Arrangement(rows: rows, sizes: sizes)
+        if cache.byWidth.count > 8 { cache.byWidth.removeAll(keepingCapacity: true) }
+        cache.byWidth[width] = arranged
+        return arranged
     }
 }
 

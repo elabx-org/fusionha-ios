@@ -156,6 +156,8 @@ final class PerfProbe: NSObject {
     }
 
     private func phase(_ name: String, _ seconds: Double, scroll: Bool = false) async {
+        // Lets CI start a `sample` of the process for exactly this phase.
+        FileHandle.standardError.write(Data("PERF-BEGIN \(name) \(Int(seconds.rounded()))\n".utf8))
         begin(name)
         scrollView = scroll ? findScrollView() : nil
         scrolling = scroll

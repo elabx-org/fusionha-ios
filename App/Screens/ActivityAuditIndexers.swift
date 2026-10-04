@@ -146,7 +146,6 @@ struct ActivityAuditTab: View {
     private static let pageSize = 100
 
     private struct RowsKey: Equatable {
-        let count: Int
         let filter: AuditCategory?
     }
 
@@ -162,7 +161,7 @@ struct ActivityAuditTab: View {
                 loadedView
             }
         }
-        .animation(reduce ? nil : ActMotion.rows, value: RowsKey(count: items.count, filter: filter))
+        .animation(reduce ? nil : ActMotion.rows, value: RowsKey(filter: filter))
         .task {
             do {
                 let page = try await model.client?.audit(limit: Self.pageSize) ?? []

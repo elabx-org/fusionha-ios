@@ -374,8 +374,7 @@ struct ActivityTasksTab: View {
                 loadedView
             }
         }
-        .animation(reduce ? nil : ActMotion.rows,
-                   value: RowsKey(recent: store.recentGroups.count, running: feed.items.filter { $0.status == "running" }.map(\.id)))
+        .animation(reduce ? nil : ActMotion.rows, value: feed.items.filter { $0.status == "running" }.map(\.id))
         .task {
             await store.load(model.client)
             // The web polls fast (2s) while any run is live, slowly otherwise.
@@ -385,11 +384,6 @@ struct ActivityTasksTab: View {
                 await store.refresh(model.client)
             }
         }
-    }
-
-    private struct RowsKey: Equatable {
-        let recent: Int
-        let running: [Int]
     }
 
     @ViewBuilder

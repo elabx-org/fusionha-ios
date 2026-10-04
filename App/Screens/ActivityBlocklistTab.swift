@@ -83,7 +83,7 @@ struct ActivityBlocklistTab: View {
                 loadedView
             }
         }
-        .animation(reduce ? nil : ActMotion.rows, value: RowsKey(revision: feed.revision, category: category, grouped: grouped))
+        .animation(reduce ? nil : ActMotion.rows, value: RowsKey(category: category, grouped: grouped))
         .task(id: search) {
             let client = model.client
             let q = search
@@ -108,7 +108,6 @@ struct ActivityBlocklistTab: View {
     }
 
     private struct RowsKey: Equatable {
-        let revision: Int
         let category: BlocklistCategory?
         let grouped: Bool
     }

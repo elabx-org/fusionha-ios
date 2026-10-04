@@ -342,7 +342,9 @@ struct ActivityHistoryTab: View {
                 loadedRows
             }
         }
-        .animation(reduce ? nil : ActMotion.rows, value: RowsKey(revision: derived.revision, filter: storyFilter, raw: raw))
+        // Filter switches animate; page appends don't (animating a whole page's
+        // insertion made the lazy stack build every new row at once).
+        .animation(reduce ? nil : ActMotion.rows, value: RowsKey(filter: storyFilter, raw: raw))
         .task(id: search) {
             let client = model.client
             let q = search
@@ -358,7 +360,6 @@ struct ActivityHistoryTab: View {
     }
 
     private struct RowsKey: Equatable {
-        let revision: Int
         let filter: HistoryStoryType?
         let raw: Bool
     }

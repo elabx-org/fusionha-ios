@@ -1,19 +1,17 @@
 #!/usr/bin/env python3
 """Summarise an Activity perf run (the CI "Activity perf" job).
 
-    perf_report.py APP_LOG [TOC_XML TIME_PROFILE_XML] [--json OUT]
+    perf_report.py APP_LOG [SAMPLE_TXT ...] [--json OUT]
 
 APP_LOG holds the `PERF {json}` lines App/Debug/PerfProbe.swift prints per phase
-(frame pacing, main-thread hangs, CPU, memory, view counters). The optional
-xctrace exports add the heaviest main-thread symbols, overall and per phase.
+(frame pacing, main-thread hangs, CPU, memory, view counters). Optional `sample` reports (one per
+phase) add the heaviest main-thread symbols and app frames.
 Prints a plain-text report (also valid Markdown inside a code fence).
 """
 import collections
-import datetime as dt
 import json
 import re
 import sys
-import xml.etree.ElementTree as ET
 
 
 def load_phases(path):
@@ -77,79 +75,11 @@ def totals(phases):
     }
 
 
-# MARK: xctrace time profile
+# MARK: `sample` call graphs
 
-def parse_start(toc_path):
-    try:
-        root = ET.parse(toc_path).getroot()
-    except Exception:
-        return None
-    node = root.find(".//run/info/summary/start-date")
-    if node is None or not node.text:
-        return None
-    text = node.text.strip()
-    text = re.sub(r"([+-]\d\d)(\d\d)$", r"\1:\2", text).replace("Z", "+00:00")
-    try:
-        return dt.datetime.fromisoformat(text).timestamp()
-    except ValueError:
-        return None
-
-
-def parse_samples(path):
-    """Yields (time_s, is_main, weight_ms, [frame names leaf first], [binary names])."""
-    ids = {}
-
-    def resolve(el):
-        ref = el.get("ref")
-        return ids.get(ref, el) if ref else el
-
-    def remember(el):
-        for sub in el.iter():
-            if sub.get("id"):
-                ids[sub.get("id")] = sub
-
-    frames_cache = {}
-    for _, el in ET.iterparse(path, events=("end",)):
-        if el.tag != "row":
-            continue
-        remember(el)
-        t = w = None
-        thread = bt = None
-        bt_key = None
-        for child in el:
-            c = resolve(child)
-            if child.tag == "sample-time":
-                t = int(c.text or 0) / 1e9
-            elif child.tag == "weight":
-                w = int(c.text or 0) / 1e6
-            elif child.tag == "thread":
-                thread = c
-            elif child.tag in ("backtrace", "tagged-backtrace"):
-                bt = c
-                bt_key = child.get("ref") or child.get("id")
-        if t is None or bt is None:
-            continue
-        key = bt_key
-        if key in frames_cache:
-            names, bins = frames_cache[key]
-        else:
-            names, bins = [], []
-            for f in bt.iter("frame"):
-                f = resolve(f)
-                names.append(f.get("name") or f.get("addr") or "?")
-                b = f.find("binary")
-                b = resolve(b) if b is not None else None
-                bins.append(b.get("name") if b is not None else "")
-            if key:
-                frames_cache[key] = (names, bins)
-        tname = thread.get("fmt", "") if thread is not None else ""
-        # Recorded with --all-processes: keep the app's samples only.
-        if "Fusionha" not in tname:
-            proc = thread.find("process") if thread is not None else None
-            proc = resolve(proc) if proc is not None else None
-            if proc is None or "Fusionha" not in (proc.get("fmt") or ""):
-                continue
-        yield t, tname.startswith("Main Thread"), w or 1.0, names, bins
+IDLE = {"mach_msg2_trap", "mach_msg_trap", "__psynch_cvwait", "semaphore_wait_trap", "__semwait_signal",
+        "__workq_kernreturn", "kevent_id", "__ulock_wait", "__ulock_wait2"}
+LINE = re.compile(r"^(?P<prefix>[\s+!:|]*)(?P<count>\d+)\s+(?P<sym>.*?)(?:\s+\(in (?P<lib>[^)]+)\))?(?:\s+\+\s+\S+)?(?:\s+\[[^\]]*\])?(?:\s+\S+:\d+)?\s*$")
 
 
 def short(name, width=110):
@@ -157,60 +87,70 @@ def short(name, width=110):
     return name if len(name) <= width else name[: width - 1] + "…"
 
 
-def profile_report(toc, tp, phases):
-    start = parse_start(toc)
-    windows = []
-    if start:
-        for p in phases:
-            off = p["epoch"] - start
-            windows.append((p["phase"], off, off + p["wall_s"]))
-    self_main = collections.Counter()
+def parse_sample(path):
+    """Main-thread nodes of a `sample` report: [(depth, count, symbol, lib)]."""
+    nodes = []
+    with open(path, errors="replace") as fh:
+        lines = fh.read().splitlines()
+    start = None
+    for i, line in enumerate(lines):
+        if "com.apple.main-thread" in line:
+            start = i
+            break
+    if start is None:
+        return nodes
+    head = LINE.match(lines[start])
+    base = len(head.group("prefix")) if head else 0
+    for line in lines[start + 1:]:
+        if not line.strip():
+            break
+        m = LINE.match(line)
+        if not m:
+            break
+        depth = len(m.group("prefix"))
+        if depth <= base:
+            break
+        nodes.append((depth, int(m.group("count")), m.group("sym").strip(), m.group("lib") or ""))
+    return nodes, (int(head.group("count")) if head else 0)
+
+
+def summarise_sample(path):
+    parsed = parse_sample(path)
+    if not parsed or not parsed[0]:
+        return f"  {path}: no main-thread call graph"
+    nodes, total = parsed
+    self_counts = collections.Counter()
     incl_app = collections.Counter()
-    main_ms = 0.0
-    all_ms = 0.0
-    per_phase = collections.defaultdict(collections.Counter)
-    per_phase_main = collections.Counter()
-    per_phase_app = collections.defaultdict(collections.Counter)
-    for t, is_main, w, names, bins in parse_samples(tp):
-        all_ms += w
-        if not is_main or not names:
-            continue
-        main_ms += w
-        self_main[names[0]] += w
-        seen = set()
-        app_frames = []
-        for n, b in zip(names, bins):
-            if b.startswith("Fusionha") and n not in seen:
-                seen.add(n)
-                app_frames.append(n)
-        for n in app_frames:
-            incl_app[n] += w
-        for name, a, b in windows:
-            if a <= t < b:
-                per_phase[name][names[0]] += w
-                per_phase_main[name] += w
-                for n in app_frames:
-                    per_phase_app[name][n] += w
-                break
-    out = [f"Time Profiler: {all_ms / 1000:.1f}s of samples, main thread {main_ms / 1000:.1f}s"]
-    out.append("\nHeaviest main-thread symbols (self time):")
-    for n, ms in self_main.most_common(25):
-        out.append(f"  {ms:8.0f} ms  {100 * ms / max(main_ms, 1):5.1f}%  {short(n)}")
-    out.append("\nHeaviest app frames on the main thread (inclusive):")
-    for n, ms in incl_app.most_common(25):
-        out.append(f"  {ms:8.0f} ms  {100 * ms / max(main_ms, 1):5.1f}%  {short(n)}")
-    if windows:
-        out.append("\nPer phase (main-thread samples, top self symbols, top app frames):")
-        for name, a, b in windows:
-            ms = per_phase_main[name]
-            if ms <= 0:
-                continue
-            out.append(f"  {name}: main busy {ms:.0f} ms over {b - a:.1f}s ({100 * ms / 1000 / max(b - a, 0.001):.0f}%)")
-            for n, v in per_phase[name].most_common(5):
-                out.append(f"      self {v:7.0f} ms  {short(n, 100)}")
-            for n, v in per_phase_app[name].most_common(6):
-                out.append(f"      app  {v:7.0f} ms  {short(n, 100)}")
-    return "\n".join(out)
+    incl_ui = collections.Counter()
+    stack = []  # [depth, symbol, lib, own samples]
+    def close(entry):
+        if entry[3] > 0:
+            self_counts[entry[1]] += entry[3]
+    for depth, count, sym, lib in nodes:
+        while stack and stack[-1][0] >= depth:
+            close(stack.pop())
+        if stack:
+            stack[-1][3] -= count
+        if sym not in {e[1] for e in stack}:
+            if lib.startswith("Fusionha"):
+                incl_app[sym] += count
+            elif lib in ("SwiftUI", "SwiftUICore", "AttributeGraph", "UIKitCore", "QuartzCore"):
+                incl_ui[sym] += count
+        stack.append([depth, sym, lib, count])
+    while stack:
+        close(stack.pop())
+    idle = sum(v for k, v in self_counts.items() if k in IDLE)
+    busy = max(total - idle, 0)
+    name = path.rsplit("sample-", 1)[-1].removesuffix(".txt")
+    out = [f"  {name}: {total} main-thread samples, busy {busy} ({100 * busy / max(total, 1):.0f}%)"]
+    for k, v in [kv for kv in self_counts.most_common(40) if kv[0] not in IDLE][:12]:
+        out.append(f"      self {v:6d} {100 * v / max(total, 1):5.1f}%  {short(k, 100)}")
+    for k, v in [kv for kv in incl_app.most_common(20) if kv[1] < total * 0.97][:14]:
+        out.append(f"      app  {v:6d} {100 * v / max(total, 1):5.1f}%  {short(k, 100)}")
+    for k, v in incl_ui.most_common(40):
+        if v < total * 0.97 and v > total * 0.05:
+            out.append(f"      ui   {v:6d} {100 * v / max(total, 1):5.1f}%  {short(k, 100)}")
+    return "\n".join(out[:40])
 
 
 def main(argv):
@@ -232,11 +172,14 @@ def main(argv):
         print(f"  {k:7s} " + "  ".join(f"{a}={b}" for a, b in v.items()))
     print("\nView counters per phase (count, total ms where timed):")
     print(counters(phases))
-    if len(argv) >= 4:
-        try:
-            print("\n" + profile_report(argv[2], argv[3], phases))
-        except Exception as exc:  # the probe numbers stand on their own
-            print(f"\n(Time Profiler export could not be parsed: {exc})")
+    samples = argv[2:]
+    if samples:
+        print("\nMain-thread samples per phase (macOS `sample`, 1 ms):")
+        for path in samples:
+            try:
+                print(summarise_sample(path))
+            except Exception as exc:  # the probe numbers stand on their own
+                print(f"  {path}: could not be parsed ({exc})")
     if out_json:
         with open(out_json, "w") as fh:
             json.dump({"phases": phases, "totals": t}, fh, indent=1)
