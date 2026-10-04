@@ -17,5 +17,6 @@ App/Info.plist
 App/*.entitlements
 Widgets/Info.plist
 Widgets/*.entitlements
+NotificationService/*.entitlements
 NotificationService/Info.plist
 __pycache__/

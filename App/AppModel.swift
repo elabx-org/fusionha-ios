@@ -142,6 +142,12 @@ final class AppModel {
             credentials = nil
         }
         #endif
+        // Re-save on launch so sign-ins from older builds also land in the
+        // keychain record the widgets read, then let the widgets refresh.
+        if let credentials, ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SERVER"] == nil {
+            CredentialStore.save(credentials)
+            WidgetCenter.shared.reloadAllTimelines()
+        }
     }
 
     var client: APIClient? {
@@ -222,6 +228,7 @@ final class AppModel {
         CredentialStore.save(creds)
         WebSessionStore.save(anonymous.sessionTokenFromCookie(), server: url) // Settings web panels sign in with it.
         credentials = creds
+        WidgetCenter.shared.reloadAllTimelines()
         AppDelegate.requestPushAuthorization()
     }
 
