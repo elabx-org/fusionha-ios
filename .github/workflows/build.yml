@@ -315,7 +315,7 @@ jobs:
             build
 
       - name: Run the perf script
-        timeout-minutes: 15
+        timeout-minutes: 25
         run: |
           sudo DevToolsSecurity -enable || true
           mkdir -p perf
@@ -331,17 +331,24 @@ jobs:
           xcrun simctl install "$UDID" build/Build/Products/Release-iphonesimulator/Fusionha.app
           # Let the freshly booted simulator settle before measuring.
           sleep 20
+          # Start the profiler first (its first launch takes minutes to initialise)
+          # and only launch the app once it is actually recording.
+          xcrun xctrace record --template 'Time Profiler' --device "$UDID" --all-processes \
+            --time-limit 600s --output perf/activity.trace > perf/xctrace.log 2>&1 &
+          XPID=$!
+          for i in $(seq 1 360); do
+            grep -qi "ctrl-c\|starting recording\|recording" perf/xctrace.log 2>/dev/null && break
+            kill -0 $XPID 2>/dev/null || break
+            sleep 1
+          done
+          echo "xctrace ready after ${i}s:"; cat perf/xctrace.log
+          sleep 3
           export SIMCTL_CHILD_FUSIONHA_PERF=1
           export SIMCTL_CHILD_FUSIONHA_PERF_DELAY=10
           export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=http://127.0.0.1:8765
           export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
           export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACTIVITY_TAB=history
-          OUT=$(xcrun simctl launch --terminate-running-process --stderr="$PWD/perf/app.log" --stdout="$PWD/perf/app.out" "$UDID" org.elabx.fusionha)
-          echo "$OUT"
-          PID=$(echo "$OUT" | awk '{print $NF}')
-          xcrun xctrace record --template 'Time Profiler' --device "$UDID" --attach "$PID" \
-            --time-limit 240s --output perf/activity.trace > perf/xctrace.log 2>&1 &
-          XPID=$!
+          xcrun simctl launch --terminate-running-process --stderr="$PWD/perf/app.log" --stdout="$PWD/perf/app.out" "$UDID" org.elabx.fusionha
           for i in $(seq 1 300); do
             grep -q "PERF DONE" perf/app.log 2>/dev/null && break
             sleep 1

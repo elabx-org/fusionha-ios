@@ -143,6 +143,12 @@ def parse_samples(path):
             if key:
                 frames_cache[key] = (names, bins)
         tname = thread.get("fmt", "") if thread is not None else ""
+        # Recorded with --all-processes: keep the app's samples only.
+        if "Fusionha" not in tname:
+            proc = thread.find("process") if thread is not None else None
+            proc = resolve(proc) if proc is not None else None
+            if proc is None or "Fusionha" not in (proc.get("fmt") or ""):
+                continue
         yield t, tname.startswith("Main Thread"), w or 1.0, names, bins
 
 
