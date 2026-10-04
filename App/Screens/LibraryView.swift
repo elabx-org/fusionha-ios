@@ -67,21 +67,43 @@ struct LibraryView: View {
         model.searchScope == .library ? model.searchText.trimmingCharacters(in: .whitespaces) : ""
     }
 
-    private var visible: [MediaItem] {
-        model.library
+    /// The filtered, sorted, sectioned rows. Built once per input change rather
+    /// than on every render: with thousands of titles, re-filtering and
+    /// re-sorting on each frame of an A–Z rail drag froze the app.
+    @State private var rows: [LibraryRowModel] = []
+    @State private var letters: Set<String> = []
+    @State private var visibleCount = 0
+
+    private struct Inputs: Equatable {
+        var version: Int, kind: String, tier: LibraryTier, filter: LibraryFilter
+        var sort: LibrarySort, query: String, list: Bool
+    }
+
+    private var inputs: Inputs {
+        Inputs(version: model.libraryVersion, kind: kindRaw, tier: tier, filter: filter,
+               sort: sort, query: query, list: listMode)
+    }
+
+    private func rebuild() {
+        let titleSort = sort == .title
+        let keyed = model.library
             .filter { item in
                 (kind == nil || item.kindBucket == kind) && tier.matches(item) && filter.matches(item)
                     && (query.isEmpty || item.title.localizedCaseInsensitiveContains(query))
             }
-            .sorted(by: sorter)
-    }
-
-    private func sorter(_ a: MediaItem, _ b: MediaItem) -> Bool {
+            .map { (item: $0, key: titleSort ? Self.sortKey($0.title) : "") }
+        let visible: [MediaItem]
         switch sort {
-        case .title: return Self.sortKey(a.title).localizedCaseInsensitiveCompare(Self.sortKey(b.title)) == .orderedAscending
-        case .added: return (a.addedAt ?? "") > (b.addedAt ?? "")
-        case .year: return (a.year ?? 0) > (b.year ?? 0)
+        case .title:
+            visible = keyed.sorted { $0.key.localizedCaseInsensitiveCompare($1.key) == .orderedAscending }.map(\.item)
+        case .added:
+            visible = keyed.map(\.item).sorted { ($0.addedAt ?? "") > ($1.addedAt ?? "") }
+        case .year:
+            visible = keyed.map(\.item).sorted { ($0.year ?? 0) > ($1.year ?? 0) }
         }
+        visibleCount = visible.count
+        rows = LibraryRowModel.build(visible, sectioned: titleSort && !listMode, perRow: listMode ? 1 : 3)
+        letters = Set(rows.compactMap { if case .header(let letter, _) = $0 { letter } else { nil } })
     }
 
     /// "The Matrix" sorts under M, like the web's alphabet grouping.
@@ -97,18 +119,6 @@ struct LibraryView: View {
         return first.isLetter && first.isASCII ? String(first) : "#"
     }
 
-    private var sections: [(String, [MediaItem])] {
-        guard sort == .title else { return [("", visible)] }
-        var order: [String] = []
-        var groups: [String: [MediaItem]] = [:]
-        for item in visible {
-            let key = Self.letter(for: item.title)
-            if groups[key] == nil { order.append(key) }
-            groups[key, default: []].append(item)
-        }
-        return order.map { ($0, groups[$0] ?? []) }
-    }
-
     var body: some View {
         Screen(showsAdd: true, filtersInPlace: true) {
             ScrollViewReader { proxy in
@@ -121,14 +131,16 @@ struct LibraryView: View {
                     }
                     .padding(.horizontal, 10)
                     .padding(.top, 14)
-                    .padding(.trailing, sort == .title && !listMode ? 22 : 0)
+                    .padding(.trailing, showsRail ? 22 : 0)
                     .padding(.bottom, 90)
                 }
                 .refreshable { await model.loadLibrary() }
                 .overlay(alignment: .trailing) {
-                    if sort == .title && !listMode && !visible.isEmpty {
-                        AlphabetRail(available: Set(sections.map(\.0))) { letter in
-                            withAnimation(.snappy) { proxy.scrollTo("letter-\(letter)", anchor: .top) }
+                    if showsRail {
+                        AlphabetRail(available: letters) { letter in
+                            // No animation: an animated jump per letter while dragging
+                            // queued up scrolls and made the app unresponsive.
+                            proxy.scrollTo(LibraryRowModel.headerId(letter), anchor: .top)
                         }
                         .padding(.trailing, 2)
                     }
@@ -138,7 +150,10 @@ struct LibraryView: View {
         .task {
             if !model.libraryLoaded { await model.loadLibrary() }
         }
+        .onChange(of: inputs, initial: true) { rebuild() }
     }
+
+    private var showsRail: Bool { sort == .title && !listMode && visibleCount > 0 }
 
     private var subtitle: String {
         let editions = model.library.reduce(0) { $0 + $1.editions.count }
@@ -214,29 +229,72 @@ struct LibraryView: View {
             } else {
                 EmptyBox(message: "Your library is empty. Tap + to add a title.")
             }
-        } else if visible.isEmpty {
+        } else if rows.isEmpty {
             EmptyBox(message: query.isEmpty ? "No titles match these filters." : "No titles match “\(query)”.")
-        } else if listMode {
-            LazyVStack(spacing: 8) {
-                ForEach(visible) { item in
-                    LibraryRow(item: item)
-                        .onTapGesture { model.open(item.id) }
-                }
-            }
         } else {
-            ForEach(sections, id: \.0) { letter, items in
-                if !letter.isEmpty {
-                    LetterHeader(letter: letter, count: items.count)
-                        .id("letter-\(letter)")
-                }
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14, alignment: .top), count: 3),
-                          alignment: .leading, spacing: 22) {
-                    ForEach(items) { item in
-                        PosterCard(item: item)
+            ForEach(rows) { row in
+                switch row {
+                case .header(let letter, let count):
+                    LetterHeader(letter: letter, count: count)
+                case .items(let items):
+                    if listMode {
+                        LibraryRow(item: items[0]).onTapGesture { model.open(items[0].id) }
+                    } else {
+                        HStack(alignment: .top, spacing: 14) {
+                            ForEach(0..<3, id: \.self) { i in
+                                if i < items.count {
+                                    PosterCard(item: items[i]).frame(maxWidth: .infinity, alignment: .top)
+                                } else {
+                                    Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+    }
+}
+
+/// One row of the Library scroll: a letter header or a line of posters. Rows
+/// are flat so the scroll stays fully lazy and the rail can jump to any header.
+enum LibraryRowModel: Identifiable {
+    case header(String, Int)
+    case items([MediaItem])
+
+    var id: String {
+        switch self {
+        case .header(let letter, _): return Self.headerId(letter)
+        case .items(let items): return "row-\(items[0].id)"
+        }
+    }
+
+    static func headerId(_ letter: String) -> String { "letter-\(letter)" }
+
+    static func build(_ items: [MediaItem], sectioned: Bool, perRow: Int) -> [LibraryRowModel] {
+        var rows: [LibraryRowModel] = []
+        func chunk(_ group: ArraySlice<MediaItem>) {
+            var start = group.startIndex
+            while start < group.endIndex {
+                let end = min(start + perRow, group.endIndex)
+                rows.append(.items(Array(group[start..<end])))
+                start = end
+            }
+        }
+        guard sectioned else {
+            chunk(items[...])
+            return rows
+        }
+        var start = items.startIndex
+        while start < items.endIndex {
+            let letter = LibraryView.letter(for: items[start].title)
+            var end = start + 1
+            while end < items.endIndex, LibraryView.letter(for: items[end].title) == letter { end += 1 }
+            rows.append(.header(letter, end - start))
+            chunk(items[start..<end])
+            start = end
+        }
+        return rows
     }
 }
 
@@ -411,7 +469,6 @@ struct PosterCard: View {
             .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous)
                 .strokeBorder(item.hasAttention == true ? Theme.miss.opacity(0.7) : Theme.line))
-            .shadow(color: .black.opacity(0.6), radius: 10, y: 8)
             .overlay(alignment: .topLeading) {
                 Image(systemName: monitored ? "bookmark.fill" : "bookmark")
                     .font(.system(size: 10, weight: .bold))

@@ -348,8 +348,12 @@ struct SignInView: View {
             plexURL = auth
             plexTask = Task {
                 do {
-                    try await model.completePlexSignIn(server: url, pin: pin)
-                    plexURL = nil
+                    try await model.completePlexSignIn(server: url, pin: pin) {
+                        // Close the Plex sheet first: once signed in this screen goes
+                        // away, and a sheet left on a removed view stays on screen.
+                        plexURL = nil
+                        try? await Task.sleep(for: .milliseconds(450))
+                    }
                 } catch is CancellationError {
                 } catch APIError.http(403, _) {
                     plexURL = nil
