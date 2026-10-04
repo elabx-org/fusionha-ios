@@ -92,6 +92,29 @@ public struct TokenMint: Decodable, Sendable {
     public let token: String
 }
 
+/// `GET /api/v1/setup-status` (unauthenticated): which sign-in methods the server offers.
+public struct SetupStatus: Decodable, Sendable {
+    public let needsSetup: Bool
+    public let plexSsoEnabled: Bool?
+    public let localLoginEnabled: Bool?
+
+    public var offersPlex: Bool { plexSsoEnabled == true }
+    /// Older servers don't send the flag; username/password was always available there.
+    public var offersPassword: Bool { localLoginEnabled ?? true }
+}
+
+/// `POST /api/v1/auth/plex/pin`. Note `authUrl` is camelCase on the wire.
+public struct PlexPin: Decodable, Sendable {
+    public let id: Int
+    public let code: String
+    public let authUrl: String
+}
+
+public enum PlexPinState: Sendable {
+    case pending
+    case signedIn
+}
+
 public struct HealthResponse: Decodable, Sendable {
     public let status: String
     public let version: String
