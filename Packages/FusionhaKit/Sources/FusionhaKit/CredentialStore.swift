@@ -68,6 +68,21 @@ public enum CredentialStore {
         for query in queries { SecItemDelete(query as CFDictionary) }
     }
 
+    /// Where the sign-in actually landed, for the avatar menu: whether this build
+    /// can use the App Group (widgets and push share it) and which keychains hold
+    /// the token. Turns "why was I signed out" into something checkable.
+    public static func diagnostics() -> String {
+        let group = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) != nil
+        let found = queries.map { base -> Bool in
+            var q = base
+            q[kSecReturnData as String] = false
+            q[kSecMatchLimit as String] = kSecMatchLimitOne
+            return SecItemCopyMatching(q as CFDictionary, nil) == errSecSuccess
+        }
+        let shared = found.first == true && queries.count > 1
+        return "App Group \(group ? "on" : "off") · token \(shared ? "shared" : (found.contains(true) ? "app only" : "missing"))"
+    }
+
     public static func client() -> APIClient? {
         load()?.client()
     }

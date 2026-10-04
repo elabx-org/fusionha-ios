@@ -117,6 +117,7 @@ struct AvatarMenu: View {
             Button("Log out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
                 model.signOut()
             }
+            Section("Version \(Bundle.main.appVersion) · \(CredentialStore.diagnostics())") {}
         } label: {
             Avatar(me: model.me, size: 38)
         }
@@ -284,5 +285,13 @@ struct SearchResultRow: View {
                 .buttonStyle(.bordered)
                 .tint(Theme.indigo)
         }
+    }
+}
+
+extension Bundle {
+    var appVersion: String {
+        let short = infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return "\(short) (\(build))"
     }
 }
