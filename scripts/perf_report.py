@@ -31,9 +31,9 @@ def load_phases(path):
 
 
 def phase_table(phases):
-    cols = [("phase", 26), ("wall_s", 7), ("fps", 6), ("hitch_ms_per_s", 8), ("hang_ms", 8), ("stalls_250ms", 7),
+    cols = [("phase", 26), ("wall_s", 7), ("fps", 6), ("hitch_ms_per_s", 8), ("hang_ms", 8), ("stalls_250ms", 7), ("bg_stall_ms", 8),
             ("max_frame_ms", 9), ("main_cpu_pct", 9), ("proc_cpu_pct", 9), ("mem_mb", 7), ("scroll_y", 8), ("content_h", 9)]
-    heads = {"hitch_ms_per_s": "hitch/s", "stalls_250ms": "hangs", "max_frame_ms": "maxframe", "main_cpu_pct": "main%",
+    heads = {"hitch_ms_per_s": "hitch/s", "stalls_250ms": "hangs", "bg_stall_ms": "bgStall", "max_frame_ms": "maxframe", "main_cpu_pct": "main%",
              "proc_cpu_pct": "proc%", "mem_mb": "memMB", "scroll_y": "scrollY", "content_h": "contentH"}
     out = ["  ".join(heads.get(c, c).rjust(w) if i else heads.get(c, c).ljust(w) for i, (c, w) in enumerate(cols))]
     for p in phases:
@@ -164,7 +164,7 @@ def main(argv):
         print("No PERF phases found in", argv[1])
         return 1
     print("Activity perf — per phase")
-    print("(hitch/s = ms of late frames per second; hangs = main-thread stalls > 250 ms; hang_ms = their total)\n")
+    print("(hitch/s = ms of late frames per second; hangs = main-thread stalls > 250 ms; hang_ms = their total;\n bgStall = ms a background thread was also stalled: the whole process/host, not the main thread)\n")
     print(phase_table(phases))
     t = totals(phases)
     print("\nTotals:")

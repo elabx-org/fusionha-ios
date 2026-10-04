@@ -107,10 +107,40 @@ final class PerfProbe: NSObject {
         self.model = model
     }
 
+    /// A background thread that sleeps 10 ms at a time and records how late it
+    /// wakes. If it is late too, the whole process (or the simulator host) was
+    /// stalled; if only frames are late, the main thread was blocked or busy.
+    nonisolated private static let stallLock = NSLock()
+    nonisolated(unsafe) private static var bgStallTime: Double = 0
+    nonisolated(unsafe) private static var bgStalls = 0
+
+    nonisolated private static func startStallWatch() {
+        let thread = Thread {
+            while true {
+                let start = CACurrentMediaTime()
+                usleep(10_000)
+                let late = CACurrentMediaTime() - start - 0.010
+                if late > 0.25 {
+                    stallLock.lock(); bgStalls += 1; bgStallTime += late; stallLock.unlock()
+                }
+            }
+        }
+        thread.qualityOfService = .userInteractive
+        thread.start()
+    }
+
+    nonisolated private static func stallSnapshot() -> (Int, Double) {
+        stallLock.lock(); defer { stallLock.unlock() }
+        return (bgStalls, bgStallTime)
+    }
+    private var phaseBgStalls = 0
+    private var phaseBgStallTime: Double = 0
+
     private func start() {
         let link = CADisplayLink(target: self, selector: #selector(tick(_:)))
         link.add(to: .main, forMode: .common)
         self.link = link
+        Self.startStallWatch()
         emit(["event": "start", "epoch": Date().timeIntervalSince1970])
         Task { await run() }
     }
@@ -176,6 +206,7 @@ final class PerfProbe: NSObject {
         phaseCounts = snap.counts
         phaseTimes = snap.times
         stats = FrameStats()
+        (phaseBgStalls, phaseBgStallTime) = Self.stallSnapshot()
     }
 
     private func end() {
@@ -190,7 +221,10 @@ final class PerfProbe: NSObject {
             times[key] = ((value - (phaseTimes[key] ?? 0)) * 1000 * 10).rounded() / 10
         }
         let sv = findScrollView()
+        let (bgStalls, bgTime) = Self.stallSnapshot()
         emit([
+            "bg_stalls": bgStalls - phaseBgStalls,
+            "bg_stall_ms": Int((bgTime - phaseBgStallTime) * 1000),
             "event": "phase",
             "phase": phaseName,
             "epoch": phaseEpoch,

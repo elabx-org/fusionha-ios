@@ -369,9 +369,10 @@ jobs:
           # probe prints `PERF-BEGIN <phase> <seconds>` as each one starts.
           ( tail -n +1 -F perf/app.log 2>/dev/null | while read -r tag name secs; do
               [ "$tag" = "PERF-BEGIN" ] || continue
+              echo "$(date +%T) $name $secs pid=$PID" >> perf/watch.log
               case "$name" in
                 history.load|history.scroll|history.idle|queue.load|queue.idle|blocklist.load|blocklist.scroll|tasks.load|tasks.idle|audit.scroll|indexers.load|history.return|wanted.load|wanted.scroll)
-                  sudo sample "$PID" "$secs" 1 -mayDie -file "perf/sample-$name.txt" > /dev/null 2>&1 & ;;
+                  sample "$PID" "$secs" 1 -mayDie -file "perf/sample-$name.txt" > "perf/sample-$name.out" 2>&1 & ;;
               esac
             done ) &
           WATCHER=$!
@@ -383,8 +384,8 @@ jobs:
           pkill -P $WATCHER 2>/dev/null || true
           kill $WATCHER 2>/dev/null || true
           pkill -f "tail -n +1 -F perf/app.log" 2>/dev/null || true
-          sudo chmod a+r perf/sample-*.txt 2>/dev/null || true
-          ls -la perf
+          ls -la perf; cat perf/watch.log || true
+          for f in perf/sample-*.out; do [ -s "$f" ] && { echo "--- $f"; head -20 "$f"; }; done || true
           grep "PERF" perf/app.log || true
           grep -q "PERF DONE" perf/app.log || { echo "::error::perf script did not finish"; tail -50 perf/app.log; exit 1; }
 
