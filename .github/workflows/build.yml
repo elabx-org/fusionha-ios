@@ -250,6 +250,8 @@ jobs:
           sleep 2
           H=http://127.0.0.1:8767
           L="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library"
+          # Warm-up launch: the first launch against a fresh mock is still loading at 9s.
+          shoot shell-00-warmup $L && rm -f shots/shell-00-warmup.png
           shoot shell-01-library-setup-pill $L
           shoot shell-02-scroll-thumb $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=thumb
           shoot shell-03-scrubbing $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=S

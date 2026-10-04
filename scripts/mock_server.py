@@ -361,6 +361,9 @@ class Handler(BaseHTTPRequestHandler):
         path = url.path.rstrip("/")
         query = parse_qs(url.query)
         hit = mock_activity.handle("GET", path, query)
+        if SHELL and path == "/api/v1/settings":
+            base = hit[0] if hit is not None else shell_settings()
+            return self.send_json(base | {"login_layout": "living", "login_living_media": False})
         if hit is not None:
             return self.send_json(*hit)
         routes = {
@@ -414,8 +417,6 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(mock_shell.library(load("library.json")))
         if SHELL and path == "/api/v1/setup-status":
             return self.send_json(mock_shell.setup_status(load("setup-status.json")))
-        if SHELL and path == "/api/v1/settings":
-            return self.send_json(shell_settings() | {"login_layout": "living", "login_living_media": False})
         if path in SHELL_ROUTES:
             return self.send_json(SHELL_ROUTES[path]())
         if path in NOTIFICATION_ROUTES:
