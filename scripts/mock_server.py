@@ -9,6 +9,7 @@ from the library, so every screen has something to show.
 """
 import datetime as dt
 import json
+import re
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -77,6 +78,18 @@ def discover():
     } for item in load("library.json")]
 
 
+# These settings fixtures were captured at CAPTURED; their timestamps are shifted
+# to "now" so countdowns, "last run" and NEW badges read the same on every run.
+REBASED = {"indexers__stats.json", "system__tasks.json", "system__commands.json", "tokens.json"}
+CAPTURED = dt.datetime(2026, 10, 4, 10, 54, 58)
+_ISO = re.compile(r'"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?"')
+
+
+def rebased(text):
+    shift = dt.datetime.utcnow() - CAPTURED
+    return _ISO.sub(lambda m: '"' + (dt.datetime.fromisoformat(m.group(1)) + shift).isoformat(timespec="seconds") + '"', text)
+
+
 def api_fixture(path):
     """`/api/v1/a/b` -> scripts/mock/api/a__b.json, when it exists."""
     if not path.startswith("/api/v1/"):
@@ -116,7 +129,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(routes[path]())
         fixture = api_fixture(path)
         if fixture:
-            return self.send_json(json.loads(fixture.read_text()))
+            text = fixture.read_text()
+            return self.send_json(json.loads(rebased(text) if fixture.name in REBASED else text))
         self.send_json({"detail": "Not Found"}, 404)
 
     def do_POST(self):

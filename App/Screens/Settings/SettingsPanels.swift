@@ -18,6 +18,17 @@ func settingsPanel(_ slug: String) -> some View {
     case "experimental": ExperimentalSettingsPanel()
     case "discover": DiscoverSettingsPanel()
     case "maintenance": MaintenanceSettingsPanel()
+    case "roots": RootFoldersPanel()
+    case "clients": DownloadClientsPanel()
+    case "indexers": IndexersPanel()
+    case "connect": ConnectPanel()
+    case "notifications": NotificationsPanel()
+    case "instances": ConnectionsPanel()
+    case "publicaccess": PublicAccessPanel()
+    case "system": SystemTasksPanel()
+    case "database": DatabasePanel()
+    case "backup": BackupPanel()
+    case "logs": LogsPanel()
     default: SettingsWebPanel(slug: slug)
     }
 }
