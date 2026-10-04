@@ -15,9 +15,18 @@ struct DetailHero: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            art
-            wash
+        // The art sizes the hero; the text is an overlay so it is proposed
+        // exactly the hero's width (a ZStack sibling could be sized wider than
+        // it is drawn, which made the meta/genre rows wrap after sizing).
+        Color.clear
+            .containerRelativeFrame(.vertical) { length, _ in min(max(length * 0.62, 430), 600) }
+            .frame(maxWidth: .infinity)
+            .background {
+                art
+                wash
+            }
+            .clipped()
+            .overlay(alignment: .bottomLeading) {
             VStack(alignment: .leading, spacing: 0) {
                 if let status = detail.status, !status.isEmpty {
                     HeroStatusChip(status: status)
@@ -53,10 +62,9 @@ struct DetailHero: View {
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 14)
-        }
-        .containerRelativeFrame(.vertical) { length, _ in min(max(length * 0.62, 430), 600) }
-        .frame(maxWidth: .infinity)
-        .overlay(alignment: .topLeading) {
+            .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .overlay(alignment: .topLeading) {
             Button(action: close) {
                 Image(systemName: "xmark")
                     .font(.system(size: 18, weight: .medium))
