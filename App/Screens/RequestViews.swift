@@ -816,7 +816,7 @@ private struct ApproveDialog: View {
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                         VStack(alignment: .leading, spacing: 4) {
                             (Text(preview?.title ?? "TMDB #\(request.tmdbId)").foregroundColor(Theme.txt)
-                             + Text(preview?.year.map { " (\($0))" } ?? "").foregroundColor(Theme.dim))
+                             + Text(verbatim: preview?.year.map { " (\($0))" } ?? "").foregroundColor(Theme.dim))
                                 .font(.system(size: 14, weight: .bold))
                             Text("Requested by user #\(request.userId ?? 0) · \(request.tier.chipLabel)")
                                 .font(.system(size: 12)).foregroundStyle(Theme.mut)

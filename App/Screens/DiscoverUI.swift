@@ -60,14 +60,19 @@ struct DiscoverArt: View {
     @State private var shown = false
 
     var body: some View {
-        ZStack {
-            LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
-            if let image {
-                Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
-                    .blur(radius: shown ? 0 : 6)
-                    .opacity(shown ? 1 : 0)
+        // Color.clear keeps the layout size to the proposal: a filling image
+        // would otherwise report its larger size and push its container out.
+        Color.clear
+            .overlay {
+                LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
             }
-        }
+            .overlay {
+                if let image {
+                    Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
+                        .blur(radius: shown ? 0 : 6)
+                        .opacity(shown ? 1 : 0)
+                }
+            }
         .clipped()
         .task(id: url) {
             guard let url else { image = nil; return }
@@ -231,6 +236,7 @@ struct DiscoverButtonStyle: ButtonStyle {
             .font(.system(size: 12, weight: kind == .primary ? .bold : .semibold))
             .foregroundStyle(foreground)
             .lineLimit(1)
+            .fixedSize(horizontal: !fullWidth, vertical: false)
             .padding(.horizontal, 11)
             .frame(maxWidth: fullWidth ? .infinity : nil, minHeight: 30)
             .background(background, in: RoundedRectangle(cornerRadius: 9, style: .continuous))

@@ -314,7 +314,15 @@ struct DiscoverView: View {
         if let raw = env["FUSIONHA_SCREENSHOT_DISCOVER_TAB"], let value = DiscoverTab(rawValue: raw) { tab = value }
         if let raw = env["FUSIONHA_SCREENSHOT_DISCOVER_KIND"], let value = SearchKind(rawValue: raw) { kind = value }
         if let raw = env["FUSIONHA_SCREENSHOT_DISCOVER_SCROLL"] {
-            Task { try? await Task.sleep(for: .seconds(2)); scrollTarget = raw }
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                scrollTarget = raw
+                // Lazy rails above the target change height as they load; aim again.
+                try? await Task.sleep(for: .seconds(2))
+                scrollTarget = nil
+                try? await Task.sleep(for: .milliseconds(100))
+                scrollTarget = raw
+            }
         }
         if store.preview == nil, let raw = env["FUSIONHA_SCREENSHOT_PREVIEW"] {
             let parts = raw.split(separator: "/")
@@ -625,6 +633,8 @@ struct DiscoverCard: View {
                     if let year = result.displayYear { Text(verbatim: "\(year) · ") }
                     DiscoverKindGlyph(kind: result.kind, isAnime: result.isAnime)
                 }
+                .lineLimit(1)
+                .fixedSize()
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.mut)
                 Spacer(minLength: 0)

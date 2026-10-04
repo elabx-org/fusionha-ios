@@ -210,7 +210,7 @@ struct PreviewPage: View {
                 StatusToneChip(status: status).padding(.bottom, 10)
             }
             (Text(d.title).font(.system(size: 33, weight: .black)).tracking(-0.66)
-             + Text(d.year.map { " \($0)" } ?? "").font(.system(size: 33, weight: .semibold)).foregroundColor(Theme.txt.opacity(0.78)))
+             + Text(verbatim: d.year.map { " \($0)" } ?? "").font(.system(size: 33, weight: .semibold)).foregroundColor(Theme.txt.opacity(0.78)))
                 .foregroundStyle(Theme.txt)
                 .lineSpacing(-2)
                 .shadow(color: .black.opacity(0.6), radius: 10, y: 3)
