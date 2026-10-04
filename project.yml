@@ -1,0 +1,124 @@
+# XcodeGen spec — the single source of truth for the Xcode project.
+# Run `xcodegen generate` to produce Fusionha.xcodeproj (git-ignored).
+name: Fusionha
+
+options:
+  bundleIdPrefix: org.elabx
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+  developmentLanguage: en
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Builds are unsigned; Feather signs on-device with your own certificate.
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGNING_ALLOWED: "NO"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    ENABLE_USER_SCRIPT_SANDBOXING: "YES"
+
+packages:
+  FusionhaKit:
+    path: Packages/FusionhaKit
+
+targets:
+  Fusionha:
+    type: application
+    platform: iOS
+    sources:
+      - App
+      - Shared
+    dependencies:
+      - package: FusionhaKit
+      - target: FusionhaWidgets
+      - target: FusionhaNotificationService
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: fusionha
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSSupportsLiveActivities: true
+        CFBundleURLTypes:
+          - CFBundleURLName: org.elabx.fusionha
+            CFBundleURLSchemes: [fusionha]
+        UIBackgroundModes:
+          - remote-notification
+          - fetch
+        # fusionha is self-hosted and often reached over plain http on a LAN.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        NSLocalNetworkUsageDescription: fusionha connects to your fusionha server on your local network.
+    entitlements:
+      path: App/Fusionha.entitlements
+      properties:
+        aps-environment: development
+        com.apple.security.application-groups:
+          - group.org.elabx.fusionha
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha
+        PRODUCT_NAME: Fusionha
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    scheme:
+      testTargets: []
+
+  FusionhaWidgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Widgets
+      - Shared
+    dependencies:
+      - package: FusionhaKit
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: fusionha
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    entitlements:
+      path: Widgets/FusionhaWidgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.org.elabx.fusionha
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.widgets
+        SKIP_INSTALL: "YES"
+
+  FusionhaNotificationService:
+    type: app-extension
+    platform: iOS
+    sources:
+      - NotificationService
+    info:
+      path: NotificationService/Info.plist
+      properties:
+        CFBundleDisplayName: fusionha
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.notification-service
+        SKIP_INSTALL: "YES"

@@ -1,0 +1,167 @@
+import Foundation
+
+public enum APIError: Error, LocalizedError, Sendable {
+    case invalidServerURL
+    case http(status: Int, body: String)
+    case notSignedIn
+
+    public var errorDescription: String? {
+        switch self {
+        case .invalidServerURL:
+            return "That doesn't look like a server address."
+        case .http(401, _), .http(403, _):
+            return "The server rejected the sign-in."
+        case .http(let status, _):
+            return "The server answered with HTTP \(status)."
+        case .notSignedIn:
+            return "Not signed in."
+        }
+    }
+}
+
+/// How a signed-in client authenticates.
+public enum AuthMethod: String, Codable, Sendable {
+    /// A personal API token sent as `X-Api-Key` (preferred).
+    case apiToken
+    /// The 30-day session token sent as `Authorization: Bearer`, for accounts that
+    /// lack the `tokens.manage.self` permission and so can't mint a personal token.
+    case session
+}
+
+/// Thin async client over fusionha's `/api/v1`. Authenticates with a personal
+/// API token (`X-Api-Key`) once signed in; sign-in itself uses the session cookie
+/// that `POST /api/v1/auth/login` sets, which URLSession stores automatically.
+public final class APIClient: @unchecked Sendable {
+    public static let sessionCookieName = "fusionha_session"
+
+    public let baseURL: URL
+    private let token: String?
+    private let method: AuthMethod
+    private let session: URLSession
+
+    private static let decoder: JSONDecoder = {
+        let d = JSONDecoder()
+        d.keyDecodingStrategy = .convertFromSnakeCase
+        return d
+    }()
+
+    private static let encoder: JSONEncoder = {
+        let e = JSONEncoder()
+        e.keyEncodingStrategy = .convertToSnakeCase
+        return e
+    }()
+
+    public init(baseURL: URL, token: String?, method: AuthMethod = .apiToken, session: URLSession = .shared) {
+        self.baseURL = baseURL
+        self.token = token
+        self.method = method
+        self.session = session
+    }
+
+    /// The session token from the cookie `POST /api/v1/auth/login` set, if any.
+    public func sessionTokenFromCookie() -> String? {
+        let cookies = session.configuration.httpCookieStorage?.cookies(for: baseURL) ?? []
+        return cookies.first { $0.name == Self.sessionCookieName }?.value
+    }
+
+    /// Normalises user input like `192.168.1.10:8787` or `https://fusionha.example/`.
+    public static func normalisedServerURL(_ input: String) -> URL? {
+        var text = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+        if !text.contains("://") { text = "http://" + text }
+        while text.hasSuffix("/") { text.removeLast() }
+        guard let url = URL(string: text), url.host != nil else { return nil }
+        return url
+    }
+
+    // MARK: Endpoints
+
+    public func health() async throws -> HealthResponse {
+        try await get("/health")
+    }
+
+    public func login(username: String, password: String) async throws {
+        let _: EmptyResponse = try await send(
+            "POST", "/api/v1/auth/login", body: LoginRequest(username: username, password: password))
+    }
+
+    /// Mints a personal API token for this device. Its secret is only returned once.
+    public func mintToken(name: String) async throws -> TokenMint {
+        try await send("POST", "/api/v1/tokens", body: TokenCreate(name: name))
+    }
+
+    public func queue(pageSize: Int = 50) async throws -> QueuePage {
+        try await get("/api/v1/queue", query: [URLQueryItem(name: "page_size", value: "\(pageSize)")])
+    }
+
+    public func library() async throws -> [LibraryItem] {
+        try await get("/api/v1/library")
+    }
+
+    public func wantedCounts() async throws -> WantedCounts {
+        try await get("/api/v1/wanted", query: [URLQueryItem(name: "page_size", value: "1")])
+    }
+
+    public func calendar(start: Date, end: Date) async throws -> [CalendarEntry] {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .iso8601)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return try await get("/api/v1/calendar", query: [
+            URLQueryItem(name: "start", value: f.string(from: start)),
+            URLQueryItem(name: "end", value: f.string(from: end)),
+        ])
+    }
+
+    /// The decision-engine search. Note: this route has no `/api/v1` prefix on the server.
+    public func searchItem(id: Int) async throws {
+        let _: EmptyResponse = try await send("POST", "/library/\(id)/search", body: Optional<String>.none)
+    }
+
+    public func processQueue() async throws {
+        let _: EmptyResponse = try await send("POST", "/api/v1/queue/process", body: Optional<String>.none)
+    }
+
+    // MARK: Transport
+
+    private struct EmptyResponse: Decodable {}
+
+    private func get<T: Decodable>(_ path: String, query: [URLQueryItem] = []) async throws -> T {
+        try await perform(request(method: "GET", path: path, query: query))
+    }
+
+    private func send<T: Decodable, B: Encodable>(_ method: String, _ path: String, body: B?) async throws -> T {
+        var req = request(method: method, path: path, query: [])
+        if let body {
+            req.httpBody = try Self.encoder.encode(body)
+            req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        return try await perform(req)
+    }
+
+    private func request(method: String, path: String, query: [URLQueryItem]) -> URLRequest {
+        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        if !query.isEmpty { components.queryItems = query }
+        var req = URLRequest(url: components.url!)
+        req.httpMethod = method
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let token {
+            switch method {
+            case .apiToken: req.setValue(token, forHTTPHeaderField: "X-Api-Key")
+            case .session: req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            }
+        }
+        req.timeoutInterval = 20
+        return req
+    }
+
+    private func perform<T: Decodable>(_ req: URLRequest) async throws -> T {
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(status) else {
+            throw APIError.http(status: status, body: String(decoding: data.prefix(500), as: UTF8.self))
+        }
+        if T.self == EmptyResponse.self { return EmptyResponse() as! T }
+        return try Self.decoder.decode(T.self, from: data)
+    }
+}

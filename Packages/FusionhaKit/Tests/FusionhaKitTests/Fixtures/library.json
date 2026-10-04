@@ -1,0 +1,18 @@
+[
+  {
+    "id": 7, "title": "Dune: Part Two", "kind": "movie", "year": 2024,
+    "tmdb_id": 693134, "tvdb_id": null, "imdb_id": "tt15239678",
+    "is_anime": false, "series_type": "standard", "is_animation": false,
+    "poster_url": "https://image.tmdb.org/t/p/w500/abc.jpg", "backdrop_url": null,
+    "is_available": true, "next_release": null, "added_at": null, "release_date": "2024-03-01",
+    "monitored": true, "has_attention": false, "metadata_provider": "tmdb",
+    "editions": [
+      {"id": 11, "tier": "HD-1080p", "movie_edition": null, "monitored": true, "monitor": "all",
+       "root_folder_id": 1, "quality_profile_id": 1, "status": "done", "have": 1, "total": 1, "size": 1,
+       "unresolved_file_count": 0, "dead_link_count": 0, "attention": false},
+      {"id": 12, "tier": "UHD-2160p", "movie_edition": "Director's Cut", "monitored": true, "monitor": "all",
+       "root_folder_id": 2, "quality_profile_id": 2, "status": "grabbing", "have": 0, "total": 1, "size": 0,
+       "unresolved_file_count": 0, "dead_link_count": 0, "attention": false}
+    ]
+  }
+]

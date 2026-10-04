@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": 41, "title": "Dune: Part Two", "episode_label": null,
+      "release_title": "Dune.Part.Two.2024.2160p.UHD.BluRay.REMUX.HDR.HEVC.Atmos-GROUP",
+      "status": "downloading", "protocol": "USENET", "download_client": "SABnzbd",
+      "indexer": "NZBgeek", "grab_trigger": "rss", "size": 64424509440.0,
+      "sizeleft": 25769803776.0, "progress": 60.0, "stalled": false,
+      "held_reason": null, "held_detail": null, "warning": null,
+      "has_downloaded_file": false, "grabbed_at": "2026-10-03T20:11:02Z",
+      "age_seconds": 812, "next_step": null, "needs_attention": false,
+      "media_item_id": 7, "edition_id": 12, "tier": "UHD-2160p", "episode_id": null,
+      "poster_url": "https://image.tmdb.org/t/p/w500/abc.jpg",
+      "phase": "downloading", "step": null, "phase_percent": 60,
+      "phase_terminal": false, "outcome": null, "terminal_reason": null, "finished_at": null
+    }
+  ],
+  "total": 1, "page": 1, "page_size": 50, "just_finished": []
+}
