@@ -76,7 +76,7 @@ struct ItemDetailView: View {
                     StatusPill(text: status)
                 }
                 (Text(d.title).foregroundColor(Theme.txt)
-                    + Text(d.year.map { " \($0)" } ?? "").foregroundColor(Theme.mut))
+                    + Text(verbatim: d.year.map { " " + String($0) } ?? "").foregroundColor(Theme.mut))
                     .font(.system(size: 30, weight: .heavy))
                     .tracking(-0.6)
                 metaLine(d)
