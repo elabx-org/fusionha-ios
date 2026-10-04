@@ -97,8 +97,24 @@ extension APIClient {
         ]))
     }
 
-    public func grab(itemId: Int, _ body: ReleaseGrabRequest) async throws {
-        let _: EmptyResponse = try await call("POST", "/api/v1/library/\(itemId)/releases/grab", body: body)
+    @discardableResult
+    public func grab(itemId: Int, _ body: ReleaseGrabRequest) async throws -> ReleaseGrabResponse {
+        try await call("POST", "/api/v1/library/\(itemId)/releases/grab", body: body)
+    }
+
+    /// Why this scope's automatic search is paused (backoff / failed-grab cooldown).
+    public func releaseScopeStatus(itemId: Int, editionId: Int, episodeId: Int? = nil,
+                                   seasonNumber: Int? = nil) async throws -> ReleaseScopeStatus {
+        try await call("GET", "/api/v1/library/\(itemId)/releases/scope-status", query: Self.items([
+            ("edition_id", String(editionId)),
+            ("episode_id", episodeId.map(String.init)),
+            ("season_number", seasonNumber.map(String.init)),
+        ]))
+    }
+
+    /// Indexers the failure backoff has auto-disabled (skipped by every search).
+    public func unavailableIndexers() async throws -> IndexerUnavailableSummary {
+        try await call("GET", "/api/v1/system/indexers/unavailable")
     }
 
     public func checkFourK(itemId: Int) async throws -> FourKCheck {

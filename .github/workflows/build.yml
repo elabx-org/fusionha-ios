@@ -245,6 +245,32 @@ jobs:
           shoot login-appearance-2-backgrounds SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=appearance SIMCTL_CHILD_FUSIONHA_SCREENSHOT_APPEARANCE_TAB=login "SIMCTL_CHILD_FUSIONHA_SCREENSHOT_APPEARANCE_SCROLL=Login background"
           ls -l shots
 
+      # Interactive (Manual) search results: The Matrix's HD edition against the
+      # mock's 34-release list (mixed qualities, rejections, blocklisted rows,
+      # torrent + usenet), then the rejected rows, the 4K tab, a grab, the
+      # loading banner and the no-match state.
+      - name: Interactive search screenshots
+        run: |
+          python3 scripts/mock_server.py 8766 &
+          sleep 2
+          UDID=$(xcrun simctl list devices booted -j | python3 -c '
+          import json, sys
+          print(next(d["udid"] for ds in json.load(sys.stdin)["devices"].values() for d in ds))')
+          shoot() {
+            name=$1; shift
+            env "$@" xcrun simctl launch --terminate-running-process "$UDID" org.elabx.fusionha > /dev/null
+            sleep 10
+            xcrun simctl io "$UDID" screenshot "shots/$name.png" > /dev/null
+          }
+          I="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=http://127.0.0.1:8766 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=1 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SCOPE=HD-1080p SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SHEET=search"
+          shoot search-1-results $I
+          shoot search-2-rejected $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=rejected
+          shoot search-3-4k $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=4k
+          shoot search-4-grabbed $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=grabbed
+          shoot search-5-loading $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=loading
+          shoot search-6-nomatch $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=nomatch
+          ls -l shots/search-*
+
       - uses: actions/upload-artifact@v4
         with:
           name: screenshots

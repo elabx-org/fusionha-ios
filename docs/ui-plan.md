@@ -56,15 +56,16 @@ The web phone layout is a swipe-down bottom sheet (`MobileDetailFlyout`). On iOS
 - **Seasons:** collapsible season cards (size, done/total, coverage bar with stripes, ⋮ opens a season actions sheet with Search / State / View groups). Episode cards: monitored dot, left-aligned title, air time, **one status chip per edition**, download pill; tapping expands facts with search and interactive search. The full `EpisodeDetailDialog` is not ported yet.
 - **Files:** per season × edition (series) or per edition (movies). Rows show the path (copy button), quality and media chips, dead-link cleanup and delete with a "Delete & blocklist" option. HD chips are purple, 4K cyan.
 - **History / Searches:** timeline (day groups, provenance, regrab), lifecycle and insights views; the Searches tab lists decision runs touching the title.
-- **Interactive search:** a sheet with an edition picker, filter field, sort/filter menu and a glass Grab button per release; rejected releases grab only after an override confirmation.
+- **Interactive search:** the web's Manual search as a sheet (see below).
 - **Dialogs:** Edit item, Add an edition and Delete are native `Form` sheets with the web's fields and words.
 
 ### Interactive search
-- **Layout:** a full-height sheet. The top bar has an edition picker (`ManualSearchTrigger`'s "All editions" choice) and a glass Sort/Filter menu.
-- **Release rows:** title in monospace, quality chip, custom-format score, size, age, protocol, peers/grabs and indexer.
-  - Rejected releases are dimmed and show their rejection reasons on expand.
-  - Each row has a **Grab** glass button with a success haptic.
-- **API:** `GET /api/v1/library/{id}/releases`, `.../releases/scope-status`, `POST .../releases/grab`.
+- **Layout (mobile web parity, `InteractiveSearch` + `InteractiveSearchModal`):** a full-height sheet titled "Manual search" with the scoped heading (`Title · HD·1080p`). From the top: the amber auto-search status strip (`.../releases/scope-status`), the indexer-cooldown notice (`/system/indexers/unavailable`), the HD/4K edition toggle (a glass pill group with a check on every searched edition) plus refresh, the "Searched:" strip with query times, then the scan banner (`querying indexers…` → `N releases · ranked by custom-format score`).
+- **Filters:** a horizontally scrolling row — title field, glass menu chips for resolution, protocol (only when both are present), indexer (only when more than one) and `Sort:` (Score by default, descending), the sort-direction button and the Hide rejected (on by default) / Hide blocklisted switches. Filters reset when the edition changes.
+- **Release cards (`ReleaseCard`):** monospace title, release group (purple) with the provenance chip once grabbed, the `→ UHD·4K` auto-target hint and the BLOCKLISTED badge; a meta row of quality chip, flags, size, age, indexer and seeders (torrent lists only); the rejection reason (amber ✕) or blocklist reason; the signed score (green / red) and the icon-only Grab tile: tray (Grab), warning triangle (Grab anyway, rejected or blocklisted) and a pulsing double chevron (Downloading). Grabs are optimistic like the web: no confirmation; a blocklisted release grabs with the override.
+- **States:** pulsing scan banner while querying, "Search failed — try again." (plus the server's reason), "No releases found for this search.", "No releases match these filters.", the real-integrations-disabled box and the all-+0 custom-format warning. Toasts ("Sent to download client") show inside the sheet.
+- **Not ported:** the "Last search passed over" skip-reason chips, the learn-edition-alias action, "remove from blocklist" (the server sends no blocklist id) and the web's links into Settings (shown as plain text).
+- **API:** `GET /api/v1/library/{id}/releases`, `.../releases/scope-status`, `POST .../releases/grab`, `GET /api/v1/system/indexers/unavailable`.
 
 ### Add flow and preview (`/preview/:kind/:tmdbId`)
 - **Preview:** the same layout as item detail but read-only, with **Add** or **Request** as a `.glassProminent` button in the bottom toolbar. If the title is already in the library, the button is **Open**.
