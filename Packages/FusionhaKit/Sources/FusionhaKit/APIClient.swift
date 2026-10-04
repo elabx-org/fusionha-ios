@@ -26,6 +26,9 @@ public enum AuthMethod: String, Codable, Sendable {
     /// The 30-day session token sent as `Authorization: Bearer`, for accounts that
     /// lack the `tokens.manage.self` permission and so can't mint a personal token.
     case session
+    /// The read-only demo identity: the `fusionha_demo` cookie `POST /api/v1/demo/login`
+    /// sets, replayed as a Cookie header (the server reads the demo token only there).
+    case demoCookie
 }
 
 /// Thin async client over fusionha's `/api/v1`. Authenticates with a personal
@@ -33,11 +36,12 @@ public enum AuthMethod: String, Codable, Sendable {
 /// that `POST /api/v1/auth/login` sets, which URLSession stores automatically.
 public final class APIClient: @unchecked Sendable {
     public static let sessionCookieName = "fusionha_session"
+    public static let demoCookieName = "fusionha_demo"
 
     public let baseURL: URL
     private let token: String?
     private let authMethod: AuthMethod
-    private let session: URLSession
+    let session: URLSession
 
     static let decoder: JSONDecoder = {
         let d = JSONDecoder()
@@ -62,6 +66,12 @@ public final class APIClient: @unchecked Sendable {
     public func sessionTokenFromCookie() -> String? {
         let cookies = session.configuration.httpCookieStorage?.cookies(for: baseURL) ?? []
         return cookies.first { $0.name == Self.sessionCookieName }?.value
+    }
+
+    /// The demo token from the cookie `POST /api/v1/demo/login` set, if any.
+    public func demoTokenFromCookie() -> String? {
+        let cookies = session.configuration.httpCookieStorage?.cookies(for: baseURL) ?? []
+        return cookies.first { $0.name == Self.demoCookieName }?.value
     }
 
     /// Normalises user input like `192.168.1.10:8787` or `https://fusionha.example/`.
@@ -225,6 +235,7 @@ public final class APIClient: @unchecked Sendable {
 
     // MARK: Transport
 
+    // Internal (not private) so endpoint extensions in other files can use them.
     struct EmptyResponse: Decodable {}
 
     func get<T: Decodable>(_ path: String, query: [URLQueryItem] = []) async throws -> T {
@@ -250,6 +261,7 @@ public final class APIClient: @unchecked Sendable {
             switch authMethod {
             case .apiToken: req.setValue(token, forHTTPHeaderField: "X-Api-Key")
             case .session: req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            case .demoCookie: req.setValue("\(Self.demoCookieName)=\(token)", forHTTPHeaderField: "Cookie")
             }
         }
         req.timeoutInterval = 20
