@@ -319,6 +319,16 @@ fileprivate final class TasksStore {
 
     var anyRunning: Bool { feed.items.contains { $0.status == "running" } || tasks.contains { $0.running } }
 
+    /// Recent (finished) runs grouped for the timeline, rebuilt only when the feed changes.
+    @ObservationIgnored private var groupsCache: (revision: Int, groups: [TasksLogic.RunGroup])?
+    var recentGroups: [TasksLogic.RunGroup] {
+        let revision = feed.revision
+        if let cache = groupsCache, cache.revision == revision { return cache.groups }
+        let groups = TasksLogic.groupRuns(feed.items.filter { $0.status != "running" })
+        groupsCache = (revision, groups)
+        return groups
+    }
+
     func load(_ client: APIClient?) async {
         feed.fetch = { page, size in
             guard let client else { return ([], 0) }
@@ -353,8 +363,9 @@ struct ActivityTasksTab: View {
     @State private var store = TasksStore()
 
     var body: some View {
+        let _ = PerfCount.hit("ActivityTasksTab.body")
         let feed = store.feed
-        Group {
+        ActivityPage {
             if !feed.loaded && feed.error == nil {
                 ActEmpty(message: "Loading the task feed…")
             } else if feed.error != nil && feed.items.isEmpty {
@@ -363,6 +374,7 @@ struct ActivityTasksTab: View {
                 loadedView
             }
         }
+        .animation(reduce ? nil : ActMotion.rows, value: feed.items.filter { $0.status == "running" }.map(\.id))
         .task {
             await store.load(model.client)
             // The web polls fast (2s) while any run is live, slowly otherwise.
@@ -391,64 +403,65 @@ struct ActivityTasksTab: View {
         if running.isEmpty && recent.isEmpty && !showSystem {
             ActEmpty(message: "No searches yet. RSS syncs, scheduled sweeps and searches show up here — each with what it grabbed and why.")
         } else {
-            VStack(alignment: .leading, spacing: 0) {
-                voiceToggle.padding(.bottom, 16)
-                if showSystem {
-                    sectionLabel("System")
-                    VStack(spacing: 10) {
-                        if showEnrichment, let enrich { EnrichmentCard(status: enrich) }
-                        if let rssTask { RssSyncCard(task: rssTask, latestRun: items.first { $0.trigger == "rss" }) }
-                        if !scheduled.isEmpty { ScheduledCard(tasks: scheduled) }
-                    }
+            // Flat children of the page's lazy stack; the Recent timeline is one child per group.
+            voiceToggle.padding(.bottom, 16)
+            if showSystem {
+                sectionLabel("System")
+                VStack(spacing: 10) {
+                    if showEnrichment, let enrich { EnrichmentCard(status: enrich) }
+                    if let rssTask { RssSyncCard(task: rssTask, latestRun: items.first { $0.trigger == "rss" }) }
+                    if !scheduled.isEmpty { ScheduledCard(tasks: scheduled) }
                 }
-                if !searchRuns.isEmpty {
-                    sectionLabel("Searching").padding(.top, showSystem ? 22 : 0)
-                    VStack(spacing: 9) {
-                        ForEach(searchRuns) { run in
-                            SearchRunCard(run: run) { Task { await store.refresh(model.client) } }
-                                .actRowTransition(reduce)
-                        }
-                    }
-                }
-                if !scanning.isEmpty {
-                    sectionLabel("Scanning").padding(.top, showSystem || !searchRuns.isEmpty ? 22 : 0)
-                    VStack(spacing: 9) {
-                        ForEach(scanning) { run in
-                            RunningRow(run: run, queued: false, playful: store.playful).actRowTransition(reduce)
-                        }
-                    }
-                }
-                if !queued.isEmpty {
-                    sectionLabel("Queued (\(queued.count))").padding(.top, !searchRuns.isEmpty || !scanning.isEmpty ? 22 : 0)
-                    VStack(spacing: 9) {
-                        ForEach(queued) { run in
-                            RunningRow(run: run, queued: true, playful: store.playful).actRowTransition(reduce)
-                        }
-                    }
-                }
-                if !recent.isEmpty {
-                    sectionLabel("Recent").padding(.top, !running.isEmpty || showSystem ? 22 : 0)
-                    LazyVStack(spacing: 9) {
-                        ForEach(Array(TasksLogic.groupRuns(recent).enumerated()), id: \.element.id) { index, group in
-                            RecentGroupView(group: group, tasks: store.tasks)
-                                .actReveal(index, stagger: 0.03)
-                        }
-                    }
-                    .background(alignment: .topLeading) {
-                        // The timeline thread behind the trigger icons (left 32).
-                        LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: Theme.line, location: 0.06),
-                                               .init(color: Theme.line, location: 0.94), .init(color: .clear, location: 1)],
-                                       startPoint: .top, endPoint: .bottom)
-                            .frame(width: 2)
-                            .padding(.vertical, 4)
-                            .padding(.leading, 31)
-                    }
-                }
-                ActFooter(total: store.feed.total, loaded: store.feed.items.count, hasMore: store.feed.hasMore,
-                          loading: store.feed.loadingMore, noun: "task runs") { Task { await store.feed.loadMore() } }
             }
-            .animation(reduce ? nil : ActMotion.rows, value: items.map(\.id))
-            .animation(reduce ? nil : ActMotion.rows, value: running.map(\.id))
+            if !searchRuns.isEmpty {
+                sectionLabel("Searching").padding(.top, showSystem ? 22 : 0)
+                VStack(spacing: 9) {
+                    ForEach(searchRuns) { run in
+                        SearchRunCard(run: run) { Task { await store.refresh(model.client) } }
+                            .actRowTransition(reduce)
+                    }
+                }
+            }
+            if !scanning.isEmpty {
+                sectionLabel("Scanning").padding(.top, showSystem || !searchRuns.isEmpty ? 22 : 0)
+                VStack(spacing: 9) {
+                    ForEach(scanning) { run in
+                        RunningRow(run: run, queued: false, playful: store.playful).actRowTransition(reduce)
+                    }
+                }
+            }
+            if !queued.isEmpty {
+                sectionLabel("Queued (\(queued.count))").padding(.top, !searchRuns.isEmpty || !scanning.isEmpty ? 22 : 0)
+                VStack(spacing: 9) {
+                    ForEach(queued) { run in
+                        RunningRow(run: run, queued: true, playful: store.playful).actRowTransition(reduce)
+                    }
+                }
+            }
+            if !recent.isEmpty {
+                let groups = store.recentGroups
+                let last = groups.count - 1
+                sectionLabel("Recent").padding(.top, !running.isEmpty || showSystem ? 22 : 0)
+                ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
+                    RecentGroupView(group: group, tasks: store.tasks)
+                        .actReveal(index, stagger: 0.03)
+                        .padding(.bottom, index == last ? 0 : 9)
+                        .background(alignment: .topLeading) {
+                            // The timeline thread behind the trigger icons (left 32), fading at the ends.
+                            LinearGradient(stops: [.init(color: index == 0 ? .clear : Theme.line, location: 0),
+                                                   .init(color: Theme.line, location: index == 0 ? 0.5 : 0),
+                                                   .init(color: Theme.line, location: index == last ? 0.5 : 1),
+                                                   .init(color: index == last ? .clear : Theme.line, location: 1)],
+                                           startPoint: .top, endPoint: .bottom)
+                                .frame(width: 2)
+                                .padding(.top, index == 0 ? 4 : 0)
+                                .padding(.bottom, index == last ? 4 : 0)
+                                .padding(.leading, 31)
+                        }
+                }
+            }
+            ActFooter(total: store.feed.total, loaded: store.feed.items.count, hasMore: store.feed.hasMore,
+                      loading: store.feed.loadingMore, noun: "task runs") { Task { await store.feed.loadMore() } }
         }
     }
 

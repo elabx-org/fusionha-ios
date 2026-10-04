@@ -102,6 +102,8 @@ final class AppModel {
     // Live Activity and the Downloads widget.
     private(set) var queue: [QueueItem] = []
     private(set) var queueTotal = 0
+    /// Downloads held for a manual import (the Activity header caption).
+    private(set) var queueHeld = 0
     private(set) var queueError: String?
     private var lastQueueIds: [Int] = []
 
@@ -318,6 +320,7 @@ final class AppModel {
         tab = .library
         queue = []
         queueTotal = 0
+        queueHeld = 0
         selectMode = false
         selection = []
         settings = nil
@@ -338,12 +341,18 @@ final class AppModel {
     }
 
     func refreshQueue() async {
+        PerfCount.hit("AppModel.refreshQueue")
         guard let client else { return }
         do {
             let page = try await client.queue()
-            queue = page.items
-            queueTotal = page.total
-            queueError = nil
+            // Polled every 2s: assign only what changed, so observers of the
+            // total / held count (Activity's header, the tab badge) don't
+            // re-render on every tick while progress moves.
+            if queue != page.items { queue = page.items }
+            if queueTotal != page.total { queueTotal = page.total }
+            let held = page.items.filter { $0.status.lowercased() == "held" }.count
+            if queueHeld != held { queueHeld = held }
+            if queueError != nil { queueError = nil }
             LiveActivityController.sync(with: page.items)
             let ids = page.items.map(\.id)
             if ids != lastQueueIds {

@@ -293,8 +293,211 @@ def fourk_available(query):
     return {"items": items[:size], "total": len(items), "page": 1, "page_size": size, "fourk_available_count": len(items)}
 
 
+
+# MARK: Volume mode (`mock_server.py <port> perf`) for the Activity perf job:
+# a large, realistic library history so paging, polling and scrolling are
+# exercised at the sizes a real server reaches.
+
+VOLUME = False
+_CACHE = {}
+
+
+def _page(rows, query, default_size=50):
+    page = int(query.get("page", ["1"])[0])
+    size = int(query.get("page_size", [str(default_size)])[0])
+    q = query.get("q", [""])[0].strip().lower()
+    if q:
+        rows = [r for r in rows if q in (r.get("item_title") or r.get("title") or "").lower()
+                or q in (r.get("source_title") or "").lower()]
+    return {"items": rows[(page - 1) * size: page * size], "total": len(rows), "page": page, "page_size": size}
+
+
+def _volume_history():
+    if "history" in _CACHE:
+        return _CACHE["history"]
+    lib = list(_library().values())
+    groups = ["NTb", "FLUX", "FraMeSToR", "DON", "SPARKS", "EDITH", "playWEB", "BeatriceRaws"]
+    sources = ["WEB-DL", "BluRay", "Remux", "WEBRip"]
+    events = []
+    minutes = 3
+    for n in range(580):
+        item = lib[n % len(lib)]
+        ed = item["editions"][(n // len(lib)) % len(item["editions"])]
+        uhd = "2160" in ed["tier"]
+        series = item["kind"] == "series"
+        name = item["title"].replace(" ", ".").replace(":", "")
+        ep = f".S{n % 6 + 1:02d}E{n % 13 + 1:02d}.Chapter.{n % 9 + 1}" if series else f".{1990 + n % 33}"
+        group = groups[n % len(groups)]
+        source = sources[n % len(sources)]
+        release = f"{name}{ep}.{'2160p' if uhd else '1080p'}.{source}.DDP5.1.Atmos.H.265-{group}"
+        quality = ("WEBDL_2160P" if uhd else "WEBDL_1080P") if source.startswith("WEB") else ("BLURAY_2160P" if uhd else "BLURAY_1080P")
+        chips = [{"kind": "group", "label": group}, {"kind": "source", "label": source},
+                 {"kind": "range", "label": "DV HDR10"} if uhd else {"kind": "edition", "label": "Standard"},
+                 {"kind": "audio", "label": "DDP 5.1 Atmos"}, {"kind": "size", "label": f"{4 + n % 30}.2 GB"}]
+        common = {
+            "media_item_id": item["id"], "edition_id": ed["id"], "episode_id": 5000 + n if series else None,
+            "item_title": item["title"], "tier": ed["tier"], "poster_url": item["poster_url"],
+            "indexer": "Demo Usenet" if n % 3 else "Demo Torrents", "download_client": "SABnzbd" if n % 3 else "qBittorrent",
+            "protocol": "usenet" if n % 3 else "torrent", "quality": quality, "cf_score": 1200 + (n * 37) % 2400,
+            "size": (4 + n % 30) * 1.07e9, "source_title": release, "chips": chips, "blocklistable": True,
+            "grab_trigger": ["rss", "search", "upgrade", "interactive", "requested"][n % 5], "data": {},
+        }
+        dl = f"perf-dl-{n}"
+        kind = n % 10
+        def ev(event_type, at, **extra):
+            e = dict(common)
+            e.update({"event_type": event_type, "created_at": _ago(minutes=at), "download_id": dl})
+            e.update(extra)
+            events.append(e)
+        if kind <= 5:
+            ev("IMPORTED", minutes, data={"import_mode": "symlink"})
+            ev("GRABBED", minutes + 14)
+        elif kind == 6:
+            ev("IMPORTED", minutes, data={"import_mode": "symlink"})
+            ev("DELETED", minutes + 1, quality="WEBRIP_1080P", cf_score=400, data={"reason": "UPGRADE"})
+            ev("GRABBED", minutes + 20)
+        elif kind == 7:
+            ev("GRAB_FAILED", minutes, download_id=None, data={"error": "Indexer returned HTTP 503 while fetching the NZB"})
+        elif kind == 8:
+            ev("DOWNLOAD_FAILED", minutes, data={"error": "Download stalled: no seeders for 6 hours", "reason": "stalled"})
+        else:
+            ev("RENAMED", minutes, download_id=None, data={})
+        minutes += 37
+    events.sort(key=lambda e: e["created_at"], reverse=True)
+    for i, e in enumerate(events):
+        e["id"] = 100000 - i
+    _CACHE["history"] = events
+    return events
+
+
+def _volume_blocklist():
+    if "blocklist" in _CACHE:
+        return _CACHE["blocklist"]
+    lib = list(_library().values())
+    reasons = ["Removed by download client (dead NZB)", "Download stalled", "Manually blocklisted from the queue",
+               "Sample-only content: the archive had no real video", "Release rejected: wrong episode"]
+    rows = []
+    for n in range(600):
+        item = lib[n % len(lib)]
+        ed = item["editions"][n % len(item["editions"])]
+        uhd = "2160" in ed["tier"]
+        title = f"{item['title'].replace(' ', '.').replace(':', '')}.{'2160p' if uhd else '1080p'}.WEB-DL-BAD{n % 17}"
+        rows.append({
+            "id": 50000 - n, "title": title, "reason": reasons[n % len(reasons)], "created_at": _ago(minutes=11 + n * 53),
+            "indexer": "Demo Usenet" if n % 2 == 0 else "Demo Torrents", "item_title": item["title"],
+            "episode_label": f"S0{n % 5 + 1}E0{n % 9 + 1} · Chapter" if item["kind"] == "series" else None,
+            "poster_url": item["poster_url"], "guid": f"https://indexer.demo/details/{90000 + n}",
+            "source": "download_client" if n % 3 else "manual", "protocol": "usenet" if n % 2 == 0 else "torrent",
+            "media_item_id": item["id"], "edition_id": ed["id"], "episode_id": None, "source_title": title,
+            "quality": "WEBDL_2160P" if uhd else "WEBDL_1080P", "formats": ["DV", "HDR10"] if uhd else ["x264"],
+            "size": (2 + n % 40) * 1.1e9, "tier": ed["tier"],
+        })
+    _CACHE["blocklist"] = rows
+    return rows
+
+
+def _volume_queue():
+    import time
+    lib = list(_library().values())
+    now = time.time()
+    phases = [None] * 14 + ["importing", "linking", "caching", "probing", "queued", "error"]
+    items = []
+    for n in range(20):
+        item = lib[n % len(lib)]
+        ed = item["editions"][n % len(item["editions"])]
+        size = (3 + n * 1.7) * 1e9
+        pct = ((now * (0.6 + n * 0.05)) + n * 13) % 100
+        phase = phases[n]
+        extra = {"phase": phase, "phase_percent": int(pct) if phase else None,
+                 "step": "Linking files" if phase else None}
+        if phase is None:
+            extra.update(sizeleft=size * (1 - pct / 100), progress=pct)
+        else:
+            extra.update(status="completed", sizeleft=0, progress=100.0)
+        if n % 7 == 3:
+            extra.update(stalled=True)
+        items.append(_queue_item(n, item, ed, size=size,
+                                 episode_label=f"S0{n % 4 + 1}E0{n % 9 + 1} · Chapter" if item["kind"] == "series" else None,
+                                 protocol="torrent" if n % 3 == 0 else "usenet",
+                                 download_client="qBittorrent" if n % 3 == 0 else "SABnzbd", **extra))
+    finished = [_queue_item(40 + n, lib[n], lib[n]["editions"][0], status="completed", sizeleft=0, progress=100.0,
+                            phase="complete", phase_terminal=True, outcome="imported", finished_at=_ago(seconds=6 + n * 9))
+                for n in range(4)]
+    return {"items": items, "total": len(items), "page": 1, "page_size": 50, "just_finished": finished}
+
+
+def _volume_runs():
+    if "runs" not in _CACHE:
+        rows = []
+        for n in range(400):
+            rid = 9000 - n
+            if n % 3 == 0:
+                rows.append(_run(rid, "RSS Sync", "rss", "completed", started_at=_ago(minutes=15 * n + 1),
+                                 ended_at=_ago(minutes=15 * n), releases=90 + n % 40, evaluated=90 + n % 40, grabbed=n % 3))
+            elif n % 3 == 1:
+                rows.append(_run(rid, "Search", "manual", "completed", item_id=1 + n % 14, media_kind="movie",
+                                 target_title=f"Title {n}", started_at=_ago(minutes=15 * n + 2), ended_at=_ago(minutes=15 * n + 1),
+                                 releases=20 + n % 9, evaluated=20 + n % 9, grabbed=n % 2, rejected=n % 7))
+            else:
+                rows.append(_run(rid, "Search", "search_on_add", "failed" if n % 11 == 0 else "completed", item_id=1 + n % 14,
+                                 media_kind="series", target_title=f"Series {n}", started_at=_ago(minutes=15 * n + 3),
+                                 ended_at=_ago(minutes=15 * n + 2), errors=1 if n % 11 == 0 else 0))
+        _CACHE["runs"] = rows
+    live = runs()["items"][:1]
+    return live + _CACHE["runs"]
+
+
+def _volume_audit(query):
+    limit = int(query.get("limit", ["100"])[0])
+    before = query.get("before_id", [None])[0]
+    top = int(before) if before else 3001
+    actions = ["POST /api/v1/library/{item_id}/editions", "PUT /api/v1/settings", "DELETE /api/v1/blocklist/{entry_id}",
+               "POST /api/v1/command/rss-sync", "POST /api/v1/requests/{request_id}/approve"]
+    rows = []
+    for i in range(top - 1, max(top - 1 - limit, 2400), -1):
+        rows.append({"id": i, "actor": "user:1:admin" if i % 3 else "instance:radarr-4k", "action": actions[i % len(actions)],
+                     "target": ["Dune", "Interstellar", None, "Breaking Bad"][i % 4], "at": _ago(minutes=(3001 - i) * 17)})
+    return rows
+
+
+def _volume_wanted(query):
+    state = query.get("state", [""])[0]
+    base = _load("wanted_missing.json")
+    if not state:
+        return {**base, "items": base["items"][:1], "total": 900, "missing_titles": 300, "cutoff_unmet_titles": 300,
+                "upcoming_titles": 300}
+    src = _load(f"wanted_{state}.json")["items"] or base["items"]
+    rows = []
+    for n in range(300):
+        item = json.loads(json.dumps(src[n % len(src)]))
+        item["id"] = 20000 + n
+        item["title"] = f"{item['title']} {n}"
+        rows.append(item)
+    page = _page(rows, query)
+    return {**base, **page}
+
+
+def volume_handle(method, path, query):
+    if method != "GET":
+        return None
+    if path == "/api/v1/history":
+        return _page(_volume_history(), query), 200
+    if path == "/api/v1/blocklist":
+        return _page(_volume_blocklist(), query), 200
+    if path == "/api/v1/queue":
+        return _volume_queue(), 200
+    if path == "/api/v1/system/runs":
+        return _page(_volume_runs(), query, 200), 200
+    if path == "/api/v1/audit":
+        return _volume_audit(query), 200
+    if path == "/api/v1/wanted":
+        return _volume_wanted(query), 200
+    return None
+
 def handle(method, path, query):
     """Returns (body, status) for an Activity / Wanted route, or None."""
+    if VOLUME and (hit := volume_handle(method, path, query)) is not None:
+        return hit
     if method == "GET":
         if path == "/api/v1/queue":
             return queue(), 200

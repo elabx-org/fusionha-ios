@@ -164,6 +164,7 @@ struct WantedView: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("WantedView.body")
         Screen(showsAdd: true) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
@@ -360,13 +361,13 @@ struct WantedView: View {
         } else if feed.items.isEmpty {
             ActEmpty(message: search.isEmpty ? tab.emptyMessage : "No wanted titles match “\(search)”.")
         } else {
-            LazyVStack(alignment: .leading, spacing: 11) {
-                ForEach(Array(feed.items.enumerated()), id: \.element.id) { index, item in
-                    WantedCardView(item: item, tab: tab, interval: settings?.seasonSearchIntervalSeconds ?? 5)
-                        .actReveal(index)
-                }
+            // Flat: each card is a direct child of the page's lazy stack (a nested
+            // LazyVStack made every scroll step re-measure the whole list).
+            ForEach(Array(feed.items.enumerated()), id: \.element.id) { index, item in
+                WantedCardView(item: item, tab: tab, interval: settings?.seasonSearchIntervalSeconds ?? 5)
+                    .actReveal(index)
+                    .padding(.top, index == 0 ? 6 : 11)
             }
-            .padding(.top, 6)
             ActFooter(total: feed.total, loaded: feed.items.count, hasMore: feed.hasMore, loading: feed.loadingMore,
                       noun: tab.noun, query: search) { Task { await feed.loadMore() } }
         }
@@ -393,13 +394,11 @@ struct WantedView: View {
                 }
             }
         } else {
-            LazyVStack(alignment: .leading, spacing: 11) {
-                ForEach(Array(fourkFeed.items.enumerated()), id: \.element.id) { index, item in
-                    WantedFourKCard(item: item) { addEditionFor = item }
-                        .actReveal(index)
-                }
+            ForEach(Array(fourkFeed.items.enumerated()), id: \.element.id) { index, item in
+                WantedFourKCard(item: item) { addEditionFor = item }
+                    .actReveal(index)
+                    .padding(.top, index == 0 ? 6 : 11)
             }
-            .padding(.top, 6)
             ActFooter(total: fourkFeed.total, loaded: fourkFeed.items.count, hasMore: fourkFeed.hasMore, loading: fourkFeed.loadingMore,
                       noun: tab.noun, query: search) { Task { await fourkFeed.loadMore() } }
         }

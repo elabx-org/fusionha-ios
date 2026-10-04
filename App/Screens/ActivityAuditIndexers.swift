@@ -145,8 +145,12 @@ struct ActivityAuditTab: View {
 
     private static let pageSize = 100
 
+    private struct RowsKey: Equatable {
+        let filter: AuditCategory?
+    }
+
     var body: some View {
-        Group {
+        ActivityPage {
             if !loaded {
                 ActEmpty(message: "Loading audit log…")
             } else if failed && items.isEmpty {
@@ -157,6 +161,7 @@ struct ActivityAuditTab: View {
                 loadedView
             }
         }
+        .animation(reduce ? nil : ActMotion.rows, value: RowsKey(filter: filter))
         .task {
             do {
                 let page = try await model.client?.audit(limit: Self.pageSize) ?? []
@@ -170,29 +175,25 @@ struct ActivityAuditTab: View {
         }
     }
 
+    /// Flat children of the page's lazy stack (one per row).
     @ViewBuilder
     private var loadedView: some View {
         let shown = filter.map { f in items.filter { AuditLogic.category(AuditLogic.resolve($0.action).tone) == f } } ?? items
-        VStack(alignment: .leading, spacing: 0) {
-            chips.padding(.bottom, 12)
-            if shown.isEmpty {
-                ActEmpty(message: "No \(filter.map { "\($0.label) " } ?? "")events in the loaded rows\(hasMore ? " yet — load more below." : ".")")
-            } else {
-                LazyVStack(alignment: .leading, spacing: 10) {
-                    ForEach(Array(shown.enumerated()), id: \.element.id) { index, entry in
-                        AuditRow(entry: entry)
-                            .actReveal(index, stagger: 0.02)
-                            .actRowTransition(reduce)
-                    }
-                }
-                .padding(.leading, 26)
-                .background(alignment: .leading) {
-                    Rectangle().fill(Theme.line).frame(width: 2).padding(.leading, 10).padding(.vertical, 12)
-                }
-                .animation(reduce ? nil : ActMotion.rows, value: shown.map(\.id))
+        chips.padding(.bottom, 12)
+        if shown.isEmpty {
+            ActEmpty(message: "No \(filter.map { "\($0.label) " } ?? "")events in the loaded rows\(hasMore ? " yet — load more below." : ".")")
+        } else {
+            let last = shown.count - 1
+            ForEach(Array(shown.enumerated()), id: \.element.id) { index, entry in
+                AuditRow(entry: entry)
+                    .actReveal(index, stagger: 0.02)
+                    .padding(.leading, 26)
+                    .padding(.bottom, index == last ? 0 : 10)
+                    .background(alignment: .leading) { ActTimelineSegment(first: index == 0, last: index == last) }
+                    .actRowTransition(reduce)
             }
-            footer
         }
+        footer
     }
 
     private var chips: some View {
@@ -312,16 +313,18 @@ struct ActivityIndexersTab: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            header
-            if let stats {
-                kpis(stats)
-                shareCard(stats)
-                activityCard(stats.summary)
-            } else if failed {
-                ActEmpty(message: "Indexer stats could not be loaded. Check the backend and try again.")
-            } else {
-                ActEmpty(message: "Loading indexer stats…")
+        ActivityPage {
+            VStack(alignment: .leading, spacing: 14) {
+                header
+                if let stats {
+                    kpis(stats)
+                    shareCard(stats)
+                    activityCard(stats.summary)
+                } else if failed {
+                    ActEmpty(message: "Indexer stats could not be loaded. Check the backend and try again.")
+                } else {
+                    ActEmpty(message: "Loading indexer stats…")
+                }
             }
         }
         .task(id: range) {

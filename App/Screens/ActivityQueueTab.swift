@@ -358,9 +358,11 @@ fileprivate final class QueueStore {
     }
 
     private func apply(_ page: QueuePage) {
-        items = page.items
-        total = page.total
-        justFinished = page.justFinished ?? []
+        // Polled every 1.5s: only touch what changed so unchanged sections don't re-render.
+        if items != page.items { items = page.items }
+        if total != page.total { total = page.total }
+        let finished = page.justFinished ?? []
+        if justFinished != finished { justFinished = finished }
         sample(page.items)
     }
 
@@ -385,7 +387,7 @@ fileprivate final class QueueStore {
             if !item.isPhaseMode, [.downloading, .stalled, .awaiting].contains(item.cockpitState) { aggregate += tel.bps }
         }
         samples = nextSamples
-        telemetry = next
+        if telemetry != next { telemetry = next }
         bandwidth.append(aggregate)
         if bandwidth.count > 70 { bandwidth.removeFirst(bandwidth.count - 70) }
     }
@@ -412,7 +414,9 @@ struct ActivityQueueTab: View {
     @State private var upNextOpen = false
 
     var body: some View {
-        content
+        let _ = PerfCount.hit("ActivityQueueTab.body")
+        ActivityPage { content }
+            .animation(reduce ? nil : ActMotion.rows, value: store.items.map(\.id))
             .task(id: search) {
                 await store.reload(model.client, query: search)
                 while !Task.isCancelled {
@@ -467,14 +471,12 @@ struct ActivityQueueTab: View {
         } else if store.items.isEmpty && finished.rows.isEmpty {
             ActEmpty(message: "Nothing is downloading right now. Grabbed releases appear here while they transfer.")
         } else {
-            VStack(alignment: .leading, spacing: 0) {
-                toolbar.padding(.bottom, 12)
-                if !store.items.isEmpty { hero.padding(.bottom, 18) }
-                sections
-                ActFooter(total: store.total, loaded: store.items.count, hasMore: store.hasMore, loading: store.loadingMore,
-                          noun: "downloads", query: search) { Task { await store.loadMore(model.client) } }
-            }
-            .animation(reduce ? nil : ActMotion.rows, value: store.items.map(\.id))
+            // Flat children of the page's lazy stack: each section header and card is its own child.
+            toolbar.padding(.bottom, 12)
+            if !store.items.isEmpty { hero.padding(.bottom, 18) }
+            sections
+            ActFooter(total: store.total, loaded: store.items.count, hasMore: store.hasMore, loading: store.loadingMore,
+                      noun: "downloads", query: search) { Task { await store.loadMore(model.client) } }
         }
     }
 
@@ -537,9 +539,11 @@ struct ActivityQueueTab: View {
         let split = QueueLogic.split(QueueLogic.group(items.filter { $0.lane == .byte }), telemetry: store.telemetry)
         let soonest = split.active.first { $0.eta != nil }?.id
         let finished = self.finished
-        VStack(alignment: .leading, spacing: 24) {
+        let firstSection = !working.isEmpty ? "Working" : !split.active.isEmpty ? "Downloading"
+            : !retrying.isEmpty ? "Retrying" : !split.upNext.isEmpty ? "Up next" : "Just finished"
+        Group {
             if !working.isEmpty {
-                section("Working", working.count, "symlink & checks · live phase") {
+                section("Working", working.count, "symlink & checks · live phase", first: firstSection) {
                     ForEach(Array(working.enumerated()), id: \.element.id) { index, item in
                         selectable(item) { PhaseCard(item: item, lane: .working, actions: actions(for: item)) }
                             .actReveal(index).actRowTransition(reduce)
@@ -547,7 +551,7 @@ struct ActivityQueueTab: View {
                 }
             }
             if !split.active.isEmpty {
-                section("Downloading", split.active.count, "finishing soonest") {
+                section("Downloading", split.active.count, "finishing soonest", first: firstSection) {
                     ForEach(Array(split.active.enumerated()), id: \.element.id) { index, entry in
                         Group {
                             switch entry {
@@ -576,7 +580,7 @@ struct ActivityQueueTab: View {
                 }
             }
             if !retrying.isEmpty {
-                section("Retrying", retrying.count, "transient — will retry") {
+                section("Retrying", retrying.count, "transient — will retry", first: firstSection) {
                     ForEach(Array(retrying.enumerated()), id: \.element.id) { index, item in
                         selectable(item) { PhaseCard(item: item, lane: .retrying, actions: actions(for: item)) }
                             .actReveal(index).actRowTransition(reduce)
@@ -586,7 +590,7 @@ struct ActivityQueueTab: View {
             if let onDeck = split.upNext.first {
                 let rest = Array(split.upNext.dropFirst())
                 let visible = upNextOpen ? rest : Array(rest.prefix(4))
-                section("Up next", split.upNext.count, "next to grab") {
+                section("Up next", split.upNext.count, "next to grab", first: firstSection) {
                     selectable(onDeck) { OnDeckCard(item: onDeck, actions: actions(for: onDeck)) }
                         .actReveal(0)
                     ForEach(Array(visible.enumerated()), id: \.element.id) { index, item in
@@ -606,7 +610,7 @@ struct ActivityQueueTab: View {
                 }
             }
             if !finished.rows.isEmpty {
-                section("Just finished", finished.rows.count, "clears to History in ~20s") {
+                section("Just finished", finished.rows.count, "clears to History in ~20s", first: firstSection) {
                     ForEach(Array(finished.rows.enumerated()), id: \.element.id) { index, entry in
                         JustFinishedRow(entry: entry).actReveal(index).actRowTransition(reduce)
                     }
@@ -620,11 +624,12 @@ struct ActivityQueueTab: View {
         }
     }
 
-    private func section<C: View>(_ title: String, _ count: Int, _ hint: String, @ViewBuilder content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ActSection(title: title, count: count)
-            content()
-        }
+    /// A section as flat children: its header, then each card (10pt apart; sections 24pt apart).
+    @ViewBuilder
+    private func section<C: View>(_ title: String, _ count: Int, _ hint: String, first: String,
+                                  @ViewBuilder content: () -> C) -> some View {
+        ActSection(title: title, count: count).padding(.top, title == first ? 0 : 24)
+        Group { content() }.padding(.top, 10)
     }
 
     @ViewBuilder
