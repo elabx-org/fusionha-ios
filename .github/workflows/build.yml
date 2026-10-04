@@ -305,8 +305,9 @@ jobs:
 
   # Drives the app through Activity (History at 1000+ events, Queue, Blocklist,
   # Tasks, Audit, Indexers) and Wanted against the mock server in volume mode,
-  # with the DEBUG perf probe (App/Debug/PerfProbe.swift) and `sample` call
-  # graphs of the main thread, then prints hitches, main-thread hangs, CPU and the heaviest symbols.
+  # with the DEBUG perf probe (App/Debug/PerfProbe.swift) and its in-app
+  # main-thread sampler, then prints hitches, main-thread hangs, CPU and the
+  # heaviest symbols per phase.
   # Optimised build (Release) with DEBUG set so the probe and mock hooks exist.
   perf:
     name: Activity perf
@@ -365,35 +366,19 @@ jobs:
           OUT=$(xcrun simctl launch --terminate-running-process --stderr="$PWD/perf/app.log" --stdout="$PWD/perf/app.out" "$UDID" org.elabx.fusionha)
           echo "$OUT"
           PID=$(echo "$OUT" | awk '{print $NF}')
-          # Sample the main thread (macOS `sample`) during the key phases; the
-          # probe prints `PERF-BEGIN <phase> <seconds>` as each one starts.
-          ( tail -n +1 -F perf/app.log 2>/dev/null | while read -r tag name secs; do
-              [ "$tag" = "PERF-BEGIN" ] || continue
-              echo "$(date +%T) $name $secs pid=$PID" >> perf/watch.log
-              case "$name" in
-                history.load|history.scroll|history.idle|queue.load|queue.idle|blocklist.load|blocklist.scroll|tasks.load|tasks.idle|audit.scroll|indexers.load|history.return|wanted.load|wanted.scroll)
-                  sample "$PID" "$secs" 1 -mayDie -file "perf/sample-$name.txt" > "perf/sample-$name.out" 2>&1 & ;;
-              esac
-            done ) &
-          WATCHER=$!
           for i in $(seq 1 400); do
             grep -q "PERF DONE" perf/app.log 2>/dev/null && break
             sleep 1
           done
-          sleep 3
-          pkill -P $WATCHER 2>/dev/null || true
-          kill $WATCHER 2>/dev/null || true
-          pkill -f "tail -n +1 -F perf/app.log" 2>/dev/null || true
-          ls -la perf; cat perf/watch.log || true
-          for f in perf/sample-*.out; do [ -s "$f" ] && { echo "--- $f"; head -20 "$f"; }; done || true
-          grep "PERF" perf/app.log || true
+          grep "PERF" perf/app.log | grep -v "\"event\":\"stacks\"" || true
           grep -q "PERF DONE" perf/app.log || { echo "::error::perf script did not finish"; tail -50 perf/app.log; exit 1; }
 
       - name: Report
         if: always()
         run: |
-          ARGS="perf/app.log $(ls perf/sample-*.txt 2>/dev/null | tr '\n' ' ')"
-          python3 scripts/perf_report.py $ARGS --json perf/summary.json | tee perf/summary.txt
+          # Swift symbols from the in-app sampler come out mangled.
+          python3 scripts/perf_report.py perf/app.log --json perf/summary.json \
+            | xcrun swift-demangle --simplified | cut -c1-240 | tee perf/summary.txt
           { echo '## Activity perf'; echo '```'; cat perf/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v4

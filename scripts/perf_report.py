@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Summarise an Activity perf run (the CI "Activity perf" job).
 
-    perf_report.py APP_LOG [SAMPLE_TXT ...] [--json OUT]
+    perf_report.py APP_LOG [--json OUT]
 
 APP_LOG holds the `PERF {json}` lines App/Debug/PerfProbe.swift prints per phase
-(frame pacing, main-thread hangs, CPU, memory, view counters). Optional `sample` reports (one per
-phase) add the heaviest main-thread symbols and app frames.
+(frame pacing, main-thread hangs, CPU, memory, view counters) and, per phase, the in-app main-thread
+sampler's heaviest symbols, overall and while the main run loop was stuck.
 Prints a plain-text report (also valid Markdown inside a code fence).
 """
 import collections
@@ -75,82 +75,39 @@ def totals(phases):
     }
 
 
-# MARK: `sample` call graphs
+# MARK: in-app main-thread samples
 
-IDLE = {"mach_msg2_trap", "mach_msg_trap", "__psynch_cvwait", "semaphore_wait_trap", "__semwait_signal",
-        "__workq_kernreturn", "kevent_id", "__ulock_wait", "__ulock_wait2"}
-LINE = re.compile(r"^(?P<prefix>[\s+!:|]*)(?P<count>\d+)\s+(?P<sym>.*?)(?:\s+\(in (?P<lib>[^)]+)\))?(?:\s+\+\s+\S+)?(?:\s+\[[^\]]*\])?(?:\s+\S+:\d+)?\s*$")
-
-
-def short(name, width=110):
-    name = re.sub(r"\s+", " ", name)
-    return name if len(name) <= width else name[: width - 1] + "…"
-
-
-def parse_sample(path):
-    """Main-thread nodes of a `sample` report: [(depth, count, symbol, lib)]."""
-    nodes = []
+def load_stacks(path):
+    out = []
     with open(path, errors="replace") as fh:
-        lines = fh.read().splitlines()
-    start = None
-    for i, line in enumerate(lines):
-        if "com.apple.main-thread" in line:
-            start = i
-            break
-    if start is None:
-        return nodes
-    head = LINE.match(lines[start])
-    base = len(head.group("prefix")) if head else 0
-    for line in lines[start + 1:]:
-        if not line.strip():
-            break
-        m = LINE.match(line)
-        if not m:
-            break
-        depth = len(m.group("prefix"))
-        if depth <= base:
-            break
-        nodes.append((depth, int(m.group("count")), m.group("sym").strip(), m.group("lib") or ""))
-    return nodes, (int(head.group("count")) if head else 0)
+        for line in fh:
+            idx = line.find("PERF {")
+            if idx < 0:
+                continue
+            try:
+                obj = json.loads(line[idx + 5:])
+            except json.JSONDecodeError:
+                continue
+            if obj.get("event") == "stacks":
+                out.append(obj)
+    return out
 
 
-def summarise_sample(path):
-    parsed = parse_sample(path)
-    if not parsed or not parsed[0]:
-        return f"  {path}: no main-thread call graph"
-    nodes, total = parsed
-    self_counts = collections.Counter()
-    incl_app = collections.Counter()
-    incl_ui = collections.Counter()
-    stack = []  # [depth, symbol, lib, own samples]
-    def close(entry):
-        if entry[3] > 0:
-            self_counts[entry[1]] += entry[3]
-    for depth, count, sym, lib in nodes:
-        while stack and stack[-1][0] >= depth:
-            close(stack.pop())
-        if stack:
-            stack[-1][3] -= count
-        if sym not in {e[1] for e in stack}:
-            if lib.startswith("Fusionha"):
-                incl_app[sym] += count
-            elif lib in ("SwiftUI", "SwiftUICore", "AttributeGraph", "UIKitCore", "QuartzCore"):
-                incl_ui[sym] += count
-        stack.append([depth, sym, lib, count])
-    while stack:
-        close(stack.pop())
-    idle = sum(v for k, v in self_counts.items() if k in IDLE)
-    busy = max(total - idle, 0)
-    name = path.rsplit("sample-", 1)[-1].removesuffix(".txt")
-    out = [f"  {name}: {total} main-thread samples, busy {busy} ({100 * busy / max(total, 1):.0f}%)"]
-    for k, v in [kv for kv in self_counts.most_common(40) if kv[0] not in IDLE][:12]:
-        out.append(f"      self {v:6d} {100 * v / max(total, 1):5.1f}%  {short(k, 100)}")
-    for k, v in [kv for kv in incl_app.most_common(20) if kv[1] < total * 0.97][:14]:
-        out.append(f"      app  {v:6d} {100 * v / max(total, 1):5.1f}%  {short(k, 100)}")
-    for k, v in incl_ui.most_common(40):
-        if v < total * 0.97 and v > total * 0.05:
-            out.append(f"      ui   {v:6d} {100 * v / max(total, 1):5.1f}%  {short(k, 100)}")
-    return "\n".join(out[:40])
+def stacks_report(stacks, rows=10):
+    out = []
+    for st in stacks:
+        n, stall = st.get("samples", 0), st.get("stall_samples", 0)
+        if n == 0:
+            continue
+        out.append(f"\n  {st['phase']}: {n} samples (5 ms), {stall} while the main run loop was stuck > 100 ms")
+        for key, label, total in (("self", "self", n), ("app", "app ", n), ("incl", "incl", n),
+                                  ("self_stall", "STALL self", stall), ("app_stall", "STALL app ", stall),
+                                  ("incl_stall", "STALL incl", stall)):
+            if total == 0:
+                continue
+            for name, count in st.get(key, [])[:rows]:
+                out.append(f"      {label} {count:5d} {100 * count / total:5.1f}%  {name}")
+    return "\n".join(out)
 
 
 def main(argv):
@@ -172,14 +129,11 @@ def main(argv):
         print(f"  {k:7s} " + "  ".join(f"{a}={b}" for a, b in v.items()))
     print("\nView counters per phase (count, total ms where timed):")
     print(counters(phases))
-    samples = argv[2:]
-    if samples:
-        print("\nMain-thread samples per phase (macOS `sample`, 1 ms):")
-        for path in samples:
-            try:
-                print(summarise_sample(path))
-            except Exception as exc:  # the probe numbers stand on their own
-                print(f"  {path}: could not be parsed ({exc})")
+    stacks = load_stacks(argv[1])
+    if stacks:
+        print("\nMain-thread samples per phase (self = leaf frame; app/incl = anywhere on the stack;")
+        print("STALL = samples taken while one run-loop pass had lasted > 100 ms):")
+        print(stacks_report(stacks))
     if out_json:
         with open(out_json, "w") as fh:
             json.dump({"phases": phases, "totals": t}, fh, indent=1)
