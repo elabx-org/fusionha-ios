@@ -146,14 +146,16 @@ def discover_rows(query):
     items = items[shift:] + items[:shift]
     if kind == "movie" and lst == "trending":
         items = sorted(items, key=lambda i: i["id"] not in NOT_IN_LIBRARY)
-    return [row(i) for i in items]
+    # Like the server, Discover rows carry `in_library` but no `library_item_id`
+    # (only /search fills it); the app resolves the id from its library list.
+    return [{**row(i), "library_item_id": None, "_id": i["id"]} for i in items]
 
 
 def trailers(query):
     rows = []
     for r in discover_rows(query):
         if r["backdrop_url"]:
-            rows.append({**r, "trailer_key": TRAILER_KEYS.get(r.get("library_item_id") or 0, "n9xhJrPXop4")})
+            rows.append({**r, "trailer_key": TRAILER_KEYS.get(r["_id"] if r["in_library"] else 0, "n9xhJrPXop4")})
     return rows
 
 

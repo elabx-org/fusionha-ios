@@ -203,6 +203,7 @@ jobs:
           shoot discover-07-preview $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PREVIEW=movie/438631
           shoot discover-08-preview-series $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PREVIEW=series/63639
           shoot discover-09-request $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUEST=series/63639/The_Expanse
+          shoot discover-13-open-in-library $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_OPEN=603
           shoot discover-10-requestor SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$R
           shoot discover-11-my-requests SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTOR_TAB=requests
           shoot discover-12-you SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTOR_TAB=you

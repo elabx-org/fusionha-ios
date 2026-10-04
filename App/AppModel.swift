@@ -94,7 +94,21 @@ final class AppModel {
     var requestScoped: Bool { me?.requestScoped == true }
 
     // The library list, shared by Library and the top-bar search.
-    private(set) var library: [MediaItem] = []
+    private(set) var library: [MediaItem] = [] {
+        didSet {
+            var map: [String: Int] = [:]
+            for item in library { if let tmdb = item.tmdbId { map[Self.tmdbKey(tmdb, item.kind)] = item.id } }
+            libraryIdByTmdb = map
+        }
+    }
+    /// TMDB id → library item id (the web's Discover `idByTmdb`). Discover rows
+    /// carry only `in_library`; the server fills `library_item_id` on /search alone.
+    private var libraryIdByTmdb: [String: Int] = [:]
+    private static func tmdbKey(_ tmdbId: Int, _ kind: MediaKind) -> String { "\(kind == .movie ? "m" : "s")\(tmdbId)" }
+    /// The library item for a TMDB result: its own id when sent, else the lookup.
+    func libraryItemId(for result: MediaSearchResult) -> Int? {
+        result.libraryItemId ?? libraryIdByTmdb[Self.tmdbKey(result.tmdbId, result.kind)]
+    }
     private(set) var libraryLoaded = false
     private(set) var libraryError: String?
     /// Bumped whenever `library` changes, so screens can rebuild derived lists.
