@@ -173,6 +173,9 @@ struct AvatarMenu: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
     @State private var showingSettings = SettingsScreenshot.openAtLaunch
+    /// Keychain + App Group probes are synchronous IPC; this menu's body runs on
+    /// every screen, so they are read once, off the main thread.
+    @State private var diagnostics = ""
 
     var body: some View {
         Menu {
@@ -205,7 +208,7 @@ struct AvatarMenu: View {
                     Task { await model.logOut() }
                 }
             }
-            Section("Version \(Bundle.main.appVersion) · \(CredentialStore.diagnostics())") {
+            Section("Version \(Bundle.main.appVersion)\(diagnostics.isEmpty ? "" : " · \(diagnostics)")") {
                 if let server = model.credentials?.serverURL {
                     Button("Open web app", systemImage: "safari") { openURL(server) }
                 }
@@ -225,6 +228,9 @@ struct AvatarMenu: View {
                 .contentShape(Circle())
         }
         .accessibilityLabel(model.attentionCount > 0 ? "Account, \(model.attentionCount) need attention" : "Account")
+        .task(id: model.credentials?.serverURL) {
+            diagnostics = await Task.detached(priority: .utility) { CredentialStore.diagnostics() }.value
+        }
         .fullScreenCover(isPresented: $showingSettings) {
             SettingsView(client: model.client, initialPanel: SettingsScreenshot.panel)
         }

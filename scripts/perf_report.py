@@ -93,7 +93,10 @@ def load_stacks(path):
     return out
 
 
-def stacks_report(stacks, rows=10):
+ROWS = {"self": 12, "app": 14, "incl": 40, "self_stall": 8, "app_stall": 10, "incl_stall": 25}
+
+
+def stacks_report(stacks):
     out = []
     for st in stacks:
         n, stall = st.get("samples", 0), st.get("stall_samples", 0)
@@ -105,7 +108,7 @@ def stacks_report(stacks, rows=10):
                                   ("incl_stall", "STALL incl", stall)):
             if total == 0:
                 continue
-            for name, count in st.get(key, [])[:rows]:
+            for name, count in st.get(key, [])[:ROWS[key]]:
                 out.append(f"      {label} {count:5d} {100 * count / total:5.1f}%  {name}")
     return "\n".join(out)
 

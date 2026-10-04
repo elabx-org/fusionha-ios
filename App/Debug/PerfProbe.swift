@@ -456,7 +456,7 @@ final class MainSampler: @unchecked Sendable {
     }
 
     /// Top self and inclusive symbols since the last reset, for the perf report.
-    func report(limit: Int = 22) -> [String: Any] {
+    func report(limit: Int = 45) -> [String: Any] {
         lock.lock()
         let snapshot = stacks
         let all = total
@@ -491,7 +491,7 @@ final class MainSampler: @unchecked Sendable {
             "samples": all, "stall_samples": stall,
             "self": top(selfAll, cap: Int.max), "self_stall": top(selfStall, cap: Int.max),
             "app": top(appAll, cap: Int(Double(all) * 0.97) + 1), "app_stall": top(appStall, cap: Int(Double(stall) * 0.97) + 1),
-            "incl": top(inclAll, cap: Int(Double(all) * 0.9)), "incl_stall": top(inclStall, cap: Int(Double(stall) * 0.9)),
+            "incl": top(inclAll, cap: Int(Double(all) * 0.6)), "incl_stall": top(inclStall, cap: Int(Double(stall) * 0.6)),
         ]
     }
 }
