@@ -187,7 +187,7 @@ struct MediaVersionsSettingsPanel: View {
                     .buttonStyle(.web())
                 }
                 .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
             } else {
                 SettingsLoadingRow(error: error)
             }

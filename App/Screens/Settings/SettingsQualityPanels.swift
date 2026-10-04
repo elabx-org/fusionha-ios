@@ -74,7 +74,7 @@ struct DefaultProfilesSettingsPanel: View {
                         .foregroundStyle(Theme.mut)
                 }
                 .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 4, trailing: 4))
+                .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
             } else {
                 SettingsLoadingRow(error: error)
             }
@@ -215,7 +215,7 @@ struct ReleaseFiltersSettingsPanel: View {
                     .foregroundStyle(Theme.mut)
             }
             .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20))
 
             if let loadError {
                 SettingsLoadingRow(error: "Couldn't load the release filters. Check the backend and try again. (\(loadError))")
