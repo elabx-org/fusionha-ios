@@ -18,6 +18,7 @@ struct DownloadsEntry: TimelineEntry {
     let rows: [Row]
     let signedIn: Bool
     let failed: Bool
+    var report: String = ""
 
     static let placeholder = DownloadsEntry(
         date: .now, total: 2,
@@ -47,7 +48,8 @@ struct DownloadsProvider: TimelineProvider {
 
     static func fetch(limit: Int) async -> DownloadsEntry {
         guard let client = CredentialStore.client() else {
-            return DownloadsEntry(date: .now, total: 0, rows: [], signedIn: false, failed: false)
+            return DownloadsEntry(date: .now, total: 0, rows: [], signedIn: false, failed: false,
+                                  report: CredentialStore.sharingReport())
         }
         do {
             let page = try await client.queue(pageSize: limit)
@@ -105,6 +107,16 @@ struct DownloadsWidgetView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                // Shows why this widget can't see the app's sign-in (App Group,
+                // team keychain), so a re-signed build can be checked on device.
+                if !entry.report.isEmpty {
+                    Text(entry.report)
+                        .font(.system(size: 8, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.6)
+                }
             }
         } else if family == .systemSmall {
             small
