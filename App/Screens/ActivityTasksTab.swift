@@ -428,7 +428,7 @@ struct ActivityTasksTab: View {
                 }
                 if !recent.isEmpty {
                     sectionLabel("Recent").padding(.top, !running.isEmpty || showSystem ? 22 : 0)
-                    VStack(spacing: 9) {
+                    LazyVStack(spacing: 9) {
                         ForEach(Array(TasksLogic.groupRuns(recent).enumerated()), id: \.element.id) { index, group in
                             RecentGroupView(group: group, tasks: store.tasks)
                                 .actReveal(index, stagger: 0.03)

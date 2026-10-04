@@ -125,14 +125,14 @@ struct ActivityBlocklistTab: View {
                 ActEmpty(message: "No \(category?.label ?? "") releases in the loaded rows.")
             } else if grouped {
                 let groups = Self.group(rows)
-                VStack(spacing: 10) {
+                LazyVStack(spacing: 10) {
                     ForEach(Array(groups.enumerated()), id: \.element.key) { index, group in
                         groupCard(group).actReveal(index).actRowTransition(reduce)
                     }
                 }
                 .animation(reduce ? nil : ActMotion.rows, value: rows.map(\.id))
             } else {
-                VStack(spacing: 10) {
+                LazyVStack(spacing: 10) {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
                         row(entry, nested: false, dupes: 1).actReveal(index).actRowTransition(reduce)
                     }

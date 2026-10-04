@@ -264,8 +264,16 @@ public final class APIClient: @unchecked Sendable {
             case .demoCookie: req.setValue("\(Self.demoCookieName)=\(token)", forHTTPHeaderField: "Cookie")
             }
         }
-        req.timeoutInterval = 20
+        req.timeoutInterval = Self.timeout(for: path)
         return req
+    }
+
+    /// Calls that query the indexers live (interactive search, the decision-engine
+    /// search, 4K checks) routinely take longer than a page read, and the web
+    /// waits for them; everything else fails fast.
+    static func timeout(for path: String) -> TimeInterval {
+        let slow = ["/releases", "/search", "/check-4k", "/refresh"]
+        return slow.contains(where: { path.hasSuffix($0) || path.contains($0 + "/") }) ? 180 : 20
     }
 
     func perform<T: Decodable>(_ req: URLRequest) async throws -> T {

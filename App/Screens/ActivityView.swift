@@ -83,7 +83,7 @@ struct ActivityView: View {
     var body: some View {
         Screen {
             ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
+                LazyVStack(alignment: .leading, spacing: 0) {
                     header
                     ActTabs(items: visibleTabs.map { t in
                         ActTabs<ActivityTab>.Item(value: t, label: label(t),

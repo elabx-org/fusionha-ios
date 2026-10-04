@@ -298,7 +298,7 @@ struct ActivityHistoryTab: View {
                 if shown.isEmpty {
                     ActEmpty(message: "No \(storyFilter.map { $0.label + " " } ?? "")stories in the loaded rows\(feed.hasMore ? " yet — load more below." : ".")")
                 } else {
-                    VStack(alignment: .leading, spacing: 10) {
+                    LazyVStack(alignment: .leading, spacing: 10) {
                         ForEach(Array(shown.enumerated()), id: \.element.id) { index, story in
                             HistoryStoryRow(story: story, onChanged: { Task { await feed.refreshLoaded() } })
                                 .actReveal(index)
@@ -405,7 +405,7 @@ struct ActivityHistoryTab: View {
     @ViewBuilder
     private var rawLog: some View {
         let rows = rawFilter.map { f in feed.items.filter { HistoryLogic.rawFilter($0.eventType) == f } } ?? feed.items
-        VStack(spacing: 0) {
+        LazyVStack(spacing: 0) {
             ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
                 if index > 0 { Rectangle().fill(Theme.line).frame(height: 1) }
                 let meta = HistoryLogic.eventMeta(entry.eventType)

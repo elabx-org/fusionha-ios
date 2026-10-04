@@ -18,6 +18,7 @@ struct InteractiveSearchSheet: View {
     @State private var editionId: Int = 0
     @State private var results: [Int: [ReleasePreview]] = [:]
     @State private var failed: Set<Int> = []
+    @State private var failureReason: [Int: String] = [:]
     @State private var query = ""
     @State private var resolution = "all"
     @State private var proto = "all"
@@ -90,7 +91,8 @@ struct InteractiveSearchSheet: View {
     @ViewBuilder
     private var content: some View {
         if failed.contains(editionId) {
-            EmptyBox(message: "The indexers couldn't be searched. Try again.")
+            EmptyBox(message: "The indexers couldn't be searched. Try again."
+                     + (failureReason[editionId].map { "\n\n\($0)" } ?? ""))
         } else if let releases = results[editionId] {
             let rows = filtered(releases)
             Text("\(rows.count) of \(releases.count) releases")
@@ -190,9 +192,26 @@ struct InteractiveSearchSheet: View {
             if reduce { results[editionId] = releases } else {
                 withAnimation(.easeOut(duration: 0.25)) { results[editionId] = releases }
             }
+        } catch is CancellationError {
+            return
         } catch {
+            if (error as? URLError)?.code == .cancelled { return }
+            failureReason[editionId] = Self.describe(error)
             failed.insert(editionId)
         }
+    }
+
+    /// A short, readable cause under the failure message.
+    private static func describe(_ error: Error) -> String {
+        if let url = error as? URLError {
+            return url.code == .timedOut ? "The indexers took too long to answer." : url.localizedDescription
+        }
+        if case APIError.http(let status, let body) = error {
+            let detail = (try? JSONSerialization.jsonObject(with: Data(body.utf8)) as? [String: Any])?["detail"] as? String
+            return detail.map { "\($0) (HTTP \(status))" } ?? "The server answered HTTP \(status)."
+        }
+        if error is DecodingError { return "The server's answer couldn't be read." }
+        return error.localizedDescription
     }
 
     private func grab(_ release: ReleasePreview, override: Bool) async {
