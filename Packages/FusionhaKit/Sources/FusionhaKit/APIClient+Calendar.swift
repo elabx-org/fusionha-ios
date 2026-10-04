@@ -2,7 +2,7 @@ import Foundation
 
 extension APIClient {
     /// `GET /api/v1/settings` (the subset the Calendar reads).
-    public func settings() async throws -> AppSettings {
+    public func appSettings() async throws -> AppSettings {
         try await get("/api/v1/settings")
     }
 

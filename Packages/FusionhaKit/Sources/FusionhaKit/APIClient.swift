@@ -43,13 +43,13 @@ public final class APIClient: @unchecked Sendable {
     private let authMethod: AuthMethod
     let session: URLSession
 
-    private static let decoder: JSONDecoder = {
+    static let decoder: JSONDecoder = {
         let d = JSONDecoder()
         d.keyDecodingStrategy = .convertFromSnakeCase
         return d
     }()
 
-    private static let encoder: JSONEncoder = {
+    static let encoder: JSONEncoder = {
         let e = JSONEncoder()
         e.keyEncodingStrategy = .convertToSnakeCase
         return e

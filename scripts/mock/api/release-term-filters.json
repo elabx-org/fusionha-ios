@@ -1,0 +1,1 @@
+[{"id":1,"term":"2160p","kind":"required","enabled":true},{"id":2,"term":"/\\b(WEB-?DL|BluRay)\\b/","kind":"required","enabled":true},{"id":3,"term":"CAM","kind":"rejected","enabled":true},{"id":4,"term":"HDTS","kind":"rejected","enabled":true},{"id":5,"term":"/\\bx265-?LQ\\b/","kind":"rejected","enabled":false}]
