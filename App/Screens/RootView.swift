@@ -38,6 +38,7 @@ struct RootView: View {
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Theme.panel)
         }
+        .sheet(isPresented: $model.showingAccount) { AccountSheet().presentationBackground(Theme.bg) }
         .onOpenURL { url in
             // fusionha://activity from the widget and Live Activity.
             if url.host() == "activity" { model.tab = .activity }

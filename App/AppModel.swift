@@ -32,6 +32,8 @@ final class AppModel {
     var searchScope: SearchScope = .library
     var presentedItem: ItemRef?
     var showingAdd = false
+    /// The Account sheet (avatar menu → Account), owned by AccountView.swift.
+    var showingAccount = false
     /// A search result to start the Add sheet with.
     var addPrefill: MediaSearchResult?
 
@@ -67,6 +69,7 @@ final class AppModel {
             }
             presentedItem = env["FUSIONHA_SCREENSHOT_ITEM"].flatMap(Int.init).map(ItemRef.init(id:))
             showingAdd = env["FUSIONHA_SCREENSHOT_ADD"] != nil
+            showingAccount = env["FUSIONHA_SCREENSHOT_ACCOUNT"] != nil
             searchText = env["FUSIONHA_SCREENSHOT_SEARCH"] ?? ""
         } else if env["FUSIONHA_SCREENSHOT_LOGIN"] != nil {
             credentials = nil

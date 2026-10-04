@@ -213,6 +213,13 @@ public struct CalendarEntry: Decodable, Sendable, Hashable {
     public let absoluteNumber: Int?
     public let episodeTitle: String?
     public let editions: [CalendarEdition]
+    /// `theatrical` / `digital` / `physical` for movie releases.
+    public let releaseType: String?
+    /// The precise air instant (UTC) when known; places the entry on its local day.
+    public let airDatetime: String?
+    /// Minutes; makes the air window `9:00 PM – 9:50 PM`.
+    public let runtime: Int?
+    public let backdropUrl: String?
 }
 
 public struct CalendarEdition: Decodable, Sendable, Hashable {

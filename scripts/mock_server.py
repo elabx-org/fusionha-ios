@@ -21,15 +21,51 @@ def load(name):
     return json.loads((MOCK / name).read_text())
 
 
-def calendar_this_month():
+# Day offsets from today for each calendar_all.json entry (same order), plus a
+# UTC air time for episodes relative to now (hours; None = date only). Spreads the
+# demo across this week and month so every view (Month, Week, Forecast, Day,
+# Agenda) has aired, airing-soon and upcoming entries, a season drop and a "now" line.
+CALENDAR_PLAN = [
+    (-9, None), (-13, -320), (-6, -150), (-3, -76), (0, -5), (0, -2), (0, 3),
+    (-2, -50), (-1, -25), (0, -1), (1, 22), (-4, None), (2, 48), (5, 120),
+    (1, 20), (1, 20.5), (1, 21), (3, None), (4, 96), (6, 145), (-7, None),
+    (-11, -260), (-5, -122), (8, 190), (9, 214), (2, None), (12, 290), (13, 314),
+]
+RELEASE_TYPES = {0: "digital", 11: "physical", 17: "theatrical", 20: None, 25: "digital"}
+
+
+def calendar_range(start=None, end=None):
     entries = load("calendar_all.json")
+    now = dt.datetime.now(dt.timezone.utc).replace(second=0, microsecond=0)
     today = dt.date.today()
-    start = today.replace(day=1)
     out = []
     for i, entry in enumerate(entries):
-        day = start + dt.timedelta(days=(i * 3 + 1) % 28)
-        out.append({**entry, "date": day.isoformat()})
-    return out
+        offset, hours = CALENDAR_PLAN[i % len(CALENDAR_PLAN)]
+        item = {**entry, "date": (today + dt.timedelta(days=offset)).isoformat()}
+        if entry["type"] == "episode" and hours is not None:
+            air = now + dt.timedelta(hours=hours)
+            item["air_datetime"] = air.strftime("%Y-%m-%dT%H:%M:%SZ")
+            item["date"] = air.date().isoformat()
+            item["runtime"] = 24 if entry["is_anime"] else 50
+        if entry["type"] == "movie":
+            item["release_type"] = RELEASE_TYPES.get(i)
+        if offset > 0:
+            # Not out yet: nothing downloaded or grabbing for future entries.
+            item["editions"] = [{**ed, "status": "wanted"} for ed in entry["editions"]]
+        out.append(item)
+    if start and end:
+        out = [e for e in out if start <= e["date"] <= end]
+    return sorted(out, key=lambda e: e["date"])
+
+
+def settings():
+    return {
+        "first_day_of_week": 0,
+        "calendar_default_view": "month",
+        "calendar_week_card_style": "landscape",
+        "voice_playful": True,
+        "animations_enabled": True,
+    }
 
 
 def queue():
@@ -90,7 +126,9 @@ class Handler(BaseHTTPRequestHandler):
             "/api/v1/queue": queue,
             "/api/v1/history": lambda: load("history.json"),
             "/api/v1/blocklist": lambda: load("blocklist.json"),
-            "/api/v1/calendar": calendar_this_month,
+            "/api/v1/calendar": lambda: calendar_range(query.get("start", [None])[0], query.get("end", [None])[0]),
+            "/api/v1/settings": settings,
+            "/api/v1/settings/api-key": lambda: {"api_key": "mock-app-api-key"},
             "/api/v1/discover": discover,
             "/api/v1/search": discover,
             "/api/v1/requests": lambda: load("requests.json"),
@@ -110,6 +148,16 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         self.send_json({})
+
+    def do_PUT(self):
+        self.send_json(settings() if self.path.startswith("/api/v1/settings") else {})
+
+    def do_PATCH(self):
+        self.send_json({})
+
+    def do_DELETE(self):
+        self.send_response(204)
+        self.end_headers()
 
     def send_json(self, body, status=200):
         data = json.dumps(body).encode()

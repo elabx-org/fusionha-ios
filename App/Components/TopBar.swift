@@ -105,6 +105,7 @@ struct AvatarMenu: View {
     var body: some View {
         Menu {
             Section(model.me.map { "\($0.username) · \($0.roleLabel)" } ?? "") {
+                Button("Account", systemImage: "person.crop.circle") { model.showingAccount = true }
                 if let server = model.credentials?.serverURL {
                     if !model.requestScoped {
                         Button("Settings", systemImage: "slider.horizontal.3") {
