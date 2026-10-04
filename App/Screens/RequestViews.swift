@@ -72,8 +72,9 @@ enum DiscoverEditionDefaults {
         let root = roots.first { kindMatch($0) && tierMatch($0) } ?? roots.first(where: kindMatch)
             ?? roots.first(where: tierMatch) ?? roots.first
         let profileTier = { (p: QualityProfile) in profileIs4k(p) == wants4k }
-        let profile = (isAnime ? profiles.first { $0.mediaKind == "anime" && profileTier($0) } : nil)
-            ?? profiles.first(where: profileTier) ?? profiles.first
+        let animeProfile: QualityProfile? = isAnime
+            ? profiles.first(where: { $0.mediaKind == "anime" && profileTier($0) }) : nil
+        let profile = animeProfile ?? profiles.first(where: profileTier) ?? profiles.first
         return (slot?.rootFolderId ?? root?.id, slot?.qualityProfileId ?? profile?.id)
     }
 }
@@ -618,7 +619,7 @@ private struct ApprovalQueue: View {
     var body: some View {
         let all = Array(store.requests.reversed())
         VStack(alignment: .leading, spacing: 16) {
-            DiscoverSegmented(options: QueueFilter.allCases.map { f in
+            DiscoverSegmented(options: QueueFilter.allCases.map { f -> (QueueFilter, String) in
                 let count = all.filter { f.matches($0.status) }.count
                 return (f, f == .all || count == 0 ? f.title : "\(f.title) \(count)")
             }, selection: $filter, fullTrack: true)
@@ -644,8 +645,8 @@ private struct ApprovalQueue: View {
                                 }
                             }
                             .discoverReveal(index: index)
-                            .swipeActionsCompat(approve: request.status == "pending" ? { approving = request } : nil,
-                                                reject: request.status == "pending" ? { rejecting = request } : nil)
+                            .approverMenu(enabled: request.status == "pending",
+                                          approve: { approving = request }, reject: { rejecting = request })
                         }
                     }
                 }
@@ -663,8 +664,8 @@ private struct ApprovalQueue: View {
 private extension View {
     /// Rows are not in a List, so a long-press menu stands in for swipe actions.
     @ViewBuilder
-    func swipeActionsCompat(approve: (() -> Void)?, reject: (() -> Void)?) -> some View {
-        if let approve, let reject {
+    func approverMenu(enabled: Bool, approve: @escaping () -> Void, reject: @escaping () -> Void) -> some View {
+        if enabled {
             contextMenu {
                 Button(action: approve) { Label("Approve", systemImage: "checkmark") }
                 Button(role: .destructive, action: reject) { Label("Reject", systemImage: "xmark") }

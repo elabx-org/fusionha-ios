@@ -325,7 +325,7 @@ struct DiscoverView: View {
         if store.requestPick == nil, let raw = env["FUSIONHA_SCREENSHOT_REQUEST"] {
             let parts = raw.split(separator: "/")
             if parts.count == 3, let id = Int(parts[1]) {
-                store.requestPick = MediaSearchResult(
+                store.requestPick = MediaSearchResult.make(
                     tmdbId: id, title: String(parts[2]).replacingOccurrences(of: "_", with: " "), year: nil,
                     kind: parts[0] == "movie" ? .movie : .series, isAnime: false, overview: nil, inLibrary: false,
                     libraryItemId: nil, posterUrl: nil, backdropUrl: nil, date: nil, voteAverage: nil)

@@ -262,21 +262,12 @@ public struct MediaPreviewDetail: Decodable, Sendable, Hashable {
 extension MediaSearchResult {
     /// Builds a row from another endpoint's shape (trailers, previews), so the
     /// Add sheet and the request modal can take it.
-    public init(tmdbId: Int, title: String, year: Int?, kind: MediaKind, isAnime: Bool,
-                overview: String?, inLibrary: Bool, libraryItemId: Int?,
-                posterUrl: String?, backdropUrl: String?, date: String?, voteAverage: Double?) {
-        self.tmdbId = tmdbId
-        self.title = title
-        self.year = year
-        self.kind = kind
-        self.isAnime = isAnime
-        self.overview = overview
-        self.inLibrary = inLibrary
-        self.libraryItemId = libraryItemId
-        self.posterUrl = posterUrl
-        self.backdropUrl = backdropUrl
-        self.date = date
-        self.voteAverage = voteAverage
+    public static func make(tmdbId: Int, title: String, year: Int?, kind: MediaKind, isAnime: Bool,
+                            overview: String?, inLibrary: Bool, libraryItemId: Int?,
+                            posterUrl: String?, backdropUrl: String?, date: String?, voteAverage: Double?) -> MediaSearchResult {
+        MediaSearchResult(tmdbId: tmdbId, title: title, year: year, kind: kind, isAnime: isAnime,
+                          overview: overview, inLibrary: inLibrary, libraryItemId: libraryItemId,
+                          posterUrl: posterUrl, backdropUrl: backdropUrl, date: date, voteAverage: voteAverage)
     }
 
     /// The year, else the first four characters of `date` (web `displayYear`).
