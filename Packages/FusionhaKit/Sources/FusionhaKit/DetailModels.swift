@@ -113,6 +113,8 @@ public struct DetailSettings: Decodable, Sendable, Hashable {
     public let defaultMovieMinimumAvailability: String?
     /// The web's "Animations" switch; off forces reduced motion.
     public let animationsEnabled: Bool?
+    /// Off → indexers aren't searched (the Manual search sheet explains the empty list).
+    public let realIntegrations: Bool?
 }
 
 /// `GET /api/v1/config/editions`: the named edition/version vocabulary.
@@ -214,13 +216,52 @@ public struct ReleasePreview: Decodable, Sendable, Hashable, Identifiable {
     public let ageSeconds: Double?
     public let seeders: Int?
     public let releaseGroup: String?
+    /// Release attributes (freeleech / internal) when a feed exposes them.
+    public let flags: [String]?
     public let blocklisted: Bool?
+    /// Why it was blocklisted, when the server says (the web falls back to a stock line).
+    public let blocklistReason: String?
     public let lowConfidence: Bool?
 
     public var id: String { guid }
     public var protocolName: String { self.protocol ?? "" }
     /// A rejected release can still be grabbed, but only as an override.
     public var rejected: Bool { action == "reject" }
+}
+
+/// `POST /api/v1/library/{id}/releases/grab` → `ReleaseGrabResponse`: only the
+/// grab provenance is read (`interactive`, or `forced` for grab-anyway).
+public struct ReleaseGrabResponse: Decodable, Sendable {
+    public let grabTrigger: String?
+}
+
+/// `GET /api/v1/library/{id}/releases/scope-status` (`ReleaseScopeStatusRead`):
+/// why this scope's automatic search is (or isn't) paused.
+public struct ReleaseScopeStatus: Decodable, Sendable, Hashable {
+    public let backoffActive: Bool?
+    public let backoffNextEligibleAt: String?
+    public let backoffConsecutiveEmpty: Int?
+    public let failedDownloadCount: Int?
+    public let failedGrabCooldownActive: Bool?
+    public let failedGrabCooldownUntil: String?
+    public let lastRunAt: String?
+    public let lastRunReleases: Int?
+    public let lastRunGrabbed: Int?
+    public let lastRunRejected: Int?
+}
+
+/// `GET /api/v1/system/indexers/unavailable` (`IndexerUnavailableSummary`).
+public struct IndexerUnavailableSummary: Decodable, Sendable, Hashable {
+    public let count: Int?
+    public let items: [IndexerUnavailable]?
+}
+
+public struct IndexerUnavailable: Decodable, Sendable, Hashable, Identifiable {
+    public let indexerId: Int
+    public let name: String
+    public let disabledTill: String?
+    public let reason: String?
+    public var id: Int { indexerId }
 }
 
 /// `POST /api/v1/library/{id}/releases/grab`.
