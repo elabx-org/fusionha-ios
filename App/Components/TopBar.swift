@@ -371,7 +371,7 @@ struct OmniSearchView: View {
 
     @ViewBuilder
     private var results: some View {
-        let owned = owned
+        let owned = self.owned
         if !model.requestScoped {
             if owned.total > 0 {
                 groupLabel("In your library", count: owned.total)

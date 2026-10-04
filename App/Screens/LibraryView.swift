@@ -313,7 +313,7 @@ struct LibraryView: View {
 
     private var toolbar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            FlowRow(spacing: 10) {
+            LibraryToolbarRow(spacing: 10) {
                 Button {
                     if model.selectMode { model.exitSelectMode() } else { model.selectMode = true }
                 } label: {
@@ -451,7 +451,7 @@ struct LibraryView: View {
 
 /// Lays out the toolbar's left group with a trailing control pinned right,
 /// wrapping the left group like the web's `flex-wrap` row.
-private struct FlowRow<Leading: View, Trailing: View>: View {
+private struct LibraryToolbarRow<Leading: View, Trailing: View>: View {
     var spacing: CGFloat
     @ViewBuilder var leading: Leading
     @ViewBuilder var trailing: Trailing

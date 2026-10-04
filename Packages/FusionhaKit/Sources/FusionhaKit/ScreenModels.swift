@@ -22,6 +22,19 @@ public struct Rail: Sendable, Hashable {
     public var upcomingDate: String? = nil
     public var upcomingStage: String? = nil
     public var upcomingEstimated: Bool = false
+
+    /// A rail built outside the derivation (previews, the filters sheet's samples).
+    public init(state: RailState, progress: Int, fraction: String?, attention: Bool, deadLinkOnly: Bool,
+                upcomingDate: String? = nil, upcomingStage: String? = nil, upcomingEstimated: Bool = false) {
+        self.state = state
+        self.progress = progress
+        self.fraction = fraction
+        self.attention = attention
+        self.deadLinkOnly = deadLinkOnly
+        self.upcomingDate = upcomingDate
+        self.upcomingStage = upcomingStage
+        self.upcomingEstimated = upcomingEstimated
+    }
 }
 
 extension Edition {
