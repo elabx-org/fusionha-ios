@@ -58,6 +58,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             build
 
       - name: Package IPA
@@ -73,9 +74,29 @@ jobs:
           path: Fusionha.ipa
           retention-days: 14
 
-      - name: Attach IPA to release
-        if: startsWith(github.ref, 'refs/tags/v')
+      # Every push to main (and every v* tag) becomes a GitHub release carrying
+      # the IPA plus a Feather/AltStore source. Feed URL to add in Feather:
+      #   https://github.com/elabx-org/fusionha-ios/releases/latest/download/source.json
+      - name: Prepare release
+        id: release
+        if: github.event_name == 'push'
+        run: |
+          VERSION=$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' project.yml | head -1)
+          BUILD=${{ github.run_number }}
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="build-$BUILD"; fi
+          python3 scripts/make_source.py Fusionha.ipa "$TAG" "$VERSION" "$BUILD" source.json
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "name=fusionha $VERSION (build $BUILD)" >> "$GITHUB_OUTPUT"
+
+      - name: Publish release
+        if: github.event_name == 'push'
         uses: softprops/action-gh-release@v2
         with:
-          files: Fusionha.ipa
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: ${{ steps.release.outputs.name }}
+          target_commitish: ${{ github.sha }}
+          files: |
+            Fusionha.ipa
+            source.json
           generate_release_notes: true
+          make_latest: true
