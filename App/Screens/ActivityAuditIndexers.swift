@@ -178,7 +178,7 @@ struct ActivityAuditTab: View {
             if shown.isEmpty {
                 ActEmpty(message: "No \(filter.map { "\($0.label) " } ?? "")events in the loaded rows\(hasMore ? " yet — load more below." : ".")")
             } else {
-                VStack(alignment: .leading, spacing: 10) {
+                LazyVStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(shown.enumerated()), id: \.element.id) { index, entry in
                         AuditRow(entry: entry)
                             .actReveal(index, stagger: 0.02)

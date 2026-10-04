@@ -519,21 +519,7 @@ enum FetchFormat {
     /// Parses the server's timestamps: ISO-8601 with or without a zone and fraction
     /// (naive values are UTC, like the web's `parseServerDate`).
     static func date(_ iso: String?) -> Date? {
-        guard let iso, !iso.isEmpty else { return nil }
-        let zoned = ISO8601DateFormatter()
-        zoned.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = zoned.date(from: iso) { return d }
-        zoned.formatOptions = [.withInternetDateTime]
-        if let d = zoned.date(from: iso) { return d }
-        let p = DateFormatter()
-        p.locale = Locale(identifier: "en_US_POSIX")
-        p.timeZone = TimeZone(identifier: "UTC")
-        for format in ["yyyy-MM-dd'T'HH:mm:ss.SSSSSS", "yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss",
-                       "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX", "yyyy-MM-dd'T'HH:mm:ssXXXXX"] {
-            p.dateFormat = format
-            if let d = p.date(from: iso) { return d }
-        }
-        return nil
+        Format.timestamp(iso)
     }
 
     /// `just now` / `5m ago` / `3h ago` / `2d ago`.

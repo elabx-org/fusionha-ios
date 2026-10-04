@@ -166,7 +166,7 @@ struct WantedView: View {
     var body: some View {
         Screen(showsAdd: true) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
+                LazyVStack(alignment: .leading, spacing: 0) {
                     header
                     if totals == nil && !totalsFailed {
                         ActEmpty(message: "Loading wanted titles…").padding(.top, 14)
@@ -360,7 +360,7 @@ struct WantedView: View {
         } else if feed.items.isEmpty {
             ActEmpty(message: search.isEmpty ? tab.emptyMessage : "No wanted titles match “\(search)”.")
         } else {
-            VStack(alignment: .leading, spacing: 11) {
+            LazyVStack(alignment: .leading, spacing: 11) {
                 ForEach(Array(feed.items.enumerated()), id: \.element.id) { index, item in
                     WantedCardView(item: item, tab: tab, interval: settings?.seasonSearchIntervalSeconds ?? 5)
                         .actReveal(index)
@@ -393,7 +393,7 @@ struct WantedView: View {
                 }
             }
         } else {
-            VStack(alignment: .leading, spacing: 11) {
+            LazyVStack(alignment: .leading, spacing: 11) {
                 ForEach(Array(fourkFeed.items.enumerated()), id: \.element.id) { index, item in
                     WantedFourKCard(item: item) { addEditionFor = item }
                         .actReveal(index)

@@ -718,7 +718,9 @@ struct ActFooter: View {
                     }
                     .buttonStyle(.plain)
                 }
-                .onAppear(perform: loadMore)
+                // Infinite scroll like the web's IntersectionObserver: only when the
+                // footer is actually on screen, never just because it was built.
+                .onScrollVisibilityChange(threshold: 0.05) { visible in if visible { loadMore() } }
             } else if total > 0 {
                 HStack(spacing: 8) {
                     hairline
@@ -977,19 +979,7 @@ enum ActFmt {
     static func date(_ iso: String?) -> Date? {
         guard let iso, !iso.isEmpty else { return nil }
         if iso.count == 10 { return Format.day(iso) }
-        if let d = Format.timestamp(iso) { return d }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        if let d = f.date(from: iso) { return d }
-        // Naive UTC with any fraction length.
-        let p = DateFormatter()
-        p.locale = Locale(identifier: "en_US_POSIX")
-        p.timeZone = TimeZone(identifier: "UTC")
-        for format in ["yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX", "yyyy-MM-dd'T'HH:mm:ssXXXXX"] {
-            p.dateFormat = format
-            if let d = p.date(from: iso) { return d }
-        }
-        return nil
+        return Format.timestamp(iso)
     }
 
     /// The web's `relativeTime`: "just now", "5 minutes ago", "3 days ago".
@@ -1021,20 +1011,28 @@ enum ActFmt {
     /// "Oct 4 · 03:52".
     static func dateTime(_ iso: String?) -> String {
         guard let d = date(iso) else { return "" }
+        return dateTimeFormatter.string(from: d)
+    }
+
+    private static let dateTimeFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
         f.dateFormat = "MMM d · HH:mm"
-        return f.string(from: d)
-    }
+        return f
+    }()
 
     /// "15 Mar 2009".
     static func releaseDate(_ iso: String?) -> String {
         guard let d = date(iso) else { return "" }
+        return releaseDateFormatter.string(from: d)
+    }
+
+    private static let releaseDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_GB")
         f.dateFormat = "d MMM yyyy"
-        return f.string(from: d)
-    }
+        return f
+    }()
 
     static func bytes(_ value: Double?) -> String {
         guard let value, value > 0 else { return "—" }
@@ -1185,8 +1183,11 @@ final class ActFeed<Item: Identifiable> {
             let (page, total) = try await fetch(pages + 1, pageSize)
             guard gen == generation else { return }
             let seen = Set(items.map { AnyHashable($0.id) })
-            items += page.filter { !seen.contains(AnyHashable($0.id)) }
-            self.total = total
+            let fresh = page.filter { !seen.contains(AnyHashable($0.id)) }
+            items += fresh
+            // A page that adds nothing (rows shifted while paging) ends the list
+            // instead of asking for the same page forever.
+            self.total = fresh.isEmpty ? items.count : total
             pages += 1
         } catch {}
     }

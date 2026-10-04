@@ -641,19 +641,46 @@ enum Format {
     }
 
     static func timestamp(_ iso: String?) -> Date? {
-        guard let iso else { return nil }
+        guard let iso, !iso.isEmpty else { return nil }
+        // Lists parse the same strings over and over (sorting, relative times),
+        // and building formatters is slow: parse each string once.
+        if let hit = parsed.object(forKey: iso as NSString) { return hit as Date }
+        var date = isoFractional.date(from: iso) ?? isoPlain.date(from: iso)
+        if date == nil {
+            // The server sends naive UTC timestamps (no zone): treat them as UTC.
+            for f in naiveUTC { if let d = f.date(from: iso) { date = d; break } }
+        }
+        if let date { parsed.setObject(date as NSDate, forKey: iso as NSString) }
+        return date
+    }
+
+    private static let parsed: NSCache<NSString, NSDate> = {
+        let c = NSCache<NSString, NSDate>()
+        c.countLimit = 20_000
+        return c
+    }()
+
+    private static let isoFractional: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = f.date(from: iso) { return d }
-        // The server sends naive UTC timestamps (no zone): treat them as UTC.
-        let p = DateFormatter()
-        p.locale = Locale(identifier: "en_US_POSIX")
-        p.timeZone = TimeZone(identifier: "UTC")
-        for format in ["yyyy-MM-dd'T'HH:mm:ss.SSSSSS", "yyyy-MM-dd'T'HH:mm:ss"] {
-            p.dateFormat = format
-            if let d = p.date(from: iso) { return d }
-        }
-        return nil
+        return f
+    }()
+
+    private static let isoPlain: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
+    private static let naiveUTC: [DateFormatter] = [
+        "yyyy-MM-dd'T'HH:mm:ss.SSSSSS", "yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss",
+        "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX", "yyyy-MM-dd'T'HH:mm:ssXXXXX", "yyyy-MM-dd HH:mm:ss.SSSSSS", "yyyy-MM-dd HH:mm:ss",
+    ].map { format in
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = format
+        return f
     }
 
     static func relative(_ iso: String?) -> String {
