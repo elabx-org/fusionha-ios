@@ -157,6 +157,7 @@ struct LibraryPosterSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
+                .padding(.trailing, 30)
                 .padding(.bottom, 14)
             ScrollView {
                 pageBody
@@ -170,6 +171,19 @@ struct LibraryPosterSheet: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 24)
+        .overlay(alignment: .topTrailing) {
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.mut)
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .padding(.top, 10)
+            .padding(.trailing, 12)
+            .accessibilityLabel("Close")
+        }
         .presentationDetents([.height(min(contentHeight + 116, 640)), .large])
         .presentationDragIndicator(.visible)
         .sensoryFeedback(.selection, trigger: page)

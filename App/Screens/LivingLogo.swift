@@ -32,11 +32,12 @@ struct LivingPose: Equatable {
     }
 
     static func mix(_ a: LivingPose, _ b: LivingPose, _ t: Double) -> LivingPose {
-        func m(_ x: CGFloat, _ y: CGFloat) -> CGFloat { x + (y - x) * CGFloat(t) }
-        func m(_ x: Double, _ y: Double) -> Double { x + (y - x) * t }
-        return LivingPose(dx: m(a.dx, b.dx), dy: m(a.dy, b.dy), rot: m(a.rot, b.rot), scale: m(a.scale, b.scale),
-                          rotY: m(a.rotY, b.rotY), light: m(a.light, b.light), jam: m(a.jam, b.jam),
-                          opacity: m(a.opacity, b.opacity))
+        let tf = CGFloat(t)
+        func mf(_ x: CGFloat, _ y: CGFloat) -> CGFloat { x + (y - x) * tf }
+        func md(_ x: Double, _ y: Double) -> Double { x + (y - x) * t }
+        return LivingPose(dx: mf(a.dx, b.dx), dy: mf(a.dy, b.dy), rot: md(a.rot, b.rot), scale: mf(a.scale, b.scale),
+                          rotY: md(a.rotY, b.rotY), light: md(a.light, b.light), jam: md(a.jam, b.jam),
+                          opacity: md(a.opacity, b.opacity))
     }
 
     /// Copies the masked fields of `other` over this pose.
@@ -250,7 +251,7 @@ final class LivingEngine {
         now = t
         // Tilt: no pointer on a phone, so the mark faces front unless it is listening.
         let target: CGPoint = listening ? CGPoint(x: 0, y: 0.7) : .zero
-        let k = 1 - exp(-dt * 1000 / 160)
+        let k = CGFloat(1 - exp(-dt * 1000 / 160))
         tilt.x += (target.x - tilt.x) * k
         tilt.y += (target.y - tilt.y) * k
         stepSprings(dt * 1000)
@@ -297,8 +298,10 @@ final class LivingEngine {
     private func launch(_ i: Int) {
         let to = tip(i)
         let angle = Double.random(in: 0..<(2 * .pi))
-        let from = CGPoint(x: to.x + cos(angle) * .random(in: 220...360), y: to.y + sin(angle) * .random(in: 160...250))
-        let mid = CGPoint(x: (from.x + to.x) / 2 + .random(in: -70...70), y: min(from.y, to.y) - 60 - .random(in: 0...60))
+        let from = CGPoint(x: to.x + CGFloat(cos(angle)) * CGFloat.random(in: 220...360),
+                           y: to.y + CGFloat(sin(angle)) * CGFloat.random(in: 160...250))
+        let mid = CGPoint(x: (from.x + to.x) / 2 + CGFloat.random(in: -70...70),
+                          y: min(from.y, to.y) - 60 - CGFloat.random(in: 0...60))
         sparks.append(Spark(blade: i, from: from, mid: mid, to: to, start: now, duration: .random(in: 0.9...1.2),
                             color: Self.sparkColors.randomElement()!))
     }
@@ -308,7 +311,7 @@ final class LivingEngine {
         sparks = sparks.compactMap { spark in
             var s = spark
             let u = min(1, (t - s.start) / s.duration)
-            let e = u * u * (3 - 2 * u) * 0.4 + u * u * 0.6
+            let e = CGFloat(u * u * (3 - 2 * u) * 0.4 + u * u * 0.6)
             let q = 1 - e
             let x = q * q * s.from.x + 2 * q * e * s.mid.x + e * e * s.to.x
             let y = q * q * s.from.y + 2 * q * e * s.mid.y + e * e * s.to.y
@@ -730,7 +733,7 @@ struct LivingMark<Caption: View>: View {
                                startPoint: UnitPoint(x: 0, y: 0.4), endPoint: UnitPoint(x: 1, y: 0.6))
                     .frame(width: w * 2.5)
                     // background-position 130% → -30% over a 250%-wide band.
-                    .offset(x: -(1.3 - 1.6 * p) * w * 1.5)
+                    .offset(x: -CGFloat(1.3 - 1.6 * p) * w * 1.5)
             }
             .mask(Image("BrandLogo").resizable().scaledToFit())
             .blendMode(.plusLighter)
@@ -781,7 +784,7 @@ struct LivingMark<Caption: View>: View {
                 p.move(to: spark.trail[j - 1])
                 p.addLine(to: spark.trail[j])
                 let k = Double(j) / Double(n)
-                ctx.stroke(p, with: .color(spark.color.opacity(k * 200 / 255)), lineWidth: 2.2 * k)
+                ctx.stroke(p, with: .color(spark.color.opacity(k * 200 / 255)), lineWidth: CGFloat(2.2 * k))
             }
             if let head = spark.trail.last {
                 let glow = Path(ellipseIn: CGRect(x: head.x - 7, y: head.y - 7, width: 14, height: 14))
@@ -816,7 +819,7 @@ struct LivingMark<Caption: View>: View {
             }
             plain.drawLayer { layer in
                 layer.opacity = q.fade
-                if glow > 0 { layer.addFilter(.shadow(color: Color(hex: 0xA5F3FC).opacity(0.55 * glow), radius: 11 * glow)) }
+                if glow > 0 { layer.addFilter(.shadow(color: Color(hex: 0xA5F3FC).opacity(0.55 * glow), radius: CGFloat(11 * glow))) }
                 layer.draw(image.resizable(), in: rect)
             }
         }
