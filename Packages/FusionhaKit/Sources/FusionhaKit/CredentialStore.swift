@@ -43,11 +43,14 @@ public enum CredentialStore {
     }
 
     public static func load() -> Credentials? {
-        guard let raw = value(serverKey, as: String.self), let url = URL(string: raw),
-              let token = readToken() else { return nil }
-        let id = value(tokenIdKey, as: Int.self)
-        let method = value(methodKey, as: String.self).flatMap(AuthMethod.init(rawValue:)) ?? .apiToken
-        return Credentials(serverURL: url, token: token, tokenId: id, method: method)
+        if let raw = value(serverKey, as: String.self), let url = URL(string: raw), let token = readToken() {
+            let id = value(tokenIdKey, as: Int.self)
+            let method = value(methodKey, as: String.self).flatMap(AuthMethod.init(rawValue:)) ?? .apiToken
+            return Credentials(serverURL: url, token: token, tokenId: id, method: method)
+        }
+        // The widgets land here when the build was signed without the App Group:
+        // the whole sign-in is also kept as one record in the team keychain.
+        return readRecord()
     }
 
     public static func save(_ credentials: Credentials) {
@@ -57,6 +60,7 @@ public enum CredentialStore {
             store.set(credentials.method.rawValue, forKey: methodKey)
         }
         writeToken(credentials.token)
+        writeRecord(credentials)
     }
 
     public static func clear() {
@@ -66,6 +70,7 @@ public enum CredentialStore {
             store.removeObject(forKey: methodKey)
         }
         for query in queries { SecItemDelete(query as CFDictionary) }
+        for query in recordQueries { SecItemDelete(query as CFDictionary) }
     }
 
     /// Where the sign-in actually landed, for the avatar menu: whether this build
@@ -80,7 +85,13 @@ public enum CredentialStore {
             return SecItemCopyMatching(q as CFDictionary, nil) == errSecSuccess
         }
         let shared = found.first == true && queries.count > 1
+        let team = teamGroup.map { group in
+            var q = recordQuery(group: group)
+            q[kSecMatchLimit as String] = kSecMatchLimitOne
+            return SecItemCopyMatching(q as CFDictionary, nil) == errSecSuccess
+        } ?? false
         return "App Group \(group ? "on" : "off") · token \(shared ? "shared" : (found.contains(true) ? "app only" : "missing"))"
+            + " · widgets \(group || team ? "on" : "off")"
     }
 
     public static func client() -> APIClient? {
@@ -132,5 +143,81 @@ public enum CredentialStore {
             q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
             SecItemAdd(q as CFDictionary, nil)
         }
+    }
+
+    // MARK: Shared record (team keychain)
+
+    private static let recordService = "org.elabx.fusionha.credentials"
+
+    /// A keychain access group every target signed by the same team can use,
+    /// whatever the App Group situation: re-signing tools give the app and its
+    /// extensions the profile's `TEAMID.*` keychain groups. The team prefix is
+    /// read from this process's default access group.
+    static let teamGroup: String? = {
+        let probe: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: "org.elabx.fusionha.probe",
+            kSecAttrAccount as String: "probe",
+        ]
+        var attrs = probe
+        attrs[kSecReturnAttributes as String] = true
+        var out: CFTypeRef?
+        var status = SecItemCopyMatching(attrs as CFDictionary, &out)
+        if status == errSecItemNotFound {
+            var add = probe
+            add[kSecValueData as String] = Data("1".utf8)
+            add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+            add[kSecReturnAttributes as String] = true
+            status = SecItemAdd(add as CFDictionary, &out)
+        }
+        guard status == errSecSuccess, let dict = out as? [String: Any],
+              let group = dict[kSecAttrAccessGroup as String] as? String,
+              let prefix = group.split(separator: ".").first, prefix.count == 10 else { return nil }
+        return "\(prefix).org.elabx.fusionha.shared"
+    }()
+
+    private static func recordQuery(group: String?) -> [String: Any] {
+        var q: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: recordService,
+            kSecAttrAccount as String: "credentials",
+        ]
+        if let group { q[kSecAttrAccessGroup as String] = group }
+        return q
+    }
+
+    /// The App Group and the team group; whichever this signature allows.
+    private static var recordQueries: [[String: Any]] {
+        var groups: [String] = []
+        #if os(iOS)
+        groups.append(appGroup)
+        #endif
+        if let teamGroup { groups.append(teamGroup) }
+        return groups.map(recordQuery(group:))
+    }
+
+    private static func writeRecord(_ credentials: Credentials) {
+        guard let data = try? JSONEncoder().encode(credentials) else { return }
+        for base in recordQueries {
+            SecItemDelete(base as CFDictionary)
+            var q = base
+            q[kSecValueData as String] = data
+            q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+            SecItemAdd(q as CFDictionary, nil)
+        }
+    }
+
+    private static func readRecord() -> Credentials? {
+        for base in recordQueries {
+            var q = base
+            q[kSecReturnData as String] = true
+            q[kSecMatchLimit as String] = kSecMatchLimitOne
+            var out: CFTypeRef?
+            if SecItemCopyMatching(q as CFDictionary, &out) == errSecSuccess, let data = out as? Data,
+               let credentials = try? JSONDecoder().decode(Credentials.self, from: data) {
+                return credentials
+            }
+        }
+        return nil
     }
 }

@@ -98,8 +98,14 @@ struct DownloadsWidgetView: View {
 
     var body: some View {
         if !entry.signedIn {
-            Label("Sign in to fusionha", systemImage: "person.crop.circle.badge.exclamationmark")
-                .font(.caption)
+            VStack(spacing: 4) {
+                Label("Sign in to fusionha", systemImage: "person.crop.circle.badge.exclamationmark")
+                    .font(.caption)
+                Text("Open the app once to share your sign-in.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
         } else if family == .systemSmall {
             small
         } else {

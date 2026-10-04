@@ -71,6 +71,8 @@ targets:
         aps-environment: development
         com.apple.security.application-groups:
           - group.org.elabx.fusionha
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)org.elabx.fusionha.shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha
@@ -105,6 +107,8 @@ targets:
       properties:
         com.apple.security.application-groups:
           - group.org.elabx.fusionha
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)org.elabx.fusionha.shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.widgets
@@ -126,6 +130,13 @@ targets:
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
+    entitlements:
+      path: NotificationService/FusionhaNotificationService.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.org.elabx.fusionha
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)org.elabx.fusionha.shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.notification-service
