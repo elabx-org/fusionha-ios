@@ -153,9 +153,9 @@ struct LibraryView: View {
                                 railMetrics.stageY = y
                             }
                         content
+                            .padding(.trailing, showsRail ? 34 : 0)
                     }
                     .padding(.horizontal, Theme.pageGutter)
-                    .padding(.trailing, showsRail ? 42 : 0)
                     .padding(.top, 20)
                     .padding(.bottom, 90)
                 }

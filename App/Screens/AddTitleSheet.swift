@@ -52,6 +52,19 @@ struct AddTitleSheet: View {
             .animation(motion ? .snappy(duration: 0.3) : nil, value: configuring)
         }
         .scrollDismissesKeyboard(.interactively)
+        .overlay(alignment: .topTrailing) {
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.mut)
+                    .frame(width: 36, height: 36)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(PressScaleStyle(scale: 0.9))
+            .accessibilityLabel("Close")
+            .padding(.top, 12)
+            .padding(.trailing, 10)
+        }
         .background(Theme.panel)
         .presentationDetents([.fraction(0.88), .large])
         .onAppear {
@@ -117,6 +130,7 @@ struct AddTitleSheet: View {
             Text(title).font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.txt)
             Text(sub).font(.system(size: 13)).foregroundStyle(Theme.mut)
         }
+        .padding(.trailing, 30)
         .padding(.bottom, 4)
     }
 
@@ -489,7 +503,7 @@ private struct AddListRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
                 (Text(result.title).foregroundStyle(Theme.txt)
-                    + Text(result.year.map { "  \($0)" } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
+                    + Text(result.year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
                     .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)
                 Text("\(kindName(result)) · via TMDB").font(.system(size: 12)).foregroundStyle(Theme.mut)
@@ -528,7 +542,7 @@ private struct TvdbRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
                 (Text(result.title).foregroundStyle(Theme.txt)
-                    + Text(result.year.map { "  \($0)" } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
+                    + Text(result.year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
                     .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)
                 Text("Series · via TVDB").font(.system(size: 12)).foregroundStyle(Theme.mut)
@@ -650,7 +664,7 @@ private struct EditionConfigurator: View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 (Text(pick.title).foregroundStyle(Theme.txt)
-                    + Text(pick.year.map { " \($0)" } ?? "").foregroundStyle(Theme.mut))
+                    + Text(pick.year.map { " " + String($0) } ?? "").foregroundStyle(Theme.mut))
                     .font(.system(size: 17, weight: .bold))
                 Text(subtitle)
                 .font(.system(size: 13)).foregroundStyle(Theme.mut)

@@ -134,7 +134,7 @@ struct LibraryPulseCard: View {
 
     private var statsTrigger: some View {
         Button { showingStats = true } label: {
-            Image(systemName: "chart.bar")
+            Image(systemName: "chart.bar.xaxis")
                 .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(Theme.txt)
                 .frame(width: 40, height: 40)
@@ -455,7 +455,7 @@ struct PosterCard: View {
                         Text("·")
                     }
                     KindGlyph(kind: item.kind)
-                    if item.isAnime == true { AnimeChip() }
+                    if item.isAnime == true { AnimeChip().fixedSize().layoutPriority(1) }
                 }
                 .font(.system(size: 11))
                 .foregroundStyle(monitored ? Theme.mut : Theme.dim)
@@ -788,6 +788,7 @@ struct BulkActionBar: View {
                 Text("\(count) selected").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt)
                 if !visibleIds.isEmpty {
                     Text("of \(visibleIds.count) filtered").font(.system(size: 12.5)).foregroundStyle(Theme.mut)
+                        .lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 if !visibleIds.isEmpty && count < visibleIds.count {
@@ -891,6 +892,8 @@ struct BulkActionBar: View {
             Text(title)
                 .font(.system(size: 12.5, weight: strong ? .bold : .semibold))
                 .foregroundStyle(strong ? Theme.i2 : Theme.txt)
+                .lineLimit(1)
+                .fixedSize()
                 .padding(.horizontal, 9)
                 .frame(height: 30)
                 .contentShape(Rectangle())

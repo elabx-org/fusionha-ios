@@ -345,8 +345,8 @@ struct SignInView: View {
                         }
                     } label: {
                         Text(working && method == nil ? "Entering…" : "Explore the demo")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Theme.mut)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Theme.txt)
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .background(.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                             .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(.white.opacity(0.08)))
@@ -355,7 +355,8 @@ struct SignInView: View {
                     .buttonStyle(PressScaleStyle())
                 }
             }
-            .padding(.top, 18)
+            .padding(.top, 28)
+            .padding(.horizontal, demoOpen && needsCredentials ? 0 : 1)
             .transition(.opacity.combined(with: .offset(y: 8)))
         }
     }

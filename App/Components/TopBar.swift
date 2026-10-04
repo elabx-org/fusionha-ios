@@ -186,7 +186,7 @@ struct AvatarMenu: View {
             }
             if let server = model.credentials?.serverURL, !model.requestScoped {
                 Section {
-                    Button("Settings", systemImage: "gearshape") {
+                    Button("Settings", systemImage: "slider.horizontal.3") {
                         openURL(server.appendingPathComponent("settings"))
                     }
                 }
@@ -581,7 +581,7 @@ private struct OmniRow<Sub: View, Action: View>: View {
                 HStack(spacing: 7) {
                     Circle().fill(dot).frame(width: 7, height: 7)
                     (Text(title).foregroundStyle(Theme.txt)
-                        + Text(year.map { "  \($0)" } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
+                        + Text(year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
                         .font(.system(size: 14, weight: .semibold))
                         .lineLimit(1)
                 }
