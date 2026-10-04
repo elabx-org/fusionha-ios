@@ -366,6 +366,6 @@ extension MediaSearchResult {
     public init(copying other: MediaSearchResult, inLibrary: Bool) {
         self.init(tmdbId: other.tmdbId, title: other.title, year: other.year, kind: other.kind, isAnime: other.isAnime,
                   overview: other.overview, inLibrary: inLibrary, libraryItemId: nil, posterUrl: other.posterUrl,
-                  backdropUrl: other.backdropUrl, voteAverage: other.voteAverage)
+                  backdropUrl: other.backdropUrl, date: other.date, voteAverage: other.voteAverage)
     }
 }

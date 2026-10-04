@@ -170,7 +170,7 @@ struct DetailRailStack: View {
                                     .frame(width: 66, height: 66)
                                     .clipShape(Circle())
                                     .overlay(Circle().strokeBorder(Theme.line))
-                                Text(person.name ?? "")
+                                Text(person.name)
                                     .font(.system(size: 11.5, weight: .semibold))
                                     .foregroundStyle(Theme.txt)
                                     .lineLimit(2)

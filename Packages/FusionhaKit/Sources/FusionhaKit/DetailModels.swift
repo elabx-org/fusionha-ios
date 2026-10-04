@@ -13,12 +13,7 @@ public struct ReleaseWindow: Decodable, Sendable, Hashable {
     public let estimated: Bool?
 }
 
-public struct CastMember: Decodable, Sendable, Hashable {
-    public let name: String?
-    public let character: String?
-    public let profileUrl: String?
-    public let order: Int?
-}
+// `CastMember` is shared with Discover (DiscoverModels.swift).
 
 /// A "More like this" card (TMDB `/similar`).
 public struct SimilarTitle: Decodable, Sendable, Hashable {
