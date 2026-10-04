@@ -184,6 +184,9 @@ struct AvatarMenu: View {
                     .disabled(true)
                 }
             }
+            Section {
+                Button("Account", systemImage: "person.crop.circle") { model.showingAccount = true }
+            }
             if let server = model.credentials?.serverURL, !model.requestScoped {
                 Section {
                     Button("Settings", systemImage: "slider.horizontal.3") {
