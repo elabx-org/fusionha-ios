@@ -29,7 +29,7 @@ struct SecuritySettingsPanel: View {
                         Text("App API key")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(Theme.txt)
-                        StatusPill(text: configured ? "Configured" : "Not set", color: configured ? Theme.done : Theme.dim)
+                        SettingsStatusPill(text: configured ? "Configured" : "Not set", color: configured ? Theme.done : Theme.dim)
                         Spacer(minLength: 0)
                     }
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
@@ -123,7 +123,7 @@ struct SecuritySettingsPanel: View {
 }
 
 /// A small rounded status pill (the web's `.pill`).
-struct StatusPill: View {
+struct SettingsStatusPill: View {
     let text: String
     var color: Color = Theme.done
 
@@ -421,7 +421,7 @@ struct MaintenanceSettingsPanel: View {
                 SettingValueRow(label: "Update status",
                                 description: "The fusionha server this app is connected to. App updates arrive through your Feather source.") {
                     if let serverVersion {
-                        StatusPill(text: "Server v\(serverVersion)")
+                        SettingsStatusPill(text: "Server v\(serverVersion)")
                     } else {
                         MonoText("—")
                     }

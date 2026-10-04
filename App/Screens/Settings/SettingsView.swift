@@ -35,7 +35,6 @@ struct SettingsView: View {
                         SettingsSearchResults(query: query, open: open(hit:))
                     }
                 }
-                .padding(.horizontal, 10)
                 .padding(.top, 8)
                 .padding(.bottom, 64)
             }
