@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import mock_activity
+import mock_add
 import mock_detail
 
 MOCK = Path(__file__).resolve().parent / "mock"
@@ -359,6 +360,9 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         path = url.path.rstrip("/")
         query = parse_qs(url.query)
+        served, body = mock_add.get(path, query, preview, tvdb_search)
+        if served:
+            return self.send_json(body) if body is not None or "preview" not in path else self.send_json({"detail": "Not Found"}, 404)
         hit = mock_activity.handle("GET", path, query)
         if hit is not None:
             return self.send_json(*hit)

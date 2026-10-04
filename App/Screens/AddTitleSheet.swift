@@ -5,14 +5,39 @@ enum MetadataSource: Hashable {
     case tmdb, tvdb
 }
 
-/// The web's Add dialog (AddItemModal.tsx) as a bottom sheet. Step 1 searches
+/// What the Add sheet pushes: the "View details" preview of a title (zooming
+/// out of `zoomId`), from the configure step's hero or a Find tile's eye.
+private struct AddDetailsRoute: Hashable {
+    let route: PreviewRoute
+    let zoomId: String
+}
+
+/// The web's Add dialog (AddItemModal.tsx) as a bottom sheet. Find searches
 /// TMDB (or TVDB for series) with the trending grid while the field is empty;
-/// step 2 configures each quality edition and the title's options, then
-/// `POST /api/v1/library`. Requester accounts get a Request flow instead.
+/// the configure step (Add title v2, `AddConfigView`) sets up each version and
+/// `POST /api/v1/library`. "View details" pushes the title's preview inside
+/// the sheet with a zoom from the hero, and "Continue adding" zooms back to
+/// the same configure state. Requester accounts get a Request flow instead.
 struct AddTitleSheet: View {
+    /// Open straight on this title's configure step (Discover, a preview page).
+    var initialPick: AddPick?
+    /// From a details page: no "View details" link back to it.
+    var hideViewDetails = false
+    /// Discover's session "Add as" provider.
+    var providerOverride: String?
+    /// After a successful add, with the new item's id.
+    var onAdded: ((Int) -> Void)?
+
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @Environment(\.motionEnabled) private var motion
+    @Namespace private var zoomSpace
+    @State private var path = NavigationPath()
+    @State private var flow: AddFlow?
+    @State private var requestPick: MediaSearchResult?
+    @State private var sessionProvider = "auto"
+    @State private var settings: AddSettings?
+    @State private var detent: PresentationDetent = .fraction(0.88)
     @State private var kind: SearchKind = .all
     @State private var source: MetadataSource = .tmdb
     @State private var query = ""
@@ -22,107 +47,199 @@ struct AddTitleSheet: View {
     @State private var trending: [MediaSearchResult] = []
     @State private var trendingState: LoadState = .loading
     @State private var searchState: LoadState = .idle
-    @State private var picked: MediaSearchResult?
-    @State private var tvdbPicked: TvdbSearchResult?
+    @State private var searchMissingKey = false
+    @State private var trendingMissingKey = false
 
     enum LoadState { case idle, loading, loaded, failed }
 
     private var term: String { query.trimmingCharacters(in: .whitespaces) }
-    private var configuring: Bool { picked != nil || tvdbPicked != nil }
+    private var configuring: Bool { flow != nil || requestPick != nil }
+    /// Optimistic while settings load: only an explicit `false` gates.
+    private var tmdbConfigured: Bool { settings?.tmdbConfigured != false }
+    private var tvdbConfigured: Bool { settings?.tvdbConfigured != false }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                if let picked {
-                    if model.requestScoped {
-                        header(title: "Request title", sub: "Pick the quality to request")
-                        RequestConfigurator(result: picked) { dismiss() }
-                    } else {
-                        EditionConfigurator(pick: .tmdb(picked), back: back, added: added)
-                    }
-                } else if let tvdbPicked {
-                    EditionConfigurator(pick: .tvdb(tvdbPicked), back: back, added: added)
-                } else {
-                    searchStep
+        NavigationStack(path: $path) {
+            root
+                .toolbar(.hidden, for: .navigationBar)
+                .navigationDestination(for: AddDetailsRoute.self) { details in
+                    previewPage(details.route)
+                        .modifier(ZoomTransition(id: details.zoomId, namespace: zoomSpace))
                 }
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 22)
-            .padding(.bottom, 30)
-            .animation(motion ? .snappy(duration: 0.3) : nil, value: configuring)
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .overlay(alignment: .topTrailing) {
-            Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Theme.mut)
-                    .frame(width: 36, height: 36)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(PressScaleStyle(scale: 0.9))
-            .accessibilityLabel("Close")
-            .padding(.top, 12)
-            .padding(.trailing, 10)
-        }
-        .background(Theme.panel)
-        .presentationDetents([.fraction(0.88), .large])
-        .onAppear {
-            picked = model.addPrefill
-            model.addPrefill = nil
-            #if DEBUG
-            if picked == nil, let id = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_ADD_PICK"].flatMap(Int.init) {
-                Task {
-                    let list = (try? await model.client?.discover(kind: .all, list: .trending)) ?? []
-                    if let hit = list.first(where: { $0.tmdbId == id }) ?? list.first {
-                        picked = MediaSearchResult(copying: hit, inLibrary: false)
-                    }
+                .navigationDestination(for: PreviewRoute.self) { route in
+                    previewPage(route)
                 }
-            }
-            #endif
         }
+        .presentationDetents([.fraction(0.88), .large], selection: $detent)
+        .onAppear(perform: start)
         .onChange(of: kind) { if kind == .movie { source = .tmdb } }
+        .onChange(of: tvdbConfigured) { if !tvdbConfigured { source = .tmdb } }
         .task(id: kind) { await loadTrending() }
         .task(id: "\(term)|\(kind.rawValue)|\(source == .tvdb)") { await search() }
+        .task { settings = try? await model.client?.addSettings() }
     }
 
-    private func back() {
-        withAnimation(motion ? .snappy : nil) {
-            picked = nil
-            tvdbPicked = nil
+    @ViewBuilder
+    private var root: some View {
+        if let flow {
+            AddConfigView(flow: flow, onSearchAgain: backToSearch, onViewDetails: viewDetailsAction(flow),
+                          onClose: { dismiss() }, onAdded: { added($0, flow: flow) },
+                          zoom: flow.pick.tmdbResult == nil ? nil : (id: heroZoomId(flow), namespace: zoomSpace))
+                .id(flow.pick.key)
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    if let requestPick {
+                        header(title: "Request title", sub: "Pick the quality to request")
+                        RequestConfigurator(result: requestPick) { dismiss() }
+                    } else {
+                        searchStep
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 22)
+                .padding(.bottom, 30)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .overlay(alignment: .topTrailing) {
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.mut)
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(PressScaleStyle(scale: 0.9))
+                .accessibilityLabel("Close")
+                .padding(.top, 8)
+                .padding(.trailing, 6)
+            }
+            .background(Theme.panel)
         }
     }
 
-    private func added(_ id: Int, _ title: String) {
-        model.toast("\(title) added")
-        dismiss()
-        Task {
-            await model.loadLibrary()
+    // MARK: Picks
+
+    private func start() {
+        if let initialPick {
+            sessionProvider = providerOverride ?? "auto"
+            startFlow(initialPick)
+        } else {
+            sessionProvider = model.addProviderOverride ?? "auto"
+            let prefill = model.addPrefill
+            model.addPrefill = nil
+            model.addProviderOverride = nil
+            if let prefill { pick(prefill) }
+        }
+        #if DEBUG
+        screenshotHooks()
+        #endif
+    }
+
+    private func startFlow(_ pick: AddPick) {
+        withAnimation(motion ? .snappy(duration: 0.3) : nil) {
+            flow = AddFlow(pick: pick, client: model.client,
+                           providerOverride: sessionProvider == "auto" ? nil : sessionProvider)
+            detent = .large
+        }
+    }
+
+    private func heroZoomId(_ flow: AddFlow) -> String { "hero-\(flow.pick.key)" }
+
+    /// "View details": a TMDB pick's preview, pushed with a zoom from the hero.
+    /// Not for a TVDB-only pick (no TMDB id), nor from a details page.
+    private func viewDetailsAction(_ flow: AddFlow) -> (() -> Void)? {
+        guard !hideViewDetails, let result = flow.pick.tmdbResult else { return nil }
+        return { path.append(AddDetailsRoute(route: PreviewRoute(result), zoomId: heroZoomId(flow))) }
+    }
+
+    /// The configure step's back: to Find, the box seeded with the title when
+    /// the pick never came from it.
+    private func backToSearch() {
+        let seed = flow?.title ?? requestPick?.title ?? ""
+        if term.isEmpty && !seed.isEmpty { query = TitleYear.display(seed, nil).title }
+        withAnimation(motion ? .snappy(duration: 0.3) : nil) {
+            flow = nil
+            requestPick = nil
+        }
+    }
+
+    private func pick(_ result: MediaSearchResult) {
+        if result.inLibrary, let id = result.libraryItemId, !model.requestScoped {
+            dismiss()
             model.open(id)
+        } else if model.requestScoped {
+            withAnimation(motion ? .snappy(duration: 0.3) : nil) { requestPick = result }
+        } else {
+            startFlow(.tmdb(result))
         }
     }
 
-    // MARK: Step 1
+    private func pickTvdb(_ result: TvdbSearchResult) {
+        if result.inLibrary == true, let id = result.libraryItemId {
+            dismiss()
+            model.open(id)
+        } else {
+            startFlow(.tvdb(result))
+        }
+    }
+
+    /// A Find tile's eye: the title's preview, zooming out of the tile.
+    private func preview(_ result: MediaSearchResult) {
+        path.append(AddDetailsRoute(route: PreviewRoute(result), zoomId: "tile-\(result.id)"))
+    }
+
+    private func isCurrent(_ route: PreviewRoute) -> Bool {
+        guard let result = flow?.pick.tmdbResult else { return false }
+        return PreviewRoute(result) == route
+    }
+
+    private func previewPage(_ route: PreviewRoute) -> some View {
+        PreviewPage(route: route, onAdd: { result in
+            // "Continue adding" goes back to the same configure state; another
+            // title starts its own.
+            if !isCurrent(PreviewRoute(result)) { startFlow(.tmdb(result)) }
+            path = NavigationPath()
+        }, onOpenLibrary: { id in
+            dismiss()
+            model.open(id)
+        }, continueAdding: isCurrent(route))
+    }
+
+    private func added(_ item: AddedTitle, flow: AddFlow) {
+        model.toast("\(flow.title) added")
+        dismiss()
+        Task { await model.loadLibrary() }
+        onAdded?(item.id)
+    }
+
+    // MARK: Find
 
     @ViewBuilder
     private var searchStep: some View {
         header(title: model.requestScoped ? "Request title" : "Add title",
-               sub: "Search TMDB or TVDB, then configure each edition")
+               sub: "Search TMDB or TVDB, then configure each version")
         SegmentedPills(options: SearchKind.allCases.map { ($0, $0.title) }, selection: $kind, style: .plain, fill: true)
         if !model.requestScoped { sourceSegment }
         searchField
-        if !model.requestScoped {
-            HStack(spacing: 5) {
-                Text("Added as")
-                ProviderLogo(provider: model.settings?.metadataProvider ?? "tmdb", compact: true)
-                Text("· your default")
-            }
-            .font(.system(size: 12))
-            .foregroundStyle(Theme.dim)
-            .padding(.leading, 3)
-        }
+        if !model.requestScoped { providerNote }
         sectionRow
         resultsBody
+    }
+
+    /// Which provider a fresh pick is added with: the session override when
+    /// set, else the global default.
+    private var providerNote: some View {
+        let global = settings?.metadataProvider ?? model.settings?.metadataProvider ?? "tmdb"
+        let effective = sessionProvider == "auto" ? global : sessionProvider
+        return HStack(spacing: 5) {
+            Text("Added as")
+            ProviderLogo(provider: effective, compact: true)
+            Text(sessionProvider == "auto" ? "· your default" : "· overridden for this session")
+        }
+        .font(.system(size: 12))
+        .foregroundStyle(Theme.dim)
+        .padding(.leading, 3)
     }
 
     private func header(title: String, sub: String) -> some View {
@@ -146,11 +263,14 @@ struct AddTitleSheet: View {
 
     private func sourceButton(_ value: MetadataSource) -> some View {
         let active = source == value
+        // Shown but unreachable without a TVDB key, so people learn it exists.
+        let locked = value == .tvdb && !tvdbConfigured
         let ring = value == .tmdb ? Theme.indigo.opacity(0.5) : Color(hex: 0x4FB862).opacity(0.55)
         return Button {
             withAnimation(motion ? Motion.indicator : nil) { source = value }
         } label: {
             ProviderLogo(provider: value == .tmdb ? "tmdb" : "tvdb")
+                .opacity(locked ? 0.4 : 1)
                 .frame(maxWidth: .infinity, minHeight: 34)
                 .background {
                     if active {
@@ -162,7 +282,9 @@ struct AddTitleSheet: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .disabled(locked)
         .accessibilityLabel(value == .tmdb ? "Search TMDB" : "Search TVDB")
+        .accessibilityHint(locked ? "Needs a TVDB key → Settings" : "")
     }
 
     private var placeholder: String {
@@ -209,7 +331,7 @@ struct AddTitleSheet: View {
     }
 
     private var sectionCount: Int? {
-        if term.isEmpty { return trendingState == .loaded ? trending.count : nil }
+        if term.isEmpty { return nil }
         guard searchState == .loaded else { return nil }
         return source == .tvdb ? tvdbResults.count : results.count
     }
@@ -221,7 +343,7 @@ struct AddTitleSheet: View {
                 .tracking(1.2)
                 .foregroundStyle(Theme.dim)
                 .lineLimit(1)
-            if let count = sectionCount, count > 0 {
+            if let count = sectionCount {
                 Text("\(count)").font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim)
             }
             Spacer(minLength: 6)
@@ -261,24 +383,34 @@ struct AddTitleSheet: View {
     @ViewBuilder
     private var resultsBody: some View {
         if term.isEmpty {
-            switch trendingState {
-            case .loading, .idle: note("Loading trending titles…")
-            case .failed: note("Could not load trending titles right now.")
-            case .loaded:
-                if trending.isEmpty { note("Nothing trending right now — search above.") } else { tmdbList(trending) }
+            if !tmdbConfigured || trendingMissingKey {
+                MetadataKeyNotice(provider: "tmdb", feature: "Trending")
+            } else {
+                switch trendingState {
+                case .loading, .idle: note("Loading trending titles…")
+                case .failed: note("Could not load trending titles right now.")
+                case .loaded:
+                    if trending.isEmpty { note("Nothing trending right now — search above.") } else { tmdbList(trending) }
+                }
             }
         } else if source == .tvdb {
-            switch searchState {
-            case .loading, .idle: note("Searching TVDB…")
-            case .failed, .loaded:
-                if tvdbResults.isEmpty {
-                    note("No TVDB matches for “\(term)”. TVDB search needs an API key in Settings → Metadata.")
-                } else {
-                    LazyVStack(spacing: 8) {
-                        ForEach(tvdbResults) { result in TvdbRow(result: result) { pickTvdb(result) } }
+            if !tvdbConfigured || searchMissingKey {
+                MetadataKeyNotice(provider: "tvdb", feature: "TVDB search")
+            } else {
+                switch searchState {
+                case .loading, .idle: note("Searching TVDB…")
+                case .failed, .loaded:
+                    if tvdbResults.isEmpty {
+                        note("No TVDB matches for “\(term)”.")
+                    } else {
+                        LazyVStack(spacing: 8) {
+                            ForEach(tvdbResults) { result in TvdbRow(result: result) { pickTvdb(result) } }
+                        }
                     }
                 }
             }
+        } else if !tmdbConfigured || searchMissingKey {
+            MetadataKeyNotice(provider: "tmdb", feature: "TMDB search")
         } else {
             switch searchState {
             case .loading, .idle: note("Searching…")
@@ -293,7 +425,7 @@ struct AddTitleSheet: View {
         if gridView {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: 3), spacing: 14) {
                 ForEach(Array(list.enumerated()), id: \.element.id) { index, result in
-                    AddTile(result: result, pick: { pick(result) }, preview: { preview(result) })
+                    AddTile(result: result, pick: { pick(result) }, preview: { preview(result) }, zoom: zoomSpace)
                         .reveal(index, y: 10, duration: 0.4)
                 }
             }
@@ -315,42 +447,24 @@ struct AddTitleSheet: View {
             .padding(.vertical, 24)
     }
 
-    private func pick(_ result: MediaSearchResult) {
-        if result.inLibrary, let id = result.libraryItemId, !model.requestScoped {
-            dismiss()
-            model.open(id)
-        } else {
-            withAnimation(motion ? .snappy : nil) { picked = result }
-        }
-    }
-
-    private func pickTvdb(_ result: TvdbSearchResult) {
-        if result.inLibrary == true, let id = result.libraryItemId {
-            dismiss()
-            model.open(id)
-        } else {
-            withAnimation(motion ? .snappy : nil) { tvdbPicked = result }
-        }
-    }
-
-    private func preview(_ result: MediaSearchResult) {
-        dismiss()
-        Task {
-            try? await Task.sleep(for: .milliseconds(400))
-            model.openPreview(result)
-        }
-    }
-
     // MARK: Loading
+
+    private static func missingKey(_ error: Error, _ code: String) -> Bool {
+        guard case .http(_, let body) = error as? APIError else { return false }
+        return body.contains(code)
+    }
 
     private func loadTrending() async {
         guard let client = model.client else { return }
         trendingState = .loading
         do {
             trending = try await client.discover(kind: kind, list: .trending)
+            trendingMissingKey = false
             trendingState = .loaded
         } catch {
-            if !Task.isCancelled { trendingState = .failed }
+            if Task.isCancelled { return }
+            trendingMissingKey = Self.missingKey(error, "tmdb_not_configured")
+            trendingState = .failed
         }
     }
 
@@ -365,13 +479,74 @@ struct AddTitleSheet: View {
             } else {
                 results = try await client.search(term: term, kind: kind)
             }
+            searchMissingKey = false
             searchState = .loaded
         } catch {
             if Task.isCancelled { return }
             results = []
             tvdbResults = []
+            searchMissingKey = Self.missingKey(error, source == .tvdb ? "tvdb_not_configured" : "tmdb_not_configured")
             searchState = .failed
         }
+    }
+
+    // MARK: Screenshots
+
+    #if DEBUG
+    /// CI screenshots: open on a trending pick (`…_ADD_PICK=<tmdb id>`, with
+    /// `…_ADD_KIND` for one off the list) or a
+    /// TVDB-only one (`…_ADD_TVDB=<tvdb id>`); `…_ADD_DETAILS` then pushes
+    /// its "View details".
+    private func screenshotHooks() {
+        let env = ProcessInfo.processInfo.environment
+        guard flow == nil, let client = model.client else { return }
+        if let id = env["FUSIONHA_SCREENSHOT_ADD_PICK"].flatMap(Int.init) {
+            Task {
+                let list = (try? await client.discover(kind: .all, list: .trending)) ?? []
+                var hit = list.first { $0.tmdbId == id }
+                if hit == nil, let kind = env["FUSIONHA_SCREENSHOT_ADD_KIND"] {
+                    // A title off the trending list (the upcoming movie).
+                    hit = try? await client.discoverPreview(kind: kind == "movie" ? .movie : .series, tmdbId: id).asSearchResult
+                }
+                if let hit = hit ?? list.first {
+                    startFlow(.tmdb(MediaSearchResult(copying: hit, inLibrary: false)))
+                    if env["FUSIONHA_SCREENSHOT_ADD_DETAILS"] != nil, let flow {
+                        try? await Task.sleep(for: .milliseconds(1200))
+                        viewDetailsAction(flow)?()
+                    }
+                }
+            }
+        } else if let id = env["FUSIONHA_SCREENSHOT_ADD_TVDB"].flatMap(Int.init) {
+            Task {
+                let list = (try? await client.searchTVDB(term: "monster")) ?? []
+                if let hit = list.first(where: { $0.tvdbId == id }) ?? list.first { startFlow(.tvdb(hit)) }
+            }
+        }
+    }
+    #endif
+}
+
+/// The shared "a key is missing" notice (web `KeyMissingNotice`): an amber
+/// wash in place of a feature that needs a TMDB or TVDB key.
+struct MetadataKeyNotice: View {
+    let provider: String
+    let feature: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "key")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.miss)
+            (Text("\(feature) needs a \(provider == "tvdb" ? "TVDB" : "TMDB") key (free) — ")
+             + Text("add one in Settings › Metadata").fontWeight(.semibold).foregroundColor(Theme.txt)
+             + Text("."))
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.mut)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.miss.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -420,6 +595,8 @@ private struct AddTile: View {
     let result: MediaSearchResult
     let pick: () -> Void
     let preview: () -> Void
+    /// The poster is the zoom source for the eye's preview push.
+    var zoom: Namespace.ID?
 
     private var subline: String {
         var parts: [String] = []
@@ -431,10 +608,7 @@ private struct AddTile: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w342"))
-                .aspectRatio(2 / 3, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Theme.line))
+            poster
                 .overlay(alignment: .topLeading) {
                     Image(systemName: result.kind == .movie && !result.isAnime ? "film" : "tv")
                         .font(.system(size: 11, weight: .semibold))
@@ -480,7 +654,8 @@ private struct AddTile: View {
                     }
                 }
             VStack(alignment: .leading, spacing: 2) {
-                Text(result.title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
+                Text(TitleYear.display(result.title, nil).title)
+                    .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
                 Text(subline)
                     .font(.system(size: 11)).foregroundStyle(Theme.mut).lineLimit(1)
             }
@@ -488,6 +663,19 @@ private struct AddTile: View {
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: pick)
+    }
+
+    @ViewBuilder
+    private var poster: some View {
+        let art = PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w342"))
+            .aspectRatio(2 / 3, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Theme.line))
+        if let zoom {
+            art.matchedTransitionSource(id: "tile-\(result.id)", in: zoom)
+        } else {
+            art
+        }
     }
 }
 
@@ -502,8 +690,9 @@ private struct AddListRow: View {
                 .frame(width: 38, height: 52)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
-                (Text(result.title).foregroundStyle(Theme.txt)
-                    + Text(result.year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
+                let shown = TitleYear.display(result.title, result.year)
+                (Text(shown.title).foregroundStyle(Theme.txt)
+                    + Text(shown.year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
                     .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)
                 Text("\(kindName(result)) · via TMDB").font(.system(size: 12)).foregroundStyle(Theme.mut)
@@ -541,8 +730,9 @@ private struct TvdbRow: View {
                 .frame(width: 38, height: 52)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
-                (Text(result.title).foregroundStyle(Theme.txt)
-                    + Text(result.year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
+                let shown = TitleYear.display(result.title, result.year)
+                (Text(shown.title).foregroundStyle(Theme.txt)
+                    + Text(shown.year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
                     .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)
                 Text("Series · via TVDB").font(.system(size: 12)).foregroundStyle(Theme.mut)
@@ -567,521 +757,6 @@ private struct TvdbRow: View {
         }
         .padding(8)
         .panel(Theme.card, radius: 12)
-    }
-}
-
-// MARK: - Step 2 (EditionConfig + the options below it)
-
-enum AddPick {
-    case tmdb(MediaSearchResult)
-    case tvdb(TvdbSearchResult)
-
-    var title: String {
-        switch self {
-        case .tmdb(let r): return r.title
-        case .tvdb(let r): return r.title
-        }
-    }
-
-    var year: Int? {
-        switch self {
-        case .tmdb(let r): return r.year
-        case .tvdb(let r): return r.year
-        }
-    }
-
-    var kind: MediaKind {
-        switch self {
-        case .tmdb(let r): return r.kind
-        case .tvdb: return .series
-        }
-    }
-
-    var tmdbAnime: Bool {
-        if case .tmdb(let r) = self { return r.isAnime }
-        return false
-    }
-}
-
-private struct TierConfig: Equatable {
-    var enabled: Bool
-    var rootId: Int?
-    var profileId: Int?
-    var monitor = "all"
-}
-
-private let monitorOptions: [(String, String)] = [
-    ("all", "All"), ("future", "Future"), ("missing", "Missing"), ("existing", "Existing"), ("recent", "Recent"),
-    ("pilot", "Pilot"), ("firstSeason", "First Season"), ("lastSeason", "Last Season"),
-    ("monitorSpecials", "Monitor Specials"), ("none", "None"),
-]
-
-private let providerOptions: [(String, String)] = [
-    ("auto", "Automatic (Settings default)"), ("tmdb", "TMDB"), ("tvdb", "TVDB"), ("tvmaze", "TVmaze"), ("hybrid", "Hybrid"),
-]
-
-private struct EditionConfigurator: View {
-    @Environment(AppModel.self) private var model
-    @Environment(\.motionEnabled) private var motion
-    let pick: AddPick
-    let back: () -> Void
-    let added: (Int, String) -> Void
-
-    @State private var roots: [RootFolder] = []
-    @State private var profiles: [QualityProfileSummary] = []
-    @State private var hd = TierConfig(enabled: true)
-    @State private var uhd = TierConfig(enabled: false)
-    @State private var seeded = false
-    @State private var folderName = ""
-    @State private var seriesType = "standard"
-    @State private var provider = "auto"
-    @State private var monitor = "all"
-    @State private var minAvail = "announced"
-    @State private var minAvailTouched = false
-    @State private var searchNow = true
-    @State private var adding = false
-    @State private var error: String?
-    @State private var fourK: FourKAvailability?
-    @State private var checkingFourK = false
-    @State private var fourKFailed = false
-
-    private var isSeries: Bool { pick.kind == .series }
-    private var subtitle: String {
-        if case .tvdb = pick { return "Identified via TVDB — no TMDB match found · configure quality editions" }
-        return "Configure quality editions — each is tracked independently"
-    }
-    private var effectiveAnime: Bool { pick.tmdbAnime || (isSeries && seriesType == "anime") }
-    private var derivedFolder: String { pick.year.map { "\(pick.title) (\($0))" } ?? pick.title }
-
-    /// profilesForItem: kindless profiles plus the title's own kind (and anime).
-    private var kindProfiles: [QualityProfileSummary] {
-        var kinds: Set<String> = [pick.kind.rawValue]
-        if effectiveAnime { kinds.insert("anime") }
-        return profiles.filter { $0.mediaKind == nil || kinds.contains($0.mediaKind!) }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 4) {
-                (Text(pick.title).foregroundStyle(Theme.txt)
-                    + Text(pick.year.map { " " + String($0) } ?? "").foregroundStyle(Theme.mut))
-                    .font(.system(size: 17, weight: .bold))
-                Text(subtitle)
-                .font(.system(size: 13)).foregroundStyle(Theme.mut)
-            }
-            .padding(.bottom, 4)
-
-            editionCard(.hd, config: $hd).reveal(0, y: 10)
-            editionCard(.uhd, config: $uhd).reveal(1, y: 10)
-
-            field("Folder name") {
-                TextField("", text: $folderName, prompt: Text(derivedFolder).foregroundStyle(Theme.dim))
-                    .font(.system(size: 15))
-                    .foregroundStyle(Theme.txt)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .padding(.horizontal, 12)
-                    .frame(height: 40)
-                    .panel(Theme.panel2, radius: 11)
-            }
-            VStack(alignment: .leading, spacing: 5) {
-                ForEach([QualityTier.hd, .uhd], id: \.self) { tier in
-                    let config = tier == .hd ? hd : uhd
-                    if config.enabled, let root = roots.first(where: { $0.id == config.rootId }) {
-                        HStack(spacing: 7) {
-                            TierPill(tier: tier)
-                            Text(joinPath(root.path, folderName.isEmpty ? derivedFolder : folderName))
-                                .font(.system(size: 11.5, design: .monospaced))
-                                .foregroundStyle(Theme.mut)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        }
-                    }
-                }
-                Text("Defaults from Settings → Default profiles — change once, applied to every add.")
-                    .font(.system(size: 12)).foregroundStyle(Theme.dim)
-            }
-
-            if isSeries {
-                field("Series type") {
-                    menuPicker(selection: $seriesType, options: [
-                        ("standard", "Standard · S01E05"), ("daily", "Daily · 2020-05-25"), ("anime", "Anime · absolute 005"),
-                    ])
-                }
-                field("Metadata provider") {
-                    menuPicker(selection: $provider, options: providerOptions)
-                }
-                monitorControl
-            } else {
-                field("Minimum availability") {
-                    menuPicker(selection: Binding<String>(get: { minAvail }, set: { minAvail = $0; minAvailTouched = true }),
-                               options: AvailabilityOption.allCases.map { ($0.rawValue, $0.label) })
-                }
-            }
-
-            Toggle(isOn: $searchNow) {
-                Text("Start search for missing on add")
-                    .font(.system(size: 13.5, weight: .semibold))
-                    .foregroundStyle(Theme.txt)
-            }
-            .tint(Theme.indigo)
-            .padding(.horizontal, 13)
-            .padding(.vertical, 10)
-            .panel(Theme.card, radius: 12)
-
-            if let error {
-                Text(error).font(.system(size: 13)).foregroundStyle(Theme.danger)
-            }
-
-            HStack(spacing: 10) {
-                Button(action: back) {
-                    Text("Back")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.txt)
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .panel(Theme.panel2, radius: Theme.radius)
-                }
-                .buttonStyle(PressScaleStyle())
-                Button {
-                    Task { await add() }
-                } label: {
-                    Text(adding ? "Adding…" : (isSeries ? "Add series" : "Add movie"))
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .background(Theme.fusion, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-                }
-                .buttonStyle(PressScaleStyle())
-                .disabled(adding || !canAdd)
-                .opacity(canAdd ? 1 : 0.5)
-            }
-            .padding(.top, 4)
-        }
-        .task { await loadOptions() }
-        .onChange(of: model.settings?.defaultMovieMinimumAvailability, initial: true) {
-            if !minAvailTouched, let value = model.settings?.defaultMovieMinimumAvailability { minAvail = value }
-        }
-        .onAppear {
-            if pick.tmdbAnime { seriesType = "anime" }
-        }
-    }
-
-    private var canAdd: Bool {
-        let tiers = [hd, uhd].filter(\.enabled)
-        return !tiers.isEmpty && tiers.allSatisfy { $0.rootId != nil && $0.profileId != nil }
-    }
-
-    // MARK: Edition card
-
-    private func editionCard(_ tier: QualityTier, config: Binding<TierConfig>) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Circle().fill(tier.color).frame(width: 9, height: 9)
-                Text(tier.chipLabel).font(.system(size: 13.5, weight: .bold)).foregroundStyle(Theme.txt)
-                if tier == .hd {
-                    Text("default")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(Theme.done)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
-                        .background(Theme.done.opacity(0.15), in: Capsule())
-                }
-                Spacer(minLength: 0)
-                Toggle("", isOn: config.enabled.animation(motion ? .snappy : nil))
-                    .labelsHidden()
-                    .tint(tier.color)
-            }
-            if config.wrappedValue.enabled {
-                VStack(alignment: .leading, spacing: 10) {
-                    field("Root folder") {
-                        menuPicker(selection: config.rootId, options: roots.map { ($0.id, $0.path) }, mono: true)
-                    }
-                    field("Quality profile") {
-                        menuPicker(selection: config.profileId, options: kindProfiles.map { ($0.id, $0.name) })
-                    }
-                    if tier == .uhd, case .tmdb = pick { fourKPanel }
-                }
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-        .padding(13)
-        .panel(Theme.card, radius: Theme.radiusLg)
-    }
-
-    /// FourKAvailabilityPanel: a quick indexer probe for a genuine 4K release.
-    private var fourKPanel: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("4K availability").font(.system(size: 12.5, weight: .bold)).foregroundStyle(Theme.txt)
-                Spacer()
-                Button {
-                    Task { await checkFourK() }
-                } label: {
-                    Text(checkingFourK ? "Checking…" : "Quick check 4K availability")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(Theme.i2)
-                }
-                .buttonStyle(.plain)
-                .disabled(checkingFourK)
-            }
-            if let fourK {
-                if fourK.foundUhd == true {
-                    Label {
-                        Text(fourKSummary(fourK))
-                    } icon: {
-                        Image(systemName: "checkmark")
-                    }
-                    .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(Theme.done)
-                    if let tags = fourK.formatTags, !tags.isEmpty {
-                        HStack(spacing: 5) {
-                            ForEach(tags, id: \.self) { tag in
-                                Text(tag.label)
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(Theme.edition)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Theme.edition.opacity(0.14), in: Capsule())
-                            }
-                        }
-                    }
-                } else {
-                    Label("No genuine 4K found right now.", systemImage: "xmark")
-                        .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(Theme.miss)
-                }
-            } else if fourKFailed {
-                Text("Couldn't check 4K availability.").font(.system(size: 12.5)).foregroundStyle(Theme.danger)
-            }
-        }
-        .padding(11)
-        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line))
-    }
-
-    private func fourKSummary(_ result: FourKAvailability) -> String {
-        let n = result.queriedIndexers ?? 0
-        var text = "4K available · seen on \(n) " + (n == 1 ? "indexer" : "indexers")
-        let seasons: [Int] = (result.seasonsSeen ?? []).compactMap { $0 }
-        if isSeries && !seasons.isEmpty {
-            text += " · seasons " + seasons.map { String($0) }.joined(separator: ", ")
-        }
-        return text
-    }
-
-    // MARK: MonitorControl
-
-    private var monitorControl: some View {
-        let all: [(QualityTier, Binding<TierConfig>)] = [(.hd, $hd), (.uhd, $uhd)]
-        let rows = all.filter { $0.1.wrappedValue.enabled }
-        let mixed = rows.contains { $0.1.wrappedValue.monitor != monitor }
-        return VStack(alignment: .leading, spacing: 10) {
-            (Text("Monitoring").foregroundStyle(Theme.txt).fontWeight(.bold)
-                + Text(" · \(pick.title)").foregroundStyle(Theme.mut))
-                .font(.system(size: 13))
-                .lineLimit(1)
-            HStack(spacing: 10) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("All editions").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt)
-                    Text("Sets every tier" + (mixed ? " — one edition differs, so this reads “Mixed”." : "."))
-                        .font(.system(size: 11.5)).foregroundStyle(Theme.mut)
-                }
-                Spacer(minLength: 8)
-                Menu {
-                    ForEach(monitorOptions.indices, id: \.self) { idx in
-                        let value = monitorOptions[idx].0
-                        Button(monitorOptions[idx].1) {
-                            monitor = value
-                            hd.monitor = value
-                            uhd.monitor = value
-                        }
-                    }
-                } label: {
-                    selectLabel(mixed ? "Mixed" : monitorLabel(monitor))
-                }
-            }
-            ForEach(rows.indices, id: \.self) { i in
-                let tier = rows[i].0
-                let config = rows[i].1
-                let override = config.wrappedValue.monitor != monitor
-                HStack(spacing: 8) {
-                    TierPill(tier: tier)
-                    Text(override ? "override" : "follows all")
-                        .font(.system(size: 11.5, weight: .semibold))
-                        .foregroundStyle(override ? Theme.miss : Theme.dim)
-                    if override {
-                        Button { config.wrappedValue.monitor = monitor } label: {
-                            Image(systemName: "arrow.counterclockwise").font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Theme.mut)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Reset to all")
-                    }
-                    Spacer(minLength: 8)
-                    Menu {
-                        ForEach(monitorOptions.indices, id: \.self) { idx in
-                            let value = monitorOptions[idx].0
-                            Button(monitorOptions[idx].1) { config.wrappedValue.monitor = value }
-                        }
-                    } label: {
-                        selectLabel(monitorLabel(config.wrappedValue.monitor))
-                    }
-                }
-                .padding(.leading, 12)
-            }
-        }
-        .padding(13)
-        .panel(Theme.card, radius: Theme.radiusLg)
-    }
-
-    private func monitorLabel(_ value: String) -> String {
-        monitorOptions.first(where: { $0.0 == value })?.1 ?? "—"
-    }
-
-    // MARK: Pieces
-
-    private func field<C: View>(_ label: String, @ViewBuilder _ content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.mut)
-            content()
-        }
-    }
-
-    private func menuPicker<V: Hashable>(selection: Binding<V?>, options: [(V, String)], mono: Bool = false) -> some View {
-        Menu {
-            ForEach(options.indices, id: \.self) { i in
-                Button(options[i].1) { selection.wrappedValue = options[i].0 }
-            }
-        } label: {
-            selectLabel(options.first(where: { $0.0 == selection.wrappedValue })?.1 ?? "Choose…", mono: mono, full: true)
-        }
-    }
-
-    private func menuPicker(selection: Binding<String>, options: [(String, String)]) -> some View {
-        Menu {
-            ForEach(options.indices, id: \.self) { i in
-                Button(options[i].1) { selection.wrappedValue = options[i].0 }
-            }
-        } label: {
-            selectLabel(options.first(where: { $0.0 == selection.wrappedValue })?.1 ?? "—", full: true)
-        }
-    }
-
-    private func selectLabel(_ text: String, mono: Bool = false, full: Bool = false) -> some View {
-        HStack(spacing: 6) {
-            Text(text)
-                .font(mono ? .system(size: 13, design: .monospaced) : .system(size: 13.5, weight: .medium))
-                .foregroundStyle(Theme.txt)
-                .lineLimit(1)
-                .truncationMode(.middle)
-            if full { Spacer(minLength: 4) }
-            Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.mut)
-        }
-        .padding(.horizontal, 12)
-        .frame(height: 38)
-        .frame(maxWidth: full ? .infinity : nil)
-        .panel(Theme.panel2, radius: 10)
-    }
-
-    private func joinPath(_ root: String, _ folder: String) -> String {
-        root.hasSuffix("/") ? root + folder : root + "/" + folder
-    }
-
-    // MARK: Data
-
-    private func loadOptions() async {
-        guard !seeded, let client = model.client else { return }
-        async let rootsCall = client.rootFolders()
-        async let profilesCall = client.qualityProfileSummaries()
-        async let defaultsCall = client.addDefaults()
-        roots = (try? await rootsCall) ?? []
-        profiles = (try? await profilesCall) ?? []
-        let defaults = (try? await defaultsCall) ?? []
-        hd = preset(.hd, current: hd, defaults: defaults)
-        uhd = preset(.uhd, current: uhd, defaults: defaults)
-        seeded = true
-    }
-
-    /// makeDefaults: the saved add-default slot, else a root whose path fits
-    /// the kind and tier, else the first; profiles by 4K-ness.
-    private func preset(_ tier: QualityTier, current: TierConfig, defaults: [AddDefaultSlot]) -> TierConfig {
-        var config = current
-        let resolvedKind = (pick.tmdbAnime || seriesType == "anime") ? "anime" : pick.kind.rawValue
-        let slot = defaults.first { $0.profileKind == resolvedKind && $0.tier == tier }
-        let wants4k = tier == .uhd
-        func matches(_ text: String, _ pattern: String) -> Bool {
-            text.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
-        }
-        func kindMatch(_ r: RootFolder) -> Bool {
-            isSeries ? matches(r.path, "tv|anime|series|show") : matches(r.path, "movie|film")
-        }
-        func tierMatch(_ r: RootFolder) -> Bool { matches(r.path, "4k|2160|uhd") == wants4k }
-        let root = roots.first(where: { kindMatch($0) && tierMatch($0) }) ?? roots.first(where: kindMatch)
-            ?? roots.first(where: tierMatch) ?? roots.first
-        config.rootId = slot?.rootFolderId ?? root?.id
-        func is4k(_ p: QualityProfileSummary) -> Bool {
-            matches(p.name, "4k|2160|uhd|ultra") || (p.allowedQualities ?? []).contains { matches($0, "2160|4k|uhd") }
-        }
-        let list = kindProfiles
-        var profile: QualityProfileSummary? = nil
-        if resolvedKind == "anime" { profile = list.first(where: { $0.mediaKind == "anime" && is4k($0) == wants4k }) }
-        if profile == nil { profile = list.first(where: { is4k($0) == wants4k }) }
-        if profile == nil { profile = list.first }
-        config.profileId = slot?.qualityProfileId ?? profile?.id
-        return config
-    }
-
-    private func checkFourK() async {
-        guard case .tmdb(let result) = pick, let client = model.client else { return }
-        checkingFourK = true
-        fourKFailed = false
-        do {
-            fourK = try await client.checkFourK(FourKAvailabilityRequest(
-                tmdbId: result.tmdbId, title: result.title, kind: result.kind, year: result.year, isAnime: effectiveAnime))
-        } catch {
-            fourKFailed = true
-        }
-        checkingFourK = false
-    }
-
-    private func add() async {
-        guard let client = model.client else { return }
-        adding = true
-        error = nil
-        defer { adding = false }
-        let trimmed = folderName.trimmingCharacters(in: .whitespaces)
-        let folderEdited = !trimmed.isEmpty && trimmed != derivedFolder
-        var editions: [EditionAddBody] = []
-        for (tier, config) in [(QualityTier.hd, hd), (.uhd, uhd)] where config.enabled {
-            guard let root = config.rootId, let profile = config.profileId else { continue }
-            editions.append(EditionAddBody(
-                tier: tier, rootFolderId: root, qualityProfileId: profile,
-                monitor: isSeries && config.monitor != monitor ? config.monitor : nil,
-                folderName: folderEdited ? trimmed : nil))
-        }
-        let body: LibraryAddBody
-        switch pick {
-        case .tmdb(let result):
-            body = LibraryAddBody(
-                title: result.title, kind: result.kind, year: result.year, tmdbId: result.tmdbId, tvdbId: nil,
-                isAnime: effectiveAnime, editions: editions, searchNow: searchNow,
-                monitor: isSeries ? monitor : "all", minimumAvailability: isSeries ? nil : minAvail,
-                seriesType: isSeries ? seriesType : nil,
-                metadataProvider: isSeries && provider != "auto" ? provider : nil)
-        case .tvdb(let result):
-            let global = model.settings?.metadataProvider ?? "tmdb"
-            body = LibraryAddBody(
-                title: result.title, kind: .series, year: result.year, tmdbId: nil, tvdbId: result.tvdbId,
-                isAnime: effectiveAnime, editions: editions, searchNow: searchNow, monitor: monitor,
-                minimumAvailability: nil, seriesType: seriesType,
-                metadataProvider: provider != "auto" ? provider : (global == "tmdb" ? "tvdb" : global))
-        }
-        do {
-            let item = try await client.addItem(body)
-            added(item.id, pick.title)
-        } catch {
-            self.error = "Couldn't add this title. \(error.localizedDescription)"
-            model.toast("Couldn't add \(pick.title)", variant: .error)
-        }
     }
 }
 

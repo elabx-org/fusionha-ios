@@ -131,9 +131,7 @@ struct DiscoverView: View {
         .environment(store)
         .discoverToastOverlay()
         .sheet(item: $store.preview) { route in
-            PreviewSheet(route: route,
-                         onAdd: { result in handOff { model.addPrefill = result; model.showingAdd = true } },
-                         onOpenLibrary: { id in handOff { model.open(id) } })
+            PreviewSheet(route: route, onOpenLibrary: { id in handOff { model.open(id) } })
         }
         .sheet(item: $store.requestPick) { pick in
             RequestModal(pick: pick) { store.requestsVersion += 1 }
@@ -180,7 +178,7 @@ struct DiscoverView: View {
             DiscoverSegmented(options: SearchKind.allCases.map { ($0, $0.title) }, selection: $kind, size: .md)
                 .padding(.bottom, 14)
             if canAdd {
-                Button { model.addPrefill = nil; model.showingAdd = true } label: {
+                Button { model.openAdd(nil, providerOverride: DiscoverSession.shared.providerOverride) } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "magnifyingglass").font(.system(size: 16, weight: .semibold))
                         Text("Search TMDB to add movies, series & anime…")
@@ -680,14 +678,22 @@ struct DiscoverCard: View {
     private var menu: some View {
         if inLibrary {
             if let id = result.libraryItemId {
+                if !model.requestScoped {
+                    Button { model.open(id) } label: { Label("Open", systemImage: "arrow.up.right.square") }
+                }
                 Button { Task { await checkLibrary(id) } } label: {
                     Label(checking ? "Checking…" : "Check for 4K", systemImage: "4k.tv")
                 }
                 .disabled(checking)
             }
         } else {
+            // Add-capable: a tap already opens details, listed first; then the
+            // Add sheet straight on this title, then the pre-add 4K probe (0.4.133).
             if canAdd {
-                Button { store.preview = PreviewRoute(result) } label: { Label("Add to library", systemImage: "plus") }
+                Button { store.preview = PreviewRoute(result) } label: { Label("View details", systemImage: "eye") }
+                Button {
+                    model.openAdd(result, providerOverride: DiscoverSession.shared.providerOverride)
+                } label: { Label("Add to library", systemImage: "plus") }
             } else if canRequest && !alreadyRequested {
                 Button { store.requestPick = result } label: { Label("Request", systemImage: "paperplane") }
             }
@@ -695,7 +701,9 @@ struct DiscoverCard: View {
                 Label(checking ? "Checking…" : "Check for 4K", systemImage: "4k.tv")
             }
             .disabled(checking)
-            Button { store.preview = PreviewRoute(result) } label: { Label("View details", systemImage: "eye") }
+            if !canAdd {
+                Button { store.preview = PreviewRoute(result) } label: { Label("View details", systemImage: "eye") }
+            }
         }
     }
 
