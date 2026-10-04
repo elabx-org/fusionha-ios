@@ -308,7 +308,6 @@ private struct SignInMethodsSheet: View {
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.mut)
                     .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
             }
 
             Section {

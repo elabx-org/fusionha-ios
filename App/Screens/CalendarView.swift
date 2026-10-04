@@ -550,10 +550,17 @@ private struct MonthGridView: View {
                 .font(.system(size: 11, weight: .heavy))
                 .foregroundStyle(isToday ? Theme.grab : Theme.mut)
             ForEach(Array(items.prefix(2).enumerated()), id: \.offset) { _, entry in
-                Button { model.open(entry.itemId) } label: {
-                    MonthPill(entry: entry, now: now)
-                }
-                .buttonStyle(.plain)
+                // The pill never widens the 50pt cell: it overflows and is clipped, so
+                // the title (the only flexible part) collapses first, like the web.
+                Color.clear
+                    .frame(maxWidth: .infinity, minHeight: 18, maxHeight: 18)
+                    .overlay(alignment: .leading) {
+                        Button { model.open(entry.itemId) } label: {
+                            MonthPill(entry: entry, now: now)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .clipped()
             }
             if items.count > 2 {
                 Text("+\(items.count - 2) more")
@@ -594,7 +601,7 @@ private struct MonthPill: View {
             Text(entry.title)
                 .font(.system(size: 10, weight: .semibold))
                 .lineLimit(1)
-                .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                .frame(minWidth: 0, alignment: .leading)
                 .layoutPriority(-1)
             Text(entry.label)
                 .font(.system(size: 10, weight: .bold))
