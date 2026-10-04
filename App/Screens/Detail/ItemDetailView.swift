@@ -50,6 +50,7 @@ struct ItemDetailView: View {
             }
             .task(id: store.detail == nil) {
                 guard store.detail != nil else { return }
+                applyIntent()
                 await screenshotScroll(proxy)
             }
         }
@@ -124,6 +125,22 @@ struct ItemDetailView: View {
     }
 
     private func close() { dismiss() }
+
+    /// What the poster menu asked for when it opened this sheet (read once, then cleared).
+    private func applyIntent() {
+        guard let intent = model.detailIntent, let detail = store.detail else { return }
+        model.detailIntent = nil
+        switch intent {
+        case .edit:
+            store.showingEdit = true
+        case .interactiveSearch(let tier):
+            let editions = tier.map { t in detail.orderedEditions.filter { $0.tier == t } } ?? detail.orderedEditions
+            let picked = editions.isEmpty ? detail.orderedEditions : editions
+            guard !picked.isEmpty else { return }
+            let subtitle = picked.count == 1 ? picked[0].label : "All editions"
+            store.interactive = InteractiveTarget(editionIds: picked.map(\.id), subtitle: subtitle)
+        }
+    }
 
     private func openWeb() {
         guard let server = model.credentials?.serverURL else { return }
