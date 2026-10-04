@@ -21,7 +21,6 @@ struct SignInView: View {
     @State private var plexURL: URL?
     @State private var plexPin: PlexPin?
     @State private var plexTask: Task<Void, Never>?
-    @State private var appeared = false
     @State private var demoOpen = false
     @State private var demoUser = ""
     @State private var demoPass = ""
@@ -32,47 +31,48 @@ struct SignInView: View {
 
     private var status: SetupStatus? { connected?.status }
 
+    /// Reduce Motion, or the server's `animations_enabled` when the app still
+    /// knows it (setup-status doesn't carry it, so a fresh sign-in animates).
+    private var motionOff: Bool { reduceMotion || !model.animationsEnabled }
+
+    /// `login_background` (unknown → aurora, like `resolveBackground`).
+    private var backdropMode: BackdropMode {
+        #if DEBUG
+        if let forced = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_LOGIN_BACKGROUND"], !forced.isEmpty {
+            return BackdropMode(resolving: forced)
+        }
+        #endif
+        return BackdropMode(resolving: status?.loginBackground)
+    }
+
+    /// `login_layout`: "split" puts the backdrop in a hero above a solid form
+    /// panel (the web's ≤760px split); anything else is the centered card.
+    private var isSplit: Bool {
+        #if DEBUG
+        if let forced = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_LOGIN_LAYOUT"], !forced.isEmpty {
+            return forced == "split"
+        }
+        #endif
+        return status?.loginLayout == "split"
+    }
+
     var body: some View {
         ZStack {
-            LoginBackdrop(mode: status?.loginBackground ?? "aurora")
-            GeometryReader { geo in
-            ScrollView {
-                VStack(spacing: 18) {
-                    card
-                    if let connected {
-                        Button {
-                            withAnimation(.snappy) { reset() }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "server.rack")
-                                Text(connected.url.host() ?? connected.url.absoluteString)
-                                Text("·")
-                                Text("Change").foregroundStyle(Theme.cyan)
-                            }
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Theme.mut)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .frame(maxWidth: 384)
-                .padding(.horizontal, 26)
-                .padding(.vertical, 40)
-                .frame(maxWidth: .infinity, minHeight: geo.size.height)
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            .scrollDismissesKeyboard(.interactively)
+            CSSRadialGradient.stage.ignoresSafeArea()
+            if isSplit {
+                splitStage
+            } else {
+                centeredStage
             }
         }
         .overlay(alignment: .bottom) {
             ToastHost().padding(.bottom, 24)
         }
-        .environment(\.motionEnabled, !reduceMotion)
+        .environment(\.motionEnabled, !motionOff)
         .preferredColorScheme(.dark)
         .sheet(item: $plexURL) { url in
             SafariView(url: url).ignoresSafeArea()
         }
-        .onAppear { withAnimation(.spring(duration: 0.9, bounce: 0.25)) { appeared = true } }
         #if DEBUG
         .task {
             // CI screenshots: connect to the mock server and pick a method.
@@ -86,37 +86,98 @@ struct SignInView: View {
         #endif
     }
 
+    // MARK: Layouts
+
+    /// `[data-layout='centered']`: full-bleed backdrop + veil, the glass card
+    /// centred in a 384pt column.
+    private var centeredStage: some View {
+        ZStack {
+            LoginBackdrop(mode: backdropMode, motionOff: motionOff)
+                .ignoresSafeArea()
+            GeometryReader { geo in
+                ScrollView {
+                    VStack(spacing: 18) {
+                        card
+                        changeServer
+                    }
+                    .frame(maxWidth: 384)
+                    .padding(.horizontal, 26)
+                    .padding(.vertical, 40)
+                    .frame(maxWidth: .infinity, minHeight: geo.size.height)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .scrollDismissesKeyboard(.interactively)
+            }
+        }
+    }
+
+    /// `[data-layout='split']` at phone width (`@media (max-width: 760px)`):
+    /// one column, the animated hero (min 190pt) over the solid form panel;
+    /// spare height is shared between the two rows like the CSS grid.
+    private var splitStage: some View {
+        GeometryReader { geo in
+            ScrollView {
+                StretchRows(minHeight: geo.size.height) {
+                    ZStack {
+                        Color(hex: 0x0B0D13)
+                        LoginBackdrop(mode: backdropMode, motionOff: motionOff)
+                        brand(hero: true)
+                            .padding(40)
+                            .loginEntrance(.riseIn(1.0), delay: 0.1)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 190)
+                    .clipped()
+
+                    VStack(spacing: 18) {
+                        VStack(spacing: 0) {
+                            header(centered: false)
+                            content
+                        }
+                        .disabled(working)
+                        changeServer
+                    }
+                    .frame(maxWidth: 340)
+                    .padding(.horizontal, 30)
+                    .padding(.vertical, 40)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(LinearGradient(colors: [Color(red: 19 / 255, green: 21 / 255, blue: 28 / 255).opacity(0.98),
+                                                        Color(red: 12 / 255, green: 13 / 255, blue: 18 / 255).opacity(0.99)],
+                                               startPoint: .top, endPoint: .bottom))
+                    .overlay(alignment: .top) { Rectangle().fill(.white.opacity(0.08)).frame(height: 1) }
+                }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollDismissesKeyboard(.interactively)
+        }
+        .ignoresSafeArea(.container)
+    }
+
+    @ViewBuilder
+    private var changeServer: some View {
+        if let connected {
+            Button {
+                withAnimation(.snappy) { reset() }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "server.rack")
+                    Text(connected.url.host() ?? connected.url.absoluteString)
+                    Text("·")
+                    Text("Change").foregroundStyle(Theme.cyan)
+                }
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Theme.mut)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     // MARK: Card
 
     private var card: some View {
         VStack(spacing: 0) {
-            brand
-            Text(connected == nil ? "Connect to fusionha" : "Welcome back")
-                .font(.system(size: 28, weight: .heavy))
-                .tracking(-0.84)
-                .foregroundStyle(Theme.txt)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 8)
-            Text(connected == nil ? "Enter the address you open the web app at" : "Sign in to continue")
-                .font(.system(size: 14))
-                .foregroundStyle(Theme.mut)
-                .multilineTextAlignment(.center)
-                .padding(.bottom, 26)
-
-            if let connected {
-                if connected.status.needsSetup {
-                    hint("This server hasn't been set up yet. Finish the first-run setup in the web app, then come back.")
-                    Link("Open the web app", destination: connected.url)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Theme.cyan)
-                        .padding(.top, 10)
-                } else {
-                    chooser(url: connected.url, status: connected.status)
-                    demoSection(url: connected.url, status: connected.status)
-                }
-            } else {
-                serverForm
-            }
+            brand(hero: false)
+            header(centered: true)
+            content
         }
         .padding(32)
         .frame(maxWidth: .infinity)
@@ -132,44 +193,72 @@ struct SignInView: View {
                 .strokeBorder(LinearGradient(colors: [.white.opacity(0.06), .clear], startPoint: .top, endPoint: .center))
         }
         .shadow(color: .black.opacity(0.95), radius: 55, y: 40)
-        .offset(y: appeared ? 0 : 22)
-        .scaleEffect(appeared ? 1 : 0.985)
-        .opacity(appeared ? 1 : 0)
+        // `.card { animation: riseIn 0.9s }`
+        .loginEntrance(.riseIn(0.9), delay: 0)
         .disabled(working)
     }
 
+    /// `.title` + `.sub` (centred in the card, left-aligned in split).
+    private func header(centered: Bool) -> some View {
+        VStack(alignment: centered ? .center : .leading, spacing: 0) {
+            Text(connected == nil ? "Connect to fusionha" : "Welcome back")
+                .font(.system(size: 28, weight: .heavy))
+                .tracking(-0.84)
+                .foregroundStyle(Theme.txt)
+                .multilineTextAlignment(centered ? .center : .leading)
+                .padding(.bottom, 8)
+                .loginEntrance(.fadeUp(0.7), delay: 0.42)
+            Text(connected == nil ? "Enter the address you open the web app at" : "Sign in to continue")
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.mut)
+                .multilineTextAlignment(centered ? .center : .leading)
+                .padding(.bottom, 26)
+                .loginEntrance(.fadeUp(0.7), delay: 0.5)
+        }
+        .frame(maxWidth: .infinity, alignment: centered ? .center : .leading)
+    }
+
     @ViewBuilder
-    private var brand: some View {
+    private var content: some View {
+        if let connected {
+            if connected.status.needsSetup {
+                hint("This server hasn't been set up yet. Finish the first-run setup in the web app, then come back.")
+                Link("Open the web app", destination: connected.url)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Theme.cyan)
+                    .padding(.top, 10)
+            } else {
+                chooser(url: connected.url, status: connected.status)
+                    .frame(maxWidth: .infinity)
+                demoSection(url: connected.url, status: connected.status)
+            }
+        } else {
+            serverForm
+        }
+    }
+
+    /// The brand identity block: logo, the letter-by-letter wordmark, tagline.
+    /// The split hero shows it bigger (108pt logo, 20pt wordmark).
+    @ViewBuilder
+    private func brand(hero: Bool) -> some View {
         let showLogo = status?.loginShowLogo ?? true
         let showWordmark = status?.loginShowWordmark ?? false
         let showTagline = status?.loginShowTagline ?? false
         if showLogo || showWordmark || showTagline {
-            VStack(spacing: 12) {
+            VStack(spacing: hero ? 14 : 12) {
                 if showLogo {
-                    Image("BrandLogo")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 56, height: 56)
-                        .shadow(color: Color(red: 139 / 255, green: 92 / 255, blue: 246 / 255).opacity(0.45), radius: 15, y: 12)
-                        .scaleEffect(appeared ? 1 : 0.6)
-                        .phaseAnimator([0, 1]) { view, phase in
-                            view.offset(y: phase == 1 ? -3 : 0)
-                        } animation: { _ in .easeInOut(duration: 2.1) }
-                        .accessibilityLabel("fusionha")
+                    LoginLogo(hero: hero)
                 }
                 if showWordmark {
-                    HStack(spacing: 0) {
-                        Text("FUSION").foregroundStyle(Theme.txt)
-                        Text("HA").foregroundStyle(Theme.loginGradient)
-                    }
-                    .font(.system(size: 15, weight: .semibold))
-                    .tracking(5.1)
+                    LoginWordmark(size: hero ? 20 : 15)
                 }
                 if showTagline {
                     Text("Everything you watch. One library, every quality.")
                         .font(.system(size: 13.5))
+                        .lineSpacing(13.5 * 0.6 - 4)
                         .foregroundStyle(Theme.mut)
                         .multilineTextAlignment(.center)
+                        .loginEntrance(.fadeUp(0.7), delay: 0.56)
                 }
             }
             .padding(.bottom, 22)
@@ -216,13 +305,14 @@ struct SignInView: View {
                 }
                 Group {
                     switch method {
-                    case .fusionha: passwordForm(url: url)
+                    // `.form { animation: fadeUp 0.7s 0.62s }` / `.providers { … 0.74s }`
+                    case .fusionha: passwordForm(url: url).loginEntrance(.fadeUp(0.7), delay: 0.62)
                     case .plex: plexReveal(url: url)
                     case nil:
                         if methods.count > 1 { hint("Choose a method above to continue").padding(.top, 34) }
                     }
                 }
-                .transition(.opacity.combined(with: .offset(y: 8)))
+                .transition(.identity)
             }
             .animation(.spring(duration: 0.4, bounce: 0.2), value: method)
         }
@@ -282,6 +372,7 @@ struct SignInView: View {
                 .frame(maxWidth: .infinity)
                 .background(.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.08)))
+                .loginEntrance(.fadeUp(0.3), delay: 0)
             } else {
                 Button {
                     Task { await startPlex(url: url) }
@@ -297,6 +388,7 @@ struct SignInView: View {
                     .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Theme.plexGold.opacity(0.45)))
                 }
                 .buttonStyle(.plain)
+                .loginEntrance(.fadeUp(0.7), delay: 0.74)
             }
             errorText
         }
@@ -358,6 +450,7 @@ struct SignInView: View {
             .padding(.top, 28)
             .padding(.horizontal, demoOpen && needsCredentials ? 0 : 1)
             .transition(.opacity.combined(with: .offset(y: 8)))
+            .loginEntrance(.fadeUp(0.7), delay: 0.74)
         }
     }
 
@@ -641,76 +734,167 @@ private struct MethodPill: View {
     }
 }
 
-/// The login backdrops (components/login/backdrops.ts): aurora (default), grid,
-/// gradient, solid. The canvas-heavy ones fall back to aurora.
-struct LoginBackdrop: View {
-    let mode: String
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    var body: some View {
-        ZStack {
-            RadialGradient(colors: [Color(hex: 0x101423), Color(hex: 0x07080C)],
-                           center: UnitPoint(x: 0.5, y: 0), startRadius: 0, endRadius: 900)
-            switch mode {
-            case "solid", "none":
-                EmptyView()
-            case "gradient":
-                LinearGradient(colors: [Color(hex: 0x2B2F66), Color(hex: 0x123B46)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                RadialGradient(colors: [Theme.cyan.opacity(0.14), .clear], center: UnitPoint(x: 0.5, y: 0.4),
-                               startRadius: 0, endRadius: 500)
-            case "grid":
-                animated { context, size, t in
-                    let width = Double(size.width), height = Double(size.height)
-                    let gap = max(16, (width / 16).rounded())
-                    var y = gap / 2
-                    var row = 0
-                    while y < height {
-                        var x = gap / 2
-                        var col = 0
-                        while x < width {
-                            let phase = Double((row * 31 + col * 17) % 628) / 100
-                            let alpha = 0.12 + 0.12 * sin(t * 2 + phase)
-                            let mix = x / width
-                            let color = Color(red: (99 + (34 - 99) * mix) / 255, green: (102 + (211 - 102) * mix) / 255,
-                                              blue: (241 + (238 - 241) * mix) / 255)
-                            context.fill(Path(ellipseIn: CGRect(x: x - 1.6, y: y - 1.6, width: 3.2, height: 3.2)),
-                                         with: .color(color.opacity(alpha)))
-                            x += gap
-                            col += 1
-                        }
-                        y += gap
-                        row += 1
-                    }
-                }
-            default:
-                animated { context, size, t in
-                    let w = Double(size.width), h = Double(size.height), mn = min(w, h)
-                    func blob(_ x: Double, _ y: Double, _ r: Double, _ color: Color) {
-                        let rect = CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)
-                        context.fill(Path(ellipseIn: rect),
-                                     with: .radialGradient(Gradient(colors: [color, .clear]),
-                                                           center: CGPoint(x: x, y: y), startRadius: 0, endRadius: r))
-                    }
-                    let ms = t * 1000
-                    blob(w * 0.32 + sin(ms * 0.0006) * w * 0.08, h * 0.36 + cos(ms * 0.0005) * h * 0.12, mn * 0.72,
-                         Color(red: 99 / 255, green: 102 / 255, blue: 241 / 255).opacity(0.5))
-                    blob(w * 0.7 + cos(ms * 0.0007) * w * 0.08, h * 0.66 + sin(ms * 0.0006) * h * 0.12, mn * 0.66,
-                         Color(red: 34 / 255, green: 211 / 255, blue: 238 / 255).opacity(0.45))
-                }
+// MARK: - Entrance choreography (Login.module.css)
+
+enum LoginEntranceKind {
+    /// `riseIn`: opacity 0, translateY(22px) scale(.985), cubic-bezier(.16, 1, .3, 1).
+    case riseIn(Double)
+    /// `fadeUp`: opacity 0, translateY(10px), cubic-bezier(.16, 1, .3, 1).
+    case fadeUp(Double)
+    /// `letterIn`: opacity 0, translateY(18px) rotate(-8deg), 0.6s cubic-bezier(.34, 1.56, .64, 1).
+    case letterIn
+}
+
+/// Plays one of the login's CSS entrance keyframes the first time the view
+/// appears (after `delay`, `animation-fill-mode: both`). Instant when motion is off.
+private struct LoginEntrance: ViewModifier {
+    let kind: LoginEntranceKind
+    let delay: Double
+    @Environment(\.motionEnabled) private var motion
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        let on = shown || !motion
+        content
+            .scaleEffect(on ? 1 : startScale)
+            .rotationEffect(.degrees(on ? 0 : startRotation))
+            .offset(y: on ? 0 : startY)
+            .opacity(on ? 1 : 0)
+            .onAppear {
+                guard motion, !shown else { return }
+                withAnimation(animation.delay(delay)) { shown = true }
             }
-            // The edge vignette that unifies the layers.
-            RadialGradient(stops: [.init(color: .clear, location: 0.4), .init(color: .black.opacity(0.55), location: 1)],
-                           center: UnitPoint(x: 0.5, y: 0.3), startRadius: 0, endRadius: 700)
-        }
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
     }
 
-    private func animated(_ draw: @escaping (GraphicsContext, CGSize, Double) -> Void) -> some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduceMotion)) { timeline in
-            Canvas { context, size in
-                draw(context, size, timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 100_000))
+    private var startY: CGFloat {
+        switch kind {
+        case .riseIn: return 22
+        case .fadeUp: return 10
+        case .letterIn: return 18
+        }
+    }
+
+    private var startScale: CGFloat {
+        if case .riseIn = kind { return 0.985 }
+        return 1
+    }
+
+    private var startRotation: Double {
+        if case .letterIn = kind { return -8 }
+        return 0
+    }
+
+    private var animation: Animation {
+        switch kind {
+        case .riseIn(let d), .fadeUp(let d): return .timingCurve(0.16, 1, 0.3, 1, duration: d)
+        case .letterIn: return .timingCurve(0.34, 1.56, 0.64, 1, duration: 0.6)
+        }
+    }
+}
+
+extension View {
+    func loginEntrance(_ kind: LoginEntranceKind, delay: Double) -> some View {
+        modifier(LoginEntrance(kind: kind, delay: delay))
+    }
+}
+
+/// `.logoImg`: an elastic pop on entry (`logoPop` 0.9s, delay 0.12s), then a
+/// slow breathe + bob at rest (`logoIdle` 4.2s ease-in-out from 1.2s, forever).
+private struct LoginLogo: View {
+    let hero: Bool
+    @Environment(\.motionEnabled) private var motion
+    @State private var popped = false
+    @State private var idleStart: Date?
+
+    var body: some View {
+        let size: CGFloat = hero ? 108 : 56
+        TimelineView(.animation(minimumInterval: nil, paused: idleStart == nil || !motion)) { timeline in
+            let pose = idlePose(at: timeline.date)
+            Image("BrandLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+                .shadow(color: Color(red: 139 / 255, green: 92 / 255, blue: 246 / 255).opacity(hero ? 0.55 : 0.45),
+                        radius: hero ? 23 : 15, y: hero ? 16 : 12)
+                .scaleEffect(pose.scale)
+                .offset(y: pose.y)
+        }
+        .scaleEffect(popped || !motion ? 1 : 0.6)
+        .opacity(popped || !motion ? 1 : 0)
+        .accessibilityLabel("fusionha")
+        .onAppear {
+            guard motion, !popped else { return }
+            withAnimation(.timingCurve(0.34, 1.56, 0.64, 1, duration: 0.9).delay(0.12)) { popped = true }
+            idleStart = Date().addingTimeInterval(1.2)
+        }
+    }
+
+    /// `logoIdle` keyframes: 0% (0, 1) · 30% (-4, 1.035) · 55% (-1, 1.01) · 100% (0, 1),
+    /// each segment eased with `ease-in-out`.
+    private func idlePose(at date: Date) -> (y: CGFloat, scale: CGFloat) {
+        guard motion, let idleStart, date > idleStart else { return (0, 1) }
+        let p = date.timeIntervalSince(idleStart).truncatingRemainder(dividingBy: 4.2) / 4.2
+        let keys: [(at: Double, y: Double, s: Double)] = [(0, 0, 1), (0.3, -4, 1.035), (0.55, -1, 1.01), (1, 0, 1)]
+        for i in 1..<keys.count where p <= keys[i].at {
+            let a = keys[i - 1], b = keys[i]
+            let e = UnitCurve.easeInOut.value(at: (p - a.at) / (b.at - a.at))
+            return (CGFloat(a.y + (b.y - a.y) * e), CGFloat(a.s + (b.s - a.s) * e))
+        }
+        return (0, 1)
+    }
+}
+
+/// `.wordmark`: "fusionha" uppercase with 0.34em tracking, each letter popping in
+/// (`letterIn`, delay 0.34s + i × 0.05s); the last two letters carry the gradient.
+private struct LoginWordmark: View {
+    let size: CGFloat
+    private static let letters = "FUSIONHA".map { String($0) }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Self.letters.indices, id: \.self) { i in
+                Group {
+                    if i >= 6 {
+                        Text(Self.letters[i]).foregroundStyle(Theme.loginGradient)
+                    } else {
+                        Text(Self.letters[i]).foregroundStyle(Theme.txt)
+                    }
+                }
+                .font(.system(size: size, weight: .semibold))
+                .tracking(size * 0.34)
+                .loginEntrance(.letterIn, delay: 0.34 + Double(i) * 0.05)
             }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("fusionha")
+    }
+}
+
+/// A one-column CSS grid with `min-height: 100%`: each row gets its natural
+/// height and the spare height is shared equally (auto tracks stretch).
+private struct StretchRows: Layout {
+    var minHeight: CGFloat
+
+    private func heights(_ width: CGFloat?, _ subviews: Subviews) -> [CGFloat] {
+        subviews.map { $0.sizeThatFits(ProposedViewSize(width: width, height: nil)).height }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width
+        let total = heights(width, subviews).reduce(0, +)
+        return CGSize(width: width ?? 0, height: max(minHeight, total))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rows = heights(bounds.width, subviews)
+        let extra = subviews.isEmpty ? 0 : max(0, bounds.height - rows.reduce(0, +)) / CGFloat(subviews.count)
+        var y = bounds.minY
+        for (i, subview) in subviews.enumerated() {
+            let height = rows[i] + extra
+            subview.place(at: CGPoint(x: bounds.minX, y: y), anchor: .topLeading,
+                          proposal: ProposedViewSize(width: bounds.width, height: height))
+            y += height
         }
     }
 }
