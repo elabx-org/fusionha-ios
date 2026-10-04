@@ -50,8 +50,8 @@ struct AddMonitorStrip: View {
                 }
                 if let hdPreview {
                     AddSeasonList(flow: flow, seasons: seasons,
-                                  bars: [SeasonBar(tier: hdOn ? .hd : .uhd, label: "HD", preview: hdPreview)]
-                                      + (uhdPreview.map { [SeasonBar(tier: .uhd, label: "4K", preview: $0)] } ?? []),
+                                  bars: [AddSeasonBar(tier: hdOn ? .hd : .uhd, label: "HD", preview: hdPreview)]
+                                      + (uhdPreview.map { [AddSeasonBar(tier: .uhd, label: "4K", preview: $0)] } ?? []),
                                   disabled: split || flow.effectiveAnime,
                                   anime: flow.effectiveAnime && !split,
                                   customised: custom ? flow.seasonFrom : [:])
@@ -125,7 +125,7 @@ struct AddMonitorStrip: View {
     }
 }
 
-struct SeasonBar {
+struct AddSeasonBar {
     let tier: QualityTier
     let label: String
     let preview: MonitorPreview
@@ -136,7 +136,7 @@ struct SeasonBar {
 private struct AddSeasonList: View {
     let flow: AddFlow
     let seasons: [SeasonCounts]
-    let bars: [SeasonBar]
+    let bars: [AddSeasonBar]
     let disabled: Bool
     let anime: Bool
     let customised: SeasonFrom
@@ -199,7 +199,7 @@ private struct AddSeasonList: View {
 private struct AddSeasonRow: View {
     let season: SeasonCounts
     let index: Int
-    let bars: [SeasonBar]
+    let bars: [AddSeasonBar]
     let disabled: Bool
     let custom: Bool
     let onToggle: () -> Void
@@ -286,7 +286,7 @@ private struct AddSeasonRow: View {
         .sensoryFeedback(.selection, trigger: sliding?.from)
     }
 
-    private func litSet(_ bar: SeasonBar, first: Bool) -> Set<Int> {
+    private func litSet(_ bar: AddSeasonBar, first: Bool) -> Set<Int> {
         if first, let sliding { return Set(sliding.from..<max(sliding.from, n)) }
         return Set(index < bar.preview.perSeason.count ? bar.preview.perSeason[index].lit : [])
     }
