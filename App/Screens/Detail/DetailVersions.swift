@@ -319,18 +319,27 @@ struct DetailVersionsPanel: View {
     // MARK: Edition filter
 
     private func filterRow(keys: [String], active: String, focused: DetailEdition?) -> some View {
-        HStack(spacing: 8) {
+        let picker = Picker("Edition", selection: Binding(get: { active }, set: { pick($0, focused: focused) })) {
+            Text("All").tag("all")
+            ForEach(keys, id: \.self) { Text(versionLabel($0)).tag($0) }
+        }
+        .pickerStyle(.segmented)
+        .fixedSize()
+        return HStack(spacing: 8) {
             Text("EDITION")
                 .font(.system(size: 10.5, weight: .bold, design: .monospaced))
                 .tracking(1.05)
                 .foregroundStyle(Theme.dim)
-            Picker("Edition", selection: Binding(get: { active }, set: { pick($0, focused: focused) })) {
-                Text("All").tag("all")
-                ForEach(keys, id: \.self) { Text(versionLabel($0)).tag($0) }
+                .fixedSize()
+            // Like the web's wrapping filter row: the segments keep their
+            // natural width and scroll sideways when they outgrow the panel.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 0) {
+                    picker
+                    Spacer(minLength: 0)
+                }
+                ScrollView(.horizontal, showsIndicators: false) { picker }
             }
-            .pickerStyle(.segmented)
-            .fixedSize()
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, 12)
         .padding(.bottom, 10)
@@ -855,7 +864,7 @@ struct DetailVersionDetail: View {
                 }
                 .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.line))
-                .layoutPriority(1.5)
+                .frame(maxWidth: .infinity)
                 InteractiveSearchButton(detail: detail, edition: edition) {
                     barLabel("person", "Choose")
                 }
