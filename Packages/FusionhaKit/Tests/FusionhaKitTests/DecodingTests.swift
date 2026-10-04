@@ -23,10 +23,14 @@ final class DecodingTests: XCTestCase {
     }
 
     func testLibraryDecodesEditionsAndWireStatuses() throws {
-        let items = try decoder.decode([LibraryItem].self, from: fixture("library"))
-        let editions = try XCTUnwrap(items.first?.editions)
-        XCTAssertEqual(editions.map(\.tier), [.hd, .uhd])
-        XCTAssertEqual(editions.map(\.status), [.downloaded, .downloading])
+        let data = try fixture("library")
+        let items: [LibraryItem] = try decoder.decode([LibraryItem].self, from: data)
+        XCTAssertEqual(items.count, 1)
+        let editions: [Edition] = items[0].editions
+        let tiers: [QualityTier] = editions.map { $0.tier }
+        let statuses: [EditionStatus] = editions.map { $0.status }
+        XCTAssertEqual(tiers, [QualityTier.hd, QualityTier.uhd])
+        XCTAssertEqual(statuses, [EditionStatus.downloaded, EditionStatus.downloading])
         XCTAssertEqual(editions[1].movieEdition, "Director's Cut")
     }
 
