@@ -1422,10 +1422,21 @@ struct ActSpin: ViewModifier {
 
 /// `Reveal` / `RevealItem`: fade + 16pt rise on first appearance, staggered.
 struct ActReveal: ViewModifier {
+    /// Only the first screenful staggers in. Rows further down appear as they
+    /// are, so a fast scroll neither shows blank space nor keeps several rows
+    /// mid-animation (each animating row is re-rendered every frame).
+    static let staggered = 12
+
     var index = 0
     var stagger = 0.04
     @Environment(\.actReduceMotion) private var reduce
-    @State private var shown = false
+    @State private var shown: Bool
+
+    init(index: Int = 0, stagger: Double = 0.04) {
+        self.index = index
+        self.stagger = stagger
+        _shown = State(initialValue: index >= Self.staggered)
+    }
 
     func body(content: Content) -> some View {
         content
@@ -1433,10 +1444,7 @@ struct ActReveal: ViewModifier {
             .offset(y: reduce || shown ? 0 : 16)
             .onAppear {
                 guard !reduce, !shown else { return }
-                // Only the first screenful staggers in; rows that scroll into view later
-                // appear straight away (they used to wait 0.48s, so a fast scroll showed
-                // blank space).
-                withAnimation(ActMotion.reveal(index < 12 ? 0.5 : 0.25).delay(index < 12 ? Double(index) * stagger : 0)) { shown = true }
+                withAnimation(ActMotion.reveal(0.5).delay(Double(index) * stagger)) { shown = true }
             }
     }
 }
