@@ -251,7 +251,7 @@ public struct HistoryEntry: Decodable, Sendable, Identifiable, Hashable {
     public let data: [String: LooseValue]?
     public let editionId: Int?
     public let episodeId: Int?
-    public let downloadId: Int?
+    public let downloadId: String?
     public let grabTrigger: String?
     public let `protocol`: String?
     public let blocklistable: Bool?

@@ -19,7 +19,7 @@ final class ActivityModelTests: XCTestCase {
     }
 
     func testHistoryLooseData() throws {
-        let page = try decode(HistoryPage.self, #"{"items": [{"id": 3, "event_type": "DOWNLOAD_FAILED", "source_title": "X.S01E01.1080p-GRP", "indexer": "Demo", "download_client": "SABnzbd", "quality": "WEBDL_1080P", "cf_score": -50, "size": null, "data": {"error": "download stalled", "nested": {"a": 1}, "retries": 2}, "created_at": "2026-10-03T17:52:39.007478", "media_item_id": 11, "edition_id": 16, "episode_id": 13, "download_id": 7, "grab_trigger": "rss", "protocol": "usenet", "blocklistable": true, "item_title": "X", "tier": "HD-1080p", "poster_url": null, "chips": []}], "total": 1}"#)
+        let page = try decode(HistoryPage.self, #"{"items": [{"id": 3, "event_type": "DOWNLOAD_FAILED", "source_title": "X.S01E01.1080p-GRP", "indexer": "Demo", "download_client": "SABnzbd", "quality": "WEBDL_1080P", "cf_score": -50, "size": null, "data": {"error": "download stalled", "nested": {"a": 1}, "retries": 2}, "created_at": "2026-10-03T17:52:39.007478", "media_item_id": 11, "edition_id": 16, "episode_id": 13, "download_id": "SABnzbd_nzo_7", "grab_trigger": "rss", "protocol": "usenet", "blocklistable": true, "item_title": "X", "tier": "HD-1080p", "poster_url": null, "chips": []}], "total": 1}"#)
         let entry = try XCTUnwrap(page.items.first)
         XCTAssertEqual(entry.data?.text("error"), "download stalled")
         XCTAssertEqual(entry.data?.text("retries"), "2")
