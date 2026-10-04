@@ -225,13 +225,13 @@ public final class APIClient: @unchecked Sendable {
 
     // MARK: Transport
 
-    private struct EmptyResponse: Decodable {}
+    struct EmptyResponse: Decodable {}
 
-    private func get<T: Decodable>(_ path: String, query: [URLQueryItem] = []) async throws -> T {
+    func get<T: Decodable>(_ path: String, query: [URLQueryItem] = []) async throws -> T {
         try await perform(request(method: "GET", path: path, query: query))
     }
 
-    private func send<T: Decodable, B: Encodable>(_ method: String, _ path: String, body: B?) async throws -> T {
+    func send<T: Decodable, B: Encodable>(_ method: String, _ path: String, body: B?) async throws -> T {
         var req = request(method: method, path: path, query: [])
         if let body {
             req.httpBody = try Self.encoder.encode(body)
