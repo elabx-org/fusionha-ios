@@ -77,6 +77,14 @@ def discover():
     } for item in load("library.json")]
 
 
+def api_fixture(path):
+    """`/api/v1/a/b` -> scripts/mock/api/a__b.json, when it exists."""
+    if not path.startswith("/api/v1/"):
+        return None
+    fixture = MOCK / "api" / (path[len("/api/v1/"):].replace("/", "__") + ".json")
+    return fixture if fixture.exists() else None
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
@@ -106,9 +114,21 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(json.loads(item.read_text())) if item.exists() else self.send_json({"detail": "Not Found"}, 404)
         if path in routes:
             return self.send_json(routes[path]())
+        fixture = api_fixture(path)
+        if fixture:
+            return self.send_json(json.loads(fixture.read_text()))
         self.send_json({"detail": "Not Found"}, 404)
 
     def do_POST(self):
+        self.send_json({})
+
+    def do_PUT(self):
+        self.send_json({})
+
+    def do_PATCH(self):
+        self.send_json({})
+
+    def do_DELETE(self):
         self.send_json({})
 
     def send_json(self, body, status=200):

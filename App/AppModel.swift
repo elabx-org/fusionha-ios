@@ -130,6 +130,7 @@ final class AppModel {
             creds = Credentials(serverURL: url, token: session, tokenId: nil, method: .session)
         }
         CredentialStore.save(creds)
+        WebSessionStore.save(anonymous.sessionTokenFromCookie(), server: url) // Settings web panels sign in with it.
         credentials = creds
         AppDelegate.requestPushAuthorization()
     }
@@ -160,6 +161,7 @@ final class AppModel {
 
     func signOut() {
         CredentialStore.clear()
+        WebSessionStore.clear()
         credentials = nil
         me = nil
         library = []

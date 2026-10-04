@@ -37,15 +37,15 @@ public final class APIClient: @unchecked Sendable {
     public let baseURL: URL
     private let token: String?
     private let authMethod: AuthMethod
-    private let session: URLSession
+    let session: URLSession
 
-    private static let decoder: JSONDecoder = {
+    static let decoder: JSONDecoder = {
         let d = JSONDecoder()
         d.keyDecodingStrategy = .convertFromSnakeCase
         return d
     }()
 
-    private static let encoder: JSONEncoder = {
+    static let encoder: JSONEncoder = {
         let e = JSONEncoder()
         e.keyEncodingStrategy = .convertToSnakeCase
         return e
@@ -225,13 +225,13 @@ public final class APIClient: @unchecked Sendable {
 
     // MARK: Transport
 
-    private struct EmptyResponse: Decodable {}
+    struct EmptyResponse: Decodable {}
 
-    private func get<T: Decodable>(_ path: String, query: [URLQueryItem] = []) async throws -> T {
+    func get<T: Decodable>(_ path: String, query: [URLQueryItem] = []) async throws -> T {
         try await perform(request(method: "GET", path: path, query: query))
     }
 
-    private func send<T: Decodable, B: Encodable>(_ method: String, _ path: String, body: B?) async throws -> T {
+    func send<T: Decodable, B: Encodable>(_ method: String, _ path: String, body: B?) async throws -> T {
         var req = request(method: method, path: path, query: [])
         if let body {
             req.httpBody = try Self.encoder.encode(body)
@@ -240,7 +240,7 @@ public final class APIClient: @unchecked Sendable {
         return try await perform(req)
     }
 
-    private func request(method: String, path: String, query: [URLQueryItem]) -> URLRequest {
+    func request(method: String, path: String, query: [URLQueryItem]) -> URLRequest {
         var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
         if !query.isEmpty { components.queryItems = query }
         var req = URLRequest(url: components.url!)
@@ -256,7 +256,7 @@ public final class APIClient: @unchecked Sendable {
         return req
     }
 
-    private func perform<T: Decodable>(_ req: URLRequest) async throws -> T {
+    func perform<T: Decodable>(_ req: URLRequest) async throws -> T {
         let (data, response) = try await session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(status) else {

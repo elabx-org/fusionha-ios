@@ -101,6 +101,7 @@ private struct ScopeBar: View {
 struct AvatarMenu: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
+    @State private var showingSettings = SettingsScreenshot.openAtLaunch
 
     var body: some View {
         Menu {
@@ -108,7 +109,7 @@ struct AvatarMenu: View {
                 if let server = model.credentials?.serverURL {
                     if !model.requestScoped {
                         Button("Settings", systemImage: "slider.horizontal.3") {
-                            openURL(server.appendingPathComponent("settings"))
+                            showingSettings = true
                         }
                     }
                     Button("Open web app", systemImage: "safari") { openURL(server) }
@@ -122,6 +123,9 @@ struct AvatarMenu: View {
             Avatar(me: model.me, size: 38)
         }
         .accessibilityLabel("Account")
+        .fullScreenCover(isPresented: $showingSettings) {
+            SettingsView(client: model.client, initialPanel: SettingsScreenshot.panel)
+        }
     }
 }
 
