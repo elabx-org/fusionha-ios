@@ -59,7 +59,7 @@ extension APIClient {
     }
 
     /// `POST /api/v1/library/{id}/search/gradual[?missing_only=true]` — one episode at a time in the background.
-    public func startGradualSearch(itemId: Int, missingOnly: Bool) async throws -> GradualSearchStart {
+    public func startGradualSearch(itemId: Int, missingOnly: Bool) async throws -> ActivityGradualStart {
         try await call("POST", "/api/v1/library/\(itemId)/search/gradual", query: q([("missing_only", missingOnly ? "true" : nil)]))
     }
 
@@ -105,7 +105,7 @@ extension APIClient {
 
     // MARK: Tasks
 
-    public func systemRuns(page: Int = 1, pageSize: Int = 200) async throws -> CommandRunPage {
+    public func systemRuns(page: Int = 1, pageSize: Int = 200) async throws -> ActivityRunPage {
         try await get("/api/v1/system/runs", query: q([("page", "\(page)"), ("page_size", "\(pageSize)")]))
     }
 
@@ -126,7 +126,7 @@ extension APIClient {
         try await fire("POST", "/api/v1/system/tasks/\(encoded)/run")
     }
 
-    public func enrichmentStatus() async throws -> EnrichmentStatus {
+    public func activityEnrichmentStatus() async throws -> ActivityEnrichmentStatus {
         try await get("/api/v1/import/enrichment-status")
     }
 
@@ -161,11 +161,11 @@ extension APIClient {
         try await get("/api/v1/wanted/4k-available", query: q([("page", "\(page)"), ("page_size", "\(pageSize)"), ("q", Self.nonEmpty(query))]))
     }
 
-    public func checkFourK(itemId: Int) async throws -> CheckFourKResult {
+    public func activityCheckFourK(itemId: Int) async throws -> CheckFourKResult {
         try await call("POST", "/api/v1/library/\(itemId)/check-4k")
     }
 
-    public func addEdition(itemId: Int, _ body: EditionAddRequest) async throws {
+    public func activityAddEdition(itemId: Int, _ body: EditionAddRequest) async throws {
         let _: EmptyResponse = try await call("POST", "/api/v1/library/\(itemId)/editions", body: body)
     }
 }

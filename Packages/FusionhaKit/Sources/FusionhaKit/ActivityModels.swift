@@ -128,7 +128,7 @@ public struct ClearedCount: Decodable, Sendable {
 
 // MARK: - Tasks  (GET /api/v1/system/runs, /system/tasks)
 
-public struct CommandRun: Decodable, Sendable, Identifiable, Hashable {
+public struct ActivityRun: Decodable, Sendable, Identifiable, Hashable {
     public let id: Int
     public let name: String
     public let trigger: String
@@ -177,8 +177,8 @@ public struct SearchScopeTarget: Decodable, Sendable, Hashable {
     public let state: String
 }
 
-public struct CommandRunPage: Decodable, Sendable {
-    public let items: [CommandRun]
+public struct ActivityRunPage: Decodable, Sendable {
+    public let items: [ActivityRun]
     public let total: Int
 }
 
@@ -218,7 +218,7 @@ public struct ActivitySystemTask: Decodable, Sendable, Hashable {
     public let nextRun: String
 }
 
-public struct EnrichmentStatus: Decodable, Sendable {
+public struct ActivityEnrichmentStatus: Decodable, Sendable {
     public let totalFiles: Int?
     public let enrichedFiles: Int?
     public let pendingFiles: Int?
@@ -340,7 +340,7 @@ public struct CheckFourKResult: Decodable, Sendable {
 }
 
 /// `POST /api/v1/library/{id}/search/gradual`.
-public struct GradualSearchStart: Decodable, Sendable {
+public struct ActivityGradualStart: Decodable, Sendable {
     public let runId: Int?
     public let total: Int
     public let alreadyRunning: Bool?

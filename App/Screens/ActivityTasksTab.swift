@@ -17,18 +17,18 @@ fileprivate struct FactPart: Hashable {
 }
 
 fileprivate enum TasksLogic {
-    static func iconKind(_ run: CommandRun) -> TaskIconKind {
+    static func iconKind(_ run: ActivityRun) -> TaskIconKind {
         if run.status == "failed" { return .fail }
         if run.trigger == "rss" { return .rss }
         if run.trigger == "scheduled" { return .refresh }
         return .search
     }
 
-    static func isStuckNoGrab(_ run: CommandRun) -> Bool {
+    static func isStuckNoGrab(_ run: ActivityRun) -> Bool {
         run.status == "completed" && run.releases > 0 && run.grabbed == 0 && run.upgraded == 0
     }
 
-    static func factParts(_ run: CommandRun) -> [FactPart] {
+    static func factParts(_ run: ActivityRun) -> [FactPart] {
         if run.status == "failed" {
             var parts = [FactPart(text: "Failed", tone: .miss)]
             if run.errors > 0 { parts.append(FactPart(text: ActFmt.plural(run.errors, "error"))) }
@@ -69,35 +69,35 @@ fileprivate enum TasksLogic {
         return parts
     }
 
-    static func factualLine(_ run: CommandRun) -> String {
+    static func factualLine(_ run: ActivityRun) -> String {
         let text = factParts(run).map(\.text).joined(separator: " · ")
         return text.isEmpty ? "Done" : text
     }
 
-    static func progressPct(_ run: CommandRun) -> Double? {
+    static func progressPct(_ run: ActivityRun) -> Double? {
         guard run.releases > 0 else { return nil }
         return min(1, max(0, Double(run.evaluated) / Double(run.releases)))
     }
 
-    static func targetDetail(_ run: CommandRun) -> String? { run.targetSummary ?? run.targetTitle }
+    static func targetDetail(_ run: ActivityRun) -> String? { run.targetSummary ?? run.targetTitle }
 
-    static func targetCountLabel(_ run: CommandRun) -> String? {
+    static func targetCountLabel(_ run: ActivityRun) -> String? {
         run.targetCount.map { ActFmt.plural($0, "target") }
     }
 
     struct RunGroup: Identifiable {
         let key: String
-        let latest: CommandRun
-        var older: [CommandRun]
+        let latest: ActivityRun
+        var older: [ActivityRun]
         var id: String { key }
     }
 
-    static func groupKey(_ run: CommandRun) -> String {
+    static func groupKey(_ run: ActivityRun) -> String {
         if run.trigger == "rss" || run.trigger == "scheduled" { return "\(run.trigger)::\(run.name)" }
         return "\(run.trigger)::\(run.name)::\(run.targetTitle ?? "#\(run.id)")"
     }
 
-    static func groupRuns(_ runs: [CommandRun]) -> [RunGroup] {
+    static func groupRuns(_ runs: [ActivityRun]) -> [RunGroup] {
         var order: [String] = []
         var byKey: [String: RunGroup] = [:]
         for run in runs {
@@ -132,7 +132,7 @@ fileprivate enum TasksLogic {
     }
 
     /// `schedulerTaskForRun`: only an unambiguous label match for a background sweep.
-    static func schedulerTask(for run: CommandRun, in tasks: [ActivitySystemTask]) -> ActivitySystemTask? {
+    static func schedulerTask(for run: ActivityRun, in tasks: [ActivitySystemTask]) -> ActivitySystemTask? {
         guard run.trigger == "scheduled" || run.trigger == "rss" else { return nil }
         let wanted = run.name.trimmingCharacters(in: .whitespaces).lowercased()
         guard !wanted.isEmpty else { return nil }
@@ -312,9 +312,9 @@ fileprivate enum TasksLogic {
 @MainActor
 @Observable
 fileprivate final class TasksStore {
-    let feed = ActFeed<CommandRun>(pageSize: 200) { _, _ in ([], 0) }
+    let feed = ActFeed<ActivityRun>(pageSize: 200) { _, _ in ([], 0) }
     var tasks: [ActivitySystemTask] = []
-    var enrichment: EnrichmentStatus?
+    var enrichment: ActivityEnrichmentStatus?
     var playful = true
 
     var anyRunning: Bool { feed.items.contains { $0.status == "running" } || tasks.contains { $0.running } }
@@ -338,7 +338,7 @@ fileprivate final class TasksStore {
     private func refreshSide(_ client: APIClient?) async {
         guard let client else { return }
         async let t = try? client.activitySystemTasks()
-        async let e = try? client.enrichmentStatus()
+        async let e = try? client.activityEnrichmentStatus()
         if let tasks = await t { self.tasks = tasks }
         enrichment = await e
     }
@@ -554,7 +554,7 @@ private struct TaskCard: ViewModifier {
 
 /// `TaskName`: name · target detail (N targets).
 private struct TaskNameLine: View {
-    let run: CommandRun
+    let run: ActivityRun
 
     var body: some View {
         var text = Text(run.name).font(.system(size: 14, weight: .semibold)).foregroundColor(Theme.txt)
@@ -570,7 +570,7 @@ private struct TaskNameLine: View {
 
 /// `TaskLine`: the coloured fact segments joined by " · ".
 private struct TaskFactLine: View {
-    let run: CommandRun
+    let run: ActivityRun
 
     var body: some View {
         let parts = TasksLogic.factParts(run)
@@ -610,7 +610,7 @@ private struct TaskBar: View {
 // MARK: - System cards
 
 private struct EnrichmentCard: View {
-    let status: EnrichmentStatus
+    let status: ActivityEnrichmentStatus
     @Environment(\.actReduceMotion) private var reduce
 
     var body: some View {
@@ -655,7 +655,7 @@ private struct EnrichmentCard: View {
 
 private struct RssSyncCard: View {
     let task: ActivitySystemTask
-    let latestRun: CommandRun?
+    let latestRun: ActivityRun?
 
     var body: some View {
         HStack(alignment: .center, spacing: 13) {
@@ -725,7 +725,7 @@ private struct ScheduledCard: View {
 // MARK: - Running rows
 
 private struct RunningRow: View {
-    let run: CommandRun
+    let run: ActivityRun
     let queued: Bool
     let playful: Bool
     @Environment(\.actReduceMotion) private var reduce
@@ -756,7 +756,7 @@ private struct RunningRow: View {
 
 /// The live backlog-search card (`SearchRunCard`) with real progress and Stop.
 private struct SearchRunCard: View {
-    let run: CommandRun
+    let run: ActivityRun
     let onChanged: () -> Void
     @Environment(AppModel.self) private var model
     @Environment(ActToaster.self) private var toaster
@@ -1001,7 +1001,7 @@ private struct RecentGroupView: View {
 }
 
 private struct RecentRow: View {
-    let run: CommandRun
+    let run: ActivityRun
     let tasks: [ActivitySystemTask]
     @Environment(AppModel.self) private var model
     @Environment(ActToaster.self) private var toaster

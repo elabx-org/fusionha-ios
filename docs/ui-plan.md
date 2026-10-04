@@ -47,27 +47,17 @@ Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`g
 - **API:** `GET /api/v1/library`, `POST /library/{id}/search` (no `/api/v1` prefix), `POST /api/v1/library/{id}/refresh`, `DELETE /api/v1/library/{id}`, `POST /api/v1/library/bulk/*`.
 
 ### Item detail (`/library/:id`)
-The web phone layout is a swipe-down bottom sheet because the web has no native navigation. On iOS it becomes a **pushed page with the zoom transition**, which keeps swipe-back and the poster morph. The content order follows `MobileDetailFlyout`.
+The web phone layout is a swipe-down bottom sheet (`MobileDetailFlyout`). On iOS it stays a **large sheet** (`.presentationDetents([.large])`, 14pt corners) presented from the Library, so swipe-down dismisses it exactly like the web. The content order follows `MobileDetailFlyout`. Code: `App/Screens/Detail/`.
 
-- **Hero:** full-bleed backdrop with `.backgroundExtensionEffect()` so the art extends under the transparent nav bar. Below it: poster, title, year, runtime, genres and overview (expandable).
-- **Glass toolbar (top right):**
-  - Monitor (bookmark, filled when monitored)
-  - Automatic search (magnifier, with a menu for all / missing only / each episode, like `SearchModeMenu`)
-  - Interactive search (person)
-  - An overflow `Menu` matching `HeroActionRail`: Refresh (metadata only), Preview rename, Manage files / episodes, Check episode numbering, Edition aliases, Edit & monitoring, Report an issue, Delete
-- **Editions:**
-  - A glass segmented picker: **All · HD · 4K** (`EditionsSwitcher`).
-  - Edition cards show the status-coloured **top hairline** (never a left rail), tier chip, profile, root and have/total. Each card has a `Menu` with search, interactive search, rescan and manage.
-  - An **"Add edition"** glass button opens the `AddEditionDialog` sheet.
-- **Sections:** a glass segmented picker **Seasons · Files · Collection · History · Searches**. Seasons is the default for series and Files for movies, the same defaults as web mobile. Collection, More like this, Cast and Trailer rails sit inline under the hero, like `DetailRailStack`.
-- **Seasons:** collapsible sections, each with a season monitor bookmark and a "Search season" menu. Episode rows are stacked like `MobileEpisodeList`: number (absolute number for anime), title, air date, and **one status pill per edition**.
-  - Swipe actions: Search, Monitor.
-  - Tapping an episode opens a sheet (`.medium`/`.large` detents) with Details · History · Search, mirroring `EpisodeDetailDialog`.
-- **Files:** sectioned by edition (movies) or season (series). Rows expand to show the full raw path in monospace (selectable, with a Copy button) and media info.
-  - Swipe to delete opens a confirmation dialog with a "Blocklist this release" toggle.
-  - A context menu offers Edit file / Fix quality / Repoint / Replace.
-- **Every dialog becomes a sheet:** Add edition, Edit item, Metadata switch, Numbering fix, Rename preview, Manage files, Edit file, Edition aliases, Delete item and Report issue. Each is a `Form` sheet with a glass toolbar (Cancel, and a `.glassProminent` confirm). The API calls are the same as the web dialogs.
-- **API:** `GET /api/v1/library/{id}`, `PATCH /api/v1/library/{id}` (and `/seasons/{n}`, `/editions/{eid}`), `POST /library/{id}/search[?episode_id&season&edition_id&missing_only]`, `GET /api/v1/library/{id}/files`, `GET/POST /api/v1/library/{id}/rename`, and so on.
+- **Hero:** poster-first art that fades into the page, with a Ken-Burns entrance; a glass close button; status chip, title, year (no thousands separator), tagline, meta line (kind, editions, runtime, rating, certification, metadata provider) and genre pills. A compact glass title bar fades in once the hero scrolls away. The blurred poster repeats behind the page as an ambient backdrop.
+- **Item actions:** a glass rail like `HeroActionRail`: Refresh (tap = metadata only; a menu adds Refresh & scan files), Preview rename, Manage files / episodes, Check episode numbering, Edition aliases, Report an issue, Edit (`pencil`) and Delete (`trash`), gated by the user's permissions. The rail's "acts on" label echoes the edition scope. Rename, Manage, Report and Aliases open the web app for now.
+- **Quality editions (`EditionsSwitcher`):** a VERSION/CUT row (series versions, movie cuts) and an ACT ON row (**All · HD · 4K** pills with have/total fractions, plus an add chip). The scope persists like the web's `fusionha:detail-scope`; tapping the active pill folds the reveal. The reveal below is one of: scoped series (season chips, episode ticks, Root/Profile/Cutoff/Monitoring), series All, versions × tiers matrix, movie All (edition cards + disk footprint), scoped movie. Each has the per-edition rail: automatic search (`magnifyingglass`, with a `SearchModeMenu`), interactive search (`person`), monitor (`bookmark`).
+- **Tabs:** Seasons · Files · History · Searches for series; Editions · Files · History · Searches (+ Collection) for movies, with an animated underline. Trailer, Collection, More like this and Cast rails sit under the editions like `DetailRailStack`.
+- **Seasons:** collapsible season cards (size, done/total, coverage bar with stripes, ⋮ opens a season actions sheet with Search / State / View groups). Episode cards: monitored dot, left-aligned title, air time, **one status chip per edition**, download pill; tapping expands facts with search and interactive search. The full `EpisodeDetailDialog` is not ported yet.
+- **Files:** per season × edition (series) or per edition (movies). Rows show the path (copy button), quality and media chips, dead-link cleanup and delete with a "Delete & blocklist" option. HD chips are purple, 4K cyan.
+- **History / Searches:** timeline (day groups, provenance, regrab), lifecycle and insights views; the Searches tab lists decision runs touching the title.
+- **Interactive search:** a sheet with an edition picker, filter field, sort/filter menu and a glass Grab button per release; rejected releases grab only after an override confirmation.
+- **Dialogs:** Edit item, Add an edition and Delete are native `Form` sheets with the web's fields and words.
 
 ### Interactive search
 - **Layout:** a full-height sheet. The top bar has an edition picker (`ManualSearchTrigger`'s "All editions" choice) and a glass Sort/Filter menu.

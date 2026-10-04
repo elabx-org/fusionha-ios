@@ -223,7 +223,7 @@ struct WantedFourKCard: View {
         Task {
             defer { checking = false }
             do {
-                let result = try await model.client?.checkFourK(itemId: item.id)
+                let result = try await model.client?.activityCheckFourK(itemId: item.id)
                 let message = result?.message ?? ""
                 toaster.show(message.isEmpty ? "Checked \(item.title) for 4K." : message,
                              tone: result?.foundUhd == true ? .success : .info)
@@ -368,7 +368,7 @@ struct WantedAddEditionSheet: View {
         saving = true
         defer { saving = false }
         do {
-            try await client.addEdition(itemId: item.id, EditionAddRequest(tier: tier, rootFolderId: rootId, qualityProfileId: profileId,
+            try await client.activityAddEdition(itemId: item.id, EditionAddRequest(tier: tier, rootFolderId: rootId, qualityProfileId: profileId,
                                                                            monitored: monitored, searchNow: searchNow))
             onAdded()
         } catch let e as APIError {
