@@ -97,6 +97,12 @@ public struct SetupStatus: Decodable, Sendable {
     public let needsSetup: Bool
     public let plexSsoEnabled: Bool?
     public let localLoginEnabled: Bool?
+    // The admin's login-page appearance (Settings → General → Login page).
+    public let loginLayout: String?
+    public let loginBackground: String?
+    public let loginShowLogo: Bool?
+    public let loginShowWordmark: Bool?
+    public let loginShowTagline: Bool?
 
     public var offersPlex: Bool { plexSsoEnabled == true }
     /// Older servers don't send the flag; username/password was always available there.
@@ -163,6 +169,8 @@ public struct MediaItem: Decodable, Sendable, Identifiable, Hashable {
     public let backdropUrl: String?
     public let monitored: Bool?
     public let hasAttention: Bool?
+    public let releaseDate: String?
+    public let addedAt: String?
     public let editions: [Edition]
 }
 
@@ -174,6 +182,11 @@ public struct Edition: Decodable, Sendable, Identifiable, Hashable {
     public let status: EditionStatus
     public let have: Int?
     public let total: Int?
+    public let size: Double?
+    public let attention: Bool?
+    public let unresolvedFileCount: Int?
+    public let deadLinkCount: Int?
+    public let availableFrom: String?
 }
 
 // MARK: - Wanted  (GET /api/v1/wanted)

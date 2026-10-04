@@ -40,7 +40,9 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: fusionha
-        UILaunchScreen: {}
+        UIUserInterfaceStyle: Dark
+        UILaunchScreen:
+          UIColorName: LaunchBackground
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:

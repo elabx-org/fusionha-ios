@@ -1,14 +1,15 @@
 # fusionha for iOS: UI plan
 
-Status: proposal for Elmer's review (updated 2026-10-04). Nothing has been created or changed yet.
+Status: in progress (updated 2026-10-04). The app shell, screens and login now follow the web app's mobile layout and look.
 
 ## 1. Principles
 
 1. **Same app, native skin.** Same destinations, same screens, same flows and the same words as the web UI's mobile layout (≤720px). Anyone who knows the web app should find everything in the same place.
-2. **Liquid Glass sits on the controls, never on the content.** Apple's rule for iOS 26 is that glass is the navigation and control layer floating above content. So the tab bar, toolbars, filter chips, segmented pickers, the bulk-action bar, sheets and the downloads accessory are glass. Posters, edition cards and episode rows stay solid content, just like the web keeps posters clean.
-3. **Multi-edition state is always visible.** Every card, row and widget shows its HD/4K edition chips in the status colours from `frontend/src/lib/status.ts`.
-4. **Native controls replace custom web controls.** The web rule "no native form controls" exists because browser controls look bad. On iOS the native `Picker`, `Toggle`, `Menu` and `Form` are the point, and they pick up Liquid Glass automatically. This is a deliberate deviation.
-5. **Motion maps onto system transitions.** The web's poster-to-hero morph becomes the iOS zoom transition. The web's "alive" cyan downloading pulse becomes `symbolEffect(.pulse)` plus a shimmer on progress bars. Both respect Reduce Motion and the server's `animations_enabled` setting.
+2. **The app looks like the web app.** Same dark tokens, panels, chips, tier pills, coverage rails, page headers and layouts as the mobile web (checked against screenshots of the web app at phone width). Native Liquid Glass is used where iOS provides the control: the tab bar, sheets, menus and context menus.
+3. **Liquid Glass sits on the controls, never on the content.** Apple's rule for iOS 26 is that glass is the navigation and control layer floating above content. So the tab bar, toolbars, filter chips, segmented pickers, the bulk-action bar, sheets and the downloads accessory are glass. Posters, edition cards and episode rows stay solid content, just like the web keeps posters clean.
+4. **Multi-edition state is always visible.** Every card, row and widget shows its HD/4K edition chips in the status colours from `frontend/src/lib/status.ts`.
+5. **Native controls replace custom web controls.** The web rule "no native form controls" exists because browser controls look bad. On iOS the native `Picker`, `Toggle`, `Menu` and `Form` are the point, and they pick up Liquid Glass automatically. This is a deliberate deviation.
+6. **Motion maps onto system transitions.** The web's poster-to-hero morph becomes the iOS zoom transition. The web's "alive" cyan downloading pulse becomes `symbolEffect(.pulse)` plus a shimmer on progress bars. Both respect Reduce Motion and the server's `animations_enabled` setting.
 
 Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`glassEffect`, `GlassEffectContainer`, `.buttonStyle(.glass/.glassProminent)`, `tabViewBottomAccessory`, `tabBarMinimizeBehavior`, `backgroundExtensionEffect`, `ToolbarSpacer`).
 
@@ -16,14 +17,15 @@ Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`g
 
 | Web | iOS |
 |---|---|
-| Mobile bottom nav: Library · Discover · Calendar · Activity · Wanted (+ More) | `TabView` with a glass tab bar: **Library · Calendar · Activity · Wanted** plus a **Search tab** (`Tab(role: .search)`), which shows as the separate round glass button. |
-| Discover page (search field + poster rails) | Lives **inside the Search tab**. Before you type, it shows the Discover rails, like the Apple TV and Music apps. Once you type, it shows the OmniSearch lanes: "In your library" (instant, filtered client-side) and "Add" (`GET /api/v1/search?term=&kind=all`). |
+| Mobile bottom nav: Library · Discover · Calendar · Activity · Wanted | `TabView` with the native glass tab bar and **the same five tabs in the same order, with the web's own icons** (SVG template assets copied from `shell/destinations.tsx`) and the cyan active tint. |
+| Discover page (search field + poster rails) | Its own **Discover tab**, like the web: kind filter, TMDB search, Browse rails and Requests. |
+| Mobile top bar: logo · search pill · avatar | The same custom top bar on every tab. The search pill scopes to **This library** (filters the Library grid in place) or **Everything** (library matches plus TMDB titles to add). |
 | Top bar hides on scroll down | `.tabBarMinimizeBehavior(.onScrollDown)` |
-| Activity pulse + queue count in the top bar | **`.tabViewBottomAccessory` "now downloading" strip**, like Music's mini player: poster of the top download, title, tier chip, progress and "+3 more". Tap opens Activity → Queue. It only appears while the queue has work. |
-| Mobile FAB (＋ Add) on Library / Discover / Wanted | A `.glassProminent` ＋ toolbar button on those screens, which opens the Add sheet. |
+| Activity pulse + queue count in the top bar | A queue-count badge on the Activity tab, plus the Live Activity and widget outside the app. |
+| Mobile FAB (＋ Add) on Library / Discover / Wanted | The same 56pt gradient ＋ orb, bottom right, on those screens. It opens the Add sheet. |
 | Avatar menu → Settings, Log out | An avatar toolbar button (top right on every tab), opening a menu with Settings, Account and Sign out. Settings opens as a full-height sheet. |
 | Attention control + health badge | A glass toolbar bell with a badge count, opening an **Attention sheet**. Sources: `GET /api/v1/library/attention`, `/system/runs/attention`, `/system/indexers/unavailable` and `GET /health`. |
-| Requester role (Discover · My requests · You) | Tabs swap to **Search/Discover · Requests · Account**, the same rule as `REQUESTOR_DESTINATIONS`. |
+| Requester role (Discover · My requests · You) | Tabs swap to **Discover · My requests · You**, driven by `request_scoped` from `GET /api/v1/auth/me`, the same rule as `REQUESTOR_DESTINATIONS`. |
 | Park & Resume dock | Not in v1. A parked interactive search can later reuse the bottom accessory. |
 | iPad | `.tabViewStyle(.sidebarAdaptable)`. The tabs become a sidebar, and Settings uses a split view like the desktop web sidebar. |
 
@@ -75,7 +77,7 @@ The web phone layout is a swipe-down bottom sheet because the web has no native 
 - **Add sheet:** first a search step, then "Configure editions" as a Form. HD is on by default and 4K is an explicit toggle (core requirement). Each edition has its own root and profile pickers. Then monitor options and search-on-add.
 - **API:** `GET /api/v1/discover/preview`, `GET /api/v1/search`, `/rootfolders`, `/qualityprofiles`, `/config/add-defaults`, `POST /api/v1/discover/check-4k`, `POST /api/v1/library`, `POST /api/v1/requests`.
 
-### Discover (inside the Search tab)
+### Discover
 - **Layout:** a glass segmented lens **Movies · Series · Anime**, then horizontal poster rails: Trending (Today/Week), Latest trailers, What's popular, Upcoming / On the air, Top rated, Collections. A Filters sheet covers genres and watch providers.
 - **Cards:** an "In library" badge opens the detail page. Otherwise a glass ＋ corner button adds or requests. Long-press offers View details, Add/Request, Ignore and Check 4K.
 - **Requests and Issues:** a segmented picker at the top (**Browse · Requests · Issues**), shown by permission, with a pending-count badge for approvers. Requests rows swipe to Approve or Reject.

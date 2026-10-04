@@ -4,8 +4,20 @@ import UIKit
 import WidgetKit
 import FusionhaKit
 
+/// The web's mobile bottom-nav destinations (shell/destinations.tsx).
 enum AppTab: Hashable {
-    case library, calendar, activity, wanted, search
+    case library, discover, calendar, activity, wanted
+    /// Requester accounts (REQUESTOR_DESTINATIONS).
+    case requests, you
+}
+
+enum SearchScope: Hashable {
+    case library, everything
+}
+
+/// Opens an item's detail sheet from any screen.
+struct ItemRef: Identifiable, Hashable {
+    let id: Int
 }
 
 @MainActor
@@ -13,6 +25,23 @@ enum AppTab: Hashable {
 final class AppModel {
     var credentials: Credentials? = CredentialStore.load()
     var tab: AppTab = .library
+    private(set) var me: Me?
+
+    // Shell state shared by the top bar, the + button and every screen.
+    var searchText = ""
+    var searchScope: SearchScope = .library
+    var presentedItem: ItemRef?
+    var showingAdd = false
+    /// A search result to start the Add sheet with.
+    var addPrefill: MediaSearchResult?
+
+    /// Requester accounts get the web's reduced nav.
+    var requestScoped: Bool { me?.requestScoped == true }
+
+    // The library list, shared by Library and the top-bar search.
+    private(set) var library: [MediaItem] = []
+    private(set) var libraryLoaded = false
+    private(set) var libraryError: String?
 
     // Queue state drives the Activity tab, the downloads accessory, the
     // Live Activity and the Downloads widget.
@@ -78,9 +107,37 @@ final class AppModel {
         AppDelegate.requestPushAuthorization()
     }
 
+    func loadMe() async {
+        guard let client else { return }
+        if let me = try? await client.me() {
+            self.me = me
+            if me.requestScoped == true, ![.discover, .requests, .you].contains(tab) { tab = .discover }
+        }
+    }
+
+    func loadLibrary() async {
+        guard let client else { return }
+        do {
+            library = try await client.library()
+            libraryError = nil
+        } catch {
+            libraryError = error.localizedDescription
+        }
+        libraryLoaded = true
+    }
+
+    func open(_ itemId: Int) {
+        presentedItem = ItemRef(id: itemId)
+    }
+
     func signOut() {
         CredentialStore.clear()
         credentials = nil
+        me = nil
+        library = []
+        libraryLoaded = false
+        searchText = ""
+        tab = .library
         queue = []
         queueTotal = 0
         LiveActivityController.endAll()
