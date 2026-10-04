@@ -91,21 +91,22 @@ The web phone layout is a swipe-down bottom sheet (`MobileDetailFlyout`). On iOS
 - **API:** `GET /api/v1/calendar?start&end`.
 
 ### Wanted (`/wanted`)
-- **Layout:** a glass segmented picker **Missing · Cutoff unmet · Upcoming · 4K available**, with counts. There is one card per title with edition chips. Series cards expand to show their missing episodes.
-- **Actions:** swipe right to Search, long-press for search mode (missing only / gradual) and Check 4K, and a toolbar **Search all** button with a confirmation dialog.
-- **API:** `GET /api/v1/wanted?state&q`, `GET /api/v1/wanted/4k-available`, `POST /library/{id}/search`, `POST /api/v1/library/{id}/search/gradual`.
+- **Layout (as the mobile web):** head "Wanted" + "{n} wanted titles · m missing, c below cutoff, u upcoming[, k seen in 4K]" from the state-independent totals (`GET /api/v1/wanted?page_size=1`, `GET /api/v1/wanted/4k-available?page_size=1`); the OverviewStrip; filter chips **Missing · Cutoff Unmet · Upcoming · 4K Available** with counts; the title search; the lead text; one GroupCard per title (tone wash, kind pill, state, per-edition HD/4K chips with a state dot, the context cue). Series on Missing list their missing episodes with a per-episode search. Infinite-scroll footer.
+- **Actions:** "Search all missing / upgrades" (the web's loop: `GET /api/v1/wanted?page_size=500&state&q`, then `POST /library/{id}/search` per title); a native search-mode `Menu` per card (Search all / Search missing only / Search each episode, the last two via `POST /api/v1/library/{id}/search/gradual` with a live progress strip and Stop); Open in library; Why this decision.
+- **4K Available:** cards with HD-owned / 4K-available rails, format tags, sightings and provenance, **Check for 4K now** (`POST /api/v1/library/{id}/check-4k`) and **＋ Add** (a native Form sheet: tier, root folder, quality profile, monitored, search now → `POST /api/v1/library/{id}/editions`). Observer off → "Turn on observing" (`PUT /api/v1/settings`).
+- Deviation: the Add-edition sheet omits the web dialog's folder-name override, monitor level / minimum availability and version fields.
 
 ### Activity (`/activity`)
-A glass segmented picker **Queue · History · Blocklist · Tasks**. Audit and Indexers sit in the toolbar menu for admins.
+Header "Activity" with the live caption and a **Manual import** button, the shared title search (Queue / History / Blocklist, server-side `q=`), and the web's horizontally scrolling tab strip **Queue · History · Blocklist · Tasks · Audit · Indexers** (Audit needs `system.admin`, Indexers `integrations.manage`); the Queue tab carries the count badge (amber when a download is held). This replaces the earlier plan of a segmented picker with Audit/Indexers in a toolbar menu, to stay like-for-like with the web.
 
-- **Queue:** cards show a poster, title, episode label and tier chip, a cyan progress bar with shimmer (orange when `stalled` or stuck), a phase stepper (`phase`, `step`, `phase_percent`) and size left.
-  - Swipe to Remove, with a blocklist toggle. Long-press offers Search again, Resolve manual import, Open item.
-  - Toolbar: Process queue now, Manual import, Select.
-  - Polling: 1.5s with active work and 4s when idle, only while this screen is visible. This is the same as `QUEUE_ACTIVE_POLL_MS` and `QUEUE_POLL_MS`.
-- **History:** grouped by title ("Stories") or a flat list, with an event filter menu (All / Grabbed / Imported / Failed / Deleted). The header is a Swift Charts sparkline from `/history/sparkline?days=14`. Long-press offers Why this decision, Copy release name, Search again, Open.
-- **Blocklist:** reason filter, swipe to remove, and Retry recoverable.
-- **Tasks:** Running and Recent runs. Tapping a run shows its decision trail. Each task has Run now.
-- **Manual import:** a full-screen sheet with one card per file and per-row overrides (item, edition, season/episode, quality). A sticky glass bottom bar holds the import-mode picker and an **Import** button.
+- **Queue:** toolbar (count, Process, Clear, Select), the bandwidth / pipeline hero, sections Working · Downloading · Retrying · Up next · Just finished, the web's card anatomy (wash, ringed poster, meta row, gradient progress with shimmer, rate / ETA / %), held and stuck cards, group cards, select mode with the glass bulk bar, Remove / Clear / bulk dialogs and the ⋯ menu (Interactive search, Blocklist, Copy release name). Polls 1.5s with active work, 4s idle, while visible.
+- **History:** insight card (total, 14-day sparkline, KPIs), story chips, Stories | Raw log, the story timeline with Regrab (409 override), the Blocklist split action + dialog (with Undo), Search again, Why this decision, Copy release name.
+- **Blocklist:** insight card with reason categories and Retry recoverable, category and Group/Flat segments, Show reasons, Select + bulk remove, Clear blocklist.
+- **Tasks:** Playful | Plain voice toggle, System cards (Media enrichment, RSS Sync, Scheduled with live countdowns), the live backlog-search card with Stop, Scanning / Queued runs and the Recent timeline with grouped repeats, decision trails (verdict strip, reason groups) and Run again / Search again.
+- **Audit:** outcome chips, timeline rows with actor avatar, action, target, times; Load older.
+- **Indexers:** the Fleet overview (range segment, KPI tiles, grab-share leaderboard, activity chart). The web's protocol / efficiency / coverage / API budget / exclusive cards are not ported yet.
+- **Manual import:** the web's large modal flow opens as the web page in an in-app Safari sheet (header button → `/activity`, a held download → `/activity?rescue={id}`).
+- **Motion:** reveal-on-appear with stagger, sliding tab/segment indicators, progress fills (`cubic-bezier(.3,.7,.3,1)`), shimmer sweeps, indeterminate bars, pulsing live dots, spinning task icons, row insert/remove transitions; all stop under Reduce Motion or when the server's `animations_enabled` is off.
 
 ### Settings (`/settings/:panel`)
 - **Layout:** a `NavigationStack` list grouped exactly like the web sidebar: General, Metadata · Media Management (Roots, Naming, File management, Library import) · Quality (Definitions, Custom formats, Release filters, Profiles, Default profiles, TRaSH) · Access (Users, Roles, Sign-in, Public access, Security) · Fetching (Download clients, Indexers, Connect, Notifications, Connections/instances) · System (Appearance, System, Database, Backup, Logs, About, Media versions, Experimental, Discover, Maintenance).

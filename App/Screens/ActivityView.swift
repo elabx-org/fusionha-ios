@@ -1,285 +1,211 @@
 import SwiftUI
 import FusionhaKit
 
-enum ActivityTab: Hashable {
-    case queue, history, blocklist
+enum ActivityTab: String, Hashable {
+    case queue, history, blocklist, tasks, audit, indexers
 }
 
-/// The web's Activity page: header, title search and the Queue / History /
-/// Blocklist tabs.
+/// Bulk-bar contents published by the tab in select mode, so the glass bar can sit
+/// at the bottom of the whole screen.
+@MainActor
+@Observable
+final class ActBulk {
+    struct Action: Identifiable {
+        let label: String
+        var icon: String?
+        var kind: ActButtonKind = .ghost
+        var disabled = false
+        let run: () -> Void
+        var id: String { label }
+    }
+
+    struct Config {
+        var count: Int
+        var hint: String?
+        var onSelectAll: () -> Void
+        var actions: [Action]
+    }
+
+    var config: Config?
+}
+
+/// Opens web-only flows (Manual import) in an in-app Safari sheet.
+@MainActor
+@Observable
+final class ActRouter {
+    var webURL: URL?
+    var server: URL?
+
+    /// The web's Manual import modal is a large flow (scan, per-file overrides,
+    /// import mode); it opens as the web page. `rescue` pre-scopes it to a held download.
+    func manualImport(rescue downloadId: Int? = nil) {
+        guard let server else { return }
+        var components = URLComponents(url: server.appendingPathComponent("activity"), resolvingAgainstBaseURL: false)
+        if let downloadId { components?.queryItems = [URLQueryItem(name: "rescue", value: "\(downloadId)")] }
+        webURL = components?.url
+    }
+}
+
+/// The web's Activity page (`routes/Activity.tsx`): header with the live caption
+/// and Manual import, the shared title search, and the Queue / History /
+/// Blocklist / Tasks / Audit / Indexers tabs.
 struct ActivityView: View {
     @Environment(AppModel.self) private var model
-    @State private var tab: ActivityTab = .queue
-    @State private var query = ""
-    @State private var processing = false
-    @State private var history: [HistoryEntry] = []
-    @State private var blocklist: [BlocklistEntry] = []
-    @State private var listError: String?
-    @State private var loadingList = false
+    @State private var tab: ActivityTab = ActivityView.initialTab
+    @State private var searchInput = ""
+    @State private var search = ""
+    @State private var toaster = ActToaster()
+    @State private var bulk = ActBulk()
+    @State private var router = ActRouter()
+    @State private var animationsEnabled = true
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
 
-    private var filteredQueue: [QueueItem] {
-        guard !query.isEmpty else { return model.queue }
-        return model.queue.filter {
-            $0.title.localizedCaseInsensitiveContains(query) || ($0.releaseTitle ?? "").localizedCaseInsensitiveContains(query)
+    private static var initialTab: ActivityTab {
+        #if DEBUG
+        if let raw = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_ACTIVITY_TAB"], let tab = ActivityTab(rawValue: raw) {
+            return tab
         }
+        #endif
+        return .queue
     }
+
+    private var visibleTabs: [ActivityTab] {
+        var tabs: [ActivityTab] = [.queue, .history, .blocklist, .tasks]
+        if model.me?.hasPermission("system.admin") == true { tabs.append(.audit) }
+        if model.me?.hasPermission("integrations.manage") == true { tabs.append(.indexers) }
+        return tabs
+    }
+
+    private var searchable: Bool { tab == .queue || tab == .history || tab == .blocklist }
+
+    private var heldCount: Int { model.queue.filter { $0.status.lowercased() == "held" }.count }
 
     var body: some View {
         Screen {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    PageHeader(title: "Activity", subtitle: subtitle) {
-                        SquareIconButton(systemImage: "arrow.triangle.2.circlepath", label: "Process queue now") {
-                            Task {
-                                processing = true
-                                try? await model.client?.processQueue()
-                                await model.refreshQueue()
-                                processing = false
-                            }
-                        }
-                        .symbolEffect(.rotate, isActive: processing)
-                    }
-                    WebSearchField(placeholder: "Search by title…", text: $query)
-                    SegmentedPills(options: [(ActivityTab.queue, "Queue"), (.history, "History"), (.blocklist, "Blocklist")],
-                                   selection: $tab, style: .plain, fill: true)
-                    switch tab {
-                    case .queue: queue
-                    case .history: historyList
-                    case .blocklist: blocklistList
-                    }
+                VStack(alignment: .leading, spacing: 0) {
+                    header
+                    ActTabs(items: visibleTabs.map { t in
+                        ActTabs<ActivityTab>.Item(value: t, label: label(t),
+                                                  badge: t == .queue ? model.queueTotal : 0,
+                                                  badgeColor: heldCount > 0 ? Theme.miss : Theme.grab)
+                    }, selection: $tab)
+                    .padding(.bottom, 20)
+                    content
                 }
                 .padding(.horizontal, 10)
-                .padding(.top, 14)
-                .padding(.bottom, 40)
+                .padding(.top, 20)
+                .padding(.bottom, bulk.config == nil ? 90 : 190)
             }
-            .refreshable { await refresh() }
+            .scrollDismissesKeyboard(.immediately)
         }
-        .task(id: "\(tab)|\(query)") {
-            guard tab != .queue else { return }
-            try? await Task.sleep(for: .milliseconds(250))
-            await loadList()
-        }
-    }
-
-    private var subtitle: String {
-        model.queueTotal == 0 ? "No active downloads" : "\(model.queueTotal) active download\(model.queueTotal == 1 ? "" : "s")"
-    }
-
-    @ViewBuilder
-    private var queue: some View {
-        if filteredQueue.isEmpty {
-            if model.queueError != nil {
-                EmptyBox(message: "The download queue could not be loaded. Check the backend and try again.")
-            } else if !query.isEmpty {
-                EmptyBox(message: "No downloads match “\(query)”.")
-            } else {
-                EmptyBox(message: "Nothing downloading. Grabs show up here while they download and import.")
-            }
-        } else {
-            LazyVStack(spacing: 10) {
-                ForEach(filteredQueue) { item in
-                    QueueCard(item: item)
-                        .onTapGesture { model.open(item.mediaItemId) }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var historyList: some View {
-        if history.isEmpty {
-            if loadingList {
-                ProgressView().tint(Theme.mut).frame(maxWidth: .infinity).padding(.top, 40)
-            } else {
-                EmptyBox(message: listError == nil ? "No history yet." : "History could not be loaded.")
-            }
-        } else {
-            LazyVStack(spacing: 10) {
-                ForEach(history) { entry in
-                    HistoryRow(entry: entry)
-                        .onTapGesture { if let id = entry.mediaItemId { model.open(id) } }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var blocklistList: some View {
-        if blocklist.isEmpty {
-            if loadingList {
-                ProgressView().tint(Theme.mut).frame(maxWidth: .infinity).padding(.top, 40)
-            } else {
-                EmptyBox(message: listError == nil ? "The blocklist is empty." : "The blocklist could not be loaded.")
-            }
-        } else {
-            LazyVStack(spacing: 10) {
-                ForEach(blocklist) { BlocklistRow(entry: $0) }
-            }
-        }
-    }
-
-    private func refresh() async {
-        if tab == .queue { await model.refreshQueue() } else { await loadList() }
-    }
-
-    private func loadList() async {
-        guard let client = model.client else { return }
-        loadingList = true
-        defer { loadingList = false }
-        do {
-            switch tab {
-            case .queue: break
-            case .history: history = try await client.history(query: query).items
-            case .blocklist: blocklist = try await client.blocklist(query: query).items
-            }
-            listError = nil
-        } catch {
-            listError = error.localizedDescription
-        }
-    }
-}
-
-/// One download in the queue: poster, title + tier, progress and phase.
-struct QueueCard: View {
-    let item: QueueItem
-
-    private var tint: Color { item.stalled ? Theme.stuck : Theme.grab }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w154"))
-                .frame(width: 46, height: 69)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
-                    Text(item.title).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                    TierPill(tier: item.tier)
-                }
-                if let label = item.episodeLabel {
-                    Text(label).font(.system(size: 12)).foregroundStyle(Theme.mut).lineLimit(1)
-                }
-                if let release = item.releaseTitle {
-                    Text(release)
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(Theme.dim)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                }
-                RailBar(progress: Int(item.progress), color: tint, state: .downloading)
-                HStack {
-                    Text(phaseText).foregroundStyle(tint)
-                    Spacer()
-                    Text("\(Int(item.progress))% · \(Format.bytes(item.sizeleft)) left")
-                        .monospacedDigit()
-                        .foregroundStyle(Theme.mut)
-                }
-                .font(.system(size: 12, weight: .semibold))
-            }
-        }
-        .padding(12)
-        .panel(Theme.card, radius: 14)
-        .overlay(alignment: .top) {
-            UnevenRoundedRectangle(topLeadingRadius: 14, topTrailingRadius: 14)
-                .fill(tint.opacity(0.8))
-                .frame(height: 2)
-                .padding(.horizontal, 1)
-        }
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-    }
-
-    private var phaseText: String {
-        if item.stalled { return "Stalled" }
-        return (item.phase ?? item.status).replacingOccurrences(of: "_", with: " ").capitalized
-    }
-}
-
-struct HistoryRow: View {
-    let entry: HistoryEntry
-
-    private var color: Color {
-        let type = entry.eventType.uppercased()
-        if type.contains("FAIL") || type.contains("DELETE") || type.contains("REJECT") { return Theme.danger }
-        if type.contains("IMPORT") || type.contains("DOWNLOADED") { return Theme.done }
-        if type.contains("GRAB") { return Theme.grab }
-        if type.contains("UPGRADE") { return Theme.edition }
-        return Theme.mut
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            PosterImage(url: TMDBImage.resized(entry.posterUrl, to: "w154"))
-                .frame(width: 40, height: 60)
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 6) {
-                    Text(entry.itemTitle ?? "Unknown title")
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                    if let tier = entry.tier { TierPill(tier: tier) }
-                    Spacer(minLength: 0)
-                    Text(Format.relative(entry.createdAt))
-                        .font(.system(size: 11)).foregroundStyle(Theme.dim).lineLimit(1)
-                }
-                Text(entry.eventLabel)
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(0.6)
-                    .textCase(.uppercase)
-                    .foregroundStyle(color)
-                if let source = entry.sourceTitle {
-                    Text(source)
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(Theme.mut)
-                        .lineLimit(2)
-                }
-                if let chips = entry.chips, !chips.isEmpty {
-                    HStack(spacing: 5) {
-                        ForEach(chips, id: \.self) { chip in
-                            Text(chip.label)
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(Theme.mut)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 5))
-                                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.line))
+        .overlay { ActToastOverlay(toaster: toaster).padding(.bottom, 70) }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if let config = bulk.config {
+                ActBulkBar(count: config.count, hint: config.hint, onSelectAll: config.onSelectAll) {
+                    ForEach(config.actions) { action in
+                        Button(action: action.run) {
+                            HStack(spacing: 6) {
+                                if let icon = action.icon { Image(systemName: icon) }
+                                Text(action.label)
+                            }
                         }
+                        .buttonStyle(ActButtonStyle(kind: action.kind))
+                        .disabled(action.disabled)
                     }
                 }
             }
         }
-        .padding(12)
-        .panel(Theme.card, radius: 14)
-        .contentShape(Rectangle())
-    }
-}
-
-struct BlocklistRow: View {
-    let entry: BlocklistEntry
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            PosterImage(url: TMDBImage.resized(entry.posterUrl, to: "w154"))
-                .frame(width: 40, height: 60)
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-            VStack(alignment: .leading, spacing: 5) {
-                HStack {
-                    Text(entry.itemTitle ?? "Unknown title")
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                    Spacer(minLength: 0)
-                    Text(Format.relative(entry.createdAt)).font(.system(size: 11)).foregroundStyle(Theme.dim)
-                }
-                if let label = entry.episodeLabel {
-                    Text(label).font(.system(size: 12)).foregroundStyle(Theme.mut)
-                }
-                Text(entry.title)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(Theme.mut)
-                    .lineLimit(2)
-                if let reason = entry.reason {
-                    Text(reason).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.danger)
-                }
+        .environment(\.actReduceMotion, systemReduceMotion || !animationsEnabled)
+        .task {
+            // The web's global motion switch (`animations_enabled`).
+            if let settings = try? await model.client?.activitySettings() {
+                animationsEnabled = settings.animationsEnabled ?? true
             }
         }
-        .padding(12)
-        .panel(Theme.card, radius: 14)
+        .environment(toaster)
+        .environment(bulk)
+        .environment(router)
+        .sheet(item: $router.webURL) { url in
+            SafariView(url: url).ignoresSafeArea()
+        }
+        .task(id: searchInput) {
+            if searchInput.isEmpty { search = ""; return }
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled else { return }
+            search = searchInput.trimmingCharacters(in: .whitespaces)
+        }
+        .onChange(of: tab) { bulk.config = nil }
+        .onAppear { router.server = model.credentials?.serverURL }
+    }
+
+    private func label(_ t: ActivityTab) -> String {
+        switch t {
+        case .queue: return "Queue"
+        case .history: return "History"
+        case .blocklist: return "Blocklist"
+        case .tasks: return "Tasks"
+        case .audit: return "Audit"
+        case .indexers: return "Indexers"
+        }
+    }
+
+    private var caption: String {
+        let downloading = max(0, model.queueTotal - heldCount)
+        var parts: [String] = []
+        if downloading > 0 { parts.append("\(downloading) downloading · live") }
+        if heldCount > 0 { parts.append("\(heldCount) need manual import") }
+        return parts.isEmpty ? "No active downloads" : parts.joined(separator: " · ")
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 14) {
+                Text("Activity")
+                    .font(.system(size: 22, weight: .bold))
+                    .tracking(-0.3)
+                    .foregroundStyle(Theme.txt)
+                    .lineLimit(1)
+                    .fixedSize()
+                Text(caption)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.mut)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer(minLength: 0)
+                Button {
+                    router.manualImport()
+                } label: {
+                    Image(systemName: "square.and.arrow.down")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.txt)
+                        .frame(width: 30, height: 30)
+                        .background(Theme.panel, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.line))
+                        .frame(width: 40, height: 40)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, -5)
+                .padding(.trailing, -5)
+                .accessibilityLabel("Manual import")
+            }
+            if searchable {
+                ActSearch(placeholder: "Search by title…", text: $searchInput)
+            }
+        }
+        .padding(.bottom, 20)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch tab {
+        case .queue: ActivityQueueTab(search: search)
+        case .history: ActivityHistoryTab(search: search)
+        case .blocklist: ActivityBlocklistTab(search: search)
+        case .tasks: ActivityTasksTab()
+        case .audit: ActivityAuditTab()
+        case .indexers: ActivityIndexersTab()
+        }
     }
 }

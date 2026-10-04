@@ -15,6 +15,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+import mock_activity
 import mock_detail
 
 MOCK = Path(__file__).resolve().parent / "mock"
@@ -314,6 +315,9 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         path = url.path.rstrip("/")
         query = parse_qs(url.query)
+        hit = mock_activity.handle("GET", path, query)
+        if hit is not None:
+            return self.send_json(*hit)
         routes = {
             "/health": lambda: {"status": "ok", "version": "mock"},
             "/api/v1/setup-status": lambda: load("setup-status.json"),
@@ -374,6 +378,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"detail": "Not Found"}, 404)
 
     def do_POST(self):
+        hit = self.activity("POST")
+        if hit:
+            return self.send_json(*hit)
         path = urlparse(self.path).path.rstrip("/")
         if path == "/api/v1/discover/check-4k":
             return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [1, 2],
@@ -390,6 +397,9 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({} if body is None else body)
 
     def do_PUT(self):
+        hit = self.activity("PUT")
+        if hit:
+            return self.send_json(*hit)
         self.send_json(settings() if self.path.startswith("/api/v1/settings") else {})
 
     def do_PATCH(self):
@@ -399,8 +409,14 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({})
 
     def do_DELETE(self):
-        self.send_response(204)
-        self.end_headers()
+        self.send_json(*(self.activity("DELETE") or ({},)))
+
+    def activity(self, method):
+        url = urlparse(self.path)
+        length = int(self.headers.get("Content-Length") or 0)
+        if length:
+            self.rfile.read(length)
+        return mock_activity.handle(method, url.path.rstrip("/"), parse_qs(url.query))
 
     def send_json(self, body, status=200):
         data = json.dumps(body).encode()
