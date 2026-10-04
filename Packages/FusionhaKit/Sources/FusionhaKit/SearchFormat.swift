@@ -54,10 +54,12 @@ public enum ReleaseSearch {
 
     /// `resolutionOf`: the `_2160P`-style token lower-cased, else `SD`.
     public static func resolution(_ quality: String?) -> String {
-        let seg = (quality ?? "").split(separator: "_").first { s in
-            s.count > 1 && s.last.map { $0 == "P" || $0 == "p" } == true && s.dropLast().allSatisfy(\.isNumber)
+        let parts: [Substring] = (quality ?? "").split(separator: "_")
+        for part in parts where part.count > 1 && part.uppercased().hasSuffix("P")
+            && part.dropLast().allSatisfy(\.isNumber) {
+            return part.lowercased()
         }
-        return seg.map { $0.lowercased() } ?? "SD"
+        return "SD"
     }
 
     /// `indexerName`: the indexer's name, else `#id`.
