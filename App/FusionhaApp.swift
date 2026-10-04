@@ -8,7 +8,10 @@ struct FusionhaApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if model.credentials == nil {
+                if let gallery = WidgetGalleryView.screenshotVariant {
+                    // CI screenshots of the home-screen widgets.
+                    WidgetGalleryView(variant: gallery)
+                } else if model.credentials == nil {
                     SignInView()
                 } else {
                     RootView()

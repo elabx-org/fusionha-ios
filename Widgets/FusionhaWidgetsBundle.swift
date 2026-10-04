@@ -5,6 +5,8 @@ import WidgetKit
 struct FusionhaWidgetsBundle: WidgetBundle {
     var body: some Widget {
         DownloadsWidget()
+        UpNextWidget()
+        RecentWidget()
         DownloadsLiveActivity()
     }
 }
