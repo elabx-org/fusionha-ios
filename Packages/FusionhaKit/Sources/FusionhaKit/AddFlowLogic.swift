@@ -97,13 +97,13 @@ public struct SeasonCounts: Sendable, Hashable {
 }
 
 public struct MonitorPreview: Sendable, Hashable {
-    public struct Season: Sendable, Hashable {
+    public struct SeasonLit: Sendable, Hashable {
         public let seasonNumber: Int
         /// Lit episode indexes (0-based, air order).
         public let lit: [Int]
     }
 
-    public let perSeason: [Season]
+    public let perSeason: [SeasonLit]
     public let newEpisodes: Bool
     public let count: Int
     public let seasonsTouched: Int
@@ -119,7 +119,7 @@ public struct MonitorPreview: Sendable, Hashable {
         let last = seasons.map(\.seasonNumber).max()
         let airedKnown = seasons.allSatisfy { $0.airedCount != nil }
         let exact = airedKnown || !dateDriven.contains(mode)
-        let per: [Season] = seasons.map { s in
+        let per: [SeasonLit] = seasons.map { s in
             let n = max(0, s.episodeCount)
             let aired = min(n, max(0, s.airedCount ?? 0))
             let recent = min(aired, max(0, s.recentCount ?? 0))
@@ -145,14 +145,14 @@ public struct MonitorPreview: Sendable, Hashable {
             default:
                 if regular { lit = Array(0..<n) }
             }
-            return Season(seasonNumber: s.seasonNumber, lit: lit)
+            return SeasonLit(seasonNumber: s.seasonNumber, lit: lit)
         }
         return MonitorPreview(perSeason: per, newEpisodes: watchesNew.contains(mode),
                               count: per.reduce(0) { $0 + $1.lit.count },
                               seasonsTouched: per.filter { !$0.lit.isEmpty }.count, exact: exact)
     }
 
-    func replacing(_ per: [Season]) -> MonitorPreview {
+    func replacing(_ per: [SeasonLit]) -> MonitorPreview {
         MonitorPreview(perSeason: per, newEpisodes: newEpisodes, count: per.reduce(0) { $0 + $1.lit.count },
                        seasonsTouched: per.filter { !$0.lit.isEmpty }.count, exact: exact)
     }
@@ -167,7 +167,7 @@ public enum SeasonSlider {
     /// The preview with each customised season re-lit from its start.
     public static func apply(_ seasons: [SeasonCounts], _ preview: MonitorPreview, _ from: SeasonFrom) -> MonitorPreview {
         if from.isEmpty { return preview }
-        let per: [MonitorPreview.Season] = preview.perSeason.enumerated().map { i, s in
+        let per: [MonitorPreview.SeasonLit] = preview.perSeason.enumerated().map { i, s in
             guard let start = from[s.seasonNumber] else { return s }
             let n = max(0, i < seasons.count ? seasons[i].episodeCount : 0)
             let lit: [Int]
@@ -177,7 +177,7 @@ public enum SeasonSlider {
             } else {
                 lit = []
             }
-            return MonitorPreview.Season(seasonNumber: s.seasonNumber, lit: lit)
+            return MonitorPreview.SeasonLit(seasonNumber: s.seasonNumber, lit: lit)
         }
         return preview.replacing(per)
     }

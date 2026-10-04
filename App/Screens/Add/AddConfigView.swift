@@ -35,10 +35,10 @@ struct AddConfigView: View {
     @State private var splitChosen = false
     @State private var editingRow: QualityTier = .uhd
     @State private var compact = false
-    @State private var phase: Phase = .idle
+    @State private var phase: AddPhase = .idle
     @State private var today = Date()
 
-    enum Phase { case idle, progress, done }
+    enum AddPhase { case idle, progress, done }
 
     /// The add moment: the fill runs at least 1.1s, then "✓ Added" holds 650ms.
     private static let fillMs = 1100
