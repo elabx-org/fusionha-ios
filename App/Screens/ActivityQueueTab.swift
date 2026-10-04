@@ -1339,6 +1339,12 @@ private struct QueueGroupCard: View {
     let removeMany: (_ ids: [Int], _ blocklist: Bool) -> Void
     let pick: () -> Void
     @Environment(AppModel.self) private var model
+    @Environment(ActRouter.self) private var router
+    @Environment(\.actReduceMotion) private var reduce
+    /// The combined rate as shown: a drop to zero holds the last non-zero
+    /// reading for two polls first, so a lone zero sample between two real ones
+    /// never blinks the speed out (the web's `useHeldRate`).
+    @State private var shownRate: Double = 0
 
     var body: some View {
         let downloads = group.downloads
@@ -1367,7 +1373,7 @@ private struct QueueGroupCard: View {
                 HStack(spacing: 6) {
                     Text(lead.title).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
                         .onTapGesture { model.open(group.mediaItemId) }
-                    Text(isSeries ? "\(downloads.count) downloads" : "\(downloads.count) editions")
+                    Text(isSeries ? "\(downloads.count) downloads" : "\(downloads.count) versions")
                         .font(.system(size: 10.5, weight: .semibold)).foregroundStyle(Theme.mut)
                         .padding(.horizontal, 7).padding(.vertical, 1).background(Theme.panel2, in: Capsule())
                 }
@@ -1382,7 +1388,9 @@ private struct QueueGroupCard: View {
         } trailing: {
             HStack(spacing: 14) {
                 VStack(alignment: .trailing, spacing: 1) {
-                    Text(ActFmt.rate(rate)).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Theme.grab)
+                    Text(ActFmt.rate(shownRate)).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Theme.grab)
+                        .contentTransition(.opacity)
+                        .animation(reduce ? nil : .easeOut(duration: 0.2), value: shownRate > 0)
                     Text("\(ActFmt.bytes(done)) / \(ActFmt.bytes(size))").font(.system(size: 10.5)).foregroundStyle(Theme.mut)
                 }
                 VStack(alignment: .trailing, spacing: 1) {
@@ -1411,8 +1419,7 @@ private struct QueueGroupCard: View {
                 let keys = isSeries ? seasons.keys.sorted { ($0 ?? 0) < ($1 ?? 0) } : [nil]
                 ForEach(keys, id: \.self) { key in
                     if isSeries, let key {
-                        Text("SEASON \(key)").font(.system(size: 9.5, weight: .heavy)).tracking(0.6).foregroundStyle(Theme.dim)
-                            .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 2)
+                        seasonHead(key, heldIds: (seasons[key] ?? []).filter { $0.status.lowercased() == "held" }.map(\.id))
                     }
                     ForEach(isSeries ? (seasons[key] ?? []) : downloads) { item in
                         nestedRow(item)
@@ -1424,6 +1431,39 @@ private struct QueueGroupCard: View {
         .overlay {
             if soonest { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.grab.opacity(0.45)) }
         }
+        .task(id: rate) {
+            if rate > 0 { shownRate = rate; return }
+            try? await Task.sleep(for: .seconds(4))
+            if !Task.isCancelled { shownRate = 0 }
+        }
+    }
+
+    /// The season sub-head; with held members it carries the "Manual import (N)"
+    /// bulk rescue (one scan for the whole season instead of one per episode).
+    private func seasonHead(_ season: Int, heldIds: [Int]) -> some View {
+        HStack(spacing: 8) {
+            Text("SEASON \(season)").font(.system(size: 9.5, weight: .heavy)).tracking(0.6).foregroundStyle(Theme.dim)
+            Spacer(minLength: 0)
+            if !heldIds.isEmpty {
+                Button {
+                    router.manualImport(rescue: heldIds)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "square.and.arrow.down").font(.system(size: 10, weight: .bold))
+                        Text("MANUAL IMPORT (\(heldIds.count))").font(.system(size: 9.5, weight: .heavy)).tracking(0.4)
+                    }
+                    .foregroundStyle(Theme.miss)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Theme.miss.opacity(0.14), in: Capsule())
+                    .frame(minHeight: 32)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Manual import \(heldIds.count) held in season \(season)")
+            }
+        }
+        .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 2)
     }
 
     private func season(_ item: QueueItem) -> Int? {

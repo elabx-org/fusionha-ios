@@ -48,9 +48,9 @@ enum WantedTab: String, CaseIterable, Hashable {
 
     var emptyMessage: String {
         switch self {
-        case .missing: return "Nothing missing — every released or aired monitored edition has a file."
+        case .missing: return "Nothing missing — every released or aired monitored version has a file."
         case .cutoff: return "Nothing below cutoff — every monitored file meets its profile cutoff."
-        case .upcoming, .fourk: return "Nothing upcoming — no monitored edition is waiting on a release or an air date."
+        case .upcoming, .fourk: return "Nothing upcoming — no monitored version is waiting on a release or an air date."
         }
     }
 }
@@ -204,7 +204,7 @@ struct WantedView: View {
         .sheet(item: $addEditionFor) { item in
             WantedAddEditionSheet(item: item) {
                 addEditionFor = nil
-                toaster.show("Added a 4K edition for \(item.title)", tone: .success)
+                toaster.show("Added a 4K version for \(item.title)", tone: .success)
                 Task { await reloadAll() }
             } onCancel: { addEditionFor = nil }
         }
@@ -336,7 +336,7 @@ struct WantedView: View {
         let text: Text
         switch tab {
         case .missing:
-            text = Text("Monitored editions with ") + b("no file yet") + Text(" — ") + dot + Text(" missing. Search runs the engine across every monitored edition.")
+            text = Text("Monitored versions with ") + b("no file yet") + Text(" — ") + dot + Text(" missing. Search runs the engine across every monitored version.")
         case .cutoff:
             text = Text("A file exists but sits ") + b("below the profile cutoff") + Text(" — ") + dot + Text(" an upgrade is wanted. Search looks for a release that meets cutoff.")
         case .upcoming:
@@ -554,7 +554,7 @@ private struct WantedCardView: View {
         Menu {
             Button { run(label: item.title, key: "title") } label: {
                 Text("Search all")
-                Text("Every monitored edition of this title — pack-preferred, missing + upgrades.")
+                Text("Every monitored version of this title — pack-preferred, missing + upgrades.")
             }
             if item.kind == .series {
                 Button { Task { await startGradual(label: "\(item.title) (missing only)", missingOnly: true) } } label: {
