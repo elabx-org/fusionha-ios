@@ -99,9 +99,9 @@ struct RootFoldersPanel: View {
         let kind = folder.inferredKind
         let tier = folder.inferredTier
         let current = defaults?.first { $0.profileKind == kind && $0.tier == tier }
-        let slot = AddDefaultSlot(profileKind: kind, tier: tier,
-                                  qualityProfileId: current?.qualityProfileId,
-                                  rootFolderId: on ? folder.id : nil)
+        let slot = AddDefaultSlot(kind: kind, tier: tier,
+                                  profileId: current?.qualityProfileId,
+                                  rootId: on ? folder.id : nil)
         savingDefault = true
         Task {
             do {

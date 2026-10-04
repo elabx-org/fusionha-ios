@@ -38,7 +38,11 @@ public enum SettingsJSON: Sendable, Hashable, Encodable,
     public static func ints(_ values: [Int]) -> SettingsJSON { .array(values.map(SettingsJSON.int)) }
     public static func optionalInts(_ values: [Int]?) -> SettingsJSON { values.map(ints) ?? .null }
 
-    private struct Key: CodingKey {
+    public typealias Key = String
+    public typealias Value = SettingsJSON
+    public typealias ArrayLiteralElement = SettingsJSON
+
+    private struct FieldKey: CodingKey {
         var stringValue: String
         var intValue: Int? { nil }
         init(stringValue: String) { self.stringValue = stringValue }
@@ -61,8 +65,8 @@ public enum SettingsJSON: Sendable, Hashable, Encodable,
             var c = encoder.unkeyedContainer()
             for value in values { try c.encode(value) }
         case .object(let fields):
-            var c = encoder.container(keyedBy: Key.self)
-            for (key, value) in fields { try c.encode(value, forKey: Key(stringValue: key)) }
+            var c = encoder.container(keyedBy: FieldKey.self)
+            for (key, value) in fields { try c.encode(value, forKey: FieldKey(stringValue: key)) }
         }
     }
 }
@@ -557,7 +561,8 @@ extension Error {
 }
 
 extension AddDefaultSlot {
-    public init(profileKind: String, tier: QualityTier, qualityProfileId: Int?, rootFolderId: Int?) {
+    /// Public for the app target (the synthesized memberwise init is internal).
+    public init(kind profileKind: String, tier: QualityTier, profileId qualityProfileId: Int?, rootId rootFolderId: Int?) {
         self.profileKind = profileKind
         self.tier = tier
         self.qualityProfileId = qualityProfileId
