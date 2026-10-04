@@ -183,6 +183,27 @@ jobs:
           shoot settings-4-editions SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=editions
           shoot settings-5-releasefilters SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=releasefilters
           shoot settings-6-security SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=security
+          python3 scripts/mock_server.py 8766 requestor &
+          R=http://127.0.0.1:8766
+          D="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover"
+          shoot discover-01-trailers $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_SCROLL=trailers
+          shoot discover-02-collections $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_SCROLL=collections
+          shoot discover-03-filters $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_SCROLL=filters
+          shoot discover-04-all $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_KIND=all
+          shoot discover-05-requests $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_TAB=requests
+          shoot discover-06-issues $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_TAB=issues
+          shoot discover-07-preview $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PREVIEW=movie/438631
+          shoot discover-08-preview-series $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PREVIEW=series/63639
+          shoot discover-09-request $D SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUEST=series/63639/The_Expanse
+          shoot discover-10-requestor SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$R
+          shoot discover-11-my-requests SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTOR_TAB=requests
+          shoot discover-12-you SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTOR_TAB=you
+          shoot calendar-week SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=week
+          shoot calendar-forecast SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=forecast
+          shoot calendar-day SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=day
+          shoot calendar-agenda SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=agenda
+          shoot account SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1
+          shoot account-methods SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=methods
           shoot library-shell-list SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LIST=1
           shoot library-shell-select SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SELECT=1
           shoot library-shell-toast SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TOAST=Monitoring\ Dune
@@ -219,4 +240,11 @@ jobs:
           cp "$RUNNER_TEMP"/shots/*.png "$DIR/"
           git add "$DIR"
           git commit -qm "Screenshots for $DIR (${GITHUB_SHA::7})" || exit 0
-          git push -q origin publish:screenshots
+          # Several PRs publish at once: rebase onto the latest branch and retry.
+          for i in 1 2 3 4 5; do
+            git push -q origin publish:screenshots && exit 0
+            sleep $((i * 3))
+            git fetch -q origin screenshots:refs/remotes/origin/screenshots
+            git rebase -q refs/remotes/origin/screenshots
+          done
+          exit 1

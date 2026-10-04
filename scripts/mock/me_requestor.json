@@ -1,0 +1,1 @@
+{"id":4,"username":"jamie.lee","is_admin":false,"role_id":3,"role_name":"Requestor","permissions":["tokens.manage.self"],"capabilities":["request","view"],"is_token":false,"request_scoped":true,"is_demo":false,"is_active":true,"plex_linked":false,"plex_username":null,"thumb":null,"auth_provider":"local"}
