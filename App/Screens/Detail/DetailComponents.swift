@@ -593,7 +593,8 @@ struct FlowRow: Layout {
         var rowWidth: CGFloat = 0
         for view in subviews {
             let size = view.sizeThatFits(.unspecified)
-            if rowWidth > 0 && rowWidth + size.width > bounds.width {
+            // A pixel of slack: layout rounds bounds to the pixel grid, which must not re-wrap a row that fit when sized.
+            if rowWidth > 0 && rowWidth + size.width > bounds.width + 1 {
                 rows.append([])
                 rowWidth = 0
             }

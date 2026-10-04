@@ -318,7 +318,7 @@ private struct EpisodeCard: View {
                                     .detailPulse(low: 0.35, high: 1, period: 2.4)
                             }
                         }
-                        .fixedSize()
+                        .layoutPriority(1)
                     }
                 }
                 .contentShape(Rectangle())

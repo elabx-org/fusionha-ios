@@ -80,7 +80,7 @@ enum DetailVocab {
         let wants4k = tier == .uhd
         let match = profiles.first { p in
             let n = p.name.lowercased()
-            let is4k = n.contains("4k") || n.contains("2160") || n.contains("uhd")
+            let is4k = n.contains("4k") || n.contains("2160") || n.contains("uhd") || n.contains("ultra")
             return is4k == wants4k
         }
         return (match ?? profiles.first)?.id
@@ -760,10 +760,11 @@ struct DeleteItemSheet: View {
                 .tint(Theme.danger)
             Spacer(minLength: 0)
             HStack(spacing: 10) {
-                Button("Cancel") { dismiss() }
-                    .buttonStyle(.glass)
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity)
+                Button { dismiss() } label: {
+                    Text("Cancel").fontWeight(.semibold).frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.glass)
+                .controlSize(.large)
                 Button {
                     Task {
                         busy = true
