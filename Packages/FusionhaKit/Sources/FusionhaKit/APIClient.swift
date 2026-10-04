@@ -94,7 +94,7 @@ public final class APIClient: @unchecked Sendable {
         try await get("/api/v1/queue", query: [URLQueryItem(name: "page_size", value: "\(pageSize)")])
     }
 
-    public func library() async throws -> [LibraryItem] {
+    public func library() async throws -> [MediaItem] {
         try await get("/api/v1/library")
     }
 

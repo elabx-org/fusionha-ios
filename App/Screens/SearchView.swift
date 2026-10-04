@@ -6,9 +6,9 @@ import FusionhaKit
 struct SearchView: View {
     @Environment(AppModel.self) private var model
     @State private var query = ""
-    @State private var items: [LibraryItem] = []
+    @State private var items: [MediaItem] = []
 
-    private var matches: [LibraryItem] {
+    private var matches: [MediaItem] {
         guard !query.isEmpty else { return [] }
         return items.filter { $0.title.localizedCaseInsensitiveContains(query) }
     }
@@ -37,7 +37,7 @@ struct SearchView: View {
                 }
             }
             .navigationTitle("Search")
-            .navigationDestination(for: LibraryItem.self) { ItemDetailView(item: $0) }
+            .navigationDestination(for: MediaItem.self) { ItemDetailView(item: $0) }
             .searchable(text: $query, prompt: "Titles in your library")
             .overlay {
                 if query.isEmpty {

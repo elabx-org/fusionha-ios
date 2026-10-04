@@ -24,7 +24,7 @@ final class DecodingTests: XCTestCase {
 
     func testLibraryDecodesEditionsAndWireStatuses() throws {
         let data = try fixture("library")
-        let items: [LibraryItem] = try decoder.decode([LibraryItem].self, from: data)
+        let items: [MediaItem] = try decoder.decode([MediaItem].self, from: data)
         XCTAssertEqual(items.count, 1)
         let editions: [Edition] = items[0].editions
         let tiers: [QualityTier] = editions.map { $0.tier }

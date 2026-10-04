@@ -130,7 +130,7 @@ public struct QueueItem: Decodable, Sendable, Identifiable, Hashable {
 
 // MARK: - Library  (GET /api/v1/library)
 
-public struct LibraryItem: Decodable, Sendable, Identifiable, Hashable {
+public struct MediaItem: Decodable, Sendable, Identifiable, Hashable {
     public let id: Int
     public let title: String
     public let kind: MediaKind
