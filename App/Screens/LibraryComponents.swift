@@ -448,8 +448,13 @@ struct PosterCard: View {
         VStack(alignment: .leading, spacing: 0) {
             art
                 // Press-and-hold feedback: the poster sinks and dims while held.
+                // A black wash, not `.brightness`: the art is a UIKit-backed view.
+                .overlay {
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .fill(.black.opacity(pressing ? 0.14 : 0))
+                        .allowsHitTesting(false)
+                }
                 .scaleEffect(pressing ? 0.95 : 1)
-                .brightness(pressing ? -0.14 : 0)
                 .animation(motion ? .easeOut(duration: 0.18) : nil, value: pressing)
             // Plex-app rhythm on phones: title/year 14.5 / 12.5, regular weight.
             VStack(alignment: .leading, spacing: 2) {

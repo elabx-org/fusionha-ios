@@ -39,25 +39,65 @@ final class ActRouter {
     /// The web's Manual import modal is a large flow (scan, per-file overrides,
     /// import mode); it opens as the web page. `rescue` pre-scopes it to a held download.
     func manualImport(rescue downloadId: Int? = nil) {
+        manualImport(rescue: downloadId.map { [$0] } ?? [])
+    }
+
+    /// A bulk queue rescue: one Manual import scan over several held downloads
+    /// (a whole season, or every held row). The web's `?rescue=` takes a
+    /// comma list.
+    func manualImport(rescue downloadIds: [Int]) {
         guard let server else { return }
         var components = URLComponents(url: server.appendingPathComponent("activity"), resolvingAgainstBaseURL: false)
-        if let downloadId { components?.queryItems = [URLQueryItem(name: "rescue", value: "\(downloadId)")] }
+        if !downloadIds.isEmpty {
+            components?.queryItems = [URLQueryItem(name: "rescue", value: downloadIds.map(String.init).joined(separator: ","))]
+        }
         webURL = components?.url
+    }
+}
+
+/// The page state the header and the tabs share: the selected tab and the
+/// (debounced) title search.
+@MainActor
+@Observable
+final class ActChrome {
+    var tab: ActivityTab
+    var searchInput = ""
+    var search = ""
+
+    init(tab: ActivityTab) { self.tab = tab }
+
+    var searchable: Bool { tab == .queue || tab == .history || tab == .blocklist }
+}
+
+private struct ActTabsNamespaceKey: EnvironmentKey {
+    static let defaultValue: Namespace.ID? = nil
+}
+
+extension EnvironmentValues {
+    /// Shared by every tab's header so the selected-tab indicator slides between pages.
+    var actTabsNamespace: Namespace.ID? {
+        get { self[ActTabsNamespaceKey.self] }
+        set { self[ActTabsNamespaceKey.self] = newValue }
     }
 }
 
 /// The web's Activity page (`routes/Activity.tsx`): header with the live caption
 /// and Manual import, the shared title search, and the Queue / History /
 /// Blocklist / Tasks / Audit / Indexers tabs.
+///
+/// Each tab is its own `ActivityPage` (a ScrollView whose LazyVStack holds the
+/// header and then the tab's rows as direct children). The page used to be one
+/// LazyVStack whose single child was the whole tab, with the rows in a nested
+/// LazyVStack: every scroll step then re-measured that one giant child (all
+/// visible rows' flow layouts, every frame), which is what made long lists stall.
 struct ActivityView: View {
     @Environment(AppModel.self) private var model
-    @State private var tab: ActivityTab = ActivityView.initialTab
-    @State private var searchInput = ""
-    @State private var search = ""
+    @State private var chrome = ActChrome(tab: ActivityView.initialTab)
     @State private var toaster = ActToaster()
     @State private var bulk = ActBulk()
     @State private var router = ActRouter()
     @State private var animationsEnabled = true
+    @Namespace private var tabsNamespace
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
 
     private static var initialTab: ActivityTab {
@@ -69,35 +109,17 @@ struct ActivityView: View {
         return .queue
     }
 
-    private var visibleTabs: [ActivityTab] {
-        var tabs: [ActivityTab] = [.queue, .history, .blocklist, .tasks]
-        if model.me?.hasPermission("system.admin") == true { tabs.append(.audit) }
-        if model.me?.hasPermission("integrations.manage") == true { tabs.append(.indexers) }
-        return tabs
-    }
-
-    private var searchable: Bool { tab == .queue || tab == .history || tab == .blocklist }
-
-    private var heldCount: Int { model.queue.filter { $0.status.lowercased() == "held" }.count }
-
     var body: some View {
+        let _ = PerfCount.hit("ActivityView.body")
         Screen {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    header
-                    ActTabs(items: visibleTabs.map { t in
-                        ActTabs<ActivityTab>.Item(value: t, label: label(t),
-                                                  badge: t == .queue ? model.queueTotal : 0,
-                                                  badgeColor: heldCount > 0 ? Theme.miss : Theme.grab)
-                    }, selection: $tab)
-                    .padding(.bottom, 20)
-                    content
-                }
-                .padding(.horizontal, 10)
-                .padding(.top, 20)
-                .padding(.bottom, bulk.config == nil ? 90 : 190)
+            switch chrome.tab {
+            case .queue: ActivityQueueTab(search: chrome.search)
+            case .history: ActivityHistoryTab(search: chrome.search)
+            case .blocklist: ActivityBlocklistTab(search: chrome.search)
+            case .tasks: ActivityTasksTab()
+            case .audit: ActivityAuditTab()
+            case .indexers: ActivityIndexersTab()
             }
-            .scrollDismissesKeyboard(.immediately)
         }
         .overlay { ActToastOverlay(toaster: toaster).padding(.bottom, 70) }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -117,26 +139,132 @@ struct ActivityView: View {
             }
         }
         .environment(\.actReduceMotion, systemReduceMotion || !animationsEnabled)
+        .environment(\.actTabsNamespace, tabsNamespace)
         .task {
             // The web's global motion switch (`animations_enabled`).
             if let settings = try? await model.client?.activitySettings() {
                 animationsEnabled = settings.animationsEnabled ?? true
             }
         }
+        .environment(chrome)
         .environment(toaster)
         .environment(bulk)
         .environment(router)
         .sheet(item: $router.webURL) { url in
             SafariView(url: url).ignoresSafeArea()
         }
-        .task(id: searchInput) {
-            if searchInput.isEmpty { search = ""; return }
+        .task(id: chrome.searchInput) {
+            if chrome.searchInput.isEmpty { chrome.search = ""; return }
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
-            search = searchInput.trimmingCharacters(in: .whitespaces)
+            chrome.search = chrome.searchInput.trimmingCharacters(in: .whitespaces)
         }
-        .onChange(of: tab) { bulk.config = nil }
+        .onChange(of: chrome.tab) { bulk.config = nil }
+        .perfActivityTabHook(Binding(get: { chrome.tab }, set: { chrome.tab = $0 }))
         .onAppear { router.server = model.credentials?.serverURL }
+    }
+}
+
+/// One Activity tab's scrolling page: the shared header, then the tab's content
+/// laid out flat (each row a direct child of the lazy stack).
+struct ActivityPage<Content: View>: View {
+    @Environment(ActBulk.self) private var bulk
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ActivityPageHeader()
+                content
+            }
+            .padding(.horizontal, 10)
+            .padding(.top, 20)
+            .padding(.bottom, bulk.config == nil ? 90 : 190)
+        }
+        .scrollDismissesKeyboard(.immediately)
+    }
+}
+
+/// The header (title, live caption, Manual import, search) and the tab strip.
+/// Reads the polled queue counts itself, so a queue tick re-renders only this.
+struct ActivityPageHeader: View {
+    @Environment(AppModel.self) private var model
+    @Environment(ActChrome.self) private var chrome
+    @Environment(ActRouter.self) private var router
+    @Environment(\.actTabsNamespace) private var tabsNamespace
+
+    private var visibleTabs: [ActivityTab] {
+        var tabs: [ActivityTab] = [.queue, .history, .blocklist, .tasks]
+        if model.me?.hasPermission("system.admin") == true { tabs.append(.audit) }
+        if model.me?.hasPermission("integrations.manage") == true { tabs.append(.indexers) }
+        return tabs
+    }
+
+    var body: some View {
+        @Bindable var chrome = chrome
+        let held = model.queueHeld
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center, spacing: 14) {
+                    Text("Activity")
+                        .font(.system(size: 22, weight: .bold))
+                        .tracking(-0.3)
+                        .foregroundStyle(Theme.txt)
+                        .lineLimit(1)
+                        .fixedSize()
+                    Text(caption(held: held))
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.mut)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                    Spacer(minLength: 0)
+                    Button {
+                        router.manualImport()
+                    } label: {
+                        Image(systemName: "square.and.arrow.down")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(Theme.txt)
+                            .frame(width: 30, height: 30)
+                            .background(Theme.panel, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.line))
+                            .frame(width: 40, height: 40)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, -5)
+                    .padding(.trailing, -5)
+                    .accessibilityLabel("Manual import")
+                }
+                if held > 0 {
+                    // "Resolve all held (N)": one Manual import over every held download.
+                    Button {
+                        router.manualImport(rescue: model.queueHeldIds)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.and.arrow.down").font(.system(size: 13, weight: .semibold))
+                            Text("Resolve all held (\(held))").font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundStyle(Theme.txt)
+                        .padding(.horizontal, 12)
+                        .frame(height: 32)
+                        .background(Theme.panel, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.line))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                if chrome.searchable {
+                    ActSearch(placeholder: "Search by title…", text: $chrome.searchInput)
+                }
+            }
+            .padding(.bottom, 20)
+            ActTabs(items: visibleTabs.map { t in
+                ActTabs<ActivityTab>.Item(value: t, label: label(t),
+                                          badge: t == .queue ? model.queueTotal : 0,
+                                          badgeColor: held > 0 ? Theme.miss : Theme.grab)
+            }, selection: $chrome.tab, namespace: tabsNamespace)
+            .padding(.bottom, 20)
+        }
     }
 
     private func label(_ t: ActivityTab) -> String {
@@ -150,62 +278,11 @@ struct ActivityView: View {
         }
     }
 
-    private var caption: String {
-        let downloading = max(0, model.queueTotal - heldCount)
+    private func caption(held: Int) -> String {
+        let downloading = max(0, model.queueTotal - held)
         var parts: [String] = []
         if downloading > 0 { parts.append("\(downloading) downloading · live") }
-        if heldCount > 0 { parts.append("\(heldCount) need manual import") }
+        if held > 0 { parts.append("\(held) need manual import") }
         return parts.isEmpty ? "No active downloads" : parts.joined(separator: " · ")
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .center, spacing: 14) {
-                Text("Activity")
-                    .font(.system(size: 22, weight: .bold))
-                    .tracking(-0.3)
-                    .foregroundStyle(Theme.txt)
-                    .lineLimit(1)
-                    .fixedSize()
-                Text(caption)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.mut)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                Spacer(minLength: 0)
-                Button {
-                    router.manualImport()
-                } label: {
-                    Image(systemName: "square.and.arrow.down")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.txt)
-                        .frame(width: 30, height: 30)
-                        .background(Theme.panel, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.line))
-                        .frame(width: 40, height: 40)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .padding(.vertical, -5)
-                .padding(.trailing, -5)
-                .accessibilityLabel("Manual import")
-            }
-            if searchable {
-                ActSearch(placeholder: "Search by title…", text: $searchInput)
-            }
-        }
-        .padding(.bottom, 20)
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        switch tab {
-        case .queue: ActivityQueueTab(search: search)
-        case .history: ActivityHistoryTab(search: search)
-        case .blocklist: ActivityBlocklistTab(search: search)
-        case .tasks: ActivityTasksTab()
-        case .audit: ActivityAuditTab()
-        case .indexers: ActivityIndexersTab()
-        }
     }
 }

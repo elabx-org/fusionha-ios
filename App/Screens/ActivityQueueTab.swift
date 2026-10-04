@@ -358,9 +358,11 @@ fileprivate final class QueueStore {
     }
 
     private func apply(_ page: QueuePage) {
-        items = page.items
-        total = page.total
-        justFinished = page.justFinished ?? []
+        // Polled every 1.5s: only touch what changed so unchanged sections don't re-render.
+        if items != page.items { items = page.items }
+        if total != page.total { total = page.total }
+        let finished = page.justFinished ?? []
+        if justFinished != finished { justFinished = finished }
         sample(page.items)
     }
 
@@ -385,7 +387,7 @@ fileprivate final class QueueStore {
             if !item.isPhaseMode, [.downloading, .stalled, .awaiting].contains(item.cockpitState) { aggregate += tel.bps }
         }
         samples = nextSamples
-        telemetry = next
+        if telemetry != next { telemetry = next }
         bandwidth.append(aggregate)
         if bandwidth.count > 70 { bandwidth.removeFirst(bandwidth.count - 70) }
     }
@@ -412,7 +414,9 @@ struct ActivityQueueTab: View {
     @State private var upNextOpen = false
 
     var body: some View {
-        content
+        let _ = PerfCount.hit("ActivityQueueTab.body")
+        ActivityPage { content }
+            .animation(reduce ? nil : ActMotion.rows, value: store.items.map(\.id))
             .task(id: search) {
                 await store.reload(model.client, query: search)
                 while !Task.isCancelled {
@@ -467,14 +471,12 @@ struct ActivityQueueTab: View {
         } else if store.items.isEmpty && finished.rows.isEmpty {
             ActEmpty(message: "Nothing is downloading right now. Grabbed releases appear here while they transfer.")
         } else {
-            VStack(alignment: .leading, spacing: 0) {
-                toolbar.padding(.bottom, 12)
-                if !store.items.isEmpty { hero.padding(.bottom, 18) }
-                sections
-                ActFooter(total: store.total, loaded: store.items.count, hasMore: store.hasMore, loading: store.loadingMore,
-                          noun: "downloads", query: search) { Task { await store.loadMore(model.client) } }
-            }
-            .animation(reduce ? nil : ActMotion.rows, value: store.items.map(\.id))
+            // Flat children of the page's lazy stack: each section header and card is its own child.
+            toolbar.padding(.bottom, 12)
+            if !store.items.isEmpty { hero.padding(.bottom, 18) }
+            sections
+            ActFooter(total: store.total, loaded: store.items.count, hasMore: store.hasMore, loading: store.loadingMore,
+                      noun: "downloads", query: search) { Task { await store.loadMore(model.client) } }
         }
     }
 
@@ -537,9 +539,11 @@ struct ActivityQueueTab: View {
         let split = QueueLogic.split(QueueLogic.group(items.filter { $0.lane == .byte }), telemetry: store.telemetry)
         let soonest = split.active.first { $0.eta != nil }?.id
         let finished = self.finished
-        VStack(alignment: .leading, spacing: 24) {
+        let firstSection = !working.isEmpty ? "Working" : !split.active.isEmpty ? "Downloading"
+            : !retrying.isEmpty ? "Retrying" : !split.upNext.isEmpty ? "Up next" : "Just finished"
+        Group {
             if !working.isEmpty {
-                section("Working", working.count, "symlink & checks · live phase") {
+                section("Working", working.count, "symlink & checks · live phase", first: firstSection) {
                     ForEach(Array(working.enumerated()), id: \.element.id) { index, item in
                         selectable(item) { PhaseCard(item: item, lane: .working, actions: actions(for: item)) }
                             .actReveal(index).actRowTransition(reduce)
@@ -547,7 +551,7 @@ struct ActivityQueueTab: View {
                 }
             }
             if !split.active.isEmpty {
-                section("Downloading", split.active.count, "finishing soonest") {
+                section("Downloading", split.active.count, "finishing soonest", first: firstSection) {
                     ForEach(Array(split.active.enumerated()), id: \.element.id) { index, entry in
                         Group {
                             switch entry {
@@ -576,7 +580,7 @@ struct ActivityQueueTab: View {
                 }
             }
             if !retrying.isEmpty {
-                section("Retrying", retrying.count, "transient — will retry") {
+                section("Retrying", retrying.count, "transient — will retry", first: firstSection) {
                     ForEach(Array(retrying.enumerated()), id: \.element.id) { index, item in
                         selectable(item) { PhaseCard(item: item, lane: .retrying, actions: actions(for: item)) }
                             .actReveal(index).actRowTransition(reduce)
@@ -586,7 +590,7 @@ struct ActivityQueueTab: View {
             if let onDeck = split.upNext.first {
                 let rest = Array(split.upNext.dropFirst())
                 let visible = upNextOpen ? rest : Array(rest.prefix(4))
-                section("Up next", split.upNext.count, "next to grab") {
+                section("Up next", split.upNext.count, "next to grab", first: firstSection) {
                     selectable(onDeck) { OnDeckCard(item: onDeck, actions: actions(for: onDeck)) }
                         .actReveal(0)
                     ForEach(Array(visible.enumerated()), id: \.element.id) { index, item in
@@ -606,7 +610,7 @@ struct ActivityQueueTab: View {
                 }
             }
             if !finished.rows.isEmpty {
-                section("Just finished", finished.rows.count, "clears to History in ~20s") {
+                section("Just finished", finished.rows.count, "clears to History in ~20s", first: firstSection) {
                     ForEach(Array(finished.rows.enumerated()), id: \.element.id) { index, entry in
                         JustFinishedRow(entry: entry).actReveal(index).actRowTransition(reduce)
                     }
@@ -620,11 +624,12 @@ struct ActivityQueueTab: View {
         }
     }
 
-    private func section<C: View>(_ title: String, _ count: Int, _ hint: String, @ViewBuilder content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ActSection(title: title, count: count)
-            content()
-        }
+    /// A section as flat children: its header, then each card (10pt apart; sections 24pt apart).
+    @ViewBuilder
+    private func section<C: View>(_ title: String, _ count: Int, _ hint: String, first: String,
+                                  @ViewBuilder content: () -> C) -> some View {
+        ActSection(title: title, count: count).padding(.top, title == first ? 0 : 24)
+        Group { content() }.padding(.top, 10)
     }
 
     @ViewBuilder
@@ -1334,6 +1339,12 @@ private struct QueueGroupCard: View {
     let removeMany: (_ ids: [Int], _ blocklist: Bool) -> Void
     let pick: () -> Void
     @Environment(AppModel.self) private var model
+    @Environment(ActRouter.self) private var router
+    @Environment(\.actReduceMotion) private var reduce
+    /// The combined rate as shown: a drop to zero holds the last non-zero
+    /// reading for two polls first, so a lone zero sample between two real ones
+    /// never blinks the speed out (the web's `useHeldRate`).
+    @State private var shownRate: Double = 0
 
     var body: some View {
         let downloads = group.downloads
@@ -1362,7 +1373,7 @@ private struct QueueGroupCard: View {
                 HStack(spacing: 6) {
                     Text(lead.title).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
                         .onTapGesture { model.open(group.mediaItemId) }
-                    Text(isSeries ? "\(downloads.count) downloads" : "\(downloads.count) editions")
+                    Text(isSeries ? "\(downloads.count) downloads" : "\(downloads.count) versions")
                         .font(.system(size: 10.5, weight: .semibold)).foregroundStyle(Theme.mut)
                         .padding(.horizontal, 7).padding(.vertical, 1).background(Theme.panel2, in: Capsule())
                 }
@@ -1377,7 +1388,9 @@ private struct QueueGroupCard: View {
         } trailing: {
             HStack(spacing: 14) {
                 VStack(alignment: .trailing, spacing: 1) {
-                    Text(ActFmt.rate(rate)).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Theme.grab)
+                    Text(ActFmt.rate(shownRate)).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Theme.grab)
+                        .contentTransition(.opacity)
+                        .animation(reduce ? nil : .easeOut(duration: 0.2), value: shownRate > 0)
                     Text("\(ActFmt.bytes(done)) / \(ActFmt.bytes(size))").font(.system(size: 10.5)).foregroundStyle(Theme.mut)
                 }
                 VStack(alignment: .trailing, spacing: 1) {
@@ -1406,8 +1419,7 @@ private struct QueueGroupCard: View {
                 let keys = isSeries ? seasons.keys.sorted { ($0 ?? 0) < ($1 ?? 0) } : [nil]
                 ForEach(keys, id: \.self) { key in
                     if isSeries, let key {
-                        Text("SEASON \(key)").font(.system(size: 9.5, weight: .heavy)).tracking(0.6).foregroundStyle(Theme.dim)
-                            .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 2)
+                        seasonHead(key, heldIds: (seasons[key] ?? []).filter { $0.status.lowercased() == "held" }.map(\.id))
                     }
                     ForEach(isSeries ? (seasons[key] ?? []) : downloads) { item in
                         nestedRow(item)
@@ -1419,6 +1431,39 @@ private struct QueueGroupCard: View {
         .overlay {
             if soonest { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.grab.opacity(0.45)) }
         }
+        .task(id: rate) {
+            if rate > 0 { shownRate = rate; return }
+            try? await Task.sleep(for: .seconds(4))
+            if !Task.isCancelled { shownRate = 0 }
+        }
+    }
+
+    /// The season sub-head; with held members it carries the "Manual import (N)"
+    /// bulk rescue (one scan for the whole season instead of one per episode).
+    private func seasonHead(_ season: Int, heldIds: [Int]) -> some View {
+        HStack(spacing: 8) {
+            Text("SEASON \(season)").font(.system(size: 9.5, weight: .heavy)).tracking(0.6).foregroundStyle(Theme.dim)
+            Spacer(minLength: 0)
+            if !heldIds.isEmpty {
+                Button {
+                    router.manualImport(rescue: heldIds)
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "square.and.arrow.down").font(.system(size: 10, weight: .bold))
+                        Text("MANUAL IMPORT (\(heldIds.count))").font(.system(size: 9.5, weight: .heavy)).tracking(0.4)
+                    }
+                    .foregroundStyle(Theme.miss)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Theme.miss.opacity(0.14), in: Capsule())
+                    .frame(minHeight: 32)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Manual import \(heldIds.count) held in season \(season)")
+            }
+        }
+        .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 2)
     }
 
     private func season(_ item: QueueItem) -> Int? {

@@ -502,4 +502,7 @@ if __name__ == "__main__":
     REQUESTOR = len(sys.argv) > 2 and sys.argv[2] == "requestor"
     # `shell` serves a bigger A–Z library, title setups in flight and the Living-logo sign-in.
     SHELL = len(sys.argv) > 2 and sys.argv[2] == "shell"
+    # `perf` serves Activity / Wanted at volume (1000 history events, 600 blocklist
+    # entries, 400 task runs, 20 live downloads) for the perf job.
+    mock_activity.VOLUME = len(sys.argv) > 2 and sys.argv[2] == "perf"
     ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
