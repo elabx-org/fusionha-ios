@@ -147,11 +147,6 @@ public struct GradualSearchStart: Decodable, Sendable, Hashable {
     public let alreadyRunning: Bool?
 }
 
-/// `POST /api/v1/library/{id}/refresh` → `202 {run_id}`.
-public struct RefreshDispatch: Decodable, Sendable, Hashable {
-    public let runId: Int
-}
-
 /// The outcome of a Refresh & Scan, carried on the finished run.
 public struct RescanSummary: Decodable, Sendable, Hashable {
     public let attached: Int?

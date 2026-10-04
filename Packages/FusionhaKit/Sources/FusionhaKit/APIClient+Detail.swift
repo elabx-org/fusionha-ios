@@ -55,7 +55,7 @@ extension APIClient {
         ])
     }
 
-    public func run(id: Int) async throws -> CommandRun {
+    public func commandRun(id: Int) async throws -> CommandRun {
         try await call("GET", "/api/v1/system/runs/\(id)")
     }
 
@@ -111,11 +111,6 @@ extension APIClient {
 
     // MARK: Refresh
 
-    public func refreshItem(id: Int, metadataOnly: Bool) async throws -> RefreshDispatch {
-        try await call("POST", "/api/v1/library/\(id)/refresh",
-                       query: metadataOnly ? [URLQueryItem(name: "metadata_only", value: "true")] : [])
-    }
-
     public func refreshSeason(itemId: Int, season: Int) async throws -> RefreshDispatch {
         try await call("POST", "/api/v1/library/\(itemId)/seasons/\(season)/refresh")
     }
@@ -141,11 +136,6 @@ extension APIClient {
 
     public func deleteEdition(itemId: Int, editionId: Int, deleteFiles: Bool) async throws {
         let _: EmptyResponse = try await call("DELETE", "/api/v1/library/\(itemId)/editions/\(editionId)",
-                                              query: deleteFiles ? [URLQueryItem(name: "deleteFiles", value: "true")] : [])
-    }
-
-    public func deleteItem(id: Int, deleteFiles: Bool) async throws {
-        let _: EmptyResponse = try await call("DELETE", "/api/v1/library/\(id)",
                                               query: deleteFiles ? [URLQueryItem(name: "deleteFiles", value: "true")] : [])
     }
 

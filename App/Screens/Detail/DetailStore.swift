@@ -245,7 +245,7 @@ final class DetailStore {
         guard let client else { return }
         while let job = gradual, job.runId == runId {
             try? await Task.sleep(for: .seconds(1.5))
-            guard let run = try? await client.run(id: runId) else { continue }
+            guard let run = try? await client.commandRun(id: runId) else { continue }
             gradual?.current = run.progressCurrent ?? gradual?.current ?? 0
             if let total = run.progressTotal { gradual?.total = total }
             if !run.isRunning {
@@ -303,7 +303,7 @@ final class DetailStore {
         guard let client else { return nil }
         for _ in 0..<200 {
             try? await Task.sleep(for: .seconds(1.5))
-            if let run = try? await client.run(id: id), !run.isRunning { return run }
+            if let run = try? await client.commandRun(id: id), !run.isRunning { return run }
         }
         return nil
     }
