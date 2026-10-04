@@ -94,6 +94,25 @@ public enum CredentialStore {
             + " · widgets \(group || team ? "on" : "off")"
     }
 
+    /// What this process can see of the shared sign-in, in a few short codes, for
+    /// the widget's signed-out state: whether the App Group container exists, the
+    /// team prefix the keychain reported, and the keychain status of each place
+    /// the sign-in can be read from (0 = found, -25300 = not there,
+    /// -34018 = this signature lacks the entitlement).
+    public static func sharingReport() -> String {
+        let group = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) != nil
+        let defaults = UserDefaults(suiteName: appGroup)?.string(forKey: serverKey) != nil
+        func status(_ base: [String: Any]) -> OSStatus {
+            var q = base
+            q[kSecMatchLimit as String] = kSecMatchLimitOne
+            return SecItemCopyMatching(q as CFDictionary, nil)
+        }
+        let team = teamGroup.map { String($0.prefix(10)) } ?? "none(\(teamProbeStatus))"
+        let records = recordQueries.map { "\(status($0))" }.joined(separator: "/")
+        let tokens = queries.map { "\(status($0))" }.joined(separator: "/")
+        return "group \(group ? "on" : "off")\(defaults ? "+url" : "") · team \(team) · rec \(records) · tok \(tokens)"
+    }
+
     public static func client() -> APIClient? {
         load()?.client()
     }
@@ -153,6 +172,8 @@ public enum CredentialStore {
     /// whatever the App Group situation: re-signing tools give the app and its
     /// extensions the profile's `TEAMID.*` keychain groups. The team prefix is
     /// read from this process's default access group.
+    nonisolated(unsafe) private static var teamProbeStatus: OSStatus = 0
+
     static let teamGroup: String? = {
         let probe: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -170,6 +191,7 @@ public enum CredentialStore {
             add[kSecReturnAttributes as String] = true
             status = SecItemAdd(add as CFDictionary, &out)
         }
+        teamProbeStatus = status
         guard status == errSecSuccess, let dict = out as? [String: Any],
               let group = dict[kSecAttrAccessGroup as String] as? String,
               let prefix = group.split(separator: ".").first, prefix.count == 10 else { return nil }
