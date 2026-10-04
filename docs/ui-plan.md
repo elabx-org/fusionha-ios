@@ -134,10 +134,10 @@ Widgets read the API with the shared token. Posters come straight from TMDB (`po
 
 | Surface | Sizes | Shows | Data source | Interactive |
 |---|---|---|---|---|
-| **Downloads** widget | S / M / L | Active count, then the top 1–4 downloads with poster, tier chip and progress. A stuck download turns orange. | `GET /api/v1/queue?page_size=4` (`items`, `total`, `progress`, `phase`, `stalled`, `poster_url`, `tier`) | "Process queue" button → `POST /api/v1/queue/process` |
-| **Up next** widget | M / L, Lock Screen rectangular | Next episodes and releases for the coming 7 days, with an edition status dot | `GET /api/v1/calendar?start=today&end=today+7` | Tap → that day in Calendar |
+| **Downloads** widget | S / M / L | Active count, then the top 1–4 downloads with poster, tier chip and progress. A stuck download turns orange. When idle: S = the next Up next item (or the latest import), M = 2 Up next rows (or a Recently added poster strip), L = 3 Up next rows + a Recently added strip. Rows tap → item (`fusionha://item/{id}`). | `GET /api/v1/queue?page_size=4` (`items`, `total`, `progress`, `phase`, `stalled`, `poster_url`, `tier`) | "Process queue" button → `POST /api/v1/queue/process` |
+| **Up next** widget | S / M / L | Next monitored episodes and releases (30 days ahead; same-day drops collapse to `S1·E1 +7`), with HD/4K pills and a status dot. S = next item, M = 3 rows, L = 6 rows under day headings | `GET /api/v1/calendar?start=today&end=today+30` | Row → item; widget → Calendar (`fusionha://calendar`) |
 | **Wanted** widget | S, Lock Screen circular | Missing / cutoff-unmet counts | `GET /api/v1/wanted?page_size=1` (`missing_count`, `cutoff_unmet_count`, `upcoming_count`) | "Search all" button (same loop as the web's Search all) |
-| **Recently imported** widget | M / L | Poster row of the latest imports with tier chips | `GET /api/v1/history?event_type=IMPORTED&page_size=6` | Tap → item |
+| **Recently added** widget | S / M / L | Latest imports, one per title, with tier pills. S = poster + title + "3h ago", M = 5-poster strip, L = 2 × 4 poster grid with titles | `GET /api/v1/history?event_type=imported&page_size=40` | Poster → item; widget → Library |
 | **Health** widget | S, Lock Screen inline | "All good" or the count of things needing attention | `GET /health`, `/api/v1/library/attention`, `/system/runs/attention`, `/system/indexers/unavailable` | Tap → Attention sheet |
 | **Disk space** widget | S, Lock Screen circular gauge | Free space per root folder (HD and 4K roots side by side) | `GET /api/v1/rootfolders` (`free_space`, `total_space`) | — |
 | **Activity chart** widget | M | 14-day grabs/imports sparkline | `GET /api/v1/history/sparkline?days=14` | — |
