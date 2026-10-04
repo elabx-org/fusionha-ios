@@ -122,8 +122,11 @@ public enum WidgetFeeds {
             guard let rows = groups[key], let first = rows.first else { return nil }
             let entry = first.entry
             let code = rows.count > 1 ? "\(entry.code) +\(rows.count - 1)" : entry.code
-            let editions = entry.editions.filter(\.monitored).map {
-                UpNextEdition(tier: $0.tier, status: entry.statusKey(for: $0, now: now))
+            // One pill per tier: a title can carry several editions in a tier
+            // (e.g. Colour and Black & White HD), which would read as duplicates.
+            var editions: [UpNextEdition] = []
+            for edition in entry.editions where edition.monitored && !editions.contains(where: { $0.tier == edition.tier }) {
+                editions.append(UpNextEdition(tier: edition.tier, status: entry.statusKey(for: edition, now: now)))
             }
             return UpNextItem(
                 itemId: entry.itemId, title: entry.title, code: code,

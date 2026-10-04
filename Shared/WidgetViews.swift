@@ -379,7 +379,13 @@ struct WidgetRowLink<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        if let url { Link(destination: url) { content } } else { content }
+        // Plain, so row text keeps the widget's colours instead of the link tint.
+        if let url {
+            Link(destination: url) { content.foregroundStyle(.primary) }
+                .buttonStyle(.plain)
+        } else {
+            content
+        }
     }
 }
 
