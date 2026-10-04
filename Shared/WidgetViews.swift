@@ -443,7 +443,7 @@ struct WidgetUpNextHero: View {
 
 /// The small family's latest import: optional poster, title, pills, `3h ago`.
 struct WidgetRecentHero: View {
-    let row: RecentRow
+    let row: RecentImportRow
     var posterWidth: CGFloat
 
     var body: some View {
@@ -470,7 +470,7 @@ struct WidgetRecentHero: View {
 
 /// A row of posters with their edition pills (and titles on the large family).
 struct WidgetPosterStrip: View {
-    let rows: [RecentRow]
+    let rows: [RecentImportRow]
     let columns: Int
     let showsTitle: Bool
 
@@ -486,7 +486,7 @@ struct WidgetPosterStrip: View {
         }
     }
 
-    private func tile(_ row: RecentRow) -> some View {
+    private func tile(_ row: RecentImportRow) -> some View {
         WidgetRowLink(url: WidgetLink.item(row.item.itemId)) {
             VStack(alignment: .leading, spacing: 4) {
                 Color.clear

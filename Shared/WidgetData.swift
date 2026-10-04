@@ -24,7 +24,7 @@ struct DownloadsEntry: TimelineEntry {
     var report: String = ""
     /// Shown while nothing is downloading.
     var upNext: [UpNextRow] = []
-    var recent: [RecentRow] = []
+    var recent: [RecentImportRow] = []
 
     var idle: Bool { total == 0 && rows.isEmpty }
 
@@ -42,7 +42,7 @@ struct UpNextRow: Hashable {
     let poster: Data?
 }
 
-struct RecentRow: Hashable {
+struct RecentImportRow: Hashable {
     let item: RecentImport
     let poster: Data?
 }
@@ -58,7 +58,7 @@ struct UpNextEntry: TimelineEntry {
 
 struct RecentEntry: TimelineEntry {
     let date: Date
-    let rows: [RecentRow]
+    let rows: [RecentImportRow]
     let signedIn: Bool
     let failed: Bool
 
@@ -113,11 +113,11 @@ enum WidgetLoader {
         return zip(items, posters).map { UpNextRow(item: $0, poster: $1) }
     }
 
-    static func recent(_ client: APIClient, limit: Int, posterSize: String) async throws -> [RecentRow] {
+    static func recent(_ client: APIClient, limit: Int, posterSize: String) async throws -> [RecentImportRow] {
         let page = try await client.recentImports(pageSize: 40)
         let items = WidgetFeeds.recentImports(page.items, limit: limit)
         let posters = await fetchPosters(items.map(\.posterUrl), size: posterSize)
-        return zip(items, posters).map { RecentRow(item: $0, poster: $1) }
+        return zip(items, posters).map { RecentImportRow(item: $0, poster: $1) }
     }
 
     /// Small TMDB posters (w92/w154), fetched in parallel, in input order.
@@ -167,7 +167,7 @@ enum WidgetSamples {
                   poster: nil),
     ]
 
-    static let recent: [RecentRow] = ["The Matrix", "Inception", "Breaking Bad", "Cowboy Bebop", "Arrival"]
-        .map { RecentRow(item: RecentImport(itemId: nil, title: $0, tiers: [.hd], importedAt: .now, posterUrl: nil, count: 1),
+    static let recent: [RecentImportRow] = ["The Matrix", "Inception", "Breaking Bad", "Cowboy Bebop", "Arrival"]
+        .map { RecentImportRow(item: RecentImport(itemId: nil, title: $0, tiers: [.hd], importedAt: .now, posterUrl: nil, count: 1),
                          poster: nil) }
 }
