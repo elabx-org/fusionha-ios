@@ -269,6 +269,8 @@ jobs:
           shoot shell-11-login-living-form SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_METHOD=fusionha
           shoot shell-12-settings-living SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=appearance SIMCTL_CHILD_FUSIONHA_SCREENSHOT_APPEARANCE_TAB=login "SIMCTL_CHILD_FUSIONHA_SCREENSHOT_APPEARANCE_SCROLL=Media morphs on the sign-in page"
           shoot shell-13-discover SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_KIND=all
+          shoot shell-14-stats $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_STATS=1
+          shoot shell-15-stats-attention $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_STATS=attention
           ls -l shots
 
       # Interactive (Manual) search results: The Matrix's HD edition against the

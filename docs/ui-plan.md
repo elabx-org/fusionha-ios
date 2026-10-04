@@ -36,6 +36,7 @@ Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`g
 
 ### Library (`/`)
 - **Layout:** large title "Library", with a `LazyVGrid` poster grid. Edition chips sit below each poster, never on the art. A compact list is available as the second density, mirroring `grid | compact`.
+- **Library stats sheet (LibraryPulse mobile sheet):** the chart button opens a sheet with a glass close button: the connection line, the five stat chips (titles in the neutral grey, flowing 2 then 3), the health, 4K coverage and on-disk meters, then **In progress** (the operations feed: running commands, live downloads, runs, with the bulk Refresh & Scan grouped; "Nothing in progress.") and **Needs attention** (the unavailable-indexers group with its expandable per-indexer list and amber Manage → Settings › Indexers, then file, held-import and no-grab rows with their Replace / View / Review / Set type / Manual import / See why actions and per-row dismiss), then "View all activity ›". Polls every 2s while open.
 - **Library pulse:** a horizontally scrolling row of glass capsule chips in a `GlassEffectContainer`: All · Downloading · Missing · Upcoming · Complete · Needs attention. Each has a count, and the selected chip morphs with `glassEffectID`.
 - **Search:** `.searchable` scoped to "This library", the same as the web's `SearchHeader`.
 - **Toolbar:** a glass **Filter menu** (type, HD/4K, recency, sort and group-by-status, using the same values as `library-filters.ts`), **Select**, **＋**.

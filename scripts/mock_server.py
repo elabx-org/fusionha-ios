@@ -355,12 +355,23 @@ SHELL_ROUTES = {
 }
 
 
+# `shell` mode: the Library stats sheet's attention + operations sources.
+SHELL_SHEET_ROUTES = {
+    "/api/v1/library/attention": mock_shell.library_attention,
+    "/api/v1/system/runs/attention": mock_shell.run_attention,
+    "/api/v1/system/indexers/unavailable": mock_shell.indexers_unavailable,
+    "/api/v1/system/commands": mock_shell.commands,
+}
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
         path = url.path.rstrip("/")
         query = parse_qs(url.query)
         hit = mock_activity.handle("GET", path, query)
+        if SHELL and path in SHELL_SHEET_ROUTES:
+            return self.send_json(SHELL_SHEET_ROUTES[path]())
         if SHELL and path == "/api/v1/settings":
             base = hit[0] if hit is not None else shell_settings()
             return self.send_json(base | {"login_layout": "living", "login_living_media": False})

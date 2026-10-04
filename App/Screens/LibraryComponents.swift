@@ -10,8 +10,13 @@ struct LibraryPulseCard: View {
     let derived: LibraryDerived
     @Binding var selection: String
     @Binding var status: LibraryStatus
+    @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @State private var showingStats = false
+    /// "Manage" on the unavailable-indexers row: Settings › Indexers opens once the sheet is gone.
+    @State private var pendingIndexerSettings = false
+    @State private var showingIndexerSettings = false
+    @State private var statsDetent: PresentationDetent = .medium
 
     private var active: LibraryKind? { LibraryKind(rawValue: selection) }
     private var accent: Color { active.map(Theme.kind) ?? Theme.i2 }
@@ -84,11 +89,28 @@ struct LibraryPulseCard: View {
         .clipShape(RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous).strokeBorder(Theme.line))
         .overlay(alignment: .topTrailing) { statsTrigger.padding(14) }
-        .sheet(isPresented: $showingStats) {
-            LibraryStatsSheet(pulse: derived.pulse, status: $status)
-                .presentationDetents([.medium, .large])
+        .sheet(isPresented: $showingStats, onDismiss: {
+            if pendingIndexerSettings {
+                pendingIndexerSettings = false
+                showingIndexerSettings = true
+            }
+        }) {
+            LibraryStatsSheet(pulse: derived.pulse, status: $status) { pendingIndexerSettings = true }
+                .presentationDetents([.medium, .large], selection: $statsDetent)
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Theme.panel)
+        }
+        #if DEBUG
+        .task {
+            // CI screenshots: `FUSIONHA_SCREENSHOT_STATS=1|attention` opens the stats sheet full height.
+            guard ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_STATS"] != nil else { return }
+            try? await Task.sleep(for: .seconds(1.5))
+            statsDetent = .large
+            showingStats = true
+        }
+        #endif
+        .fullScreenCover(isPresented: $showingIndexerSettings) {
+            SettingsView(client: model.client, initialPanel: "indexers")
         }
     }
 
@@ -152,15 +174,19 @@ struct LibraryPulseCard: View {
     }
 }
 
-/// "Library stats": stat buttons that set the status filter, then the
-/// health, 4K coverage and on-disk meters, and a link to Activity.
+/// "Library stats" (LibraryPulse.tsx mobile sheet): the connection line, stat
+/// buttons that set the status filter, the health / 4K coverage / on-disk
+/// meters, then In progress and Needs attention, and a link to Activity.
 private struct LibraryStatsSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @Environment(\.motionEnabled) private var motion
     let pulse: PulseStats
     @Binding var status: LibraryStatus
+    /// Close the sheet, then open Settings › Indexers.
+    var manageIndexers: () -> Void = {}
     @State private var grown = false
+    @State private var feed = StatsSheetFeed()
 
     private let order: [(LibraryStatus, String)] = [
         (.all, "titles"), (.complete, "complete"), (.downloading, "downloading"),
@@ -168,9 +194,11 @@ private struct LibraryStatsSheet: View {
     ]
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Library stats").font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.txt)
+                    .padding(.trailing, 36)
                 HStack(spacing: 8) {
                     Circle().fill(model.libraryError == nil ? Theme.done : Theme.danger)
                         .frame(width: 8, height: 8)
@@ -211,6 +239,22 @@ private struct LibraryStatsSheet: View {
                 }
                 .padding(.top, 16)
                 .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
+                section("In progress") {
+                    StatsInProgressList(operations: feed.inProgress) { _ in
+                        dismiss()
+                        model.tab = .activity
+                    }
+                }
+                section("Needs attention", id: "needs-attention") {
+                    StatsAttentionList(indexers: feed.indexers, rows: feed.rows, manageIndexers: {
+                        manageIndexers()
+                        dismiss()
+                    }, openRow: { row in
+                        dismiss()
+                        if row.kind == .importHeld { model.tab = .activity } else if let id = row.itemId { model.open(id) }
+                    }, act: act, dismissRow: dismissRow)
+                    .padding(.horizontal, -16)
+                }
                 Button {
                     dismiss()
                     model.tab = .activity
@@ -224,15 +268,86 @@ private struct LibraryStatsSheet: View {
                 .buttonStyle(.plain)
                 .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
             }
-            .padding(20)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 20)
+        }
+        #if DEBUG
+        .task(id: feed.loaded) {
+            guard feed.loaded, ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_STATS"] == "attention" else { return }
+            try? await Task.sleep(for: .milliseconds(600))
+            proxy.scrollTo("needs-attention", anchor: .top)
+        }
+        #endif
+        }
+        .overlay(alignment: .topTrailing) {
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.mut)
+                    .frame(width: 28, height: 28)
+            }
+            .buttonStyle(.glass)
+            .buttonBorderShape(.circle)
+            .padding(.top, 14)
+            .padding(.trailing, 14)
+            .accessibilityLabel("Close")
         }
         .onAppear {
             withAnimation(motion ? Motion.reveal(1.1) : nil) { grown = true }
         }
+        .task {
+            while !Task.isCancelled {
+                if let client = model.client { await feed.load(client: client, queue: model.queue) }
+                try? await Task.sleep(for: .seconds(2))
+            }
+        }
+    }
+
+    /// `.sheetSection`: a hairline, then the 11/700 uppercase label.
+    private func section<Content: View>(_ title: String, id: String? = nil, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title.uppercased())
+                .font(.system(size: 11, weight: .bold))
+                .tracking(0.22)
+                .foregroundStyle(Theme.dim)
+            content()
+        }
+        .padding(.top, 16)
+        .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
+        .id(id ?? title)
+    }
+
+    private func act(_ row: StatsAttentionRow) {
+        dismiss()
+        guard let id = row.itemId else { model.tab = .activity; return }
+        switch row.action {
+        case .manualImport: model.tab = .activity
+        case .replace(let tier): model.interactiveSearch(id, tier: tier)
+        case .setType: model.edit(id)
+        case .review, .view, .seeWhy: model.open(id)
+        }
+    }
+
+    private func dismissRow(_ row: StatsAttentionRow) {
+        guard let client = model.client else { return }
+        feed.drop(rowId: row.id)
+        Task {
+            do {
+                if let runId = row.runId {
+                    try await client.ackRunAttention(runId)
+                } else if let itemId = row.dismissItemId {
+                    try await client.dismissScopeMismatch(itemId)
+                }
+            } catch {
+                model.toast(row.runId != nil ? "Couldn't dismiss — the item is back. Try again." : "Couldn't dismiss — try again.",
+                            variant: .error)
+                await feed.load(client: client, queue: model.queue)
+            }
+        }
     }
 
     private func statButton(_ key: LibraryStatus, _ label: String) -> some View {
-        let color: Color = key == .all ? Theme.i2 : (CardStatus(rawValue: key.rawValue)?.color ?? Theme.i2)
+        let color: Color = key == .all ? Theme.mut : (CardStatus(rawValue: key.rawValue)?.color ?? Theme.i2)
         let count = key == .all ? pulse.titles : (CardStatus(rawValue: key.rawValue).flatMap { pulse.titleCounts[$0] } ?? 0)
         let isActive = status == key
         return Button {

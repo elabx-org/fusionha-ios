@@ -18,7 +18,7 @@ EXTRA_TITLES = [
     ("Oppenheimer", 2023, 5), ("Parasite", 2019, 4), ("Perfect Blue", 1997, 7), ("Ran", 1985, 2),
     ("Severance", 2022, 9), ("Shōgun", 2024, 8), ("Succession", 2018, 8), ("Tenet", 2020, 5),
     ("True Detective", 2014, 9), ("Up", 2009, 2), ("Vertigo", 1958, 2), ("Whiplash", 2014, 4),
-    ("Yellowjackets", 2021, 9), ("Zodiac", 2007, 5), ("1917", 2019, 5),
+    ("Yellowjackets", 2021, 9), ("Zodiac", 2007, 5), ("1917", 2019, 5), ("Lioness", 2023, 8),
 ]
 
 ANIME = {"Akira"}  # borrowed from a non-anime fixture, so flagged here
@@ -87,3 +87,35 @@ def setups():
 def setup_status(base):
     """The Living logo needs a connected server; `login_living_media` mirrors the web toggle."""
     return base | {"login_layout": "living", "login_living_media": False}
+
+
+# The Library stats sheet's "In progress" + "Needs attention" sources.
+def library_attention():
+    items = [
+        {"item_id": 9, "title": "Game of Thrones", "tier": "UHD-2160p", "edition": None, "movie_edition": None,
+         "kind": "dead_link", "count": 2, "root_path": "/tv-4k",
+         "message": "2 files point at a debrid link that no longer resolves."},
+        {"item_id": 138, "title": "Lioness", "tier": "HD-1080p", "edition": None, "movie_edition": None,
+         "kind": "not_found", "count": 1, "root_path": "/tv",
+         "message": "1 file wasn't found on the last scan."},
+    ]
+    return {"editions": len(items), "versions": len(items), "titles": len(items), "items": items,
+            "numbering_mismatches": 0, "metadata_removed": 0, "arr_scope_mismatches": 0}
+
+
+def run_attention():
+    return {"count": 1, "items": [{"run_id": 4412, "item_id": 104, "media_kind": "series", "scope": "item",
+                                   "title": "Arcane", "releases": 14, "started_at": _iso(dt.timedelta(minutes=-30)),
+                                   "reason": "14 releases found, none passed your profile (all below the cutoff)."}]}
+
+
+def indexers_unavailable():
+    return {"count": 1, "items": [{"indexer_id": 3, "name": "NZBgeek", "failure_count": 5,
+                                   "disabled_till": _iso(dt.timedelta(minutes=18)) + "Z",
+                                   "last_failure_at": _iso(dt.timedelta(minutes=-12)) + "Z",
+                                   "reason": "HTTP 503 from the API"}]}
+
+
+def commands():
+    return [{"id": "c-rss-1", "name": "rss_sync", "started": _iso(dt.timedelta(seconds=-20)) + "Z",
+             "status": "running", "message": "Checking 6 indexers", "progress": 0.4, "ended": None}]
