@@ -15,6 +15,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+import mock_detail
+
 MOCK = Path(__file__).resolve().parent / "mock"
 
 
@@ -363,6 +365,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"id": int(path.rsplit("/", 1)[-1]), "status": "completed", "detail": None})
         if path in routes:
             return self.send_json(routes[path]())
+        if (body := mock_detail.get(path, query)) is not None:
+            return self.send_json(body)
         fixture = api_fixture(path)
         if fixture:
             text = fixture.read_text()
@@ -382,7 +386,8 @@ class Handler(BaseHTTPRequestHandler):
         if path.endswith("/check-4k"):
             return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [],
                                    "format_tags": [], "message": ""})
-        self.send_json({})
+        body = mock_detail.post(path)
+        self.send_json({} if body is None else body)
 
     def do_PUT(self):
         self.send_json(settings() if self.path.startswith("/api/v1/settings") else {})

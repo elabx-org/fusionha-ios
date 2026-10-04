@@ -169,7 +169,7 @@ public struct BulkResult: Decodable, Sendable {
 
 // MARK: - Runs  (POST /library/{id}/refresh → GET /system/runs/{id})
 
-public struct RefreshDispatch: Decodable, Sendable {
+public struct RefreshDispatch: Decodable, Sendable, Hashable {
     public let runId: Int
 }
 
