@@ -41,6 +41,14 @@ final class DecodingTests: XCTestCase {
         XCTAssertTrue(status.offersPlex)
         XCTAssertFalse(status.offersPassword)
 
+        let styled = try decoder.decode(SetupStatus.self, from: Data(#"""
+            {"needs_setup": false, "login_style": "aurora", "login_layout": "centered",
+             "login_background": "aurora", "login_show_logo": true, "login_show_wordmark": false,
+             "login_show_tagline": false, "plex_sso_enabled": true, "local_login_enabled": true}
+            """#.utf8))
+        XCTAssertEqual(styled.loginBackground, "aurora")
+        XCTAssertEqual(styled.loginShowLogo, true)
+
         let legacy = try decoder.decode(SetupStatus.self, from: Data(#"{"needs_setup": false}"#.utf8))
         XCTAssertFalse(legacy.offersPlex)
         XCTAssertTrue(legacy.offersPassword)

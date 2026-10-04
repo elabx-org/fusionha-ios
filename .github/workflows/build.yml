@@ -100,3 +100,98 @@ jobs:
             source.json
           generate_release_notes: true
           make_latest: true
+
+  # Screenshots of every screen from the simulator, against a mock server that
+  # serves a demo library (scripts/mock_server.py). Published to the
+  # `screenshots` branch under the PR number (or `main`) so changes can be
+  # compared with the web app.
+  screenshots:
+    name: Simulator screenshots
+    runs-on: macos-26
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select newest Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Fusionha.xcodeproj \
+            -scheme Fusionha \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Take screenshots
+        run: |
+          python3 scripts/mock_server.py 8765 &
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = [d for rt, ds in json.load(sys.stdin)["devices"].items() if "iOS-26" in rt for d in ds]
+          pick = next((d for d in devices if d["name"] == "iPhone 17 Pro"), None) or next(d for d in devices if d["name"].startswith("iPhone"))
+          print(pick["udid"])')
+          echo "Using simulator $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --wifiBars 3
+          xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/Fusionha.app
+          mkdir -p shots
+          shoot() {
+            name=$1; shift
+            env "$@" xcrun simctl launch --terminate-running-process "$UDID" org.elabx.fusionha > /dev/null
+            sleep 9
+            xcrun simctl io "$UDID" screenshot "shots/$name.png" > /dev/null
+          }
+          S=http://127.0.0.1:8765
+          shoot 01-login SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=
+          shoot 02-login-methods SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S
+          shoot 03-login-form SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_METHOD=fusionha
+          shoot 04-library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
+          shoot 05-discover SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover
+          shoot 06-calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar
+          shoot 07-activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity
+          shoot 08-wanted SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=wanted
+          shoot 09-detail SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
+          shoot 10-add SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD=1
+          shoot 11-search SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH=ma
+          ls -l shots
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: shots
+          retention-days: 14
+
+      - name: Publish to the screenshots branch
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          DIR=${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp -R shots "$RUNNER_TEMP/shots"
+          git fetch -q origin screenshots:refs/remotes/origin/screenshots || true
+          if git rev-parse -q --verify refs/remotes/origin/screenshots > /dev/null; then
+            git switch -q -c publish refs/remotes/origin/screenshots
+          else
+            git switch -q --orphan publish
+          fi
+          rm -rf "$DIR" && mkdir -p "$DIR"
+          cp "$RUNNER_TEMP"/shots/*.png "$DIR/"
+          git add "$DIR"
+          git commit -qm "Screenshots for $DIR (${GITHUB_SHA::7})" || exit 0
+          git push -q origin publish:screenshots
