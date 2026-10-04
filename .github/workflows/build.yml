@@ -46,6 +46,13 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
+      # Feather only offers an update when the version string changes, so the
+      # patch number is the CI run number: 1.1.0 in project.yml ships as 1.1.<run>.
+      - name: Set version
+        run: |
+          BASE=$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' project.yml | head -1)
+          echo "APP_VERSION=${BASE%.*}.${{ github.run_number }}" >> "$GITHUB_ENV"
+
       - name: Build (unsigned)
         run: |
           set -o pipefail
@@ -59,6 +66,7 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            MARKETING_VERSION="$APP_VERSION" \
             build
 
       - name: Package IPA
@@ -81,7 +89,7 @@ jobs:
         id: release
         if: github.event_name == 'push'
         run: |
-          VERSION=$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' project.yml | head -1)
+          VERSION="$APP_VERSION"
           BUILD=${{ github.run_number }}
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="build-$BUILD"; fi
           python3 scripts/make_source.py Fusionha.ipa "$TAG" "$VERSION" "$BUILD" source.json

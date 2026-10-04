@@ -12,7 +12,7 @@ options:
 settings:
   base:
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "1.1.0"
     CURRENT_PROJECT_VERSION: "1"
     # Builds are unsigned; Feather signs on-device with your own certificate.
     DEVELOPMENT_TEAM: ""
@@ -40,6 +40,8 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: fusionha
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UIUserInterfaceStyle: Dark
         UILaunchScreen:
           UIColorName: LaunchBackground
@@ -92,6 +94,8 @@ targets:
       path: Widgets/Info.plist
       properties:
         CFBundleDisplayName: fusionha
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
         NSAppTransportSecurity:
@@ -115,6 +119,8 @@ targets:
       path: NotificationService/Info.plist
       properties:
         CFBundleDisplayName: fusionha
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.usernotifications.service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
