@@ -706,7 +706,7 @@ private struct HistoryStoryRow: View {
         } catch let error as APIError where error.status == 409 && !override {
             regrabConflict = true
         } catch let error as APIError where error.status == 422 || error.status == 404 {
-            toaster.show(error.serverMessage ?? "Couldn't re-grab this release — try again", tone: .warning)
+            toaster.show(error.serverDetail ?? "Couldn't re-grab this release — try again", tone: .warning)
         } catch {
             toaster.show("Couldn't re-grab this release — try again", tone: .error)
         }

@@ -117,7 +117,7 @@ extension APIClient {
         try await fire("POST", "/api/v1/system/runs/\(id)/cancel")
     }
 
-    public func systemTasks() async throws -> [SystemTask] {
+    public func activitySystemTasks() async throws -> [ActivitySystemTask] {
         try await get("/api/v1/system/tasks")
     }
 
@@ -144,7 +144,7 @@ extension APIClient {
         try await get("/api/v1/audit", query: q([("limit", "\(limit)"), ("before_id", beforeId.map(String.init))]))
     }
 
-    public func indexerStats(range: String) async throws -> IndexerStatsResponse {
+    public func activityIndexerStats(range: String) async throws -> ActivityIndexerStats {
         try await get("/api/v1/indexers/stats", query: [URLQueryItem(name: "range", value: range)])
     }
 

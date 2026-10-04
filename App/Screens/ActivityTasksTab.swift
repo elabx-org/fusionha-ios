@@ -124,7 +124,7 @@ fileprivate enum TasksLogic {
     static func isRss(_ name: String) -> Bool { normalize(name).contains("rsssync") }
     static func isEnrichment(_ name: String) -> Bool { normalize(name).contains("enrichment") }
 
-    static func scheduledTasks(_ tasks: [SystemTask], limit: Int = 2) -> [SystemTask] {
+    static func scheduledTasks(_ tasks: [ActivitySystemTask], limit: Int = 2) -> [ActivitySystemTask] {
         tasks.filter { !isRss($0.name) && !isEnrichment($0.name) }
             .sorted { (ActFmt.date($0.nextRun) ?? .distantFuture) < (ActFmt.date($1.nextRun) ?? .distantFuture) }
             .prefix(limit)
@@ -132,7 +132,7 @@ fileprivate enum TasksLogic {
     }
 
     /// `schedulerTaskForRun`: only an unambiguous label match for a background sweep.
-    static func schedulerTask(for run: CommandRun, in tasks: [SystemTask]) -> SystemTask? {
+    static func schedulerTask(for run: CommandRun, in tasks: [ActivitySystemTask]) -> ActivitySystemTask? {
         guard run.trigger == "scheduled" || run.trigger == "rss" else { return nil }
         let wanted = run.name.trimmingCharacters(in: .whitespaces).lowercased()
         guard !wanted.isEmpty else { return nil }
@@ -313,7 +313,7 @@ fileprivate enum TasksLogic {
 @Observable
 fileprivate final class TasksStore {
     let feed = ActFeed<CommandRun>(pageSize: 200) { _, _ in ([], 0) }
-    var tasks: [SystemTask] = []
+    var tasks: [ActivitySystemTask] = []
     var enrichment: EnrichmentStatus?
     var playful = true
 
@@ -337,7 +337,7 @@ fileprivate final class TasksStore {
 
     private func refreshSide(_ client: APIClient?) async {
         guard let client else { return }
-        async let t = try? client.systemTasks()
+        async let t = try? client.activitySystemTasks()
         async let e = try? client.enrichmentStatus()
         if let tasks = await t { self.tasks = tasks }
         enrichment = await e
@@ -654,7 +654,7 @@ private struct EnrichmentCard: View {
 }
 
 private struct RssSyncCard: View {
-    let task: SystemTask
+    let task: ActivitySystemTask
     let latestRun: CommandRun?
 
     var body: some View {
@@ -698,7 +698,7 @@ private struct RssSyncCard: View {
 }
 
 private struct ScheduledCard: View {
-    let tasks: [SystemTask]
+    let tasks: [ActivitySystemTask]
 
     var body: some View {
         HStack(alignment: .center, spacing: 13) {
@@ -958,7 +958,7 @@ private struct SearchRunCard: View {
 
 private struct RecentGroupView: View {
     let group: TasksLogic.RunGroup
-    let tasks: [SystemTask]
+    let tasks: [ActivitySystemTask]
     @State private var expanded = false
     @Environment(\.actReduceMotion) private var reduce
 
@@ -1002,7 +1002,7 @@ private struct RecentGroupView: View {
 
 private struct RecentRow: View {
     let run: CommandRun
-    let tasks: [SystemTask]
+    let tasks: [ActivitySystemTask]
     @Environment(AppModel.self) private var model
     @Environment(ActToaster.self) private var toaster
     @Environment(\.actReduceMotion) private var reduce

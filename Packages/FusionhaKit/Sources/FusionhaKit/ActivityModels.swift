@@ -208,7 +208,7 @@ public struct CommandRunDetail: Decodable, Sendable {
     public let detail: String?
 }
 
-public struct SystemTask: Decodable, Sendable, Hashable {
+public struct ActivitySystemTask: Decodable, Sendable, Hashable {
     public let name: String
     public let intervalSeconds: Int
     public let running: Bool
@@ -261,9 +261,9 @@ public struct AuditEntry: Decodable, Sendable, Identifiable, Hashable {
 
 // MARK: - Indexers  (GET /api/v1/indexers/stats)
 
-public struct IndexerStatsResponse: Decodable, Sendable {
+public struct ActivityIndexerStats: Decodable, Sendable {
     public let indexers: [IndexerStat]
-    public let summary: IndexerStatsSummary
+    public let summary: ActivityIndexerSummary
 }
 
 public struct IndexerStat: Decodable, Sendable, Identifiable, Hashable {
@@ -284,7 +284,7 @@ public struct IndexerHealth: Decodable, Sendable, Hashable {
     public let lastFailureReason: String?
 }
 
-public struct IndexerStatsSummary: Decodable, Sendable {
+public struct ActivityIndexerSummary: Decodable, Sendable {
     public let range: String
     public let indexers: Int
     public let healthy: Int
@@ -363,15 +363,6 @@ public struct EditionAddRequest: Encodable, Sendable {
 }
 
 extension APIError {
-    /// The server's `detail` message, when it sent one.
-    public var serverMessage: String? {
-        guard case .http(_, let body) = self,
-              let obj = try? JSONSerialization.jsonObject(with: Data(body.utf8)) as? [String: Any] else { return nil }
-        if let s = obj["detail"] as? String { return s }
-        if let d = obj["detail"] as? [String: Any], let s = d["message"] as? String { return s }
-        return nil
-    }
-
     /// A 409 "already running" body's `detail.run_id` (gradual search).
     public var detailRunId: Int? {
         guard case .http(_, let body) = self,

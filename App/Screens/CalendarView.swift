@@ -441,7 +441,7 @@ struct CalendarView: View {
 
     private func loadSettings() async {
         guard let client = model.client else { return }
-        if let loaded = try? await client.settings() { settings = loaded }
+        if let loaded = try? await client.appSettings() { settings = loaded }
         settingsResolved = true
     }
 

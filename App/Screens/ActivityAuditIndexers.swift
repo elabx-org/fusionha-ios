@@ -294,7 +294,7 @@ struct ActivityIndexersTab: View {
     @Environment(AppModel.self) private var model
     @Environment(\.actReduceMotion) private var reduce
     @State private var range = "7d"
-    @State private var stats: IndexerStatsResponse?
+    @State private var stats: ActivityIndexerStats?
     @State private var failed = false
     @State private var othersOpen = false
     @State private var grown = false
@@ -326,7 +326,7 @@ struct ActivityIndexersTab: View {
         }
         .task(id: range) {
             do {
-                let result = try await model.client?.indexerStats(range: range)
+                let result = try await model.client?.activityIndexerStats(range: range)
                 if reduce { stats = result } else { withAnimation(ActMotion.reveal()) { stats = result } }
                 failed = false
                 grown = false
@@ -346,7 +346,7 @@ struct ActivityIndexersTab: View {
         }
     }
 
-    private func kpis(_ s: IndexerStatsResponse) -> some View {
+    private func kpis(_ s: ActivityIndexerStats) -> some View {
         let summary = s.summary
         let total = summary.indexers
         let off = summary.off
@@ -441,7 +441,7 @@ struct ActivityIndexersTab: View {
         let isOthers: Bool
     }
 
-    private func shareCard(_ s: IndexerStatsResponse) -> some View {
+    private func shareCard(_ s: ActivityIndexerStats) -> some View {
         let fleet = s.summary.grabsRange ?? s.indexers.reduce(0) { $0 + ($1.grabsRange ?? 0) }
         let sorted = s.indexers.filter { ($0.grabsRange ?? 0) > 0 }.sorted { ($0.grabsRange ?? 0) > ($1.grabsRange ?? 0) }
         let share: (Int) -> Double = { fleet > 0 ? Double($0) / Double(fleet) * 100 : 0 }
@@ -520,7 +520,7 @@ struct ActivityIndexersTab: View {
         .contentShape(Rectangle())
     }
 
-    private func activityCard(_ summary: IndexerStatsSummary) -> some View {
+    private func activityCard(_ summary: ActivityIndexerSummary) -> some View {
         let series = summary.activitySeries ?? []
         let peak = series.max() ?? 0
         return VStack(alignment: .leading, spacing: 0) {

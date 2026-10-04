@@ -372,7 +372,7 @@ struct WantedAddEditionSheet: View {
                                                                            monitored: monitored, searchNow: searchNow))
             onAdded()
         } catch let e as APIError {
-            self.error = e.serverMessage ?? (e.status == 409 ? "That edition already exists on this title." : "Couldn't add the edition — try again.")
+            self.error = e.serverDetail ?? (e.status == 409 ? "That edition already exists on this title." : "Couldn't add the edition — try again.")
         } catch {
             self.error = "Couldn't add the edition — try again."
         }

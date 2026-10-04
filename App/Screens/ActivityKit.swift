@@ -846,7 +846,7 @@ final class ActToaster {
     }
 
     func error(_ error: Error, fallback: String? = nil) {
-        if let api = error as? APIError, let message = api.serverMessage {
+        if let api = error as? APIError, let message = api.serverDetail {
             show(message, tone: .error)
         } else {
             show(fallback ?? error.localizedDescription, tone: .error)
@@ -1423,7 +1423,7 @@ enum ActActions {
             }
             done()
         } catch let error as APIError where error.status == 422 || error.status == 404 {
-            toaster.show(error.serverMessage ?? "Couldn't blocklist this release — try again", tone: .warning)
+            toaster.show(error.serverDetail ?? "Couldn't blocklist this release — try again", tone: .warning)
         } catch {
             toaster.show("Couldn't blocklist this release — try again", tone: .error)
         }

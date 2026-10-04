@@ -9,6 +9,7 @@ from the library, so every screen has something to show.
 """
 import datetime as dt
 import json
+import re
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -259,6 +260,26 @@ def discover():
     } for item in load("library.json")]
 
 
+# These settings fixtures were captured at CAPTURED; their timestamps are shifted
+# to "now" so countdowns, "last run" and NEW badges read the same on every run.
+REBASED = {"indexers__stats.json", "system__tasks.json", "tokens.json"}
+CAPTURED = dt.datetime(2026, 10, 4, 10, 54, 58)
+_ISO = re.compile(r'"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(\.\d+)?"')
+
+
+def rebased(text):
+    shift = dt.datetime.utcnow() - CAPTURED
+    return _ISO.sub(lambda m: '"' + (dt.datetime.fromisoformat(m.group(1)) + shift).isoformat(timespec="seconds") + '"', text)
+
+
+def api_fixture(path):
+    """`/api/v1/a/b` -> scripts/mock/api/a__b.json, when it exists."""
+    if not path.startswith("/api/v1/"):
+        return None
+    fixture = MOCK / "api" / (path[len("/api/v1/"):].replace("/", "__") + ".json")
+    return fixture if fixture.exists() else None
+
+
 # library-shell: the shell's polls, settings, the Add flow's TVDB search and 4K check.
 def library_attention():
     return {"editions": 1, "titles": 1, "items": [{"item_id": 3, "title": "Attention"}], "numbering_mismatches": 0,
@@ -266,7 +287,8 @@ def library_attention():
 
 
 def shell_settings():
-    return {"library_rail_style": "current", "library_rail_consolidate": True, "metadata_provider": "tmdb",
+    full = json.loads((MOCK / "api" / "settings.json").read_text()) if (MOCK / "api" / "settings.json").exists() else {}
+    return full | {"library_rail_style": "current", "library_rail_consolidate": True, "metadata_provider": "tmdb",
             "default_movie_minimum_availability": "released", "animations_enabled": True}
 
 
@@ -346,6 +368,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"id": int(path.rsplit("/", 1)[-1]), "status": "completed", "detail": None})
         if path in routes:
             return self.send_json(routes[path]())
+        fixture = api_fixture(path)
+        if fixture:
+            text = fixture.read_text()
+            return self.send_json(json.loads(rebased(text) if fixture.name in REBASED else text))
         self.send_json({"detail": "Not Found"}, 404)
 
     def do_POST(self):
@@ -371,6 +397,9 @@ class Handler(BaseHTTPRequestHandler):
         if hit:
             return self.send_json(*hit)
         self.send_json(settings() if self.path.startswith("/api/v1/settings") else {})
+
+    def do_PATCH(self):
+        self.send_json({})
 
     def do_PATCH(self):
         self.send_json({})
