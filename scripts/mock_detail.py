@@ -91,7 +91,8 @@ def _releases(item_id, edition_id):
     item = _item(item_id)
     if not item:
         return []
-    edition = next((e for e in item["editions"] if e["id"] == edition_id), item["editions"][0])
+    versions = item.get("versions") or item.get("editions") or []
+    edition = next((e for e in versions if e["id"] == edition_id), versions[0])
     uhd = edition["tier"] == "UHD-2160p"
     name = re.sub(r"[^A-Za-z0-9]+", ".", item["title"]).strip(".")
     tag = "S01E01" if item["kind"] == "series" else str(item.get("year") or "")
@@ -116,8 +117,9 @@ def _releases(item_id, edition_id):
 
 def _scope_status(item_id, edition_id):
     """Auto-search paused on the 4K edition, so its strip shows; idle otherwise."""
-    item = _item(item_id) or {"editions": []}
-    edition = next((e for e in item["editions"] if e["id"] == edition_id), None)
+    item = _item(item_id) or {}
+    versions = item.get("versions") or item.get("editions") or []
+    edition = next((e for e in versions if e["id"] == edition_id), None)
     paused = bool(edition and edition["tier"] == "UHD-2160p")
     resume = (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%S")
     return {
@@ -127,6 +129,12 @@ def _scope_status(item_id, edition_id):
         "last_run_at": _ago(hours=5), "last_run_releases": 18, "last_run_grabbed": 0,
         "last_run_rejected": 18, "now": _ago(),
     }
+
+
+def _version_id(query):
+    """`version_id` since 0.4.122; the deprecated `edition_id` is still accepted."""
+    raw = (query.get("version_id") or query.get("edition_id") or ["0"])[0]
+    return int(raw or 0)
 
 
 def get(path, query):
@@ -154,11 +162,10 @@ def get(path, query):
         return {"episodes": [], "seasons": [], "now": _ago()}
     m = re.fullmatch(r"/api/v1/library/(\d+)/releases/scope-status", path)
     if m:
-        return _scope_status(int(m.group(1)), int(query.get("edition_id", ["0"])[0] or 0))
+        return _scope_status(int(m.group(1)), _version_id(query))
     m = re.fullmatch(r"/api/v1/library/(\d+)/releases", path)
     if m:
-        edition_id = int(query.get("edition_id", ["0"])[0] or 0)
-        return _releases(int(m.group(1)), edition_id)
+        return _releases(int(m.group(1)), _version_id(query))
     return None
 
 
@@ -170,6 +177,8 @@ def post(path):
         return []
     if re.fullmatch(r"/api/v1/library/\d+(/seasons/\d+)?/refresh", path):
         return {"run_id": 950}
+    if re.fullmatch(r"/api/v1/library/versions/\d+/replace-dead", path):
+        return {"deleted_files": 1, "search_dispatched": True}
     if re.fullmatch(r"/api/v1/library/\d+/check-4k", path):
         return {"dispatched": True, "queried_indexers": 3, "found_uhd": True,
                 "best_release_name": "Title.2160p.WEB-DL.DDP5.1.DV.H.265-NTb",

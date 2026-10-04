@@ -214,7 +214,7 @@ struct SearchCFWarning: View {
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.miss)
                 .padding(.top, 1)
-            Text("Every release scored +0 — this edition’s quality profile has no custom-format scores, so custom formats can’t rank or reject releases. Add scores in Custom Formats.")
+            Text("Every release scored +0 — this version’s quality profile has no custom-format scores, so custom formats can’t rank or reject releases. Add scores in Custom Formats.")
                 .font(.system(size: 12.5))
                 .foregroundStyle(Theme.txt)
                 .lineSpacing(3)
@@ -345,7 +345,7 @@ struct AutoTargetHint: View {
     let info: ReleaseSearch.AutoTarget
     var body: some View {
         let color = info.targetLabel == nil ? Theme.mut : DetailTokens.tier(info.tier)
-        Text(info.targetLabel.map { "→ \($0)" } ?? "no \(info.tier.tierShort) edition")
+        Text(info.targetLabel.map { "→ \($0)" } ?? "no \(info.tier.tierShort) version")
             .font(.system(size: 10.5, weight: .bold))
             .foregroundStyle(color)
             .lineLimit(1)
@@ -359,8 +359,8 @@ struct AutoTargetHint: View {
                     Capsule().strokeBorder(color.opacity(0.32))
                 }
             }
-            .accessibilityHint(info.targetLabel.map { "This release will be filed under the \($0) edition, not the one you're viewing." }
-                ?? "Blocked — no \(info.tier.tierShort) edition exists to file this release under.")
+            .accessibilityHint(info.targetLabel.map { "This release will be filed under the \($0) version, not the one you're viewing." }
+                ?? "Blocked — no \(info.tier.tierShort) version exists to file this release under.")
     }
 }
 

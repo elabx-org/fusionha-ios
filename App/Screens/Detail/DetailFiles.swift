@@ -72,7 +72,7 @@ struct SeriesFilesTab: View {
     var body: some View {
         let sections = sections
         VStack(alignment: .leading, spacing: 12) {
-            Text("Grouped by season, split by edition — each tier lives in its own root folder, so its files are listed separately. Tap a section to collapse it.")
+            Text("Grouped by season, split by version — each tier lives in its own root folder, so its files are listed separately. Tap a section to collapse it.")
                 .font(.system(size: 12))
                 .lineSpacing(3)
                 .foregroundStyle(Theme.dim)
@@ -289,10 +289,8 @@ struct MovieEditionsTab: View {
         let editions = store.scopedEditions
         let owned = editions.filter { $0.movieFile != nil }
         let bytes = owned.compactMap { $0.movieFile?.size }.reduce(0, +)
-        let wanted = editions.filter { e in
-            guard let file = e.movieFile else { return true }
-            return !DetailText.meetsCutoff(file.quality, cutoff: store.cutoff(e.qualityProfileId))
-        }.count
+        // `wanted` = versions with no file (MovieVersionsTable).
+        let wanted = editions.count - owned.count
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 HStack(spacing: -4) {
@@ -305,7 +303,7 @@ struct MovieEditionsTab: View {
                 let bytesText = Text(DetailText.bytes(bytes))
                     .font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundColor(Theme.txt)
                 let tail: String = wanted == 0 ? " · all at cutoff" : " · \(wanted) wanted"
-                (countText + Text(" editions · ") + bytesText + Text(tail))
+                (countText + Text(" versions · ") + bytesText + Text(tail))
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.mut)
             }
@@ -316,7 +314,7 @@ struct MovieEditionsTab: View {
                         Button {
                             searchingAll = true
                             Task {
-                                await store.search(label: "all editions")
+                                await store.search(label: "all monitored versions")
                                 searchingAll = false
                             }
                         } label: {
@@ -521,12 +519,48 @@ private struct WantedEditionCard: View {
                     }
                 }
                 if model.me?.can("edit") ?? true {
-                    DetailSquareAction(systemImage: "pencil", label: "Edit edition", size: 40) { store.showingEdit = true }
+                    DetailSquareAction(systemImage: "pencil", label: "Edit version", size: 40) { store.showingEdit = true }
                 }
             }
         }
         .padding(12)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 11))
         .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line))
+    }
+}
+
+/// The probe formatters (episode-file-info.ts).
+enum DetailMediaFacts {
+    static func codec(_ probe: FileProbe?) -> String? {
+        guard let codec = probe?.videoCodec, !codec.isEmpty else { return nil }
+        let map = ["h264": "h264", "hevc": "h265", "h265": "h265", "av1": "AV1", "mpeg2": "MPEG-2", "vc1": "VC-1"]
+        return map[codec.lowercased()] ?? codec
+    }
+
+    static func audio(_ probe: FileProbe?) -> String? {
+        guard let probe else { return nil }
+        var parts: [String] = []
+        if let codec = probe.audioCodec, !codec.isEmpty {
+            let map = ["eac3": "EAC3", "ac3": "AC3", "truehd": "TrueHD", "dts": "DTS", "aac": "AAC", "flac": "FLAC", "opus": "Opus", "mp3": "MP3"]
+            parts.append(map[codec.lowercased()] ?? codec.uppercased())
+        }
+        if let ch = probe.audioChannels, ch.isFinite {
+            let map: [Int: String] = [1: "1.0", 2: "2.0", 6: "5.1", 7: "6.1", 8: "7.1"]
+            parts.append(map[Int(ch)] ?? "\(Int(ch)).0")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " ")
+    }
+
+    /// A probed file with no HDR metadata is SDR; no probe → nil.
+    static func range(_ probe: FileProbe?) -> String? {
+        guard let probe else { return nil }
+        guard let hdr = probe.hdrFormat, !hdr.isEmpty else { return "SDR" }
+        let map = ["dv": "DV", "hdr10": "HDR10", "hdr10+": "HDR10+", "hlg": "HLG"]
+        return map[hdr.lowercased()] ?? hdr.uppercased()
+    }
+
+    static func languages(_ probe: FileProbe?) -> String? {
+        guard let langs = probe?.audioLanguages, !langs.isEmpty else { return nil }
+        return langs.joined(separator: ", ")
     }
 }

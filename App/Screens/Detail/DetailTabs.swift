@@ -3,7 +3,7 @@ import FusionhaKit
 
 /// DetailTabs: the underlined tab row with the "showing {scope}" echo, then
 /// the active pane. Series: Seasons · Files · History · Searches. Movie:
-/// Editions · History · Searches · Collection (when it has one).
+/// Versions · History · Searches · Collection (when it has one).
 struct DetailTabsView: View {
     @Environment(DetailStore.self) private var store
     @Environment(\.detailReduceMotion) private var reduce
@@ -15,12 +15,12 @@ struct DetailTabsView: View {
         if detail.isSeries {
             return [(.seasons, "Seasons"), (.files, "Files"), (.history, "History"), (.searches, "Searches")]
         }
-        var tabs: [(DetailTab, String)] = [(.files, "Editions"), (.history, "History"), (.searches, "Searches")]
+        var tabs: [(DetailTab, String)] = [(.files, "Versions"), (.history, "History"), (.searches, "Searches")]
         if detail.collection != nil { tabs.append((.collection, "Collection")) }
         return tabs
     }
 
-    /// A movie has no Seasons tab: it opens on Editions.
+    /// A movie has no Seasons tab: it opens on Versions.
     private var current: DetailTab {
         tabs.contains { $0.0 == store.tab } ? store.tab : tabs[0].0
     }

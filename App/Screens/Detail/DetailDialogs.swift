@@ -151,7 +151,7 @@ struct EditItemSheet: View {
                             if masterMonitor.wrappedValue == "" { Text("Mixed").tag("") }
                             ForEach(DetailVocab.monitorOptions, id: \.value) { Text($0.label).tag($0.value) }
                         } label: {
-                            DialogFieldLabel(title: "Monitor", subtitle: "Sets the level for every edition")
+                            DialogFieldLabel(title: "Monitor", subtitle: "Sets the level for every version")
                         }
                     }
                     LabeledContent("Metadata source") {
@@ -172,8 +172,12 @@ struct EditItemSheet: View {
                             store.addPreset = AddEditionPreset()
                         }
                     } label: {
-                        Label("Add edition", systemImage: "plus")
+                        Label("Add version", systemImage: "plus")
                     }
+                } header: {
+                    Text("Versions")
+                } footer: {
+                    Text("A new tier, or another edition ({edition-…})")
                 }
 
                 tagsSection
@@ -197,11 +201,11 @@ struct EditItemSheet: View {
             }
             .confirmationDialog(removeTitle, isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),
                                 titleVisibility: .visible, presenting: removing) { edition in
-                Button("Remove edition", role: .destructive) { Task { await remove(edition, deleteFiles: false) } }
+                Button("Remove version", role: .destructive) { Task { await remove(edition, deleteFiles: false) } }
                 Button("Remove and delete files on disk", role: .destructive) { Task { await remove(edition, deleteFiles: true) } }
                 Button("Cancel", role: .cancel) {}
             } message: { _ in
-                Text("The edition stops being tracked. Its files stay on disk unless you also delete them.")
+                Text("The version stops being tracked. Its files stay on disk unless you also delete them.")
             }
         }
         .presentationDragIndicator(.visible)
@@ -210,8 +214,8 @@ struct EditItemSheet: View {
     }
 
     private var removeTitle: String {
-        guard let removing else { return "Remove edition?" }
-        return "Remove the \(removing.label) edition?"
+        guard let removing else { return "Remove version?" }
+        return "Remove the \(removing.label) version?"
     }
 
     // MARK: Edition card
@@ -288,8 +292,12 @@ struct EditItemSheet: View {
             }
             if detail.editions.count > 1 {
                 Button(role: .destructive) { removing = edition } label: {
-                    Label("Remove edition", systemImage: "trash")
+                    Label("Remove version", systemImage: "trash")
                 }
+            } else {
+                Label("The last version can’t be removed — delete the title instead", systemImage: "trash")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.dim)
             }
         } header: {
             HStack(spacing: 8) {
@@ -474,11 +482,11 @@ struct EditItemSheet: View {
         guard let client = store.client else { return }
         do {
             try await client.deleteEdition(itemId: detail.id, editionId: edition.id, deleteFiles: deleteFiles)
-            store.show("Removed the \(edition.label) edition", variant: .success)
+            store.show("Removed the \(edition.label) version", variant: .success)
             await store.reload()
             dismiss()
         } catch {
-            store.show("Couldn't remove the \(edition.label) edition", variant: .error)
+            store.show("Couldn't remove the \(edition.label) version", variant: .error)
         }
     }
 }
@@ -535,15 +543,18 @@ struct AddEditionSheet: View {
                     Picker("Tier", selection: $tier) {
                         ForEach(QualityTier.ordered, id: \.self) { Text($0.chipLabel).tag($0) }
                     }
-                    Picker(isSeries ? "Version" : "Movie edition", selection: $editionChoice) {
+                    Picker("Edition", selection: $editionChoice) {
                         ForEach([Self.standard] + presets, id: \.self) { Text($0).tag($0) }
                         Text("Custom…").tag(Self.custom)
                     }
                     if editionChoice == Self.custom {
-                        TextField(isSeries ? "Custom version name" : "Custom edition name", text: $customEdition)
+                        LabeledContent("Custom edition name") {
+                            TextField(isSeries ? "e.g. Remastered" : "e.g. Final Cut", text: $customEdition)
+                                .multilineTextAlignment(.trailing)
+                        }
                     }
                 } header: {
-                    Text("\(detail.title) · a new quality edition, tracked independently")
+                    Text("\(detail.title) · a new tier + edition copy, tracked independently")
                         .textCase(nil)
                 }
 
@@ -579,8 +590,15 @@ struct AddEditionSheet: View {
                             ForEach(DetailVocab.minimumAvailability, id: \.value) { Text($0.label).tag($0.value) }
                         }
                     }
-                    Toggle("Monitored", isOn: $monitored).tint(Theme.indigo)
-                    Toggle("Search for releases now", isOn: $searchNow).tint(Theme.indigo)
+                    Toggle(isOn: $monitored) {
+                        DialogFieldLabel(title: "Monitored", subtitle: "Track this version and grab it independently")
+                    }
+                    .tint(Theme.indigo)
+                    .accessibilityLabel("Monitor version")
+                    Toggle(isOn: $searchNow) {
+                        DialogFieldLabel(title: "Search for releases now", subtitle: "Kick off a search as soon as the version is added")
+                    }
+                    .tint(Theme.indigo)
                 }
 
                 if let error {
@@ -591,7 +609,7 @@ struct AddEditionSheet: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
-            .navigationTitle("Add an edition")
+            .navigationTitle("Add a version")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -601,7 +619,7 @@ struct AddEditionSheet: View {
                     Button {
                         Task { await submit() }
                     } label: {
-                        if busy { ProgressView() } else { Text("Add edition").fontWeight(.semibold) }
+                        if busy { ProgressView() } else { Text("Add version").fontWeight(.semibold) }
                     }
                     .disabled(!canSubmit)
                 }
@@ -648,8 +666,8 @@ struct AddEditionSheet: View {
             Text("4K availability")
         } footer: {
             Text(isSeries
-                 ? "A quick look at whether 4K releases of this show exist before you add the edition."
-                 : "A quick look at whether 4K releases of this movie exist before you add the edition.")
+                 ? "A quick look at whether 4K releases of this show exist before you add the version."
+                 : "A quick look at whether 4K releases of this movie exist before you add the version.")
         }
     }
 
@@ -716,14 +734,12 @@ struct AddEditionSheet: View {
             searchNow: searchNow)
         do {
             try await client.addEdition(itemId: detail.id, body)
-            let name = [tier.chipLabel, effectiveEdition].compactMap { $0 }.joined(separator: " · ")
-            store.show("Added the \(name) edition", variant: .success)
             await store.reload()
             dismiss()
         } catch APIError.http(let status, _) where status == 409 {
-            self.error = "That edition already exists on this title."
+            self.error = "That version (tier + edition) already exists on this title."
         } catch {
-            self.error = "Couldn't add the edition. Try again."
+            self.error = "Could not add the version. Please try again."
         }
     }
 }
@@ -751,7 +767,7 @@ struct DeleteItemSheet: View {
                     .foregroundStyle(Theme.txt)
                     .lineLimit(2)
             }
-            Text("This removes the title and all its editions from your library. This cannot be undone.")
+            Text("This removes the title and all its versions from your library. This cannot be undone.")
                 .font(.system(size: 14))
                 .foregroundStyle(Theme.mut)
                 .fixedSize(horizontal: false, vertical: true)

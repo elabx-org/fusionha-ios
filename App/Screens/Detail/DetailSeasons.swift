@@ -3,7 +3,7 @@ import FusionhaKit
 
 // The Seasons tab (SeasonsAccordion + MobileEpisodeList): season cards with a
 // striped progress bar and a ⋮ sheet, carded episode rows with one status chip
-// per scoped edition, and the expanded per-edition facts + actions.
+// per scoped version, and the expanded per-version facts + actions.
 
 struct SeasonsTab: View {
     @Environment(DetailStore.self) private var store
@@ -145,6 +145,8 @@ private struct SeasonCard: View {
                                 .lineLimit(1)
                                 .fixedSize()
                             Text("\(c.done)/\(c.total)").font(.system(size: 12).monospacedDigit()).foregroundStyle(Theme.mut)
+                                .contentTransition(.numericText(value: Double(c.done)))
+                                .detailAnimation(.easeOut(duration: 0.4), value: c.done)
                             Spacer(minLength: 4)
                             Text(DetailText.bytes(season.bytes(editionIds: ids)))
                                 .font(.system(size: 12)).foregroundStyle(Theme.mut)
@@ -255,7 +257,7 @@ private struct EpisodeList: View {
     var body: some View {
         let oldest = store.oldestFirst.contains(season.seasonNumber)
         let episodes = season.episodes.sorted { oldest ? $0.episodeNumber < $1.episodeNumber : $0.episodeNumber > $1.episodeNumber }
-        VStack(spacing: 8) {
+        LazyVStack(spacing: 8) {
             ForEach(episodes) { episode in
                 EpisodeCard(detail: detail, season: season, episode: episode)
             }
@@ -282,11 +284,7 @@ private struct EpisodeCard: View {
         let failed = editions.contains { episode.file(for: $0.id)?.analysis == "failed" }
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 10) {
-                Circle()
-                    .fill(episode.monitored != false ? Theme.cyan : .clear)
-                    .overlay(Circle().strokeBorder(Theme.mut, lineWidth: 1.5))
-                    .frame(width: 9, height: 9)
-                    .accessibilityLabel(episode.monitored != false ? "Monitored" : "Not monitored")
+                monitorToggle
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 10) {
                         Text(numberText)
@@ -421,7 +419,7 @@ private struct EpisodeBody: View {
                     if let file = episode.file(for: edition.id) {
                         facts(file)
                     } else {
-                        Text("No file for this edition.").font(.system(size: 12.5)).foregroundStyle(Theme.mut)
+                        Text("No file for this version.").font(.system(size: 12.5)).foregroundStyle(Theme.mut)
                     }
                 }
                 .padding(10)
@@ -464,7 +462,36 @@ private struct EpisodeBody: View {
         }
     }
 
-    /// ManualSearchTrigger: direct with one edition, else "Search which edition?".
+    /// Per-episode monitor toggle: the season toolbar's bookmark (filled =
+    /// monitored), its own tap target. A read-only visitor sees the dot.
+    @ViewBuilder
+    private var monitorToggle: some View {
+        let on = store.episodeMonitored(episode)
+        if model.me?.can("edit") ?? true {
+            let label = "S\(season.seasonNumber)·E\(episode.episodeNumber)"
+            Button {
+                Task { await store.setEpisodeMonitored(episode, seasonNumber: season.seasonNumber, !on) }
+            } label: {
+                Image(systemName: on ? "bookmark.fill" : "bookmark")
+                    .font(.system(size: 15))
+                    .foregroundStyle(on ? Theme.cyan : Theme.dim)
+                    .contentTransition(.symbolEffect(.replace))
+                    .frame(width: 36, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(DetailPressStyle())
+            .accessibilityLabel(on ? "Stop monitoring \(label)" : "Monitor \(label)")
+            .accessibilityAddTraits(on ? .isSelected : [])
+        } else {
+            Circle()
+                .fill(on ? Theme.cyan : .clear)
+                .overlay(Circle().strokeBorder(Theme.mut, lineWidth: 1.5))
+                .frame(width: 9, height: 9)
+                .accessibilityLabel(on ? "Monitored" : "Not monitored")
+        }
+    }
+
+    /// ManualSearchTrigger: direct with one version, else "Search which version?".
     @ViewBuilder
     private func interactive(_ editions: [DetailEdition]) -> some View {
         let all = detail.orderedEditions
@@ -475,7 +502,7 @@ private struct EpisodeBody: View {
             }
         } else {
             Menu {
-                Section("Search which edition?") {
+                Section("Search which version?") {
                     ForEach(all) { edition in
                         Button {
                             store.interactive = InteractiveTarget(editionIds: [edition.id], episodeId: episode.id,
@@ -491,8 +518,8 @@ private struct EpisodeBody: View {
                         store.interactive = InteractiveTarget(editionIds: all.map(\.id), episodeId: episode.id,
                                                               subtitle: "S\(season.seasonNumber)·E\(episode.episodeNumber)")
                     } label: {
-                        Text("All editions")
-                        Text("search every edition · tiers × versions · \(all.count) queries")
+                        Text("All versions")
+                        Text("search every version · tiers × versions · \(all.count) queries")
                     }
                 }
             } label: {
