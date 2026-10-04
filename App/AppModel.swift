@@ -42,6 +42,8 @@ final class AppModel {
     private(set) var library: [MediaItem] = []
     private(set) var libraryLoaded = false
     private(set) var libraryError: String?
+    /// Bumped whenever `library` changes, so screens can rebuild derived lists.
+    private(set) var libraryVersion = 0
 
     // Queue state drives the Activity tab, the downloads accessory, the
     // Live Activity and the Downloads widget.
@@ -101,13 +103,16 @@ final class AppModel {
 
     /// Polls the PIN every 2s, like the web login, until Plex confirms (the server
     /// then sets the session cookie). Cancel the task to stop waiting.
-    func completePlexSignIn(server url: URL, pin: PlexPin) async throws {
+    /// `authorized` runs before the app switches away from the sign-in screen, so
+    /// the caller can close the Plex browser sheet while it can still dismiss it.
+    func completePlexSignIn(server url: URL, pin: PlexPin, authorized: () async -> Void) async throws {
         let anonymous = APIClient(baseURL: url, token: nil)
         while true {
             try Task.checkCancellation()
             if try await anonymous.checkPlexPin(id: pin.id) == .signedIn { break }
             try await Task.sleep(for: .seconds(2))
         }
+        await authorized()
         try await finishSignIn(with: anonymous)
     }
 
@@ -141,6 +146,7 @@ final class AppModel {
         guard let client else { return }
         do {
             library = try await client.library()
+            libraryVersion += 1
             libraryError = nil
         } catch {
             libraryError = error.localizedDescription
@@ -157,6 +163,7 @@ final class AppModel {
         credentials = nil
         me = nil
         library = []
+        libraryVersion += 1
         libraryLoaded = false
         searchText = ""
         tab = .library
