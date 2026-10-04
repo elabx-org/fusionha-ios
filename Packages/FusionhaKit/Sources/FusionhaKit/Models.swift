@@ -153,6 +153,24 @@ public struct QueueItem: Decodable, Sendable, Identifiable, Hashable {
     public let phase: String?
     public let step: String?
     public let phasePercent: Int?
+    // Extra queue fields the Activity screen reads (all optional, so older
+    // servers and the widgets keep decoding).
+    public let `protocol`: String?
+    public let downloadClient: String?
+    public let indexer: String?
+    public let grabTrigger: String?
+    public let heldReason: String?
+    public let heldDetail: HeldDetail?
+    public let warning: String?
+    public let nextStep: String?
+    public let hasDownloadedFile: Bool?
+    public let grabbedAt: String?
+    public let ageSeconds: Double?
+    public let episodeId: Int?
+    public let phaseTerminal: Bool?
+    public let outcome: String?
+    public let terminalReason: String?
+    public let finishedAt: String?
 
     public var fraction: Double { min(max(progress / 100, 0), 1) }
 }

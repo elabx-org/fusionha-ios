@@ -14,6 +14,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+import mock_activity
+
 MOCK = Path(__file__).resolve().parent / "mock"
 
 
@@ -82,6 +84,9 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         path = url.path.rstrip("/")
         query = parse_qs(url.query)
+        hit = mock_activity.handle("GET", path, query)
+        if hit is not None:
+            return self.send_json(*hit)
         routes = {
             "/health": lambda: {"status": "ok", "version": "mock"},
             "/api/v1/setup-status": lambda: load("setup-status.json"),
@@ -109,7 +114,20 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"detail": "Not Found"}, 404)
 
     def do_POST(self):
-        self.send_json({})
+        self.send_json(*(self.activity("POST") or ({},)))
+
+    def do_PUT(self):
+        self.send_json(*(self.activity("PUT") or ({},)))
+
+    def do_DELETE(self):
+        self.send_json(*(self.activity("DELETE") or ({},)))
+
+    def activity(self, method):
+        url = urlparse(self.path)
+        length = int(self.headers.get("Content-Length") or 0)
+        if length:
+            self.rfile.read(length)
+        return mock_activity.handle(method, url.path.rstrip("/"), parse_qs(url.query))
 
     def send_json(self, body, status=200):
         data = json.dumps(body).encode()

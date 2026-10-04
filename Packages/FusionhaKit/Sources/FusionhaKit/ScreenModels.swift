@@ -212,6 +212,7 @@ public struct WantedEdition: Decodable, Sendable, Identifiable, Hashable {
     public let missingEpisodes: [WantedEpisode]?
     public let missingEpisodeCount: Int?
     public let latestAired: String?
+    public let upcomingUntil: String?
     public var id: Int { editionId }
 }
 
@@ -245,6 +246,15 @@ public struct HistoryEntry: Decodable, Sendable, Identifiable, Hashable {
     public let tier: QualityTier?
     public let posterUrl: String?
     public let chips: [HistoryChip]?
+    public let downloadClient: String?
+    public let cfScore: Int?
+    public let data: [String: LooseValue]?
+    public let editionId: Int?
+    public let episodeId: Int?
+    public let downloadId: Int?
+    public let grabTrigger: String?
+    public let `protocol`: String?
+    public let blocklistable: Bool?
 
     public var eventLabel: String {
         eventType.replacingOccurrences(of: "_", with: " ").capitalized
@@ -272,6 +282,17 @@ public struct BlocklistEntry: Decodable, Sendable, Identifiable, Hashable {
     public let itemTitle: String?
     public let episodeLabel: String?
     public let posterUrl: String?
+    public let guid: String?
+    public let source: String?
+    public let `protocol`: String?
+    public let mediaItemId: Int?
+    public let editionId: Int?
+    public let episodeId: Int?
+    public let sourceTitle: String?
+    public let quality: String?
+    public let formats: [String]?
+    public let size: Double?
+    public let tier: QualityTier?
 }
 
 // MARK: - Discover / TMDB search  (GET /api/v1/discover, /api/v1/search)
