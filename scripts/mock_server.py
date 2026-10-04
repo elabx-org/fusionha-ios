@@ -14,6 +14,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+import mock_detail
+
 MOCK = Path(__file__).resolve().parent / "mock"
 
 
@@ -106,10 +108,13 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(json.loads(item.read_text())) if item.exists() else self.send_json({"detail": "Not Found"}, 404)
         if path in routes:
             return self.send_json(routes[path]())
+        if (body := mock_detail.get(path, query)) is not None:
+            return self.send_json(body)
         self.send_json({"detail": "Not Found"}, 404)
 
     def do_POST(self):
-        self.send_json({})
+        body = mock_detail.post(urlparse(self.path).path.rstrip("/"))
+        self.send_json({} if body is None else body)
 
     def send_json(self, body, status=200):
         data = json.dumps(body).encode()

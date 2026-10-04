@@ -119,6 +119,23 @@ public struct ItemDetail: Decodable, Sendable, Identifiable {
     public let editions: [DetailEdition]
     public let seasons: [Season]?
     public let history: [HistoryEntry]?
+    // Detail page extras (all optional so an older server still decodes).
+    public let tmdbId: Int?
+    public let seriesType: String?
+    public let metadataProvider: String?
+    public let resolvedMetadataProvider: String?
+    public let episodeNumberingSource: String?
+    public let numberingMismatch: Bool?
+    public let releaseDate: String?
+    public let inCinemas: String?
+    public let digitalRelease: String?
+    public let physicalRelease: String?
+    public let releaseWindows: [ReleaseWindow]?
+    public let cast: [CastMember]?
+    public let similar: [SimilarTitle]?
+    public let trailerKey: String?
+    public let collection: CollectionRef?
+    public let tags: [ItemTag]?
 }
 
 public struct DetailEdition: Decodable, Sendable, Identifiable, Hashable {
@@ -132,6 +149,19 @@ public struct DetailEdition: Decodable, Sendable, Identifiable, Hashable {
     public let downloadState: String?
     public let movieFile: MovieFile?
     public let progress: Double?
+    public let monitor: String?
+    public let folderName: String?
+    public let needsEditionFolder: Bool?
+    public let minimumAvailability: String?
+    public let releaseTitle: String?
+    public let client: String?
+    public let indexer: String?
+    public let grabbable: Bool?
+    public let availableFrom: String?
+    public let availableStage: String?
+    public let unresolvedFileCount: Int?
+    public let attentionKind: String?
+    public let attentionMessage: String?
 }
 
 public struct MovieFile: Decodable, Sendable, Hashable {
@@ -141,6 +171,14 @@ public struct MovieFile: Decodable, Sendable, Hashable {
     public let quality: String?
     public let releaseGroup: String?
     public let cfScore: Int?
+    public let mediaInfo: MediaInfo?
+    public let customFormats: [String]?
+    public let languages: [String]?
+    public let releaseType: String?
+    public let sceneName: String?
+    public let linkUnresolved: Bool?
+    public let unresolved: Bool?
+    public let analysis: String?
 }
 
 public struct Season: Decodable, Sendable, Hashable, Identifiable {
@@ -159,12 +197,19 @@ public struct Episode: Decodable, Sendable, Hashable, Identifiable {
     public let monitored: Bool?
     public let files: [EpisodeFile]?
     public let downloadStates: [EpisodeDownload]?
+    public let overview: String?
+    public let airDatetime: String?
 }
 
 public struct EpisodeDownload: Decodable, Sendable, Hashable {
     public let editionId: Int?
     public let state: String?
     public let progress: Double?
+    public let tier: QualityTier?
+    public let releaseTitle: String?
+    public let releaseQuality: String?
+    public let client: String?
+    public let indexer: String?
 }
 
 public struct EpisodeFile: Decodable, Sendable, Hashable {
@@ -245,6 +290,12 @@ public struct HistoryEntry: Decodable, Sendable, Identifiable, Hashable {
     public let tier: QualityTier?
     public let posterUrl: String?
     public let chips: [HistoryChip]?
+    public let editionId: Int?
+    public let episodeId: Int?
+    public let downloadClient: String?
+    public let cfScore: Int?
+    public let grabTrigger: String?
+    public let blocklistable: Bool?
 
     public var eventLabel: String {
         eventType.replacingOccurrences(of: "_", with: " ").capitalized
@@ -347,6 +398,7 @@ public struct QualityProfile: Decodable, Sendable, Identifiable, Hashable {
     public let id: Int
     public let name: String
     public let mediaKind: String?
+    public let cutoff: String?
 }
 
 public struct AddDefaultSlot: Decodable, Sendable, Hashable {
