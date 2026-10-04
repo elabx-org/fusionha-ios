@@ -47,7 +47,7 @@ jobs:
           xcodegen generate
 
       # Feather only offers an update when the version string changes, so the
-      # patch number is the CI run number: 0.1.0 in project.yml ships as 0.1.<run>.
+      # patch number is the CI run number: 1.1.0 in project.yml ships as 1.1.<run>.
       - name: Set version
         run: |
           BASE=$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' project.yml | head -1)
