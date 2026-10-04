@@ -276,3 +276,106 @@ jobs:
             git rebase -q refs/remotes/origin/screenshots
           done
           exit 1
+
+  # Drives the app through Activity (History at 1000+ events, Queue, Blocklist,
+  # Tasks, Audit, Indexers) and Wanted against the mock server in volume mode,
+  # with the DEBUG perf probe (App/Debug/PerfProbe.swift) and a Time Profiler
+  # trace, then prints hitches, main-thread hangs, CPU and the heaviest symbols.
+  # Optimised build (Release) with DEBUG set so the probe and mock hooks exist.
+  perf:
+    name: Activity perf
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select newest Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build for the simulator (optimised, with the perf probe)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Fusionha.xcodeproj \
+            -scheme Fusionha \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            ONLY_ACTIVE_ARCH=YES ARCHS=arm64 \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS=DEBUG \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Run the perf script
+        timeout-minutes: 15
+        run: |
+          sudo DevToolsSecurity -enable || true
+          mkdir -p perf
+          python3 scripts/mock_server.py 8765 perf > perf/mock.log 2>&1 &
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = [d for rt, ds in json.load(sys.stdin)["devices"].items() if "iOS-26" in rt for d in ds]
+          pick = next((d for d in devices if d["name"] == "iPhone 17 Pro"), None) or next(d for d in devices if d["name"].startswith("iPhone"))
+          print(pick["udid"])')
+          echo "Using simulator $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl install "$UDID" build/Build/Products/Release-iphonesimulator/Fusionha.app
+          # Let the freshly booted simulator settle before measuring.
+          sleep 20
+          export SIMCTL_CHILD_FUSIONHA_PERF=1
+          export SIMCTL_CHILD_FUSIONHA_PERF_DELAY=10
+          export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=http://127.0.0.1:8765
+          export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
+          export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACTIVITY_TAB=history
+          OUT=$(xcrun simctl launch --terminate-running-process --stderr="$PWD/perf/app.log" --stdout="$PWD/perf/app.out" "$UDID" org.elabx.fusionha)
+          echo "$OUT"
+          PID=$(echo "$OUT" | awk '{print $NF}')
+          xcrun xctrace record --template 'Time Profiler' --device "$UDID" --attach "$PID" \
+            --time-limit 240s --output perf/activity.trace > perf/xctrace.log 2>&1 &
+          XPID=$!
+          for i in $(seq 1 300); do
+            grep -q "PERF DONE" perf/app.log 2>/dev/null && break
+            sleep 1
+          done
+          kill -INT $XPID 2>/dev/null || true
+          wait $XPID || true
+          cat perf/xctrace.log || true
+          grep "PERF" perf/app.log || true
+          grep -q "PERF DONE" perf/app.log || { echo "::error::perf script did not finish"; tail -50 perf/app.log; exit 1; }
+
+      - name: Report
+        if: always()
+        run: |
+          ARGS="perf/app.log"
+          if [ -d perf/activity.trace ]; then
+            xcrun xctrace export --input perf/activity.trace --toc > perf/toc.xml || true
+            SCHEMA=$(grep -o 'schema="time-profile"\|schema="time-sample"' perf/toc.xml | head -1 | cut -d'"' -f2)
+            echo "Profile table: ${SCHEMA:-none}"
+            if [ -n "$SCHEMA" ]; then
+              xcrun xctrace export --input perf/activity.trace \
+                --xpath "/trace-toc/run[@number=\"1\"]/data/table[@schema=\"$SCHEMA\"]" > perf/time-profile.xml || true
+              ARGS="$ARGS perf/toc.xml perf/time-profile.xml"
+            fi
+          fi
+          python3 scripts/perf_report.py $ARGS --json perf/summary.json | tee perf/summary.txt
+          { echo '## Activity perf'; echo '```'; cat perf/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: activity-perf
+          path: |
+            perf/*.txt
+            perf/*.json
+            perf/*.log
+            perf/*.out
+          retention-days: 14

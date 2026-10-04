@@ -412,6 +412,7 @@ struct ActivityQueueTab: View {
     @State private var upNextOpen = false
 
     var body: some View {
+        let _ = PerfCount.hit("ActivityQueueTab.body")
         content
             .task(id: search) {
                 await store.reload(model.client, query: search)

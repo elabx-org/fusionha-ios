@@ -9,6 +9,7 @@ struct PosterImage: View {
     @State private var image: UIImage?
 
     var body: some View {
+        let _ = PerfCount.hit("PosterImage.body")
         Group {
             if let image {
                 Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)

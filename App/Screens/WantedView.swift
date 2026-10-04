@@ -164,6 +164,7 @@ struct WantedView: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("WantedView.body")
         Screen(showsAdd: true) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {

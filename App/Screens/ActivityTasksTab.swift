@@ -353,6 +353,7 @@ struct ActivityTasksTab: View {
     @State private var store = TasksStore()
 
     var body: some View {
+        let _ = PerfCount.hit("ActivityTasksTab.body")
         let feed = store.feed
         Group {
             if !feed.loaded && feed.error == nil {

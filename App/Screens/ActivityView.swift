@@ -81,6 +81,7 @@ struct ActivityView: View {
     private var heldCount: Int { model.queue.filter { $0.status.lowercased() == "held" }.count }
 
     var body: some View {
+        let _ = PerfCount.hit("ActivityView.body")
         Screen {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
@@ -136,6 +137,7 @@ struct ActivityView: View {
             search = searchInput.trimmingCharacters(in: .whitespaces)
         }
         .onChange(of: tab) { bulk.config = nil }
+        .perfActivityTabHook($tab)
         .onAppear { router.server = model.credentials?.serverURL }
     }
 

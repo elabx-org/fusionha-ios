@@ -80,6 +80,7 @@ struct ActFlow: Layout {
     var alignment: HorizontalAlignment = .leading
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        PerfCount.hit("ActFlow.sizeThatFits")
         let rows = arrange(width: proposal.width ?? .infinity, subviews: subviews)
         let height = rows.reduce(0) { $0 + $1.height } + CGFloat(max(rows.count - 1, 0)) * lineSpacing
         let width = rows.map(\.width).max() ?? 0
@@ -1239,6 +1240,7 @@ struct ActLoop<Content: View>: View {
             content(0)
         } else {
             TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
+                let _ = PerfCount.hit("ActLoop.frame")
                 let t = context.date.timeIntervalSinceReferenceDate
                 content(t.truncatingRemainder(dividingBy: duration) / duration)
             }

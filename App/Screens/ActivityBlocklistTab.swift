@@ -69,6 +69,7 @@ struct ActivityBlocklistTab: View {
     @State private var busy = false
 
     var body: some View {
+        let _ = PerfCount.hit("ActivityBlocklistTab.body")
         Group {
             if !feed.loaded && feed.error == nil {
                 ActEmpty(message: "Loading the blocklist…")

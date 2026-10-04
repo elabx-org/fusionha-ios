@@ -258,6 +258,7 @@ struct ActivityHistoryTab: View {
     @State private var rawFilter: String?
 
     var body: some View {
+        let _ = PerfCount.hit("ActivityHistoryTab.body")
         Group {
             if !feed.loaded && feed.error == nil {
                 ActEmpty(message: "Loading history…")
@@ -283,7 +284,7 @@ struct ActivityHistoryTab: View {
         }
     }
 
-    private var stories: [HistoryStory] { HistoryLogic.build(feed.items) }
+    private var stories: [HistoryStory] { PerfCount.time("HistoryLogic.build") { HistoryLogic.build(feed.items) } }
 
     @ViewBuilder
     private var loadedView: some View {
@@ -470,6 +471,7 @@ private struct HistoryStoryRow: View {
     @State private var blocking = false
 
     var body: some View {
+        let _ = PerfCount.hit("HistoryStoryRow.body")
         let multi = story.events.count > 1 || story.failReason != nil
         ZStack(alignment: .topLeading) {
             if multi {

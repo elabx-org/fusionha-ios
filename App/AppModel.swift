@@ -311,6 +311,7 @@ final class AppModel {
     }
 
     func refreshQueue() async {
+        PerfCount.hit("AppModel.refreshQueue")
         guard let client else { return }
         do {
             let page = try await client.queue()
