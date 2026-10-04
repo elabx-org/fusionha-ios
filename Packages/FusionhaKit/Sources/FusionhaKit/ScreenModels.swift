@@ -110,6 +110,10 @@ public struct Me: Decodable, Sendable {
     /// Requester accounts get the web's reduced nav (Discover, My requests, You).
     public let requestScoped: Bool?
     public let thumb: String?
+    // Account → Sign-in methods.
+    public let plexUsername: String?
+    public let plexLinked: Bool?
+    public let credentials: [UserCredential]?
 
     public var initials: String {
         let parts = username.split(whereSeparator: { $0 == " " || $0 == "." || $0 == "_" || $0 == "-" })
