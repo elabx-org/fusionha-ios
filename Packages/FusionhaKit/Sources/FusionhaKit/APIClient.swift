@@ -80,6 +80,32 @@ public final class APIClient: @unchecked Sendable {
         try await get("/health")
     }
 
+    public func setupStatus() async throws -> SetupStatus {
+        try await get("/api/v1/setup-status")
+    }
+
+    /// Starts Plex sign-in. The server binds the PIN to this client with a short-lived
+    /// cookie, which URLSession keeps, so only this app can complete it.
+    public func createPlexPin() async throws -> PlexPin {
+        var req = request(method: "POST", path: "/api/v1/auth/plex/pin", query: [])
+        // The server uses Origin to send Plex's page back to its own self-closing page.
+        req.setValue(baseURL.absoluteString, forHTTPHeaderField: "Origin")
+        return try await perform(req)
+    }
+
+    /// Polls a Plex PIN. `202` means still pending; `200` means signed in (the server
+    /// has set the session cookie). `403` means the Plex account isn't allowed here.
+    public func checkPlexPin(id: Int) async throws -> PlexPinState {
+        let req = request(method: "POST", path: "/api/v1/auth/plex/pin/\(id)/check", query: [])
+        let (data, response) = try await session.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        switch status {
+        case 202: return .pending
+        case 200..<300: return .signedIn
+        default: throw APIError.http(status: status, body: String(decoding: data.prefix(500), as: UTF8.self))
+        }
+    }
+
     public func login(username: String, password: String) async throws {
         let _: EmptyResponse = try await send(
             "POST", "/api/v1/auth/login", body: LoginRequest(username: username, password: password))

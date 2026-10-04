@@ -34,6 +34,24 @@ final class DecodingTests: XCTestCase {
         XCTAssertEqual(editions[1].movieEdition, "Director's Cut")
     }
 
+    func testSetupStatusAndPlexPinDecode() throws {
+        let status = try decoder.decode(SetupStatus.self, from: Data(#"""
+            {"needs_setup": false, "demo_mode": false, "plex_sso_enabled": true, "local_login_enabled": false}
+            """#.utf8))
+        XCTAssertTrue(status.offersPlex)
+        XCTAssertFalse(status.offersPassword)
+
+        let legacy = try decoder.decode(SetupStatus.self, from: Data(#"{"needs_setup": false}"#.utf8))
+        XCTAssertFalse(legacy.offersPlex)
+        XCTAssertTrue(legacy.offersPassword)
+
+        let pin = try decoder.decode(PlexPin.self, from: Data(#"""
+            {"id": 42, "code": "abcd", "authUrl": "https://app.plex.tv/auth#?code=abcd"}
+            """#.utf8))
+        XCTAssertEqual(pin.id, 42)
+        XCTAssertEqual(pin.authUrl, "https://app.plex.tv/auth#?code=abcd")
+    }
+
     func testUnknownStatusDoesNotThrow() {
         XCTAssertEqual(EditionStatus(rawValue: "brand-new"), .other("brand-new"))
         XCTAssertEqual(EditionStatus(rawValue: "wanted"), .missing)

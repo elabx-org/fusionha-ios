@@ -27,13 +27,43 @@ final class AppModel {
 
     // MARK: Sign-in
 
-    /// Checks the server, signs in with the session cookie, then mints a personal
-    /// API token for this device so the widgets can call the API too.
-    func signIn(server: String, username: String, password: String) async throws {
+    /// Step 1: check the server is a reachable fusionha and see which sign-in
+    /// methods it offers (`GET /health`, `GET /api/v1/setup-status`).
+    func connect(server: String) async throws -> (URL, SetupStatus) {
         guard let url = APIClient.normalisedServerURL(server) else { throw APIError.invalidServerURL }
         let anonymous = APIClient(baseURL: url, token: nil)
         _ = try await anonymous.health()
+        return (url, try await anonymous.setupStatus())
+    }
+
+    /// Step 2a: username and password (sets the session cookie).
+    func signIn(server url: URL, username: String, password: String) async throws {
+        let anonymous = APIClient(baseURL: url, token: nil)
         try await anonymous.login(username: username, password: password)
+        try await finishSignIn(with: anonymous)
+    }
+
+    /// Step 2b: Plex. Mints a PIN whose `authUrl` the user opens in a browser sheet.
+    func startPlexSignIn(server url: URL) async throws -> PlexPin {
+        try await APIClient(baseURL: url, token: nil).createPlexPin()
+    }
+
+    /// Polls the PIN every 2s, like the web login, until Plex confirms (the server
+    /// then sets the session cookie). Cancel the task to stop waiting.
+    func completePlexSignIn(server url: URL, pin: PlexPin) async throws {
+        let anonymous = APIClient(baseURL: url, token: nil)
+        while true {
+            try Task.checkCancellation()
+            if try await anonymous.checkPlexPin(id: pin.id) == .signedIn { break }
+            try await Task.sleep(for: .seconds(2))
+        }
+        try await finishSignIn(with: anonymous)
+    }
+
+    /// With a session cookie in place, mint a personal API token for this device so
+    /// the widgets can call the API too.
+    private func finishSignIn(with anonymous: APIClient) async throws {
+        let url = anonymous.baseURL
         let creds: Credentials
         do {
             let mint = try await anonymous.mintToken(name: "fusionha iOS · \(UIDevice.current.name)")
