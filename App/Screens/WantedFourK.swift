@@ -198,7 +198,7 @@ struct WantedFourKCard: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Add edition")
+            .accessibilityLabel("Add 4K version")
         }
     }
 
@@ -301,7 +301,7 @@ struct WantedAddEditionSheet: View {
                         ForEach(kindProfiles) { p in Text(p.name).tag(p.id) }
                     }
                 } footer: {
-                    Text("\(item.title) · a new quality edition, tracked independently")
+                    Text("\(item.title) · a new tier + edition copy, tracked independently")
                 }
                 Section {
                     Toggle(monitored ? "Monitored" : "Unmonitored", isOn: $monitored)
@@ -314,7 +314,7 @@ struct WantedAddEditionSheet: View {
             .tint(Theme.indigo)
             .scrollContentBackground(.hidden)
             .background(Theme.panel)
-            .navigationTitle("Add an edition")
+            .navigationTitle("Add a version")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel", action: onCancel) }
@@ -322,7 +322,7 @@ struct WantedAddEditionSheet: View {
                     Button {
                         Task { await submit() }
                     } label: {
-                        if saving { ProgressView() } else { Text("Add edition").bold() }
+                        if saving { ProgressView() } else { Text("Add version").bold() }
                     }
                     .disabled(saving || rootId == 0 || profileId == 0)
                 }

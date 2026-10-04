@@ -18,6 +18,7 @@ struct FusionhaApp: App {
             .tint(Theme.indigo)
             // fusionha's web app is dark-only; match it.
             .preferredColorScheme(.dark)
+            .task { PerfProbe.startIfRequested(model: model) }
         }
     }
 }
