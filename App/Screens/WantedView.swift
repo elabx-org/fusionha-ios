@@ -48,9 +48,9 @@ enum WantedTab: String, CaseIterable, Hashable {
 
     var emptyMessage: String {
         switch self {
-        case .missing: return "Nothing missing — every released or aired monitored edition has a file."
+        case .missing: return "Nothing missing — every released or aired monitored version has a file."
         case .cutoff: return "Nothing below cutoff — every monitored file meets its profile cutoff."
-        case .upcoming, .fourk: return "Nothing upcoming — no monitored edition is waiting on a release or an air date."
+        case .upcoming, .fourk: return "Nothing upcoming — no monitored version is waiting on a release or an air date."
         }
     }
 }
@@ -164,6 +164,7 @@ struct WantedView: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("WantedView.body")
         Screen(showsAdd: true) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
@@ -203,7 +204,7 @@ struct WantedView: View {
         .sheet(item: $addEditionFor) { item in
             WantedAddEditionSheet(item: item) {
                 addEditionFor = nil
-                toaster.show("Added a 4K edition for \(item.title)", tone: .success)
+                toaster.show("Added a 4K version for \(item.title)", tone: .success)
                 Task { await reloadAll() }
             } onCancel: { addEditionFor = nil }
         }
@@ -335,7 +336,7 @@ struct WantedView: View {
         let text: Text
         switch tab {
         case .missing:
-            text = Text("Monitored editions with ") + b("no file yet") + Text(" — ") + dot + Text(" missing. Search runs the engine across every monitored edition.")
+            text = Text("Monitored versions with ") + b("no file yet") + Text(" — ") + dot + Text(" missing. Search runs the engine across every monitored version.")
         case .cutoff:
             text = Text("A file exists but sits ") + b("below the profile cutoff") + Text(" — ") + dot + Text(" an upgrade is wanted. Search looks for a release that meets cutoff.")
         case .upcoming:
@@ -360,13 +361,13 @@ struct WantedView: View {
         } else if feed.items.isEmpty {
             ActEmpty(message: search.isEmpty ? tab.emptyMessage : "No wanted titles match “\(search)”.")
         } else {
-            LazyVStack(alignment: .leading, spacing: 11) {
-                ForEach(Array(feed.items.enumerated()), id: \.element.id) { index, item in
-                    WantedCardView(item: item, tab: tab, interval: settings?.seasonSearchIntervalSeconds ?? 5)
-                        .actReveal(index)
-                }
+            // Flat: each card is a direct child of the page's lazy stack (a nested
+            // LazyVStack made every scroll step re-measure the whole list).
+            ForEach(Array(feed.items.enumerated()), id: \.element.id) { index, item in
+                WantedCardView(item: item, tab: tab, interval: settings?.seasonSearchIntervalSeconds ?? 5)
+                    .actReveal(index)
+                    .padding(.top, index == 0 ? 6 : 11)
             }
-            .padding(.top, 6)
             ActFooter(total: feed.total, loaded: feed.items.count, hasMore: feed.hasMore, loading: feed.loadingMore,
                       noun: tab.noun, query: search) { Task { await feed.loadMore() } }
         }
@@ -393,13 +394,11 @@ struct WantedView: View {
                 }
             }
         } else {
-            LazyVStack(alignment: .leading, spacing: 11) {
-                ForEach(Array(fourkFeed.items.enumerated()), id: \.element.id) { index, item in
-                    WantedFourKCard(item: item) { addEditionFor = item }
-                        .actReveal(index)
-                }
+            ForEach(Array(fourkFeed.items.enumerated()), id: \.element.id) { index, item in
+                WantedFourKCard(item: item) { addEditionFor = item }
+                    .actReveal(index)
+                    .padding(.top, index == 0 ? 6 : 11)
             }
-            .padding(.top, 6)
             ActFooter(total: fourkFeed.total, loaded: fourkFeed.items.count, hasMore: fourkFeed.hasMore, loading: fourkFeed.loadingMore,
                       noun: tab.noun, query: search) { Task { await fourkFeed.loadMore() } }
         }
@@ -555,7 +554,7 @@ private struct WantedCardView: View {
         Menu {
             Button { run(label: item.title, key: "title") } label: {
                 Text("Search all")
-                Text("Every monitored edition of this title — pack-preferred, missing + upgrades.")
+                Text("Every monitored version of this title — pack-preferred, missing + upgrades.")
             }
             if item.kind == .series {
                 Button { Task { await startGradual(label: "\(item.title) (missing only)", missingOnly: true) } } label: {

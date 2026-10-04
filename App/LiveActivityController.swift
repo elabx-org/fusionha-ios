@@ -4,21 +4,24 @@ import FusionhaKit
 
 /// Starts, updates and ends the single "Downloads" Live Activity from app-side
 /// polling. Updating it while the app is closed needs server pushes (see the plan).
+///
+/// The queue is polled every 2 s on the main actor. ActivityKit's
+/// `areActivitiesEnabled` and `Activity.activities` are synchronous IPC, so
+/// they run on `LiveActivityWorker` (off the main thread), and only when the
+/// state actually changed.
 @MainActor
 enum LiveActivityController {
     private static var lastState: DownloadsActivityAttributes.ContentState?
+    private static let worker = LiveActivityWorker()
 
     static func sync(with items: [QueueItem]) {
-        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        let current = Activity<DownloadsActivityAttributes>.activities.first
-
         guard let top = items.first else {
-            if let current, var finished = lastState {
+            if var finished = lastState {
                 finished.finished = true
                 finished.activeCount = 0
                 finished.overallFraction = 1
-                let content = ActivityContent(state: finished, staleDate: nil)
-                Task { await current.end(content, dismissalPolicy: .after(.now + 15 * 60)) }
+                let state = finished
+                Task { await worker.end(with: state) }
             }
             lastState = nil
             return
@@ -38,19 +41,39 @@ enum LiveActivityController {
             finished: false)
         guard state != lastState else { return }
         lastState = state
+        Task { await worker.apply(state) }
+    }
 
+    static func endAll() {
+        lastState = nil
+        Task { await worker.endAll() }
+    }
+}
+
+/// Runs the ActivityKit calls in order, off the main thread.
+actor LiveActivityWorker {
+    private var current: Activity<DownloadsActivityAttributes>? {
+        Activity<DownloadsActivityAttributes>.activities.first
+    }
+
+    func apply(_ state: DownloadsActivityAttributes.ContentState) async {
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         let content = ActivityContent(state: state, staleDate: .now + 120)
         if let current {
-            Task { await current.update(content) }
+            await current.update(content)
         } else {
             _ = try? Activity.request(attributes: DownloadsActivityAttributes(), content: content, pushType: nil)
         }
     }
 
-    static func endAll() {
+    func end(with state: DownloadsActivityAttributes.ContentState) async {
+        guard let current else { return }
+        await current.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .after(.now + 15 * 60))
+    }
+
+    func endAll() async {
         for activity in Activity<DownloadsActivityAttributes>.activities {
-            Task { await activity.end(nil, dismissalPolicy: .immediate) }
+            await activity.end(nil, dismissalPolicy: .immediate)
         }
-        lastState = nil
     }
 }

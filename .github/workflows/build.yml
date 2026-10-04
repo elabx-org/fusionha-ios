@@ -307,3 +307,92 @@ jobs:
             git rebase -q refs/remotes/origin/screenshots
           done
           exit 1
+
+  # Drives the app through Activity (History at 1000+ events, Queue, Blocklist,
+  # Tasks, Audit, Indexers) and Wanted against the mock server in volume mode,
+  # with the DEBUG perf probe (App/Debug/PerfProbe.swift) and its in-app
+  # main-thread sampler, then prints hitches, main-thread hangs, CPU and the
+  # heaviest symbols per phase.
+  # Optimised build (Release) with DEBUG set so the probe and mock hooks exist.
+  perf:
+    name: Activity perf
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select newest Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build for the simulator (optimised, with the perf probe)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Fusionha.xcodeproj \
+            -scheme Fusionha \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            ONLY_ACTIVE_ARCH=YES ARCHS=arm64 \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS=DEBUG \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Run the perf script
+        timeout-minutes: 25
+        run: |
+          sudo DevToolsSecurity -enable || true
+          mkdir -p perf
+          python3 scripts/mock_server.py 8765 perf > perf/mock.log 2>&1 &
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = [d for rt, ds in json.load(sys.stdin)["devices"].items() if "iOS-26" in rt for d in ds]
+          pick = next((d for d in devices if d["name"] == "iPhone 17 Pro"), None) or next(d for d in devices if d["name"].startswith("iPhone"))
+          print(pick["udid"])')
+          echo "Using simulator $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl install "$UDID" build/Build/Products/Release-iphonesimulator/Fusionha.app
+          # Let the freshly booted simulator settle before measuring.
+          sleep 20
+          export SIMCTL_CHILD_FUSIONHA_PERF=1
+          export SIMCTL_CHILD_FUSIONHA_PERF_DELAY=10
+          export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=http://127.0.0.1:8765
+          export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
+          export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACTIVITY_TAB=history
+          OUT=$(xcrun simctl launch --terminate-running-process --stderr="$PWD/perf/app.log" --stdout="$PWD/perf/app.out" "$UDID" org.elabx.fusionha)
+          echo "$OUT"
+          PID=$(echo "$OUT" | awk '{print $NF}')
+          for i in $(seq 1 400); do
+            grep -q "PERF DONE" perf/app.log 2>/dev/null && break
+            sleep 1
+          done
+          grep "PERF" perf/app.log | grep -v "\"event\":\"stacks\"" || true
+          grep -q "PERF DONE" perf/app.log || { echo "::error::perf script did not finish"; tail -50 perf/app.log; exit 1; }
+
+      - name: Report
+        if: always()
+        run: |
+          # Swift symbols from the in-app sampler come out mangled.
+          python3 scripts/perf_report.py perf/app.log --json perf/summary.json \
+            | xcrun swift-demangle --simplified | cut -c1-240 | tee perf/summary.txt
+          { echo '## Activity perf'; echo '```'; cat perf/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: activity-perf
+          path: |
+            perf/*.txt
+            perf/*.json
+            perf/*.log
+            perf/*.out
+          retention-days: 14
