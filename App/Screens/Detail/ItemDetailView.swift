@@ -189,13 +189,13 @@ struct ItemDetailView: View {
             try? await Task.sleep(for: .seconds(1.2))
             proxy.scrollTo(anchor, anchor: .top)
         }
-        guard let sheet = env["FUSIONHA_SCREENSHOT_DETAIL_SHEET"], let detail = store.detail else { return }
+        guard let sheet = env["FUSIONHA_SCREENSHOT_DETAIL_SHEET"], store.detail != nil else { return }
         try? await Task.sleep(for: .seconds(1.2))
         switch sheet {
         case "search":
             let ids = store.scopedEditions.map(\.id)
             store.interactive = InteractiveTarget(editionIds: ids, episodeId: nil, seasonNumber: nil,
-                                                  subtitle: "\(detail.title) · \(store.actsOnLabel)")
+                                                  subtitle: store.actsOnLabel)
         case "edit": store.showingEdit = true
         case "add": store.addPreset = AddEditionPreset()
         case "delete": store.showingDelete = true
