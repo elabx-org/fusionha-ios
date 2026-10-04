@@ -36,7 +36,7 @@ public final class APIClient: @unchecked Sendable {
 
     public let baseURL: URL
     private let token: String?
-    private let method: AuthMethod
+    private let authMethod: AuthMethod
     private let session: URLSession
 
     private static let decoder: JSONDecoder = {
@@ -54,7 +54,7 @@ public final class APIClient: @unchecked Sendable {
     public init(baseURL: URL, token: String?, method: AuthMethod = .apiToken, session: URLSession = .shared) {
         self.baseURL = baseURL
         self.token = token
-        self.method = method
+        self.authMethod = method
         self.session = session
     }
 
@@ -94,7 +94,7 @@ public final class APIClient: @unchecked Sendable {
         try await get("/api/v1/queue", query: [URLQueryItem(name: "page_size", value: "\(pageSize)")])
     }
 
-    public func library() async throws -> [LibraryItem] {
+    public func library() async throws -> [MediaItem] {
         try await get("/api/v1/library")
     }
 
@@ -146,7 +146,7 @@ public final class APIClient: @unchecked Sendable {
         req.httpMethod = method
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         if let token {
-            switch method {
+            switch authMethod {
             case .apiToken: req.setValue(token, forHTTPHeaderField: "X-Api-Key")
             case .session: req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             }

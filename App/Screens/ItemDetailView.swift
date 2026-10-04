@@ -6,7 +6,7 @@ import FusionhaKit
 struct ItemDetailView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
-    let item: LibraryItem
+    let item: MediaItem
     @State private var searching = false
     @State private var searchSent = false
 

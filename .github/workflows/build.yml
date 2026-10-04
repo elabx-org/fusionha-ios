@@ -12,13 +12,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Test, build unsigned IPA
+  test:
+    name: FusionhaKit tests
     runs-on: macos-26
-    permissions:
-      contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Select newest Xcode 26
         run: |
@@ -26,8 +24,22 @@ jobs:
           sudo xcode-select -s "$XCODE"
           xcodebuild -version
 
-      - name: Unit tests (FusionhaKit)
+      - name: Unit tests
         run: swift test --package-path Packages/FusionhaKit
+
+  build:
+    name: Build unsigned IPA
+    runs-on: macos-26
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select newest Xcode 26
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
 
       - name: Generate Xcode project
         run: |

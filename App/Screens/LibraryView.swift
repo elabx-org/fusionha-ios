@@ -15,7 +15,7 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
         }
     }
 
-    func matches(_ item: LibraryItem) -> Bool {
+    func matches(_ item: MediaItem) -> Bool {
         let monitored = item.editions.filter(\.monitored)
         switch self {
         case .all: return true
@@ -32,7 +32,7 @@ enum LibraryKind: String, CaseIterable, Identifiable {
     var id: Self { self }
     var title: String { rawValue.capitalized }
 
-    func matches(_ item: LibraryItem) -> Bool {
+    func matches(_ item: MediaItem) -> Bool {
         switch self {
         case .all: return true
         case .movies: return item.kind == .movie && item.isAnime != true
@@ -47,7 +47,7 @@ enum LibraryQuality: String, CaseIterable, Identifiable {
     var id: Self { self }
     var title: String { self == .all ? "All" : (self == .hd ? "HD" : "4K") }
 
-    func matches(_ item: LibraryItem) -> Bool {
+    func matches(_ item: MediaItem) -> Bool {
         switch self {
         case .all: return true
         case .hd: return item.editions.contains { $0.tier == .hd }
@@ -58,7 +58,7 @@ enum LibraryQuality: String, CaseIterable, Identifiable {
 
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
-    @State private var items: [LibraryItem] = []
+    @State private var items: [MediaItem] = []
     @State private var loading = true
     @State private var error: String?
     @State private var query = ""
@@ -67,12 +67,12 @@ struct LibraryView: View {
     @State private var quality: LibraryQuality = .all
     @Namespace private var zoom
 
-    private var base: [LibraryItem] {
+    private var base: [MediaItem] {
         items.filter { kind.matches($0) && quality.matches($0) &&
             (query.isEmpty || $0.title.localizedCaseInsensitiveContains(query)) }
     }
 
-    private var visible: [LibraryItem] {
+    private var visible: [MediaItem] {
         base.filter(filter.matches).sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
     }
 
@@ -94,7 +94,7 @@ struct LibraryView: View {
                 .padding(.bottom, 24)
             }
             .navigationTitle("Library")
-            .navigationDestination(for: LibraryItem.self) { item in
+            .navigationDestination(for: MediaItem.self) { item in
                 ItemDetailView(item: item)
                     .navigationTransition(.zoom(sourceID: item.id, in: zoom))
             }
@@ -116,22 +116,9 @@ struct LibraryView: View {
             GlassEffectContainer(spacing: 8) {
                 HStack(spacing: 8) {
                     ForEach(LibraryFilter.allCases) { f in
-                        let count = base.filter(f.matches).count
-                        Button {
+                        FilterChip(title: f.title, count: base.filter(f.matches).count, selected: f == filter) {
                             withAnimation(.smooth) { filter = f }
-                        } label: {
-                            HStack(spacing: 5) {
-                                Text(f.title)
-                                Text("\(count)").monospacedDigit().foregroundStyle(.secondary)
-                            }
-                            .font(.subheadline.weight(f == filter ? .semibold : .regular))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 7)
                         }
-                        .buttonStyle(.plain)
-                        .glassEffect(
-                            f == filter ? .regular.tint(Theme.indigo.opacity(0.45)).interactive() : .regular.interactive(),
-                            in: .capsule)
                     }
                 }
                 .padding(.horizontal)
@@ -155,7 +142,7 @@ struct LibraryView: View {
     }
 
     @ViewBuilder
-    private func contextActions(for item: LibraryItem) -> some View {
+    private func contextActions(for item: MediaItem) -> some View {
         Button("Automatic search", systemImage: "magnifyingglass") {
             Task { try? await model.client?.searchItem(id: item.id) }
         }
@@ -190,7 +177,7 @@ struct LibraryView: View {
 
 /// Poster-forward card: clean art, edition chips in the body below (design rule).
 struct PosterCard: View {
-    let item: LibraryItem
+    let item: MediaItem
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -216,5 +203,31 @@ struct PosterCard: View {
                 .glassEffect(.regular, in: .circle)
                 .padding(6)
         }
+    }
+}
+
+/// One glass capsule in the status filter row.
+private struct FilterChip: View {
+    let title: String
+    let count: Int
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Text(title)
+                Text("\(count)").monospacedDigit().foregroundStyle(.secondary)
+            }
+            .font(.subheadline.weight(selected ? .semibold : .regular))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(glass, in: .capsule)
+    }
+
+    private var glass: Glass {
+        selected ? Glass.regular.tint(Theme.indigo.opacity(0.45)).interactive() : Glass.regular.interactive()
     }
 }

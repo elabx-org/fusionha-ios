@@ -30,7 +30,7 @@ struct WantedView: View {
         HStack {
             Label(title, systemImage: symbol).foregroundStyle(color)
             Spacer()
-            Text(value.map(String.init) ?? "–").font(.title3.monospacedDigit().weight(.semibold))
+            Text(value.map { "\($0)" } ?? "–").font(.title3.monospacedDigit().weight(.semibold))
         }
     }
 
