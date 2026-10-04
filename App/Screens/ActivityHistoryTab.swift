@@ -7,7 +7,7 @@ import FusionhaKit
 
 // MARK: - Stories (buildHistoryStories)
 
-fileprivate enum HistoryStoryType: String, CaseIterable {
+fileprivate enum HistoryStoryType: String, CaseIterable, Sendable {
     case upgraded, added, grabbed, failed, deleted, other
 
     var label: String {
@@ -63,10 +63,11 @@ fileprivate enum HistoryStoryType: String, CaseIterable {
     }
 }
 
-fileprivate struct HistoryStory: Identifiable {
+fileprivate struct HistoryStory: Identifiable, Equatable, Sendable {
     let key: String
     let type: HistoryStoryType
     let time: String
+    let date: Date
     let mediaItemId: Int?
     let title: String
     let episodeLabel: String?
@@ -87,19 +88,50 @@ fileprivate struct HistoryStory: Identifiable {
     var id: String { key }
 }
 
+/// Everything the History tab derives from the loaded rows, built once per change
+/// of the feed (off the main actor) instead of on every body evaluation.
+fileprivate struct HistoryDerived: Sendable {
+    var stories: [HistoryStory] = []
+    var storyCounts: [HistoryStoryType: Int] = [:]
+    var rawCounts: [String: Int] = [:]
+    var revision = -1
+
+    static func make(_ entries: [HistoryEntry], revision: Int) -> HistoryDerived {
+        let stories = HistoryLogic.build(entries)
+        var storyCounts: [HistoryStoryType: Int] = [:]
+        for story in stories { storyCounts[story.type, default: 0] += 1 }
+        var rawCounts: [String: Int] = [:]
+        for entry in entries { rawCounts[HistoryLogic.rawFilter(entry.eventType), default: 0] += 1 }
+        return HistoryDerived(stories: stories, storyCounts: storyCounts, rawCounts: rawCounts, revision: revision)
+    }
+}
+
 fileprivate enum HistoryLogic {
-    struct Parsed { let title: String; let seasonEpisode: String?; let episodeName: String? }
+    struct Parsed: Sendable { let title: String; let seasonEpisode: String?; let episodeName: String? }
 
     private static let tech = try! NSRegularExpression(
         pattern: #"\b(?:19\d\d|20\d\d|\d{3,4}p|web[ .-]?dl|web[ .-]?rip|webrip|web|blu[ .-]?ray|bdrip|brrip|dvdrip|hdtv|remux|hybrid|x26[45]|h[ .]?26[45]|hevc|avc|hdr10\+?|hdr|dovi|dv|dts(?:[ .-]?hd)?|truehd|atmos|ddp?[0-9]?|dd\+?|eac3|aac|flac|opus|proper|repack|uhd|amzn|nf|dsnp|hmax|atvp|internal|limited|extended|remastered|imax)\b"#,
         options: [.caseInsensitive])
     private static let se = try! NSRegularExpression(pattern: #"\bS(\d{1,2})(?:E(\d{1,3})(?:[-–E]E?(\d{1,3}))?)?\b"#, options: [.caseInsensitive])
+    // Compiled once: `replacingOccurrences(options: .regularExpression)` compiles on every call.
+    private static let separators = try! NSRegularExpression(pattern: "[._]+")
+    private static let brackets = try! NSRegularExpression(pattern: #"[\[\](){}]"#)
+    private static let spaces = try! NSRegularExpression(pattern: #"\s+"#)
+    private static let edges = try! NSRegularExpression(pattern: #"^[\s-]+|[\s-]+$"#)
+    private static let ext = try! NSRegularExpression(pattern: #"\.(mkv|mp4|avi|m4v|ts|mov|wmv)$"#, options: [.caseInsensitive])
+
+    private static let cacheLock = NSLock()
+    nonisolated(unsafe) private static var parseCache: [String: Parsed] = [:]
+
+    private static func replace(_ re: NSRegularExpression, _ s: String, _ with: String) -> String {
+        re.stringByReplacingMatches(in: s, range: NSRange(location: 0, length: (s as NSString).length), withTemplate: with)
+    }
 
     private static func clean(_ s: String) -> String {
-        var t = s.replacingOccurrences(of: "[._]+", with: " ", options: .regularExpression)
-        t = t.replacingOccurrences(of: #"[\[\](){}]"#, with: " ", options: .regularExpression)
-        t = t.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
-        t = t.replacingOccurrences(of: #"^[\s-]+|[\s-]+$"#, with: "", options: .regularExpression)
+        var t = replace(separators, s, " ")
+        t = replace(brackets, t, " ")
+        t = replace(spaces, t, " ")
+        t = replace(edges, t, "")
         return t.trimmingCharacters(in: .whitespaces)
     }
 
@@ -109,10 +141,24 @@ fileprivate enum HistoryLogic {
         return Range(m.range, in: s)?.lowerBound
     }
 
+    /// Release-name parsing is pure, so each distinct name is parsed once.
     static func parse(_ raw: String?) -> Parsed {
         let source = (raw ?? "").trimmingCharacters(in: .whitespaces)
         guard !source.isEmpty else { return Parsed(title: "", seasonEpisode: nil, episodeName: nil) }
-        let base = source.replacingOccurrences(of: #"\.(mkv|mp4|avi|m4v|ts|mov|wmv)$"#, with: "", options: [.regularExpression, .caseInsensitive])
+        cacheLock.lock()
+        let hit = parseCache[source]
+        cacheLock.unlock()
+        if let hit { return hit }
+        let parsed = parseUncached(source)
+        cacheLock.lock()
+        if parseCache.count > 20_000 { parseCache.removeAll(keepingCapacity: true) }
+        parseCache[source] = parsed
+        cacheLock.unlock()
+        return parsed
+    }
+
+    private static func parseUncached(_ source: String) -> Parsed {
+        let base = replace(ext, source, "")
         let ns = base as NSString
         if let m = se.firstMatch(in: base, range: NSRange(location: 0, length: ns.length)), let r = Range(m.range, in: base) {
             let titleFragment = String(base[..<r.lowerBound])
@@ -153,19 +199,42 @@ fileprivate enum HistoryLogic {
         return err
     }
 
+    /// buildHistoryStories. Linear: grabs/deletes are indexed by download id and
+    /// every timestamp is parsed once (it used to be O(n²) with dates parsed
+    /// inside the sort comparator).
     static func build(_ entries: [HistoryEntry]) -> [HistoryStory] {
-        let grabs = entries.filter { $0.eventType == "GRABBED" }
-        let deletes = entries.filter { $0.eventType == "DELETED" }
-        let imports = entries.filter { $0.eventType == "IMPORTED" }
-        let fails = entries.filter { ["GRAB_FAILED", "DOWNLOAD_FAILED", "FILE_MOVE_FAILED"].contains($0.eventType) }
-        let others = entries.filter { ["RENAMED", "FILE_MOVED", "NEEDS_ATTENTION", "RENUMBERED"].contains($0.eventType) }
+        var dates: [Int: Date] = [:]
+        dates.reserveCapacity(entries.count)
+        for e in entries { dates[e.id] = ActFmt.date(e.createdAt) ?? .distantPast }
+        func date(_ e: HistoryEntry) -> Date { dates[e.id] ?? .distantPast }
+
+        var grabsByDownload: [String: [HistoryEntry]] = [:]
+        var deletesByDownload: [String: [HistoryEntry]] = [:]
+        var grabs: [HistoryEntry] = [], deletes: [HistoryEntry] = [], imports: [HistoryEntry] = []
+        var fails: [HistoryEntry] = [], others: [HistoryEntry] = []
+        for e in entries {
+            switch e.eventType {
+            case "GRABBED":
+                grabs.append(e)
+                if let d = e.downloadId { grabsByDownload[d, default: []].append(e) }
+            case "DELETED":
+                deletes.append(e)
+                if let d = e.downloadId { deletesByDownload[d, default: []].append(e) }
+            case "IMPORTED": imports.append(e)
+            case "GRAB_FAILED", "DOWNLOAD_FAILED", "FILE_MOVE_FAILED": fails.append(e)
+            case "RENAMED", "FILE_MOVED", "NEEDS_ATTENTION", "RENUMBERED": others.append(e)
+            default: break
+            }
+        }
         var usedGrab = Set<Int>(), usedDel = Set<Int>()
         var stories: [HistoryStory] = []
+        stories.reserveCapacity(entries.count)
 
         func story(_ key: String, _ type: HistoryStoryType, _ e: HistoryEntry, lead: HistoryEntry? = nil,
                    events: [HistoryEntry], old: HistoryEntry? = nil, grab: HistoryEntry? = nil) -> HistoryStory {
-            HistoryStory(
-                key: key, type: type, time: (lead ?? e).createdAt, mediaItemId: e.mediaItemId, title: leadTitle(e),
+            let leadEntry = lead ?? e
+            return HistoryStory(
+                key: key, type: type, time: leadEntry.createdAt, date: date(leadEntry), mediaItemId: e.mediaItemId, title: leadTitle(e),
                 episodeLabel: episodeLabel(old?.sourceTitle, e.sourceTitle, grab?.sourceTitle),
                 tier: e.tier ?? grab?.tier ?? old?.tier, posterUrl: e.posterUrl ?? grab?.posterUrl ?? old?.posterUrl,
                 oldQuality: old?.quality, oldCf: old?.cfScore,
@@ -183,28 +252,29 @@ fileprivate enum HistoryLogic {
             var grab: HistoryEntry?
             var del: HistoryEntry?
             if let d = imp.downloadId {
-                grab = grabs.first { $0.downloadId == d && $0.episodeId == imp.episodeId } ?? grabs.first { $0.downloadId == d && $0.episodeId == nil }
-                del = deletes.first { $0.downloadId == d && $0.episodeId == imp.episodeId }
+                let candidates = grabsByDownload[d] ?? []
+                grab = candidates.first { $0.episodeId == imp.episodeId } ?? candidates.first { $0.episodeId == nil }
+                del = deletesByDownload[d]?.first { $0.episodeId == imp.episodeId }
             }
             if let grab { usedGrab.insert(grab.id) }
             if let del { usedDel.insert(del.id) }
-            let events = [del, imp, grab].compactMap { $0 }.sorted { (ActFmt.date($0.createdAt) ?? .distantPast) > (ActFmt.date($1.createdAt) ?? .distantPast) }
+            let events = [del, imp, grab].compactMap { $0 }.sorted { date($0) > date($1) }
             stories.append(story("imp:\(imp.id)", del != nil ? .upgraded : .added, imp, lead: events.first, events: events, old: del, grab: grab))
         }
         for del in deletes where !usedDel.contains(del.id) {
-            var s = story("del:\(del.id)", .deleted, del, events: [del])
-            s = HistoryStory(key: s.key, type: s.type, time: s.time, mediaItemId: s.mediaItemId, title: s.title, episodeLabel: s.episodeLabel,
-                             tier: s.tier, posterUrl: s.posterUrl, oldQuality: del.quality, oldCf: del.cfScore, newQuality: nil, newSize: nil,
-                             newCf: nil, indexer: nil, downloadClient: nil, failReason: nil, releaseTitle: del.sourceTitle,
-                             chips: del.chips ?? [], actionEntry: del, events: [del])
-            stories.append(s)
+            let s = story("del:\(del.id)", .deleted, del, events: [del])
+            stories.append(HistoryStory(key: s.key, type: s.type, time: s.time, date: s.date, mediaItemId: s.mediaItemId, title: s.title,
+                                        episodeLabel: s.episodeLabel, tier: s.tier, posterUrl: s.posterUrl, oldQuality: del.quality,
+                                        oldCf: del.cfScore, newQuality: nil, newSize: nil, newCf: nil, indexer: nil, downloadClient: nil,
+                                        failReason: nil, releaseTitle: del.sourceTitle, chips: del.chips ?? [], actionEntry: del,
+                                        events: [del]))
         }
         for grab in grabs where !usedGrab.contains(grab.id) {
             stories.append(story("grab:\(grab.id)", .grabbed, grab, events: [grab], grab: grab))
         }
         for fail in fails { stories.append(story("fail:\(fail.id)", .failed, fail, events: [fail])) }
         for other in others { stories.append(story("other:\(other.id)", .other, other, events: [other])) }
-        return stories.sorted { (ActFmt.date($0.time) ?? .distantPast) > (ActFmt.date($1.time) ?? .distantPast) }
+        return stories.sorted { $0.date > $1.date }
     }
 
     /// historyFilterId for the raw log.
@@ -256,11 +326,12 @@ struct ActivityHistoryTab: View {
     @State private var raw = false
     @State private var storyFilter: HistoryStoryType?
     @State private var rawFilter: String?
+    @State private var derived = HistoryDerived()
 
     var body: some View {
         let _ = PerfCount.hit("ActivityHistoryTab.body")
-        Group {
-            if !feed.loaded && feed.error == nil {
+        ActivityPage {
+            if (!feed.loaded && feed.error == nil) || (derived.revision < 0 && !feed.items.isEmpty) {
                 ActEmpty(message: "Loading history…")
             } else if feed.error != nil && feed.items.isEmpty {
                 ActEmpty(message: "History could not be loaded. Check the backend and try again.")
@@ -268,9 +339,10 @@ struct ActivityHistoryTab: View {
                 ActEmpty(message: search.isEmpty ? "No history yet. Grabs, imports, upgrades and failures show up here."
                                                  : "No history matches “\(search)”.")
             } else {
-                loadedView
+                loadedRows
             }
         }
+        .animation(reduce ? nil : ActMotion.rows, value: RowsKey(revision: derived.revision, filter: storyFilter, raw: raw))
         .task(id: search) {
             let client = model.client
             let q = search
@@ -282,46 +354,58 @@ struct ActivityHistoryTab: View {
             await feed.reload(resetting: true)
             if let days = try? await client?.historySparkline(days: 14) { sparkline = days }
         }
+        .task(id: feed.revision) { await rebuild() }
     }
 
-    private var stories: [HistoryStory] { PerfCount.time("HistoryLogic.build") { HistoryLogic.build(feed.items) } }
+    private struct RowsKey: Equatable {
+        let revision: Int
+        let filter: HistoryStoryType?
+        let raw: Bool
+    }
 
+    /// Stories, counts and filters are derived once per feed change, off the main actor.
+    private func rebuild() async {
+        let items = feed.items
+        let revision = feed.revision
+        let next = await Task.detached(priority: .userInitiated) {
+            PerfCount.time("HistoryLogic.build") { HistoryDerived.make(items, revision: revision) }
+        }.value
+        guard !Task.isCancelled, revision == feed.revision else { return }
+        derived = next
+    }
+
+    /// Flat children of the page's lazy stack: overview, filters, one child per row, footer.
     @ViewBuilder
-    private var loadedView: some View {
-        let stories = self.stories
-        VStack(alignment: .leading, spacing: 0) {
-            if raw { rawOverview.padding(.bottom, 14) } else { insight(stories).padding(.bottom, 14) }
-            filterBar(stories).padding(.bottom, 12)
-            if raw {
-                rawLog
+    private var loadedRows: some View {
+        let stories = derived.stories
+        if raw { rawOverview.padding(.bottom, 14) } else { insight(stories).padding(.bottom, 14) }
+        filterBar(stories).padding(.bottom, 12)
+        if raw {
+            rawLog
+        } else {
+            let shown = storyFilter.map { f in stories.filter { $0.type == f } } ?? stories
+            if shown.isEmpty {
+                ActEmpty(message: "No \(storyFilter.map { $0.label + " " } ?? "")stories in the loaded rows\(feed.hasMore ? " yet — load more below." : ".")")
             } else {
-                let shown = storyFilter.map { f in stories.filter { $0.type == f } } ?? stories
-                if shown.isEmpty {
-                    ActEmpty(message: "No \(storyFilter.map { $0.label + " " } ?? "")stories in the loaded rows\(feed.hasMore ? " yet — load more below." : ".")")
-                } else {
-                    LazyVStack(alignment: .leading, spacing: 10) {
-                        ForEach(Array(shown.enumerated()), id: \.element.id) { index, story in
-                            HistoryStoryRow(story: story, onChanged: { Task { await feed.refreshLoaded() } })
-                                .actReveal(index)
-                                .actRowTransition(reduce)
-                        }
-                    }
-                    .padding(.leading, 26)
-                    .background(alignment: .leading) {
-                        Rectangle().fill(Theme.line).frame(width: 2).padding(.leading, 10).padding(.vertical, 12)
-                    }
-                    .animation(reduce ? nil : ActMotion.rows, value: shown.map(\.id))
+                let last = shown.count - 1
+                ForEach(Array(shown.enumerated()), id: \.element.id) { index, story in
+                    HistoryStoryRow(story: story, onChanged: { Task { await feed.refreshLoaded() } })
+                        .actReveal(index)
+                        .padding(.leading, 26)
+                        .padding(.bottom, index == last ? 0 : 10)
+                        .background(alignment: .leading) { ActTimelineSegment(first: index == 0, last: index == last) }
+                        .actRowTransition(reduce)
                 }
             }
-            ActFooter(total: feed.total, loaded: feed.items.count, hasMore: feed.hasMore, loading: feed.loadingMore,
-                      noun: "events", query: search) { Task { await feed.loadMore() } }
         }
+        ActFooter(total: feed.total, loaded: feed.items.count, hasMore: feed.hasMore, loading: feed.loadingMore,
+                  noun: "events", query: search) { Task { await feed.loadMore() } }
     }
 
     // MARK: Insight card
 
     private func insight(_ stories: [HistoryStory]) -> some View {
-        let counts = Dictionary(grouping: stories, by: \.type).mapValues(\.count)
+        let counts = derived.storyCounts
         let maxCount = max(sparkline.map(\.count).max() ?? 0, 1)
         return VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .bottom, spacing: 16) {
@@ -361,7 +445,7 @@ struct ActivityHistoryTab: View {
     }
 
     private var rawOverview: some View {
-        let counts = Dictionary(grouping: feed.items) { HistoryLogic.rawFilter($0.eventType) }.mapValues(\.count)
+        let counts = derived.rawCounts
         return ActOverview(total: feed.total, label: "events", stats: [
             .init(label: "Grabbed", value: counts["grabbed"] ?? 0, color: Theme.grab),
             .init(label: "Imported", value: counts["imported"] ?? 0, color: Theme.done),
@@ -376,7 +460,7 @@ struct ActivityHistoryTab: View {
         VStack(alignment: .leading, spacing: 8) {
             ActFlow(spacing: 8, lineSpacing: 8) {
                 if raw {
-                    let counts = Dictionary(grouping: feed.items) { HistoryLogic.rawFilter($0.eventType) }.mapValues(\.count)
+                    let counts = derived.rawCounts
                     ActChip(label: "All", count: feed.items.count, accent: Theme.grab, selected: rawFilter == nil) { rawFilter = nil }
                     ForEach([("grabbed", "Grabbed", Theme.grab), ("imported", "Imported", Theme.done), ("failed", "Failed", Theme.danger),
                              ("deleted", "Deleted", Theme.miss), ("renamed", "Renamed", Theme.edition)], id: \.0) { id, label, color in
@@ -385,7 +469,7 @@ struct ActivityHistoryTab: View {
                         }
                     }
                 } else {
-                    let counts = Dictionary(grouping: stories, by: \.type).mapValues(\.count)
+                    let counts = derived.storyCounts
                     ActChip(label: "All", count: stories.count, accent: Theme.grab, selected: storyFilter == nil) { storyFilter = nil }
                     ForEach([HistoryStoryType.upgraded, .added, .failed, .deleted], id: \.self) { type in
                         if (counts[type] ?? 0) > 0 {
@@ -406,36 +490,33 @@ struct ActivityHistoryTab: View {
     @ViewBuilder
     private var rawLog: some View {
         let rows = rawFilter.map { f in feed.items.filter { HistoryLogic.rawFilter($0.eventType) == f } } ?? feed.items
-        LazyVStack(spacing: 0) {
-            ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
-                if index > 0 { Rectangle().fill(Theme.line).frame(height: 1) }
-                let meta = HistoryLogic.eventMeta(entry.eventType)
-                VStack(alignment: .leading, spacing: 4) {
-                    ActFlow(spacing: 6, lineSpacing: 3) {
-                        Text(ActFmt.relative(entry.createdAt)).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim)
-                        Text(meta.label).font(.system(size: 11, weight: .bold)).foregroundStyle(meta.color)
-                        if let trigger = entry.grabTrigger { ActProvenance(trigger: trigger) }
-                        Text(entry.itemTitle ?? "Unknown").font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                    }
-                    ActFlow(spacing: 6, lineSpacing: 3) {
-                        if let src = entry.sourceTitle {
-                            Text(src).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.mut).lineLimit(1).truncationMode(.middle)
-                        }
-                        if let q = entry.quality { ActQualityChip(quality: q) }
-                        if let size = entry.size { Text(ActFmt.bytes(size)).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.dim) }
-                        if let cf = entry.cfScore { Text("CF \(cf)").font(.system(size: 10.5, weight: .bold, design: .monospaced)).foregroundStyle(Theme.done) }
-                    }
+        let last = rows.count - 1
+        ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
+            let meta = HistoryLogic.eventMeta(entry.eventType)
+            VStack(alignment: .leading, spacing: 4) {
+                ActFlow(spacing: 6, lineSpacing: 3) {
+                    Text(ActFmt.relative(entry.createdAt)).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim)
+                    Text(meta.label).font(.system(size: 11, weight: .bold)).foregroundStyle(meta.color)
+                    if let trigger = entry.grabTrigger { ActProvenance(trigger: trigger) }
+                    Text(entry.itemTitle ?? "Unknown").font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 9)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .onTapGesture { if let id = entry.mediaItemId { model.open(id) } }
-                .actReveal(index, stagger: 0.02)
+                ActFlow(spacing: 6, lineSpacing: 3) {
+                    if let src = entry.sourceTitle {
+                        Text(src).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.mut).lineLimit(1).truncationMode(.middle)
+                    }
+                    if let q = entry.quality { ActQualityChip(quality: q) }
+                    if let size = entry.size { Text(ActFmt.bytes(size)).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.dim) }
+                    if let cf = entry.cfScore { Text("CF \(cf)").font(.system(size: 10.5, weight: .bold, design: .monospaced)).foregroundStyle(Theme.done) }
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 9)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture { if let id = entry.mediaItemId { model.open(id) } }
+            .actReveal(index, stagger: 0.02)
+            .actCardSegment(first: index == 0, last: index == last)
         }
-        .background(Theme.panel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
     }
 }
 

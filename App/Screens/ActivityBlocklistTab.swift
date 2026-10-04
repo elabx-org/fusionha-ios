@@ -70,7 +70,7 @@ struct ActivityBlocklistTab: View {
 
     var body: some View {
         let _ = PerfCount.hit("ActivityBlocklistTab.body")
-        Group {
+        ActivityPage {
             if !feed.loaded && feed.error == nil {
                 ActEmpty(message: "Loading the blocklist…")
             } else if feed.error != nil && feed.items.isEmpty {
@@ -83,6 +83,7 @@ struct ActivityBlocklistTab: View {
                 loadedView
             }
         }
+        .animation(reduce ? nil : ActMotion.rows, value: RowsKey(revision: feed.revision, category: category, grouped: grouped))
         .task(id: search) {
             let client = model.client
             let q = search
@@ -106,6 +107,12 @@ struct ActivityBlocklistTab: View {
         }
     }
 
+    private struct RowsKey: Equatable {
+        let revision: Int
+        let category: BlocklistCategory?
+        let grouped: Bool
+    }
+
     private var counts: [BlocklistCategory: Int] {
         Dictionary(grouping: feed.items) { BlocklistCategory(reason: $0.reason) }.mapValues(\.count)
     }
@@ -115,34 +122,33 @@ struct ActivityBlocklistTab: View {
         return feed.items.filter { BlocklistCategory(reason: $0.reason) == category }
     }
 
+    /// Flat children of the page's lazy stack (one per card).
     @ViewBuilder
     private var loadedView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            insight.padding(.bottom, 14)
-            filterBar.padding(.bottom, 8)
-            toolrow.padding(.bottom, 12)
-            let rows = filtered
-            if rows.isEmpty {
-                ActEmpty(message: "No \(category?.label ?? "") releases in the loaded rows.")
-            } else if grouped {
-                let groups = Self.group(rows)
-                LazyVStack(spacing: 10) {
-                    ForEach(Array(groups.enumerated()), id: \.element.key) { index, group in
-                        groupCard(group).actReveal(index).actRowTransition(reduce)
-                    }
-                }
-                .animation(reduce ? nil : ActMotion.rows, value: rows.map(\.id))
-            } else {
-                LazyVStack(spacing: 10) {
-                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
-                        row(entry, nested: false, dupes: 1).actReveal(index).actRowTransition(reduce)
-                    }
-                }
-                .animation(reduce ? nil : ActMotion.rows, value: rows.map(\.id))
+        insight.padding(.bottom, 14)
+        filterBar.padding(.bottom, 8)
+        toolrow.padding(.bottom, 12)
+        let rows = filtered
+        if rows.isEmpty {
+            ActEmpty(message: "No \(category?.label ?? "") releases in the loaded rows.")
+        } else if grouped {
+            let groups = Self.group(rows)
+            let last = groups.count - 1
+            ForEach(Array(groups.enumerated()), id: \.element.key) { index, group in
+                groupCard(group).actReveal(index)
+                    .padding(.bottom, index == last ? 0 : 10)
+                    .actRowTransition(reduce)
             }
-            ActFooter(total: feed.total, loaded: feed.items.count, hasMore: feed.hasMore, loading: feed.loadingMore,
-                      noun: "blocklisted releases", query: search) { Task { await feed.loadMore() } }
+        } else {
+            let last = rows.count - 1
+            ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
+                row(entry, nested: false, dupes: 1).actReveal(index)
+                    .padding(.bottom, index == last ? 0 : 10)
+                    .actRowTransition(reduce)
+            }
         }
+        ActFooter(total: feed.total, loaded: feed.items.count, hasMore: feed.hasMore, loading: feed.loadingMore,
+                  noun: "blocklisted releases", query: search) { Task { await feed.loadMore() } }
     }
 
     // MARK: Insight

@@ -331,31 +331,31 @@ jobs:
           xcrun simctl install "$UDID" build/Build/Products/Release-iphonesimulator/Fusionha.app
           # Let the freshly booted simulator settle before measuring.
           sleep 20
-          # Start the profiler first (its first launch takes minutes to initialise)
-          # and only launch the app once it is actually recording.
-          xcrun xctrace record --template 'Time Profiler' --device "$UDID" --all-processes \
-            --time-limit 600s --output perf/activity.trace > perf/xctrace.log 2>&1 &
-          XPID=$!
-          for i in $(seq 1 360); do
-            grep -qi "ctrl-c\|starting recording\|recording" perf/xctrace.log 2>/dev/null && break
-            kill -0 $XPID 2>/dev/null || break
-            sleep 1
-          done
-          echo "xctrace ready after ${i}s:"; cat perf/xctrace.log
-          sleep 3
+          # Warm the profiler up (its first run initialises for minutes), then
+          # attach to the app right after launch.
+          perl -e 'alarm 600; exec @ARGV' xcrun xctrace record --template 'Time Profiler' --device "$UDID" --all-processes \
+            --time-limit 3s --output perf/warmup.trace > perf/xctrace-warmup.log 2>&1 || true
+          rm -rf perf/warmup.trace
           export SIMCTL_CHILD_FUSIONHA_PERF=1
           export SIMCTL_CHILD_FUSIONHA_PERF_DELAY=10
           export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=http://127.0.0.1:8765
           export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
           export SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACTIVITY_TAB=history
-          xcrun simctl launch --terminate-running-process --stderr="$PWD/perf/app.log" --stdout="$PWD/perf/app.out" "$UDID" org.elabx.fusionha
+          OUT=$(xcrun simctl launch --terminate-running-process --stderr="$PWD/perf/app.log" --stdout="$PWD/perf/app.out" "$UDID" org.elabx.fusionha)
+          echo "$OUT"
+          PID=$(echo "$OUT" | awk '{print $NF}')
+          xcrun xctrace record --template 'Time Profiler' --device "$UDID" --attach "$PID" \
+            --time-limit 200s --output perf/activity.trace > perf/xctrace.log 2>&1 &
+          XPID=$!
           for i in $(seq 1 300); do
             grep -q "PERF DONE" perf/app.log 2>/dev/null && break
             sleep 1
           done
           kill -INT $XPID 2>/dev/null || true
-          wait $XPID || true
-          cat perf/xctrace.log || true
+          # Finalising can be slow; never let it eat the job.
+          for i in $(seq 1 300); do kill -0 $XPID 2>/dev/null || break; sleep 1; done
+          kill -9 $XPID 2>/dev/null || true
+          echo "--- xctrace"; cat perf/xctrace-warmup.log perf/xctrace.log || true
           grep "PERF" perf/app.log || true
           grep -q "PERF DONE" perf/app.log || { echo "::error::perf script did not finish"; tail -50 perf/app.log; exit 1; }
 
@@ -364,11 +364,11 @@ jobs:
         run: |
           ARGS="perf/app.log"
           if [ -d perf/activity.trace ]; then
-            xcrun xctrace export --input perf/activity.trace --toc > perf/toc.xml || true
+            perl -e 'alarm 300; exec @ARGV' xcrun xctrace export --input perf/activity.trace --toc > perf/toc.xml || true
             SCHEMA=$(grep -o 'schema="time-profile"\|schema="time-sample"' perf/toc.xml | head -1 | cut -d'"' -f2)
             echo "Profile table: ${SCHEMA:-none}"
             if [ -n "$SCHEMA" ]; then
-              xcrun xctrace export --input perf/activity.trace \
+              perl -e 'alarm 600; exec @ARGV' xcrun xctrace export --input perf/activity.trace \
                 --xpath "/trace-toc/run[@number=\"1\"]/data/table[@schema=\"$SCHEMA\"]" > perf/time-profile.xml || true
               ARGS="$ARGS perf/toc.xml perf/time-profile.xml"
             fi

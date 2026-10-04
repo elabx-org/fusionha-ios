@@ -37,6 +37,49 @@ extension View {
     }
 }
 
+// MARK: Flat-list pieces
+//
+// Long lists are laid out flat (each row a direct child of the page's lazy
+// stack), so the decorations that used to wrap the whole list — the timeline
+// thread, the shared card — are drawn per row instead.
+
+/// The 2pt timeline thread behind one row (left 10), inset 12pt at the ends.
+struct ActTimelineSegment: View {
+    let first: Bool
+    let last: Bool
+    var leading: CGFloat = 10
+
+    var body: some View {
+        Rectangle()
+            .fill(Theme.line)
+            .frame(width: 2)
+            .padding(.top, first ? 12 : 0)
+            .padding(.bottom, last ? 12 : 0)
+            .padding(.leading, leading)
+    }
+}
+
+extension View {
+    /// One row of a single rounded panel card: rounded ends on the first and
+    /// last rows, a hairline between rows, the border only on the outside.
+    func actCardSegment(first: Bool, last: Bool, radius: CGFloat = 14) -> some View {
+        let shape = UnevenRoundedRectangle(topLeadingRadius: first ? radius : 0, bottomLeadingRadius: last ? radius : 0,
+                                           bottomTrailingRadius: last ? radius : 0, topTrailingRadius: first ? radius : 0,
+                                           style: .continuous)
+        return background(Theme.panel, in: shape)
+            .overlay {
+                shape.strokeBorder(Theme.line)
+                    .padding(.top, first ? 0 : -1)
+                    .padding(.bottom, last ? 0 : -1)
+                    .clipped()
+                    .allowsHitTesting(false)
+            }
+            .overlay(alignment: .top) {
+                if !first { Rectangle().fill(Theme.line).frame(height: 1).allowsHitTesting(false) }
+            }
+    }
+}
+
 // MARK: Poster
 
 enum ActPosterSize {
@@ -79,21 +122,35 @@ struct ActFlow: Layout {
     var lineSpacing: CGFloat = 8
     var alignment: HorizontalAlignment = .leading
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        PerfCount.hit("ActFlow.sizeThatFits")
-        let rows = arrange(width: proposal.width ?? .infinity, subviews: subviews)
-        let height = rows.reduce(0) { $0 + $1.height } + CGFloat(max(rows.count - 1, 0)) * lineSpacing
-        let width = rows.map(\.width).max() ?? 0
-        return CGSize(width: proposal.width ?? width, height: height)
+    /// The last arrangement, so a pass that proposes the same width (sizing, then
+    /// placing, then every re-layout of the row) measures each subview once.
+    struct Cache {
+        var width: CGFloat = .nan
+        var rows: [Row] = []
+        var sizes: [CGSize] = []
     }
 
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let rows = arrange(width: bounds.width, subviews: subviews)
+    func makeCache(subviews: Subviews) -> Cache { Cache() }
+
+    func updateCache(_ cache: inout Cache, subviews: Subviews) { cache = Cache() }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) -> CGSize {
+        PerfCount.hit("ActFlow.sizeThatFits")
+        let width = proposal.width ?? .infinity
+        arrange(width: width, subviews: subviews, cache: &cache)
+        let rows = cache.rows
+        let height = rows.reduce(0) { $0 + $1.height } + CGFloat(max(rows.count - 1, 0)) * lineSpacing
+        let natural = rows.map(\.width).max() ?? 0
+        return CGSize(width: proposal.width ?? natural, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) {
+        arrange(width: bounds.width, subviews: subviews, cache: &cache)
         var y = bounds.minY
-        for row in rows {
+        for row in cache.rows {
             var x = alignment == .trailing ? bounds.maxX - row.width : bounds.minX
             for index in row.indices {
-                let size = measure(subviews[index], width: bounds.width)
+                let size = cache.sizes[index]
                 subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: ProposedViewSize(size))
                 x += size.width + spacing
             }
@@ -101,7 +158,7 @@ struct ActFlow: Layout {
         }
     }
 
-    private struct Row { var indices: [Int] = []; var width: CGFloat = 0; var height: CGFloat = 0 }
+    struct Row { var indices: [Int] = []; var width: CGFloat = 0; var height: CGFloat = 0 }
 
     /// Natural size, but a subview wider than the line wraps to the line width instead of overflowing.
     private func measure(_ subview: LayoutSubview, width: CGFloat) -> CGSize {
@@ -110,11 +167,15 @@ struct ActFlow: Layout {
         return subview.sizeThatFits(ProposedViewSize(width: width, height: nil))
     }
 
-    private func arrange(width: CGFloat, subviews: Subviews) -> [Row] {
+    private func arrange(width: CGFloat, subviews: Subviews, cache: inout Cache) {
+        if cache.width == width, cache.sizes.count == subviews.count { return }
         var rows: [Row] = []
+        var sizes: [CGSize] = []
+        sizes.reserveCapacity(subviews.count)
         var row = Row()
         for index in subviews.indices {
             let size = measure(subviews[index], width: width)
+            sizes.append(size)
             let needed = row.indices.isEmpty ? size.width : row.width + spacing + size.width
             if needed > width, !row.indices.isEmpty {
                 rows.append(row)
@@ -125,7 +186,7 @@ struct ActFlow: Layout {
             row.indices.append(index)
         }
         if !row.indices.isEmpty { rows.append(row) }
-        return rows
+        cache = Cache(width: width, rows: rows, sizes: sizes)
     }
 }
 
@@ -141,6 +202,8 @@ struct ActTabs<Value: Hashable>: View {
 
     let items: [Item]
     @Binding var selection: Value
+    /// Pass a shared namespace when the strip is rebuilt per page, so the indicator still slides.
+    var namespace: Namespace.ID? = nil
     @Namespace private var indicator
     @Environment(\.actReduceMotion) private var reduce
 
@@ -175,7 +238,7 @@ struct ActTabs<Value: Hashable>: View {
                                 RoundedRectangle(cornerRadius: 9, style: .continuous)
                                     .fill(Theme.panel)
                                     .shadow(color: .black.opacity(0.3), radius: 1, y: 1)
-                                    .matchedGeometryEffect(id: "tab-indicator", in: indicator)
+                                    .matchedGeometryEffect(id: "tab-indicator", in: namespace ?? indicator)
                             }
                         }
                         .contentShape(Rectangle())
@@ -1124,8 +1187,11 @@ enum ActFmt {
 
 @MainActor
 @Observable
-final class ActFeed<Item: Identifiable> {
+final class ActFeed<Item: Identifiable & Equatable> {
     private(set) var items: [Item] = []
+    /// Bumps on every change of `items`, so views can rebuild derived data once
+    /// per change (`.task(id: feed.revision)`) instead of on every body evaluation.
+    private(set) var revision = 0
     private(set) var total = 0
     private(set) var loaded = false
     private(set) var error: String?
@@ -1142,15 +1208,20 @@ final class ActFeed<Item: Identifiable> {
 
     var hasMore: Bool { items.count < total }
 
+    private func setItems(_ new: [Item]) {
+        items = new
+        revision &+= 1
+    }
+
     /// Loads the first page again (a new search or a pull to refresh).
     func reload(resetting: Bool = false) async {
         generation += 1
         let gen = generation
-        if resetting { loaded = false; items = []; total = 0 }
+        if resetting { loaded = false; setItems([]); total = 0 }
         do {
             let (page, total) = try await fetch(1, pageSize)
             guard gen == generation else { return }
-            items = page
+            setItems(page)
             self.total = total
             pages = 1
             error = nil
@@ -1169,10 +1240,11 @@ final class ActFeed<Item: Identifiable> {
         let size = min(pageSize * pages, 500)
         let gen = generation
         guard let (page, total) = try? await fetch(1, size), gen == generation else { return }
-        items = page
-        self.total = total
-        error = nil
-        loaded = true
+        // Live polling: an unchanged page must not invalidate every row.
+        if items != page { setItems(page) }
+        if self.total != total { self.total = total }
+        if error != nil { error = nil }
+        if !loaded { loaded = true }
     }
 
     func loadMore() async {
@@ -1185,7 +1257,7 @@ final class ActFeed<Item: Identifiable> {
             guard gen == generation else { return }
             let seen = Set(items.map { AnyHashable($0.id) })
             let fresh = page.filter { !seen.contains(AnyHashable($0.id)) }
-            items += fresh
+            if !fresh.isEmpty { setItems(items + fresh) }
             // A page that adds nothing (rows shifted while paging) ends the list
             // instead of asking for the same page forever.
             self.total = fresh.isEmpty ? items.count : total
@@ -1196,7 +1268,7 @@ final class ActFeed<Item: Identifiable> {
     /// Drops rows locally (optimistic remove).
     func remove(where predicate: (Item) -> Bool) {
         let before = items.count
-        items.removeAll(where: predicate)
+        setItems(items.filter { !predicate($0) })
         total = max(0, total - (before - items.count))
     }
 }
@@ -1228,23 +1300,25 @@ enum ActMotion {
     static func easeInOut(_ t: Double) -> Double { t < 0.5 ? 2 * t * t : 1 - pow(-2 * t + 2, 2) / 2 }
 }
 
-/// Loops a 0...1 phase every `duration` seconds (CSS `animation: … infinite`).
-/// Stops (phase 0 / static) under reduced motion.
-struct ActLoop<Content: View>: View {
-    let duration: Double
-    @Environment(\.actReduceMotion) private var reduce
-    @ViewBuilder let content: (Double) -> Content
+// The looping effects below are SwiftUI repeat-forever animations of a
+// transform/opacity, which the render loop interpolates without re-running any
+// view body. They used to be `TimelineView(.animation)` loops that re-evaluated
+// (and re-laid out) every bar, dot and spinner 30 times a second, which kept the
+// main thread ~50% busy on an idle Queue tab. All of them are static under
+// reduced motion.
+
+/// A view that starts one repeat-forever animation when it appears.
+private struct ActRepeat<Content: View>: View {
+    let animation: Animation
+    @ViewBuilder let content: (_ on: Bool) -> Content
+    @State private var on = false
 
     var body: some View {
-        if reduce {
-            content(0)
-        } else {
-            TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
-                let _ = PerfCount.hit("ActLoop.frame")
-                let t = context.date.timeIntervalSinceReferenceDate
-                content(t.truncatingRemainder(dividingBy: duration) / duration)
+        content(on)
+            .onAppear {
+                guard !on else { return }
+                withAnimation(animation) { on = true }
             }
-        }
     }
 }
 
@@ -1256,12 +1330,11 @@ struct ActShimmer: View {
     var body: some View {
         if !reduce {
             GeometryReader { geo in
-                ActLoop(duration: duration) { phase in
-                    let x = -1 + 2 * ActMotion.easeInOut(phase)
+                ActRepeat(animation: .easeInOut(duration: duration).repeatForever(autoreverses: false)) { on in
                     LinearGradient(colors: [.white.opacity(0), .white.opacity(0.28), .white.opacity(0)],
                                    startPoint: .leading, endPoint: .trailing)
                         .frame(width: geo.size.width)
-                        .offset(x: geo.size.width * x)
+                        .offset(x: geo.size.width * (on ? 1 : -1))
                 }
             }
             .clipped()
@@ -1283,12 +1356,11 @@ struct ActIndeterminateBar: View {
                 if reduce {
                     Capsule().fill(color.opacity(0.6)).frame(width: geo.size.width * 0.36)
                 } else {
-                    ActLoop(duration: 1.35) { phase in
-                        let left = -0.36 + 1.36 * ActMotion.easeInOut(phase)
+                    ActRepeat(animation: .easeInOut(duration: 1.35).repeatForever(autoreverses: false)) { on in
                         Capsule()
                             .fill(LinearGradient(colors: [color.opacity(0), color, color.opacity(0)], startPoint: .leading, endPoint: .trailing))
                             .frame(width: geo.size.width * 0.36)
-                            .offset(x: geo.size.width * left)
+                            .offset(x: geo.size.width * (on ? 1 : -0.36))
                     }
                 }
             }
@@ -1305,19 +1377,23 @@ struct ActPulseDot: View {
     var size: CGFloat = 7
     var spread: CGFloat = 7
     var duration = 1.8
+    @Environment(\.actReduceMotion) private var reduce
 
     var body: some View {
-        ActLoop(duration: duration) { phase in
-            let p = min(phase / 0.7, 1)
-            Circle()
-                .fill(color)
-                .frame(width: size, height: size)
-                .background(
-                    Circle()
-                        .fill(color.opacity(0.55 * (1 - p)))
-                        .frame(width: size + 2 * spread * p, height: size + 2 * spread * p))
-        }
-        .frame(width: size, height: size)
+        Circle()
+            .fill(color)
+            .frame(width: size, height: size)
+            .background {
+                if !reduce {
+                    ActRepeat(animation: .easeOut(duration: duration).repeatForever(autoreverses: false)) { on in
+                        Circle()
+                            .fill(color.opacity(0.55))
+                            .frame(width: size, height: size)
+                            .scaleEffect(on ? (size + 2 * spread) / size : 1)
+                            .opacity(on ? 0 : 1)
+                    }
+                }
+            }
     }
 }
 
@@ -1325,11 +1401,12 @@ struct ActPulseDot: View {
 struct ActSpin: ViewModifier {
     let active: Bool
     var duration = 0.8
+    @Environment(\.actReduceMotion) private var reduce
 
     func body(content: Content) -> some View {
-        if active {
-            ActLoop(duration: duration) { phase in
-                content.rotationEffect(.degrees(360 * phase))
+        if active && !reduce {
+            ActRepeat(animation: .linear(duration: duration).repeatForever(autoreverses: false)) { on in
+                content.rotationEffect(.degrees(on ? 360 : 0))
             }
         } else {
             content
@@ -1350,7 +1427,10 @@ struct ActReveal: ViewModifier {
             .offset(y: reduce || shown ? 0 : 16)
             .onAppear {
                 guard !reduce, !shown else { return }
-                withAnimation(ActMotion.reveal().delay(Double(min(index, 12)) * stagger)) { shown = true }
+                // Only the first screenful staggers in; rows that scroll into view later
+                // appear straight away (they used to wait 0.48s, so a fast scroll showed
+                // blank space).
+                withAnimation(ActMotion.reveal(index < 12 ? 0.5 : 0.25).delay(index < 12 ? Double(index) * stagger : 0)) { shown = true }
             }
     }
 }
