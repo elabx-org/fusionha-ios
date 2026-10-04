@@ -135,11 +135,4 @@ extension APIClient {
     public func deleteIssue(id: Int) async throws {
         let _: EmptyResponse = try await send("DELETE", "/api/v1/issues/\(id)", body: Optional<String>.none)
     }
-
-    // MARK: Account
-
-    /// Revokes this device's personal token on sign-out.
-    public func revokeToken(id: Int) async throws {
-        let _: EmptyResponse = try await send("DELETE", "/api/v1/tokens/\(id)", body: Optional<String>.none)
-    }
 }

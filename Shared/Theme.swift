@@ -23,6 +23,9 @@ enum Theme {
 
     static let indigo = Color(hex: 0x6366F1)
     static let cyan = Color(hex: 0x22D3EE)
+    /// `--i1` / `--i2` aliases, so ports read like the CSS.
+    static let i1 = indigo
+    static let i2 = cyan
     /// The "fusion" gradient. Brand mark and primary actions only, never a status.
     static let fusion = LinearGradient(colors: [indigo, cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
 
@@ -48,6 +51,22 @@ enum Theme {
             .init(color: Color(hex: 0xF9A826), location: 1),
         ],
         startPoint: .leading, endPoint: .trailing)
+
+    /// Library kind accents (`--kind-*`); animation rides the anime pink.
+    static func kind(_ kind: LibraryKind) -> Color {
+        switch kind {
+        case .movie: return kindMovie
+        case .series: return kindSeries
+        case .anime, .animation: return kindAnime
+        }
+    }
+
+    /// Mobile layout tokens (`--page-gutter`, `--bottom-nav-clearance`).
+    /// SegGroup active text: `color-mix(in srgb, var(--i2) 45%, var(--txt))`.
+    static let segActiveText = Color(hex: 0x8FE0EF)
+
+    static let pageGutter: CGFloat = 10
+    static let bottomNavClearance: CGFloat = 76
 
     static func kind(_ bucket: KindBucket) -> Color {
         switch bucket {

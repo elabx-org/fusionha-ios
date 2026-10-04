@@ -169,11 +169,8 @@ struct YouView: View {
     }
 
     private func signOut() async {
-        // Revoke this device's personal token, like the web's logout.
-        if let creds = model.credentials, let id = creds.tokenId {
-            try? await model.client?.revokeToken(id: id)
-        }
-        model.signOut()
+        // End the session and revoke this device's token, like the web's logout.
+        await model.logOut()
     }
 }
 
