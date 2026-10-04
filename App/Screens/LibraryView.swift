@@ -7,7 +7,7 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .all: return "All"
+        case .all: return "All titles"
         case .downloading: return "Downloading"
         case .missing: return "Missing"
         case .complete: return "Complete"
@@ -16,36 +16,19 @@ enum LibraryFilter: String, CaseIterable, Identifiable {
     }
 
     func matches(_ item: MediaItem) -> Bool {
-        let monitored = item.editions.filter(\.monitored)
+        let rails = item.editions.filter(\.monitored).map { $0.rail(isSeries: item.kind == .series) }
         switch self {
         case .all: return true
-        case .downloading: return item.editions.contains { $0.status == .downloading || $0.status == .upgrading }
-        case .missing: return monitored.contains { $0.status == .missing }
-        case .complete: return !monitored.isEmpty && monitored.allSatisfy { $0.status == .downloaded }
-        case .attention: return item.hasAttention == true
+        case .downloading: return rails.contains { $0.state == .downloading || $0.state == .upgrading }
+        case .missing: return rails.contains { $0.state == .wanted || $0.state == .partial }
+        case .complete: return !rails.isEmpty && rails.allSatisfy { $0.state == .owned }
+        case .attention: return item.hasAttention == true || rails.contains(where: \.attention)
         }
     }
 }
 
-enum LibraryKind: String, CaseIterable, Identifiable {
-    case all, movies, series, anime
-    var id: Self { self }
-    var title: String { rawValue.capitalized }
-
-    func matches(_ item: MediaItem) -> Bool {
-        switch self {
-        case .all: return true
-        case .movies: return item.kind == .movie && item.isAnime != true
-        case .series: return item.kind == .series && item.isAnime != true
-        case .anime: return item.isAnime == true
-        }
-    }
-}
-
-enum LibraryQuality: String, CaseIterable, Identifiable {
+enum LibraryTier: Hashable {
     case all, hd, uhd
-    var id: Self { self }
-    var title: String { self == .all ? "All" : (self == .hd ? "HD" : "4K") }
 
     func matches(_ item: MediaItem) -> Bool {
         switch self {
@@ -56,178 +39,465 @@ enum LibraryQuality: String, CaseIterable, Identifiable {
     }
 }
 
+enum LibrarySort: String, CaseIterable, Identifiable {
+    case title, added, year
+    var id: Self { self }
+    var label: String {
+        switch self {
+        case .title: return "Title"
+        case .added: return "Date added"
+        case .year: return "Year"
+        }
+    }
+}
+
+/// The web's Library page on mobile: header, kinds card, tier filter + Filters,
+/// grid/list toggle and the A–Z sectioned poster grid with its letter rail.
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
-    @State private var items: [MediaItem] = []
-    @State private var loading = true
-    @State private var error: String?
-    @State private var query = ""
+    @AppStorage("library.kind") private var kindRaw = "all"
+    @AppStorage("library.list") private var listMode = false
+    @State private var tier: LibraryTier = .all
     @State private var filter: LibraryFilter = .all
-    @State private var kind: LibraryKind = .all
-    @State private var quality: LibraryQuality = .all
-    @Namespace private var zoom
+    @State private var sort: LibrarySort = .title
 
-    private var base: [MediaItem] {
-        items.filter { kind.matches($0) && quality.matches($0) &&
-            (query.isEmpty || $0.title.localizedCaseInsensitiveContains(query)) }
+    private var kind: KindBucket? { KindBucket(rawValue: kindRaw) }
+
+    private var query: String {
+        model.searchScope == .library ? model.searchText.trimmingCharacters(in: .whitespaces) : ""
     }
 
     private var visible: [MediaItem] {
-        base.filter(filter.matches).sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+        model.library
+            .filter { item in
+                (kind == nil || item.kindBucket == kind) && tier.matches(item) && filter.matches(item)
+                    && (query.isEmpty || item.title.localizedCaseInsensitiveContains(query))
+            }
+            .sorted(by: sorter)
+    }
+
+    private func sorter(_ a: MediaItem, _ b: MediaItem) -> Bool {
+        switch sort {
+        case .title: return Self.sortKey(a.title).localizedCaseInsensitiveCompare(Self.sortKey(b.title)) == .orderedAscending
+        case .added: return (a.addedAt ?? "") > (b.addedAt ?? "")
+        case .year: return (a.year ?? 0) > (b.year ?? 0)
+        }
+    }
+
+    /// "The Matrix" sorts under M, like the web's alphabet grouping.
+    static func sortKey(_ title: String) -> String {
+        for article in ["The ", "A ", "An "] where title.hasPrefix(article) {
+            return String(title.dropFirst(article.count))
+        }
+        return title
+    }
+
+    static func letter(for title: String) -> String {
+        guard let first = sortKey(title).uppercased().first else { return "#" }
+        return first.isLetter && first.isASCII ? String(first) : "#"
+    }
+
+    private var sections: [(String, [MediaItem])] {
+        guard sort == .title else { return [("", visible)] }
+        var order: [String] = []
+        var groups: [String: [MediaItem]] = [:]
+        for item in visible {
+            let key = Self.letter(for: item.title)
+            if groups[key] == nil { order.append(key) }
+            groups[key, default: []].append(item)
+        }
+        return order.map { ($0, groups[$0] ?? []) }
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                pulse
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 108), spacing: 12)], spacing: 18) {
-                    ForEach(visible) { item in
-                        NavigationLink(value: item) {
-                            PosterCard(item: item)
-                                .matchedTransitionSource(id: item.id, in: zoom)
+        Screen(showsAdd: true, filtersInPlace: true) {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 18) {
+                        PageHeader(title: "Library", subtitle: subtitle)
+                        KindsCard(items: model.library, selection: $kindRaw)
+                        toolbar
+                        content
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.top, 14)
+                    .padding(.trailing, sort == .title && !listMode ? 22 : 0)
+                    .padding(.bottom, 90)
+                }
+                .refreshable { await model.loadLibrary() }
+                .overlay(alignment: .trailing) {
+                    if sort == .title && !listMode && !visible.isEmpty {
+                        AlphabetRail(available: Set(sections.map(\.0))) { letter in
+                            withAnimation(.snappy) { proxy.scrollTo("letter-\(letter)", anchor: .top) }
                         }
-                        .buttonStyle(.plain)
-                        .contextMenu { contextActions(for: item) }
+                        .padding(.trailing, 2)
                     }
                 }
-                .padding(.horizontal)
-                .padding(.bottom, 24)
             }
-            .navigationTitle("Library")
-            .navigationDestination(for: MediaItem.self) { item in
-                ItemDetailView(item: item)
-                    .navigationTransition(.zoom(sourceID: item.id, in: zoom))
-            }
-            .searchable(text: $query, prompt: "Search this library")
-            .refreshable { await load() }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { filterMenu }
-                ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                ToolbarItem(placement: .topBarTrailing) { AccountButton() }
-            }
-            .overlay { stateOverlay }
-            .task { await load() }
+        }
+        .task {
+            if !model.libraryLoaded { await model.loadLibrary() }
         }
     }
 
-    /// The web's LibraryPulse status filter, as morphing glass chips.
-    private var pulse: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            GlassEffectContainer(spacing: 8) {
-                HStack(spacing: 8) {
-                    ForEach(LibraryFilter.allCases) { f in
-                        FilterChip(title: f.title, count: base.filter(f.matches).count, selected: f == filter) {
-                            withAnimation(.smooth) { filter = f }
+    private var subtitle: String {
+        let editions = model.library.reduce(0) { $0 + $1.editions.count }
+        return "\(model.library.count) titles · \(editions) editions"
+    }
+
+    private var toolbar: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                SegmentedPills(options: [(LibraryTier.all, "All"), (.hd, "HD"), (.uhd, "4K")], selection: $tier)
+                Spacer(minLength: 0)
+                Menu {
+                    Picker("Show", selection: $filter) {
+                        ForEach(LibraryFilter.allCases) { Text($0.title).tag($0) }
+                    }
+                    Picker("Sort by", selection: $sort) {
+                        ForEach(LibrarySort.allCases) { Text($0.label).tag($0) }
+                    }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "slider.horizontal.3")
+                        Text("Filters")
+                        if filter != .all || sort != .title {
+                            Circle().fill(Theme.cyan).frame(width: 7, height: 7)
                         }
                     }
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Theme.txt)
+                    .padding(.horizontal, 14)
+                    .frame(height: 44)
+                    .panel(Theme.panel, radius: 12)
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 6)
             }
+            viewToggle
         }
     }
 
-    private var filterMenu: some View {
-        Menu {
-            Picker("Type", selection: $kind) {
-                ForEach(LibraryKind.allCases) { Text($0.title).tag($0) }
+    /// Grid / list icon toggle.
+    private var viewToggle: some View {
+        HStack(spacing: 2) {
+            ForEach([false, true], id: \.self) { list in
+                Button {
+                    withAnimation(.snappy) { listMode = list }
+                } label: {
+                    Image(systemName: list ? "list.bullet" : "square.grid.2x2")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(listMode == list ? Color(hex: 0xA5F3FC) : Theme.mut)
+                        .frame(width: 40, height: 34)
+                        .background {
+                            if listMode == list {
+                                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                    .fill(Theme.indigo.opacity(0.26))
+                                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                        .strokeBorder(Theme.indigo.opacity(0.7)))
+                            }
+                        }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(list ? "List view" : "Grid view")
             }
-            Picker("Quality", selection: $quality) {
-                ForEach(LibraryQuality.allCases) { Text($0.title).tag($0) }
-            }
-        } label: {
-            Image(systemName: "line.3.horizontal.decrease")
         }
-        .accessibilityLabel("Filter")
+        .padding(4)
+        .panel(Theme.panel2, radius: 12)
     }
 
     @ViewBuilder
-    private func contextActions(for item: MediaItem) -> some View {
+    private var content: some View {
+        if model.library.isEmpty {
+            if !model.libraryLoaded {
+                ProgressView().tint(Theme.mut).frame(maxWidth: .infinity).padding(.top, 60)
+            } else if let error = model.libraryError {
+                EmptyBox(message: "The library could not be loaded. \(error)", systemImage: "wifi.exclamationmark")
+            } else {
+                EmptyBox(message: "Your library is empty. Tap + to add a title.")
+            }
+        } else if visible.isEmpty {
+            EmptyBox(message: query.isEmpty ? "No titles match these filters." : "No titles match “\(query)”.")
+        } else if listMode {
+            LazyVStack(spacing: 8) {
+                ForEach(visible) { item in
+                    LibraryRow(item: item)
+                        .onTapGesture { model.open(item.id) }
+                }
+            }
+        } else {
+            ForEach(sections, id: \.0) { letter, items in
+                if !letter.isEmpty {
+                    LetterHeader(letter: letter, count: items.count)
+                        .id("letter-\(letter)")
+                }
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 14, alignment: .top), count: 3),
+                          alignment: .leading, spacing: 22) {
+                    ForEach(items) { item in
+                        PosterCard(item: item)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// The kinds summary card: proportional kind bar + kind chips with counts.
+private struct KindsCard: View {
+    let items: [MediaItem]
+    @Binding var selection: String
+
+    private func count(_ kind: KindBucket) -> Int { items.filter { $0.kindBucket == kind }.count }
+
+    var body: some View {
+        let selected = KindBucket(rawValue: selection)
+        let present = KindBucket.allCases.filter { count($0) > 0 }
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 12) {
+                Image(systemName: selected == .series || selected == .anime ? "tv" : "film")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(selected.map(Theme.kind) ?? Theme.cyan)
+                    .frame(width: 30, height: 30)
+                    .background((selected.map(Theme.kind) ?? Theme.cyan).opacity(0.12),
+                                in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder((selected.map(Theme.kind) ?? Theme.cyan).opacity(0.4)))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(selected?.plural ?? "All kinds")
+                        .font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
+                    Text(selected.map { "\(count($0)) titles" } ?? "\(present.count) kinds")
+                        .font(.system(size: 12)).foregroundStyle(Theme.mut)
+                }
+            }
+
+            GeometryReader { geo in
+                let total = max(items.count, 1)
+                let gaps = CGFloat(max(present.count - 1, 0)) * 2
+                HStack(spacing: 2) {
+                    ForEach(present, id: \.self) { kind in
+                        Capsule()
+                            .fill(Theme.kind(kind))
+                            .opacity(selected == nil || selected == kind ? 1 : 0.3)
+                            .frame(width: (geo.size.width - gaps) * CGFloat(count(kind)) / CGFloat(total))
+                    }
+                }
+            }
+            .frame(height: 12)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    chip(label: "All", count: nil, color: Theme.indigo, value: "all")
+                    ForEach(KindBucket.allCases, id: \.self) { kind in
+                        chip(label: kind.plural, count: count(kind), color: Theme.kind(kind), value: kind.rawValue)
+                    }
+                }
+            }
+            .scrollClipDisabled()
+        }
+        .padding(16)
+        .background(
+            LinearGradient(colors: [Color(hex: 0x10272E), Theme.panel], startPoint: .topLeading, endPoint: .bottomTrailing),
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Theme.line))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func chip(label: String, count: Int?, color: Color, value: String) -> some View {
+        DotChip(label: label, count: count, dot: color, selected: selection == value) {
+            withAnimation(.snappy) { selection = value }
+        }
+    }
+}
+
+private struct LetterHeader: View {
+    let letter: String
+    let count: Int
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Text(letter).font(.system(size: 22, weight: .heavy)).foregroundStyle(Theme.txt)
+            Rectangle().fill(Theme.line).frame(height: 1)
+            Text("\(count)").font(.system(size: 13).monospacedDigit()).foregroundStyle(Theme.dim)
+        }
+        .padding(.top, 8)
+    }
+}
+
+/// The A–Z rail on the right edge; tap or drag to jump to a letter.
+private struct AlphabetRail: View {
+    let available: Set<String>
+    let jump: (String) -> Void
+    @State private var active: String?
+
+    private let letters = ["#"] + "ABCDEFGHIJKLMNOPQRSTUVWXYZ".map(String.init)
+
+    var body: some View {
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                ForEach(letters, id: \.self) { letter in
+                    Text(letter)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(letter == active ? Theme.cyan : (available.contains(letter) ? Theme.mut : Theme.dim.opacity(0.5)))
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+                let index = Int(value.location.y / geo.size.height * CGFloat(letters.count))
+                let letter = letters[min(max(index, 0), letters.count - 1)]
+                guard letter != active else { return }
+                active = letter
+                if available.contains(letter) { jump(letter) }
+            }.onEnded { _ in active = nil })
+        }
+        .frame(width: 18)
+        .frame(maxHeight: 460)
+        .sensoryFeedback(.selection, trigger: active)
+        .accessibilityHidden(true)
+    }
+}
+
+/// The web's poster card: clean art with corner badges, then title, meta line
+/// and one coverage rail per edition.
+struct PosterCard: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.openURL) private var openURL
+    let item: MediaItem
+
+    private var monitored: Bool { item.monitored ?? true }
+    private var downloading: Bool {
+        item.editions.contains { $0.status == .downloading || $0.status == .upgrading }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            art
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.title)
+                    .font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(monitored ? Theme.txt : Theme.mut)
+                    .lineLimit(1)
+                HStack(spacing: 5) {
+                    if let year = item.year {
+                        Text(String(year)).lineLimit(1)
+                    }
+                    if item.isAnime == true {
+                        AnimeChip()
+                    } else {
+                        Text("·")
+                        KindGlyph(kind: item.kind)
+                    }
+                }
+                .font(.system(size: 12))
+                .foregroundStyle(monitored ? Theme.mut : Theme.dim)
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(item.editions) { CoverageRailView(edition: $0, isSeries: item.kind == .series) }
+                }
+                .padding(.top, 6)
+            }
+            .padding(.top, 7)
+            .padding(.horizontal, 2)
+        }
+        .contentShape(Rectangle())
+        .onTapGesture { model.open(item.id) }
+        .contextMenu { actions }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private var art: some View {
+        PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w342"))
+            .aspectRatio(2 / 3, contentMode: .fit)
+            .saturation(monitored ? 1 : 0.75)
+            .brightness(monitored ? 0 : -0.1)
+            .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .strokeBorder(item.hasAttention == true ? Theme.miss.opacity(0.7) : Theme.line))
+            .shadow(color: .black.opacity(0.6), radius: 10, y: 8)
+            .overlay(alignment: .topLeading) {
+                Image(systemName: monitored ? "bookmark.fill" : "bookmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(monitored ? Theme.cyan : .white.opacity(0.72))
+                    .frame(width: 22, height: 22)
+                    .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
+                    .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.white.opacity(0.18)))
+                    .padding(8)
+                    .accessibilityLabel(monitored ? "Monitored" : "Not monitored")
+            }
+            .overlay(alignment: .topTrailing) {
+                if item.editions.contains(where: { $0.tier == .uhd }) {
+                    Text("4K")
+                        .font(.system(size: 10, weight: .heavy))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.black.opacity(0.5), in: RoundedRectangle(cornerRadius: 5))
+                        .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(.white.opacity(0.22)))
+                        .padding(8)
+                }
+            }
+            .overlay(alignment: .bottomLeading) {
+                if downloading {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Theme.grab)
+                        .symbolEffect(.rotate, options: .repeat(.continuous))
+                        .frame(width: 22, height: 22)
+                        .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 6))
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.grab.opacity(0.55)))
+                        .padding(8)
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                Menu { actions } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 14, weight: .heavy))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.9), radius: 2, y: 1)
+                        .frame(width: 34, height: 30)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel("More actions")
+            }
+    }
+
+    @ViewBuilder
+    private var actions: some View {
+        Button("Open", systemImage: "arrow.up.right.square") { model.open(item.id) }
         Button("Automatic search", systemImage: "magnifyingglass") {
             Task { try? await model.client?.searchItem(id: item.id) }
         }
-    }
-
-    @ViewBuilder
-    private var stateOverlay: some View {
-        if items.isEmpty {
-            if loading {
-                ProgressView()
-            } else if let error {
-                ContentUnavailableView("Couldn't load the library", systemImage: "wifi.exclamationmark", description: Text(error))
-            } else {
-                ContentUnavailableView("Your library is empty", systemImage: "square.grid.2x2")
+        if let server = model.credentials?.serverURL {
+            Button("Open in web app", systemImage: "safari") {
+                openURL(server.appendingPathComponent("library/\(item.id)"))
             }
-        } else if visible.isEmpty {
-            ContentUnavailableView.search(text: query)
         }
-    }
-
-    private func load() async {
-        guard let client = model.client else { return }
-        do {
-            items = try await client.library()
-            error = nil
-        } catch {
-            self.error = error.localizedDescription
-        }
-        loading = false
     }
 }
 
-/// Poster-forward card: clean art, edition chips in the body below (design rule).
-struct PosterCard: View {
+/// Compact list row (the web's list view).
+private struct LibraryRow: View {
     let item: MediaItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w342"))
-                .aspectRatio(2 / 3, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(alignment: .topTrailing) { liveBadge }
-            Text(item.title).font(.footnote.weight(.semibold)).lineLimit(1)
-            HStack(spacing: 4) {
-                ForEach(item.editions) { EditionChip(tier: $0.tier, status: $0.status) }
+        HStack(spacing: 12) {
+            PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w154"))
+                .frame(width: 44, height: 66)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.title).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
+                HStack(spacing: 6) {
+                    if let year = item.year { Text(String(year)) }
+                    if item.isAnime == true { AnimeChip() } else { KindGlyph(kind: item.kind) }
+                }
+                .font(.system(size: 12)).foregroundStyle(Theme.mut)
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(item.editions) { CoverageRailView(edition: $0, isSeries: item.kind == .series) }
+                }
+                .frame(maxWidth: 220)
             }
+            Spacer(minLength: 0)
         }
-    }
-
-    @ViewBuilder
-    private var liveBadge: some View {
-        if item.editions.contains(where: { $0.status == .downloading }) {
-            Image(systemName: "arrow.down")
-                .font(.caption2.bold())
-                .foregroundStyle(Theme.grab)
-                .symbolEffect(.pulse)
-                .frame(width: 27, height: 27)
-                .glassEffect(.regular, in: .circle)
-                .padding(6)
-        }
-    }
-}
-
-/// One glass capsule in the status filter row.
-private struct FilterChip: View {
-    let title: String
-    let count: Int
-    let selected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 5) {
-                Text(title)
-                Text("\(count)").monospacedDigit().foregroundStyle(.secondary)
-            }
-            .font(.subheadline.weight(selected ? .semibold : .regular))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-        }
-        .buttonStyle(.plain)
-        .glassEffect(glass, in: .capsule)
-    }
-
-    private var glass: Glass {
-        selected ? Glass.regular.tint(Theme.indigo.opacity(0.45)).interactive() : Glass.regular.interactive()
+        .padding(10)
+        .panel(Theme.card, radius: 12)
+        .contentShape(Rectangle())
     }
 }

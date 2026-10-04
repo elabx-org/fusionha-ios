@@ -3,6 +3,24 @@ import FusionhaKit
 
 /// fusionha's design tokens (`design/DESIGN-STANDARDS.md`), shared by the app and widgets.
 enum Theme {
+    // Surfaces and text (web `styles/tokens.css`, dark theme).
+    static let bg = Color(hex: 0x0C0D11)
+    static let panel = Color(hex: 0x14161D)
+    static let panel2 = Color(hex: 0x181B23)
+    static let card = Color(hex: 0x151821)
+    static let line = Color.white.opacity(0.08)
+    static let txt = Color(hex: 0xE9EAF0)
+    static let mut = Color(hex: 0x9AA0AD)
+    static let dim = Color(hex: 0x6B7280)
+
+    static let kindMovie = Color(hex: 0x38BDF8)
+    static let kindSeries = Color(hex: 0xA855F7)
+    static let kindAnime = Color(hex: 0xF472B6)
+
+    static let radiusSm: CGFloat = 9
+    static let radius: CGFloat = 11
+    static let radiusLg: CGFloat = 14
+
     static let indigo = Color(hex: 0x6366F1)
     static let cyan = Color(hex: 0x22D3EE)
     /// The "fusion" gradient. Brand mark and primary actions only, never a status.
@@ -19,6 +37,38 @@ enum Theme {
     static let edition = Color(hex: 0xA78BFA)
     static let anime = Color(hex: 0xF472B6)
     static let danger = Color(hex: 0xF87171)
+    static let plexGold = Color(hex: 0xE5A00D)
+
+    /// The login screen's brand gradient (Login.module.css `.stage --grad`).
+    static let loginGradient = LinearGradient(
+        stops: [
+            .init(color: Color(hex: 0x3B82F6), location: 0),
+            .init(color: Color(hex: 0x8B5CF6), location: 0.38),
+            .init(color: Color(hex: 0xD946EF), location: 0.66),
+            .init(color: Color(hex: 0xF9A826), location: 1),
+        ],
+        startPoint: .leading, endPoint: .trailing)
+
+    static func kind(_ bucket: KindBucket) -> Color {
+        switch bucket {
+        case .movie: return kindMovie
+        case .series: return kindSeries
+        case .anime: return kindAnime
+        }
+    }
+}
+
+extension RailState {
+    /// Rail fill colour, from the web's RAIL_STATUS map.
+    var color: Color {
+        switch self {
+        case .owned: return Theme.done
+        case .partial, .wanted: return Theme.miss
+        case .downloading: return Theme.grab
+        case .upgrading: return Theme.edition
+        case .upcoming: return Theme.unaired
+        }
+    }
 }
 
 extension Color {
@@ -50,6 +100,8 @@ extension EditionStatus {
 extension QualityTier {
     /// Tier chip colour: HD = edition purple, 4K = cyan.
     var color: Color { self == .hd ? Theme.edition : Theme.grab }
+    /// The tier pill text on cards: `HD` / `4K`.
+    var pill: String { self == .hd ? "HD" : "4K" }
 }
 
 /// A small edition chip, e.g. `UHD·4K` tinted by its status. Content, not glass.

@@ -144,6 +144,81 @@ public final class APIClient: @unchecked Sendable {
         let _: EmptyResponse = try await send("POST", "/library/\(id)/search", body: Optional<String>.none)
     }
 
+    public func me() async throws -> Me {
+        try await get("/api/v1/auth/me")
+    }
+
+    public func item(id: Int) async throws -> ItemDetail {
+        try await get("/api/v1/library/\(id)")
+    }
+
+    public func wanted(state: WantedState, query: String? = nil, pageSize: Int = 100) async throws -> WantedPage {
+        var items = [URLQueryItem(name: "state", value: state.rawValue),
+                     URLQueryItem(name: "page_size", value: "\(pageSize)")]
+        if let query, !query.isEmpty { items.append(URLQueryItem(name: "q", value: query)) }
+        return try await get("/api/v1/wanted", query: items)
+    }
+
+    public func history(query: String? = nil, pageSize: Int = 50) async throws -> HistoryPage {
+        var items = [URLQueryItem(name: "page_size", value: "\(pageSize)")]
+        if let query, !query.isEmpty { items.append(URLQueryItem(name: "q", value: query)) }
+        return try await get("/api/v1/history", query: items)
+    }
+
+    public func blocklist(query: String? = nil, pageSize: Int = 50) async throws -> BlocklistPage {
+        var items = [URLQueryItem(name: "page_size", value: "\(pageSize)")]
+        if let query, !query.isEmpty { items.append(URLQueryItem(name: "q", value: query)) }
+        return try await get("/api/v1/blocklist", query: items)
+    }
+
+    /// Searches TMDB (and the library) for titles to add.
+    public func search(term: String, kind: SearchKind) async throws -> [MediaSearchResult] {
+        try await get("/api/v1/search", query: [URLQueryItem(name: "term", value: term),
+                                                URLQueryItem(name: "kind", value: kind.rawValue)])
+    }
+
+    public func discover(kind: SearchKind, list: DiscoverList, window: String = "week") async throws -> [MediaSearchResult] {
+        try await get("/api/v1/discover", query: [URLQueryItem(name: "kind", value: kind.rawValue),
+                                                  URLQueryItem(name: "list", value: list.rawValue),
+                                                  URLQueryItem(name: "window", value: window)])
+    }
+
+    public func preview(kind: MediaKind, tmdbId: Int) async throws -> MediaPreview {
+        try await get("/api/v1/preview/\(kind.rawValue)/\(tmdbId)")
+    }
+
+    public func requests() async throws -> [MediaRequest] {
+        try await get("/api/v1/requests")
+    }
+
+    public func request(_ body: MediaRequestCreate) async throws {
+        let _: EmptyResponse = try await send("POST", "/api/v1/requests", body: body)
+    }
+
+    public func rootFolders() async throws -> [RootFolder] {
+        try await get("/api/v1/rootfolders")
+    }
+
+    public func qualityProfiles() async throws -> [QualityProfile] {
+        try await get("/api/v1/qualityprofiles")
+    }
+
+    public func addDefaults() async throws -> [AddDefaultSlot] {
+        try await get("/api/v1/config/add-defaults")
+    }
+
+    public func add(_ body: LibraryAddRequest) async throws -> AddedItem {
+        try await send("POST", "/api/v1/library", body: body)
+    }
+
+    public func searchMissing() async throws {
+        let _: EmptyResponse = try await send("POST", "/api/v1/command/missing-search", body: Optional<String>.none)
+    }
+
+    public func searchCutoffUnmet() async throws {
+        let _: EmptyResponse = try await send("POST", "/api/v1/command/cutoff-unmet-search", body: Optional<String>.none)
+    }
+
     public func processQueue() async throws {
         let _: EmptyResponse = try await send("POST", "/api/v1/queue/process", body: Optional<String>.none)
     }
