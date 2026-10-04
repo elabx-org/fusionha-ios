@@ -591,7 +591,7 @@ private struct HistoryStoryRow: View {
         }
         .sheet(isPresented: $regrabConflict) {
             ActDialog(title: "Re-grab a blocklisted release?",
-                      message: "\(story.releaseTitle ?? story.title) is blocklisted for this edition. Re-grab it anyway? This clears the block first.",
+                      message: "\(story.releaseTitle ?? story.title) is blocklisted for this version. Re-grab it anyway? This clears the block first.",
                       confirmLabel: "Re-grab anyway", confirmKind: .primary, busy: regrabbing,
                       onCancel: { regrabConflict = false },
                       onConfirm: { Task { await regrab(override: true) } }) { EmptyView() }
@@ -816,7 +816,7 @@ private struct BlocklistReleaseDialog: View {
 
     var body: some View {
         ActDialog(title: "Blocklist this release?",
-                  message: "\(release) will never be grabbed again for this edition.",
+                  message: "\(release) will never be grabbed again for this version.",
                   confirmLabel: confirmLabel, onCancel: onCancel, onConfirm: { onConfirm(search, deleteFile) }) {
             ActOption(label: "Also search for a replacement", isOn: $search)
             ActOption(label: "Delete the current file",

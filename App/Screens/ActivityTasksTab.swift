@@ -224,7 +224,7 @@ fileprivate enum TasksLogic {
             return Bucket(key: "cf-floor", label: "Below the custom-format floor", tone: .wrong)
         }
         if r.contains("rejected on size") || r.contains("size window") { return Bucket(key: "size", label: "Outside the size window", tone: .wrong) }
-        if r.contains("edition") && r.contains("does not match") { return Bucket(key: "edition", label: "Wrong movie edition", tone: .wrong) }
+        if r.contains("edition") && r.contains("does not match") { return Bucket(key: "edition", label: "Wrong edition", tone: .wrong) }
         return Bucket(key: "other:\(r)", label: c.reason.isEmpty ? "Passed over" : c.reason, tone: .skip)
     }
 

@@ -104,6 +104,9 @@ final class AppModel {
     private(set) var queueTotal = 0
     /// Downloads held for a manual import (the Activity header caption).
     private(set) var queueHeld = 0
+    /// The held (manual-import-required) downloads on queue page 1, for the
+    /// Activity header's "Resolve all held" bulk rescue.
+    private(set) var queueHeldIds: [Int] = []
     private(set) var queueError: String?
     private var lastQueueIds: [Int] = []
 
@@ -294,6 +297,7 @@ final class AppModel {
         queue = []
         queueTotal = 0
         queueHeld = 0
+        queueHeldIds = []
         selectMode = false
         selection = []
         settings = nil
@@ -323,8 +327,9 @@ final class AppModel {
             // re-render on every tick while progress moves.
             if queue != page.items { queue = page.items }
             if queueTotal != page.total { queueTotal = page.total }
-            let held = page.items.filter { $0.status.lowercased() == "held" }.count
-            if queueHeld != held { queueHeld = held }
+            let heldIds = page.items.filter { $0.status.lowercased() == "held" }.map(\.id)
+            if queueHeldIds != heldIds { queueHeldIds = heldIds }
+            if queueHeld != heldIds.count { queueHeld = heldIds.count }
             if queueError != nil { queueError = nil }
             LiveActivityController.sync(with: page.items)
             let ids = page.items.map(\.id)

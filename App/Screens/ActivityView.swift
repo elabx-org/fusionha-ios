@@ -39,9 +39,18 @@ final class ActRouter {
     /// The web's Manual import modal is a large flow (scan, per-file overrides,
     /// import mode); it opens as the web page. `rescue` pre-scopes it to a held download.
     func manualImport(rescue downloadId: Int? = nil) {
+        manualImport(rescue: downloadId.map { [$0] } ?? [])
+    }
+
+    /// A bulk queue rescue: one Manual import scan over several held downloads
+    /// (a whole season, or every held row). The web's `?rescue=` takes a
+    /// comma list.
+    func manualImport(rescue downloadIds: [Int]) {
         guard let server else { return }
         var components = URLComponents(url: server.appendingPathComponent("activity"), resolvingAgainstBaseURL: false)
-        if let downloadId { components?.queryItems = [URLQueryItem(name: "rescue", value: "\(downloadId)")] }
+        if !downloadIds.isEmpty {
+            components?.queryItems = [URLQueryItem(name: "rescue", value: downloadIds.map(String.init).joined(separator: ","))]
+        }
         webURL = components?.url
     }
 }
@@ -225,6 +234,24 @@ struct ActivityPageHeader: View {
                     .padding(.vertical, -5)
                     .padding(.trailing, -5)
                     .accessibilityLabel("Manual import")
+                }
+                if held > 0 {
+                    // "Resolve all held (N)": one Manual import over every held download.
+                    Button {
+                        router.manualImport(rescue: model.queueHeldIds)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.and.arrow.down").font(.system(size: 13, weight: .semibold))
+                            Text("Resolve all held (\(held))").font(.system(size: 13, weight: .semibold))
+                        }
+                        .foregroundStyle(Theme.txt)
+                        .padding(.horizontal, 12)
+                        .frame(height: 32)
+                        .background(Theme.panel, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.line))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
                 if chrome.searchable {
                     ActSearch(placeholder: "Search by title…", text: $chrome.searchInput)

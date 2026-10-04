@@ -77,8 +77,14 @@ fileprivate enum AuditLogic {
         ("DELETE", "/requests/[^/]+$", "Withdrew a request", .neutral),
         ("DELETE", "/library/[^/]+$", "Deleted a title", .danger),
         ("POST", "/library$", "Added a title", .ok),
-        ("POST", "/library/[^/]+/editions$", "Added an edition", .ok),
-        ("DELETE", "/editions/[^/]+$", "Removed an edition", .danger),
+        // Versions (the native API renamed /editions to /versions; the old
+        // paths stay as compat coverage for rows written before the rename).
+        ("POST", "/library/[^/]+/versions$", "Added a version", .ok),
+        ("DELETE", "/library/[^/]+/versions/[^/]+$", "Removed a version", .danger),
+        ("POST", "/library/versions/[^/]+/replace-dead$", "Ran a search", .neutral),
+        ("POST", "/library/[^/]+/editions$", "Added a version", .ok),
+        ("POST", "/library/editions/[^/]+/replace-dead$", "Ran a search", .neutral),
+        ("DELETE", "/library/[^/]+/editions/[^/]+$", "Removed a version", .danger),
         ("DELETE", "/blocklist/all$", "Cleared the entire blocklist", .danger),
         ("DELETE", "/blocklist/[^/]+$", "Cleared a blocklist entry", .warn),
         ("POST", "/blocklist", "Blocklisted a release", .danger),
