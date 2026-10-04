@@ -142,6 +142,7 @@ final class AppModel {
             credentials = nil
         }
         #endif
+        observePush()
         // Re-save on launch so sign-ins from older builds also land in the
         // keychain record the widgets read, then let the widgets refresh.
         if let credentials, ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SERVER"] == nil {
@@ -152,6 +153,27 @@ final class AppModel {
 
     var client: APIClient? {
         credentials?.client()
+    }
+
+    // MARK: Native push (APNs)
+
+    /// Registers the APNs token whenever iOS issues one, and opens tapped notifications.
+    private func observePush() {
+        NotificationCenter.default.addObserver(forName: .apnsTokenChanged, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in await self?.registerPushDevice() }
+        }
+        NotificationCenter.default.addObserver(forName: .openNotificationItem, object: nil, queue: .main) { [weak self] note in
+            guard let id = note.object as? Int else { return }
+            Task { @MainActor in self?.open(id) }
+        }
+    }
+
+    /// `POST /api/v1/notifications/apns/devices` for this install, when signed in
+    /// (not as the read-only demo, and never against the screenshot mock).
+    func registerPushDevice() async {
+        guard let client, credentials?.method != .demoCookie,
+              ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SERVER"] == nil else { return }
+        await PushRegistration.register(with: client)
     }
 
     // MARK: Sign-in
@@ -230,6 +252,9 @@ final class AppModel {
         credentials = creds
         WidgetCenter.shared.reloadAllTimelines()
         AppDelegate.requestPushAuthorization()
+        // A token from an earlier session registers right away; a fresh one
+        // arrives via `.apnsTokenChanged`.
+        await registerPushDevice()
     }
 
     func loadMe() async {
@@ -273,6 +298,8 @@ final class AppModel {
     /// forget the credentials.
     func logOut() async {
         if let client, let creds = credentials {
+            // Stop pushes to this phone for the account that is leaving.
+            await PushRegistration.unregister(with: client)
             try? await client.logout()
             if let tokenId = creds.tokenId { try? await client.revokeToken(id: tokenId) }
         }
