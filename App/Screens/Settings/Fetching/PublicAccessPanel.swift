@@ -292,7 +292,7 @@ private struct DemoConfigSheet: View {
                     countChip(c.movies, "movies")
                     countChip(c.series, "series")
                     countChip(c.anime, "anime")
-                    countChip(c.editions, "editions")
+                    countChip(c.editions, "versions")
                     countChip(c.files, "files")
                     countChip(c.downloadsActive, "in queue")
                     countChip(c.historyEvents, "history")

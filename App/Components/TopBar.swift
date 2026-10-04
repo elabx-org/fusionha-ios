@@ -188,10 +188,16 @@ struct AvatarMenu: View {
             Section {
                 Button("Account", systemImage: "person.crop.circle") { model.showingAccount = true }
             }
-            if model.credentials != nil, !model.requestScoped {
-                Section {
+            Section {
+                if model.credentials != nil, !model.requestScoped {
                     Button("Settings", systemImage: "slider.horizontal.3") {
                         showingSettings = true
+                    }
+                }
+                // The in-app docs (`/docs`) live on the web app; open them there.
+                if let server = model.credentials?.serverURL {
+                    Button("Documentation", systemImage: "book.closed") {
+                        openURL(server.appendingPathComponent("docs"))
                     }
                 }
             }
@@ -272,6 +278,8 @@ struct OmniSearchView: View {
     @State private var remote: [MediaSearchResult] = []
     @State private var searching = false
     @State private var failed = false
+    /// The server has no TMDB key (409 `tmdb_not_configured`).
+    @State private var noKey = false
     @State private var searchedTerm = ""
     @FocusState private var focused: Bool
 
@@ -303,10 +311,18 @@ struct OmniSearchView: View {
             guard !Task.isCancelled, let client = model.client else { return }
             searching = true
             failed = false
+            noKey = false
             do {
                 remote = try await client.search(term: trimmed, kind: .all)
             } catch {
-                if !Task.isCancelled { failed = true; remote = [] }
+                if !Task.isCancelled {
+                    if case APIError.http(status: 409, body: let body) = error, body.contains("tmdb_not_configured") {
+                        noKey = true
+                    } else {
+                        failed = true
+                    }
+                    remote = []
+                }
             }
             searchedTerm = trimmed
             searching = false
@@ -466,6 +482,8 @@ struct OmniSearchView: View {
                 Text("Searching to add…").font(.system(size: 13)).foregroundStyle(Theme.mut)
             }
             .padding(16)
+        } else if noKey {
+            note("Adding needs a TMDB key — add one in Settings › Metadata.")
         } else if failed {
             note("Couldn't reach the metadata provider — try again.")
         } else if remote.isEmpty {

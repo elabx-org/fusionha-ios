@@ -24,7 +24,7 @@ struct LibraryPulseCard: View {
         let subtitle: String = {
             if let active {
                 let e = derived.kindEditions[active] ?? 0
-                return "\(e) \(e == 1 ? "edition" : "editions")"
+                return "\(e) \(e == 1 ? "version" : "versions")"
             }
             return "\(present) \(present == 1 ? "kind" : "kinds")"
         }()
@@ -417,7 +417,10 @@ struct LibraryFiltersSheet: View {
 struct PosterCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
+    @Environment(\.openPosterSheet) private var openSheet
     let item: MediaItem
+    @State private var pressing = false
+    @State private var longPresses = 0
 
     private var monitored: Bool { item.monitored ?? true }
     private var selecting: Bool { model.selectMode }
@@ -444,9 +447,14 @@ struct PosterCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             art
-            VStack(alignment: .leading, spacing: 3) {
+                // Press-and-hold feedback: the poster sinks and dims while held.
+                .scaleEffect(pressing ? 0.95 : 1)
+                .brightness(pressing ? -0.14 : 0)
+                .animation(motion ? .easeOut(duration: 0.18) : nil, value: pressing)
+            // Plex-app rhythm on phones: title/year 14.5 / 12.5, regular weight.
+            VStack(alignment: .leading, spacing: 2) {
                 Text(item.title)
-                    .font(.system(size: 12.5, weight: .semibold))
+                    .font(.system(size: 14.5, weight: .medium))
                     .foregroundStyle(monitored ? Theme.txt : Theme.mut)
                     .lineLimit(1)
                 HStack(spacing: 4) {
@@ -457,14 +465,13 @@ struct PosterCard: View {
                     KindGlyph(kind: item.kind)
                     if item.isAnime == true { AnimeChip().fixedSize().layoutPriority(1) }
                 }
-                .font(.system(size: 11))
+                .font(.system(size: 12.5))
                 .foregroundStyle(monitored ? Theme.mut : Theme.dim)
                 CoverageRails(item: item)
-                    .padding(.top, 6)
+                    .padding(.top, 7)
             }
-            .padding(.top, 7)
-            .padding(.horizontal, 2)
-            .padding(.bottom, 2)
+            .padding(.top, 8)
+            .padding(.horizontal, 1)
         }
         .contentShape(Rectangle())
         .onTapGesture {
@@ -474,10 +481,20 @@ struct PosterCard: View {
                 model.open(item.id)
             }
         }
+        // Press-and-hold (450ms, 10pt tolerance) opens the quick-actions sheet,
+        // replacing the old ⋯ button (LibraryPosterSheet).
+        .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 10) {
+            guard !selecting, let openSheet else { return }
+            longPresses += 1
+            openSheet(item)
+        } onPressingChanged: { pressing = $0 && !selecting && openSheet != nil }
         .sensoryFeedback(.selection, trigger: selected)
-        .contextMenu { if !selecting { PosterActions(item: item) } }
+        .sensoryFeedback(.selection, trigger: longPresses)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(selecting && selected ? [.isButton, .isSelected] : [.isButton])
+        .accessibilityAction(named: "Actions") {
+            if !selecting { openSheet?(item) }
+        }
     }
 
     private var ringColor: Color {
@@ -524,8 +541,10 @@ struct PosterCard: View {
                 }
                 .padding(8)
             }
-            .overlay(alignment: .bottomTrailing) {
-                if !selecting { kebab }
+            .overlay(alignment: .bottom) {
+                if let setup = model.setupProgress.activeSetup(for: item.id) {
+                    SetupIndicators(fraction: setup.progressFraction)
+                }
             }
     }
 
@@ -571,24 +590,6 @@ struct PosterCard: View {
         .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 6))
         .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(color.opacity(0.55)))
         .accessibilityLabel(state == .upgrading ? "Upgrading" : "Downloading")
-    }
-
-    private var kebab: some View {
-        Menu {
-            PosterActions(item: item)
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: 13, weight: .heavy))
-                .foregroundStyle(.white)
-                .frame(width: 26, height: 26)
-                .background(RadialGradient(colors: [.black.opacity(0.55), .black.opacity(0)], center: .center,
-                                           startRadius: 0, endRadius: 16), in: Circle())
-                .frame(width: 42, height: 42)
-                .contentShape(Rectangle())
-        }
-        .padding(.trailing, -1)
-        .padding(.bottom, -3)
-        .accessibilityLabel("More actions")
     }
 }
 
@@ -638,7 +639,7 @@ struct LibraryTableHeader: View {
     var body: some View {
         HStack(spacing: 8) {
             Text("Title ▾").frame(maxWidth: .infinity, alignment: .leading)
-            Text("Editions · coverage").lineLimit(1).frame(width: tableEditionsWidth, alignment: .leading)
+            Text("Versions · coverage").lineLimit(1).frame(width: tableEditionsWidth, alignment: .leading)
             Text("Size").frame(width: tableSizeWidth, alignment: .trailing)
             Color.clear.frame(width: tableMonitorWidth)
         }
@@ -867,7 +868,7 @@ struct BulkActionBar: View {
                 model.selection = []
             }
         } message: {
-            Text("This removes the selected titles and all their editions from your library. Files stay on disk.")
+            Text("This removes the selected titles and all their versions from your library. Files stay on disk.")
         }
     }
 
@@ -931,8 +932,8 @@ private struct ChangeRootSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Re-assign root folder").font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.txt)
-            field("Which editions to move") {
-                SegmentedPills(options: [("HD-1080p", "HD·1080p"), ("UHD-2160p", "UHD·4K"), ("all", "Every edition")],
+            field("Which versions to move") {
+                SegmentedPills(options: [("HD-1080p", "HD·1080p"), ("UHD-2160p", "UHD·4K"), ("all", "Every version")],
                                selection: $tier, fill: true)
             }
             field("New root folder") {

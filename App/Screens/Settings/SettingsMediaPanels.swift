@@ -162,7 +162,7 @@ struct MediaVersionsSettingsPanel: View {
     private static let base = "/api/v1/config/editions"
 
     var body: some View {
-        SettingsForm(slug: "editions") {
+        SettingsForm(slug: "versions") {
             if let defs {
                 Section {
                     ForEach(defs) { def in
@@ -175,7 +175,7 @@ struct MediaVersionsSettingsPanel: View {
                     }
                     .onMove(perform: move)
                 } footer: {
-                    Text("A cut composes with the quality tier — e.g. {Director's Cut · 4K} and {Theatrical · 1080p} are separate files on one movie. Aliases are the spellings the parser folds to this canonical name. Drag ≡ to reorder.")
+                    Text("An edition composes with the tier — e.g. {Director's Cut · 4K} and {Theatrical · 1080p} are separate versions on one title. Aliases are the spellings the parser folds to this canonical name. Drag ≡ to reorder.")
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.mut)
                 }

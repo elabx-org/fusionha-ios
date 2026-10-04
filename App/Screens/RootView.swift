@@ -81,6 +81,10 @@ struct RootView: View {
             guard scenePhase == .active, model.me != nil else { return }
             await model.pollShell()
         }
+        .task(id: "setups|\(scenePhase == .active)|\(model.me?.id ?? -1)") {
+            guard scenePhase == .active, model.me != nil, !model.requestScoped else { return }
+            await model.pollSetups()
+        }
     }
 }
 
@@ -95,6 +99,7 @@ struct Screen<Content: View>: View {
     /// top-bar pill, every other tab opens the omni search.
     var filtersInPlace = false
     @ViewBuilder var content: Content
+    @State private var barHeight: CGFloat = 56
 
     var body: some View {
         let hidden = model.chromeHidden
@@ -113,9 +118,13 @@ struct Screen<Content: View>: View {
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             TopBar()
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { barHeight = $0 }
                 .visualEffect { view, proxy in
                     view.offset(y: hidden ? -proxy.frame(in: .global).maxY : 0)
                 }
+        }
+        .overlay(alignment: .top) {
+            if !model.requestScoped { SetupProgressPill(barHeight: barHeight) }
         }
         .webBackground()
         .animation(motion ? .timingCurve(0.2, 0.7, 0.2, 1, duration: 0.32) : nil, value: hidden)
@@ -160,7 +169,7 @@ struct DeleteTitleDialog: View {
                 .font(.system(size: 17, weight: .bold))
                 .foregroundStyle(Theme.txt)
                 .padding(.top, 8)
-            Text("This removes the title and all its editions from your library. This cannot be undone.")
+            Text("This removes the title and all its versions from your library. This cannot be undone.")
                 .font(.system(size: 13.5))
                 .foregroundStyle(Theme.mut)
                 .fixedSize(horizontal: false, vertical: true)

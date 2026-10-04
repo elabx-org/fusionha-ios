@@ -26,6 +26,17 @@ struct ItemRef: Identifiable, Hashable {
 enum DetailIntent: Hashable {
     case interactiveSearch(QualityTier?)
     case edit
+    /// The Library poster sheet's drilled-in interactive search (season / episode / version).
+    case scopedSearch(ScopedSearch)
+}
+
+/// An interactive search scoped from the poster sheet: the version tabs (the
+/// first is selected), an optional season or episode, and the sheet subtitle.
+struct ScopedSearch: Hashable {
+    var editionIds: [Int]
+    var episodeId: Int?
+    var seasonNumber: Int?
+    var subtitle: String
 }
 
 /// A title waiting for the Delete confirmation (DeleteItemDialog).
@@ -188,10 +199,13 @@ final class AppModel {
     }
 
     /// Step 2a: username and password (sets the session cookie).
-    func signIn(server url: URL, username: String, password: String) async throws {
+    /// `beforeEnter` runs once the password is accepted and the token minted,
+    /// just before the app switches over (the Living logo's unlock plays there).
+    func signIn(server url: URL, username: String, password: String,
+                beforeEnter: (() async -> Void)? = nil) async throws {
         let anonymous = APIClient(baseURL: url, token: nil)
         try await anonymous.login(username: username, password: password)
-        try await finishSignIn(with: anonymous)
+        try await finishSignIn(with: anonymous, beforeEnter: beforeEnter)
     }
 
     /// Step 2b: Plex. Mints a PIN whose `authUrl` the user opens in a browser sheet.
@@ -236,7 +250,7 @@ final class AppModel {
 
     /// With a session cookie in place, mint a personal API token for this device so
     /// the widgets can call the API too.
-    private func finishSignIn(with anonymous: APIClient) async throws {
+    private func finishSignIn(with anonymous: APIClient, beforeEnter: (() async -> Void)? = nil) async throws {
         let url = anonymous.baseURL
         let creds: Credentials
         do {
@@ -247,6 +261,7 @@ final class AppModel {
             guard let session = anonymous.sessionTokenFromCookie() else { throw APIError.http(status: 403, body: "") }
             creds = Credentials(serverURL: url, token: session, tokenId: nil, method: .session)
         }
+        await beforeEnter?()
         CredentialStore.save(creds)
         WebSessionStore.save(anonymous.sessionTokenFromCookie(), server: url) // Settings web panels sign in with it.
         credentials = creds
@@ -268,8 +283,13 @@ final class AppModel {
     func loadLibrary() async {
         guard let client else { return }
         do {
+            let previousCount = library.count
             library = try await client.library()
             libraryVersion += 1
+            // A new title starts a setup: show the pill now, not at the next calm poll.
+            if libraryLoaded, library.count > previousCount, !requestScoped {
+                Task { _ = await setupProgress.refresh(client: client) }
+            }
             libraryError = nil
         } catch {
             libraryError = error.localizedDescription
@@ -394,6 +414,22 @@ final class AppModel {
         }
     }
 
+    // MARK: Setup progress
+
+    /// The setting-up pill and the posters' setup rings (shared by every tab).
+    let setupProgress = SetupProgress()
+
+    /// Polls `GET /api/v1/library/setups`: every 2s while anything is setting
+    /// up, else every 20s. A finished step reloads the library.
+    func pollSetups() async {
+        while !Task.isCancelled {
+            if let client, Date().timeIntervalSince(setupProgress.lastRefresh) >= setupProgress.list.pollInterval {
+                if await setupProgress.refresh(client: client) { await loadLibrary() }
+            }
+            try? await Task.sleep(for: .seconds(1))
+        }
+    }
+
     func pollShell() async {
         while !Task.isCancelled {
             await refreshShell()
@@ -439,6 +475,11 @@ final class AppModel {
 
     func interactiveSearch(_ id: Int, tier: QualityTier?) {
         detailIntent = .interactiveSearch(tier)
+        open(id)
+    }
+
+    func scopedSearch(_ id: Int, _ scope: ScopedSearch) {
+        detailIntent = .scopedSearch(scope)
         open(id)
     }
 

@@ -59,7 +59,7 @@ enum LibraryRecency: String, CaseIterable, Hashable {
 /// rail drag froze the app.
 struct LibraryDerived {
     var rows: [LibraryRowModel] = []
-    var letters: Set<String> = []
+    var alpha = LibraryAlphaIndex()
     var visibleIds: [Int] = []
     var titleCount = 0
     var editionCount = 0
@@ -102,7 +102,7 @@ struct PulseStats {
 
 /// The web's Library page on mobile (routes/Library.tsx): header with live
 /// counts, the kinds card, the toolbar (select · tier · attention · Filters ·
-/// density) and the A–Z poster grid with its letter rail, the status-grouped
+/// density) and the A–Z poster grid with its scroll thumb, the status-grouped
 /// grid, a plain grid for other sorts, or the compact table.
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
@@ -116,7 +116,8 @@ struct LibraryView: View {
     @State private var group = false
     @State private var showingFilters = false
     @State private var derived = LibraryDerived()
-    @State private var railMetrics = RailMetrics()
+    @State private var scrubber = ScrubberState()
+    @State private var posterSheet: MediaItem?
 
     private var kind: LibraryKind? { LibraryKind(rawValue: kindRaw) }
     private var compact: Bool { density == "compact" }
@@ -150,12 +151,13 @@ struct LibraryView: View {
                         toolbar.reveal(2)
                         Color.clear.frame(height: 1)
                             .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { y in
-                                railMetrics.stageY = y
+                                scrubber.setGridTop(y)
                             }
                         content
-                            .padding(.trailing, showsRail ? 34 : 0)
                     }
-                    .padding(.horizontal, Theme.pageGutter)
+                    .scrollTargetLayout()
+                    // Plex-app rhythm on phones: 16pt side margins.
+                    .padding(.horizontal, 16)
                     .padding(.top, 20)
                     .padding(.bottom, 90)
                 }
@@ -166,14 +168,21 @@ struct LibraryView: View {
                 } action: { old, new in
                     updateChrome(old: old, new: new)
                 }
-                .overlay(alignment: .topTrailing) {
+                .onScrollGeometryChange(for: ScrubberState.Metrics.self) { geo in
+                    ScrubberState.Metrics(geo)
+                } action: { _, metrics in
+                    if showsRail { scrubber.scrolled(metrics) }
+                }
+                .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.5) { ids in
+                    if showsRail { scrubber.activeLetter = derived.alpha.activeLetter(visible: ids) }
+                }
+                .overlay {
                     if showsRail {
-                        AlphabetRail(available: derived.letters, metrics: railMetrics) { letter in
-                            // No animation: an animated jump per letter while dragging
-                            // queued up scrolls and made the app unresponsive.
-                            proxy.scrollTo(LibraryRowModel.headerId(letter), anchor: .top)
+                        ScrollScrubber(state: scrubber, letters: derived.alpha.letters) { letter in
+                            // Always instant: an animated jump per letter while scrubbing
+                            // queued up scrolls and made the app unresponsive (F-A).
+                            if let row = derived.alpha.letterRow[letter] { proxy.scrollTo(row, anchor: .top) }
                         }
-                        .padding(.trailing, Theme.pageGutter)
                     }
                 }
                 .onChange(of: model.scrollToTopTick) {
@@ -193,6 +202,10 @@ struct LibraryView: View {
             }
         }
         .animation(motion ? .snappy(duration: 0.3) : nil, value: model.selectMode)
+        .environment(\.openPosterSheet, { posterSheet = $0 })
+        .sheet(item: $posterSheet) { item in
+            LibraryPosterSheet(item: item)
+        }
         .sheet(isPresented: $showingFilters) {
             LibraryFiltersSheet(recency: $recency, group: $group, sort: $sort)
                 .presentationDetents([.medium, .large])
@@ -201,6 +214,13 @@ struct LibraryView: View {
         }
         .task {
             if !model.libraryLoaded { await model.loadLibrary() }
+            #if DEBUG
+            // CI screenshots: `FUSIONHA_SCREENSHOT_POSTER_SHEET=<item id>` long-presses that poster.
+            if let id = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_POSTER_SHEET"].flatMap(Int.init) {
+                try? await Task.sleep(for: .seconds(1))
+                posterSheet = model.library.first { $0.id == id }
+            }
+            #endif
         }
         .onChange(of: inputs, initial: true) { rebuild() }
     }
@@ -220,7 +240,7 @@ struct LibraryView: View {
 
     private var subtitle: String {
         let t = derived.titleCount, e = derived.editionCount
-        return "\(t) \(t == 1 ? "title" : "titles") · \(e) \(e == 1 ? "edition" : "editions")"
+        return "\(t) \(t == 1 ? "title" : "titles") · \(e) \(e == 1 ? "version" : "versions")"
     }
 
     // MARK: Derivation
@@ -256,10 +276,11 @@ struct LibraryView: View {
             next.rows = LibraryRowModel.table(visible)
         } else if group {
             next.rows = LibraryRowModel.grouped(visible)
+        } else if sort == .title {
+            (next.rows, next.alpha) = LibraryRowModel.alpha(visible)
         } else {
-            next.rows = LibraryRowModel.build(visible, sectioned: sort == .title)
+            next.rows = LibraryRowModel.plain(visible)
         }
-        next.letters = Set(next.rows.compactMap { if case .header(let letter, _, _) = $0 { letter } else { nil } })
         derived = next
     }
 
@@ -417,19 +438,18 @@ struct LibraryView: View {
             } else if model.libraryError != nil {
                 EmptyBox(message: "Your library could not be loaded. Check the backend and try again.")
             } else {
-                EmptyBox(message: "Your library is empty. Use Add to search TMDB and start tracking a title across its quality editions.")
+                EmptyBox(message: "Your library is empty. Use Add to search TMDB and start tracking a title in one or more versions (HD, 4K).")
             }
         } else if derived.rows.isEmpty || derived.titleCount == 0 {
             EmptyBox(message: "No titles match \(query.isEmpty ? "these filters" : "your search"). Try clearing a filter or the search box.")
         } else {
             ForEach(derived.rows) { row in
                 switch row {
-                case .header(let letter, let count, _):
-                    LetterHeader(letter: letter, count: count)
                 case .section(let status, let count):
                     StatusSectionHeader(status: status, count: count)
                 case .items(let items):
-                    HStack(alignment: .top, spacing: 18) {
+                    // Rows are only as tall as their own tallest card (7f2b50c7).
+                    HStack(alignment: .top, spacing: 6) {
                         ForEach(0..<3, id: \.self) { i in
                             if i < items.count {
                                 PosterCard(item: items[i]).frame(maxWidth: .infinity, alignment: .top)
@@ -479,9 +499,8 @@ private struct LibraryToolbarRow<Leading: View, Trailing: View>: View {
 // MARK: - Rows
 
 /// One row of the Library scroll. Rows are flat so the scroll stays fully lazy
-/// and the rail can jump to any header.
+/// and the scroll thumb can jump to any row.
 enum LibraryRowModel: Identifiable {
-    case header(String, Int, id: String)
     case section(CardStatus, Int)
     case items([MediaItem])
     case tableHeader
@@ -489,15 +508,12 @@ enum LibraryRowModel: Identifiable {
 
     var id: String {
         switch self {
-        case .header(_, _, let id): return id
         case .section(let status, _): return "status-\(status.rawValue)"
         case .items(let items): return "row-\(items[0].id)"
         case .tableHeader: return "table-header"
         case .tableRow(let item, _): return "table-\(item.id)"
         }
     }
-
-    static func headerId(_ letter: String) -> String { "letter-\(letter)" }
 
     private static func chunk(_ group: ArraySlice<MediaItem>, into rows: inout [LibraryRowModel]) {
         var start = group.startIndex
@@ -508,27 +524,30 @@ enum LibraryRowModel: Identifiable {
         }
     }
 
-    /// Lettered runs (`buildAlphaSections`) when sorted by title, else a plain grid.
-    static func build(_ items: [MediaItem], sectioned: Bool) -> [LibraryRowModel] {
+    /// The A–Z grid on phones (`buildRowModel` with `headers: false`): one
+    /// continuous run of 3-card rows with no letter headers. Each letter's jump
+    /// target is the row holding its FIRST title; each row remembers the letter
+    /// of its first card for the thumb's "where am I" bubble.
+    static func alpha(_ items: [MediaItem]) -> (rows: [LibraryRowModel], index: LibraryAlphaIndex) {
         var rows: [LibraryRowModel] = []
-        guard sectioned else {
-            chunk(items[...], into: &rows)
-            return rows
+        chunk(items[...], into: &rows)
+        var index = LibraryAlphaIndex()
+        for (i, row) in rows.enumerated() {
+            guard case .items(let cards) = row else { continue }
+            index.rowLetter[row.id] = (i, LibraryView.letter(for: cards[0].title))
+            for card in cards {
+                let letter = LibraryView.letter(for: card.title)
+                if index.letterRow[letter] == nil { index.letterRow[letter] = row.id }
+            }
         }
-        var seen: [String: Int] = [:]
-        var start = items.startIndex
-        while start < items.endIndex {
-            let letter = LibraryView.letter(for: items[start].title)
-            var end = start + 1
-            while end < items.endIndex, LibraryView.letter(for: items[end].title) == letter { end += 1 }
-            let n = seen[letter, default: 0]
-            seen[letter] = n + 1
-            // A letter can reopen (e.g. an accented title sorts among E but files under #);
-            // the rail jumps to its first run.
-            rows.append(.header(letter, end - start, id: n == 0 ? headerId(letter) : "\(headerId(letter))-\(n)"))
-            chunk(items[start..<end], into: &rows)
-            start = end
-        }
+        index.letters = LibraryAlphaIndex.alphabet.filter { index.letterRow[$0] != nil }
+        return (rows, index)
+    }
+
+    /// A plain grid for the other sorts.
+    static func plain(_ items: [MediaItem]) -> [LibraryRowModel] {
+        var rows: [LibraryRowModel] = []
+        chunk(items[...], into: &rows)
         return rows
     }
 
@@ -550,24 +569,20 @@ enum LibraryRowModel: Identifiable {
     }
 }
 
-/// Letter header: 21/800 letter in a 30pt column, a hairline, a mono count.
-private struct LetterHeader: View {
-    let letter: String
-    let count: Int
+/// Jump targets for the scroll thumb (`buildAlphaIndex` + `startLetters`).
+struct LibraryAlphaIndex {
+    /// `ALPHABET`: '#' then A–Z.
+    static let alphabet = ["#"] + "ABCDEFGHIJKLMNOPQRSTUVWXYZ".map(String.init)
+    /// The letters that have titles, in ALPHABET order.
+    var letters: [String] = []
+    /// Letter → the row holding its first title.
+    var letterRow: [String: String] = [:]
+    /// Row id → (row position, letter of its first card).
+    var rowLetter: [String: (Int, String)] = [:]
 
-    var body: some View {
-        HStack(spacing: 12) {
-            Text(letter)
-                .font(.system(size: 21, weight: .heavy))
-                .foregroundStyle(Theme.txt)
-                .frame(width: 30, alignment: .leading)
-            Rectangle().fill(Theme.line).frame(height: 1)
-            Text("\(count)").font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.dim)
-        }
-        .padding(.vertical, 8)
-        .padding(.top, 4)
-        .padding(.bottom, 14)
-        .background(Theme.bg)
+    /// The letter at the top of the grid, from the rows on screen.
+    func activeLetter(visible ids: [String]) -> String? {
+        ids.compactMap { rowLetter[$0] }.min { $0.0 < $1.0 }?.1
     }
 }
 
@@ -604,135 +619,12 @@ extension CardStatus {
     }
 }
 
-// MARK: - A–Z rail
-
-/// Shared between the scroll view (writer) and the rail (reader) so scrolling
-/// never re-renders the whole page.
-@Observable
-final class RailMetrics {
-    var stageY: CGFloat = 0
-}
-
-/// The A–Z rail (AlphabetRail.tsx `.railMobile`): 22pt wide with a hairline on
-/// its left, sticky from the grid's top to above the tab bar. Tap a letter to
-/// jump; hold or drag to scrub with the fisheye magnification and a selection
-/// haptic per letter. Jumps are instant and throttled to 120ms.
-private struct AlphabetRail: View {
-    let available: Set<String>
-    let metrics: RailMetrics
-    let jump: (String) -> Void
-    @Environment(\.motionEnabled) private var motion
-    @State private var scrubIndex: Int?
-    @State private var scrubbing = false
-    @State private var touchStart: Date?
-    @State private var lastJump = Date.distantPast
-    @State private var pending: String?
-
-    private let letters = ["#"] + "ABCDEFGHIJKLMNOPQRSTUVWXYZ".map(String.init)
-
-    var body: some View {
-        GeometryReader { geo in
-            let origin = geo.frame(in: .global).minY
-            let minTop = geo.safeAreaInsets.top + 12
-            let top = max(minTop, metrics.stageY - origin)
-            let bottom = geo.size.height - 12
-            let height = max(bottom - top, 120)
-            rail(height: height)
-                .frame(width: 22, height: height)
-                .offset(y: top)
-        }
-        .frame(width: 22)
-        .sensoryFeedback(.selection, trigger: scrubIndex)
-        .accessibilityHidden(true)
-    }
-
-    private func rail(height: CGFloat) -> some View {
-        VStack(spacing: 0) {
-            ForEach(letters.indices, id: \.self) { i in
-                let letter = letters[i]
-                let present = available.contains(letter)
-                let lift = liftFor(i)
-                Text(letter)
-                    .font(.system(size: 9.5, weight: scrubbing && scrubIndex == i ? .black : .heavy))
-                    .foregroundStyle(color(i, present: present))
-                    .shadow(color: scrubbing && scrubIndex == i ? Theme.i2.opacity(0.8) : .clear, radius: 6)
-                    .scaleEffect(1 + lift * 1.5)
-                    .offset(x: -lift * 42)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 2)
-        .overlay(alignment: .leading) { Rectangle().fill(Theme.line).frame(width: 1) }
-        .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { value in
-                    let start = touchStart ?? Date()
-                    if touchStart == nil { touchStart = start }
-                    let moved = abs(value.translation.height) >= 8 || abs(value.translation.width) >= 8
-                    if !scrubbing && (moved || Date().timeIntervalSince(start) >= 0.12) {
-                        withAnimation(motion ? .snappy(duration: 0.18) : nil) { scrubbing = true }
-                    }
-                    guard scrubbing else { return }
-                    let index = indexFor(y: value.location.y, height: height)
-                    if index != scrubIndex {
-                        withAnimation(motion ? .interactiveSpring(duration: 0.18) : nil) { scrubIndex = index }
-                        request(letters[index])
-                    }
-                }
-                .onEnded { value in
-                    let index = indexFor(y: value.location.y, height: height)
-                    if !scrubbing {
-                        if available.contains(letters[index]) { jump(letters[index]) }
-                    } else if let pending {
-                        jump(pending)
-                    }
-                    pending = nil
-                    touchStart = nil
-                    withAnimation(motion ? .snappy(duration: 0.25) : nil) {
-                        scrubbing = false
-                        scrubIndex = nil
-                    }
-                }
-        )
-    }
-
-    private func indexFor(y: CGFloat, height: CGFloat) -> Int {
-        let usable = max(height - 8, 1)
-        return min(max(Int((y - 4) / usable * CGFloat(letters.count)), 0), letters.count - 1)
-    }
-
-    /// Jumps at most every 120ms; the latest letter waits for the next slot.
-    private func request(_ letter: String) {
-        guard available.contains(letter) else { return }
-        if Date().timeIntervalSince(lastJump) >= 0.12 {
-            lastJump = Date()
-            pending = nil
-            jump(letter)
-        } else {
-            pending = letter
-        }
-    }
-
-    /// `lift = max(0, 1 - |i - idx| / 3.5)`.
-    private func liftFor(_ i: Int) -> CGFloat {
-        guard scrubbing, motion, let idx = scrubIndex else { return 0 }
-        return max(0, 1 - CGFloat(abs(i - idx)) / 3.5)
-    }
-
-    private func color(_ i: Int, present: Bool) -> Color {
-        if scrubbing && scrubIndex == i { return Theme.i2 }
-        return present ? Theme.mut : Theme.dim.opacity(0.3)
-    }
-}
-
 // MARK: - Skeleton
 
-/// LibraryGridSkeleton: 12 cells, 3 columns, gap 9, shimmering.
+/// LibraryGridSkeleton: 12 cells, 3 columns, 18 × 6 gaps, shimmering.
 private struct LibraryGridSkeleton: View {
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 9), count: 3), spacing: 9) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 18) {
             ForEach(0..<12, id: \.self) { _ in
                 VStack(alignment: .leading, spacing: 7) {
                     RoundedRectangle(cornerRadius: 13, style: .continuous)

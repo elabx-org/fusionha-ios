@@ -14,7 +14,7 @@ func settingsPanel(_ slug: String) -> some View {
     case "security": SecuritySettingsPanel()
     case "appearance": AppearanceSettingsPanel()
     case "about": AboutSettingsPanel()
-    case "editions": MediaVersionsSettingsPanel()
+    case "versions", "editions": MediaVersionsSettingsPanel()
     case "experimental": ExperimentalSettingsPanel()
     case "discover": DiscoverSettingsPanel()
     case "maintenance": MaintenanceSettingsPanel()

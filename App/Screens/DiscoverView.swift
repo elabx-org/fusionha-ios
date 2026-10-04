@@ -117,7 +117,8 @@ struct DiscoverView: View {
                         tabs
                         content
                     }
-                    .padding(.horizontal, 10)
+                    // Plex-app rhythm on phones: 16pt side margins, like Library.
+                    .padding(.horizontal, 16)
                     .padding(.top, 20)
                     .padding(.bottom, 90)
                 }
@@ -624,8 +625,9 @@ struct DiscoverCard: View {
 
     private var meta: some View {
         VStack(alignment: .leading, spacing: 2) {
+            // The Library card's text size, so a poster reads the same on both.
             Text(result.title)
-                .font(.system(size: 12.5, weight: .semibold))
+                .font(.system(size: 14.5, weight: .medium))
                 .foregroundStyle(Theme.txt)
                 .lineLimit(1)
             HStack(spacing: 6) {
@@ -635,7 +637,7 @@ struct DiscoverCard: View {
                 }
                 .lineLimit(1)
                 .fixedSize()
-                .font(.system(size: 11))
+                .font(.system(size: 12.5))
                 .foregroundStyle(Theme.mut)
                 Spacer(minLength: 0)
                 providerException
@@ -653,7 +655,7 @@ struct DiscoverCard: View {
             }
         }
         .padding(.top, 8)
-        .padding(.horizontal, 2)
+        .padding(.horizontal, 1)
     }
 
     @ViewBuilder
@@ -1134,8 +1136,9 @@ private struct DiscoverFiltersPanel: View {
         case .failed: filterState("Could not load results.", error: true)
         case .loaded(let items) where items.isEmpty: filterState("No titles match these filters.")
         case .loaded(let items):
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 9, alignment: .top), count: 3),
-                      alignment: .leading, spacing: 16) {
+            // Same 18 × 6 rhythm as the Library grid.
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6, alignment: .top), count: 3),
+                      alignment: .leading, spacing: 18) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     DiscoverCard(result: item, canAdd: canAdd, canRequest: canRequest)
                         .discoverReveal(index: index, step: 0.02)
@@ -1167,9 +1170,9 @@ private struct RequestorSearchResults: View {
             case .failed: line("Couldn't search right now — try again.")
             case .loaded(let items) where items.isEmpty: line("No results for “\(term)”.")
             case .loaded(let items):
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 16, alignment: .top),
-                                    GridItem(.flexible(), spacing: 16, alignment: .top)],
-                          alignment: .leading, spacing: 16) {
+                // Three tracks, 18 × 6 gaps, like every poster grid.
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6, alignment: .top), count: 3),
+                          alignment: .leading, spacing: 18) {
                     ForEach(items) { DiscoverCard(result: $0, canAdd: canAdd, canRequest: canRequest) }
                 }
                 .padding(.top, 4)

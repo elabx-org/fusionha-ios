@@ -17,6 +17,7 @@ from urllib.parse import parse_qs, urlparse
 
 import mock_activity
 import mock_detail
+import mock_shell
 
 MOCK = Path(__file__).resolve().parent / "mock"
 
@@ -407,6 +408,14 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(body) if body else self.send_json({"detail": "Not Found"}, 404)
         if path.startswith("/api/v1/collections/") and path.rsplit("/", 1)[-1].isdigit():
             return self.send_json(collection_detail(int(path.rsplit("/", 1)[-1])))
+        if path == "/api/v1/library/setups":
+            return self.send_json(mock_shell.setups() if SHELL else {"setups": [], "next_rss_at": None})
+        if SHELL and path == "/api/v1/library":
+            return self.send_json(mock_shell.library(load("library.json")))
+        if SHELL and path == "/api/v1/setup-status":
+            return self.send_json(mock_shell.setup_status(load("setup-status.json")))
+        if SHELL and path == "/api/v1/settings":
+            return self.send_json(shell_settings() | {"login_layout": "living", "login_living_media": False})
         if path in SHELL_ROUTES:
             return self.send_json(SHELL_ROUTES[path]())
         if path in NOTIFICATION_ROUTES:
@@ -484,9 +493,12 @@ class Handler(BaseHTTPRequestHandler):
 
 
 REQUESTOR = False
+SHELL = False
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
     # `requestor` serves a request-scoped account (Discover · My requests · You).
     REQUESTOR = len(sys.argv) > 2 and sys.argv[2] == "requestor"
+    # `shell` serves a bigger A–Z library, title setups in flight and the Living-logo sign-in.
+    SHELL = len(sys.argv) > 2 and sys.argv[2] == "shell"
     ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()

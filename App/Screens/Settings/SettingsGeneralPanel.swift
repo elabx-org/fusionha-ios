@@ -66,7 +66,7 @@ struct GeneralSettingsPanel: View {
                           description: "Search this many days before (−) or after (+) a movie becomes available. 0 = exactly on the available date.",
                           unit: "days", signed: true)
             SettingToggle(key: "search_on_add", label: "Search on add",
-                          description: "When adding a title, immediately search for its monitored editions (a per-add choice can still override this).",
+                          description: "When adding a title, immediately search for its monitored versions (a per-add choice can still override this).",
                           fallback: true)
             SettingNumber(key: "season_search_interval_seconds", label: "Season episode-search interval",
                           description: "Seconds between each episode when a season uses 'Search each episode (gradual)' instead of a season-pack search.",
@@ -75,7 +75,7 @@ struct GeneralSettingsPanel: View {
 
         SettingsSection("Missing (Wanted) search") {
             SettingToggle(key: "missing_search_enabled", label: "Automatic missing search",
-                          description: "Periodically search for monitored titles still missing a file for a monitored edition.")
+                          description: "Periodically search for monitored titles still missing a file for a monitored version.")
             SettingNumber(key: "missing_search_interval_seconds", label: "Search interval",
                           description: "How often the missing-search sweep runs. Clamped to a safe floor to avoid indexer bans.",
                           unit: "sec")
@@ -86,26 +86,26 @@ struct GeneralSettingsPanel: View {
 
         SettingsSection("Cutoff upgrade search") {
             SettingToggle(key: "cutoff_unmet_search_enabled", label: "Automatic cutoff-unmet search",
-                          description: "Periodically re-search monitored editions whose file is below the profile cutoff, looking for an upgrade. Heavier on indexers — off by default.")
+                          description: "Periodically re-search monitored versions whose file is below the profile cutoff, looking for an upgrade. Heavier on indexers — off by default.")
             SettingNumber(key: "cutoff_unmet_search_interval_seconds", label: "Search interval",
                           description: "How often the cutoff-upgrade sweep runs. Clamped to a safe floor to avoid indexer bans.",
                           unit: "sec")
             SettingNumber(key: "missing_search_max_items", label: "Cutoff items per run",
-                          description: "Cap on how many below-cutoff editions one cutoff-upgrade sweep works through (oldest first), so a big backlog drains across runs.",
+                          description: "Cap on how many below-cutoff versions one cutoff-upgrade sweep works through (oldest first), so a big backlog drains across runs.",
                           unit: "items")
         }
 
         SettingsSection("Recent-upgrade retry") {
             SettingToggle(key: "active_upgrade_search_enabled", label: "Retry recent grabs for an upgrade",
-                          description: "A gentle, small lane that re-checks recently imported editions still below cutoff for a better release — so a fresh episode's upgrade isn't starved behind the big oldest-first backlog.")
+                          description: "A gentle, small lane that re-checks recently imported versions still below cutoff for a better release — so a fresh episode's upgrade isn't starved behind the big oldest-first backlog.")
             SettingNumber(key: "active_upgrade_window_days", label: "Recent window",
-                          description: "Only editions imported within this many days are eligible for the recent-upgrade lane; older ones hand back to the daily cutoff sweep.",
+                          description: "Only versions imported within this many days are eligible for the recent-upgrade lane; older ones hand back to the daily cutoff sweep.",
                           unit: "days")
             SettingNumber(key: "active_upgrade_search_interval_seconds", label: "Search interval",
                           description: "How often the recent-upgrade lane runs. Clamped to a safe floor to avoid indexer bans (kept gentle by default).",
                           unit: "sec")
             SettingNumber(key: "active_upgrade_max_items", label: "Items per run",
-                          description: "Cap on how many recently imported editions the recent-upgrade lane works through (newest first).",
+                          description: "Cap on how many recently imported versions the recent-upgrade lane works through (newest first).",
                           unit: "items")
         }
 

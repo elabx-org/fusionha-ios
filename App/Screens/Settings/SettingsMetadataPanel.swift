@@ -43,6 +43,29 @@ struct MetadataSettingsPanel: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
+                // TVDB / Hybrid need a configured TVDB key (the server answers 422
+                // `tvdb_not_configured`): they stay visible but can't be picked.
+                if !store.bool("tvdb_configured") {
+                    Text("TVDB · Hybrid: Needs a TVDB key")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.dim)
+                    if ["tvdb", "hybrid"].contains(store.string("metadata_provider", "tmdb")) {
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "key")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Theme.miss)
+                            let name = store.string("metadata_provider", "tmdb") == "hybrid" ? "Hybrid" : "TVDB"
+                            Text("Your default is \(Text(name).bold()), but no TVDB key is configured — series fall back to TMDB/TVmaze until you add one above.")
+                                .font(.system(size: 12.5))
+                                .foregroundStyle(Theme.txt)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.miss.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .accessibilityElement(children: .combine)
+                    }
+                }
             }
             .settingsField("Default provider")
             if store.string("metadata_provider", "tmdb") == "hybrid" {
@@ -100,7 +123,10 @@ struct MetadataSettingsPanel: View {
 
     private var providerBinding: Binding<String> {
         Binding(get: { store.string("metadata_provider", "tmdb") },
-                set: { store.save("metadata_provider", .string($0)) })
+                set: { value in
+                    if ["tvdb", "hybrid"].contains(value), !store.bool("tvdb_configured") { return }
+                    store.save("metadata_provider", .string(value))
+                })
     }
 }
 

@@ -33,7 +33,7 @@ enum SettingsNav {
         .init(id: "metadata", label: "Metadata", title: "Metadata",
               subtitle: "TMDB metadata provider for movies, series & anime.", icon: "book.closed"),
         .init(id: "roots", label: "Root Folders", title: "Root Folders",
-              subtitle: "Separate roots per quality tier.", icon: "folder"),
+              subtitle: "Separate roots per tier.", icon: "folder"),
         .init(id: "naming", label: "Naming", title: "Naming",
               subtitle: "File and folder formats, per kind — the preview renders the full path as you type.",
               icon: "pencil.line"),
@@ -65,8 +65,8 @@ enum SettingsNav {
         .init(id: "releasefilters", label: "Release Filters", title: "Release Filters",
               subtitle: "Reject releases by name before they’re grabbed — Required / Rejected terms (arr Release Profiles).",
               icon: "line.3.horizontal.decrease"),
-        .init(id: "editions", label: "Media Versions", title: "Media Versions",
-              subtitle: "The cut/variant vocabulary (Director’s Cut · IMAX · Open Matte · Black & White …) for movies and series. Drives parsing and the Add-version presets.",
+        .init(id: "versions", label: "Editions", title: "Editions",
+              subtitle: "The edition vocabulary (Director’s Cut · IMAX · Open Matte · Black & White …) shared by movies and series. Drives parsing and the Edition choices when adding a version.",
               icon: "film"),
         .init(id: "trash", label: "TRaSH Guides", title: "TRaSH Guides",
               subtitle: "Import community custom formats + quality profiles; keep them synced.", icon: "trash"),
@@ -122,13 +122,14 @@ enum SettingsNav {
         .init(id: "fetching", label: "Fetching",
               panels: ["clients", "indexers", "connect", "notifications", "instances"]),
         .init(id: "system", label: "System",
-              panels: ["appearance", "system", "database", "backup", "logs", "about", "editions",
+              panels: ["appearance", "system", "database", "backup", "logs", "about", "versions",
                        "experimental", "discover", "maintenance"]),
     ]
 
     private static let byId = Dictionary(uniqueKeysWithValues: panels.map { ($0.id, $0) })
 
-    static func panel(_ id: String) -> SettingsPanelInfo? { byId[id] }
+    /// `editions` is the pre-0.4.122 slug of the Editions panel.
+    static func panel(_ id: String) -> SettingsPanelInfo? { byId[id == "editions" ? "versions" : id] }
 
     /// The group or section label a panel sits under (search breadcrumbs).
     static func groupLabel(_ id: String) -> String {

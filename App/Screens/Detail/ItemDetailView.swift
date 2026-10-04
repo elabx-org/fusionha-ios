@@ -139,6 +139,9 @@ struct ItemDetailView: View {
             guard !picked.isEmpty else { return }
             let subtitle = picked.count == 1 ? picked[0].label : "All editions"
             store.interactive = InteractiveTarget(editionIds: picked.map(\.id), subtitle: subtitle)
+        case .scopedSearch(let scope):
+            store.interactive = InteractiveTarget(editionIds: scope.editionIds, episodeId: scope.episodeId,
+                                                  seasonNumber: scope.seasonNumber, subtitle: scope.subtitle)
         }
     }
 

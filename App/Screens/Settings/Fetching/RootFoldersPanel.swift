@@ -69,7 +69,7 @@ struct RootFoldersPanel: View {
                          sub: free > 0 ? "\(FetchFormat.bytes(free)) free" : "unreported", tint: Theme.grab)
                 .fetchReveal(1)
             RootStatTile(key: "Tracked here", value: FetchFormat.grouped(tracked),
-                         sub: "editions · \(FetchFormat.bytes(trackedBytes))", tint: Theme.grab)
+                         sub: "versions · \(FetchFormat.bytes(trackedBytes))", tint: Theme.grab)
                 .fetchReveal(2)
             RootStatTile(key: "Auto-op defaults", value: "\(defaultsSet) / 6", sub: "auto-op roots", tint: Theme.done)
                 .fetchReveal(3)
@@ -263,7 +263,7 @@ private struct RootFolderCard: View {
                 if !folder.online {
                     Text("Mount not responding").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.stuck)
                     Spacer(minLength: 4)
-                    mono("\(editions) editions")
+                    mono("\(editions) versions")
                 } else if let total = folder.totalSpace, let used = folder.usedSpace {
                     Text(FetchFormat.bytes(used)).font(.system(size: 12, weight: .bold).monospacedDigit()).foregroundStyle(Theme.txt)
                     Text("used").font(.system(size: 12)).foregroundStyle(Theme.txt)
@@ -273,7 +273,7 @@ private struct RootFolderCard: View {
                     Text("—").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.txt)
                     Text("size not reported").font(.system(size: 12)).foregroundStyle(Theme.mut)
                     Spacer(minLength: 4)
-                    mono("\(editions) editions")
+                    mono("\(editions) versions")
                 }
             }
             .padding(.bottom, 7)
@@ -282,7 +282,7 @@ private struct RootFolderCard: View {
 
             HStack {
                 if folder.online, let pct {
-                    Text("\(editions) \(editions == 1 ? "edition" : "editions") tracked here\(pct >= 90 ? " · running low" : "")")
+                    Text("\(editions) \(editions == 1 ? "version" : "versions") tracked here\(pct >= 90 ? " · running low" : "")")
                     Spacer()
                     Text("\(pct)%").foregroundStyle(pct >= 75 ? Theme.miss : Theme.dim)
                 } else if folder.online {

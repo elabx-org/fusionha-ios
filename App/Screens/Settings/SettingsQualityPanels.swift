@@ -31,7 +31,7 @@ struct DefaultProfilesSettingsPanel: View {
         SettingsForm(slug: "defaultprofiles") {
             SettingsSection("How it works") {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Every title has a **kind** (Movies / Series / Anime) and a **tier** (HD·1080p / UHD·4K). Whenever fusionha creates a title or edition, it looks up this table by that kind × tier and applies the cell's **quality profile**.")
+                    Text("Every title has a **kind** (Movies / Series / Anime) and a **tier** (HD·1080p / UHD·4K). Whenever fusionha creates a title or version, it looks up this table by that kind × tier and applies the cell's **quality profile**.")
                     Text("Two things create titles: the **Add flow** (Overseerr / Seer, or the Add dialog) — which also drops the new title into the cell's **root folder**; and **Library Import** — which applies the profile but keeps the folder it's adopting. Because the match is by kind + tier, it works for **any root, even one you haven't added yet**.")
                     Text("Set a cell to a specific profile to pin it, or leave it on `— (use smart default)` to let fusionha pick the first profile of that kind.")
                 }
