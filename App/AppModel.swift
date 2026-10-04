@@ -50,6 +50,28 @@ final class AppModel {
     private(set) var queueError: String?
     private var lastQueueIds: [Int] = []
 
+    init() {
+        #if DEBUG
+        // CI screenshots: point at the mock server and open a given screen.
+        let env = ProcessInfo.processInfo.environment
+        if let server = env["FUSIONHA_SCREENSHOT_SERVER"].flatMap(URL.init(string:)) {
+            credentials = Credentials(serverURL: server, token: "screenshot", tokenId: nil)
+            switch env["FUSIONHA_SCREENSHOT_TAB"] {
+            case "discover": tab = .discover
+            case "calendar": tab = .calendar
+            case "activity": tab = .activity
+            case "wanted": tab = .wanted
+            default: tab = .library
+            }
+            presentedItem = env["FUSIONHA_SCREENSHOT_ITEM"].flatMap(Int.init).map(ItemRef.init(id:))
+            showingAdd = env["FUSIONHA_SCREENSHOT_ADD"] != nil
+            searchText = env["FUSIONHA_SCREENSHOT_SEARCH"] ?? ""
+        } else if env["FUSIONHA_SCREENSHOT_LOGIN"] != nil {
+            credentials = nil
+        }
+        #endif
+    }
+
     var client: APIClient? {
         credentials?.client()
     }

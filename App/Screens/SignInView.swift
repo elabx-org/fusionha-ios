@@ -65,6 +65,16 @@ struct SignInView: View {
             SafariView(url: url).ignoresSafeArea()
         }
         .onAppear { withAnimation(.spring(duration: 0.9, bounce: 0.25)) { appeared = true } }
+        #if DEBUG
+        .task {
+            // CI screenshots: connect to the mock server and pick a method.
+            let env = ProcessInfo.processInfo.environment
+            guard let login = env["FUSIONHA_SCREENSHOT_LOGIN"], !login.isEmpty else { return }
+            server = login
+            await connect()
+            if env["FUSIONHA_SCREENSHOT_METHOD"] == "fusionha" { method = .fusionha }
+        }
+        #endif
     }
 
     // MARK: Card
