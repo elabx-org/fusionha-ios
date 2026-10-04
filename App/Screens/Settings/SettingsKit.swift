@@ -19,15 +19,19 @@ final class SettingsStore {
     /// The last failed save, shown as a banner until dismissed.
     var saveError: String?
     let client: APIClient?
+    /// The singleton document this store edits: `/api/v1/settings` or, for
+    /// File Management, `/api/v1/media-management` (same GET + partial PUT shape).
+    let path: String
 
-    init(client: APIClient?) {
+    init(client: APIClient?, path: String = "/api/v1/settings") {
         self.client = client
+        self.path = path
     }
 
     func load() async {
         guard let client else { return }
         do {
-            values = try await client.settings()
+            values = try await client.json("GET", path).object ?? [:]
             error = nil
         } catch {
             self.error = error.localizedDescription
@@ -39,6 +43,7 @@ final class SettingsStore {
 
     func bool(_ key: String, _ fallback: Bool = false) -> Bool { values[key]?.bool ?? fallback }
     func int(_ key: String, _ fallback: Int = 0) -> Int { values[key]?.int ?? fallback }
+    func double(_ key: String, _ fallback: Double = 0) -> Double { values[key]?.double ?? fallback }
     func string(_ key: String, _ fallback: String = "") -> String { values[key]?.string ?? fallback }
 
     func save(_ key: String, _ value: JSONValue) {
@@ -51,7 +56,7 @@ final class SettingsStore {
         guard let client else { return }
         Task {
             do {
-                let fresh = try await client.updateSettings(diff)
+                let fresh = try await client.json("PUT", path, body: .object(diff)).object ?? [:]
                 if !fresh.isEmpty { values.merge(fresh) { _, new in new } }
             } catch {
                 for (k, v) in before { values[k] = v }
@@ -88,6 +93,18 @@ extension EnvironmentValues {
     var settingsMotionOff: Bool {
         get { self[SettingsMotionOffKey.self] }
         set { self[SettingsMotionOffKey.self] = newValue }
+    }
+}
+
+/// Pushes a panel by slug onto the Settings stack (honours motion-off).
+private struct SettingsPushKey: EnvironmentKey {
+    static let defaultValue: (String) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    var settingsPush: (String) -> Void {
+        get { self[SettingsPushKey.self] }
+        set { self[SettingsPushKey.self] = newValue }
     }
 }
 
@@ -397,7 +414,7 @@ struct SettingPicker<Value: Hashable>: View {
     }
 }
 
-/// The web's `NumberField`: a bounded integer with a trailing unit, committed
+/// The web's `NumberField`: a bounded number with a trailing unit, committed
 /// on Return or when the field loses focus, only if it changed.
 struct SettingNumber: View {
     @Environment(SettingsStore.self) private var store
@@ -406,14 +423,17 @@ struct SettingNumber: View {
     var description: String?
     let unit: String
     var signed = false
-    var max: Int?
-    var fallback = 0
+    var min: Double?
+    var max: Double?
+    var integer = true
+    var disabled = false
 
     var body: some View {
         NumberFieldRow(label: label, description: description, unit: unit,
-                       value: store.int(key, fallback), signed: signed, max: max) { n in
-            store.save(key, .number(Double(n)))
+                       value: store.double(key), signed: signed, min: min, max: max, integer: integer) { n in
+            store.save(key, .number(n))
         }
+        .disabled(disabled)
     }
 }
 
@@ -421,21 +441,24 @@ struct NumberFieldRow: View {
     let label: String
     var description: String?
     let unit: String
-    let value: Int
+    let value: Double
     var signed = false
-    var max: Int?
-    let onSave: (Int) -> Void
+    var min: Double?
+    var max: Double?
+    var integer = true
+    let onSave: (Double) -> Void
     @State private var text = ""
     @FocusState private var focused: Bool
+    @Environment(\.isEnabled) private var enabled
 
     var body: some View {
         LabeledContent {
             HStack(spacing: 7) {
                 TextField("", text: $text)
-                    .keyboardType(signed ? .numbersAndPunctuation : .numberPad)
+                    .keyboardType(signed ? .numbersAndPunctuation : (integer ? .numberPad : .decimalPad))
                     .multilineTextAlignment(.trailing)
                     .font(.system(size: 13).monospacedDigit())
-                    .foregroundStyle(Theme.txt)
+                    .foregroundStyle(enabled ? Theme.txt : Theme.dim)
                     .padding(.horizontal, 9)
                     .frame(width: 72, height: 34)
                     .background(Theme.bg, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
@@ -449,22 +472,70 @@ struct NumberFieldRow: View {
         } label: {
             FieldLabel(label: label, description: description)
         }
-        .onAppear { text = String(value) }
-        .onChange(of: value) { text = String(value) }
+        .onAppear { text = format(value) }
+        .onChange(of: value) { text = format(value) }
+        .onChange(of: focused) { if !focused { commit() } }
+        .settingsField(label)
+    }
+
+    private func format(_ n: Double) -> String {
+        integer || n.rounded() == n ? String(Int(n)) : String(n)
+    }
+
+    private func commit() {
+        guard let raw = Double(text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: ".")),
+              raw.isFinite else {
+            text = format(value)
+            return
+        }
+        var n = integer ? raw.rounded() : (raw * 100).rounded() / 100
+        if !signed { n = Swift.max(min ?? 0, n) } else if let min { n = Swift.max(min, n) }
+        if let max { n = Swift.min(max, n) }
+        if n != value { onSave(n) }
+        text = format(n)
+    }
+}
+
+/// A text field row that autosaves on Return or blur, only if it changed.
+struct SettingText: View {
+    @Environment(SettingsStore.self) private var store
+    let key: String
+    let label: String
+    var description: String?
+    var placeholder = ""
+    var trims = true
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            FieldLabel(label: label, description: description)
+            TextField("", text: $text, prompt: Text(placeholder).foregroundStyle(Theme.dim))
+                .font(.system(size: 13, design: .monospaced))
+                .foregroundStyle(Theme.txt)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .padding(.horizontal, 11)
+                .frame(height: 34)
+                .background(Theme.bg, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .strokeBorder(focused ? Theme.indigo : Theme.line, lineWidth: focused ? 2 : 1))
+                .focused($focused)
+                .submitLabel(.done)
+                .onSubmit(commit)
+                .accessibilityLabel(label)
+        }
+        .padding(.bottom, 4)
+        .onAppear { text = store.string(key) }
+        .onChange(of: store.string(key)) { if !focused { text = store.string(key) } }
         .onChange(of: focused) { if !focused { commit() } }
         .settingsField(label)
     }
 
     private func commit() {
-        guard let raw = Double(text.trimmingCharacters(in: .whitespaces)), raw.isFinite else {
-            text = String(value)
-            return
-        }
-        var n = Int(raw.rounded())
-        if !signed { n = Swift.max(0, n) }
-        if let max { n = Swift.min(max, n) }
-        if n != value { onSave(n) }
-        text = String(n)
+        let next = trims ? text.trimmingCharacters(in: .whitespaces) : text
+        if next != store.string(key) { store.save(key, .string(next)) }
+        text = next
     }
 }
 

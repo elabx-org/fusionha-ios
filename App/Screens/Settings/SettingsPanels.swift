@@ -6,7 +6,18 @@ import SwiftUI
 @ViewBuilder
 func settingsPanel(_ slug: String) -> some View {
     switch slug {
-    default:
-        SettingsWebPanel(slug: slug)
+    case "general": GeneralSettingsPanel()
+    case "metadata": MetadataSettingsPanel()
+    case "filemanagement": FileManagementSettingsPanel()
+    case "releasefilters": ReleaseFiltersSettingsPanel()
+    case "defaultprofiles": DefaultProfilesSettingsPanel()
+    case "security": SecuritySettingsPanel()
+    case "appearance": AppearanceSettingsPanel()
+    case "about": AboutSettingsPanel()
+    case "editions": MediaVersionsSettingsPanel()
+    case "experimental": ExperimentalSettingsPanel()
+    case "discover": DiscoverSettingsPanel()
+    case "maintenance": MaintenanceSettingsPanel()
+    default: SettingsWebPanel(slug: slug)
     }
 }

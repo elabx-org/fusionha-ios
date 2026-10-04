@@ -59,6 +59,7 @@ struct SettingsView: View {
         .environment(store)
         .environment(flash)
         .environment(\.settingsMotionOff, motionOff)
+        .environment(\.settingsPush, push)
         .task { await store.load() }
     }
 
