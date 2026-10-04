@@ -607,6 +607,7 @@ private struct MonthPill: View {
                 .font(.system(size: 10, weight: .bold))
                 .lineLimit(1)
                 .fixedSize()
+            Spacer(minLength: 0)
             HStack(spacing: 2) {
                 ForEach(Array(entry.editions.prefix(3).enumerated()), id: \.offset) { _, edition in
                     Circle().fill(entry.statusKey(for: edition, now: now).color).frame(width: 6, height: 6)
@@ -617,6 +618,7 @@ private struct MonthPill: View {
         .foregroundStyle(Theme.txt)
         .padding(.horizontal, 4)
         .padding(.vertical, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .calLivePulse(entry.isGrabbing, shape: RoundedRectangle(cornerRadius: 6, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
         .accessibilityElement(children: .ignore)
