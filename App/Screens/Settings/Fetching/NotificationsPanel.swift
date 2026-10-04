@@ -1,10 +1,13 @@
+import Combine
 import SwiftUI
+import UserNotifications
 import FusionhaKit
 
-/// Settings → Notifications (`NotificationsPanel.tsx`): this user's push event
-/// matrix and Send test; the Web Push master switch, grouping, quiet hours and key
-/// rotation for admins. Web Push devices are browser subscriptions, so this app
-/// lists them read-only instead of enabling itself as one.
+/// Settings → Notifications (`NotificationsPanel.tsx`): this device's native push
+/// (APNs) state and Send test, this user's other iOS devices, the shared push
+/// event matrix; the Web Push master switch, grouping, quiet hours, key rotation
+/// and the APNs key for admins. Web Push devices are browser subscriptions, so
+/// this app lists them read-only.
 struct NotificationsPanel: View {
     @Environment(AppModel.self) private var model
     @State private var prefs: [String: Bool] = [:]
@@ -17,6 +20,13 @@ struct NotificationsPanel: View {
     @State private var rotating = false
     @State private var toaster = FetchToaster()
     @State private var confirm: FetchConfirm?
+    // Native push (APNs).
+    @State private var apnsStatus: ApnsStatus?
+    @State private var apnsDevices: [ApnsDevice] = []
+    @State private var apnsSettings: ApnsSettings?
+    @State private var authStatus: UNAuthorizationStatus?
+    @State private var registering = false
+    @State private var editingApns = false
 
     private var isAdmin: Bool {
         guard let me = model.me else { return false }
@@ -52,6 +62,17 @@ struct NotificationsPanel: View {
 
             sec("This device")
             card { thisDevice }.fetchReveal(1)
+
+            if !otherApnsDevices.isEmpty {
+                sec("Other iOS devices")
+                card {
+                    ForEach(Array(otherApnsDevices.enumerated()), id: \.element.id) { index, device in
+                        if index > 0 { Divider().overlay(Theme.line) }
+                        apnsDeviceRow(device)
+                    }
+                }
+                .fetchReveal(2)
+            }
 
             if !devices.isEmpty {
                 sec("Web Push devices")
@@ -95,39 +116,111 @@ struct NotificationsPanel: View {
             if isAdmin { adminSection }
         }
         .task { await load() }
+        .sheet(isPresented: $editingApns) {
+            ApnsSettingsSheet(settings: apnsSettings) { saved in
+                apnsSettings = saved
+                toaster.show("iOS push settings saved")
+                Task { await load() }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .apnsTokenChanged)) { _ in
+            Task {
+                try? await Task.sleep(for: .milliseconds(600)) // let AppModel register first
+                await load()
+            }
+        }
     }
 
-    // MARK: This device
+    // MARK: This device (native push)
+
+    private var deviceToken: String? { PushRegistration.deviceToken }
+
+    /// This install's row on the server, matched by APNs token.
+    private var thisApnsDevice: ApnsDevice? {
+        guard let token = deviceToken else { return nil }
+        return apnsDevices.first { $0.deviceToken == token }
+    }
+
+    private var otherApnsDevices: [ApnsDevice] {
+        apnsDevices.filter { $0.deviceToken != deviceToken }
+    }
+
+    private enum NativeState {
+        case loading, serverNotConfigured(String), serverOff(String), denied, notAsked
+        case noEntitlement(String), registering, enabled(ApnsDevice)
+    }
+
+    private var nativeState: NativeState {
+        guard let status = apnsStatus, let authStatus else { return .loading }
+        if !status.configured {
+            return .serverNotConfigured(status.message
+                ?? "The server has no APNs key configured, so it can't send push to this app yet.")
+        }
+        if !status.enabled { return .serverOff(status.message ?? "iOS push is turned off on the server.") }
+        switch authStatus {
+        case .denied: return .denied
+        case .notDetermined: return .notAsked
+        default: break
+        }
+        if let device = thisApnsDevice { return .enabled(device) }
+        if deviceToken == nil, let error = PushRegistration.registrationError { return .noEntitlement(error) }
+        return .registering
+    }
 
     @ViewBuilder
     private var thisDevice: some View {
+        let state = nativeState
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "iphone").font(.system(size: 18)).foregroundStyle(Theme.mut)
                 .frame(width: 36, height: 36)
                 .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(UIDevice.current.name).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
-                Text("This app").font(.system(size: 12)).foregroundStyle(Theme.mut)
+                Text(thisDeviceMeta(state)).font(.system(size: 12)).foregroundStyle(Theme.mut)
             }
             Spacer(minLength: 0)
-            FetchPill(text: "● Web only", tone: .off)
+            thisDevicePill(state)
         }
         .padding(.vertical, 8)
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "info.circle").foregroundStyle(Theme.cyan)
-            Text("Web Push is a browser channel. Open fusionha in Safari on this iPhone, add it to the Home Screen and enable push there; your event choices below apply to every device.")
-                .font(.system(size: 12)).foregroundStyle(Theme.mut)
-                .fixedSize(horizontal: false, vertical: true)
+        if let note = thisDeviceNote(state) {
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: note.warn ? "exclamationmark.triangle" : "info.circle")
+                    .foregroundStyle(note.warn ? Theme.miss : Theme.cyan)
+                Text(note.text)
+                    .font(.system(size: 12)).foregroundStyle(Theme.mut)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(10)
+            .background((note.warn ? Theme.miss : Theme.cyan).opacity(0.07),
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
-        .padding(10)
-        .background(Theme.cyan.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         HStack(spacing: 10) {
-            Button { runTest() } label: { Label("Send test", systemImage: "bolt.fill") }
-                .buttonStyle(.web(.primary))
-                .disabled(testing)
-            if testing {
+            switch state {
+            case .notAsked:
+                Button { enableNotifications() } label: { Label("Enable notifications", systemImage: "bell.badge") }
+                    .buttonStyle(.web(.primary))
+            case .denied:
+                Button { openNotificationSettings() } label: { Label("Open iOS Settings", systemImage: "gear") }
+                    .buttonStyle(.web(.primary))
+            case .serverNotConfigured:
+                if isAdmin {
+                    Button { editingApns = true } label: { Label("Set up APNs", systemImage: "key") }
+                        .buttonStyle(.web(.primary))
+                }
+            case .registering:
+                Button { Task { await register() } } label: { Label("Register this device", systemImage: "arrow.clockwise") }
+                    .buttonStyle(.web(.primary))
+                    .disabled(registering)
+            case .enabled:
+                Button { runTest() } label: { Label("Send test", systemImage: "bolt.fill") }
+                    .buttonStyle(.web(.primary))
+                    .disabled(testing)
+            case .loading, .serverOff, .noEntitlement:
+                EmptyView()
+            }
+            if testing || registering {
                 ProgressView().controlSize(.mini)
-                Text("Sending…").font(.system(size: 12)).foregroundStyle(Theme.mut)
+                Text(testing ? "Sending…" : "Registering…").font(.system(size: 12)).foregroundStyle(Theme.mut)
             } else if let testResult {
                 Label(testResult.message, systemImage: testResult.ok ? "checkmark" : "xmark")
                     .font(.system(size: 12, weight: .semibold))
@@ -135,6 +228,76 @@ struct NotificationsPanel: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
+        }
+        .padding(.vertical, 10)
+    }
+
+    private func thisDeviceMeta(_ state: NativeState) -> String {
+        switch state {
+        case .enabled(let d):
+            let active = FetchFormat.ago(d.lastSuccessAt ?? d.lastSeenAt ?? d.createdAt)
+            return "This app · \(d.environment) · active \(active)"
+        default:
+            return "This app"
+        }
+    }
+
+    @ViewBuilder
+    private func thisDevicePill(_ state: NativeState) -> some View {
+        switch state {
+        case .loading: ProgressView().controlSize(.mini)
+        case .enabled(let d):
+            if let error = d.lastError, (d.failureCount ?? 0) > 0 {
+                FetchPill(text: "● Not delivering", tone: .warn).accessibilityHint(error)
+            } else {
+                FetchPill(text: "● Enabled", tone: .ok)
+            }
+        case .serverNotConfigured: FetchPill(text: "● Server not set up", tone: .warn)
+        case .serverOff: FetchPill(text: "● Off on server", tone: .off)
+        case .denied: FetchPill(text: "● Blocked", tone: .err)
+        case .notAsked: FetchPill(text: "● Off", tone: .off)
+        case .noEntitlement: FetchPill(text: "● Unavailable", tone: .err)
+        case .registering: FetchPill(text: "● Not registered", tone: .off)
+        }
+    }
+
+    private func thisDeviceNote(_ state: NativeState) -> (text: String, warn: Bool)? {
+        switch state {
+        case .serverNotConfigured(let message):
+            return (message + (isAdmin
+                ? " Add the APNs auth key (.p8), Key ID and Team ID from your Apple Developer account."
+                : " Ask an admin to add the APNs key in Settings → Notifications."), true)
+        case .serverOff(let message): return (message, true)
+        case .denied:
+            return ("Notifications for fusionha are turned off in iOS Settings. Turn them on there to get pushes on this device.", true)
+        case .notAsked:
+            return ("Get grabs, imports, failures and requests as native notifications on this device. Your event choices below apply to every device.", false)
+        case .noEntitlement(let error):
+            return ("iOS didn't issue a push token (\(error)). The build must be signed with a profile that has Push Notifications enabled for org.elabx.fusionha.", true)
+        case .enabled(let d):
+            if let error = d.lastError, (d.failureCount ?? 0) > 0 {
+                return ("Last delivery failed: \(error)", true)
+            }
+            return nil
+        case .loading, .registering: return nil
+        }
+    }
+
+    private func apnsDeviceRow(_ device: ApnsDevice) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "iphone").font(.system(size: 16)).foregroundStyle(Theme.mut).frame(width: 30)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(device.deviceName?.isEmpty == false ? device.deviceName! : "iPhone")
+                    .font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
+                Text("fusionha app · \(device.environment) · active \(FetchFormat.ago(device.lastSuccessAt ?? device.lastSeenAt ?? device.createdAt))")
+                    .font(.system(size: 11.5)).foregroundStyle(Theme.mut).lineLimit(1)
+            }
+            Spacer(minLength: 0)
+            FetchIconButton(systemName: "trash", label: "Remove \(device.deviceName ?? "device")", danger: true) {
+                confirm = FetchConfirm(title: "Remove \(device.deviceName ?? "this device")?",
+                                       message: "It stops receiving notifications until the app registers again.",
+                                       action: "Remove") { removeApnsDevice(device) }
+            }
         }
         .padding(.vertical, 10)
     }
@@ -176,6 +339,23 @@ struct NotificationsPanel: View {
 
     @ViewBuilder
     private var adminSection: some View {
+        sec("iOS app push (APNs)")
+        card {
+            row(name: "Apple Push", desc: apnsSettings?.configured == true
+                ? "Configured · key \(apnsSettings?.keyId ?? "") · team \(apnsSettings?.teamId ?? "")"
+                : "Not configured · needs the APNs auth key (.p8), Key ID and Team ID") {
+                Toggle("Enable iOS push", isOn: Binding(get: { apnsSettings?.enabled ?? true },
+                                                        set: { updateApns(["enabled": .bool($0)]) }))
+                    .labelsHidden().tint(Theme.indigo)
+            }
+            Divider().overlay(Theme.line)
+            row(name: "Bundle ID · environment",
+                desc: "\(apnsSettings?.topic ?? "org.elabx.fusionha") · \(apnsSettings?.environment ?? "auto")") {
+                Button("Configure") { editingApns = true }
+                    .buttonStyle(.web(.ghost))
+            }
+        }
+        .fetchReveal(4)
         sec("Grouping & timing")
         card {
             VStack(alignment: .leading, spacing: 8) {
@@ -285,7 +465,21 @@ struct NotificationsPanel: View {
             self.error = error.settingsMessage
         }
         devices = (try? await client.pushSubscriptions()) ?? []
-        if isAdmin { settings = try? await client.webPushSettings() }
+        if isAdmin {
+            settings = try? await client.webPushSettings()
+            apnsSettings = try? await client.apnsSettings()
+        }
+        do {
+            apnsStatus = try await client.apnsStatus()
+        } catch APIError.http(404, _) {
+            apnsStatus = ApnsStatus(configured: false, enabled: false, topic: "", environment: "", missing: [],
+                                    message: "This fusionha server doesn't support native iOS push yet — update it.")
+        } catch {
+            apnsStatus = ApnsStatus(configured: false, enabled: false, topic: "", environment: "", missing: [],
+                                    message: "Couldn't check the server's push setup (\(error.settingsMessage)).")
+        }
+        apnsDevices = (try? await client.apnsDevices()) ?? []
+        authStatus = await PushRegistration.authorizationStatus()
         loaded = true
     }
 
@@ -317,10 +511,11 @@ struct NotificationsPanel: View {
         testResult = nil
         Task {
             do {
-                let r = try await client.testPush()
+                let r = try await client.testApns(deviceId: thisApnsDevice?.id)
+                let failure = r.devices?.first { !$0.ok }?.detail
                 let message = r.sent == 0
-                    ? "No devices to notify — enable push on a device first."
-                    : "Sent to \(r.delivered) of \(r.sent) device\(r.sent == 1 ? "" : "s")"
+                    ? "This device isn't registered yet."
+                    : r.delivered > 0 ? "Sent — check your notifications" : (failure ?? "Not delivered")
                 testResult = ConnectionTestResult(ok: r.delivered > 0, message: message)
                 toaster.show(message, tone: r.delivered > 0 ? .success : .error)
             } catch {
@@ -328,6 +523,54 @@ struct NotificationsPanel: View {
                 toaster.error(error)
             }
             testing = false
+            await load()
+        }
+    }
+
+    private func enableNotifications() {
+        Task {
+            let granted = (try? await UNUserNotificationCenter.current()
+                .requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+            if granted { UIApplication.shared.registerForRemoteNotifications() }
+            authStatus = await PushRegistration.authorizationStatus()
+        }
+    }
+
+    private func openNotificationSettings() {
+        if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    private func register() async {
+        guard let client = model.client else { return }
+        registering = true
+        if PushRegistration.deviceToken == nil {
+            await MainActor.run { UIApplication.shared.registerForRemoteNotifications() }
+        } else if await PushRegistration.register(with: client) == nil {
+            toaster.show("Couldn't register this device", tone: .error)
+        }
+        registering = false
+        await load()
+    }
+
+    private func removeApnsDevice(_ device: ApnsDevice) {
+        guard let client = model.client else { return }
+        Task {
+            do {
+                try await client.deleteApnsDevice(id: device.id)
+                apnsDevices.removeAll { $0.id == device.id }
+            } catch { toaster.error(error) }
+        }
+    }
+
+    private func updateApns(_ body: [String: SettingsJSON]) {
+        guard let client = model.client else { return }
+        Task {
+            do {
+                apnsSettings = try await client.updateApnsSettings(.object(body))
+                apnsStatus = try? await client.apnsStatus()
+            } catch { toaster.error(error) }
         }
     }
 

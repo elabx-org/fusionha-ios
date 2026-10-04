@@ -190,6 +190,7 @@ jobs:
           shoot settings-4-editions SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=editions
           shoot settings-5-releasefilters SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=releasefilters
           shoot settings-6-security SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=security
+          shoot settings-7-notifications SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=notifications SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PUSH_TOKEN=ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
           python3 scripts/mock_server.py 8766 requestor &
           R=http://127.0.0.1:8766
           D="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover"
