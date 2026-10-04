@@ -1185,11 +1185,11 @@ struct DetailNotTrackedRow: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .overlay(alignment: .top) {
-            Line().stroke(Theme.line, style: StrokeStyle(lineWidth: 1, dash: [4, 3])).frame(height: 1)
+            DashedRule().stroke(Theme.line, style: StrokeStyle(lineWidth: 1, dash: [4, 3])).frame(height: 1)
         }
     }
 
-    private struct Line: Shape {
+    private struct DashedRule: Shape {
         func path(in rect: CGRect) -> Path {
             var p = Path()
             p.move(to: CGPoint(x: rect.minX, y: rect.midY))

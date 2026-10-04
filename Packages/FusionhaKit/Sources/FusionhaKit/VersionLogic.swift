@@ -70,8 +70,8 @@ public enum MovieVersionStatus: Sendable, Hashable {
 
 /// `movieAvailability`: whether a movie is out yet, and the gating date.
 public struct MovieAvailability: Hashable, Sendable {
-    public enum Phase: Sendable { case released, upcoming, unknown }
-    public let state: Phase
+    public enum Stage: Sendable { case released, upcoming, unknown }
+    public let state: Stage
     public let iso: String?
     public let date: String?
     public let label: String?
