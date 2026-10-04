@@ -1,16 +1,6 @@
 import Foundation
 
 extension APIClient {
-    /// `DELETE /api/v1/tokens/{id}`: revokes this device's personal token on sign-out.
-    public func revokeToken(id: Int) async throws {
-        let _: EmptyResponse = try await send("DELETE", "/api/v1/tokens/\(id)", body: Optional<String>.none)
-    }
-
-    /// `POST /api/v1/auth/logout` (ends a session).
-    public func logout() async throws {
-        let _: EmptyResponse = try await send("POST", "/api/v1/auth/logout", body: Optional<String>.none)
-    }
-
     /// `GET /api/v1/users/{id}/avatar`: the same-origin proxy of the Plex thumb.
     public func avatar(userId: Int) async throws -> Data {
         var req = request(method: "GET", path: "/api/v1/users/\(userId)/avatar", query: [])

@@ -113,6 +113,34 @@ def discover():
     } for item in load("library.json")]
 
 
+# library-shell: the shell's polls, settings, the Add flow's TVDB search and 4K check.
+def library_attention():
+    return {"editions": 1, "titles": 1, "items": [{"item_id": 3, "title": "Attention"}], "numbering_mismatches": 0,
+            "metadata_removed": 0, "arr_scope_mismatches": 0}
+
+
+def shell_settings():
+    return {"library_rail_style": "current", "library_rail_consolidate": True, "metadata_provider": "tmdb",
+            "default_movie_minimum_availability": "released", "animations_enabled": True}
+
+
+def tvdb_search():
+    return [{"tvdb_id": 81189 + i, "title": item["title"], "year": item["year"], "overview": None,
+             "image_url": item["poster_url"], "tmdb_id": item["tmdb_id"], "imdb_id": None,
+             "in_library": False, "library_item_id": None}
+            for i, item in enumerate(load("library.json")) if item["kind"] == "series"][:6]
+
+
+SHELL_ROUTES = {
+    "/api/v1/library/attention": library_attention,
+    "/api/v1/system/runs/attention": lambda: {"count": 0, "items": []},
+    "/api/v1/system/indexers/unavailable": lambda: {"count": 0, "items": []},
+    "/api/v1/system/commands": lambda: [],
+    "/api/v1/settings": shell_settings,
+    "/api/v1/search/tvdb": tvdb_search,
+}
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
@@ -142,11 +170,24 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/v1/library/") and path.rsplit("/", 1)[-1].isdigit():
             item = MOCK / "items" / f"{path.rsplit('/', 1)[-1]}.json"
             return self.send_json(json.loads(item.read_text())) if item.exists() else self.send_json({"detail": "Not Found"}, 404)
+        if path in SHELL_ROUTES:
+            return self.send_json(SHELL_ROUTES[path]())
+        if path.startswith("/api/v1/system/runs/") and path.rsplit("/", 1)[-1].isdigit():
+            return self.send_json({"id": int(path.rsplit("/", 1)[-1]), "status": "completed", "detail": None})
         if path in routes:
             return self.send_json(routes[path]())
         self.send_json({"detail": "Not Found"}, 404)
 
     def do_POST(self):
+        path = urlparse(self.path).path.rstrip("/")
+        if path == "/api/v1/discover/check-4k":
+            return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [1, 2],
+                                   "best_release_name": "Demo.2160p.WEB-DL.DV.HDR10", "message": None,
+                                   "format_tags": [{"label": "DV", "kind": "hdr"}, {"label": "HDR10", "kind": "hdr"}]})
+        if path.startswith("/api/v1/library/") and path.endswith("/refresh"):
+            return self.send_json({"run_id": 1})
+        if path == "/api/v1/library":
+            return self.send_json({"id": 1}, 201)
         self.send_json({})
 
     def do_PUT(self):

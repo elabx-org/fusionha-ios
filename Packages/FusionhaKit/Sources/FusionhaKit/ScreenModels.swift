@@ -17,22 +17,47 @@ public struct Rail: Sendable, Hashable {
     /// The edition has not-found or dead-link files (amber/orange warning).
     public let attention: Bool
     public let deadLinkOnly: Bool
+    /// Upcoming only: the date the edition becomes grabbable (ISO day), its
+    /// release stage and whether the date is an estimate.
+    public var upcomingDate: String? = nil
+    public var upcomingStage: String? = nil
+    public var upcomingEstimated: Bool = false
+
+    /// A rail built outside the derivation (previews, the filters sheet's samples).
+    public init(state: RailState, progress: Int, fraction: String?, attention: Bool, deadLinkOnly: Bool,
+                upcomingDate: String? = nil, upcomingStage: String? = nil, upcomingEstimated: Bool = false) {
+        self.state = state
+        self.progress = progress
+        self.fraction = fraction
+        self.attention = attention
+        self.deadLinkOnly = deadLinkOnly
+        self.upcomingDate = upcomingDate
+        self.upcomingStage = upcomingStage
+        self.upcomingEstimated = upcomingEstimated
+    }
 }
 
 extension Edition {
-    public func rail(isSeries: Bool) -> Rail {
+    /// The web's `editionChipState`: upgrading > downloading > have/total counts.
+    public func chipState(isSeries: Bool) -> RailState {
         let have = self.have ?? 0
         let total = self.total ?? 0
-        let state: RailState
-        if status == .upgrading {
-            state = .upgrading
-        } else if status == .downloading {
-            state = .downloading
-        } else if isSeries, total > 0 {
-            state = have >= total ? .owned : (have > 0 ? .partial : .wanted)
-        } else {
-            state = have > 0 ? .owned : (availableFrom != nil ? .upcoming : .wanted)
+        if status == .upgrading { return .upgrading }
+        if status == .downloading { return .downloading }
+        if isSeries, total > 0 {
+            return have >= total ? .owned : (have > 0 ? .partial : .wanted)
         }
+        return have > 0 ? .owned : .wanted
+    }
+
+    /// The coverage rail (CoverageRail.tsx). A wanted edition reads Upcoming when
+    /// it carries its own `available_from` cue or the whole title is upcoming.
+    public func rail(isSeries: Bool, itemUpcoming: Bool = false, itemUpcomingDate: String? = nil) -> Rail {
+        let have = self.have ?? 0
+        let total = self.total ?? 0
+        var state = chipState(isSeries: isSeries)
+        let ownCue = availableFrom != nil
+        if state == .wanted && (ownCue || itemUpcoming) { state = .upcoming }
         let progress: Int
         switch state {
         case .owned: progress = 100
@@ -47,7 +72,10 @@ extension Edition {
             progress: progress,
             fraction: isSeries ? "\(have)/\(total)" : nil,
             attention: attention,
-            deadLinkOnly: attention && dead > 0 && dead == unresolved)
+            deadLinkOnly: attention && dead > 0 && dead == unresolved,
+            upcomingDate: state == .upcoming ? (availableFrom ?? itemUpcomingDate) : nil,
+            upcomingStage: state == .upcoming && ownCue ? availableStage : nil,
+            upcomingEstimated: state == .upcoming && ownCue && (availableEstimated ?? false))
     }
 }
 

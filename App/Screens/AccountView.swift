@@ -80,7 +80,7 @@ struct AccountView: View {
             row {
                 Button("Sign out") {
                     signingOut = true
-                    Task { await model.signOutRevokingToken() }
+                    Task { await model.logOut() }
                 }
                 .buttonStyle(CalButtonStyle(variant: .danger, fullWidth: true))
                 .disabled(signingOut)
@@ -234,25 +234,6 @@ struct RoleBadge: View {
         .padding(.vertical, 3)
         .background(me.roleTone == .other ? Theme.panel2 : tint.opacity(me.roleTone == .manager ? 0.15 : 0.16),
                     in: Capsule())
-    }
-}
-
-// MARK: Sign out
-
-extension AppModel {
-    /// Sign out like the web, and also revoke this device's personal token
-    /// (`DELETE /api/v1/tokens/{tokenId}`) so it stops working server-side.
-    func signOutRevokingToken() async {
-        if let creds = credentials {
-            let client = creds.client()
-            if creds.method == .session || client.sessionTokenFromCookie() != nil {
-                try? await client.logout()
-            }
-            if let id = creds.tokenId {
-                try? await client.revokeToken(id: id)
-            }
-        }
-        signOut()
     }
 }
 

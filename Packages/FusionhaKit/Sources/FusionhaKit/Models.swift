@@ -103,6 +103,9 @@ public struct SetupStatus: Decodable, Sendable {
     public let loginShowLogo: Bool?
     public let loginShowWordmark: Bool?
     public let loginShowTagline: Bool?
+    /// "Explore the demo" on the login page (and whether it asks for credentials).
+    public let demoMode: Bool?
+    public let demoRequireCredentials: Bool?
 
     public var offersPlex: Bool { plexSsoEnabled == true }
     /// Older servers don't send the flag; username/password was always available there.
@@ -172,6 +175,15 @@ public struct MediaItem: Decodable, Sendable, Identifiable, Hashable {
     public let releaseDate: String?
     public let addedAt: String?
     public let editions: [Edition]
+    // Read by the Library's kind buckets, upcoming state and list view.
+    public let isAnimation: Bool?
+    public let isAvailable: Bool?
+    public let nextRelease: String?
+    public let tmdbId: Int?
+    public let tvdbId: Int?
+    public let imdbId: String?
+    public let seriesType: String?
+    public let metadataProvider: String?
 }
 
 public struct Edition: Decodable, Sendable, Identifiable, Hashable {
@@ -187,6 +199,14 @@ public struct Edition: Decodable, Sendable, Identifiable, Hashable {
     public let unresolvedFileCount: Int?
     public let deadLinkCount: Int?
     public let availableFrom: String?
+    public let monitor: String?
+    public let rootFolderId: Int?
+    public let qualityProfileId: Int?
+    /// `theatrical` / `digital` / `physical`: which release `availableFrom` belongs to.
+    public let availableStage: String?
+    /// The date is the backend's +45d/+90d estimate rather than a typed TMDB date.
+    public let availableEstimated: Bool?
+    public let grabbable: Bool?
 }
 
 // MARK: - Wanted  (GET /api/v1/wanted)
