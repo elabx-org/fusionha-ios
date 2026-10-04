@@ -351,8 +351,8 @@ struct ActivityIndexersTab: View {
         let total = summary.indexers
         let off = summary.off
         let avg = summary.avgSuccessRange.map { Int(($0 * 100).rounded()) }
-        let columns = [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
-        return LazyVGrid(columns: columns, spacing: 14) {
+        return Grid(horizontalSpacing: 14, verticalSpacing: 14) {
+            GridRow {
             kpiTile {
                 kpiNumber("\(total)")
                 (Text("\(summary.healthy) healthy").bold().foregroundColor(Theme.done) + Text(" · ")
@@ -365,6 +365,8 @@ struct ActivityIndexersTab: View {
                 kpiNumber((summary.grabsRange ?? 0).formatted())
                 Text("grabs · \(phrase)").font(.system(size: 11.5)).foregroundStyle(Theme.mut).padding(.top, 7)
             }
+            }
+            GridRow {
             kpiTile {
                 kpiNumber((summary.queriesRange ?? 0).formatted())
                 Text("API queries · \(phrase)").font(.system(size: 11.5)).foregroundStyle(Theme.mut).padding(.top, 7)
@@ -389,6 +391,7 @@ struct ActivityIndexersTab: View {
                 }
                 Text("avg success · \(phrase)").font(.system(size: 11.5)).foregroundStyle(Theme.mut).padding(.top, 7)
             }
+            }
         }
     }
 
@@ -396,7 +399,7 @@ struct ActivityIndexersTab: View {
         VStack(alignment: .leading, spacing: 0) { content() }
             .padding(.horizontal, 16)
             .padding(.vertical, 15)
-            .frame(maxWidth: .infinity, minHeight: 84, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: 84, maxHeight: .infinity, alignment: .topLeading)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
     }

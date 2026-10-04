@@ -92,7 +92,7 @@ struct ActFlow: Layout {
         for row in rows {
             var x = alignment == .trailing ? bounds.maxX - row.width : bounds.minX
             for index in row.indices {
-                let size = subviews[index].sizeThatFits(.unspecified)
+                let size = measure(subviews[index], width: bounds.width)
                 subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: ProposedViewSize(size))
                 x += size.width + spacing
             }
@@ -102,11 +102,18 @@ struct ActFlow: Layout {
 
     private struct Row { var indices: [Int] = []; var width: CGFloat = 0; var height: CGFloat = 0 }
 
+    /// Natural size, but a subview wider than the line wraps to the line width instead of overflowing.
+    private func measure(_ subview: LayoutSubview, width: CGFloat) -> CGSize {
+        let natural = subview.sizeThatFits(.unspecified)
+        guard width.isFinite, natural.width > width else { return natural }
+        return subview.sizeThatFits(ProposedViewSize(width: width, height: nil))
+    }
+
     private func arrange(width: CGFloat, subviews: Subviews) -> [Row] {
         var rows: [Row] = []
         var row = Row()
         for index in subviews.indices {
-            let size = subviews[index].sizeThatFits(.unspecified)
+            let size = measure(subviews[index], width: width)
             let needed = row.indices.isEmpty ? size.width : row.width + spacing + size.width
             if needed > width, !row.indices.isEmpty {
                 rows.append(row)
@@ -318,12 +325,13 @@ struct ActOverview: View {
 
     var body: some View {
         let maxValue = max(stats.map(\.value).max() ?? 0, 1)
-        ActFlow(spacing: 20, lineSpacing: 12) {
+        // Mobile web: the total sits on its own row, the per-state stats wrap beneath it.
+        VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(total)").font(.system(size: 18, weight: .bold, design: .monospaced)).foregroundStyle(Theme.txt)
                 label10(label)
             }
-            .padding(.trailing, 4)
+            ActFlow(spacing: 20, lineSpacing: 12) {
             ForEach(stats) { stat in
                 VStack(alignment: .leading, spacing: 5) {
                     Text("\(stat.value)").font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Theme.txt)
@@ -339,6 +347,7 @@ struct ActOverview: View {
                 }
                 .frame(minWidth: 74, alignment: .leading)
                 .fixedSize(horizontal: true, vertical: false)
+            }
             }
         }
         .padding(.horizontal, 18)
