@@ -61,8 +61,8 @@ struct RootView: View {
                 .environment(\.motionEnabled, !reduceMotion && model.animationsEnabled)
         }
         .onOpenURL { url in
-            // fusionha://activity from the widget and Live Activity.
-            if url.host() == "activity" { model.tab = .activity }
+            // fusionha://activity, calendar, item/{id}… from the widgets and Live Activity.
+            model.handleDeepLink(url)
         }
         .onChange(of: model.tab) {
             model.searchText = ""

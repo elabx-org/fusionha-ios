@@ -241,6 +241,10 @@ jobs:
           shoot settings-fetching-1-indexers SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=indexers
           shoot settings-fetching-2-instances SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=instances
           shoot settings-fetching-3-system SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=system
+          # Home-screen widgets (small ×2, medium, large) hosted in the app.
+          for w in downloads downloads-active upnext recent; do
+            shoot widgets-$w SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGETS=$w
+          done
           for bg in flow web hub orbits grid aurora gradient; do
             shoot login-bg-$bg SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN_BACKGROUND=$bg
           done
