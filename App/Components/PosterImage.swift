@@ -14,14 +14,25 @@ struct PosterImage: View {
     @State private var image: UIImage?
     @State private var fade = false
 
+    private var placeholder: some View {
+        LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
     var body: some View {
         let _ = PerfCount.hit("PosterImage.body")
         // The placeholder stays underneath, so the fade reads as the old
-        // crossfade; once loaded the art sizes itself exactly like
-        // `Image(...).resizable().aspectRatio(contentMode: .fill)` did.
-        ZStack {
-            LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
-            if let image { PosterArt(image: image, fade: fade) }
+        // crossfade. Layout is still done by the same resizable, aspect-filled
+        // SwiftUI `Image` as before (kept invisible), and the art is drawn over
+        // exactly its frame, so every caller sizes the poster as it always has.
+        Group {
+            if let image {
+                Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
+                    .hidden()
+                    .overlay { PosterArt(image: image, fade: fade) }
+                    .background { placeholder }
+            } else {
+                placeholder
+            }
         }
         .task(id: url) {
             guard let url else { image = nil; return }
@@ -39,8 +50,7 @@ struct PosterImage: View {
     }
 }
 
-/// Aspect-filled art, sized the way a resizable SwiftUI `Image` with
-/// `.aspectRatio(contentMode: .fill)` is (callers frame and clip it).
+/// Aspect-filled art drawn by UIKit, with a Core Animation fade-in.
 private struct PosterArt: UIViewRepresentable {
     let image: UIImage
     let fade: Bool
@@ -72,21 +82,9 @@ private struct PosterArt: UIViewRepresentable {
         }
     }
 
+    /// Fills whatever frame the overlay offers (the hidden `Image`'s frame).
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UIImageView, context: Context) -> CGSize? {
-        let natural = CGSize(width: max(image.size.width, 1), height: max(image.size.height, 1))
-        let w = proposal.width.flatMap { $0.isFinite ? $0 : nil }
-        let h = proposal.height.flatMap { $0.isFinite ? $0 : nil }
-        switch (w, h) {
-        case let (w?, h?):
-            let scale = max(w / natural.width, h / natural.height)
-            return CGSize(width: natural.width * scale, height: natural.height * scale)
-        case let (w?, nil):
-            return CGSize(width: w, height: w * natural.height / natural.width)
-        case let (nil, h?):
-            return CGSize(width: h * natural.width / natural.height, height: h)
-        default:
-            return natural
-        }
+        proposal.replacingUnspecifiedDimensions(by: image.size)
     }
 }
 
