@@ -495,4 +495,7 @@ if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
     # `requestor` serves a request-scoped account (Discover · My requests · You).
     REQUESTOR = len(sys.argv) > 2 and sys.argv[2] == "requestor"
+    # `perf` serves Activity / Wanted at volume (1000 history events, 600 blocklist
+    # entries, 400 task runs, 20 live downloads) for the perf job.
+    mock_activity.VOLUME = len(sys.argv) > 2 and sys.argv[2] == "perf"
     ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()
