@@ -300,6 +300,50 @@ def tvdb_search():
             for i, item in enumerate(load("library.json")) if item["kind"] == "series"][:6]
 
 
+# Notifications panel: the shared event matrix, Web Push, and native iOS push (APNs).
+# The screenshot run sets FUSIONHA_SCREENSHOT_PUSH_TOKEN to MOCK_APNS_TOKEN so
+# "This device" renders registered.
+MOCK_APNS_TOKEN = "f" * 64
+
+
+def apns_device(i, token, name, env="sandbox"):
+    return {"id": i, "user_id": 1, "device_token": token, "environment": env, "device_name": name,
+            "app_version": "1.0", "created_at": "2026-09-20T10:00:00", "last_seen_at": "2026-10-04T08:00:00",
+            "last_success_at": "2026-10-04T08:05:00", "failure_count": 0, "last_error": None, "disabled": False}
+
+
+APNS_SETTINGS = {"enabled": True, "configured": True, "key_id": "ABC123DEFG", "team_id": "TEAM123456",
+                 "topic": "org.elabx.fusionha", "environment": "auto", "auth_key_set": True}
+
+NOTIFICATION_ROUTES = {
+    "/api/v1/notifications/preferences": lambda: {"principal_id": 1, "preferences": [
+        {"event_kind": k, "enabled": k not in ("upgrade", "issue_reported", "retargeted")}
+        for k in ("grab", "import", "upgrade", "manual_required", "failed", "needs_attention", "issue_reported",
+                  "retargeted", "request_available", "request_made")]},
+    "/api/v1/notifications/webpush/subscriptions": lambda: [
+        {"id": 4, "user_id": 1, "endpoint": "https://web.push.apple.com/x", "device_id": "d1",
+         "device_label": "MacBook Air", "user_agent": "Mozilla/5.0 (Macintosh)", "created_at": "2026-09-01T10:00:00",
+         "last_seen_at": "2026-10-03T21:00:00", "last_success_at": "2026-10-03T21:00:00", "failure_count": 0,
+         "disabled": False}],
+    "/api/v1/notifications/webpush/settings": lambda: {
+        "enabled": True, "grouping": "group_by_title", "quiet_hours_enabled": True, "quiet_hours_start": "23:00",
+        "quiet_hours_end": "07:00", "vapid_subject": "mailto:admin@fusionha.app", "vapid_public_key": "BMock",
+        "vapid_private_set": True},
+    "/api/v1/notifications/apns/status": lambda: {"configured": True, "enabled": True, "topic": "org.elabx.fusionha",
+                                                  "environment": "auto", "missing": [], "message": None},
+    "/api/v1/notifications/apns/settings": lambda: APNS_SETTINGS,
+    "/api/v1/notifications/apns/devices": lambda: [apns_device(1, MOCK_APNS_TOKEN, "iPhone 17 Pro"),
+                                                   apns_device(2, "e" * 64, "iPad Air", "production")],
+}
+
+NOTIFICATION_POSTS = {
+    "/api/v1/notifications/apns/devices": lambda: (apns_device(1, MOCK_APNS_TOKEN, "iPhone 17 Pro"), 201),
+    "/api/v1/notifications/apns/test": lambda: ({"sent": 1, "delivered": 1, "devices": [
+        {"id": 1, "device_label": "iPhone 17 Pro", "ok": True, "detail": "delivered"}]}, 200),
+    "/api/v1/notifications/webpush/test": lambda: ({"sent": 1, "delivered": 1, "devices": []}, 200),
+}
+
+
 SHELL_ROUTES = {
     "/api/v1/library/attention": library_attention,
     "/api/v1/system/runs/attention": lambda: {"count": 0, "items": []},
@@ -365,6 +409,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(collection_detail(int(path.rsplit("/", 1)[-1])))
         if path in SHELL_ROUTES:
             return self.send_json(SHELL_ROUTES[path]())
+        if path in NOTIFICATION_ROUTES:
+            return self.send_json(NOTIFICATION_ROUTES[path]())
         if path.startswith("/api/v1/system/runs/") and path.rsplit("/", 1)[-1].isdigit():
             return self.send_json({"id": int(path.rsplit("/", 1)[-1]), "status": "completed", "detail": None})
         if path in routes:
@@ -382,6 +428,8 @@ class Handler(BaseHTTPRequestHandler):
         if hit:
             return self.send_json(*hit)
         path = urlparse(self.path).path.rstrip("/")
+        if path in NOTIFICATION_POSTS:
+            return self.send_json(*NOTIFICATION_POSTS[path]())
         if path == "/api/v1/discover/check-4k":
             return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [1, 2],
                                    "best_release_name": "Demo.2160p.WEB-DL.DV.HDR10", "message": None,
@@ -397,6 +445,11 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({} if body is None else body)
 
     def do_PUT(self):
+        path = urlparse(self.path).path.rstrip("/")
+        if path in ("/api/v1/notifications/apns/settings", "/api/v1/notifications/webpush/settings",
+                    "/api/v1/notifications/preferences"):
+            self.rfile.read(int(self.headers.get("Content-Length") or 0))
+            return self.send_json(NOTIFICATION_ROUTES[path]())
         hit = self.activity("PUT")
         if hit:
             return self.send_json(*hit)

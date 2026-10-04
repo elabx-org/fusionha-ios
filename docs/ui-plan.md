@@ -114,7 +114,7 @@ Header "Activity" with the live caption and a **Manual import** button, the shar
 - **Search:** `.searchable` across panels, like `SettingsSearch`.
 - **Presentation:** a full-screen cover from the avatar menu. Panels are pushed by slug through `settingsPanel(_:)` (`App/Screens/Settings/SettingsPanels.swift`).
 - **Native now:** General, Metadata, File Management, Release Filters, Default Profiles, Security, Appearance, About, Media Versions, Experimental, Discover and Maintenance. Each is a dark `Form` with the web's section titles and field rows, and each control saves only its own key as soon as it changes.
-- **Fetching and System panels, native:** Root folders, Download clients, Indexers (cards plus the fleet overview with Swift Charts; the web's table view is not ported), Connect, Notifications, Connections and API tokens, Public access, System, Database, Backup and Logs are card lists with Form sheets for add/edit, Test where the web has it and a confirm before delete. Notifications lists Web Push devices read-only, since the app is not a browser push subscription. The arr-webhook editor, Add connection and the Postgres migration wizard open the web panel. Backup and log downloads go to the share sheet.
+- **Fetching and System panels, native:** Root folders, Download clients, Indexers (cards plus the fleet overview with Swift Charts; the web's table view is not ported), Connect, Notifications, Connections and API tokens, Public access, System, Database, Backup and Logs are card lists with Form sheets for add/edit, Test where the web has it and a confirm before delete. Notifications: "This device" is the app's own native push (APNs) state: enable, blocked in iOS Settings, server not set up, registered, plus **Send test**. Below it are your other iOS devices (removable), the shared event matrix, and the Web Push devices, read-only since the app is not a browser push subscription. Admins also get an "iOS app push (APNs)" card whose Configure sheet takes the Key ID, Team ID, bundle ID, environment and the pasted `.p8`. The arr-webhook editor, Add connection and the Postgres migration wizard open the web panel. Backup and log downloads go to the share sheet.
 - **Opened in an in-app web view:** every panel that is not native yet, including the heavy editors (Naming, Library import, Quality definitions, Custom formats, Quality profiles, TRaSH, Users, Roles, Sign-in methods). The `fusionha_session` cookie saved at sign-in signs the web view in. Accounts that signed in before this change see the web login once.
 - **Motion:** the group chevrons turn and the panel headings rise in like the web. All of it is switched off by Reduce Motion or by General → Enable animations.
 
@@ -154,10 +154,11 @@ The Live Activity is **one aggregate activity, not one per download**. That keep
 
 ## 5. Backend work the app needs (not started; your call)
 
-1. **APNs channel:**
-   - An `ApnsChannel` next to the Web Push channel inside `WebPushDispatcher.dispatch` (`services/push_dispatch.py`), so it reuses recipients, preferences, quiet hours and payloads.
-   - A device-token table modelled on `PushSubscription`, plus `POST/DELETE /api/v1/notifications/apns/devices`.
-   - It needs an Apple Developer account and a signing certificate carrying the push entitlement. Sideloaded builds signed without that entitlement can't receive pushes.
+1. **APNs channel (built: server branch `claude/apns-push`):**
+   - `services/apns.py` adds an `ApnsChannel`, called inside `WebPushDispatcher.dispatch` alongside Web Push, so it reuses recipients, preferences, quiet hours, grouping and payload text.
+   - Backend pieces: the `apns_devices` table, and `/api/v1/notifications/apns/{status,settings,devices,devices/token/{token},test}`.
+   - App side: the app registers its token after sign-in and on every launch. It sends `sandbox` or `production` based on the embedded profile's `aps-environment`, and unregisters on sign-out.
+   - Requirements: an Apple Developer account, and a signing profile with Push Notifications enabled for `org.elabx.fusionha`. Builds signed without that entitlement get no token, and the panel says so.
 2. **Live Activity updates:** queue progress is not an event today. This needs throttled progress pushes from the download poll loop, plus registration of push-to-start and update tokens.
 3. **Nice to have:**
    - An `eta` field on `QueueRead`. Today it has to be derived from `sizeleft` over time.

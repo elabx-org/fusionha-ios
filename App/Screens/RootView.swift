@@ -69,7 +69,10 @@ struct RootView: View {
             model.chromeHidden = false
             if model.tab != .library { model.exitSelectMode() }
         }
-        .task { await model.loadMe() }
+        .task {
+            await model.loadMe()
+            await model.registerPushDevice()
+        }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
             await model.pollQueue()

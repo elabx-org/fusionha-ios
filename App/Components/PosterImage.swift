@@ -16,27 +16,31 @@ struct PosterImage: View {
 
     var body: some View {
         let _ = PerfCount.hit("PosterImage.body")
-        LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
-            .overlay {
-                if let image { PosterArt(image: image, fade: fade) }
+        // The placeholder stays underneath, so the fade reads as the old
+        // crossfade; once loaded the art sizes itself exactly like
+        // `Image(...).resizable().aspectRatio(contentMode: .fill)` did.
+        ZStack {
+            LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
+            if let image { PosterArt(image: image, fade: fade) }
+        }
+        .task(id: url) {
+            guard let url else { image = nil; return }
+            if let cached = ImagePipeline.shared.cached(url) {
+                fade = false
+                image = cached
+                return
             }
-            .task(id: url) {
-                guard let url else { image = nil; return }
-                if let cached = ImagePipeline.shared.cached(url) {
-                    fade = false
-                    image = cached
-                    return
-                }
-                image = nil
-                let loaded = await ImagePipeline.shared.image(for: url)
-                guard !Task.isCancelled else { return }
-                fade = true
-                image = loaded
-            }
+            image = nil
+            let loaded = await ImagePipeline.shared.image(for: url)
+            guard !Task.isCancelled else { return }
+            fade = true
+            image = loaded
+        }
     }
 }
 
-/// Aspect-filled, clipped art that takes exactly the size it is offered.
+/// Aspect-filled art, sized the way a resizable SwiftUI `Image` with
+/// `.aspectRatio(contentMode: .fill)` is (callers frame and clip it).
 private struct PosterArt: UIViewRepresentable {
     let image: UIImage
     let fade: Bool
@@ -44,7 +48,7 @@ private struct PosterArt: UIViewRepresentable {
     func makeUIView(context: Context) -> UIImageView {
         let view = UIImageView()
         view.contentMode = .scaleAspectFill
-        view.clipsToBounds = true
+        view.clipsToBounds = false
         view.isUserInteractionEnabled = false
         view.isAccessibilityElement = false
         view.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -69,7 +73,20 @@ private struct PosterArt: UIViewRepresentable {
     }
 
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UIImageView, context: Context) -> CGSize? {
-        proposal.replacingUnspecifiedDimensions(by: CGSize(width: 10, height: 10))
+        let natural = CGSize(width: max(image.size.width, 1), height: max(image.size.height, 1))
+        let w = proposal.width.flatMap { $0.isFinite ? $0 : nil }
+        let h = proposal.height.flatMap { $0.isFinite ? $0 : nil }
+        switch (w, h) {
+        case let (w?, h?):
+            let scale = max(w / natural.width, h / natural.height)
+            return CGSize(width: natural.width * scale, height: natural.height * scale)
+        case let (w?, nil):
+            return CGSize(width: w, height: w * natural.height / natural.width)
+        case let (nil, h?):
+            return CGSize(width: h * natural.width / natural.height, height: h)
+        default:
+            return natural
+        }
     }
 }
 
