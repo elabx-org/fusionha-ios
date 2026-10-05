@@ -89,6 +89,47 @@ extension CalendarStatusKey {
     }
 }
 
+/// Where a widget tap lands: `fusionha://item/{id}` or a tab
+/// (`fusionha://activity`, `calendar`, `library`).
+public enum WidgetRoute: Sendable, Hashable {
+    case item(Int)
+    case activity
+    case calendar
+    case library
+
+    public var url: URL {
+        switch self {
+        case .item(let id): return URL(string: "fusionha://item/\(id)")!
+        case .activity: return URL(string: "fusionha://activity")!
+        case .calendar: return URL(string: "fusionha://calendar")!
+        case .library: return URL(string: "fusionha://library")!
+        }
+    }
+
+    /// The title's detail sheet, or `fallback` when the row has no usable id.
+    /// Widget tiles always link somewhere so a tap never falls through to the
+    /// widget's own URL (Activity on the Downloads widget).
+    public static func item(_ id: Int?, fallback: WidgetRoute) -> WidgetRoute {
+        guard let id, id > 0 else { return fallback }
+        return .item(id)
+    }
+
+    /// The Downloads widget's whole-widget URL (anywhere outside a row link).
+    /// Downloading → Activity. Idle small → the one title it shows. Idle
+    /// medium/large → Library (Calendar when only Up next shows): idle shows no
+    /// downloads, so Activity would be a surprising place to land.
+    public static func downloads(idle: Bool, small: Bool, upNextIds: [Int], recentIds: [Int?]) -> WidgetRoute {
+        guard idle else { return .activity }
+        if small {
+            if let next = upNextIds.first { return item(next, fallback: .calendar) }
+            if let latest = recentIds.first { return item(latest, fallback: .library) }
+            return .activity
+        }
+        if recentIds.isEmpty && !upNextIds.isEmpty { return .calendar }
+        return .library
+    }
+}
+
 public enum WidgetFeeds {
     /// Upcoming calendar entries (monitored, not yet aired), soonest first. Episodes
     /// of one title on the same local day collapse into one row (`S1·E1 +7`).
@@ -166,7 +207,9 @@ public enum WidgetFeeds {
             var tiers: [QualityTier] = []
             for row in rows { if let tier = row.entry.tier, !tiers.contains(tier) { tiers.append(tier) } }
             return RecentImport(
-                itemId: first.entry.mediaItemId,
+                // Any grouped row's id: a tombstoned first row must not leave
+                // the tile without a link to its title.
+                itemId: rows.lazy.compactMap { $0.entry.mediaItemId }.first,
                 title: first.entry.itemTitle ?? first.entry.sourceTitle ?? "",
                 tiers: tiers.sorted { $0 == .hd && $1 == .uhd },
                 importedAt: first.at,
