@@ -8,3 +8,9 @@ duo-folded-landscape-detail: 1398 2034
 duo-folded-landscape-activity: 2034 1398 
 duo-folded-landscape-discover: 2034 1398 
 duo-folded-landscape-settings: 2034 1398 
+Screen 1 power state set to off
+outer display power off: exit 0
+Screen 3 power state set to on
+inner display power on: exit 0
+duo-probe-inner-home: 2853 2007 
+duo-probe-outer-home: 2853 2007 
