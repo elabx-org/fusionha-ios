@@ -1,0 +1,137 @@
+== /Applications/Xcode_27.1_beta.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/System/Library/Frameworks/SwiftUI.framework/Modules/SwiftUI.swiftmodule/arm64-apple-ios-simulator.swiftinterface
+32206:  nonisolated public func toolbarVerticalBehavior(_ behavior: SwiftUI.ToolbarVerticalBehavior) -> some SwiftUICore.View
+32210:public struct ToolbarVerticalBehavior : Swift.Hashable, Swift.Sendable {
+32211:  public static let automatic: SwiftUI.ToolbarVerticalBehavior
+32212:  public static let disabled: SwiftUI.ToolbarVerticalBehavior
+32213:  public static func == (a: SwiftUI.ToolbarVerticalBehavior, b: SwiftUI.ToolbarVerticalBehavior) -> Swift.Bool
+== /Applications/Xcode_27.1_beta.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/System/Library/Frameworks/SwiftUICore.framework/Modules/SwiftUICore.swiftmodule/arm64-apple-ios-simulator.swiftinterface
+2550:  public var toolbarVerticalEdge: SwiftUICore::HorizontalEdge? {
+4843:public struct ReservedRegion : Swift::Equatable, Swift::Hashable, Swift::Identifiable, Swift::Sendable {
+4844:  public var id: SwiftUICore::ReservedRegion.SwiftUICore::ID {
+4847:  public var kind: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+4859:  public static func == (a: SwiftUICore::ReservedRegion, b: SwiftUICore::ReservedRegion) -> Swift::Bool
+4866:extension SwiftUICore::ReservedRegion {
+4868:    public static func == (a: SwiftUICore::ReservedRegion.SwiftUICore::ID, b: SwiftUICore::ReservedRegion.SwiftUICore::ID) -> Swift::Bool
+4875:    public static var occlusion: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+4878:    public static var division: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+4881:    public static func == (a: SwiftUICore::ReservedRegion.SwiftUICore::Kind, b: SwiftUICore::ReservedRegion.SwiftUICore::Kind) -> Swift::Bool
+4890:    public static var includeInactive: SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions {
+4894:    public typealias ArrayLiteralElement = SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions
+4896:    public typealias Element = SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions
+10290:  public func reservedRegions(kind: SwiftUICore::ReservedRegion.SwiftUICore::Kind, options: SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions = [], layoutDirectionBehavior: SwiftUICore::LayoutDirectionBehavior = .mirrors) -> [SwiftUICore::ReservedRegion]
+10315:  public func reservedRegions(kind: SwiftUICore::ReservedRegion.SwiftUICore::Kind, options: SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions = [], layoutDirectionBehavior: SwiftUICore::LayoutDirectionBehavior = .mirrors) -> [SwiftUICore::ReservedRegion]
+24267:  nonisolated public func onHingeChange(isEnabled: Swift::Bool = true, _ action: @escaping (_ oldContext: SwiftUICore::DeviceHingeContext, _ newContext: SwiftUICore::DeviceHingeContext) -> Swift::Void) -> some SwiftUICore::View
+26334:extension SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions : Swift::Sendable {}
+26336:extension SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions : Swift::BitwiseCopyable {}
+public struct ReservedRegion : Swift::Equatable, Swift::Hashable, Swift::Identifiable, Swift::Sendable {
+  public var id: SwiftUICore::ReservedRegion.SwiftUICore::ID {
+    get
+  }
+  public var kind: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+    get
+  }
+  public var frame: CoreFoundation::CGRect {
+    get
+  }
+  public var margins: SwiftUICore::EdgeInsets {
+    get
+  }
+  public var isActive: Swift::Bool {
+    get
+  }
+  public static func == (a: SwiftUICore::ReservedRegion, b: SwiftUICore::ReservedRegion) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+@available(anyAppleOS 27.1, *)
+extension SwiftUICore::ReservedRegion {
+  public struct ID : Swift::Hashable, Swift::Sendable {
+    public static func == (a: SwiftUICore::ReservedRegion.SwiftUICore::ID, b: SwiftUICore::ReservedRegion.SwiftUICore::ID) -> Swift::Bool
+    public func hash(into hasher: inout Swift::Hasher)
+    public var hashValue: Swift::Int {
+      get
+    }
+  }
+  public struct Kind : Swift::Hashable, Swift::Sendable {
+    public static var occlusion: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+      get
+    }
+    public static var division: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+      get
+    }
+    public static func == (a: SwiftUICore::ReservedRegion.SwiftUICore::Kind, b: SwiftUICore::ReservedRegion.SwiftUICore::Kind) -> Swift::Bool
+    public func hash(into hasher: inout Swift::Hasher)
+    public var hashValue: Swift::Int {
+== Runtimes ==
+iOS 27.0 (27.0 - 24A434) - com.apple.CoreSimulator.SimRuntime.iOS-27-0
+tvOS 27.0 (27.0 - 24J360) - com.apple.CoreSimulator.SimRuntime.tvOS-27-0
+watchOS 27.0 (27.0 - 24R362) - com.apple.CoreSimulator.SimRuntime.watchOS-27-0
+visionOS 27.0 (27.0 - 24M362) - com.apple.CoreSimulator.SimRuntime.xrOS-27-0
+iPhone 18 Pro (com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro)
+iPhone 18 Pro Max (com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro-Max)
+iPhone Duo (com.apple.CoreSimulator.SimDeviceType.iPhone-Duo)
+ls: /Applications/Xcode_27.1.app/Contents/Developer/Applications: No such file or directory
+Set up a device IO operation.
+Usage: simctl io <device> <operation> <arguments>
+
+Common arguments:
+	    --display    Specifies which display to record. Accepts:
+	                 - Screen ID (eg: "1") 
+	                 - Screen name (eg: "Internal-1")
+	                 - Screen device name (eg: "primary")
+	                 - Screen UUID (eg: "D5293DAA-4D8C-453E-B049-969FE81936A0")
+	                 - Port UUID (eg: "D5293DAA-4D8C-453E-B049-969FE81936A0"
+	                 - Alias (for compatibility): "internal" or "external"
+	                 Use 'simctl io <device> enumerate' to list available screens and their IDs.
+
+Supported operations:
+	enumerate [--poll]
+	    Lists all available IO ports and descriptor states.
+	    --poll       Poll after enumeration.
+
+	poll
+	    Polls all available IO ports for events.
+
+	recordVideo [--codec=<codec>] [--display=<display>] [--mask=<policy>] [--force] <file or url>
+	    Records the display to a QuickTime movie at the specified file or url.
+	    --codec      Specifies the codec type: "h264" or "hevc". Default is "hevc".
+
+	    --mask       For non-rectangular displays, handle the mask by policy:
+	                 ignored: The mask is ignored and the unmasked framebuffer is saved.
+	                 alpha: Not supported, but retained for compatibility; the mask is rendered black.
+	                 black: The mask is rendered black.
+
+	    --force      Force the output file to be written to, even if the file already exists.
+
+	simctl writes 'Recording started' to stderr once the first video frame has been processed. Look for this
+	if you want to wait for the recording to start.
+	Send SIGINT (Control + C) to stop recording. simctl exits once the in-flight frames are processed
+	and the video file is finalized.
+
+	screenshot [--type=<type>] [--display=<display>] [--mask=<policy>] <file or url>
+	    Saves a screenshot as a PNG to the specified file or url(use "-" for stdout).
+	    --type       Can be "png", "tiff", "bmp", "gif", "jpeg". Default is png.
+
+	    --mask       For non-rectangular displays, handle the mask by policy:
+	                 ignored: The mask is ignored and the unmasked framebuffer is saved.
+	                 alpha: The mask is used as premultiplied alpha.
+	                 black: The mask is rendered black.
+
+	screenConfig [--display=<display>] <subcommand> [arguments]
+	    Manage device screen configuration.
+
+	    power <on|off>
+	        Set the power state of a screen.
+
+	    geometry <width>x<height>[@<scale>]
+	        Change the geometry of a screen.
+	        The width and height must be compatible with the screen's current mode.
+	        If @<scale> is specified, a mode with that scale factor will be selected.
+
+Example:
+	Save a screenshot of the booted device to screenshot.png:
+	simctl io booted screenshot screenshot.png
+
+
