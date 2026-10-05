@@ -54,6 +54,8 @@ final class AppModel {
     var showingAccount = false
     /// A search result to start the Add sheet with.
     var addPrefill: MediaSearchResult?
+    /// Discover's session "Add as" provider for the next Add sheet (nil = none).
+    var addProviderOverride: String?
     /// The full-screen omni search (top-bar "Everything", or any non-Library tab).
     var showingOmni = false
     var omniQuery = ""
@@ -92,7 +94,21 @@ final class AppModel {
     var requestScoped: Bool { me?.requestScoped == true }
 
     // The library list, shared by Library and the top-bar search.
-    private(set) var library: [MediaItem] = []
+    private(set) var library: [MediaItem] = [] {
+        didSet {
+            var map: [String: Int] = [:]
+            for item in library { if let tmdb = item.tmdbId { map[Self.tmdbKey(tmdb, item.kind)] = item.id } }
+            libraryIdByTmdb = map
+        }
+    }
+    /// TMDB id → library item id (the web's Discover `idByTmdb`). Discover rows
+    /// carry only `in_library`; the server fills `library_item_id` on /search alone.
+    private var libraryIdByTmdb: [String: Int] = [:]
+    private static func tmdbKey(_ tmdbId: Int, _ kind: MediaKind) -> String { "\(kind == .movie ? "m" : "s")\(tmdbId)" }
+    /// The library item for a TMDB result: its own id when sent, else the lookup.
+    func libraryItemId(for result: MediaSearchResult) -> Int? {
+        result.libraryItemId ?? libraryIdByTmdb[Self.tmdbKey(result.tmdbId, result.kind)]
+    }
     private(set) var libraryLoaded = false
     private(set) var libraryError: String?
     /// Bumped whenever `library` changes, so screens can rebuild derived lists.
@@ -289,6 +305,13 @@ final class AppModel {
     /// The web's `/preview/{kind}/{tmdb_id}`. Until a native Preview screen
     /// exists this opens the Add sheet on that title (Preview's own Add).
     var previewHandler: ((MediaSearchResult) -> Void)?
+
+    /// Opens the Add sheet, on a title's configure step when `pick` is set.
+    func openAdd(_ pick: MediaSearchResult?, providerOverride: String? = nil) {
+        addPrefill = pick
+        addProviderOverride = providerOverride
+        showingAdd = true
+    }
 
     func openPreview(_ result: MediaSearchResult) {
         if let previewHandler {
