@@ -864,7 +864,8 @@ struct DetailVersionDetail: View {
                 }
                 .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.line))
-                .frame(maxWidth: .infinity)
+                // Room for "Search" + the mode chevron; Choose and Edit share the rest.
+                .frame(minWidth: 132, maxWidth: .infinity)
                 InteractiveSearchButton(detail: detail, edition: edition) {
                     barLabel("person", "Choose")
                 }
