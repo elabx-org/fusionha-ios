@@ -55,9 +55,9 @@ def setups():
         "item_id": ACTIVE_SETUP_ID, "title": "Andor", "poster_url": None,
         "steps": [
             {"key": "added", "label": "Added to library", "source": None, "status": "done", "detail": None},
-            {"key": "tree", "label": "Seasons & episodes", "source": "TMDB", "status": "done",
-             "detail": "2 seasons · 24 episodes"},
-            {"key": "airtimes", "label": "Air times", "source": "TVmaze", "status": "running", "detail": None},
+            {"key": "tree", "label": "Seasons & episodes", "source": "TVDB", "status": "running",
+             "detail": None},
+            {"key": "airtimes", "label": "Air times", "source": "TVmaze", "status": "pending", "detail": None},
             {"key": "numbering", "label": "Episode numbering check", "source": "TVmaze", "status": "pending",
              "detail": None},
             {"key": "search", "label": "Searching for releases", "source": "indexers", "status": "pending",
@@ -119,3 +119,12 @@ def indexers_unavailable():
 def commands():
     return [{"id": "c-rss-1", "name": "rss_sync", "started": _iso(dt.timedelta(seconds=-20)) + "Z",
              "status": "running", "message": "Checking 6 indexers", "progress": 0.4, "ended": None}]
+
+
+def setting_up_detail(base):
+    """Andor's title page mid-setup: the tree step is still running, so no seasons yet."""
+    return base | {"id": ACTIVE_SETUP_ID, "title": "Andor", "year": 2022, "tvdb_id": 393189, "tmdb_id": 83867,
+                   "overview": "The tale of the burgeoning rebellion against the Empire.",
+                   "poster_url": None, "backdrop_url": None, "seasons": [], "history": [], "similar": [],
+                   "cast": [], "trailer_key": None, "collection": None, "rescan_summary": None,
+                   "numbering_mismatch": None}

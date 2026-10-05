@@ -247,6 +247,11 @@ private struct DetailPage: View {
             DetailHero(detail: detail, close: close)
 
             VStack(alignment: .leading, spacing: 0) {
+                if let setup = model.setupProgress.activeSetup(for: detail.id) {
+                    SetupStepStrip(setup: setup)
+                        .padding(.top, 8)
+                        .padding(.bottom, 4)
+                }
                 if let overview = detail.overview, !overview.isEmpty {
                     Text(overview)
                         .font(.system(size: 14))

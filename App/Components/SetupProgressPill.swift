@@ -435,3 +435,60 @@ struct SetupIndicators: View {
         .allowsHitTesting(false)
     }
 }
+
+/// The step strip under the title-page hero while the title is still setting up
+/// (SetupStepStrip): the current step's label + n/N, then one segment per step,
+/// filled as each finishes, the running one shimmering.
+struct SetupStepStrip: View {
+    @Environment(\.motionEnabled) private var motion
+    let setup: TitleSetup
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(setup.nowLabel)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.txt)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer(minLength: 0)
+                Text("\(setup.doneCount)/\(setup.steps.count)")
+                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                    .monospacedDigit()
+                    .foregroundStyle(Theme.mut)
+            }
+            HStack(spacing: 4) {
+                ForEach(Array(setup.steps.enumerated()), id: \.offset) { _, step in
+                    segment(step)
+                }
+            }
+            .accessibilityHidden(true)
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.radius)
+                .fill(Theme.panel2)
+                .overlay(RoundedRectangle(cornerRadius: Theme.radius).fill(Theme.grab.opacity(0.1)))
+        )
+        .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private func segment(_ step: SetupStep) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 2)
+        if step.status.finished {
+            shape.fill(Theme.grab).frame(height: 4).frame(maxWidth: .infinity)
+                .animation(.easeOut(duration: 0.4), value: step.status.finished)
+        } else if step.status == .running {
+            if motion {
+                shape.fill(Theme.line).frame(height: 4).frame(maxWidth: .infinity)
+                    .overlay(shape.fill(Theme.grab.opacity(0.7)).shimmer().clipShape(shape))
+            } else {
+                shape.fill(Theme.grab).frame(height: 4).frame(maxWidth: .infinity)
+            }
+        } else {
+            shape.fill(Theme.line).frame(height: 4).frame(maxWidth: .infinity)
+        }
+    }
+}

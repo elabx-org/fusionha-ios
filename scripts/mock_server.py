@@ -413,6 +413,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/wanted":
             state = query.get("state", ["missing"])[0]
             return self.send_json(load(f"wanted_{state}.json"))
+        if SHELL and path == f"/api/v1/library/{mock_shell.ACTIVE_SETUP_ID}":
+            return self.send_json(mock_shell.setting_up_detail(json.loads((MOCK / "items" / "8.json").read_text())))
         if path.startswith("/api/v1/library/") and path.rsplit("/", 1)[-1].isdigit():
             item = MOCK / "items" / f"{path.rsplit('/', 1)[-1]}.json"
             return self.send_json(json.loads(item.read_text())) if item.exists() else self.send_json({"detail": "Not Found"}, 404)
