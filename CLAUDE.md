@@ -22,6 +22,11 @@ editions, anime first-class, arr emulation); this repo owns how they look on iOS
   `magnifyingglass` · interactive search = `person` · edit = `pencil` · refresh =
   `arrow.clockwise` · delete = `trash`.
 - **Motion respects Reduce Motion.** Prefer system transitions (zoom, symbol effects).
+- **No monolith files (core principle).** One view or one concern per file, grouped in
+  feature folders. Aim for files under ~300 lines and split anything heading past ~400.
+  Keep functions and `body`s short: extract subviews, view models and helpers rather than
+  growing a file. New code never pushes a file over the limit. When a change touches a
+  file that's already oversized, split it in the same PR or a follow-up.
 
 ## Layout
 
