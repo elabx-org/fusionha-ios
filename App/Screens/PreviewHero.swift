@@ -56,7 +56,7 @@ struct PreviewHero: View {
         ZStack(alignment: .bottomLeading) {
             Group {
                 if let art {
-                    DiscoverArt(url: TMDBImage.resized(art, to: "w780"))
+                    DiscoverArt(url: TMDBImage.resized(art, to: "original"))
                         .mask {
                             LinearGradient(stops: [.init(color: .black, location: 0),
                                                    .init(color: .black, location: 0.4),

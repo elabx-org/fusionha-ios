@@ -52,47 +52,6 @@ struct DiscoverPressStyle: ButtonStyle {
     }
 }
 
-/// `DiscoverArt`: the art fades in from `blur(6px)` + transparent to sharp over 0.55s.
-struct DiscoverArt: View {
-    let url: URL?
-    @Environment(\.accessibilityReduceMotion) private var osReduceMotion
-    @State private var image: UIImage?
-    @State private var shown = false
-
-    var body: some View {
-        // Color.clear keeps the layout size to the proposal: a filling image
-        // would otherwise report its larger size and push its container out.
-        Color.clear
-            .overlay {
-                LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
-            }
-            .overlay {
-                if let image {
-                    Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
-                        .blur(radius: shown ? 0 : 6)
-                        .opacity(shown ? 1 : 0)
-                }
-            }
-        .clipped()
-        .task(id: url) {
-            guard let url else { image = nil; return }
-            if let cached = ImagePipeline.shared.cached(url) {
-                image = cached
-                shown = true
-                return
-            }
-            shown = false
-            image = await ImagePipeline.shared.image(for: url)
-            guard !Task.isCancelled else { return }
-            if DiscoverMotion.reduced(osReduceMotion) {
-                shown = true
-            } else {
-                withAnimation(.easeOut(duration: 0.55)) { shown = true }
-            }
-        }
-    }
-}
-
 /// `Skeleton`: a soft tint with a 1.4s shimmer sweep (static when reduced).
 struct DiscoverShimmer: View {
     var radius: CGFloat = 8
