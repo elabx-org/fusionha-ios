@@ -99,7 +99,7 @@ struct ShellSplit: Equatable {
 
     /// `wide`: regular horizontal size class. `hasItem`: a title is open.
     init(fold: FoldInfo, wide: Bool, hasItem: Bool) {
-        let width = fold.size.width, height = fold.size.height
+        let width = fold.size.width
         if let x = fold.vertical {
             // Half open, fold top to bottom: one column each side of it, always,
             // so nothing (text, posters) runs across the fold.
@@ -121,7 +121,6 @@ struct ShellSplit: Equatable {
             primary = max(width - detail - 1, 0)
             gap = 1
         }
-        _ = height
     }
 }
 

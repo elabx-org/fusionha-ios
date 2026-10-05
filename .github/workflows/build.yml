@@ -365,7 +365,7 @@ jobs:
   duo:
     name: iPhone Duo screenshots
     runs-on: xcode-27
-    timeout-minutes: 75
+    timeout-minutes: 100
     permissions:
       contents: write
     steps:
@@ -445,7 +445,7 @@ jobs:
           xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/Fusionha.app
 
       - name: Take iPhone Duo screenshots
-        timeout-minutes: 40
+        timeout-minutes: 55
         run: |
           python3 scripts/mock_server.py 8765 &
           sleep 2
@@ -458,6 +458,9 @@ jobs:
           # Opening the Device Hub has twice taken the hosted runner down; off until poses work headless.
           export DUO_UI=0
           scripts/duo_shots.sh "$UDID" duo/shots || true
+          # Unfolded proxy: a regular-width iPad mini (labelled proxy-*).
+          xcrun simctl shutdown "$UDID" || true
+          scripts/duo_proxy.sh build/Build/Products/Debug-iphonesimulator/Fusionha.app duo/shots || true
           cat duo/shots/duo-poses.log || true
 
       - uses: actions/upload-artifact@v4
