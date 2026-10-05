@@ -78,15 +78,34 @@ screens folded-portrait primary
 xcrun simctl io "$UDID" enumerate > "$OUT/duo-displays.txt" 2>&1
 $PUBLISH
 
-# The poses are buttons in the simulator UI: open it on this device and list
-# its controls (time-limited; a slow accessibility walk must not hang CI).
-if [ "${DUO_UI:-1}" = 0 ]; then
-  # Headless: the app turns itself to landscape (DEBUG hook); the outer
-  # display's framebuffer stays portrait, so the PNGs are turned upright.
-  echo "simulator UI skipped (DUO_UI=0)" | tee -a "$LOG"
-  screens folded-landscape primary SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ORIENTATION=landscape
-  for f in "$OUT"/duo-folded-landscape-*.png; do sips -r 90 "$f" > /dev/null; done
+# 1b. Folded, landscape: the app turns itself (DEBUG hook). The outer
+# display's framebuffer stays portrait; the PNGs are saved as captured.
+screens folded-landscape primary SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ORIENTATION=landscape
+$PUBLISH
+
+# 2. Headless unfold: with no pose command, try powering the outer display
+# off so the system moves to the inner one (time-limited, may not work).
+if [ "${DUO_SCREENCONFIG:-1}" = 1 ]; then
+  limited 60 xcrun simctl io "$UDID" screenConfig --display=primary power off >> "$LOG" 2>&1
+  echo "outer display power off: exit $?" | tee -a "$LOG"
+  limited 60 xcrun simctl io "$UDID" screenConfig --display=primary-1 power on >> "$LOG" 2>&1
+  echo "inner display power on: exit $?" | tee -a "$LOG"
+  sleep 15
+  snap duo-probe-inner-home primary-1
+  snap duo-probe-outer-home primary
+  if limited 60 xcrun simctl launch --terminate-running-process "$UDID" org.elabx.fusionha \
+       > /dev/null 2>&1; then
+    sleep 9
+    snap duo-probe-inner-app primary-1
+  fi
+  xcrun simctl io "$UDID" enumerate > "$OUT/duo-displays-after.txt" 2>&1
   $PUBLISH
+fi
+
+# The poses are buttons in the simulator UI (the Device Hub). Off on hosted
+# runners: opening it has taken the runner down.
+if [ "${DUO_UI:-1}" = 0 ]; then
+  echo "simulator UI skipped (DUO_UI=0)" | tee -a "$LOG"
   ls -l "$OUT"; exit 0
 fi
 XC=$(dirname "$(dirname "$(xcode-select -p)")")
@@ -96,12 +115,6 @@ if [ -n "$APP" ]; then open "$APP" --args -CurrentDeviceUDID "$UDID"; else open 
 sleep 30
 limited 180 osascript -l JavaScript "$HERE/duo_pose.js" dump > "$OUT/duo-ui-tree.txt" 2>&1
 echo "ui dump exit $?" | tee -a "$LOG"
-$PUBLISH
-
-# 1b. Folded, landscape.
-rotate_right
-screens folded-landscape primary $rotated_env
-rotate_back
 $PUBLISH
 
 # 2. Unfolded (open), portrait and landscape, on the inner display.
