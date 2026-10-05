@@ -373,7 +373,7 @@ struct InteractiveSearchSheet: View {
             trigger: triggers[release.guid],
             autoTarget: ReleaseSearch.autoTarget(release.quality, activeTier: edition?.tier, editions: siblings),
             blocklistReason: release.blocklistReason
-                ?? "blocklisted — failed on the \(target.subtitle.isEmpty ? "this" : target.subtitle) edition"
+                ?? "blocklisted — failed on \(target.subtitle.isEmpty ? "this" : "the \(target.subtitle)") version"
         ) { Task { await grab(release) } }
     }
 
@@ -391,7 +391,7 @@ struct InteractiveSearchSheet: View {
         started = true
         let first = target.editionIds.first ?? editions.first?.id ?? 0
         editionId = first
-        // "All editions" chosen → every edition is searched up front (the web's searchBoth).
+        // "All versions" chosen → every version is searched up front (the web's searchBoth).
         var seed = target.editionIds.count > 1 ? target.editionIds : [first]
         applyScreenshotState()
         if !seed.contains(editionId) { seed.append(editionId) }

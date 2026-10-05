@@ -94,17 +94,35 @@ public struct SearchPauses: Decodable, Sendable, Hashable {
 }
 
 public struct EpisodePause: Decodable, Sendable, Hashable {
-    public let editionId: Int?
+    /// `version_id` since 0.4.122, `edition_id` before: either decodes.
+    public var editionId: Int? { versionId ?? legacyEditionId }
+    private let versionId: Int?
+    private let legacyEditionId: Int?
     public let episodeId: Int?
     public let cooldownUntil: String?
     public let failedDownloadCount: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case versionId
+        case legacyEditionId = "editionId"
+        case episodeId, cooldownUntil, failedDownloadCount
+    }
 }
 
 public struct SeasonPause: Decodable, Sendable, Hashable {
-    public let editionId: Int?
+    /// `version_id` since 0.4.122, `edition_id` before: either decodes.
+    public var editionId: Int? { versionId ?? legacyEditionId }
+    private let versionId: Int?
+    private let legacyEditionId: Int?
     public let seasonNumber: Int?
     public let backoffUntil: String?
     public let consecutiveEmpty: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case versionId
+        case legacyEditionId = "editionId"
+        case seasonNumber, backoffUntil, consecutiveEmpty
+    }
 }
 
 /// The few `GET /api/v1/settings` values the detail page reads.
@@ -129,12 +147,21 @@ public struct EditionDefinition: Decodable, Sendable, Hashable, Identifiable {
 /// One decision from `POST /library/{id}/search` (`DecisionRead`).
 public struct SearchDecision: Decodable, Sendable, Hashable {
     public let action: String
-    public let editionId: Int?
+    /// `version_id` since 0.4.122, `edition_id` before: either decodes.
+    public var editionId: Int? { versionId ?? legacyEditionId }
+    private let versionId: Int?
+    private let legacyEditionId: Int?
     public let reason: String?
     public let score: Int?
     public let releaseTitle: String?
 
     public var grabbed: Bool { action == "grab" || action == "upgrade" }
+
+    private enum CodingKeys: String, CodingKey {
+        case action, versionId
+        case legacyEditionId = "editionId"
+        case reason, score, releaseTitle
+    }
 }
 
 /// `POST …/search/gradual` and `…/search/season/{n}/gradual`.
@@ -266,7 +293,8 @@ public struct IndexerUnavailable: Decodable, Sendable, Hashable, Identifiable {
 
 /// `POST /api/v1/library/{id}/releases/grab`.
 public struct ReleaseGrabRequest: Encodable, Sendable {
-    public let editionId: Int
+    /// Sent as `version_id` (the server still accepts the old `edition_id`).
+    public let versionId: Int
     public let episodeId: Int?
     public let seasonNumber: Int?
     public let guid: String
@@ -279,7 +307,7 @@ public struct ReleaseGrabRequest: Encodable, Sendable {
     public let override: Bool
 
     public init(release: ReleasePreview, editionId: Int, episodeId: Int?, seasonNumber: Int?, override: Bool) {
-        self.editionId = editionId
+        self.versionId = editionId
         self.episodeId = episodeId
         self.seasonNumber = seasonNumber
         guid = release.guid
@@ -308,7 +336,7 @@ public struct ItemUpdate: Encodable, Sendable {
     public var isEmpty: Bool { monitored == nil && seriesType == nil && tagIds == nil }
 }
 
-/// `PATCH /api/v1/library/{id}/editions/{eid}`: only the keys that changed are sent.
+/// `PATCH /api/v1/library/{id}/versions/{vid}` (`VersionUpdate`): only the keys that changed are sent.
 public struct EditionUpdate: Encodable, Sendable {
     public var monitored: Bool?
     public var monitor: String?
@@ -334,10 +362,11 @@ public struct EditionUpdate: Encodable, Sendable {
     }
 }
 
-/// `POST /api/v1/library/{id}/editions` (`EditionAddRequest`).
+/// `POST /api/v1/library/{id}/versions` (`VersionAddRequest`). The edition goes
+/// out as `edition` (the server still accepts the old `movie_edition`).
 public struct EditionAdd: Encodable, Sendable {
     public let tier: QualityTier
-    public let movieEdition: String?
+    public let edition: String?
     public let rootFolderId: Int
     public let qualityProfileId: Int
     public let monitored: Bool
@@ -349,7 +378,7 @@ public struct EditionAdd: Encodable, Sendable {
                 monitored: Bool, folderName: String?, monitor: String?, minimumAvailability: String?,
                 searchNow: Bool) {
         self.tier = tier
-        self.movieEdition = movieEdition
+        self.edition = movieEdition
         self.rootFolderId = rootFolderId
         self.qualityProfileId = qualityProfileId
         self.monitored = monitored

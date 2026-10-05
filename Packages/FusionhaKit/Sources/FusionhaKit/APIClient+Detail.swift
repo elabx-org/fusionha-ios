@@ -67,7 +67,7 @@ extension APIClient {
         try await call("POST", "/library/\(itemId)/search", query: Self.items([
             ("episode_id", episodeId.map(String.init)),
             ("season", season.map(String.init)),
-            ("edition_id", editionId.map(String.init)),
+            ("version_id", editionId.map(String.init)),
             ("missing_only", missingOnly ? "true" : nil),
         ]))
     }
@@ -78,7 +78,7 @@ extension APIClient {
         let path = season.map { "/api/v1/library/\(itemId)/search/season/\($0)/gradual" }
             ?? "/api/v1/library/\(itemId)/search/gradual"
         return try await call("POST", path, query: Self.items([
-            ("edition_id", editionId.map(String.init)),
+            ("version_id", editionId.map(String.init)),
             ("missing_only", missingOnly ? "true" : nil),
         ]))
     }
@@ -91,7 +91,7 @@ extension APIClient {
 
     public func releases(itemId: Int, editionId: Int, episodeId: Int? = nil, seasonNumber: Int? = nil) async throws -> [ReleasePreview] {
         try await call("GET", "/api/v1/library/\(itemId)/releases", query: Self.items([
-            ("edition_id", String(editionId)),
+            ("version_id", String(editionId)),
             ("episode_id", episodeId.map(String.init)),
             ("season_number", seasonNumber.map(String.init)),
         ]))
@@ -106,7 +106,7 @@ extension APIClient {
     public func releaseScopeStatus(itemId: Int, editionId: Int, episodeId: Int? = nil,
                                    seasonNumber: Int? = nil) async throws -> ReleaseScopeStatus {
         try await call("GET", "/api/v1/library/\(itemId)/releases/scope-status", query: Self.items([
-            ("edition_id", String(editionId)),
+            ("version_id", String(editionId)),
             ("episode_id", episodeId.map(String.init)),
             ("season_number", seasonNumber.map(String.init)),
         ]))
@@ -142,16 +142,29 @@ extension APIClient {
         let _: EmptyResponse = try await call("PATCH", "/api/v1/library/\(id)", body: body)
     }
 
+    /// `PATCH /api/v1/library/{id}/episodes/{eid}`: the per-episode monitor toggle.
+    public func setEpisodeMonitored(itemId: Int, episodeId: Int, monitored: Bool) async throws {
+        let _: EmptyResponse = try await call("PATCH", "/api/v1/library/\(itemId)/episodes/\(episodeId)",
+                                              body: MonitorToggle(monitored: monitored))
+    }
+
+    // Versions: `/versions` since 0.4.122 (the old `/editions` routes are deprecated).
+
     public func updateEdition(itemId: Int, editionId: Int, _ body: EditionUpdate) async throws {
-        let _: EmptyResponse = try await call("PATCH", "/api/v1/library/\(itemId)/editions/\(editionId)", body: body)
+        let _: EmptyResponse = try await call("PATCH", "/api/v1/library/\(itemId)/versions/\(editionId)", body: body)
     }
 
     public func addEdition(itemId: Int, _ body: EditionAdd) async throws {
-        let _: EmptyResponse = try await call("POST", "/api/v1/library/\(itemId)/editions", body: body)
+        let _: EmptyResponse = try await call("POST", "/api/v1/library/\(itemId)/versions", body: body)
+    }
+
+    /// #82 dead-link "Search replacement": deletes the version's dead file(s), then re-grabs.
+    public func replaceDeadVersion(versionId: Int) async throws {
+        let _: EmptyResponse = try await call("POST", "/api/v1/library/versions/\(versionId)/replace-dead")
     }
 
     public func deleteEdition(itemId: Int, editionId: Int, deleteFiles: Bool) async throws {
-        let _: EmptyResponse = try await call("DELETE", "/api/v1/library/\(itemId)/editions/\(editionId)",
+        let _: EmptyResponse = try await call("DELETE", "/api/v1/library/\(itemId)/versions/\(editionId)",
                                               query: deleteFiles ? [URLQueryItem(name: "deleteFiles", value: "true")] : [])
     }
 

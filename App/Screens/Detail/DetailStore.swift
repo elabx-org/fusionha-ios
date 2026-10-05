@@ -3,7 +3,7 @@ import Observation
 import SwiftUI
 import FusionhaKit
 
-/// The detail page's tabs (DetailTabs.tsx). `files` is "Editions" on a movie.
+/// The detail page's tabs (DetailTabs.tsx). `files` is "Versions" on a movie.
 enum DetailTab: String, Hashable {
     case seasons, files, history, searches, collection
 }
@@ -11,7 +11,7 @@ enum DetailTab: String, Hashable {
 /// What the interactive-search sheet searches.
 struct InteractiveTarget: Identifiable {
     let id = UUID()
-    /// The editions offered as tabs (one, or every edition for "All editions").
+    /// The versions offered as tabs (one, or every version for "All versions").
     var editionIds: [Int]
     var episodeId: Int?
     var seasonNumber: Int?
@@ -68,16 +68,19 @@ final class DetailStore {
     private(set) var runs: [CommandRun] = []
     private(set) var runsTotal = 0
     private(set) var runsLoaded = false
-    var queue: [QueueItem] = []
-
-    var scope: DetailScope {
+    var queue: [QueueItem] = [] {
         didSet {
-            UserDefaults.standard.set(scope.serialized, forKey: DetailScope.storageKey)
-            if scope != oldValue { folded = false }
+            // A live queue row flips a version to Downloading / Upgrading.
+            let active = activeQueueEditionIds
+            if active != lastActiveQueue { lastActiveQueue = active; rebuildSummaries() }
         }
     }
+    private var lastActiveQueue: Set<Int> = []
+
+    /// The page scope. Per title: every open starts on all versions (0.4.140
+    /// dropped the shared `fusionha:detail-scope` persistence).
+    var scope: DetailScope = .all
     var tab: DetailTab = .seasons
-    var folded = false
     var oldestFirst: Set<Int> = []
     var toast: DetailToast?
     var flash: SearchFlash?
@@ -88,6 +91,9 @@ final class DetailStore {
     /// Optimistic monitor flips while the PATCH is in flight.
     var seasonMonitorOverride: [Int: Bool] = [:]
     var editionMonitorOverride: [Int: Bool] = [:]
+    var episodeMonitorOverride: [Int: Bool] = [:]
+    /// The panel's per-version summaries, rebuilt once per load (never in `body`).
+    private(set) var versionSummaries: [Int: VersionSummary] = [:]
 
     // Sheets
     var interactive: InteractiveTarget?
@@ -98,7 +104,6 @@ final class DetailStore {
 
     init(itemId: Int) {
         self.itemId = itemId
-        scope = DetailScope.parse(UserDefaults.standard.string(forKey: DetailScope.storageKey))
     }
 
     // MARK: Derived
@@ -106,8 +111,12 @@ final class DetailStore {
     var effScope: DetailScope { detail?.effectiveScope(scope) ?? scope }
     var scopeEditionId: Int? { detail?.scopeEditionId(scope) }
     var scopedEditions: [DetailEdition] { detail?.scopedEditions(scope) ?? [] }
-    var actsOnLabel: String { detail?.scopeLabel(scope, allText: "all editions") ?? "all editions" }
-    var showingLabel: String { detail?.scopeLabel(scope, allText: "All editions") ?? "All editions" }
+    /// The rail's `applies to …` hint.
+    var actsOnLabel: String { detail?.appliesToLabel(scope) ?? "all versions" }
+    /// The tabs' `showing …` echo.
+    var showingLabel: String { detail?.showingLabel(scope) ?? "All versions" }
+    /// The opened version row (from the RAW scope), nil for all versions.
+    var focusedVersion: DetailEdition? { detail?.focusedVersion(scope) }
 
     /// Editions with a live queue row (the web filters `GET /api/v1/queue` to active states).
     var activeQueueEditionIds: Set<Int> {
@@ -135,6 +144,12 @@ final class DetailStore {
     func editionMonitored(_ edition: DetailEdition) -> Bool {
         editionMonitorOverride[edition.id] ?? edition.monitored
     }
+
+    func episodeMonitored(_ episode: Episode) -> Bool {
+        episodeMonitorOverride[episode.id] ?? (episode.monitored != false)
+    }
+
+    func summary(_ edition: DetailEdition) -> VersionSummary? { versionSummaries[edition.id] }
 
     var seasonInterval: Int { settings?.seasonSearchIntervalSeconds ?? 5 }
 
@@ -165,9 +180,24 @@ final class DetailStore {
             loadError = nil
             seasonMonitorOverride = [:]
             editionMonitorOverride = [:]
+            episodeMonitorOverride = [:]
+            rebuildSummaries()
         } catch {
             if detail == nil { loadError = error.localizedDescription }
         }
+    }
+
+    /// Recomputes the per-version coverage once (also when the queue changes,
+    /// since a live queue row turns a version's status to Downloading/Upgrading).
+    func rebuildSummaries() {
+        guard let detail else { versionSummaries = [:]; return }
+        let now = Date()
+        let active = activeQueueEditionIds
+        var out: [Int: VersionSummary] = [:]
+        for edition in detail.editions {
+            out[edition.id] = VersionSummary(detail: detail, edition: edition, activeQueue: active, now: now)
+        }
+        versionSummaries = out
     }
 
     func loadRuns() async {
@@ -201,9 +231,9 @@ final class DetailStore {
             if grabbed.isEmpty {
                 show("Searched \(label) — nothing grabbed", variant: .warning)
             } else {
-                let editions = Set(grabbed.compactMap(\.editionId)).count
-                let n = max(editions, 1)
-                show("Searching \(label) — grabbing \(n) edition\(n == 1 ? "" : "s")", variant: .success,
+                let versions = Set(grabbed.compactMap(\.editionId)).count
+                let n = max(versions, 1)
+                show("Searching \(label) — grabbing \(n) version\(n == 1 ? "" : "s")", variant: .success,
                      actionLabel: "View trail") { [weak self] in self?.tab = .searches }
             }
             scheduleFlashClear()
@@ -231,7 +261,8 @@ final class DetailStore {
         do {
             let start = try await client.gradualSearch(itemId: itemId, season: season, editionId: editionId, missingOnly: missingOnly)
             guard let runId = start.runId, (start.total ?? 0) > 0 else {
-                show("Nothing to search in \(label)", variant: .info)
+                show(missingOnly ? "\(label): no missing episodes — nothing to search"
+                                 : "\(label): all episodes meet the cutoff — nothing to upgrade", variant: .warning)
                 return
             }
             gradual = GradualJob(runId: runId, season: season, total: start.total ?? 0, label: label)
@@ -384,7 +415,34 @@ final class DetailStore {
         }
     }
 
+    /// Per-episode monitor toggle (`PATCH /api/v1/library/{id}/episodes/{eid}`).
+    func setEpisodeMonitored(_ episode: Episode, seasonNumber: Int, _ on: Bool) async {
+        guard let client else { return }
+        let code = "S\(seasonNumber)·E\(String(format: "%02d", episode.episodeNumber))"
+        episodeMonitorOverride[episode.id] = on
+        do {
+            try await client.setEpisodeMonitored(itemId: itemId, episodeId: episode.id, monitored: on)
+            await reload()
+        } catch {
+            episodeMonitorOverride[episode.id] = nil
+            show("Couldn't update \(code)", variant: .error)
+        }
+    }
+
     // MARK: Files and history
+
+    /// #82 dead-link "Search replacement": delete the version's dead file(s), then re-grab.
+    func replaceDead(_ edition: DetailEdition) async {
+        guard let client, let title = detail?.title else { return }
+        flash = SearchFlash(phase: .searching, scope: "\(title) — replacing dead file(s)")
+        defer { flash = nil }
+        do {
+            try await client.replaceDeadVersion(versionId: edition.id)
+            await reload()
+        } catch {
+            show("Couldn't replace the dead file", variant: .error)
+        }
+    }
 
     func deleteFile(_ fileId: Int, blocklist: Bool) async {
         guard let client else { return }
