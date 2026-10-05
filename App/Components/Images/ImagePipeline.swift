@@ -92,16 +92,21 @@ final class ImagePipeline {
 /// up to 32px so a tiny resize does not restart the load.
 struct ArtRequest: Hashable {
     let url: URL?
-    let pixels: CGSize
     let scale: CGFloat
+    private let width: CGFloat
+    private let height: CGFloat
 
     init(url: URL?, points: CGSize, scale: CGFloat) {
         self.url = url
         self.scale = scale
         func bucket(_ v: CGFloat) -> CGFloat { (max(v, 0) * scale / 32).rounded(.up) * 32 }
-        pixels = CGSize(width: bucket(points.width), height: bucket(points.height))
+        width = bucket(points.width)
+        height = bucket(points.height)
     }
 
+    /// The frame in pixels.
+    var pixels: CGSize { CGSize(width: width, height: height) }
+
     /// Laid out with a real size (before layout the frame is still zero).
-    var hasFrame: Bool { pixels.width > 0 && pixels.height > 0 }
+    var hasFrame: Bool { width > 0 && height > 0 }
 }
