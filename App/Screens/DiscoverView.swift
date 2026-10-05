@@ -131,9 +131,7 @@ struct DiscoverView: View {
         .environment(store)
         .discoverToastOverlay()
         .sheet(item: $store.preview) { route in
-            PreviewSheet(route: route,
-                         onAdd: { result in handOff { model.addPrefill = result; model.showingAdd = true } },
-                         onOpenLibrary: { id in handOff { model.open(id) } })
+            PreviewSheet(route: route, onOpenLibrary: { id in handOff { model.open(id) } })
         }
         .sheet(item: $store.requestPick) { pick in
             RequestModal(pick: pick) { store.requestsVersion += 1 }
@@ -153,6 +151,8 @@ struct DiscoverView: View {
                 DiscoverSession.shared.animationsEnabled = settings.animationsEnabled ?? true
             }
         }
+        // In-library cards route by the library list (the web's `idByTmdb`).
+        .task { if !model.libraryLoaded && !model.requestScoped { await model.loadLibrary() } }
         .onChange(of: canManageIssues) { if tab == .issues && !canManageIssues { tab = .browse } }
         #if DEBUG
         .onAppear(perform: applyScreenshotHooks)
@@ -180,7 +180,7 @@ struct DiscoverView: View {
             DiscoverSegmented(options: SearchKind.allCases.map { ($0, $0.title) }, selection: $kind, size: .md)
                 .padding(.bottom, 14)
             if canAdd {
-                Button { model.addPrefill = nil; model.showingAdd = true } label: {
+                Button { model.openAdd(nil, providerOverride: DiscoverSession.shared.providerOverride) } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "magnifyingglass").font(.system(size: 16, weight: .semibold))
                         Text("Search TMDB to add movies, series & anime…")
@@ -586,7 +586,10 @@ struct DiscoverCard: View {
     let canRequest: Bool
     @State private var checking = false
 
+    /// Discover rows carry only `in_library`; the id comes from the library list
+    /// (the web's `idByTmdb`), or the row itself on search results.
     private var inLibrary: Bool { result.inLibrary || result.libraryItemId != nil }
+    private var libraryId: Int? { inLibrary ? model.libraryItemId(for: result) : nil }
     private var requestStatus: String? { store.statusByTmdb[result.tmdbId] }
     private var alreadyRequested: Bool { requestStatus == "pending" || requestStatus == "approved" }
 
@@ -599,6 +602,9 @@ struct DiscoverCard: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(DiscoverPressStyle())
+        #if DEBUG
+        .task(id: model.libraryLoaded) { screenshotOpen() }
+        #endif
         .contextMenu { menu } preview: {
             PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w342"))
                 .frame(width: 220, height: 330)
@@ -666,9 +672,27 @@ struct DiscoverCard: View {
         }
     }
 
+    #if DEBUG
+    /// `FUSIONHA_SCREENSHOT_DISCOVER_OPEN=<tmdb id>` taps that card once, through
+    /// the same `open()` a finger would.
+    private static var screenshotOpened = false
+    private func screenshotOpen() {
+        guard !Self.screenshotOpened, model.libraryLoaded,
+              ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_DISCOVER_OPEN"] == String(result.tmdbId) else { return }
+        Self.screenshotOpened = true
+        open()
+    }
+    #endif
+
     private func open() {
         if inLibrary {
-            if let id = result.libraryItemId, !model.requestScoped { model.open(id) }
+            if let id = libraryId, !model.requestScoped {
+                model.open(id)
+            } else {
+                // Not in the loaded list yet: the preview resolves the item and
+                // offers "Open in library".
+                store.preview = PreviewRoute(result)
+            }
         } else if canAdd {
             store.preview = PreviewRoute(result)
         } else if canRequest && !alreadyRequested {
@@ -679,15 +703,25 @@ struct DiscoverCard: View {
     @ViewBuilder
     private var menu: some View {
         if inLibrary {
-            if let id = result.libraryItemId {
+            if let id = libraryId {
+                if !model.requestScoped {
+                    Button { model.open(id) } label: { Label("Open", systemImage: "arrow.up.right.square") }
+                }
                 Button { Task { await checkLibrary(id) } } label: {
                     Label(checking ? "Checking…" : "Check for 4K", systemImage: "4k.tv")
                 }
                 .disabled(checking)
+            } else {
+                Button { store.preview = PreviewRoute(result) } label: { Label("View details", systemImage: "eye") }
             }
         } else {
+            // Add-capable: a tap already opens details, listed first; then the
+            // Add sheet straight on this title, then the pre-add 4K probe (0.4.133).
             if canAdd {
-                Button { store.preview = PreviewRoute(result) } label: { Label("Add to library", systemImage: "plus") }
+                Button { store.preview = PreviewRoute(result) } label: { Label("View details", systemImage: "eye") }
+                Button {
+                    model.openAdd(result, providerOverride: DiscoverSession.shared.providerOverride)
+                } label: { Label("Add to library", systemImage: "plus") }
             } else if canRequest && !alreadyRequested {
                 Button { store.requestPick = result } label: { Label("Request", systemImage: "paperplane") }
             }
@@ -695,7 +729,9 @@ struct DiscoverCard: View {
                 Label(checking ? "Checking…" : "Check for 4K", systemImage: "4k.tv")
             }
             .disabled(checking)
-            Button { store.preview = PreviewRoute(result) } label: { Label("View details", systemImage: "eye") }
+            if !canAdd {
+                Button { store.preview = PreviewRoute(result) } label: { Label("View details", systemImage: "eye") }
+            }
         }
     }
 
