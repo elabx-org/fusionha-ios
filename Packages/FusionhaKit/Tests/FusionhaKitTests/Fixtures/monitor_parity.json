@@ -1,0 +1,83 @@
+{
+  "_comment": "Add-title v2 monitor parity (spec 2026-09-29 §2.3). Synthetic series; each episode's air date is today + offset_days (null = no date). The backend test runs services/library.py::_episode_monitored (anchor = today) over these episodes; the frontend test (frontend/src/components/library/add/monitor-preview.test.ts) reduces each season to {episode_count, aired_count, recent_count} and runs monitorPreview. Both must light exactly the episode numbers in `expected`. Keep episodes numbered 1..n with non-decreasing dates and null dates last -- the frontend works on counts, so aired episodes must be a prefix. The frontend keeps a byte-identical copy next to its test (the Docker frontend build only sees frontend/).",
+  "today": "2026-06-15",
+  "recent_days": 90,
+  "cases": [
+    {
+      "name": "returning show with specials, an episode airing today and a TBA season",
+      "seasons": [
+        { "season_number": 0, "offsets": [-2000, -400, -30] },
+        { "season_number": 1, "offsets": [-1500, -1493, -1486, -1479] },
+        { "season_number": 2, "offsets": [-120, -100, -60, -10, 0] },
+        { "season_number": 3, "offsets": [30, null, null] }
+      ],
+      "expected": {
+        "all": { "1": [1, 2, 3, 4], "2": [1, 2, 3, 4, 5], "3": [1, 2, 3] },
+        "missing": { "1": [1, 2, 3, 4], "2": [1, 2, 3, 4, 5], "3": [1, 2, 3] },
+        "future": { "2": [5], "3": [1, 2, 3] },
+        "existing": { "2": [5], "3": [1, 2, 3] },
+        "recent": { "0": [3], "2": [3, 4, 5], "3": [1, 2, 3] },
+        "pilot": { "1": [1] },
+        "firstSeason": { "1": [1, 2, 3, 4] },
+        "lastSeason": { "3": [1, 2, 3] },
+        "monitorSpecials": { "0": [1, 2, 3], "1": [1, 2, 3, 4], "2": [1, 2, 3, 4, 5], "3": [1, 2, 3] },
+        "none": {}
+      }
+    },
+    {
+      "name": "gapped season numbers, an upcoming special and the 90-day boundary",
+      "seasons": [
+        { "season_number": 0, "offsets": [-10, 5] },
+        { "season_number": 2, "offsets": [-300, -290] },
+        { "season_number": 5, "offsets": [-95, -90] }
+      ],
+      "expected": {
+        "all": { "2": [1, 2], "5": [1, 2] },
+        "missing": { "2": [1, 2], "5": [1, 2] },
+        "future": { "0": [2] },
+        "existing": { "0": [2] },
+        "recent": { "0": [1, 2], "5": [2] },
+        "pilot": { "2": [1] },
+        "firstSeason": { "2": [1, 2] },
+        "lastSeason": { "5": [1, 2] },
+        "monitorSpecials": { "0": [1, 2], "2": [1, 2], "5": [1, 2] },
+        "none": {}
+      }
+    },
+    {
+      "name": "specials only (no regular season)",
+      "seasons": [{ "season_number": 0, "offsets": [-5, -3] }],
+      "expected": {
+        "all": {},
+        "missing": {},
+        "future": {},
+        "existing": {},
+        "recent": { "0": [1, 2] },
+        "pilot": {},
+        "firstSeason": {},
+        "lastSeason": { "0": [1, 2] },
+        "monitorSpecials": { "0": [1, 2] },
+        "none": {}
+      }
+    },
+    {
+      "name": "ended show, nothing recent",
+      "seasons": [
+        { "season_number": 1, "offsets": [-900, -893, -886] },
+        { "season_number": 2, "offsets": [-500, -493] }
+      ],
+      "expected": {
+        "all": { "1": [1, 2, 3], "2": [1, 2] },
+        "missing": { "1": [1, 2, 3], "2": [1, 2] },
+        "future": {},
+        "existing": {},
+        "recent": {},
+        "pilot": { "1": [1] },
+        "firstSeason": { "1": [1, 2, 3] },
+        "lastSeason": { "2": [1, 2] },
+        "monitorSpecials": { "1": [1, 2, 3], "2": [1, 2] },
+        "none": {}
+      }
+    }
+  ]
+}

@@ -551,7 +551,7 @@ private struct OmniAddRow: View {
 
     @ViewBuilder
     private var action: some View {
-        if result.inLibrary, let id = result.libraryItemId, !model.requestScoped {
+        if result.inLibrary, let id = model.libraryItemId(for: result), !model.requestScoped {
             Button {
                 close()
                 model.open(id)
@@ -706,7 +706,7 @@ struct SearchResultRow: View {
 
     @ViewBuilder
     private var action: some View {
-        if result.inLibrary, let id = result.libraryItemId, !model.requestScoped {
+        if result.inLibrary, let id = model.libraryItemId(for: result), !model.requestScoped {
             Button("Open ↗") { model.open(id) }
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.mut)

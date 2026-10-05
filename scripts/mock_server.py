@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import mock_activity
+import mock_add
 import mock_detail
 import mock_shell
 
@@ -146,14 +147,16 @@ def discover_rows(query):
     items = items[shift:] + items[:shift]
     if kind == "movie" and lst == "trending":
         items = sorted(items, key=lambda i: i["id"] not in NOT_IN_LIBRARY)
-    return [row(i) for i in items]
+    # Like the server, Discover rows carry `in_library` but no `library_item_id`
+    # (only /search fills it); the app resolves the id from its library list.
+    return [{**row(i), "library_item_id": None, "_id": i["id"]} for i in items]
 
 
 def trailers(query):
     rows = []
     for r in discover_rows(query):
         if r["backdrop_url"]:
-            rows.append({**r, "trailer_key": TRAILER_KEYS.get(r.get("library_item_id") or 0, "n9xhJrPXop4")})
+            rows.append({**r, "trailer_key": TRAILER_KEYS.get(r["_id"] if r["in_library"] else 0, "n9xhJrPXop4")})
     return rows
 
 
@@ -369,6 +372,9 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         path = url.path.rstrip("/")
         query = parse_qs(url.query)
+        served, body = mock_add.get(path, query, preview, tvdb_search)
+        if served:
+            return self.send_json(body) if body is not None or "preview" not in path else self.send_json({"detail": "Not Found"}, 404)
         hit = mock_activity.handle("GET", path, query)
         if SHELL and path in SHELL_SHEET_ROUTES:
             return self.send_json(SHELL_SHEET_ROUTES[path]())
@@ -445,16 +451,18 @@ class Handler(BaseHTTPRequestHandler):
         self.send_json({"detail": "Not Found"}, 404)
 
     def do_POST(self):
+        path = urlparse(self.path).path.rstrip("/")
+        # Ahead of the activity routes, whose catch-all `/check-4k` has no counts.
+        if path == "/api/v1/discover/check-4k":
+            return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [1, 2],
+                                   "best_release_name": "Demo.2160p.WEB-DL.DV.HDR10", "message": None,
+                                   "format_tags": [{"label": "DV", "kind": "hdr"}, {"label": "HDR10", "kind": "hdr"}]})
         hit = self.activity("POST")
         if hit:
             return self.send_json(*hit)
         path = urlparse(self.path).path.rstrip("/")
         if path in NOTIFICATION_POSTS:
             return self.send_json(*NOTIFICATION_POSTS[path]())
-        if path == "/api/v1/discover/check-4k":
-            return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [1, 2],
-                                   "best_release_name": "Demo.2160p.WEB-DL.DV.HDR10", "message": None,
-                                   "format_tags": [{"label": "DV", "kind": "hdr"}, {"label": "HDR10", "kind": "hdr"}]})
         if path.startswith("/api/v1/library/") and path.endswith("/refresh"):
             return self.send_json({"run_id": 1})
         if path == "/api/v1/library":
