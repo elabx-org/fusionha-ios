@@ -2,46 +2,44 @@ import SwiftUI
 import WidgetKit
 import FusionhaKit
 
-struct DownloadsProvider: TimelineProvider {
+struct DownloadsProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> DownloadsEntry { .placeholder }
 
-    func getSnapshot(in context: Context, completion: @escaping (DownloadsEntry) -> Void) {
-        if context.isPreview { completion(.placeholder); return }
-        Task { completion(await Self.fetch(family: context.family)) }
+    func snapshot(for configuration: DownloadsPagesIntent, in context: Context) async -> DownloadsEntry {
+        if context.isPreview { return .placeholder }
+        return await Self.fetch(family: context.family, enabled: configuration.enabled)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<DownloadsEntry>) -> Void) {
-        Task {
-            let entry = await Self.fetch(family: context.family)
-            // Refresh sooner while something is downloading (the app also reloads on
-            // change); when idle, every ~45 minutes or just after the next item airs.
-            let refresh = entry.idle
-                ? WidgetLoader.nextRefresh(idleMinutes: 45, nextAir: entry.upNext.first?.item.airDate)
-                : Date.now.addingTimeInterval(15 * 60)
-            completion(Timeline(entries: [entry], policy: .after(refresh)))
-        }
+    func timeline(for configuration: DownloadsPagesIntent, in context: Context) async -> Timeline<DownloadsEntry> {
+        let entry = await Self.fetch(family: context.family, enabled: configuration.enabled)
+        // Refresh sooner while something is downloading (the app also reloads on
+        // change); when idle, every ~45 minutes or just after the next item airs.
+        let refresh = entry.idle
+            ? WidgetLoader.nextRefresh(idleMinutes: 45, nextAir: entry.upNext.first?.item.airDate)
+            : Date.now.addingTimeInterval(15 * 60)
+        return Timeline(entries: [entry], policy: .after(refresh))
     }
 
-    static func fetch(family: WidgetFamily) async -> DownloadsEntry {
+    static func fetch(family: WidgetFamily, enabled: Set<WidgetPage>) async -> DownloadsEntry {
         guard let client = CredentialStore.client() else {
             return DownloadsEntry(date: .now, total: 0, rows: [], signedIn: false, failed: false,
                                   report: CredentialStore.sharingReport())
         }
-        let large = family == .systemLarge
-        return await WidgetLoader.downloads(
-            client, limit: large ? 4 : 2,
-            idleUpNext: family == .systemSmall ? 1 : (large ? 3 : 2),
-            idleRecent: family == .systemSmall ? 1 : 5)
+        if family == .systemSmall {
+            return await WidgetLoader.downloads(client, limit: 2, idleUpNext: 1, idleRecent: 1)
+        }
+        let stored = WidgetPageStore.page(family: WidgetPageStore.familyKey(family))
+        return await WidgetPageLoader.entry(client, family: family, enabled: enabled, stored: stored)
     }
 }
 
 struct DownloadsWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "Downloads", provider: DownloadsProvider()) { entry in
+        AppIntentConfiguration(kind: "Downloads", intent: DownloadsPagesIntent.self, provider: DownloadsProvider()) { entry in
             DownloadsWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Downloads")
-        .description("What fusionha is downloading, or what's up next and just added when it's idle.")
+        .description("Downloads, Up next, Recently added, Library, Indexers, Wanted and Requests in one widget. Tap the dots to switch views; Edit Widget picks which views show.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }
@@ -56,11 +54,12 @@ private struct DownloadsWidgetEntryView: View {
             .widgetURL(url)
     }
 
-    /// Downloading opens Activity; idle small opens the title it shows; idle
-    /// medium and large open Library (rows and posters link to their own items).
+    /// Small: Activity while downloading, else the title it shows. Medium and
+    /// large: the current view's screen (rows and posters link to their items).
     private var url: URL {
-        WidgetRoute.downloads(
-            idle: entry.idle, small: family == .systemSmall,
+        guard family == .systemSmall else { return WidgetRoute.page(entry.page).url }
+        return WidgetRoute.downloads(
+            idle: entry.idle, small: true,
             upNextIds: entry.upNext.map(\.item.itemId),
             recentIds: entry.recent.map(\.item.itemId)).url
     }

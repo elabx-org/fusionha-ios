@@ -155,6 +155,12 @@ struct DiscoverView: View {
         // In-library cards route by the library list (the web's `idByTmdb`).
         .task { if !model.libraryLoaded && !model.requestScoped { await model.loadLibrary() } }
         .onChange(of: canManageIssues) { if tab == .issues && !canManageIssues { tab = .browse } }
+        .onChange(of: model.pendingDiscoverTab, initial: true) {
+            // `fusionha://discover/requests` from the widget.
+            guard let pending = model.pendingDiscoverTab else { return }
+            tab = pending
+            model.pendingDiscoverTab = nil
+        }
         #if DEBUG
         .onAppear(perform: applyScreenshotHooks)
         .onChange(of: model.me?.id) { applyScreenshotHooks() }

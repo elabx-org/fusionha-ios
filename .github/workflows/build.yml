@@ -249,6 +249,10 @@ jobs:
           for w in downloads downloads-active upnext recent; do
             shoot widgets-$w SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGETS=$w
           done
+          # The paged Downloads widget: each view at medium and large.
+          for p in downloading upnext recent library indexers wanted requests; do
+            shoot widget-page-$p SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_PAGE=$p
+          done
           for bg in flow web hub orbits grid aurora gradient; do
             shoot login-bg-$bg SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN_BACKGROUND=$bg
           done

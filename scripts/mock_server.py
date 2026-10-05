@@ -406,6 +406,10 @@ class Handler(BaseHTTPRequestHandler):
             "/api/v1/requests": lambda: requests_rows(query),
             "/api/v1/requests/offerable": lambda: {"editions": ["HD-1080p", "UHD-2160p"], "mode": "choose", "auto_editions": []},
             "/api/v1/issues": lambda: issues_rows(query),
+            # Requester names for the widget's Requests & issues view.
+            "/api/v1/users": lambda: [{"id": 1, "username": "admin", "is_admin": True},
+                                      {"id": 4, "username": "maya (plex:4471)", "is_admin": False},
+                                      {"id": 6, "username": "theo", "is_admin": False}],
             "/api/v1/qualityprofiles": lambda: load("qualityprofiles.json"),
             "/api/v1/rootfolders": lambda: load("rootfolders.json"),
             "/api/v1/config/add-defaults": lambda: load("add-defaults.json"),

@@ -160,6 +160,12 @@ struct ActivityView: View {
             chrome.search = chrome.searchInput.trimmingCharacters(in: .whitespaces)
         }
         .onChange(of: chrome.tab) { bulk.config = nil }
+        .onChange(of: model.pendingActivityTab, initial: true) {
+            // `fusionha://activity/indexers` from the widget.
+            guard let tab = model.pendingActivityTab else { return }
+            chrome.tab = tab
+            model.pendingActivityTab = nil
+        }
         .perfActivityTabHook(Binding(get: { chrome.tab }, set: { chrome.tab = $0 }))
         .onAppear { router.server = model.credentials?.serverURL }
     }

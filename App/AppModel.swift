@@ -60,6 +60,10 @@ final class AppModel {
     var searchText = ""
     var searchScope: SearchScope = .library
     var presentedItem: ItemRef?
+    /// A deep link's sub-tab (`fusionha://activity/indexers`, `discover/requests`),
+    /// taken by the screen when it shows.
+    var pendingActivityTab: ActivityTab?
+    var pendingDiscoverTab: DiscoverTab?
     var showingAdd = false
     /// The Account sheet (avatar menu → Account), owned by AccountView.swift.
     var showingAccount = false
