@@ -14,14 +14,15 @@ concurrency:
 jobs:
   test:
     name: FusionhaKit tests
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v5
 
-      - name: Select newest Xcode 26
+      # iPhone Duo needs apps built with Xcode 27.1 or later (older builds run
+      # letterboxed on its inner display). GitHub ships it on the `xcode-27` image.
+      - name: Select Xcode 27.1
         run: |
-          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
-          sudo xcode-select -s "$XCODE"
+          sudo xcode-select -s /Applications/Xcode_27.1.app
           xcodebuild -version
 
       - name: Unit tests
@@ -29,16 +30,17 @@ jobs:
 
   build:
     name: Build unsigned IPA
-    runs-on: macos-26
+    runs-on: xcode-27
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v5
 
-      - name: Select newest Xcode 26
+      # iPhone Duo needs apps built with Xcode 27.1 or later (older builds run
+      # letterboxed on its inner display). GitHub ships it on the `xcode-27` image.
+      - name: Select Xcode 27.1
         run: |
-          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
-          sudo xcode-select -s "$XCODE"
+          sudo xcode-select -s /Applications/Xcode_27.1.app
           xcodebuild -version
 
       - name: Generate Xcode project
@@ -115,16 +117,17 @@ jobs:
   # compared with the web app.
   screenshots:
     name: Simulator screenshots
-    runs-on: macos-26
+    runs-on: xcode-27
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v5
 
-      - name: Select newest Xcode 26
+      # iPhone Duo needs apps built with Xcode 27.1 or later (older builds run
+      # letterboxed on its inner display). GitHub ships it on the `xcode-27` image.
+      - name: Select Xcode 27.1
         run: |
-          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
-          sudo xcode-select -s "$XCODE"
+          sudo xcode-select -s /Applications/Xcode_27.1.app
           xcodebuild -version
 
       - name: Generate Xcode project
@@ -150,8 +153,8 @@ jobs:
           python3 scripts/mock_server.py 8765 &
           UDID=$(xcrun simctl list devices available -j | python3 -c '
           import json, sys
-          devices = [d for rt, ds in json.load(sys.stdin)["devices"].items() if "iOS-26" in rt for d in ds]
-          pick = next((d for d in devices if d["name"] == "iPhone 17 Pro"), None) or next(d for d in devices if d["name"].startswith("iPhone"))
+          devices = [d for rt, ds in sorted(json.load(sys.stdin)["devices"].items(), reverse=True) if "iOS-27" in rt for d in ds]
+          pick = next((d for d in devices if d["name"] in ("iPhone 18 Pro", "iPhone 17 Pro")), None) or next(d for d in devices if d["name"].startswith("iPhone") and "Duo" not in d["name"])
           print(pick["udid"])')
           echo "Using simulator $UDID"
           xcrun simctl boot "$UDID"
@@ -340,11 +343,123 @@ jobs:
           else
             git switch -q --orphan publish
           fi
-          rm -rf "$DIR" && mkdir -p "$DIR"
+          # Keep the iPhone Duo job's $DIR/duo/ (published separately).
+          mkdir -p "$DIR" && find "$DIR" -maxdepth 1 -name '*.png' -delete
           cp "$RUNNER_TEMP"/shots/*.png "$DIR/"
           git add "$DIR"
           git commit -qm "Screenshots for $DIR (${GITHUB_SHA::7})" || exit 0
           # Several PRs publish at once: rebase onto the latest branch and retry.
+          for i in 1 2 3 4 5; do
+            git push -q origin publish:screenshots && exit 0
+            sleep $((i * 3))
+            git fetch -q origin screenshots:refs/remotes/origin/screenshots
+            git rebase -q refs/remotes/origin/screenshots
+          done
+          exit 1
+
+  # iPhone Duo: the main screens folded, unfolded and half open, in portrait
+  # and landscape, on an iPhone Duo simulator from Xcode 27.1. Poses are
+  # pressed in the Simulator's Device Hub (scripts/duo_pose.js) since simctl
+  # has no pose command. Published to the `screenshots` branch under
+  # <pr-N|main>/duo/.
+  duo:
+    name: iPhone Duo screenshots
+    runs-on: xcode-27
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode 27.1
+        run: |
+          sudo xcode-select -s /Applications/Xcode_27.1.app
+          xcodebuild -version
+
+      - name: iPhone Duo SDK probe
+        continue-on-error: true
+        run: |
+          SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
+          for f in $(find "$SDK/System/Library/Frameworks/SwiftUI.framework" "$SDK/System/Library/Frameworks/SwiftUICore.framework" -name '*.swiftinterface' 2>/dev/null | grep arm64-apple-ios-simulator); do
+            echo "== $f"
+            grep -n -E "reservedRegion|ReservedRegion|toolbarVerticalBehavior|ToolbarVerticalBehavior|toolbarVerticalEdge|onHingeChange|HingeState" "$f" | head -60
+          done
+          xcrun simctl list runtimes
+          xcrun simctl list devicetypes | grep -i -E "duo|iphone 1[89]"
+          ls /Applications/Xcode_27.1.app/Contents/Developer/Applications || true
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Fusionha.xcodeproj \
+            -scheme Fusionha \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Create the iPhone Duo simulator
+        timeout-minutes: 30
+        run: |
+          if ! xcrun simctl list runtimes | grep -q "iOS 27.1"; then
+            xcodebuild -downloadPlatform iOS -buildVersion 27.1 || xcodebuild -downloadPlatform iOS
+          fi
+          RUNTIME=$(xcrun simctl list runtimes -j | python3 -c '
+          import json, sys
+          rts = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"]]
+          rts = [r for r in rts if tuple(map(int, r["version"].split(".")[:2])) >= (27, 1)] or rts
+          print(sorted(rts, key=lambda r: [int(x) for x in r["version"].split(".")])[-1]["identifier"])')
+          echo "Runtime $RUNTIME"
+          UDID=$(xcrun simctl create "iPhone Duo" com.apple.CoreSimulator.SimDeviceType.iPhone-Duo "$RUNTIME")
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --wifiBars 3 || true
+          xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/Fusionha.app
+          open -a Simulator --args -CurrentDeviceUDID "$UDID"
+          sleep 30
+          osascript -l JavaScript scripts/duo_pose.js dump || echo "UI scripting unavailable"
+
+      - name: Take iPhone Duo screenshots
+        timeout-minutes: 40
+        run: |
+          python3 scripts/mock_server.py 8765 &
+          sleep 2
+          mkdir -p duo/shots
+          scripts/duo_shots.sh "$UDID" duo/shots
+          cat duo/duo-poses.log
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: duo-screenshots
+          path: duo
+          retention-days: 14
+
+      - name: Publish to the screenshots branch
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          DIR=${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}/duo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp -R duo/shots "$RUNNER_TEMP/duo-shots"
+          git fetch -q origin screenshots:refs/remotes/origin/screenshots || true
+          if git rev-parse -q --verify refs/remotes/origin/screenshots > /dev/null; then
+            git switch -q -c publish refs/remotes/origin/screenshots
+          else
+            git switch -q --orphan publish
+          fi
+          rm -rf "$DIR" && mkdir -p "$DIR"
+          cp "$RUNNER_TEMP"/duo-shots/*.png "$DIR/"
+          git add "$DIR"
+          git commit -qm "iPhone Duo screenshots for $DIR (${GITHUB_SHA::7})" || exit 0
           for i in 1 2 3 4 5; do
             git push -q origin publish:screenshots && exit 0
             sleep $((i * 3))
@@ -361,14 +476,15 @@ jobs:
   # Optimised build (Release) with DEBUG set so the probe and mock hooks exist.
   perf:
     name: Activity perf
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@v5
 
-      - name: Select newest Xcode 26
+      # iPhone Duo needs apps built with Xcode 27.1 or later (older builds run
+      # letterboxed on its inner display). GitHub ships it on the `xcode-27` image.
+      - name: Select Xcode 27.1
         run: |
-          XCODE=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
-          sudo xcode-select -s "$XCODE"
+          sudo xcode-select -s /Applications/Xcode_27.1.app
           xcodebuild -version
 
       - name: Generate Xcode project
@@ -399,8 +515,8 @@ jobs:
           python3 scripts/mock_server.py 8765 perf > perf/mock.log 2>&1 &
           UDID=$(xcrun simctl list devices available -j | python3 -c '
           import json, sys
-          devices = [d for rt, ds in json.load(sys.stdin)["devices"].items() if "iOS-26" in rt for d in ds]
-          pick = next((d for d in devices if d["name"] == "iPhone 17 Pro"), None) or next(d for d in devices if d["name"].startswith("iPhone"))
+          devices = [d for rt, ds in sorted(json.load(sys.stdin)["devices"].items(), reverse=True) if "iOS-27" in rt for d in ds]
+          pick = next((d for d in devices if d["name"] in ("iPhone 18 Pro", "iPhone 17 Pro")), None) or next(d for d in devices if d["name"].startswith("iPhone") and "Duo" not in d["name"])
           print(pick["udid"])')
           echo "Using simulator $UDID"
           xcrun simctl boot "$UDID"
