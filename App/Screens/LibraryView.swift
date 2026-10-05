@@ -600,6 +600,8 @@ final class LibraryOnScreen {
         guard !shown.isEmpty else { return nil }
         // Row ids carry their first title; the topmost is the earliest in display order.
         guard let top = derived.visibleIds.first(where: shown.contains) else { return nil }
+        // Still at the top of the page: stay there (header and all).
+        if top == derived.visibleIds.first { return nil }
         for row in derived.rows {
             switch row {
             case .items(let items) where items.contains(where: { $0.id == top }): return row.id
