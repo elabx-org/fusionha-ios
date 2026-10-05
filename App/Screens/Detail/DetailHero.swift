@@ -6,6 +6,8 @@ import FusionhaKit
 /// meta line and genre pills, bottom-aligned over the art.
 struct DetailHero: View {
     @Environment(\.detailReduceMotion) private var reduce
+    /// In the unfolded trailing column, close is a toolbar item instead.
+    @Environment(\.detailInColumn) private var inColumn
     let detail: ItemDetail
     let close: () -> Void
     @State private var artShown = false
@@ -65,6 +67,7 @@ struct DetailHero: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             }
             .overlay(alignment: .topLeading) {
+            if !inColumn {
             Button(action: close) {
                 Image(systemName: "xmark")
                     .font(.system(size: 18, weight: .medium))
@@ -76,6 +79,7 @@ struct DetailHero: View {
             .padding(.top, 14)
             .padding(.leading, 12)
             .accessibilityLabel("Close detail")
+            }
         }
     }
 

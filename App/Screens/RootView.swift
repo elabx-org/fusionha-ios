@@ -11,10 +11,55 @@ struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @State private var fold = FoldInfo()
+
+    /// Unfolded (regular width) the open title is the trailing column, not a sheet.
+    private var split: ShellSplit {
+        ShellSplit(fold: fold, wide: sizeClass == .regular, hasItem: model.presentedItem != nil)
+    }
+
+    /// The detail sheet's binding: empty while the title shows in the trailing
+    /// column, so unfolding moves an open sheet into the column and folding
+    /// moves it back, without losing which title is open.
+    private var sheetItem: Binding<ItemRef?> {
+        Binding(
+            get: { split.shown ? nil : model.presentedItem },
+            set: { value in if !split.shown { model.presentedItem = value } }
+        )
+    }
 
     var body: some View {
+        let split = split
+        FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap) {
+            tabs
+            if split.shown {
+                ShellDetailColumn()
+                    .transition(reduceMotion ? .opacity : .move(edge: .trailing).combined(with: .opacity))
+            }
+        }
+        .background(Theme.bg)
+        .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { fold = $0 }
+        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: split)
+        .overlay(alignment: .bottom) {
+            ToastHost()
+                .padding(.bottom, 72)
+        }
+        .environment(\.motionEnabled, !reduceMotion && model.animationsEnabled)
+        .environment(\.railStyle, model.railStyle)
+        .environment(\.railConsolidate, model.railConsolidate)
+        .sheet(item: sheetItem) { ref in
+            ItemDetailView(itemId: ref.id)
+                .presentationDragIndicator(.visible)
+                .presentationBackground(Theme.bg)
+        }
+        .modifier(ShellPresentations(model: model, reduceMotion: reduceMotion, scenePhase: scenePhase))
+    }
+
+    /// The tabs: the whole app when folded, the leading column when unfolded.
+    private var tabs: some View {
         @Bindable var model = model
-        TabView(selection: $model.tab) {
+        return TabView(selection: $model.tab) {
             if model.requestScoped {
                 Tab("Discover", image: "nav-discover", value: AppTab.discover) { DiscoverView() }
                 Tab("My requests", image: "nav-requests", value: AppTab.requests) { RequestsView() }
@@ -31,18 +76,18 @@ struct RootView: View {
         }
         .tint(Theme.cyan)
         .tabBarMinimizeBehavior(.onScrollDown)
-        .overlay(alignment: .bottom) {
-            ToastHost()
-                .padding(.bottom, 72)
-        }
-        .environment(\.motionEnabled, !reduceMotion && model.animationsEnabled)
-        .environment(\.railStyle, model.railStyle)
-        .environment(\.railConsolidate, model.railConsolidate)
-        .sheet(item: $model.presentedItem) { ref in
-            ItemDetailView(itemId: ref.id)
-                .presentationDragIndicator(.visible)
-                .presentationBackground(Theme.bg)
-        }
+    }
+}
+
+/// The shell's other sheets, deep links and polling, applied once around the
+/// whole (possibly two-column) shell.
+private struct ShellPresentations: ViewModifier {
+    @Bindable var model: AppModel
+    let reduceMotion: Bool
+    let scenePhase: ScenePhase
+
+    func body(content: Content) -> some View {
+        content
         .sheet(isPresented: $model.showingAdd) {
             AddTitleSheet()
                 .presentationDragIndicator(.visible)
@@ -70,6 +115,14 @@ struct RootView: View {
             if model.tab != .library { model.exitSelectMode() }
         }
         .task {
+            #if DEBUG
+            // CI screenshots: the folded iPhone Duo held sideways, when the
+            // simulator cannot rotate itself (`FUSIONHA_SCREENSHOT_ORIENTATION=landscape`).
+            if ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_ORIENTATION"] == "landscape",
+               let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight)) { _ in }
+            }
+            #endif
             await model.loadMe()
             await model.registerPushDevice()
         }

@@ -1173,8 +1173,7 @@ private struct DiscoverFiltersPanel: View {
         case .loaded(let items) where items.isEmpty: filterState("No titles match these filters.")
         case .loaded(let items):
             // Same 18 × 6 rhythm as the Library grid.
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6, alignment: .top), count: 3),
-                      alignment: .leading, spacing: 18) {
+            AdaptivePosterGrid {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     DiscoverCard(result: item, canAdd: canAdd, canRequest: canRequest)
                         .discoverReveal(index: index, step: 0.02)
@@ -1207,8 +1206,7 @@ private struct RequestorSearchResults: View {
             case .loaded(let items) where items.isEmpty: line("No results for “\(term)”.")
             case .loaded(let items):
                 // Three tracks, 18 × 6 gaps, like every poster grid.
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6, alignment: .top), count: 3),
-                          alignment: .leading, spacing: 18) {
+                AdaptivePosterGrid {
                     ForEach(items) { DiscoverCard(result: $0, canAdd: canAdd, canRequest: canRequest) }
                 }
                 .padding(.top, 4)

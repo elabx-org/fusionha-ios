@@ -59,6 +59,8 @@ enum LibraryRecency: String, CaseIterable, Hashable {
 /// rail drag froze the app.
 struct LibraryDerived {
     var rows: [LibraryRowModel] = []
+    /// Cards per grid row: 3 on phones, more when unfolded (`PosterColumns`).
+    var columns = 3
     var alpha = LibraryAlphaIndex()
     var visibleIds: [Int] = []
     var titleCount = 0
@@ -118,6 +120,11 @@ struct LibraryView: View {
     @State private var derived = LibraryDerived()
     @State private var scrubber = ScrubberState()
     @State private var posterSheet: MediaItem?
+    /// Cards per row for the grid's current width.
+    @State private var columns = 3
+    /// The grid rows on screen, kept (unobserved) so a fold/unfold that changes
+    /// the column count can scroll back to the same titles.
+    @State private var onScreen = LibraryOnScreen()
 
     private var kind: LibraryKind? { LibraryKind(rawValue: kindRaw) }
     private var compact: Bool { density == "compact" }
@@ -129,11 +136,12 @@ struct LibraryView: View {
     private struct Inputs: Equatable {
         var version: Int, kind: String, tier: LibraryTier, status: LibraryStatus
         var sort: LibrarySort, recency: LibraryRecency, group: Bool, query: String, compact: Bool
+        var columns: Int
     }
 
     private var inputs: Inputs {
         Inputs(version: model.libraryVersion, kind: kindRaw, tier: tier, status: status, sort: sort,
-               recency: recency, group: group, query: query, compact: compact)
+               recency: recency, group: group, query: query, compact: compact, columns: columns)
     }
 
     var body: some View {
@@ -162,6 +170,9 @@ struct LibraryView: View {
                     .padding(.bottom, 90)
                 }
                 .scrollDismissesKeyboard(.immediately)
+                .onGeometryChange(for: Int.self) { proxy in
+                    PosterColumns.count(for: proxy.size.width - 32)
+                } action: { columns = $0 }
                 .refreshable { await model.loadLibrary() }
                 .onScrollGeometryChange(for: CGFloat.self) { geo in
                     geo.contentOffset.y + geo.contentInsets.top
@@ -174,7 +185,12 @@ struct LibraryView: View {
                     if showsRail { scrubber.scrolled(metrics) }
                 }
                 .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.5) { ids in
+                    onScreen.rowIds = ids
                     if showsRail { scrubber.activeLetter = derived.alpha.activeLetter(visible: ids) }
+                }
+                .onChange(of: derived.columns) {
+                    // Folding or unfolding re-flows the grid: keep the same titles on screen.
+                    if let row = onScreen.anchorRow(in: derived) { proxy.scrollTo(row, anchor: .top) }
                 }
                 .overlay {
                     if showsRail {
@@ -272,14 +288,15 @@ struct LibraryView: View {
         next.visibleIds = visible.map(\.id)
         next.titleCount = visible.count
         next.editionCount = visible.reduce(0) { $0 + $1.editions.count }
+        next.columns = columns
         if compact {
             next.rows = LibraryRowModel.table(visible)
         } else if group {
-            next.rows = LibraryRowModel.grouped(visible)
+            next.rows = LibraryRowModel.grouped(visible, columns: columns)
         } else if sort == .title {
-            (next.rows, next.alpha) = LibraryRowModel.alpha(visible)
+            (next.rows, next.alpha) = LibraryRowModel.alpha(visible, columns: columns)
         } else {
-            next.rows = LibraryRowModel.plain(visible)
+            next.rows = LibraryRowModel.plain(visible, columns: columns)
         }
         derived = next
     }
@@ -450,7 +467,7 @@ struct LibraryView: View {
                 case .items(let items):
                     // Rows are only as tall as their own tallest card (7f2b50c7).
                     HStack(alignment: .top, spacing: 6) {
-                        ForEach(0..<3, id: \.self) { i in
+                        ForEach(0..<max(derived.columns, items.count), id: \.self) { i in
                             if i < items.count {
                                 PosterCard(item: items[i]).frame(maxWidth: .infinity, alignment: .top)
                             } else {
@@ -515,10 +532,11 @@ enum LibraryRowModel: Identifiable {
         }
     }
 
-    private static func chunk(_ group: ArraySlice<MediaItem>, into rows: inout [LibraryRowModel]) {
+    private static func chunk(_ group: ArraySlice<MediaItem>, columns: Int, into rows: inout [LibraryRowModel]) {
         var start = group.startIndex
+        let columns = max(columns, 1)
         while start < group.endIndex {
-            let end = min(start + 3, group.endIndex)
+            let end = min(start + columns, group.endIndex)
             rows.append(.items(Array(group[start..<end])))
             start = end
         }
@@ -528,9 +546,9 @@ enum LibraryRowModel: Identifiable {
     /// continuous run of 3-card rows with no letter headers. Each letter's jump
     /// target is the row holding its FIRST title; each row remembers the letter
     /// of its first card for the thumb's "where am I" bubble.
-    static func alpha(_ items: [MediaItem]) -> (rows: [LibraryRowModel], index: LibraryAlphaIndex) {
+    static func alpha(_ items: [MediaItem], columns: Int = 3) -> (rows: [LibraryRowModel], index: LibraryAlphaIndex) {
         var rows: [LibraryRowModel] = []
-        chunk(items[...], into: &rows)
+        chunk(items[...], columns: columns, into: &rows)
         var index = LibraryAlphaIndex()
         for (i, row) in rows.enumerated() {
             guard case .items(let cards) = row else { continue }
@@ -545,20 +563,20 @@ enum LibraryRowModel: Identifiable {
     }
 
     /// A plain grid for the other sorts.
-    static func plain(_ items: [MediaItem]) -> [LibraryRowModel] {
+    static func plain(_ items: [MediaItem], columns: Int = 3) -> [LibraryRowModel] {
         var rows: [LibraryRowModel] = []
-        chunk(items[...], into: &rows)
+        chunk(items[...], columns: columns, into: &rows)
         return rows
     }
 
     /// Group by status (`groupByStatus`): Downloading, Needs attention, Upcoming, Complete.
-    static func grouped(_ items: [MediaItem]) -> [LibraryRowModel] {
+    static func grouped(_ items: [MediaItem], columns: Int = 3) -> [LibraryRowModel] {
         var rows: [LibraryRowModel] = []
         for status in CardStatus.allCases {
             let members = items.filter { $0.cardStatus == status }
             guard !members.isEmpty else { continue }
             rows.append(.section(status, members.count))
-            chunk(members[...], into: &rows)
+            chunk(members[...], columns: columns, into: &rows)
         }
         return rows
     }
@@ -566,6 +584,32 @@ enum LibraryRowModel: Identifiable {
     static func table(_ items: [MediaItem]) -> [LibraryRowModel] {
         guard !items.isEmpty else { return [] }
         return [.tableHeader] + items.enumerated().map { .tableRow($0.element, last: $0.offset == items.count - 1) }
+    }
+}
+
+/// The grid rows last seen on screen. A plain class so scrolling never
+/// re-renders the page; read only when the column count changes.
+final class LibraryOnScreen {
+    var rowIds: [String] = []
+
+    /// The row that now holds the topmost title that was on screen.
+    func anchorRow(in derived: LibraryDerived) -> String? {
+        let shown = Set(rowIds.compactMap { id -> Int? in
+            id.hasPrefix("row-") ? Int(id.dropFirst(4)) : (id.hasPrefix("table-") ? Int(id.dropFirst(6)) : nil)
+        })
+        guard !shown.isEmpty else { return nil }
+        // Row ids carry their first title; the topmost is the earliest in display order.
+        guard let top = derived.visibleIds.first(where: shown.contains) else { return nil }
+        // Still at the top of the page: stay there (header and all).
+        if top == derived.visibleIds.first { return nil }
+        for row in derived.rows {
+            switch row {
+            case .items(let items) where items.contains(where: { $0.id == top }): return row.id
+            case .tableRow(let item, _) where item.id == top: return row.id
+            default: continue
+            }
+        }
+        return nil
     }
 }
 
