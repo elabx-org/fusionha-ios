@@ -80,6 +80,15 @@ $PUBLISH
 
 # The poses are buttons in the simulator UI: open it on this device and list
 # its controls (time-limited; a slow accessibility walk must not hang CI).
+if [ "${DUO_UI:-1}" = 0 ]; then
+  # Headless: the app turns itself to landscape (DEBUG hook); the outer
+  # display's framebuffer stays portrait, so the PNGs are turned upright.
+  echo "simulator UI skipped (DUO_UI=0)" | tee -a "$LOG"
+  screens folded-landscape primary SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ORIENTATION=landscape
+  for f in "$OUT"/duo-folded-landscape-*.png; do sips -r 90 "$f" > /dev/null; done
+  $PUBLISH
+  ls -l "$OUT"; exit 0
+fi
 XC=$(dirname "$(dirname "$(xcode-select -p)")")
 APP=$(find "$XC" /Applications -maxdepth 5 -name "*.app" 2>/dev/null | grep -i -E "/(simulator|device ?hub)\.app$" | head -1)
 echo "simulator UI: ${APP:-com.apple.iphonesimulator}" | tee -a "$LOG"

@@ -365,6 +365,7 @@ jobs:
   duo:
     name: iPhone Duo screenshots
     runs-on: xcode-27
+    timeout-minutes: 75
     permissions:
       contents: write
     steps:
@@ -391,7 +392,20 @@ jobs:
           xcrun simctl list devicetypes | grep -i -E "duo|iphone 1[89]"
           echo "== Apps that can host the simulator UI"
           find "$(dirname "$(dirname "$(xcode-select -p)")")" /Applications /System/Applications -maxdepth 5 -name "*.app" 2>/dev/null | grep -i -E "simulator|device ?hub" | head -20
-          mdfind "kMDItemCFBundleIdentifier == 'com.apple.iphonesimulator' || kMDItemDisplayName == '*Device Hub*'" 2>/dev/null | head
+          echo "== simctl commands"
+          xcrun simctl help 2>&1 | sed -n '/Subcommands/,$p'
+          xcrun simctl help ui 2>&1 | head -40
+          echo "== pose / hinge symbols"
+          XC=$(dirname "$(dirname "$(xcode-select -p)")")
+          for b in "$XC/Contents/Applications/DeviceHub.app/Contents/MacOS/"* \
+                   /Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/CoreSimulator \
+                   "$XC"/Contents/Developer/Library/PrivateFrameworks/SimulatorKit.framework/Versions/A/SimulatorKit; do
+            [ -f "$b" ] || continue
+            echo "-- $b"
+            strings -a "$b" | grep -E -i "pose|hinge|posture|fold(ed)?State|bookMode|closedState|setAngle" | sort -u | head -80
+          done
+          ls "$XC/Contents/Applications/DeviceHub.app/Contents/Resources" 2>/dev/null | head -40
+          defaults read com.apple.DeviceHub 2>/dev/null | head -20 || true
 
       - name: Generate Xcode project
         run: |
@@ -441,6 +455,8 @@ jobs:
           if [ "${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}" = true ]; then
             export DUO_PUBLISH="scripts/publish_duo.sh duo/shots $DEST"
           fi
+          # Opening the Device Hub has twice taken the hosted runner down; off until poses work headless.
+          export DUO_UI=0
           scripts/duo_shots.sh "$UDID" duo/shots || true
           cat duo/shots/duo-poses.log || true
 
