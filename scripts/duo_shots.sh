@@ -15,10 +15,15 @@ OUT=$2
 mkdir -p "$OUT"
 S=http://127.0.0.1:8765
 HERE=$(cd "$(dirname "$0")" && pwd)
-LOG="$OUT/../duo-poses.log"
+LOG="$OUT/duo-poses.log"
+# Optional: a command run after each pose to publish what we have so far.
+PUBLISH=${DUO_PUBLISH:-true}
+
+# osascript with a time limit: a stuck accessibility walk must not hang CI.
+limited() { perl -e 'alarm shift; exec @ARGV' "$@"; }
 
 pose() {
-  if osascript -l JavaScript "$HERE/duo_pose.js" press "$1" >> "$LOG" 2>&1; then
+  if limited 90 osascript -l JavaScript "$HERE/duo_pose.js" press "$1" >> "$LOG" 2>&1; then
     echo "pose $1: pressed" | tee -a "$LOG"
     sleep 8
     return 0
@@ -67,12 +72,28 @@ rotate_back() {
 # Warm-up: the first launch against a fresh mock is still loading at 9s.
 launch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
 
-# 1. Folded (closed), portrait and landscape, on the outer display.
-pose "Closed" || true
+# 1. Folded (closed), portrait, on the outer display: the Duo boots closed,
+# so this needs no simulator UI.
 screens folded-portrait primary
+xcrun simctl io "$UDID" enumerate > "$OUT/duo-displays.txt" 2>&1
+$PUBLISH
+
+# The poses are buttons in the simulator UI: open it on this device and list
+# its controls (time-limited; a slow accessibility walk must not hang CI).
+XC=$(dirname "$(dirname "$(xcode-select -p)")")
+APP=$(find "$XC" /Applications -maxdepth 5 -name "*.app" 2>/dev/null | grep -i -E "/(simulator|device ?hub)\.app$" | head -1)
+echo "simulator UI: ${APP:-com.apple.iphonesimulator}" | tee -a "$LOG"
+if [ -n "$APP" ]; then open "$APP" --args -CurrentDeviceUDID "$UDID"; else open -b com.apple.iphonesimulator --args -CurrentDeviceUDID "$UDID"; fi >> "$LOG" 2>&1
+sleep 30
+limited 180 osascript -l JavaScript "$HERE/duo_pose.js" dump > "$OUT/duo-ui-tree.txt" 2>&1
+echo "ui dump exit $?" | tee -a "$LOG"
+$PUBLISH
+
+# 1b. Folded, landscape.
 rotate_right
 screens folded-landscape primary $rotated_env
 rotate_back
+$PUBLISH
 
 # 2. Unfolded (open), portrait and landscape, on the inner display.
 if pose "Open"; then
@@ -80,6 +101,7 @@ if pose "Open"; then
   rotate_right
   screens unfolded-landscape primary-1 $rotated_env
   rotate_back
+  $PUBLISH
 fi
 
 # 3. Book (half open), both orientations.
@@ -88,6 +110,7 @@ if pose "Book"; then
   rotate_right
   screens book-landscape primary-1 $rotated_env
   rotate_back
+  $PUBLISH
 fi
 
 # 4. Continuity: open a title folded, scroll it, then unfold without relaunching.
@@ -99,4 +122,5 @@ if pose "Closed"; then
     pose "Closed" && snap duo-continuity-3-folded-again primary
   fi
 fi
+$PUBLISH
 ls -l "$OUT"

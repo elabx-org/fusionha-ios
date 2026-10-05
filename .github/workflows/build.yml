@@ -429,16 +429,6 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b
           xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --wifiBars 3 || true
           xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/Fusionha.app
-          # The simulator UI (Simulator.app, or the Device Hub in newer Xcodes)
-          # carries the pose buttons.
-          XC=$(dirname "$(dirname "$(xcode-select -p)")")
-          APP=$(find "$XC" /Applications -maxdepth 5 -name "*.app" 2>/dev/null | grep -i -E "/(simulator|device ?hub)\.app$" | head -1)
-          echo "Opening ${APP:-com.apple.iphonesimulator}"
-          if [ -n "$APP" ]; then open "$APP" --args -CurrentDeviceUDID "$UDID" || true
-          else open -b com.apple.iphonesimulator --args -CurrentDeviceUDID "$UDID" || true; fi
-          xcrun simctl io "$UDID" enumerate | grep -i -E "display|name|screen|uuid" | head -40
-          sleep 30
-          osascript -l JavaScript scripts/duo_pose.js dump 2>&1 | tee duo/ui-tree.txt | head -300 || echo "UI scripting unavailable"
 
       - name: Take iPhone Duo screenshots
         timeout-minutes: 40
@@ -446,8 +436,13 @@ jobs:
           python3 scripts/mock_server.py 8765 &
           sleep 2
           mkdir -p duo/shots
+          cp duo/probe.txt duo/shots/ 2>/dev/null || true
+          DEST=${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}/duo
+          if [ "${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}" = true ]; then
+            export DUO_PUBLISH="scripts/publish_duo.sh duo/shots $DEST"
+          fi
           scripts/duo_shots.sh "$UDID" duo/shots || true
-          cat duo/duo-poses.log || true
+          cat duo/shots/duo-poses.log || true
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -459,29 +454,9 @@ jobs:
       - name: Publish to the screenshots branch
         if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         run: |
-          DIR=${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}/duo
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           mkdir -p duo/shots
-          cp duo/*.txt duo/*.log duo/shots/ 2>/dev/null || true
-          cp -R duo/shots "$RUNNER_TEMP/duo-shots"
-          git fetch -q origin screenshots:refs/remotes/origin/screenshots || true
-          if git rev-parse -q --verify refs/remotes/origin/screenshots > /dev/null; then
-            git switch -q -c publish refs/remotes/origin/screenshots
-          else
-            git switch -q --orphan publish
-          fi
-          rm -rf "$DIR" && mkdir -p "$DIR"
-          cp "$RUNNER_TEMP"/duo-shots/* "$DIR/" || true
-          git add "$DIR"
-          git commit -qm "iPhone Duo screenshots for $DIR (${GITHUB_SHA::7})" || exit 0
-          for i in 1 2 3 4 5; do
-            git push -q origin publish:screenshots && exit 0
-            sleep $((i * 3))
-            git fetch -q origin screenshots:refs/remotes/origin/screenshots
-            git rebase -q refs/remotes/origin/screenshots
-          done
-          exit 1
+          cp duo/probe.txt duo/shots/ 2>/dev/null || true
+          scripts/publish_duo.sh duo/shots ${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}/duo
 
   # Drives the app through Activity (History at 1000+ events, Queue, Blocklist,
   # Tasks, Audit, Indexers) and Wanted against the mock server in volume mode,
