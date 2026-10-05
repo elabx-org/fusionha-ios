@@ -3,7 +3,8 @@
 # only be changed in the Device Hub UI, which does not run on the hosted
 # runner, so the inner display (669 x 951 pt, regular width and height) is
 # stood in for by an iPad mini (744 x 1133 pt, also regular / regular).
-# Files are named proxy-ipadmini-<orientation>-<screen>.png.
+# Files are named standin-unfolded-<orientation>-<screen>-ipadmini-not-real-unfold.png:
+# a stand-in, not a real unfold.
 #
 #   scripts/duo_proxy.sh <app-path> <out-dir>
 set -u
@@ -35,11 +36,11 @@ snap() { xcrun simctl io "$UDID" screenshot "$OUT/$1.png" > /dev/null 2>&1; }
 screens() {  # screens <orientation> [env…]
   local O=$1; shift
   local B="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S"
-  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library "$@";  snap "proxy-ipadmini-$O-library"
-  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8 "$@"; snap "proxy-ipadmini-$O-detail"
-  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=1 "$@"; snap "proxy-ipadmini-$O-activity"
-  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover "$@"; snap "proxy-ipadmini-$O-discover"
-  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=general "$@"; snap "proxy-ipadmini-$O-settings"
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library "$@";  snap "standin-unfolded-$O-library-ipadmini-not-real-unfold"
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8 "$@"; snap "standin-unfolded-$O-detail-ipadmini-not-real-unfold"
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=1 "$@"; snap "standin-unfolded-$O-activity-ipadmini-not-real-unfold"
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover "$@"; snap "standin-unfolded-$O-discover-ipadmini-not-real-unfold"
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=general "$@"; snap "standin-unfolded-$O-settings-ipadmini-not-real-unfold"
 }
 
 launch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library

@@ -458,7 +458,7 @@ jobs:
           # Opening the Device Hub has twice taken the hosted runner down; off until poses work headless.
           export DUO_UI=0
           scripts/duo_shots.sh "$UDID" duo/shots || true
-          # Unfolded proxy: a regular-width iPad mini (labelled proxy-*).
+          # Unfolded proxy: a regular-width iPad mini (labelled standin-*-not-real-unfold).
           xcrun simctl shutdown "$UDID" || true
           scripts/duo_proxy.sh build/Build/Products/Debug-iphonesimulator/Fusionha.app duo/shots || true
           cat duo/shots/duo-poses.log || true

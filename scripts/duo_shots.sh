@@ -83,9 +83,11 @@ $PUBLISH
 screens folded-landscape primary SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ORIENTATION=landscape
 $PUBLISH
 
-# 2. Headless unfold: with no pose command, try powering the outer display
+# 2. Headless unfold (off by default; DUO_SCREENCONFIG=1): powering the outer
+# display off leaves the inner one black on Xcode 27.1, it does not unfold.
+# Kept for when a later Xcode adds a pose command. Try powering the outer display
 # off so the system moves to the inner one (time-limited, may not work).
-if [ "${DUO_SCREENCONFIG:-1}" = 1 ]; then
+if [ "${DUO_SCREENCONFIG:-0}" = 1 ]; then
   limited 60 xcrun simctl io "$UDID" screenConfig --display=primary power off >> "$LOG" 2>&1
   echo "outer display power off: exit $?" | tee -a "$LOG"
   limited 60 xcrun simctl io "$UDID" screenConfig --display=primary-1 power on >> "$LOG" 2>&1
