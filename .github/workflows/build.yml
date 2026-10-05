@@ -389,8 +389,9 @@ jobs:
           done
           xcrun simctl list runtimes
           xcrun simctl list devicetypes | grep -i -E "duo|iphone 1[89]"
-          ls "$(xcode-select -p)/Applications" || true
-          xcrun simctl help io | head -40
+          echo "== Apps that can host the simulator UI"
+          find "$(dirname "$(dirname "$(xcode-select -p)")")" /Applications /System/Applications -maxdepth 5 -name "*.app" 2>/dev/null | grep -i -E "simulator|device ?hub" | head -20
+          mdfind "kMDItemCFBundleIdentifier == 'com.apple.iphonesimulator' || kMDItemDisplayName == '*Device Hub*'" 2>/dev/null | head
 
       - name: Generate Xcode project
         run: |
@@ -430,10 +431,12 @@ jobs:
           xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/Fusionha.app
           # The simulator UI (Simulator.app, or the Device Hub in newer Xcodes)
           # carries the pose buttons.
-          ls "$(xcode-select -p)/Applications"
-          APP=$(ls -d "$(xcode-select -p)"/Applications/*.app | grep -i -E "simulator|device hub" | head -1)
-          echo "Opening $APP"
-          open -a "$APP" --args -CurrentDeviceUDID "$UDID" || true
+          XC=$(dirname "$(dirname "$(xcode-select -p)")")
+          APP=$(find "$XC" /Applications -maxdepth 5 -name "*.app" 2>/dev/null | grep -i -E "/(simulator|device ?hub)\.app$" | head -1)
+          echo "Opening ${APP:-com.apple.iphonesimulator}"
+          if [ -n "$APP" ]; then open "$APP" --args -CurrentDeviceUDID "$UDID" || true
+          else open -b com.apple.iphonesimulator --args -CurrentDeviceUDID "$UDID" || true; fi
+          xcrun simctl io "$UDID" enumerate | grep -i -E "display|name|screen|uuid" | head -40
           sleep 30
           osascript -l JavaScript scripts/duo_pose.js dump 2>&1 | tee duo/ui-tree.txt | head -300 || echo "UI scripting unavailable"
 
