@@ -362,8 +362,12 @@ jobs:
   # pressed in the Simulator's Device Hub (scripts/duo_pose.js) since simctl
   # has no pose command. Published to the `screenshots` branch under
   # <pr-N|main>/duo/.
+  # Best-effort: the simulator has taken the hosted runner down mid-capture, so
+  # it never fails the run, and it only runs where the shots are reviewed.
   duo:
     name: iPhone Duo screenshots
+    if: github.event_name != 'push'
+    continue-on-error: true
     runs-on: xcode-27
     timeout-minutes: 100
     permissions:
