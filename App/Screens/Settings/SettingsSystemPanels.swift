@@ -291,7 +291,7 @@ struct AboutSettingsPanel: View {
                 .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).strokeBorder(Theme.line))
             VStack(alignment: .leading, spacing: 2) {
                 Text("fusionha").font(.system(size: 21, weight: .bold)).tracking(-0.4).foregroundStyle(Theme.txt)
-                Text("Movies, series & anime — one library, every quality edition.")
+                Text("Movies, series & anime — one library, every version.")
                     .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
                 HStack(spacing: 8) {
                     Text(version.map { "v\($0)" } ?? "—")

@@ -139,6 +139,9 @@ struct ItemDetailView: View {
             guard !picked.isEmpty else { return }
             let subtitle = picked.count == 1 ? picked[0].label : "All versions"
             store.interactive = InteractiveTarget(editionIds: picked.map(\.id), subtitle: subtitle)
+        case .scopedSearch(let scope):
+            store.interactive = InteractiveTarget(editionIds: scope.editionIds, episodeId: scope.episodeId,
+                                                  seasonNumber: scope.seasonNumber, subtitle: scope.subtitle)
         }
     }
 
@@ -244,6 +247,11 @@ private struct DetailPage: View {
             DetailHero(detail: detail, close: close)
 
             VStack(alignment: .leading, spacing: 0) {
+                if let setup = model.setupProgress.activeSetup(for: detail.id) {
+                    SetupStepStrip(setup: setup)
+                        .padding(.top, 8)
+                        .padding(.bottom, 4)
+                }
                 if let overview = detail.overview, !overview.isEmpty {
                     Text(overview)
                         .font(.system(size: 14))

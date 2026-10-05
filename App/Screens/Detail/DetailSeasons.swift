@@ -12,6 +12,14 @@ struct SeasonsTab: View {
     let openWeb: () -> Void
     @State private var open: Set<Int>?
 
+    /// The running `tree` step's source while the season list is still empty.
+    private var waitingSource: String? {
+        guard let setup = model.setupProgress.activeSetup(for: detail.id),
+              let tree = setup.steps.first(where: { $0.key == "tree" }),
+              tree.status == .running else { return nil }
+        return tree.source ?? "the provider"
+    }
+
     var body: some View {
         let seasons = detail.seasonsNewestFirst
         let openSet = open ?? Set(seasons.prefix(1).map(\.seasonNumber))
@@ -76,7 +84,11 @@ struct SeasonsTab: View {
             }
 
             if seasons.isEmpty {
-                EmptyBox(message: "No seasons yet for this title.")
+                if let source = waitingSource {
+                    SeasonsWaiting(source: source)
+                } else {
+                    EmptyBox(message: "No seasons yet for this title.")
+                }
             }
             ForEach(seasons) { season in
                 SeasonCard(detail: detail, season: season, isOpen: openSet.contains(season.seasonNumber)) {
@@ -86,6 +98,34 @@ struct SeasonsTab: View {
                 }
             }
         }
+    }
+}
+
+/// While the setup's `tree` step is still building the season list (TVDB-only /
+/// Hybrid): a skeleton + "Waiting for seasons from TVDB…" (ItemDetail
+/// `seasonsWaiting`, SeasonsAccordion `.seasonsWaiting`).
+private struct SeasonsWaiting: View {
+    let source: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach([0.7, 0.9, 0.55], id: \.self) { width in
+                    GeometryReader { geo in
+                        SkeletonBar(height: 12, radius: 6).frame(width: geo.size.width * width)
+                    }
+                    .frame(height: 12)
+                }
+            }
+            .accessibilityHidden(true)
+            Text("Waiting for seasons from \(source)…")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.mut)
+        }
+        .padding(.vertical, 14)
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: Theme.radius))
     }
 }
 

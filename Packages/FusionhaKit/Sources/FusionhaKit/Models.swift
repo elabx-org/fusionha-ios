@@ -103,6 +103,8 @@ public struct SetupStatus: Decodable, Sendable {
     public let loginShowLogo: Bool?
     public let loginShowWordmark: Bool?
     public let loginShowTagline: Bool?
+    /// The Living logo layout's "Media morphs" toggle (0.4.128+).
+    public let loginLivingMedia: Bool?
     /// "Explore the demo" on the login page (and whether it asks for credentials).
     public let demoMode: Bool?
     public let demoRequireCredentials: Bool?

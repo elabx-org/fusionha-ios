@@ -18,6 +18,7 @@ from urllib.parse import parse_qs, urlparse
 import mock_activity
 import mock_add
 import mock_detail
+import mock_shell
 
 MOCK = Path(__file__).resolve().parent / "mock"
 
@@ -357,6 +358,15 @@ SHELL_ROUTES = {
 }
 
 
+# `shell` mode: the Library stats sheet's attention + operations sources.
+SHELL_SHEET_ROUTES = {
+    "/api/v1/library/attention": mock_shell.library_attention,
+    "/api/v1/system/runs/attention": mock_shell.run_attention,
+    "/api/v1/system/indexers/unavailable": mock_shell.indexers_unavailable,
+    "/api/v1/system/commands": mock_shell.commands,
+}
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
@@ -366,6 +376,11 @@ class Handler(BaseHTTPRequestHandler):
         if served:
             return self.send_json(body) if body is not None or "preview" not in path else self.send_json({"detail": "Not Found"}, 404)
         hit = mock_activity.handle("GET", path, query)
+        if SHELL and path in SHELL_SHEET_ROUTES:
+            return self.send_json(SHELL_SHEET_ROUTES[path]())
+        if SHELL and path == "/api/v1/settings":
+            base = hit[0] if hit is not None else shell_settings()
+            return self.send_json(base | {"login_layout": "living", "login_living_media": False})
         if hit is not None:
             return self.send_json(*hit)
         routes = {
@@ -398,6 +413,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/wanted":
             state = query.get("state", ["missing"])[0]
             return self.send_json(load(f"wanted_{state}.json"))
+        if SHELL and path == f"/api/v1/library/{mock_shell.ACTIVE_SETUP_ID}":
+            return self.send_json(mock_shell.setting_up_detail(json.loads((MOCK / "items" / "8.json").read_text())))
         if path.startswith("/api/v1/library/") and path.rsplit("/", 1)[-1].isdigit():
             item = MOCK / "items" / f"{path.rsplit('/', 1)[-1]}.json"
             return self.send_json(json.loads(item.read_text())) if item.exists() else self.send_json({"detail": "Not Found"}, 404)
@@ -413,6 +430,12 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json(body) if body else self.send_json({"detail": "Not Found"}, 404)
         if path.startswith("/api/v1/collections/") and path.rsplit("/", 1)[-1].isdigit():
             return self.send_json(collection_detail(int(path.rsplit("/", 1)[-1])))
+        if path == "/api/v1/library/setups":
+            return self.send_json(mock_shell.setups() if SHELL else {"setups": [], "next_rss_at": None})
+        if SHELL and path == "/api/v1/library":
+            return self.send_json(mock_shell.library(load("library.json")))
+        if SHELL and path == "/api/v1/setup-status":
+            return self.send_json(mock_shell.setup_status(load("setup-status.json")))
         if path in SHELL_ROUTES:
             return self.send_json(SHELL_ROUTES[path]())
         if path in NOTIFICATION_ROUTES:
@@ -492,11 +515,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 REQUESTOR = False
+SHELL = False
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
     # `requestor` serves a request-scoped account (Discover · My requests · You).
     REQUESTOR = len(sys.argv) > 2 and sys.argv[2] == "requestor"
+    # `shell` serves a bigger A–Z library, title setups in flight and the Living-logo sign-in.
+    SHELL = len(sys.argv) > 2 and sys.argv[2] == "shell"
     # `perf` serves Activity / Wanted at volume (1000 history events, 600 blocklist
     # entries, 400 task runs, 20 live downloads) for the perf job.
     mock_activity.VOLUME = len(sys.argv) > 2 and sys.argv[2] == "perf"

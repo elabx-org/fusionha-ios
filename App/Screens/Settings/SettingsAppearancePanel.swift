@@ -126,11 +126,13 @@ struct AppearanceSettingsPanel: View {
     /// the branding switches and the live thumbnail grid of backgrounds.
     @ViewBuilder
     private var loginSection: some View {
-        let layout = store.string("login_layout", "centered") == "split" ? "split" : "centered"
+        let stored = store.string("login_layout", "centered")
+        let layout = ["split", "living"].contains(stored) ? stored : "centered"
+        let living = layout == "living"
         let background = BackdropMode(resolving: store.string("login_background", "aurora"))
         SettingsSection("Preview") {
             VStack(alignment: .leading, spacing: 12) {
-                Text("\(layout == "split" ? "Split" : "Centered") · \(background.name)")
+                Text(living ? "Living logo" : "\(layout == "split" ? "Split" : "Centered") · \(background.name)")
                     .font(.system(size: 12.5))
                     .foregroundStyle(Theme.mut)
                 LoginPreview(layout: layout, background: background, motionOff: motionOff,
@@ -164,16 +166,31 @@ struct AppearanceSettingsPanel: View {
             SettingToggle(key: "login_show_tagline", label: "Show tagline",
                           description: "A one-line description (shown only to signed-out visitors when on).")
         }
+        SettingsSection("Living logo") {
+            Text(living ? "Neutral moves by default." : "Used by the Living logo layout.")
+                .font(.system(size: 12.5))
+                .foregroundStyle(Theme.mut)
+            SettingToggle(key: "login_living_media", label: "Media morphs on the sign-in page",
+                          description: "Adds film, TV and anime-themed animations (a clapperboard, an old TV, a dragon…). Off by default: they tell signed-out visitors this server manages media.")
+                .disabled(!living)
+        }
         SettingsSection("Login background",
                         footer: "Changes save immediately and apply to everyone at the sign-in screen. Reduced-motion visitors always get a still version.") {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Animated or static. All respect reduced-motion.")
                     .font(.system(size: 12.5))
                     .foregroundStyle(Theme.mut)
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: 12)], spacing: 12) {
-                    ForEach(BackdropMode.allCases) { mode in
-                        BackgroundTile(mode: mode, selected: background == mode, motionOff: motionOff) {
-                            if background != mode { store.save("login_background", .string(mode.rawValue)) }
+                if living {
+                    Text("Living logo draws its own dot field, so the background doesn’t apply. Your choice is kept for the other layouts.")
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Theme.mut)
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 158), spacing: 12)], spacing: 12) {
+                        ForEach(BackdropMode.allCases) { mode in
+                            BackgroundTile(mode: mode, selected: background == mode, motionOff: motionOff) {
+                                if background != mode { store.save("login_background", .string(mode.rawValue)) }
+                            }
                         }
                     }
                 }
@@ -187,6 +204,7 @@ struct AppearanceSettingsPanel: View {
     private static let layouts: [(key: String, name: String, desc: String)] = [
         ("centered", "Centered", "Glass card over a full-screen background."),
         ("split", "Split", "Animated hero beside a solid form panel."),
+        ("living", "Living logo", "The logo comes alive beside the form and reacts as you type."),
     ]
 
     // MARK: Library display
@@ -256,9 +274,43 @@ private struct LoginPreview: View {
             let width = geo.size.width
             ZStack {
                 Theme.panel
-                BackdropCanvas(mode: background, motionOff: motionOff)
+                if layout == "living" {
+                    LivingDots(spacing: 9, radius: 0.8, alpha: 0.22)
+                } else {
+                    BackdropCanvas(mode: background, motionOff: motionOff)
+                }
                 CSSRadialGradient.previewVeil
-                if layout == "split" {
+                if layout == "living" {
+                    HStack(spacing: 0) {
+                        VStack(spacing: 10) {
+                            FloatingMark(motionOff: motionOff)
+                            if showWordmark {
+                                Text("FUSIONHA")
+                                    .font(.system(size: 11))
+                                    .tracking(11 * 0.28)
+                                    .foregroundStyle(Theme.txt)
+                            }
+                            if showTagline {
+                                RoundedRectangle(cornerRadius: 4).fill(.white.opacity(0.06))
+                                    .frame(width: (width * 0.52) * 0.72, height: 6)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        VStack(alignment: .leading, spacing: 9) {
+                            bar.frame(width: max(0, (width * 0.48 - 44) * 0.45))
+                            bar
+                            bar
+                            button
+                        }
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 26)
+                        .frame(width: max(150, width * 0.48))
+                        .frame(maxHeight: .infinity)
+                        .background(LinearGradient(colors: [Color(hex: 0x12141B), Color(hex: 0x0D0E13)],
+                                                   startPoint: .top, endPoint: .bottom))
+                        .overlay(alignment: .leading) { Rectangle().fill(Theme.line).frame(width: 1) }
+                    }
+                } else if layout == "split" {
                     let formWidth = min(190, max(150, width / 2))
                     HStack(spacing: 0) {
                         VStack(spacing: 10) {
@@ -361,7 +413,21 @@ private struct LayoutTile: View {
     private var wire: some View {
         ZStack {
             Theme.panel2
-            if key == "split" {
+            if key == "living" {
+                LivingDots(spacing: 5, radius: 0.6, alpha: 0.35)
+                HStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    Color.white.opacity(0.14).frame(width: 74 * 0.44)
+                }
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(LinearGradient(stops: [.init(color: Color(hex: 0x3B82F6), location: 0),
+                                                 .init(color: Color(hex: 0xC256B9), location: 0.6),
+                                                 .init(color: Color(hex: 0xFDBA61), location: 1)],
+                                         startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 14, height: 14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 74 * 0.18)
+            } else if key == "split" {
                 HStack(spacing: 0) {
                     Spacer(minLength: 0)
                     ZStack(alignment: .trailing) {
@@ -452,5 +518,48 @@ private struct SelectedRing: ViewModifier {
                 RoundedRectangle(cornerRadius: Theme.radius + 3, style: .continuous)
                     .fill(Theme.cyan.opacity(selected ? 0.22 : 0))
                     .padding(-3))
+    }
+}
+
+/// The Living logo's dot field in miniature (`.pvDots` / `.liv`): a grid of
+/// faint periwinkle dots on #08090d.
+private struct LivingDots: View {
+    let spacing: CGFloat
+    let radius: CGFloat
+    let alpha: Double
+
+    var body: some View {
+        Canvas { ctx, size in
+            ctx.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Color(hex: 0x08090D)))
+            let dot = Color(red: 170 / 255, green: 180 / 255, blue: 1).opacity(alpha)
+            var y = spacing / 2
+            while y < size.height {
+                var x = spacing / 2
+                while x < size.width {
+                    ctx.fill(Path(ellipseIn: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)),
+                             with: .color(dot))
+                    x += spacing
+                }
+                y += spacing
+            }
+        }
+    }
+}
+
+/// `.pvMark`: the logo at 54pt, floating (`pvFloat` 3.6s: up 3pt and a 10° turn at the midpoint).
+private struct FloatingMark: View {
+    let motionOff: Bool
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: nil, paused: motionOff)) { context in
+            let phase = motionOff ? 0 : context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 3.6) / 3.6
+            let k = UnitCurve.easeInOut.value(at: phase < 0.5 ? phase * 2 : (1 - phase) * 2)
+            Image("BrandLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 54, height: 54)
+                .rotation3DEffect(.degrees(10 * k), axis: (x: 0, y: 1, z: 0))
+                .offset(y: -3 * k)
+        }
     }
 }

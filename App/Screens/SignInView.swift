@@ -26,6 +26,10 @@ struct SignInView: View {
     @State private var demoPass = ""
     @FocusState private var field: Field?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The Living logo layout's engine (tumbler pins, jam, unlock).
+    @State private var living = LivingEngine()
+    /// Bumped on a failed sign-in in the Living layout: the form shakes "no".
+    @State private var nudges = 0
 
     enum Field { case server, username, password, demoUser, demoPass }
 
@@ -47,19 +51,27 @@ struct SignInView: View {
 
     /// `login_layout`: "split" puts the backdrop in a hero above a solid form
     /// panel (the web's ≤760px split); anything else is the centered card.
-    private var isSplit: Bool {
+    private var isSplit: Bool { layout == "split" }
+
+    /// `login_layout = living`: the animated Living logo art panel above the form.
+    /// It needs the server's settings, so the address step stays the centred card.
+    private var isLiving: Bool { connected != nil && layout == "living" }
+
+    private var layout: String? {
         #if DEBUG
         if let forced = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_LOGIN_LAYOUT"], !forced.isEmpty {
-            return forced == "split"
+            return forced
         }
         #endif
-        return status?.loginLayout == "split"
+        return status?.loginLayout
     }
 
     var body: some View {
         ZStack {
             CSSRadialGradient.stage.ignoresSafeArea()
-            if isSplit {
+            if isLiving {
+                livingStage
+            } else if isSplit {
                 splitStage
             } else {
                 centeredStage
@@ -128,28 +140,79 @@ struct SignInView: View {
                     .frame(maxWidth: .infinity, minHeight: 190)
                     .clipped()
 
-                    VStack(spacing: 18) {
-                        VStack(spacing: 0) {
-                            header(centered: false)
-                            content
-                        }
-                        .disabled(working)
-                        changeServer
-                    }
-                    .frame(maxWidth: 340)
-                    .padding(.horizontal, 30)
-                    .padding(.vertical, 40)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(LinearGradient(colors: [Color(red: 19 / 255, green: 21 / 255, blue: 28 / 255).opacity(0.98),
-                                                        Color(red: 12 / 255, green: 13 / 255, blue: 18 / 255).opacity(0.99)],
-                                               startPoint: .top, endPoint: .bottom))
-                    .overlay(alignment: .top) { Rectangle().fill(.white.opacity(0.08)).frame(height: 1) }
+                    formPanel(top: false)
                 }
             }
             .scrollBounceBehavior(.basedOnSize)
             .scrollDismissesKeyboard(.interactively)
         }
         .ignoresSafeArea(.container)
+    }
+
+    /// `.formPanel` on phones: the solid panel under the hero, with a hairline on top.
+    private func formPanel(top: Bool, minHeight: CGFloat = 0) -> some View {
+        VStack(spacing: 18) {
+            VStack(spacing: 0) {
+                header(centered: false)
+                content
+            }
+            .disabled(working)
+            .modifier(Nudge(trigger: nudges))
+            changeServer
+        }
+        .frame(maxWidth: 340)
+        .padding(.horizontal, 30)
+        .padding(.vertical, 40)
+        .frame(maxWidth: .infinity, minHeight: minHeight, maxHeight: .infinity, alignment: top ? .top : .center)
+        .background(LinearGradient(colors: [Color(red: 19 / 255, green: 21 / 255, blue: 28 / 255).opacity(0.98),
+                                            Color(red: 12 / 255, green: 13 / 255, blue: 18 / 255).opacity(0.99)],
+                                   startPoint: .top, endPoint: .bottom))
+        .overlay(alignment: .top) { Rectangle().fill(.white.opacity(0.08)).frame(height: 1) }
+    }
+
+    /// `[data-layout='living']` on phones: the Living logo art takes the top 44%
+    /// of the screen and the form sits below it (its own dot field, so
+    /// `login_background` does not apply). Only the wordmark/tagline toggles
+    /// apply under the mark: the mark IS the logo.
+    private var livingStage: some View {
+        GeometryReader { geo in
+            ScrollView {
+                VStack(spacing: 0) {
+                    LivingMark(engine: living, reduce: motionOff) {
+                        livingCaption
+                    }
+                    .frame(height: geo.size.height * 0.44)
+                    // `place-items: start center` under the art.
+                    formPanel(top: true, minHeight: geo.size.height * 0.56)
+                }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollDismissesKeyboard(.interactively)
+        }
+        .ignoresSafeArea(.container)
+        .onChange(of: password) { if isLiving { living.typing(password.count) } }
+        .onChange(of: field) { old, new in
+            guard isLiving else { return }
+            if new == .password { living.listen() } else if old == .password { living.unlisten() }
+        }
+    }
+
+    @ViewBuilder
+    private var livingCaption: some View {
+        let showWordmark = status?.loginShowWordmark ?? false
+        let showTagline = status?.loginShowTagline ?? false
+        if showWordmark || showTagline {
+            VStack(spacing: 8) {
+                if showWordmark { LoginWordmark(size: 15) }
+                if showTagline {
+                    Text("Everything you watch. One library, every version.")
+                        .font(.system(size: 13.5))
+                        .foregroundStyle(Theme.mut)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .padding(.top, 14)
+        }
     }
 
     @ViewBuilder
@@ -253,7 +316,7 @@ struct SignInView: View {
                     LoginWordmark(size: hero ? 20 : 15)
                 }
                 if showTagline {
-                    Text("Everything you watch. One library, every quality.")
+                    Text("Everything you watch. One library, every version.")
                         .font(.system(size: 13.5))
                         .lineSpacing(13.5 * 0.6 - 4)
                         .foregroundStyle(Theme.mut)
@@ -516,7 +579,21 @@ struct SignInView: View {
     }
 
     private func passwordSignIn(url: URL) async {
-        await run { try await model.signIn(server: url, username: username, password: password) }
+        // Living logo: let the pins align, glint and spin, then go in; a wrong
+        // password jams the pins and the form shakes "no".
+        let celebrate = isLiving && !motionOff
+        let engine = living
+        await run {
+            try await model.signIn(server: url, username: username, password: password,
+                                   beforeEnter: celebrate ? {
+                                       engine.unlock()
+                                       try? await Task.sleep(for: .milliseconds(LivingEngine.unlockMs))
+                                   } : nil)
+        }
+        if celebrate, error != nil {
+            living.fail()
+            nudges += 1
+        }
     }
 
     private func startPlex(url: URL) async {
@@ -734,6 +811,27 @@ private struct MethodPill: View {
     }
 }
 
+
+/// `nudge`: a small horizontal "no" shake (420ms, after 160ms) for the form
+/// after a failed attempt in the Living layout.
+private struct Nudge: ViewModifier {
+    let trigger: Int
+    @Environment(\.motionEnabled) private var motion
+
+    func body(content: Content) -> some View {
+        content.keyframeAnimator(initialValue: CGFloat(0), trigger: motion ? trigger : 0) { view, x in
+            view.offset(x: x)
+        } keyframes: { _ in
+            KeyframeTrack {
+                LinearKeyframe(0, duration: 0.16)
+                CubicKeyframe(-7, duration: 0.105)
+                CubicKeyframe(5, duration: 0.105)
+                CubicKeyframe(-2, duration: 0.105)
+                CubicKeyframe(0, duration: 0.105)
+            }
+        }
+    }
+}
 
 // MARK: - Entrance choreography (Login.module.css)
 

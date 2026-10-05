@@ -187,7 +187,7 @@ jobs:
           shoot settings-1-list SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=list
           shoot settings-2-general SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=general
           shoot settings-3-metadata SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=metadata
-          shoot settings-4-editions SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=editions
+          shoot settings-4-editions SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=versions
           shoot settings-5-releasefilters SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=releasefilters
           shoot settings-6-security SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=security
           shoot settings-7-notifications SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=notifications SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PUSH_TOKEN=ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
@@ -267,6 +267,32 @@ jobs:
           shoot add-10-tvdb-only $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_TVDB=81196 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_SCROLL=details
           shoot add-11-anime-monitor $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=1429 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_KIND=series SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_SCROLL=monitor
           shoot add-12-view-details $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=63639 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_KIND=series SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_DETAILS=1
+          # App shell (0.4.140): the A–Z scroll thumb, setup progress, the poster
+          # long-press sheet and the Living-logo sign-in, against a bigger library.
+          python3 scripts/mock_server.py 8767 shell &
+          sleep 2
+          H=http://127.0.0.1:8767
+          L="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library"
+          # Warm-up launch: the first launch against a fresh mock is still loading at 9s.
+          shoot shell-00-warmup $L && rm -f shots/shell-00-warmup.png
+          shoot shell-01-library-setup-pill $L
+          shoot shell-02-scroll-thumb $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=thumb
+          shoot shell-03-scrubbing $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=S
+          shoot shell-04-setup-steps $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETUP=steps
+          shoot shell-05-setup-result $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETUP=result
+          shoot shell-06-setup-multi $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETUP=multi
+          shoot shell-07-poster-sheet SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_POSTER_SHEET=9
+          shoot shell-08-poster-seasons SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_POSTER_SHEET=9 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_POSTER_PAGE=seasons
+          shoot shell-09-poster-versions SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_POSTER_SHEET=1 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_POSTER_PAGE=versions
+          shoot shell-10-login-living SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$H
+          shoot shell-11-login-living-form SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_METHOD=fusionha
+          shoot shell-12-settings-living SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=appearance SIMCTL_CHILD_FUSIONHA_SCREENSHOT_APPEARANCE_TAB=login "SIMCTL_CHILD_FUSIONHA_SCREENSHOT_APPEARANCE_SCROLL=Media morphs on the sign-in page"
+          shoot shell-13-discover SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_KIND=all
+          shoot shell-14-stats $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_STATS=1
+          shoot shell-15-stats-attention $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_STATS=attention
+          # Title page mid-setup: the step strip under the hero and "Waiting for seasons from TVDB…".
+          shoot shell-16-detail-setup-strip SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=103
+          shoot shell-17-detail-seasons-waiting SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=103 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SCROLL=tabs
           ls -l shots
 
       # Interactive (Manual) search results: The Matrix's HD edition against the
