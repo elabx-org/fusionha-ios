@@ -134,7 +134,7 @@ struct DetailRailStack: View {
                         ForEach(similar.indices, id: \.self) { i in
                             let title = similar[i]
                             VStack(alignment: .leading, spacing: 4) {
-                                PosterImage(url: TMDBImage.resized(title.posterUrl, to: "w185"))
+                                PosterImage(url: TMDBImage.resized(title.posterUrl, to: "w342"))
                                     .frame(width: 96, height: 144)
                                     .clipShape(RoundedRectangle(cornerRadius: 9))
                                     .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Theme.line))
@@ -166,7 +166,7 @@ struct DetailRailStack: View {
                         ForEach(cast.indices, id: \.self) { i in
                             let person = cast[i]
                             VStack(spacing: 4) {
-                                PosterImage(url: TMDBImage.resized(person.profileUrl, to: "w185"))
+                                PosterImage(url: TMDBImage.resized(person.profileUrl, to: "h632"))
                                     .frame(width: 66, height: 66)
                                     .clipShape(Circle())
                                     .overlay(Circle().strokeBorder(Theme.line))

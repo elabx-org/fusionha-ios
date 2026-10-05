@@ -254,7 +254,7 @@ struct RequestModal: View {
             Color.clear
                 .aspectRatio(2 / 3, contentMode: .fit)
                 .frame(maxWidth: 190)
-                .overlay { DiscoverArt(url: TMDBImage.resized(preview?.posterUrl ?? pick.posterUrl, to: "w342")) }
+                .overlay { DiscoverArt(url: TMDBImage.resized(preview?.posterUrl ?? pick.posterUrl, to: "w780")) }
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
                 .shadow(color: .black.opacity(0.5), radius: 16, y: 12)

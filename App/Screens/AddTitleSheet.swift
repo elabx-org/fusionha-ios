@@ -669,7 +669,7 @@ private struct AddTile: View {
 
     @ViewBuilder
     private var poster: some View {
-        let art = PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w342"))
+        let art = PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w500"))
             .aspectRatio(2 / 3, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Theme.line))
@@ -688,7 +688,7 @@ private struct AddListRow: View {
 
     var body: some View {
         HStack(spacing: 11) {
-            PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w92"))
+            PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w154"))
                 .frame(width: 38, height: 52)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {

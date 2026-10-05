@@ -308,7 +308,7 @@ struct PreviewPage: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Color.clear
                                 .aspectRatio(2 / 3, contentMode: .fit)
-                                .overlay { DiscoverArt(url: TMDBImage.resized(card.posterUrl, to: "w342")) }
+                                .overlay { DiscoverArt(url: TMDBImage.resized(card.posterUrl, to: "w500")) }
                                 .background(Theme.panel2)
                                 .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
                                 .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Theme.line))
@@ -347,7 +347,7 @@ private struct CastCard: View {
             ZStack {
                 LinearGradient(colors: [Theme.indigo, Theme.cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
                 Text(initials).font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
-                if let url = member.profileUrl.flatMap({ TMDBImage.resized($0, to: "w185") }) {
+                if let url = member.profileUrl.flatMap({ TMDBImage.resized($0, to: "h632") }) {
                     DiscoverArt(url: url)
                 }
             }
