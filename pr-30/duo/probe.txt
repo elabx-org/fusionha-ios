@@ -1,0 +1,168 @@
+== /Applications/Xcode_27.1_beta.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/System/Library/Frameworks/SwiftUI.framework/Modules/SwiftUI.swiftmodule/arm64-apple-ios-simulator.swiftinterface
+32206:  nonisolated public func toolbarVerticalBehavior(_ behavior: SwiftUI.ToolbarVerticalBehavior) -> some SwiftUICore.View
+32210:public struct ToolbarVerticalBehavior : Swift.Hashable, Swift.Sendable {
+32211:  public static let automatic: SwiftUI.ToolbarVerticalBehavior
+32212:  public static let disabled: SwiftUI.ToolbarVerticalBehavior
+32213:  public static func == (a: SwiftUI.ToolbarVerticalBehavior, b: SwiftUI.ToolbarVerticalBehavior) -> Swift.Bool
+== /Applications/Xcode_27.1_beta.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/System/Library/Frameworks/SwiftUICore.framework/Modules/SwiftUICore.swiftmodule/arm64-apple-ios-simulator.swiftinterface
+2550:  public var toolbarVerticalEdge: SwiftUICore::HorizontalEdge? {
+4843:public struct ReservedRegion : Swift::Equatable, Swift::Hashable, Swift::Identifiable, Swift::Sendable {
+4844:  public var id: SwiftUICore::ReservedRegion.SwiftUICore::ID {
+4847:  public var kind: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+4859:  public static func == (a: SwiftUICore::ReservedRegion, b: SwiftUICore::ReservedRegion) -> Swift::Bool
+4866:extension SwiftUICore::ReservedRegion {
+4868:    public static func == (a: SwiftUICore::ReservedRegion.SwiftUICore::ID, b: SwiftUICore::ReservedRegion.SwiftUICore::ID) -> Swift::Bool
+4875:    public static var occlusion: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+4878:    public static var division: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+4881:    public static func == (a: SwiftUICore::ReservedRegion.SwiftUICore::Kind, b: SwiftUICore::ReservedRegion.SwiftUICore::Kind) -> Swift::Bool
+4890:    public static var includeInactive: SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions {
+4894:    public typealias ArrayLiteralElement = SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions
+4896:    public typealias Element = SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions
+10290:  public func reservedRegions(kind: SwiftUICore::ReservedRegion.SwiftUICore::Kind, options: SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions = [], layoutDirectionBehavior: SwiftUICore::LayoutDirectionBehavior = .mirrors) -> [SwiftUICore::ReservedRegion]
+10315:  public func reservedRegions(kind: SwiftUICore::ReservedRegion.SwiftUICore::Kind, options: SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions = [], layoutDirectionBehavior: SwiftUICore::LayoutDirectionBehavior = .mirrors) -> [SwiftUICore::ReservedRegion]
+24267:  nonisolated public func onHingeChange(isEnabled: Swift::Bool = true, _ action: @escaping (_ oldContext: SwiftUICore::DeviceHingeContext, _ newContext: SwiftUICore::DeviceHingeContext) -> Swift::Void) -> some SwiftUICore::View
+26334:extension SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions : Swift::Sendable {}
+26336:extension SwiftUICore::ReservedRegion.SwiftUICore::QueryOptions : Swift::BitwiseCopyable {}
+public struct ReservedRegion : Swift::Equatable, Swift::Hashable, Swift::Identifiable, Swift::Sendable {
+  public var id: SwiftUICore::ReservedRegion.SwiftUICore::ID {
+    get
+  }
+  public var kind: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+    get
+  }
+  public var frame: CoreFoundation::CGRect {
+    get
+  }
+  public var margins: SwiftUICore::EdgeInsets {
+    get
+  }
+  public var isActive: Swift::Bool {
+    get
+  }
+  public static func == (a: SwiftUICore::ReservedRegion, b: SwiftUICore::ReservedRegion) -> Swift::Bool
+  public func hash(into hasher: inout Swift::Hasher)
+  public var hashValue: Swift::Int {
+    get
+  }
+}
+@available(anyAppleOS 27.1, *)
+extension SwiftUICore::ReservedRegion {
+  public struct ID : Swift::Hashable, Swift::Sendable {
+    public static func == (a: SwiftUICore::ReservedRegion.SwiftUICore::ID, b: SwiftUICore::ReservedRegion.SwiftUICore::ID) -> Swift::Bool
+    public func hash(into hasher: inout Swift::Hasher)
+    public var hashValue: Swift::Int {
+      get
+    }
+  }
+  public struct Kind : Swift::Hashable, Swift::Sendable {
+    public static var occlusion: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+      get
+    }
+    public static var division: SwiftUICore::ReservedRegion.SwiftUICore::Kind {
+      get
+    }
+    public static func == (a: SwiftUICore::ReservedRegion.SwiftUICore::Kind, b: SwiftUICore::ReservedRegion.SwiftUICore::Kind) -> Swift::Bool
+    public func hash(into hasher: inout Swift::Hasher)
+    public var hashValue: Swift::Int {
+== Runtimes ==
+iOS 27.0 (27.0 - 24A434) - com.apple.CoreSimulator.SimRuntime.iOS-27-0
+tvOS 27.0 (27.0 - 24J360) - com.apple.CoreSimulator.SimRuntime.tvOS-27-0
+watchOS 27.0 (27.0 - 24R362) - com.apple.CoreSimulator.SimRuntime.watchOS-27-0
+visionOS 27.0 (27.0 - 24M362) - com.apple.CoreSimulator.SimRuntime.xrOS-27-0
+iPhone 18 Pro (com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro)
+iPhone 18 Pro Max (com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro-Max)
+iPhone Duo (com.apple.CoreSimulator.SimDeviceType.iPhone-Duo)
+== Apps that can host the simulator UI
+/Applications/Xcode_27.1_beta.app/Contents/Applications/DeviceHub.app
+/Applications/Xcode_27.app/Contents/Applications/DeviceHub.app
+/Applications/Xcode_27.2_beta.app/Contents/Applications/DeviceHub.app
+== simctl commands
+Subcommands:
+	addmedia            Add photos, live photos, videos, or contacts to the library of a device.
+	appinfo             Show information about an installed application.
+	boot                Boot a device or device pair.
+	clone               Clone an existing device.
+	create              Create a new device.
+	delete              Delete specified devices, unavailable devices, or all devices.
+	diagnose            Collect diagnostic information and logs.
+	erase               Erase a device's contents and settings.
+	get_app_container   Print the path of the installed app's container
+	getenv              Print an environment variable from a running device.
+	help                Prints the usage for a given subcommand.
+	icloud_sync         Trigger iCloud sync on a device.
+	install             Install an app on a device.
+	install_app_data    Install an xcappdata package to a device, replacing the current contents of the container.
+	io                  Set up a device IO operation.
+	keychain            Manipulate a device's keychain
+	launch              Launch an application by identifier on a device.
+	list                List available devices, device types, runtimes, or device pairs.
+	listapps            Show the installed applications.
+	location            Control a device's simulated location
+	logverbose          enable or disable verbose logging for a device
+	openurl             Open a URL in a device.
+	pair                Create a new watch and phone pair.
+	pair_activate       Set a given pair as active.
+	pbcopy              Copy standard input onto the device pasteboard.
+	pbpaste             Print the contents of the device's pasteboard to standard output.
+	pbsync              Sync the pasteboard content from one pasteboard to another.
+	personalization     Provides utility when working with personalization manifests
+	privacy             Grant, revoke, or reset privacy and permissions
+	push                Send a simulated push notification
+	reboot              Reboot a device.
+	rename              Rename a device.
+	runtime             Perform operations on runtimes
+	shutdown            Shutdown a device.
+	spawn               Spawn a process by executing a given executable on a device.
+	status_bar          Set or clear status bar overrides
+	terminate           Terminate an application by identifier on a device.
+	ui                  Get or Set UI options
+	uninstall           Uninstall an app from a device.
+	unpair              Unpair a watch and phone pair.
+	upgrade             Upgrade a device to a newer runtime.
+Get or Set UI options
+Usage: simctl ui <device> <option> [<arguments>]
+
+Supported Options:
+    appearance
+	When invoked without arguments prints the current user interface appearance style:
+	     light
+	     The Light appearance style.
+	     dark
+	     The Dark appearance style.
+	     unsupported
+	     The platform or runtime version do not support appearance styles.
+	     unknown
+	     The current style is unknown or there was an error detecting it.
+
+    appearance [light | dark]
+	Set the user interface apperance style to light or dark.
+
+    increase_contrast
+	When invoked without arguments prints whether the Increase Contrast mode is currently enabled:
+	     enabled
+	     Increase Contrast is enabled.
+	     disabled
+	     Increase Contrast is disabled.
+	     unsupported
+	     The platform or runtime version do not support the Increase Contrast setting.
+	     unknown
+	     The current setting is unknown or there was an error detecting it.
+
+    increase_contrast [enabled | disabled]
+	Enable or disable Increase Contrast mode.
+
+    content_size
+	When invoked without arguments prints the current preferred content size category, from the following possible values:
+	     Standard sizes: extra-small, small, medium, large, extra-large, extra-extra-large, extra-extra-extra-large.
+	     Extended range sizes: accessibility-medium, accessibility-large, accessibility-extra-large, accessibility-extra-extra-large, accessibility-extra-extra-extra-large.
+	     Other values: unknown, unsupported.
+
+    content_size [increment | decrement | desired_size]
+	Set the preferred content size category. If 'increment' or 'decrement' is passed, the preferred content size will beset to the category one increment larger or smaller than the currently set value respectively.
+== pose / hinge symbols
+-- /Applications/Xcode_27.1.app/Contents/Applications/DeviceHub.app/Contents/MacOS/DeviceHub
+-- /Applications/Xcode_27.1.app/Contents/Applications/DeviceHub.app/Contents/MacOS/DevicesTrampoline
+-- /Library/Developer/PrivateFrameworks/CoreSimulator.framework/Versions/A/CoreSimulator
+AppIcon.icns
+Assets.car
+en.lproj
