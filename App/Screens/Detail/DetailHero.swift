@@ -153,7 +153,7 @@ private struct HeroStatusChip: View {
     }
 }
 
-/// `Movie · 1 edition · 136 min · ★ 8.3 · [R] · Metadata via TMDB`.
+/// `Movie · 1 version · 136 min · ★ 8.3 · [R] · Metadata via TMDB`.
 private struct HeroMetaLine: View {
     let detail: ItemDetail
 
@@ -166,8 +166,10 @@ private struct HeroMetaLine: View {
         let count = detail.editions.count
         FlowRow(spacing: 7, lineSpacing: 6) {
             Text(kindLabel)
-            dotSep
-            Text("\(count) edition\(count == 1 ? "" : "s")")
+            if count > 0 {
+                dotSep
+                Text("\(count) version\(count == 1 ? "" : "s")")
+            }
             if let runtime = detail.runtime, runtime > 0 {
                 dotSep
                 Text("\(runtime) min")

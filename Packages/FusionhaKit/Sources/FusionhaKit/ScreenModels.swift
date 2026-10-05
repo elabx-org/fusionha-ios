@@ -161,7 +161,11 @@ public struct ItemDetail: Decodable, Sendable, Identifiable {
     public let posterUrl: String?
     public let backdropUrl: String?
     public let monitored: Bool?
-    public let editions: [DetailEdition]
+    /// The title's versions. fusionha 0.4.122 renamed `editions` to `versions`
+    /// (the old key is deprecated, removed no earlier than 0.5.0): either decodes.
+    public var editions: [DetailEdition] { versions ?? legacyEditions ?? [] }
+    private let versions: [DetailEdition]?
+    private let legacyEditions: [DetailEdition]?
     public let seasons: [Season]?
     public let history: [HistoryEntry]?
     // Detail page extras (all optional so an older server still decodes).
@@ -181,12 +185,26 @@ public struct ItemDetail: Decodable, Sendable, Identifiable {
     public let trailerKey: String?
     public let collection: CollectionRef?
     public let tags: [ItemTag]?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, kind, year, isAnime, overview, runtime, status, tagline, voteAverage
+        case certification, genres, posterUrl, backdropUrl, monitored
+        case versions
+        case legacyEditions = "editions"
+        case seasons, history, tmdbId, seriesType, metadataProvider, resolvedMetadataProvider
+        case episodeNumberingSource, numberingMismatch, releaseDate, inCinemas, digitalRelease
+        case physicalRelease, releaseWindows, cast, similar, trailerKey, collection, tags
+    }
 }
 
 public struct DetailEdition: Decodable, Sendable, Identifiable, Hashable {
     public let id: Int
     public let tier: QualityTier
-    public let movieEdition: String?
+    /// The edition (cut) name; nil or empty = Standard. Sent as `edition` since
+    /// 0.4.122 and as the deprecated `movie_edition` before: either decodes.
+    public var movieEdition: String? { edition ?? legacyMovieEdition }
+    private let edition: String?
+    private let legacyMovieEdition: String?
     public let monitored: Bool
     public let rootFolderId: Int?
     public let fullPath: String?
@@ -205,8 +223,19 @@ public struct DetailEdition: Decodable, Sendable, Identifiable, Hashable {
     public let availableFrom: String?
     public let availableStage: String?
     public let unresolvedFileCount: Int?
+    public let missingFileCount: Int?
+    public let hasUnresolvedLinks: Bool?
     public let attentionKind: String?
     public let attentionMessage: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, tier, edition
+        case legacyMovieEdition = "movieEdition"
+        case monitored, rootFolderId, fullPath, qualityProfileId, downloadState, movieFile, progress
+        case monitor, folderName, needsEditionFolder, minimumAvailability, releaseTitle, client, indexer
+        case grabbable, availableFrom, availableStage, unresolvedFileCount, missingFileCount
+        case hasUnresolvedLinks, attentionKind, attentionMessage
+    }
 }
 
 public struct MovieFile: Decodable, Sendable, Hashable {
@@ -247,7 +276,10 @@ public struct Episode: Decodable, Sendable, Hashable, Identifiable {
 }
 
 public struct EpisodeDownload: Decodable, Sendable, Hashable {
-    public let editionId: Int?
+    /// `version_id` since 0.4.122, `edition_id` before: either decodes.
+    public var editionId: Int? { versionId ?? legacyEditionId }
+    private let versionId: Int?
+    private let legacyEditionId: Int?
     public let state: String?
     public let progress: Double?
     public let tier: QualityTier?
@@ -255,12 +287,27 @@ public struct EpisodeDownload: Decodable, Sendable, Hashable {
     public let releaseQuality: String?
     public let client: String?
     public let indexer: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case versionId
+        case legacyEditionId = "editionId"
+        case state, progress, tier, releaseTitle, releaseQuality, client, indexer
+    }
 }
 
 public struct EpisodeFile: Decodable, Sendable, Hashable {
-    public let editionId: Int?
+    /// `version_id` since 0.4.122, `edition_id` before: either decodes.
+    public var editionId: Int? { versionId ?? legacyEditionId }
+    private let versionId: Int?
+    private let legacyEditionId: Int?
     public let tier: QualityTier?
     public let file: MovieFile?
+
+    private enum CodingKeys: String, CodingKey {
+        case versionId
+        case legacyEditionId = "editionId"
+        case tier, file
+    }
 }
 
 // MARK: - Wanted  (GET /api/v1/wanted?state=)

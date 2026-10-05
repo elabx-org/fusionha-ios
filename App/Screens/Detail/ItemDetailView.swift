@@ -3,8 +3,8 @@ import FusionhaKit
 
 /// The web's mobile item detail (`MobileDetailFlyout`): a large sheet with the
 /// full-bleed art hero over a blurred ambient backdrop, the item actions rail,
-/// the quality-editions switcher with its scoped reveal, the rails, and the
-/// Seasons / Files (Editions) / History / Searches tabs. A glass compact bar
+/// the Versions panel (opening a row scopes the page), the rails, and the
+/// Seasons / Files (Versions) / History / Searches tabs. A glass compact bar
 /// fades in once the hero has scrolled away.
 struct ItemDetailView: View {
     @Environment(AppModel.self) private var model
@@ -137,7 +137,7 @@ struct ItemDetailView: View {
             let editions = tier.map { t in detail.orderedEditions.filter { $0.tier == t } } ?? detail.orderedEditions
             let picked = editions.isEmpty ? detail.orderedEditions : editions
             guard !picked.isEmpty else { return }
-            let subtitle = picked.count == 1 ? picked[0].label : "All editions"
+            let subtitle = picked.count == 1 ? picked[0].label : "All versions"
             store.interactive = InteractiveTarget(editionIds: picked.map(\.id), subtitle: subtitle)
         }
     }
@@ -256,18 +256,16 @@ private struct DetailPage: View {
 
                 DetailSection(title: "Item actions")
                 ItemActionsRail(detail: detail, openWeb: openWeb)
-                (Text("acts on ").foregroundColor(Theme.dim)
+                (Text("applies to ").foregroundColor(Theme.dim)
                     + Text(store.actsOnLabel).font(.system(size: 11.5, weight: .semibold, design: .monospaced)).foregroundColor(Theme.txt))
                     .font(.system(size: 11.5))
                     .padding(.top, 8)
                     .contentTransition(.opacity)
                     .detailAnimation(.easeInOut(duration: 0.2), value: store.actsOnLabel)
 
-                DetailSection(title: "Quality editions", see: "scope + search in one")
+                DetailSection(title: "Versions")
                     .id("editions")
-                EditionsSwitcher(detail: detail)
-                AutoSearchFlashStrip()
-                GradualProgressStrip()
+                DetailVersionsPanel(detail: detail, openWeb: openWeb)
 
                 if detail.kind == .movie, ReleaseTimeline.hasData(detail) {
                     DetailSection(title: "Release timeline")

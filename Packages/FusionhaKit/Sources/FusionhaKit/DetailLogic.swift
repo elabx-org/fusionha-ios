@@ -83,27 +83,58 @@ public enum DetailText {
     /// (`2026-10-02T02:52:39.007478`), sometimes with `Z` or an offset.
     public static func instant(_ iso: String?) -> Date? {
         guard var text = iso, !text.isEmpty else { return nil }
-        if text.count == 10 {
-            let f = DateFormatter()
-            f.locale = Locale(identifier: "en_US_POSIX")
-            f.timeZone = TimeZone(identifier: "UTC")
-            f.dateFormat = "yyyy-MM-dd"
-            return f.date(from: text)
-        }
+        if text.count == 10 { return dayFormatter.date(from: text) }
         if text.range(of: #"([zZ]|[+-]\d\d:?\d\d)$"#, options: .regularExpression) == nil { text += "Z" }
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = iso.date(from: text) { return d }
-        iso.formatOptions = [.withInternetDateTime]
-        if let d = iso.date(from: text) { return d }
+        if let d = isoFractional.date(from: text) { return d }
+        if let d = isoPlain.date(from: text) { return d }
         // Microsecond fractions (6 digits) trip ISO8601DateFormatter: trim to 3.
         if let dot = text.firstIndex(of: "."), let end = text[dot...].firstIndex(where: { !$0.isNumber && $0 != "." }) {
             let frac = text[text.index(after: dot)..<end]
             let trimmed = String(text[..<dot]) + "." + String(frac.prefix(3)) + String(text[end...])
-            iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return iso.date(from: String(trimmed))
+            return isoFractional.date(from: String(trimmed))
         }
         return nil
+    }
+
+    // Parsing only (never mutated after creation), so one shared instance each
+    // instead of a formatter per call: coverage parses every episode's air date.
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    private static let isoFractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+
+    private static let isoPlain: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+
+    private static let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+    /// `formatReleaseDate` (release-dates.ts): `2026-09-29` → `29 Sep 2026`.
+    public static func releaseDate(_ iso: String) -> String {
+        let parts = iso.prefix(10).split(separator: "-")
+        guard parts.count == 3, let y = Int(parts[0]), let m = Int(parts[1]), let d = Int(parts[2]),
+              (1...12).contains(m) else { return iso }
+        return "\(d) \(months[m - 1]) \(y)"
+    }
+
+    /// `hasPassed` (release-dates.ts): the ISO day is today or earlier, in local time.
+    public static func dayHasPassed(_ iso: String, now: Date = Date()) -> Bool {
+        let parts = iso.prefix(10).split(separator: "-")
+        guard parts.count == 3, let y = Int(parts[0]), let m = Int(parts[1]), let d = Int(parts[2]) else { return false }
+        let cal = Calendar.current
+        guard let day = cal.date(from: DateComponents(year: y, month: m, day: d)) else { return false }
+        return day <= cal.startOfDay(for: now)
     }
 
     /// `relativeTime` (detail-format.ts): "just now" / "N minutes ago" / …
@@ -293,7 +324,7 @@ extension ItemDetail {
 public enum EpisodeStatusKind: String, Sendable {
     case owned, attention, upgrading, downloading, stuck, missing, soon
 
-    /// The drill tick's tooltip text.
+    /// The tick tooltip text (`STATUS_TEXT`).
     public var statusText: String {
         switch self {
         case .owned: return "Downloaded"
@@ -306,17 +337,21 @@ public enum EpisodeStatusKind: String, Sendable {
         }
     }
 
-    /// owned / grab / want tick paint.
+    /// `tickKind`: an attention or upgrading file is still owned coverage; a
+    /// not-yet-aired episode is `soon`, never a gap.
     public var tick: TickKind {
         switch self {
         case .owned, .attention, .upgrading: return .owned
         case .downloading, .stuck: return .grab
-        case .missing, .soon: return .want
+        case .soon: return .soon
+        case .missing: return .want
         }
     }
 }
 
-public enum TickKind: Sendable { case owned, grab, want }
+/// How one episode tick paints. `untracked` is set by the caller from
+/// monitoring (unmonitored and fileless): neutral, never a gap.
+public enum TickKind: Sendable { case owned, grab, want, soon, untracked }
 
 extension Episode {
     public func file(for editionId: Int) -> MovieFile? {
@@ -349,19 +384,25 @@ extension Episode {
     }
 }
 
-// MARK: - Coverage (EditionCoverage.tsx)
+// MARK: - Coverage (version-coverage.ts)
 
+/// One version's coverage over a set of episodes. `total` counts MONITORED
+/// episodes; `wanted` is monitored, fileless and aired; `unaired` is monitored,
+/// fileless and still to air (never missing); `kept` holds files on unmonitored
+/// episodes; `untracked` is unmonitored and absent.
 public struct Cover: Sendable, Hashable {
-    public var total = 0, owned = 0, grabbing = 0, wanted = 0, kept = 0, untracked = 0
+    public var total = 0, owned = 0, grabbing = 0, wanted = 0, unaired = 0, kept = 0, untracked = 0
     public init() {}
 
     public static func + (a: Cover, b: Cover) -> Cover {
         var c = Cover()
         c.total = a.total + b.total; c.owned = a.owned + b.owned; c.grabbing = a.grabbing + b.grabbing
-        c.wanted = a.wanted + b.wanted; c.kept = a.kept + b.kept; c.untracked = a.untracked + b.untracked
+        c.wanted = a.wanted + b.wanted; c.unaired = a.unaired + b.unaired
+        c.kept = a.kept + b.kept; c.untracked = a.untracked + b.untracked
         return c
     }
 
+    /// `coverState`: full ✓ / partial ◐ / empty ○.
     public enum State: Sendable { case done, part, empty }
     public var state: State {
         if total > 0 && owned >= total { return .done }
@@ -371,6 +412,7 @@ public struct Cover: Sendable, Hashable {
 }
 
 extension Season {
+    /// `seasonCover`: an unmonitored season is not coverage (its files are kept).
     public func cover(editionId: Int, now: Date = Date()) -> Cover {
         var c = Cover()
         if monitored == false {
@@ -388,11 +430,18 @@ extension Season {
             switch kind.tick {
             case .owned: c.owned += 1
             case .grab: c.grabbing += 1
-            case .want: break
+            case .soon: c.unaired += 1
+            case .want, .untracked: break
             }
         }
-        c.wanted = c.total - c.owned - c.grabbing
+        c.wanted = c.total - c.owned - c.grabbing - c.unaired
         return c
+    }
+
+    /// `seasonOff`: nothing in the season is tracked (unmonitored outright, or
+    /// every episode unmonitored). A season with no episodes keeps the ordinary look.
+    public func isOff(_ c: Cover) -> Bool {
+        monitored == false || (c.total == 0 && c.kept + c.untracked > 0)
     }
 
     /// `seasonCompletion` for the Seasons tab: an episode counts as done only
@@ -437,7 +486,12 @@ extension ItemDetail {
         }
     }
 
-    /// `editionState`: done when the movie file exists / every monitored episode has a file.
+    /// Seasons in number order (Specials first), as the Versions panel lays them out.
+    public var seasonsAscending: [Season] {
+        (seasons ?? []).sorted { $0.seasonNumber < $1.seasonNumber }
+    }
+
+    /// `versionState`: done when the movie file exists / every monitored episode has a file.
     public func isComplete(_ edition: DetailEdition) -> Bool {
         if !isSeries { return edition.movieFile != nil }
         let monitored = allEpisodes.filter { $0.monitored != false }
@@ -445,7 +499,7 @@ extension ItemDetail {
     }
 }
 
-/// The dot status of an edition (`editionStatusFor`).
+/// The dot status of an edition (`versionStatusFor`).
 public enum EditionDot: Sendable { case upgrade, grab, done, miss }
 
 extension ItemDetail {
