@@ -11,12 +11,19 @@ struct ItemDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    /// True when this is the shell's trailing column (unfolded) rather than a sheet:
+    /// the close / refresh / web actions are then standard toolbar items, which
+    /// the system can move to the side of the display in some postures.
+    @Environment(\.detailInColumn) private var inColumn
     let itemId: Int
+    /// Closes the column; a sheet dismisses itself.
+    var onClose: (() -> Void)?
     @State private var store: DetailStore
     @State private var compact = false
 
-    init(itemId: Int) {
+    init(itemId: Int, onClose: (() -> Void)? = nil) {
         self.itemId = itemId
+        self.onClose = onClose
         _store = State(initialValue: DetailStore(itemId: itemId))
     }
 
@@ -55,7 +62,7 @@ struct ItemDetailView: View {
             }
         }
         .overlay(alignment: .top) {
-            if compact, let title = store.detail?.title {
+            if compact, !inColumn, let title = store.detail?.title {
                 compactBar(title)
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .offset(y: -6)))
             }
@@ -75,6 +82,23 @@ struct ItemDetailView: View {
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: compact)
         .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: store.toast)
         .background { AmbientBackdrop(url: store.detail.flatMap { $0.posterUrl ?? $0.backdropUrl }) }
+        .toolbar {
+            if inColumn {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: close) { Image(systemName: "xmark") }
+                        .accessibilityLabel("Close detail")
+                }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button { Task { await store.load() } } label: { Image(systemName: "arrow.clockwise") }
+                        .accessibilityLabel("Refresh")
+                    Button(action: openWeb) { Image(systemName: "safari") }
+                        .accessibilityLabel("Open in the web app")
+                }
+            }
+        }
+        .navigationTitle(inColumn && compact ? (store.detail?.title ?? "") : "")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackgroundVisibility(inColumn && compact ? .visible : .hidden, for: .navigationBar)
         .environment(store)
         .environment(\.detailReduceMotion, reduceMotion)
         .presentationDetents([.large])
@@ -89,7 +113,7 @@ struct ItemDetailView: View {
         .onChange(of: store.deleted) {
             guard store.deleted else { return }
             Task { await model.loadLibrary() }
-            dismiss()
+            close()
         }
         .sheet(item: $store.interactive) { target in
             InteractiveSearchSheet(target: target)
@@ -124,7 +148,9 @@ struct ItemDetailView: View {
         }
     }
 
-    private func close() { dismiss() }
+    private func close() {
+        if let onClose { onClose() } else { dismiss() }
+    }
 
     /// What the poster menu asked for when it opened this sheet (read once, then cleared).
     private func applyIntent() {

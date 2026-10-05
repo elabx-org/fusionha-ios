@@ -1,6 +1,6 @@
 # fusionha for iOS: UI plan
 
-Status: in progress (updated 2026-10-04). The app shell, screens and login now follow the web app's mobile layout and look.
+Status: in progress (updated 2026-10-05). The app shell, screens and login now follow the web app's mobile layout and look.
 
 ## 1. Principles
 
@@ -31,6 +31,17 @@ Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`g
 | Requester role (Discover · My requests · You) | Tabs swap to **Discover · My requests · You**, driven by `request_scoped` from `GET /api/v1/auth/me`, the same rule as `REQUESTOR_DESTINATIONS`. |
 | Park & Resume dock | Not in v1. A parked interactive search can later reuse the bottom accessory. |
 | iPad | `.tabViewStyle(.sidebarAdaptable)`. The tabs become a sidebar, and Settings uses a split view like the desktop web sidebar. |
+| iPhone Duo (and any regular-width window) | See **iPhone Duo** below. Folded it is the phone app, unchanged. |
+
+### iPhone Duo
+
+Built with Xcode 27.1 (earlier builds run letterboxed on the inner display). Everything is container-relative: no screen sizes, idiom or orientation checks.
+
+- **Folded (outer display, compact width):** the phone layout, unchanged; landscape is now allowed and keeps one column (the Library and Discover grids gain columns as the width grows).
+- **Unfolded (inner display, regular width):** the web's wide layout. The tabs stay on the leading side and the open title becomes the **trailing column** instead of a sheet (`ShellSplit`, `FoldSplitLayout` in `App/Components/DuoLayout.swift`). Its close / refresh / open-in-web actions are standard `.toolbar` items so the system can place them on the side of the display. Poster grids use the web's auto-fill rhythm (`PosterColumns`: 3 on phones, 2 in a narrow column, about one per 150pt when wider). **Settings** becomes the web's desktop Settings: a sidebar of panels beside the open panel (`NavigationSplitView`).
+- **Half open (Book):** the fold is read from `GeometryProxy.reservedRegions(kind: .division)` on every geometry change (it is empty on the first pass). The two columns meet at the fold, which stays empty; with no title open the trailing column says "Select a title". A side-to-side fold stacks the tabs above it and the title below.
+- **Continuity:** the selected tab and the open title live in `AppModel`, so folding and unfolding keeps them (sheet ↔ trailing column). The tab view keeps its identity across the split, so scroll positions survive; when the Library's column count changes, it scrolls back to the title that was at the top.
+- **Widgets and Live Activity:** system families and `containerBackground`, no fixed sizes; nothing Duo-specific.
 
 ## 3. Screen by screen
 

@@ -10,6 +10,7 @@ struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var store: SettingsStore
     @State private var flash = SettingsFlash()
     @State private var path: [String]
@@ -24,8 +25,53 @@ struct SettingsView: View {
 
     private var motionOff: Bool { reduceMotion || !store.animationsEnabled }
 
+    /// Unfolded (regular width): the web's desktop Settings, a sidebar of panels
+    /// beside the open panel. `path` is shared by both layouts (its first slug
+    /// is the sidebar selection), so folding keeps the open panel.
+    private var wide: Bool { sizeClass == .regular }
+
     var body: some View {
-        NavigationStack(path: $path) {
+        Group {
+            if wide {
+                NavigationSplitView {
+                    master
+                        .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 340)
+                } detail: {
+                    NavigationStack(path: detailPath) {
+                        settingsPanel(path.first ?? "general")
+                            .navigationDestination(for: String.self) { slug in
+                                settingsPanel(slug)
+                            }
+                    }
+                    .id(path.first ?? "general")
+                }
+                .navigationSplitViewStyle(.balanced)
+            } else {
+                NavigationStack(path: $path) {
+                    master
+                        .navigationDestination(for: String.self) { slug in
+                            settingsPanel(slug)
+                        }
+                }
+            }
+        }
+        .tint(Theme.cyan)
+        .environment(store)
+        .environment(flash)
+        .environment(\.settingsMotionOff, motionOff)
+        .environment(\.settingsPush, push)
+        .task { await store.load() }
+    }
+
+    /// The panels pushed on top of the sidebar's selection.
+    private var detailPath: Binding<[String]> {
+        Binding(
+            get: { Array(path.dropFirst()) },
+            set: { path = [path.first ?? "general"] + $0 }
+        )
+    }
+
+    private var master: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     header
@@ -50,16 +96,6 @@ struct SettingsView: View {
                         .accessibilityLabel("Close settings")
                 }
             }
-            .navigationDestination(for: String.self) { slug in
-                settingsPanel(slug)
-            }
-        }
-        .tint(Theme.cyan)
-        .environment(store)
-        .environment(flash)
-        .environment(\.settingsMotionOff, motionOff)
-        .environment(\.settingsPush, push)
-        .task { await store.load() }
     }
 
     // MARK: Header
@@ -129,10 +165,15 @@ struct SettingsView: View {
     }
 
     private func row(_ panel: SettingsPanelInfo, child: Bool = false) -> some View {
-        Button { push(panel.id) } label: {
+        Button { select(panel.id) } label: {
             SettingsMasterRow(panel: panel)
         }
         .buttonStyle(SettingsRowButtonStyle())
+        .background {
+            if wide && (path.first ?? "general") == panel.id {
+                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.panel2)
+            }
+        }
         .padding(.top, panel.action ? 5 : 0)
         .overlay(alignment: .top) {
             if panel.action { Rectangle().fill(Theme.line).frame(height: 1) }
@@ -183,20 +224,39 @@ struct SettingsView: View {
 
     // MARK: Navigation
 
+    /// Pushes a panel. In the split, a panel pushed before any sidebar pick
+    /// stacks on General, the panel the detail column shows by default.
     private func push(_ slug: String) {
+        perform {
+            if wide && path.isEmpty { path = ["general"] }
+            path.append(slug)
+        }
+    }
+
+    /// A sidebar / master-list pick: pushes on a phone, replaces the detail
+    /// column when unfolded.
+    private func select(_ slug: String) {
+        if wide {
+            perform { path = [slug] }
+        } else {
+            push(slug)
+        }
+    }
+
+    private func perform(_ change: () -> Void) {
         if motionOff {
             var t = Transaction(animation: nil)
             t.disablesAnimations = true
-            withTransaction(t) { path.append(slug) }
+            withTransaction(t, change)
         } else {
-            path.append(slug)
+            change()
         }
     }
 
     private func open(hit: SettingsSearchHit) {
         query = ""
         flash.set(panel: hit.panel, label: hit.kind == .field ? hit.label : nil)
-        push(hit.panel)
+        select(hit.panel)
     }
 }
 

@@ -378,14 +378,19 @@ jobs:
       - name: iPhone Duo SDK probe
         continue-on-error: true
         run: |
+          mkdir -p duo
+          exec > >(tee duo/probe.txt) 2>&1
           SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)
           for f in $(find "$SDK/System/Library/Frameworks/SwiftUI.framework" "$SDK/System/Library/Frameworks/SwiftUICore.framework" -name '*.swiftinterface' 2>/dev/null | grep arm64-apple-ios-simulator); do
             echo "== $f"
             grep -n -E "reservedRegion|ReservedRegion|toolbarVerticalBehavior|ToolbarVerticalBehavior|toolbarVerticalEdge|onHingeChange|HingeState" "$f" | head -60
+            # The region type itself, for its members.
+            awk '/(struct|enum|class) (ReservedRegion|ReservedRegionKind|ReservedRegionOptions)[ <:{]/{p=1} p{print; n++} n>40{p=0; n=0}' "$f" | head -150
           done
           xcrun simctl list runtimes
           xcrun simctl list devicetypes | grep -i -E "duo|iphone 1[89]"
-          ls /Applications/Xcode_27.1.app/Contents/Developer/Applications || true
+          ls "$(xcode-select -p)/Applications" || true
+          xcrun simctl help io | head -40
 
       - name: Generate Xcode project
         run: |
@@ -423,9 +428,14 @@ jobs:
           xcrun simctl bootstatus "$UDID" -b
           xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --wifiBars 3 || true
           xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/Fusionha.app
-          open -a Simulator --args -CurrentDeviceUDID "$UDID"
+          # The simulator UI (Simulator.app, or the Device Hub in newer Xcodes)
+          # carries the pose buttons.
+          ls "$(xcode-select -p)/Applications"
+          APP=$(ls -d "$(xcode-select -p)"/Applications/*.app | grep -i -E "simulator|device hub" | head -1)
+          echo "Opening $APP"
+          open -a "$APP" --args -CurrentDeviceUDID "$UDID" || true
           sleep 30
-          osascript -l JavaScript scripts/duo_pose.js dump || echo "UI scripting unavailable"
+          osascript -l JavaScript scripts/duo_pose.js dump 2>&1 | tee duo/ui-tree.txt | head -300 || echo "UI scripting unavailable"
 
       - name: Take iPhone Duo screenshots
         timeout-minutes: 40
@@ -433,8 +443,8 @@ jobs:
           python3 scripts/mock_server.py 8765 &
           sleep 2
           mkdir -p duo/shots
-          scripts/duo_shots.sh "$UDID" duo/shots
-          cat duo/duo-poses.log
+          scripts/duo_shots.sh "$UDID" duo/shots || true
+          cat duo/duo-poses.log || true
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -444,11 +454,13 @@ jobs:
           retention-days: 14
 
       - name: Publish to the screenshots branch
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         run: |
           DIR=${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}/duo
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p duo/shots
+          cp duo/*.txt duo/*.log duo/shots/ 2>/dev/null || true
           cp -R duo/shots "$RUNNER_TEMP/duo-shots"
           git fetch -q origin screenshots:refs/remotes/origin/screenshots || true
           if git rev-parse -q --verify refs/remotes/origin/screenshots > /dev/null; then
@@ -457,7 +469,7 @@ jobs:
             git switch -q --orphan publish
           fi
           rm -rf "$DIR" && mkdir -p "$DIR"
-          cp "$RUNNER_TEMP"/duo-shots/*.png "$DIR/"
+          cp "$RUNNER_TEMP"/duo-shots/* "$DIR/" || true
           git add "$DIR"
           git commit -qm "iPhone Duo screenshots for $DIR (${GITHUB_SHA::7})" || exit 0
           for i in 1 2 3 4 5; do
