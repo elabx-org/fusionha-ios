@@ -381,7 +381,9 @@ struct WidgetRowLink<Content: View>: View {
     var body: some View {
         // Plain, so row text keeps the widget's colours instead of the link tint.
         if let url {
-            Link(destination: url) { content.foregroundStyle(.primary) }
+            // A rectangular content shape so the whole row (gaps included) is
+            // the tap region, not only its drawn pixels.
+            Link(destination: url) { content.foregroundStyle(.primary).contentShape(Rectangle()) }
                 .buttonStyle(.plain)
         } else {
             content
@@ -492,12 +494,18 @@ struct WidgetPosterStrip: View {
         }
     }
 
+    /// The whole tile (poster, title, pills) is one link to the title. The poster
+    /// sits on a solid frame and the label carries a rectangular content shape: a
+    /// `Color.clear` base with the poster only in an overlay left the tile without
+    /// a tap region, so taps fell through to the widget's URL (Activity on the
+    /// Downloads widget). A row with no item id opens Library, never Activity.
     private func tile(_ row: RecentImportRow) -> some View {
-        WidgetRowLink(url: WidgetLink.item(row.item.itemId)) {
+        Link(destination: WidgetLink.item(row.item.itemId, fallback: .library)) {
             VStack(alignment: .leading, spacing: 4) {
-                Color.clear
+                Theme.card
                     .aspectRatio(2 / 3, contentMode: .fit)
                     .overlay(WidgetPoster(data: row.poster, radius: 6))
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 if showsTitle {
                     Text(row.item.title)
                         .font(.system(size: 10, weight: .semibold))
@@ -506,7 +514,10 @@ struct WidgetPosterStrip: View {
                 WidgetTierPills(editions: row.item.pills)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundStyle(.primary)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 }
 

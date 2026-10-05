@@ -87,6 +87,49 @@ final class WidgetFeedsTests: XCTestCase {
         XCTAssertEqual(rows[0].importedAt, CalendarMath.parseUTC("2026-10-03T21:00:00"))
     }
 
+    func testRecentImportsKeepsAnyGroupedItemId() throws {
+        // A title-grouped row whose newest event lost its item id still links.
+        let page = try decode(HistoryPage.self, """
+            {"total":2,"items":[
+              {"id":1,"event_type":"IMPORTED","created_at":"2026-10-03T10:00:00","source_title":"Arrival",
+               "tier":"HD-1080p"},
+              {"id":2,"event_type":"IMPORTED","created_at":"2026-10-02T10:00:00","source_title":"Arrival",
+               "tier":"UHD-2160p"}
+            ]}
+            """)
+        let rows = WidgetFeeds.recentImports(page.items, limit: 5)
+        XCTAssertEqual(rows.count, 1)
+        XCTAssertNil(rows[0].itemId)
+        XCTAssertEqual(WidgetRoute.item(rows[0].itemId, fallback: .library).url.absoluteString, "fusionha://library")
+
+        let linked = try decode(HistoryPage.self, """
+            {"total":1,"items":[
+              {"id":3,"event_type":"IMPORTED","created_at":"2026-10-03T10:00:00","media_item_id":42,
+               "item_title":"Arrival","tier":"HD-1080p"}
+            ]}
+            """)
+        let row = WidgetFeeds.recentImports(linked.items, limit: 5)[0]
+        XCTAssertEqual(row.itemId, 42)
+        XCTAssertEqual(WidgetRoute.item(row.itemId, fallback: .library).url.absoluteString, "fusionha://item/42")
+    }
+
+    func testWidgetRoutes() {
+        XCTAssertEqual(WidgetRoute.item(0, fallback: .library), .library)
+        XCTAssertEqual(WidgetRoute.item(nil, fallback: .calendar), .calendar)
+        XCTAssertEqual(WidgetRoute.item(7, fallback: .library), .item(7))
+        // Downloading: Activity, whatever the family.
+        XCTAssertEqual(WidgetRoute.downloads(idle: false, small: false, upNextIds: [1], recentIds: [2]), .activity)
+        XCTAssertEqual(WidgetRoute.downloads(idle: false, small: true, upNextIds: [], recentIds: []), .activity)
+        // Idle small: the title it shows.
+        XCTAssertEqual(WidgetRoute.downloads(idle: true, small: true, upNextIds: [5], recentIds: [6]), .item(5))
+        XCTAssertEqual(WidgetRoute.downloads(idle: true, small: true, upNextIds: [], recentIds: [6]), .item(6))
+        XCTAssertEqual(WidgetRoute.downloads(idle: true, small: true, upNextIds: [], recentIds: [nil]), .library)
+        // Idle medium/large never fall back to Activity.
+        XCTAssertEqual(WidgetRoute.downloads(idle: true, small: false, upNextIds: [5], recentIds: [6]), .library)
+        XCTAssertEqual(WidgetRoute.downloads(idle: true, small: false, upNextIds: [5], recentIds: []), .calendar)
+        XCTAssertEqual(WidgetRoute.downloads(idle: true, small: false, upNextIds: [], recentIds: []), .library)
+    }
+
     func testLabels() {
         let at = CalendarMath.parseUTC("2026-10-04T21:00:00Z")!
         XCTAssertEqual(WidgetFeeds.whenLabel(at, hasTime: true, now: now, calendar: utc), "Today · 9:00 PM")

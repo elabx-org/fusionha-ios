@@ -56,12 +56,12 @@ private struct DownloadsWidgetEntryView: View {
             .widgetURL(url)
     }
 
-    /// Idle small widgets open the item they show; everything else opens Activity
-    /// (medium and large rows link to their own items).
+    /// Downloading opens Activity; idle small opens the title it shows; idle
+    /// medium and large open Library (rows and posters link to their own items).
     private var url: URL {
-        guard entry.idle, family == .systemSmall else { return WidgetLink.activity }
-        if let next = entry.upNext.first { return WidgetLink.item(next.item.itemId) ?? WidgetLink.calendar }
-        if let latest = entry.recent.first { return WidgetLink.item(latest.item.itemId) ?? WidgetLink.library }
-        return WidgetLink.activity
+        WidgetRoute.downloads(
+            idle: entry.idle, small: family == .systemSmall,
+            upNextIds: entry.upNext.map(\.item.itemId),
+            recentIds: entry.recent.map(\.item.itemId)).url
     }
 }
