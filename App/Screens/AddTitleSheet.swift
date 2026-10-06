@@ -236,7 +236,8 @@ struct AddTitleSheet: View {
         let effective = sessionProvider == "auto" ? global : sessionProvider
         return HStack(spacing: 5) {
             Text("Added as")
-            ProviderLogo(provider: effective, compact: true)
+            ProviderMark(provider: effective, size: 12)
+                .foregroundStyle(Theme.txt)
             Text(sessionProvider == "auto" ? "· your default" : "· overridden for this session")
         }
         .font(.system(size: 12))
@@ -271,7 +272,7 @@ struct AddTitleSheet: View {
         return Button {
             withAnimation(motion ? Motion.indicator : nil) { source = value }
         } label: {
-            ProviderLogo(provider: value == .tmdb ? "tmdb" : "tvdb")
+            ProviderMark(provider: value == .tmdb ? "tmdb" : "tvdb", size: 12)
                 .opacity(locked ? 0.4 : 1)
                 .frame(maxWidth: .infinity, minHeight: 34)
                 .background {
@@ -359,7 +360,7 @@ struct AddTitleSheet: View {
             }
             HStack(spacing: 5) {
                 Text("VIA").font(.system(size: 10, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
-                ProviderLogo(provider: source == .tvdb ? "tvdb" : "tmdb", compact: true)
+                ProviderMark(provider: source == .tvdb ? "tvdb" : "tmdb", size: 10)
             }
             .padding(.horizontal, 8)
             .frame(height: 26)
@@ -553,39 +554,6 @@ struct MetadataKeyNotice: View {
 }
 
 // MARK: - Step 1 pieces
-
-/// The TMDB / TVDB marks, drawn (no bundled artwork).
-struct ProviderLogo: View {
-    let provider: String
-    var compact = false
-
-    var body: some View {
-        switch provider.lowercased() {
-        case "tvdb":
-            HStack(spacing: 0) {
-                Text("tv")
-                    .foregroundStyle(Theme.bg)
-                    .padding(.horizontal, 2)
-                    .background(Color(hex: 0x4FB862), in: RoundedRectangle(cornerRadius: 3))
-                Text("db").foregroundStyle(Theme.txt)
-            }
-            .font(.system(size: compact ? 11 : 13, weight: .heavy))
-        case "tvmaze":
-            Text("TVmaze").font(.system(size: compact ? 11 : 13, weight: .heavy)).foregroundStyle(Color(hex: 0x3C948B))
-        case "hybrid":
-            Text("Hybrid").font(.system(size: compact ? 11 : 13, weight: .heavy)).foregroundStyle(Theme.edition)
-        default:
-            Text("TMDB")
-                .font(.system(size: compact ? 9.5 : 11, weight: .black))
-                .foregroundStyle(LinearGradient(colors: [Color(hex: 0x90CEA1), Color(hex: 0x01B4E4)],
-                                                startPoint: .leading, endPoint: .trailing))
-                .padding(.horizontal, compact ? 5 : 7)
-                .padding(.vertical, compact ? 2 : 3)
-                .background(Color(hex: 0x0D253F), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Color(hex: 0x01B4E4).opacity(0.35)))
-        }
-    }
-}
 
 private func kindName(_ result: MediaSearchResult) -> String {
     result.isAnime ? "Anime" : (result.kind == .movie ? "Movie" : "Series")

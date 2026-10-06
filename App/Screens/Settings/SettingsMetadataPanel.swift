@@ -7,6 +7,7 @@ import FusionhaKit
 struct MetadataSettingsPanel: View {
     @Environment(SettingsStore.self) private var store
     @Environment(\.settingsMotionOff) private var motionOff
+    @Environment(SettingsFlash.self) private var flash
     @State private var advancedOpen = false
 
     var body: some View {
@@ -17,6 +18,15 @@ struct MetadataSettingsPanel: View {
                 content
             }
         }
+        #if DEBUG
+        .task(id: store.loaded) {
+            // CI screenshots: scroll to a field (`FUSIONHA_SCREENSHOT_METADATA_SCROLL=Default provider`).
+            guard store.loaded, let label = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_METADATA_SCROLL"]
+            else { return }
+            try? await Task.sleep(for: .milliseconds(600))
+            flash.set(panel: "metadata", label: label)
+        }
+        #endif
     }
 
     @ViewBuilder
@@ -24,9 +34,13 @@ struct MetadataSettingsPanel: View {
         SettingsSection("Metadata sources") {
             ProviderCard(provider: .tmdb)
         }
-        SettingsSection(footer: "Metadata provided by TheTVDB. Please consider adding missing information or subscribing.") {
+        Section {
             ProviderCard(provider: .tvdb)
+        } footer: {
+            TvdbAttribution()
         }
+        .listRowBackground(Theme.card)
+        .listRowSeparatorTint(Theme.line)
         SettingsSection {
             ProviderCard(provider: .tvmaze)
         }
@@ -35,14 +49,8 @@ struct MetadataSettingsPanel: View {
             VStack(alignment: .leading, spacing: 10) {
                 FieldLabel(label: "Default provider",
                            description: "Global default for series (movies always use TMDB). A per-series override on the title’s detail page wins over this.")
-                Picker("Default provider", selection: providerBinding) {
-                    Text("TMDB").tag("tmdb")
-                    Text("TVDB").tag("tvdb")
-                    Text("TVmaze").tag("tvmaze")
-                    Text("Hybrid").tag("hybrid")
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
+                MetadataProviderSegmented(selection: providerBinding,
+                                          disabled: store.bool("tvdb_configured") ? [] : ["tvdb", "hybrid"])
                 // TVDB / Hybrid need a configured TVDB key (the server answers 422
                 // `tvdb_not_configured`): they stay visible but can't be picked.
                 if !store.bool("tvdb_configured") {
@@ -130,297 +138,6 @@ struct MetadataSettingsPanel: View {
     }
 }
 
-// MARK: Provider cards
-
-private enum MetadataProvider {
-    case tmdb, tvdb, tvmaze
-
-    var name: String {
-        switch self {
-        case .tmdb: return "The Movie Database"
-        case .tvdb: return "TheTVDB"
-        case .tvmaze: return "TVmaze"
-        }
-    }
-
-    var role: String {
-        switch self {
-        case .tmdb: return "Identity · Primary"
-        case .tvdb: return "Series provider · augment"
-        case .tvmaze: return "Air times · numbering"
-        }
-    }
-
-    var blurb: String {
-        switch self {
-        case .tmdb: return "Movies, series & anime · TVDB/IMDB → TMDB translation for arr clients."
-        case .tvdb: return "Alternate series numbering · tvdb_id backfill · adding series missing from TMDB."
-        case .tvmaze: return "Free · no API key. Network air time + timezone per episode, and an alternate numbering source."
-        }
-    }
-
-    var mark: (String, Color) {
-        switch self {
-        case .tmdb: return ("TMDB", Color(hex: 0x01B4E4))
-        case .tvdb: return ("TVDB", Color(hex: 0x6CD491))
-        case .tvmaze: return ("TVmaze", Color(hex: 0x3C948B))
-        }
-    }
-}
-
-private struct ProviderStatus {
-    enum Kind { case ok, ready, off, err, testing }
-    let kind: Kind
-    let label: String
-    let meta: String
-
-    var color: Color {
-        switch kind {
-        case .ok: return Theme.done
-        case .ready: return Theme.cyan
-        case .off: return Theme.dim
-        case .err: return Theme.danger
-        case .testing: return Theme.miss
-        }
-    }
-}
-
-private struct ProviderCard: View {
-    let provider: MetadataProvider
-    @Environment(SettingsStore.self) private var store
-    @State private var testing = false
-    @State private var running = false
-    @State private var testMessage: String?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 12) {
-                Text(provider.mark.0)
-                    .font(.system(size: 11, weight: .heavy))
-                    .foregroundStyle(provider.mark.1)
-                    .frame(width: 46, height: 46)
-                    .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Theme.line))
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(provider.role.uppercased())
-                        .font(.system(size: 9.5, weight: .heavy))
-                        .tracking(0.5)
-                        .foregroundStyle(Theme.dim)
-                    Text(provider.name)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Theme.txt)
-                    Text(provider.blurb)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.mut)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-                Toggle("", isOn: enabledBinding)
-                    .labelsHidden()
-                    .tint(Theme.indigo)
-                    .disabled(provider == .tmdb)
-                    .accessibilityLabel(provider == .tmdb ? "TMDB is always enabled" : "Enable \(provider.mark.0) provider")
-            }
-            HStack(spacing: 8) {
-                HStack(spacing: 6) {
-                    Circle().fill(status.color).frame(width: 6, height: 6)
-                    Text(status.label)
-                }
-                .font(.system(size: 11.5, weight: .semibold))
-                .foregroundStyle(status.color)
-                .padding(.horizontal, 10)
-                .frame(height: 24)
-                .background(status.color.opacity(0.12), in: Capsule())
-                .overlay(Capsule().strokeBorder(status.color.opacity(0.32)))
-                Text(status.meta).font(.system(size: 11.5)).foregroundStyle(Theme.mut).lineLimit(1)
-            }
-            .animation(.easeInOut(duration: 0.2), value: status.label)
-            switch provider {
-            case .tmdb:
-                ApiKeyCell(key: "tmdb_api_key", configuredKey: "tmdb_configured", label: "TMDB API key",
-                           sub: "Required · movies always use TMDB")
-                connectionCell(sub: "Probe the saved key against TMDB.", path: "/api/v1/settings/test-tmdb")
-            case .tvdb:
-                ApiKeyCell(key: "tvdb_api_key", configuredKey: "tvdb_configured", label: "TVDB API key",
-                           sub: "BYO TVDB v4 · stored redacted")
-                connectionCell(sub: "Probe against TheTVDB.", path: "/api/v1/settings/test-tvdb")
-            case .tvmaze:
-                NumberFieldRow(label: "Search delay after air", description: "Wait before auto-searching", unit: "min",
-                               value: store.double("search_air_delay_minutes", 15)) { n in
-                    store.save("search_air_delay_minutes", .number(n))
-                }
-                HStack {
-                    FieldLabel(label: "Enrichment", description: enrichmentSub)
-                    Spacer()
-                    Button {
-                        Task { await runEnrichment() }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .buttonStyle(.web())
-                    .disabled(running || !store.bool("tvmaze_enabled"))
-                    .accessibilityLabel(running ? "Running…" : "Run enrichment now")
-                }
-            }
-        }
-        .padding(.vertical, 6)
-        .opacity(enabled ? 1 : 0.7)
-        .settingsField(provider.name)
-    }
-
-    private var enabled: Bool {
-        switch provider {
-        case .tmdb: return true
-        case .tvdb: return store.bool("tvdb_enabled")
-        case .tvmaze: return store.bool("tvmaze_enabled", true)
-        }
-    }
-
-    private var enabledBinding: Binding<Bool> {
-        switch provider {
-        case .tmdb: return .constant(true)
-        case .tvdb: return store.boolBinding("tvdb_enabled")
-        case .tvmaze: return store.boolBinding("tvmaze_enabled", true)
-        }
-    }
-
-    private var status: ProviderStatus {
-        if testing {
-            return ProviderStatus(kind: .testing, label: "Testing…",
-                                  meta: provider == .tmdb ? "probing TMDB" : "probing TheTVDB")
-        }
-        switch provider {
-        case .tmdb:
-            return keyedStatus(configured: store.bool("tmdb_configured"), tested: store.string("tmdb_last_tested_at"),
-                               ok: store.bool("tmdb_last_test_ok"))
-        case .tvdb:
-            if !store.bool("tvdb_enabled") {
-                return ProviderStatus(kind: .off, label: "Disabled",
-                                      meta: store.bool("tvdb_configured") ? "key stored · inactive" : "not configured")
-            }
-            return keyedStatus(configured: store.bool("tvdb_configured"), tested: store.string("tvdb_last_tested_at"),
-                               ok: store.bool("tvdb_last_test_ok"))
-        case .tvmaze:
-            if !store.bool("tvmaze_enabled", true) { return ProviderStatus(kind: .off, label: "Disabled", meta: "inactive") }
-            let synced = store.string("tvmaze_last_synced_at")
-            return ProviderStatus(kind: .ok, label: "Active",
-                                  meta: synced.isEmpty ? "not yet synced" : "synced \(formatAgo(synced))")
-        }
-    }
-
-    private func keyedStatus(configured: Bool, tested: String, ok: Bool) -> ProviderStatus {
-        if !configured { return ProviderStatus(kind: .err, label: "Error", meta: "no API key configured") }
-        if tested.isEmpty { return ProviderStatus(kind: .ready, label: "Ready", meta: "configured · not tested") }
-        if ok { return ProviderStatus(kind: .ok, label: "Connected", meta: "verified \(formatAgo(tested))") }
-        return ProviderStatus(kind: .err, label: "Error", meta: "failed \(formatAgo(tested))")
-    }
-
-    private var enrichmentSub: String {
-        let synced = store.string("tvmaze_last_synced_at")
-        return Format.timestamp(synced) == nil ? "Never run yet" : "Last filled \(formatAgo(synced))"
-    }
-
-    private func connectionCell(sub: String, path: String) -> some View {
-        HStack {
-            FieldLabel(label: "Connection", description: testMessage ?? sub)
-            Spacer()
-            Button {
-                Task { await test(path) }
-            } label: {
-                Image(systemName: "bolt")
-            }
-            .buttonStyle(.web())
-            .foregroundStyle(Theme.cyan)
-            .disabled(testing)
-            .accessibilityLabel(testing ? "Testing…" : "Test connection")
-        }
-    }
-
-    private func test(_ path: String) async {
-        guard let client = store.client else { return }
-        testing = true
-        let result = try? await client.json("POST", path)
-        testMessage = result?["message"]?.string
-        // The probe always stamps last-tested on the server; re-read for the pill.
-        await store.load()
-        testing = false
-    }
-
-    private func runEnrichment() async {
-        running = true
-        _ = try? await store.client?.json("POST", "/api/v1/system/tasks/air-times/run")
-        running = false
-    }
-}
-
-/// A masked key with a pencil; editing shows a secure field with Save / Cancel.
-private struct ApiKeyCell: View {
-    let key: String
-    let configuredKey: String
-    let label: String
-    let sub: String
-    @Environment(SettingsStore.self) private var store
-    @State private var editing = false
-    @State private var value = ""
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                FieldLabel(label: label, description: sub)
-                Spacer()
-                if !editing {
-                    MonoText(store.bool(configuredKey) ? "•••• •••• ••••" : "Not set")
-                    Button { editing = true } label: { Image(systemName: "pencil") }
-                        .buttonStyle(.web())
-                        .accessibilityLabel("Change \(label)")
-                }
-            }
-            if editing {
-                SecureField("", text: $value, prompt: Text("Paste your \(label)").foregroundStyle(Theme.dim))
-                    .font(.system(size: 13))
-                    .padding(.horizontal, 11)
-                    .frame(height: 34)
-                    .background(Theme.bg, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.line))
-                    .onSubmit(commit)
-                HStack(spacing: 8) {
-                    Button("Save", action: commit)
-                        .buttonStyle(.web(.primary))
-                        .disabled(value.trimmingCharacters(in: .whitespaces).isEmpty)
-                    Button("Cancel") { editing = false; value = "" }
-                        .buttonStyle(.web(.ghost))
-                }
-            }
-        }
-    }
-
-    private func commit() {
-        let trimmed = value.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        store.save(key, .string(trimmed))
-        Task {
-            try? await Task.sleep(for: .milliseconds(600))
-            await store.load()
-        }
-        editing = false
-        value = ""
-    }
-}
-
-/// The web's `formatAgo`: "just now", "5 min ago", "3h ago", "2d ago", or a date.
-func formatAgo(_ iso: String) -> String {
-    guard let then = Format.timestamp(iso) else { return "" }
-    let secs = max(0, Int(Date().timeIntervalSince(then)))
-    if secs < 60 { return "just now" }
-    let mins = secs / 60
-    if mins < 60 { return "\(mins) min ago" }
-    let hrs = mins / 60
-    if hrs < 24 { return "\(hrs)h ago" }
-    let days = hrs / 24
-    if days < 7 { return "\(days)d ago" }
-    return then.formatted(date: .numeric, time: .omitted)
-}
-
 // MARK: Hybrid precedence
 
 /// "✦ Hybrid — per-field source precedence": tap a source to promote it.
@@ -472,7 +189,7 @@ private struct HybridPrecedenceRows: View {
                         if index > 0 { Text("→").font(.system(size: 12)).foregroundStyle(Theme.dim) }
                         Button { promote(field.id, source) } label: {
                             HStack(spacing: 5) {
-                                Text(Self.sourceLabel[source] ?? source)
+                                ProviderMark(provider: source, size: 14)
                                 if index == 0 {
                                     Text("PRIMARY").font(.system(size: 8.5, weight: .heavy)).foregroundStyle(Theme.cyan)
                                 }

@@ -155,7 +155,7 @@ struct EditItemSheet: View {
                         }
                     }
                     LabeledContent("Metadata source") {
-                        Text(DetailText.provider(detail.resolvedMetadataProvider ?? detail.metadataProvider ?? "tmdb"))
+                        ProviderMark(provider: detail.resolvedMetadataProvider ?? detail.metadataProvider ?? "tmdb", size: 15)
                             .foregroundStyle(Theme.mut)
                     }
                 }

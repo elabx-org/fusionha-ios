@@ -204,7 +204,7 @@ struct DiscoverView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Search TMDB to add movies, series and anime")
-                AddAsControl()
+                DiscoverAddAsControl()
                     .padding(.top, 8)
             } else if canRequest {
                 HStack(spacing: 12) {
@@ -365,46 +365,6 @@ func interleave<T>(_ a: [T], _ b: [T]) -> [T] {
 struct RequestsView: View {
     var body: some View {
         DiscoverView(initialTab: .requests)
-    }
-}
-
-// MARK: - "Add as" provider control
-
-private struct AddAsControl: View {
-    @State private var session = DiscoverSession.shared
-
-    private func label(_ value: String) -> String {
-        switch value {
-        case "tvdb": return "TVDB"
-        case "hybrid": return "Hybrid"
-        default: return "TMDB"
-        }
-    }
-
-    var body: some View {
-        @Bindable var session = session
-        HStack(spacing: 6) {
-            Text("Add as").foregroundStyle(Theme.dim)
-            Menu {
-                Picker("Add as", selection: $session.providerOverride) {
-                    Text("Default (\(label(session.globalProvider)))").tag("auto")
-                    Text("TMDB").tag("tmdb")
-                    Text("TVDB").tag("tvdb")
-                    Text("Hybrid").tag("hybrid")
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    DiscoverProviderMark(provider: session.effectiveProvider)
-                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.mut)
-                }
-                .padding(.horizontal, 2)
-                .frame(minHeight: 30)
-                .contentShape(Rectangle())
-            }
-            .accessibilityLabel("Add as \(label(session.effectiveProvider))")
-        }
-        .font(.system(size: 12))
-        .foregroundStyle(Theme.mut)
     }
 }
 
@@ -674,9 +634,9 @@ struct DiscoverCard: View {
     private var providerException: some View {
         let global = DiscoverSession.shared.globalProvider
         if result.kind == .movie && global != "tmdb" {
-            DiscoverProviderMark(provider: "tmdb", height: 9)
+            TmdbLogo(size: 9, label: "TMDB")
         } else if result.kind == .series && global == "tvdb" {
-            DiscoverProviderMark(provider: "tvdb", height: 11)
+            TvdbLogo(size: 11, label: "TVDB")
         }
     }
 
