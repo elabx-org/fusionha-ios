@@ -404,11 +404,10 @@ struct SetupIndicators: View {
             VStack {
                 Spacer(minLength: 0)
                 if motion {
-                    TimelineView(.animation) { context in
-                        let phase = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.4) / 1.4
-                        // `background-size: 200%` sliding to `-200%`: two gradient tiles scroll left.
-                        GeometryReader { geo in
-                            let w = geo.size.width
+                    // `background-size: 200%` sliding to `-200%`: two gradient tiles scroll left.
+                    GeometryReader { geo in
+                        let w = geo.size.width
+                        RepeatForever(animation: .linear(duration: 1.4).repeatForever(autoreverses: false)) { on in
                             HStack(spacing: 0) {
                                 ForEach(0..<2, id: \.self) { _ in
                                     LinearGradient(colors: [.clear, Theme.grab, .clear],
@@ -416,7 +415,7 @@ struct SetupIndicators: View {
                                         .frame(width: w * 2)
                                 }
                             }
-                            .offset(x: -CGFloat(phase) * 2 * w)
+                            .offset(x: on ? -2 * w : 0)
                         }
                     }
                     .frame(height: 3)

@@ -13,6 +13,9 @@ extension ScrubberState {
         let height: CGFloat = 600
         func y(_ ratio: CGFloat) -> CGFloat { Self.thumbHeight / 2 + ratio * (height - Self.thumbHeight) }
         HangWatchdog.start()
+        // A baseline: the page as it opens, before any scrub.
+        HangWatchdog.mark("SCRUB-CHECK idle-before")
+        await HangWatchdog.checkIdle(seconds: 3)
         HangWatchdog.mark("SCRUB-CHECK sweep")
         engage(at: y(0), height: height, letters: letters)
         let stops: [CGFloat] = [0.97, 0.03, 0.6, 0.1, 0.9, 0.35, 0.99, 0.0, 0.75, 0.2]
@@ -25,6 +28,8 @@ extension ScrubberState {
         try? await Task.sleep(for: .milliseconds(300))
         HangWatchdog.mark("SCRUB-CHECK scroll")
         await Self.screenshotDrift(steps: 500)
+        // Let the thumb fade and the last scroll settle, then measure.
+        try? await Task.sleep(for: .seconds(2))
         HangWatchdog.mark("SCRUB-CHECK idle")
         await HangWatchdog.checkIdle(seconds: 3)
         HangWatchdog.mark("SCRUB-CHECK DONE")

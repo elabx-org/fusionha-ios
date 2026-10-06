@@ -299,7 +299,8 @@ jobs:
           mkdir -p sweep
           env $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=sweep xcrun simctl launch --terminate-running-process \
             --stderr="$PWD/sweep/app.log" "$UDID" org.elabx.fusionha > /dev/null
-          sleep 8
+          for i in $(seq 1 40); do grep -q "SCRUB-CHECK sweep" sweep/app.log 2>/dev/null && break; sleep 1; done
+          sleep 2
           for i in $(seq -w 1 16); do
             xcrun simctl io "$UDID" screenshot "sweep/shell-03-sweep-$i.png" > /dev/null
             sips -Z 400 -s format bmp "sweep/shell-03-sweep-$i.png" --out "sweep/shell-03-sweep-$i.bmp" > /dev/null

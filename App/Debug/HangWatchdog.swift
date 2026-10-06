@@ -13,6 +13,9 @@ import Darwin
 enum HangWatchdog {
     /// The longest the main thread may go without answering a ping.
     static let limit: Double = 1.0
+    /// The share of one core the main thread may use on an idle page. Loops
+    /// on screen must be render-loop animations (`RepeatForever`), not timelines.
+    static let idleLimit: Double = 0.25
 
     private static let lock = NSLock()
     nonisolated(unsafe) private static var started = false
@@ -84,8 +87,9 @@ enum HangWatchdog {
     }
 
     /// After the scripted scroll stops: the main thread must go quiet. A
-    /// layout feedback loop that never blocks for a whole second still keeps
-    /// it busy, so a mostly-busy main thread while idle is reported as a hang.
+    /// layout feedback loop that never blocks for a whole second, or views
+    /// re-rendering every frame, still keep it busy, so a main thread busier
+    /// than `idleLimit` while idle is reported as a hang.
     @MainActor
     static func checkIdle(seconds: Double) async {
         let thread = mach_thread_self()
@@ -93,7 +97,7 @@ enum HangWatchdog {
         try? await Task.sleep(for: .seconds(seconds))
         let busy = (cpuTime(thread) - before) / seconds
         mark(String(format: "SCRUB-CHECK idle main-thread cpu %.0f%%", busy * 100))
-        if busy > 0.85 { mark("HANG main thread stayed busy while the page was idle") }
+        if busy > idleLimit { mark("HANG main thread stayed busy while the page was idle") }
     }
 
     private static func cpuTime(_ thread: thread_act_t) -> Double {

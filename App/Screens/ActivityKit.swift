@@ -1310,23 +1310,8 @@ enum ActMotion {
 // transform/opacity, which the render loop interpolates without re-running any
 // view body. They used to be `TimelineView(.animation)` loops that re-evaluated
 // (and re-laid out) every bar, dot and spinner 30 times a second, which kept the
-// main thread ~50% busy on an idle Queue tab. All of them are static under
-// reduced motion.
-
-/// A view that starts one repeat-forever animation when it appears.
-private struct ActRepeat<Content: View>: View {
-    let animation: Animation
-    @ViewBuilder let content: (_ on: Bool) -> Content
-    @State private var on = false
-
-    var body: some View {
-        content(on)
-            .onAppear {
-                guard !on else { return }
-                withAnimation(animation) { on = true }
-            }
-    }
-}
+// main thread ~50% busy on an idle Queue tab (`RepeatForever`). All of them
+// are static under reduced motion.
 
 /// `queue-sweep` / `activity-sweep`: a light band crossing a progress fill, 1.35s ease-in-out.
 struct ActShimmer: View {
@@ -1336,7 +1321,7 @@ struct ActShimmer: View {
     var body: some View {
         if !reduce {
             GeometryReader { geo in
-                ActRepeat(animation: .easeInOut(duration: duration).repeatForever(autoreverses: false)) { on in
+                RepeatForever(animation: .easeInOut(duration: duration).repeatForever(autoreverses: false)) { on in
                     LinearGradient(colors: [.white.opacity(0), .white.opacity(0.28), .white.opacity(0)],
                                    startPoint: .leading, endPoint: .trailing)
                         .frame(width: geo.size.width)
@@ -1362,7 +1347,7 @@ struct ActIndeterminateBar: View {
                 if reduce {
                     Capsule().fill(color.opacity(0.6)).frame(width: geo.size.width * 0.36)
                 } else {
-                    ActRepeat(animation: .easeInOut(duration: 1.35).repeatForever(autoreverses: false)) { on in
+                    RepeatForever(animation: .easeInOut(duration: 1.35).repeatForever(autoreverses: false)) { on in
                         Capsule()
                             .fill(LinearGradient(colors: [color.opacity(0), color, color.opacity(0)], startPoint: .leading, endPoint: .trailing))
                             .frame(width: geo.size.width * 0.36)
@@ -1391,7 +1376,7 @@ struct ActPulseDot: View {
             .frame(width: size, height: size)
             .background {
                 if !reduce {
-                    ActRepeat(animation: .easeOut(duration: duration).repeatForever(autoreverses: false)) { on in
+                    RepeatForever(animation: .easeOut(duration: duration).repeatForever(autoreverses: false)) { on in
                         Circle()
                             .fill(color.opacity(0.55))
                             .frame(width: size, height: size)
@@ -1411,7 +1396,7 @@ struct ActSpin: ViewModifier {
 
     func body(content: Content) -> some View {
         if active && !reduce {
-            ActRepeat(animation: .linear(duration: duration).repeatForever(autoreverses: false)) { on in
+            RepeatForever(animation: .linear(duration: duration).repeatForever(autoreverses: false)) { on in
                 content.rotationEffect(.degrees(on ? 360 : 0))
             }
         } else {
