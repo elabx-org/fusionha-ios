@@ -256,7 +256,8 @@ struct ScrollScrubber: View {
     /// `FUSIONHA_SCREENSHOT_SCRUB=thumb` shows the resting thumb mid-library;
     /// a letter (e.g. `S`) shows the scrubbing state on it, bubble included;
     /// `sweep` scrubs far back and forth, then scrolls normally under the hang
-    /// check, and `drift` only scrolls (LibraryScrubberDebug.swift).
+    /// check, `drift` only scrolls (LibraryScrubberDebug.swift), and `jump`
+    /// captures the silhouette a far jump lands on (LibraryJumpDebug.swift).
     private func screenshotScrub() async {
         guard let raw = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SCRUB"], !raw.isEmpty,
               letters.count > 1 else { return }
@@ -264,6 +265,7 @@ struct ScrollScrubber: View {
         if raw == "sweep" { return await state.screenshotSweep(letters: letters, jump: jump) }
         if raw == "drift" { return await ScrubberState.screenshotDrift() }
         if raw == "hang-selftest" { return await HangWatchdog.selfTest() }
+        if raw == "jump" { return await state.screenshotJump(letters: letters, jump: jump) }
         let thumb = raw == "thumb"
         let letter = thumb ? letters[letters.count / 2] : raw.uppercased()
         state.screenshotHold(letter: letter, bubble: !thumb, letters: letters, jump: jump)
