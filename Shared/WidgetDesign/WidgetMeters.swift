@@ -14,7 +14,7 @@ struct WidgetRing<Center: View>: View {
             Circle()
                 .stroke(Color.white.opacity(0.12), lineWidth: lineWidth)
             Circle()
-                .trim(from: 0, to: max(0.001, min(fraction, 1)))
+                .trim(from: 0, to: CGFloat(max(0.001, min(fraction, 1))))
                 .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .widgetAccentable()
@@ -34,7 +34,7 @@ struct WidgetBar: View {
         GeometryReader { geo in
             Capsule()
                 .fill(tint)
-                .frame(width: max(height, geo.size.width * max(0, min(fraction, 1))))
+                .frame(width: max(height, geo.size.width * CGFloat(max(0, min(fraction, 1)))))
                 .widgetAccentable()
         }
         .frame(height: height)
