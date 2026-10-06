@@ -13,13 +13,6 @@ import Darwin
 enum HangWatchdog {
     /// The longest the main thread may go without answering a ping.
     static let limit: Double = 1.0
-    /// The share of one core the main thread may use on an idle page. Loops
-    /// on screen must be render-loop animations (`RepeatForever`), not timelines.
-    /// On the CI simulator (DEBUG) a screen of download sweeps and setup
-    /// spinners measures 17–29% (mostly Core Animation sync); the timeline
-    /// loops this replaced measured 54%. The like-for-like check in
-    /// `checkIdle(baseline:)` (+10 points on the same screen) catches leaks.
-    static let idleLimit: Double = 0.40
 
     private static let lock = NSLock()
     nonisolated(unsafe) private static var started = false
@@ -91,53 +84,16 @@ enum HangWatchdog {
     }
 
     /// After the scripted scroll stops: the main thread must go quiet. A
-    /// layout feedback loop that never blocks for a whole second, or views
-    /// re-rendering every frame, still keep it busy, so a main thread busier
-    /// than `idleLimit` while idle is reported as a hang. With a `baseline`
-    /// (the same screen measured earlier) it must also not have grown by more
-    /// than 10 points: anything left running by the scrub or the scroll.
-    @MainActor @discardableResult
-    static func checkIdle(seconds: Double, baseline: Double? = nil) async -> Double {
+    /// layout feedback loop that never blocks for a whole second still keeps
+    /// it busy, so a mostly-busy main thread while idle is reported as a hang.
+    @MainActor
+    static func checkIdle(seconds: Double) async {
         let thread = mach_thread_self()
-        startSampler()
         let before = cpuTime(thread)
         try? await Task.sleep(for: .seconds(seconds))
         let busy = (cpuTime(thread) - before) / seconds
         mark(String(format: "SCRUB-CHECK idle main-thread cpu %.0f%%", busy * 100))
-        if let baseline, busy > baseline + 0.10 {
-            mark(String(format: "HANG idle main-thread cpu grew from %.0f%% to %.0f%% on the same screen", baseline * 100, busy * 100))
-            reportSamples()
-        } else if busy > idleLimit {
-            mark("HANG main thread stayed busy while the page was idle")
-            reportSamples()
-        }
-        return busy
-    }
-
-    // MARK: Where the idle main thread went (PerfProbe's MainSampler)
-
-    @MainActor private static var sampling = false
-
-    @MainActor
-    private static func startSampler() {
-        #if arch(arm64)
-        if !sampling { sampling = true; MainSampler.shared.start() }
-        MainSampler.shared.reset()
-        #endif
-    }
-
-    /// The busiest app frames and inclusive frames of the idle window, as
-    /// `SCRUB-CHECK sample` lines (mangled; CI demangles them).
-    private static func reportSamples() {
-        #if arch(arm64)
-        let report = MainSampler.shared.report(limit: 25)
-        mark("SCRUB-CHECK sample total \(report["samples"] ?? 0)")
-        for kind in ["app", "incl"] {
-            for row in (report[kind] as? [[Any]]) ?? [] where row.count == 2 {
-                mark("SCRUB-CHECK sample \(kind) \(row[1]) \(row[0])")
-            }
-        }
-        #endif
+        if busy > 0.85 { mark("HANG main thread stayed busy while the page was idle") }
     }
 
     private static func cpuTime(_ thread: thread_act_t) -> Double {

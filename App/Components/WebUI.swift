@@ -550,14 +550,16 @@ private struct Stripes: View {
     }
 }
 
-/// The 1.5s white sweep across a downloading bar (render-loop driven, see `RepeatForever`).
+/// The 1.5s white sweep across a downloading bar.
 private struct Sweep: View {
     let width: CGFloat
     var body: some View {
-        RepeatForever(animation: .timingCurve(0.2, 0.6, 0.35, 1, duration: 1.5).repeatForever(autoreverses: false)) { on in
+        TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+            let t = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.5) / 1.5
+            let eased = 1 - pow(1 - t, 2.2)
             LinearGradient(colors: [.clear, .white.opacity(0.55), .clear], startPoint: .leading, endPoint: .trailing)
                 .frame(width: width * 0.38)
-                .offset(x: -width * 0.4 + (on ? width * 1.4 : 0))
+                .offset(x: -width * 0.4 + eased * width * 1.4)
         }
         .allowsHitTesting(false)
     }

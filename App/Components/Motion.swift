@@ -56,10 +56,12 @@ private struct ShimmerModifier: ViewModifier {
         content.overlay {
             if motion {
                 GeometryReader { geo in
-                    RepeatForever(animation: .easeInOut(duration: 1.4).repeatForever(autoreverses: false)) { on in
+                    TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+                        let t = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.4) / 1.4
+                        let eased = t < 0.5 ? 2 * t * t : 1 - pow(-2 * t + 2, 2) / 2
                         LinearGradient(colors: [.clear, .white.opacity(0.09), .clear], startPoint: .leading, endPoint: .trailing)
                             .frame(width: geo.size.width)
-                            .offset(x: (on ? 1 : -1) * geo.size.width)
+                            .offset(x: (-1 + 2 * eased) * geo.size.width)
                     }
                 }
                 .allowsHitTesting(false)
