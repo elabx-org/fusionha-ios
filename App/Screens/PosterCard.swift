@@ -139,7 +139,7 @@ struct PosterCard: View {
                 .padding(8)
             }
             .overlay(alignment: .bottom) {
-                if let setup = model.setupProgress.activeSetup(for: item.id) {
+                if let setup = model.setupProgress.slots.slot(for: item.id).setup {
                     SetupIndicators(fraction: setup.progressFraction)
                 }
             }
