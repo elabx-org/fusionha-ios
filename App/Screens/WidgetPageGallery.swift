@@ -4,7 +4,8 @@ import FusionhaKit
 
 /// CI screenshots only: one view of the paged Downloads widget at its medium
 /// and large sizes, loaded through `WidgetPageLoader` against the mock server.
-/// `FUSIONHA_SCREENSHOT_WIDGET_PAGE=downloading|upnext|recent|library|indexers|wanted|requests`.
+/// `FUSIONHA_SCREENSHOT_WIDGET_PAGE=downloading|upnext|recent|library|indexers|wanted|requests`;
+/// `FUSIONHA_SCREENSHOT_WIDGET_FAIL=1` shows the page's timed-out state with its diagnostic line.
 struct WidgetPageGalleryView: View {
     static var screenshotPage: WidgetPage? {
         #if DEBUG
@@ -37,11 +38,21 @@ struct WidgetPageGalleryView: View {
 
     private func card(_ entry: DownloadsEntry, _ family: WidgetFamily) -> some View {
         let size = family == .systemLarge ? CGSize(width: 364, height: 382) : CGSize(width: 364, height: 170)
-        return DownloadsWidgetView(entry: entry, family: family)
-            .padding(16)
-            .frame(width: size.width, height: size.height, alignment: .topLeading)
-            .background(LinearGradient(colors: [Theme.panel, Theme.bg], startPoint: .top, endPoint: .bottom))
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        return DownloadsWidgetView(entry: entry, family: family).galleryWidgetCard(size)
+    }
+
+    private static var showsFailure: Bool {
+        ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_WIDGET_FAIL"] == "1"
+    }
+
+    /// The page as a reload that ran out of time leaves it.
+    private func failed(_ entry: DownloadsEntry) -> DownloadsEntry {
+        var entry = entry
+        entry.pageData = WidgetPageData()
+        entry.pageError = "timeout 6s"
+        entry.diagnostic = WidgetRunLog(stage: "page", page: page.rawValue, outcome: .timedOut,
+                                        error: "timeout 6s", seconds: 8).line
+        return entry
     }
 
     private func load() async {
@@ -55,6 +66,7 @@ struct WidgetPageGalleryView: View {
             entry.pages = WidgetPage.allCases
             entry.page = page
             await WidgetPageLoader.load(page, into: &entry, client, large: large)
+            if Self.showsFailure { entry = failed(entry) }
             entries[family] = entry
         }
     }

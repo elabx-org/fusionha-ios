@@ -14,10 +14,12 @@ struct PagedDownloadsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: large ? 8 : 6) {
-            WidgetPageHeader(entry: entry, pages: pages, familyKey: WidgetPageStore.familyKey(family))
+            WidgetPageHeader(entry: entry, pages: pages, familyKey: familyKey)
             Group {
                 if entry.failed {
-                    WidgetEmptyText("Server unreachable")
+                    WidgetRetryLine(text: "Server unreachable", page: entry.page, familyKey: familyKey)
+                } else if entry.pageError != nil {
+                    WidgetRetryLine(text: "Couldn't load", page: entry.page, familyKey: familyKey)
                 } else {
                     content
                 }
@@ -26,8 +28,11 @@ struct PagedDownloadsView: View {
             .transition(reduceMotion ? .opacity : .push(from: .trailing))
             .invalidatableContent()
             Spacer(minLength: 0)
+            if let diagnostic = entry.diagnostic { WidgetDiagnosticLine(text: diagnostic) }
         }
     }
+
+    private var familyKey: String { WidgetPageStore.familyKey(family) }
 
     @ViewBuilder
     private var content: some View {

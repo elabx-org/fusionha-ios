@@ -5,8 +5,8 @@ import FusionhaKit
 // Timeline entries for the home-screen widgets. In Shared so the app's debug
 // widget gallery (CI screenshots) renders the same views with the same data.
 
-struct DownloadsEntry: TimelineEntry {
-    struct Row: Hashable {
+struct DownloadsEntry: TimelineEntry, Sendable {
+    struct Row: Hashable, Sendable {
         let itemId: Int
         let title: String
         let tier: QualityTier
@@ -31,6 +31,12 @@ struct DownloadsEntry: TimelineEntry {
     var pages: [WidgetPage] = []
     var page: WidgetPage = .downloading
     var pageData = WidgetPageData()
+    /// Why the current page's data is missing (`timeout 6s`, `HTTP 502`): the
+    /// page then shows a tap-to-retry line instead.
+    var pageError: String?
+    /// A failed, timed-out or killed reload, in a few monospaced words; nil
+    /// after a clean one.
+    var diagnostic: String?
 
     var idle: Bool { total == 0 && rows.isEmpty }
 
@@ -44,12 +50,12 @@ struct DownloadsEntry: TimelineEntry {
         pages: [.downloading, .upNext, .recent, .library, .indexers, .wanted, .requests])
 }
 
-struct UpNextRow: Hashable {
+struct UpNextRow: Hashable, Sendable {
     let item: UpNextItem
     let poster: Data?
 }
 
-struct RecentImportRow: Hashable {
+struct RecentImportRow: Hashable, Sendable {
     let item: RecentImport
     let poster: Data?
 }

@@ -57,11 +57,7 @@ struct WidgetGalleryView: View {
     /// (Downloads: Recently added when nothing is up next; others: empty).
     private func card(_ family: WidgetFamily, alternate: Bool) -> some View {
         let size = Self.size(family)
-        return content(family, alternate: alternate)
-            .padding(16)
-            .frame(width: size.width, height: size.height, alignment: .topLeading)
-            .background(LinearGradient(colors: [Theme.panel, Theme.bg], startPoint: .top, endPoint: .bottom))
-            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        return content(family, alternate: alternate).galleryWidgetCard(size)
     }
 
     @ViewBuilder

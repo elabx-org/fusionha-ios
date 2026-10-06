@@ -3,7 +3,7 @@ import FusionhaKit
 
 /// The data behind the paged widget's current view. Only the shown page's
 /// part is filled, so a page flip fetches one view's worth of data.
-struct WidgetPageData: Hashable {
+struct WidgetPageData: Hashable, Sendable {
     var library: WidgetLibrarySummary?
     var indexers: WidgetIndexerSummary?
     var wanted: WidgetWantedSummary?

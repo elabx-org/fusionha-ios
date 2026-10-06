@@ -12,6 +12,12 @@ struct WidgetKindBar: View {
         [(.movie, summary.movies), (.series, summary.series), (.anime, summary.anime)]
     }
 
+    /// In accented rendering the kind colours collapse to one tint, so the
+    /// segments step down in opacity instead.
+    private static func accentedOpacity(_ index: Int) -> Double {
+        [1, 0.6, 0.32][min(index, 2)]
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             bar
@@ -27,8 +33,7 @@ struct WidgetKindBar: View {
                 ForEach(kinds.indices, id: \.self) { index in
                     let pair = kinds[index]
                     if pair.1 > 0 {
-                        Rectangle()
-                            .fill(Theme.kind(pair.0))
+                        WidgetFill(color: Theme.kind(pair.0), accentedOpacity: Self.accentedOpacity(index))
                             .frame(width: free * CGFloat(pair.1) / total)
                     }
                 }
@@ -45,7 +50,9 @@ struct WidgetKindBar: View {
             ForEach(kinds.indices, id: \.self) { index in
                 let pair = kinds[index]
                 HStack(spacing: 4) {
-                    Circle().fill(Theme.kind(pair.0)).frame(width: 6, height: 6)
+                    WidgetFill(color: Theme.kind(pair.0), accentedOpacity: Self.accentedOpacity(index))
+                        .frame(width: 6, height: 6)
+                        .clipShape(Circle())
                     Text("\(pair.0.plural) \(pair.1)")
                         .font(.system(size: 10, weight: .medium).monospacedDigit())
                         .foregroundStyle(.secondary)
@@ -72,6 +79,7 @@ struct WidgetCoverageMeter: View {
                 Capsule()
                     .fill(LinearGradient(colors: [Theme.edition, Theme.grab], startPoint: .leading, endPoint: .trailing))
                     .frame(width: geo.size.width * CGFloat(summary.fourKPercent) / 100)
+                    .widgetAccentable()
             }
             .frame(height: 6)
             .background(Color.white.opacity(0.07), in: Capsule())
