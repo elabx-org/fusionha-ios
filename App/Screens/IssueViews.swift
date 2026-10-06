@@ -177,6 +177,9 @@ struct IssueModal: View {
     let isSeries: Bool
     /// Season number → episode count, when known; otherwise numeric fields.
     let seasons: [Int: Int]?
+    /// Reports the outcome (message, failed) to the host's own toast, e.g. the
+    /// item detail sheet; Discover's shared toast otherwise.
+    var onResult: ((String, Bool) -> Void)? = nil
 
     @State private var type: IssueType = .playback
     @State private var scope = "item"
@@ -283,10 +286,14 @@ struct IssueModal: View {
                 season: scope == "item" ? nil : season.map { max(0, $0) },
                 episode: scope == "episode" ? episode.map { max(1, $0) } : nil,
                 description: trimmed.isEmpty ? nil : trimmed))
-            DiscoverToasts.shared.show(.success, "Issue reported on \(title)")
+            if let onResult { onResult("Issue reported on \(title)", false) } else {
+                DiscoverToasts.shared.show(.success, "Issue reported on \(title)")
+            }
             dismiss()
         } catch {
-            DiscoverToasts.shared.error("Could not report issue", error)
+            if let onResult { onResult("Could not report issue", true) } else {
+                DiscoverToasts.shared.error("Could not report issue", error)
+            }
         }
     }
 }

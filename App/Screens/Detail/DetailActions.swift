@@ -1,10 +1,13 @@
 import SwiftUI
 import FusionhaKit
 
-/// The item actions rail (HeroActionRail): refresh split-button, rename,
-/// manage, report, numbering, aliases, edit and delete in a glass capsule.
-/// The rarely used dialogs (rename, manage, report, aliases, numbering fix)
-/// open the same item in the web app.
+/// The item actions rail (HeroActionRail at ≤720px): a glass pill of icon
+/// buttons in the web's order — Refresh (split: tap = metadata only, caret =
+/// menu), Preview rename, Manage files / episodes, Report an issue, Check
+/// episode numbering (series), Edition aliases (a title with a non-Standard
+/// edition), Edit & monitoring, Delete. Like the web it wraps to a second row
+/// rather than scrolling an action out of sight. A user without `edit` keeps
+/// only Report an issue and the numbering check, as on the web.
 struct ItemActionsRail: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
@@ -12,51 +15,76 @@ struct ItemActionsRail: View {
     let openWeb: () -> Void
 
     private var canEdit: Bool { model.me?.can("edit") ?? true }
-    private var canDelete: Bool { model.me?.can("delete") ?? true }
+
+    private var actions: [ItemAction] {
+        ItemAction.rail(isSeries: detail.isSeries, canEdit: canEdit, hasNonStandardEdition: detail.hasVersions)
+    }
 
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 6) {
-                if canEdit {
-                    refreshSplit
-                    DetailRailButton(systemImage: "textformat", label: "Preview rename", action: openWeb)
-                    DetailRailButton(systemImage: detail.isSeries ? "tablecells" : "folder.badge.plus",
-                                   label: detail.isSeries ? "Manage episodes" : "Manage files", action: openWeb)
-                }
-                DetailRailButton(systemImage: "flag", label: "Report an issue", action: openWeb)
-                if canEdit {
-                    if detail.isSeries {
-                        let mismatch = detail.numberingMismatch == true
-                        DetailRailButton(systemImage: "list.number",
-                                       label: mismatch ? "Review episode numbering" : "Check episode numbering",
-                                       tint: mismatch ? Theme.miss : Theme.mut) {
-                            Task { await store.checkNumbering(openWeb: openWeb) }
-                        }
-                    }
-                    if detail.hasVersions {
-                        DetailRailButton(systemImage: "tag", label: "Edition aliases", action: openWeb)
-                    }
-                    DetailRailButton(systemImage: "pencil", label: "Edit & monitoring") { store.showingEdit = true }
-                }
-                if canDelete {
-                    DetailRailButton(systemImage: "trash", label: detail.isSeries ? "Delete series" : "Delete movie") {
-                        store.showingDelete = true
-                    }
+        FlowRow(spacing: 4) {
+            ForEach(actions, id: \.self) { action in
+                if action == .refresh {
+                    RefreshSplitButton()
+                } else {
+                    button(action)
                 }
             }
-            .padding(5)
         }
-        .scrollIndicators(.hidden)
+        .padding(5)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.panel.opacity(0.55), in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.panel.opacity(0.8), in: RoundedRectangle(cornerRadius: 12))
         .glassEffect(.regular, in: .rect(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.line))
     }
 
-    /// Main tap = metadata-only refresh; the caret offers the full rescan.
-    private var refreshSplit: some View {
+    private func button(_ action: ItemAction) -> some View {
+        let flagged = detail.numberingMismatch == true
+        return DetailRailButton(systemImage: Self.symbol(action), label: action.label(isSeries: detail.isSeries, numberingFlagged: flagged),
+                                glyph: 17, tint: action == .checkNumbering && flagged ? Theme.miss : Theme.mut,
+                                busy: action == .checkNumbering && store.checkingNumbering) {
+            perform(action)
+        }
+    }
+
+    private func perform(_ action: ItemAction) {
+        switch action {
+        case .refresh: Task { await store.refresh(metadataOnly: true) }
+        case .previewRename: store.openRename()
+        // ManageExistingFilesDialog / ManageEpisodesDialog are not ported yet.
+        case .manageFiles, .manageEpisodes: openWeb()
+        case .reportIssue: store.showingIssue = true
+        case .checkNumbering: Task { await store.checkNumbering() }
+        case .editionAliases: store.showingAliases = true
+        case .edit: store.showingEdit = true
+        case .delete: store.showingDelete = true
+        }
+    }
+
+    /// The web's rail glyphs as SF Symbols (CLAUDE.md: edit = pencil, delete = trash, refresh = arrow.clockwise).
+    static func symbol(_ action: ItemAction) -> String {
+        switch action {
+        case .refresh: return "arrow.clockwise"
+        case .previewRename: return "textformat"
+        case .manageEpisodes: return "tablecells"
+        case .manageFiles: return "folder.badge.plus"
+        case .reportIssue: return "flag"
+        case .checkNumbering: return "list.number"
+        case .editionAliases: return "tag"
+        case .edit: return "pencil"
+        case .delete: return "trash"
+        }
+    }
+}
+
+/// Split "Refresh": the main half is a one-tap metadata refresh; the caret
+/// opens the menu offering both "Refresh metadata" and "Refresh & scan files".
+/// Both halves disable while the refresh runs.
+private struct RefreshSplitButton: View {
+    @Environment(DetailStore.self) private var store
+
+    var body: some View {
         HStack(spacing: 0) {
-            DetailRailButton(systemImage: "arrow.clockwise", label: "Refresh metadata", busy: store.refreshing) {
+            DetailRailButton(systemImage: "arrow.clockwise", label: "Refresh metadata", glyph: 17, busy: store.refreshing) {
                 Task { await store.refresh(metadataOnly: true) }
             }
             Menu {
@@ -74,13 +102,13 @@ struct ItemActionsRail: View {
                     Label {
                         Text("Refresh & scan files")
                         Text("Also re-probe every file on disk · slower")
-                    } icon: { Image(systemName: "externaldrive.badge.checkmark") }
+                    } icon: { Image(systemName: "list.bullet.rectangle") }
                 }
             } label: {
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(Theme.dim)
-                    .frame(width: 22, height: 44)
+                    .frame(width: 18, height: 44)
                     .contentShape(Rectangle())
             }
             .disabled(store.refreshing)

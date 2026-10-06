@@ -9,6 +9,8 @@ import json
 import re
 from pathlib import Path
 
+import mock_item_actions
+
 MOCK = Path(__file__).resolve().parent / "mock"
 
 
@@ -139,6 +141,8 @@ def _version_id(query):
 
 def get(path, query):
     """The body for a detail GET route, or None when the path isn't one."""
+    if (body := mock_item_actions.get(path, query)) is not None:
+        return body
     if path == "/api/v1/import/enrichment-status":
         return {"total_files": 214, "enriched_files": 214, "pending_files": 0, "issue_files": 0}
     if path == "/api/v1/settings":
@@ -171,6 +175,8 @@ def get(path, query):
 
 def post(path):
     """The body for a detail POST route, or None when the path isn't one."""
+    if (body := mock_item_actions.post(path)) is not None:
+        return body
     if re.fullmatch(r"/api/v1/library/\d+/releases/grab", path):
         return {"id": 77, "status": "queued", "grab_trigger": "interactive"}
     if re.fullmatch(r"/library/\d+/search", path):
