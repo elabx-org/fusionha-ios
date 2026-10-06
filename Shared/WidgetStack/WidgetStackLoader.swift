@@ -84,19 +84,19 @@ enum WidgetStackLoader {
         }
     }
 
-    /// The Smart Stack score (`WidgetRelevance`): low after a failed load.
+    /// The Smart Stack score (`WidgetStackRelevance`): low after a failed load.
     static func relevance(_ stack: WidgetStack, _ entry: DownloadsEntry) -> Float {
-        guard entry.signedIn, !entry.failed, entry.pageError == nil else { return WidgetRelevance.low }
+        guard entry.signedIn, !entry.failed, entry.pageError == nil else { return WidgetStackRelevance.low }
         switch stack {
         case .downloading:
-            return WidgetRelevance.downloading(active: entry.total, stalled: entry.rows.filter(\.stalled).count)
+            return WidgetStackRelevance.downloading(active: entry.total, stalled: entry.rows.filter(\.stalled).count)
         case .library:
-            return WidgetRelevance.low
+            return WidgetStackRelevance.low
         case .indexers:
-            return WidgetRelevance.indexers(flagged: entry.pageData.indexers?.flagged.count ?? 0)
+            return WidgetStackRelevance.indexers(flagged: entry.pageData.indexers?.flagged.count ?? 0)
         case .requests:
             let s = entry.pageData.requests
-            return WidgetRelevance.requests(pending: s?.pending ?? 0, openIssues: s?.openIssues ?? 0)
+            return WidgetStackRelevance.requests(pending: s?.pending ?? 0, openIssues: s?.openIssues ?? 0)
         }
     }
 }

@@ -3,7 +3,7 @@ import Foundation
 /// Smart Stack relevance for the widgets (`TimelineEntryRelevance` scores,
 /// 0–1). High only when a widget has something worth surfacing; everything
 /// else sits at `low` so the stack keeps the owner's own order.
-public enum WidgetRelevance {
+public enum WidgetStackRelevance {
     public static let low: Float = 0.05
 
     /// A score that takes effect at `date` (a timeline entry's date).

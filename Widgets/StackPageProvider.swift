@@ -43,7 +43,7 @@ struct StackPageProvider: TimelineProvider {
         if entry.pageError == nil { entry.pageError = "timed out" }
         entry.diagnostic = log.line
         entry.runId = run.id
-        entry.relevanceScore = WidgetRelevance.low
+        entry.relevanceScore = WidgetStackRelevance.low
         return entry
     }
 }

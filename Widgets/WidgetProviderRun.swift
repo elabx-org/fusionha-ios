@@ -38,7 +38,7 @@ enum WidgetProviderRun {
 
     /// `entry` repeated at each relevance step (same data, rising or fading
     /// score), so Smart Stack ranking changes without spending a reload.
-    static func steps<Entry>(_ steps: [WidgetRelevance.Step], _ make: (Date, Float) -> Entry) -> [Entry] {
+    static func steps<Entry>(_ steps: [WidgetStackRelevance.Step], _ make: (Date, Float) -> Entry) -> [Entry] {
         steps.map { make($0.date, $0.score) }
     }
 }

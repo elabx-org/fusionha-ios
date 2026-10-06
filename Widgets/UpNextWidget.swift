@@ -4,7 +4,7 @@ import FusionhaKit
 
 /// "Up next": the next airing episodes and releases from the Calendar. The
 /// timeline repeats the entry at each Smart Stack step as the next airing
-/// nears (`WidgetRelevance.upNextSteps`), and reloads just after it airs.
+/// nears (`WidgetStackRelevance.upNextSteps`), and reloads just after it airs.
 struct UpNextProvider: TimelineProvider {
     static let kind = "UpNext"
 
@@ -25,7 +25,7 @@ struct UpNextProvider: TimelineProvider {
             let entry = await Self.fetch(family: family, run: run)
             let refresh = entry.failed ? Date.now.addingTimeInterval(WidgetStack.retryMinutes * 60)
                 : WidgetLoader.nextRefresh(idleMinutes: 60, nextAir: entry.rows.first?.item.airDate)
-            let steps = WidgetRelevance.upNextSteps(airDate: entry.failed ? nil : entry.rows.first?.item.airDate,
+            let steps = WidgetStackRelevance.upNextSteps(airDate: entry.failed ? nil : entry.rows.first?.item.airDate,
                                                     now: entry.date, until: refresh)
             let entries: [UpNextEntry] = WidgetProviderRun.steps(steps) { date, score in
                 var step = UpNextEntry(date: date, rows: entry.rows, signedIn: entry.signedIn, failed: entry.failed,
@@ -71,7 +71,7 @@ struct UpNextProvider: TimelineProvider {
     static func watchdogEntry(_ run: WidgetRun) -> UpNextEntry {
         WidgetProviderRun.watchdogLog(run)
         return UpNextEntry(date: .now, rows: [], signedIn: true, failed: true, runId: run.id,
-                           relevanceScore: WidgetRelevance.low)
+                           relevanceScore: WidgetStackRelevance.low)
     }
 }
 

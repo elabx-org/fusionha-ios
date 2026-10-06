@@ -4,7 +4,7 @@ import FusionhaKit
 
 /// "Recently added": the latest imports (Activity › History), as posters. A
 /// fresh import raises it in a Smart Stack; the score fades as it ages
-/// (`WidgetRelevance.recentSteps`), within one reload.
+/// (`WidgetStackRelevance.recentSteps`), within one reload.
 struct RecentProvider: TimelineProvider {
     static let kind = "RecentlyAdded"
 
@@ -25,7 +25,7 @@ struct RecentProvider: TimelineProvider {
             let entry = await Self.fetch(family: family, run: run)
             let refresh = Date.now.addingTimeInterval((entry.failed ? WidgetStack.retryMinutes : 45) * 60)
             let newest = entry.rows.compactMap(\.item.importedAt).max()
-            let steps = WidgetRelevance.recentSteps(newest: entry.failed ? nil : newest, now: entry.date, until: refresh)
+            let steps = WidgetStackRelevance.recentSteps(newest: entry.failed ? nil : newest, now: entry.date, until: refresh)
             let entries: [RecentEntry] = WidgetProviderRun.steps(steps) { date, score in
                 var step = RecentEntry(date: date, rows: entry.rows, signedIn: entry.signedIn, failed: entry.failed,
                                        runId: entry.runId)
@@ -71,7 +71,7 @@ struct RecentProvider: TimelineProvider {
     static func watchdogEntry(_ run: WidgetRun) -> RecentEntry {
         WidgetProviderRun.watchdogLog(run)
         return RecentEntry(date: .now, rows: [], signedIn: true, failed: true, runId: run.id,
-                           relevanceScore: WidgetRelevance.low)
+                           relevanceScore: WidgetStackRelevance.low)
     }
 }
 
