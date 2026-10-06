@@ -94,15 +94,14 @@ final class AppModel {
     /// App-wide toasts (components/ui/Toast). Call `toast(...)` from any screen.
     private(set) var toasts: [ToastMessage] = []
 
-    // Shell badges and settings.
-    private(set) var attentionCount = 0
-    private(set) var pendingRequests = 0
-    private(set) var commandsActive = false
-    private(set) var settings: ShellSettings?
-    /// Quality-profile names for the compact list's subline.
-    private(set) var profileNames: [Int: String] = [:]
+    // Shell badges and settings (ShellState.swift).
+    let shell = ShellState()
+    var attentionCount: Int { shell.attentionCount }
+    var pendingRequests: Int { shell.pendingRequests }
+    var commandsActive: Bool { shell.commandsActive }
+    var settings: ShellSettings? { shell.settings }
 
-    func profileName(_ id: Int) -> String? { profileNames[id] }
+    func profileName(_ id: Int) -> String? { shell.profileNames[id] }
     var railStyle: RailStyle { RailStyle(rawValue: settings?.libraryRailStyle ?? "") ?? .current }
     var railConsolidate: Bool { settings?.libraryRailConsolidate ?? false }
     var animationsEnabled: Bool { settings?.animationsEnabled ?? true }
@@ -380,9 +379,7 @@ final class AppModel {
         queueHeldIds = []
         selectMode = false
         selection = []
-        settings = nil
-        attentionCount = 0
-        pendingRequests = 0
+        shell.reset()
         LiveActivityController.endAll()
         WidgetCenter.shared.reloadAllTimelines()
     }
@@ -442,23 +439,7 @@ final class AppModel {
 
     func refreshShell() async {
         guard let client else { return }
-        if let value = try? await client.shellSettings() { settings = value }
-        if profileNames.isEmpty, let profiles = try? await client.qualityProfiles() {
-            profileNames = Dictionary(profiles.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
-        }
-        if !requestScoped {
-            async let library = try? client.libraryAttention()
-            async let runs = try? client.runAttention()
-            async let indexers = try? client.indexersUnavailable()
-            let (l, r, i) = await (library, runs, indexers)
-            attentionCount = (l?.count ?? 0) + (r?.count ?? 0) + ((i?.count ?? 0) > 0 ? 1 : 0)
-            if let commands = try? await client.commands() {
-                commandsActive = commands.contains { ["started", "queued", "running"].contains($0.status.lowercased()) }
-            }
-        }
-        if canApproveRequests, let pending = try? await client.requests(status: "pending") {
-            pendingRequests = pending.count
-        }
+        await shell.refresh(client: client, requestScoped: requestScoped, canApproveRequests: canApproveRequests)
     }
 
     // MARK: Setup progress
@@ -490,7 +471,7 @@ final class AppModel {
         do {
             try await client.updateRailSettings(RailSettingsUpdate(libraryRailStyle: style?.rawValue,
                                                                    libraryRailConsolidate: consolidate))
-            settings = try? await client.shellSettings()
+            await shell.reloadSettings(client: client)
         } catch {
             toast("Couldn't save the rail setting", variant: .error)
         }

@@ -204,7 +204,7 @@ public struct AttentionItems: Decodable, Sendable {
 
 // MARK: - Settings  (GET/PUT /api/v1/settings, the fields the shell reads)
 
-public struct ShellSettings: Decodable, Sendable {
+public struct ShellSettings: Decodable, Sendable, Equatable {
     /// `current` / `fill` / `dot`.
     public let libraryRailStyle: String?
     public let libraryRailConsolidate: Bool?
