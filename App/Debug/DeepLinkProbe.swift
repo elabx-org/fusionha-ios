@@ -6,6 +6,7 @@ import Foundation
 enum DeepLinkProbe {
     static func log(_ line: String) {
         #if DEBUG
+        NSLog("FUSIONHA_PROBE %@", line)
         guard let dir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else { return }
         let url = dir.appendingPathComponent("deeplink-log.txt")
         let data = Data("\(line)\n".utf8)

@@ -17,7 +17,10 @@ log_file() {
 }
 
 clear_log() {
-  rm -f "$(log_file)"
+  local file
+  file=$(log_file)
+  echo "-- probe log before clearing:"; cat "$file" 2>/dev/null || echo "(none)"
+  rm -f "$file"
 }
 
 # check <name> <expected text>
@@ -29,7 +32,8 @@ check() {
   cat "$file" 2>/dev/null || echo "(no probe log)"
   ls "$(dirname "$file")" 2>/dev/null | head -5
   xcrun simctl spawn "$UDID" log show --last 15s --style compact \
-    --predicate 'eventMessage CONTAINS[c] "fusionha://" OR eventMessage CONTAINS[c] "openURL"' 2>/dev/null | tail -12
+    --predicate 'eventMessage CONTAINS[c] "fusionha://" OR eventMessage CONTAINS[c] "openURL" OR process == "Fusionha"' 2>/dev/null \
+    | grep -i -E "probe|url|scene|crash|terminat|fault|error" | tail -25
   if grep -qF "$expected" "$file" 2>/dev/null; then
     report+="| $name | ok | \`$expected\` |"$'\n'
   else
