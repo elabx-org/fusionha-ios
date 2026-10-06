@@ -21,10 +21,16 @@ struct FusionhaApp: App {
                 }
             }
             .environment(model)
+            // At the root, so a link that cold-launches the app is never
+            // missed; RootView applies it once signed in and on screen.
+            .onOpenURL { model.receiveDeepLink($0) }
             .tint(Theme.indigo)
             // fusionha's web app is dark-only; match it.
             .preferredColorScheme(.dark)
-            .task { PerfProbe.startIfRequested(model: model) }
+            .task {
+                DeepLinkProbe.log("launched")
+                PerfProbe.startIfRequested(model: model)
+            }
         }
     }
 }

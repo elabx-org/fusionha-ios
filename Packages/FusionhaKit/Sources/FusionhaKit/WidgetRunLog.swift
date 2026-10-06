@@ -53,6 +53,7 @@ public struct WidgetRunLog: Codable, Sendable, Equatable {
     public static func describe(_ error: Error) -> String {
         switch error {
         case let timeout as WidgetTimedOut: return "timeout \(Int(timeout.seconds.rounded()))s"
+        case let note as WidgetRunNote: return note.text
         case let api as APIError: return describe(api)
         case let url as URLError: return "net \(url.code.rawValue)"
         case let decoding as DecodingError: return describe(decoding)
@@ -80,5 +81,14 @@ public struct WidgetRunLog: Codable, Sendable, Equatable {
         case .dataCorrupted: return "decode: bad JSON"
         @unknown default: return "decode"
         }
+    }
+}
+
+/// A failure the widget describes in its own words (`queue unreachable`).
+public struct WidgetRunNote: Error, Equatable, Sendable {
+    public let text: String
+
+    public init(_ text: String) {
+        self.text = text
     }
 }

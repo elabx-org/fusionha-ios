@@ -2,17 +2,16 @@ import Foundation
 import WidgetKit
 import FusionhaKit
 
-/// Per-widget page state and small caches, in the widget extension's own
-/// UserDefaults. The App Group may be missing on a re-signed build, so it is
-/// only a mirror: the page is written to both and the newer copy wins, which
-/// also covers the intent running in the app's process.
+/// Per-widget page state and small caches. The page is kept in the shared
+/// keychain and in this process's own UserDefaults, newer copy wins: the dots'
+/// intent may run in the app's process rather than the extension's, and on a
+/// build signed without the App Group only the keychain is seen by both.
+/// Caches stay in the extension's own UserDefaults.
 enum WidgetPageStore {
     private struct Stamped<Value: Codable>: Codable {
         let value: Value
         let at: Date
     }
-
-    private static let group = UserDefaults(suiteName: "group.org.elabx.fusionha")
 
     /// The page-state key for a family: medium and large flick independently.
     static func familyKey(_ family: WidgetFamily) -> String { family == .systemLarge ? "large" : "medium" }
@@ -20,17 +19,16 @@ enum WidgetPageStore {
     private static func pageKey(_ family: String) -> String { "widget.Downloads.page.\(family)" }
 
     static func page(family: String) -> WidgetPage? {
-        let copies = [UserDefaults.standard, group].compactMap { defaults -> Stamped<WidgetPage>? in
-            defaults.flatMap { read(Stamped<WidgetPage>.self, $0, pageKey(family)) }
-        }
-        return copies.max { $0.at < $1.at }?.value
+        let key = pageKey(family)
+        let shared = decode(Stamped<WidgetPage>.self, SharedKeychain.read(key))
+        let local = read(Stamped<WidgetPage>.self, .standard, key)
+        return [shared, local].compactMap { $0 }.max { $0.at < $1.at }?.value
     }
 
     static func setPage(_ page: WidgetPage, family: String) {
         let stamped = Stamped(value: page, at: .now)
-        for defaults in [UserDefaults.standard, group].compactMap({ $0 }) {
-            write(stamped, defaults, pageKey(family))
-        }
+        write(stamped, .standard, pageKey(family))
+        if let data = try? JSONEncoder().encode(stamped) { SharedKeychain.write(data, pageKey(family)) }
     }
 
     /// A cached value no older than `maxAge` seconds (extension defaults only).
@@ -44,14 +42,13 @@ enum WidgetPageStore {
         write(Stamped(value: value, at: .now), .standard, "widget.cache.\(key)")
     }
 
-    /// The paged widget's last timeline reload (extension defaults only).
-    static var lastRun: WidgetRunLog? { read(WidgetRunLog.self, .standard, "widget.lastRun") }
-
-    static func saveRun(_ log: WidgetRunLog) { write(log, .standard, "widget.lastRun") }
+    private static func decode<T: Decodable>(_ type: T.Type, _ data: Data?) -> T? {
+        guard let data else { return nil }
+        return try? JSONDecoder().decode(T.self, from: data)
+    }
 
     private static func read<T: Decodable>(_ type: T.Type, _ defaults: UserDefaults, _ key: String) -> T? {
-        guard let data = defaults.data(forKey: key) else { return nil }
-        return try? JSONDecoder().decode(T.self, from: data)
+        decode(T.self, defaults.data(forKey: key))
     }
 
     private static func write<T: Encodable>(_ value: T, _ defaults: UserDefaults, _ key: String) {

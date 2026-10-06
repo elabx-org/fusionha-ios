@@ -50,6 +50,7 @@ struct RootView: View {
         .environment(\.railConsolidate, model.railConsolidate)
         .sheet(item: sheetItem) { ref in
             ItemDetailView(itemId: ref.id)
+                .onAppear { DeepLinkProbe.log("detail \(ref.id) shown") }
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Theme.bg)
         }
@@ -105,9 +106,10 @@ private struct ShellPresentations: ViewModifier {
             OmniSearchView()
                 .environment(\.motionEnabled, !reduceMotion && model.animationsEnabled)
         }
-        .onOpenURL { url in
-            // fusionha://activity, calendar, item/{id}… from the widgets and Live Activity.
-            model.handleDeepLink(url)
+        .onChange(of: model.pendingLink, initial: true) {
+            // fusionha://activity, calendar, item/{id}… from the widgets, the
+            // Live Activity and notifications (received in FusionhaApp).
+            Task { await model.applyPendingLink() }
         }
         .onChange(of: model.tab) {
             model.searchText = ""
