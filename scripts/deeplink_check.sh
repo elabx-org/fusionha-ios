@@ -38,6 +38,7 @@ check() {
     report+="| $name | ok | \`$expected\` |"$'\n'
   else
     report+="| $name | **missed** | \`$expected\` |"$'\n'
+    echo "::error::$name missed (expected: $expected; probe log: $(tr '\n' ';' < "$file" 2>/dev/null))"
     failed=1
   fi
 }
