@@ -1,30 +1,11 @@
 Port:
-    UUID: ADC707E0-D312-49A3-AD65-276CE0FB7FD0
+    UUID: 536BFC28-4647-4C45-81A9-5B7D176C8CE9
     Class: Unknown
     Port Identifier: com.apple.display.captureservice
     Power state: On
 
 Port:
-    UUID: E3B9D99D-0CDA-4BCA-B22B-A2538154C72B
-    Class: Display
-    Port Identifier: com.apple.framebuffer.display
-    Power state: On
-    Display class: 0
-    Default width: 1398
-    Default height: 2034
-    Default pixel format: 'BGRA'
-    IOSurface port:
-        width              = 1398
-        height             = 2034
-        bytes per row      = 5632
-        size               = 11455488
-        pixel format       = 'BGRA'
-        bytes per element  = 4
-        CPU cache mode     = Default cache
-        Pixel size casting = Yes
-
-Port:
-    UUID: 017D4181-2BA8-4D9A-9614-56E0649544D5
+    UUID: 68D56DA2-7654-444D-95C8-545951FC2D84
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -34,17 +15,7 @@ Port:
     Default pixel format: 'BGRA'
 
 Port:
-    UUID: C703894A-1920-4382-A5E7-41035167D5FE
-    Class: Display
-    Port Identifier: com.apple.framebuffer.display
-    Power state: On
-    Display class: 1
-    Default width: 720
-    Default height: 480
-    Default pixel format: 'BGRA'
-
-Port:
-    UUID: 6B134896-58FF-4511-BCB4-3D7F0B426665
+    UUID: 7A13C4FA-2FF9-48EF-A528-440978EB12D9
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -63,7 +34,26 @@ Port:
         Pixel size casting = Yes
 
 Port:
-    UUID: D6D31FDE-6B53-4273-AF00-29362FBBC947
+    UUID: 3DAAFDDD-30A5-42CD-8AED-9AF3FC0618B5
+    Class: Display
+    Port Identifier: com.apple.framebuffer.display
+    Power state: On
+    Display class: 0
+    Default width: 1398
+    Default height: 2034
+    Default pixel format: 'BGRA'
+    IOSurface port:
+        width              = 1398
+        height             = 2034
+        bytes per row      = 5632
+        size               = 11455488
+        pixel format       = 'BGRA'
+        bytes per element  = 4
+        CPU cache mode     = Default cache
+        Pixel size casting = Yes
+
+Port:
+    UUID: 0B7C7D4E-115D-49B6-8C52-98A7BCF53D0F
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -73,7 +63,17 @@ Port:
     Default pixel format: 'BGRA'
 
 Port:
-    UUID: 0B9D02B9-A01A-473C-A172-7BF780C40722
+    UUID: 3218D5E7-1FFE-4D33-B07B-73F5D9DFF65C
+    Class: Display
+    Port Identifier: com.apple.framebuffer.display
+    Power state: On
+    Display class: 1
+    Default width: 720
+    Default height: 480
+    Default pixel format: 'BGRA'
+
+Port:
+    UUID: 2549977C-0F16-4E99-B102-F21F00AD5679
     Class: DisplayAdapter
     Port Identifier: com.apple.framebuffer.server
     Power state: On
@@ -82,9 +82,9 @@ Port:
     (2) TVOut:
         Screen ID: 2
         Name: TVOut
-        Unique ID: 36143C1E-8133-4D7C-A532-BE86D34AB934
+        Unique ID: D5F5F8A7-30C9-4171-9A66-B926C66DF1BD
         Device Name: external-0
-        Seed: 25
+        Seed: 35
         Screen Type: TVOut
         Pixel Size: {720, 480}
         Dot Pitch: 72
@@ -97,30 +97,12 @@ Port:
         HDR Mode: SDR
         Refresh Rate: 6000
         UI Orientation: Ambiguous
-    (3) LCD-1:
-        Screen ID: 3
-        Name: LCD-1
-        Unique ID: AE2E1F15-99CA-488F-8057-1BC8B2B24ADB
-        Device Name: primary-1
-        Seed: 26
-        Screen Type: Integrated
-        Pixel Size: {2007, 2853}
-        Dot Pitch: 460
-        Mask URL: file:///Library/Developer/DeviceKit/FramebufferMasks/BF0DC480-5EE2-4EC1-B02B-C75E94759832.pdf
-        Mask ID: BF0DC480-5EE2-4EC1-B02B-C75E94759832
-        Chrome ID: com.apple.dt.devicekit.chrome.phone14
-        Preferred UI Scale: 3
-        Pixel Format: 'BGRA'
-        Colorspace: sRGB
-        HDR Mode: SDR
-        Refresh Rate: 6000
-        UI Orientation: Portrait
     (4) Wireless:
         Screen ID: 4
         Name: Wireless
-        Unique ID: 1E7F2B7F-A53F-408A-B0A1-254358326288
+        Unique ID: E6221B8D-E7A7-4DA5-B076-9304D026C574
         Device Name: wireless0
-        Seed: 27
+        Seed: 36
         Screen Type: CarPlay
         Pixel Size: {720, 480}
         Dot Pitch: 72
@@ -133,30 +115,12 @@ Port:
         HDR Mode: SDR
         Refresh Rate: 6000
         UI Orientation: Ambiguous
-    (5) Resizable:
-        Screen ID: 5
-        Name: Resizable
-        Unique ID: ECFF81DD-6400-4CBE-A3D2-E5742B740830
-        Device Name: resizable
-        Seed: 28
-        Screen Type: Scene
-        Pixel Size: {7680, 4320}
-        Dot Pitch: 120
-        Mask URL: (none)
-        Mask ID: (none)
-        Chrome ID: (none)
-        Preferred UI Scale: 3
-        Pixel Format: 'BGRA'
-        Colorspace: sRGB
-        HDR Mode: SDR
-        Refresh Rate: 6000
-        UI Orientation: Ambiguous
     (1) LCD:
         Screen ID: 1
         Name: LCD
-        Unique ID: 1E6BDCED-06CF-44B7-A41D-AFEA1FBF0E0B
+        Unique ID: 7BFF470D-25C1-4B63-B17F-2BC0AEAFF405
         Device Name: primary
-        Seed: 29
+        Seed: 37
         Screen Type: Integrated
         Pixel Size: {1398, 2034}
         Dot Pitch: 460
@@ -169,42 +133,63 @@ Port:
         HDR Mode: SDR
         Refresh Rate: 6000
         UI Orientation: Portrait
+    (3) LCD-1:
+        Screen ID: 3
+        Name: LCD-1
+        Unique ID: 1B10F32C-47C0-4E2E-ACDF-5F2D4A8DAADE
+        Device Name: primary-1
+        Seed: 38
+        Screen Type: Integrated
+        Pixel Size: {2007, 2853}
+        Dot Pitch: 460
+        Mask URL: file:///Library/Developer/DeviceKit/FramebufferMasks/BF0DC480-5EE2-4EC1-B02B-C75E94759832.pdf
+        Mask ID: BF0DC480-5EE2-4EC1-B02B-C75E94759832
+        Chrome ID: com.apple.dt.devicekit.chrome.phone14
+        Preferred UI Scale: 3
+        Pixel Format: 'BGRA'
+        Colorspace: sRGB
+        HDR Mode: SDR
+        Refresh Rate: 6000
+        UI Orientation: Portrait
+    (5) Resizable:
+        Screen ID: 5
+        Name: Resizable
+        Unique ID: B0CD24AF-7D87-432C-BADB-E338280742DF
+        Device Name: resizable
+        Seed: 39
+        Screen Type: Scene
+        Pixel Size: {7680, 4320}
+        Dot Pitch: 120
+        Mask URL: (none)
+        Mask ID: (none)
+        Chrome ID: (none)
+        Preferred UI Scale: 3
+        Pixel Format: 'BGRA'
+        Colorspace: sRGB
+        HDR Mode: SDR
+        Refresh Rate: 6000
+        UI Orientation: Ambiguous
 
 Port:
-    UUID: 03CC1A2D-8914-4F31-AD7D-9BA08F5672A5
+    UUID: 6040B32D-F8E8-4067-BD18-F176064CE595
     Class: Accelerator
     Port Identifier: com.apple.accelerator.metal
     Power state: On
 
 Port:
-    UUID: 24A368E9-E2B4-4270-82C5-0EE88354F059
+    UUID: 6CFAE7E8-F4BC-41A6-A8F1-E30A4F376490
     Class: Accelerator
     Port Identifier: com.apple.accelerator.iosurface
     Power state: On
 
 Port:
-    UUID: 347E116B-9438-4673-97F5-1D8A41505637
+    UUID: DAEA14C1-681C-4CD9-9541-C2DD9167B1D2
     Class: LegacyHID
     Port Identifier: com.apple.CoreSimulator.HID.LegacyHID
     Power state: On
 
 Port:
-    UUID: 8E45DE21-7B4D-4C18-A856-9683182CF10E
-    Class: StreamProcessor
-    Port Identifier: com.apple.SimStreamProcessor.default
-    Power state: On
-    Stream processor device
-    Specification:
-        SimStreamProcessorSpecificationPerformanceHint = SimStreamProcessorSpecificationPerformanceHint_MaximizePerformance
-        SimStreamProcessorSpecificationRendererHint = SimStreamProcessorSpecificationRendererHint_Metal
-        SimStreamProcessorSpecificationEmulationHint = SimStreamProcessorSpecificationEmulationHint_NoEmulation
-    Renderer private name: Apple Paravirtual device
-    Renderer version: 1.3
-    Denylisted: No
-    Memory regions:
-
-Port:
-    UUID: 8AA2CBE9-5675-477B-AFAA-E80E377F828A
+    UUID: 3096F370-F2D7-4263-B811-70E21F14F61A
     Class: StreamProcessor
     Port Identifier: com.apple.SimStreamProcessor.default
     Power state: On
@@ -219,25 +204,40 @@ Port:
     Memory regions:
 
 Port:
-    UUID: 9472ACE8-D20B-4DE4-9FF4-D5487C6E4538
+    UUID: E32886C1-C143-4AE0-BA18-A4752E682D17
+    Class: StreamProcessor
+    Port Identifier: com.apple.SimStreamProcessor.default
+    Power state: On
+    Stream processor device
+    Specification:
+        SimStreamProcessorSpecificationPerformanceHint = SimStreamProcessorSpecificationPerformanceHint_MaximizePerformance
+        SimStreamProcessorSpecificationRendererHint = SimStreamProcessorSpecificationRendererHint_Metal
+        SimStreamProcessorSpecificationEmulationHint = SimStreamProcessorSpecificationEmulationHint_NoEmulation
+    Renderer private name: Apple Paravirtual device
+    Renderer version: 1.3
+    Denylisted: No
+    Memory regions:
+
+Port:
+    UUID: F01E2083-77AF-4121-BF6D-7ABAFF958676
     Class: Audio
     Port Identifier: com.apple.CoreSimulator.Audio.HostRoute
     Power state: On
     Guest Audio Input -> Default Host Audio Device
     Guest Audio Output -> Default Host Audio Device
     Host Audio Devices:
-        AVIODevice: Speakers (0 In / 2 Out)
-        AVIODevice 2: Microphone (2 In / 0 Out)
+        AVIODevice: Microphone (2 In / 0 Out)
+        AVIODevice 2: Speakers (0 In / 2 Out)
         NullAudioDevice_UID: Data Source Item 0 (2 In / 2 Out)
 
 Port:
-    UUID: 3FD2C9F4-8837-425F-8012-B1BE2F01B362
+    UUID: 81D5B8B7-6187-482D-842B-C276F13ECAFC
     Class: Unknown
     Port Identifier: com.apple.gputools.service.simulator
     Power state: On
 
 Port:
-    UUID: 6ADA5F0D-FAC7-40A2-A853-29002BFDF14A
+    UUID: 3F43116A-D2FC-4181-8744-32A1B5213F56
     Class: Unknown
     Port Identifier: com.apple.gputools.GPUToolsAgentService.simulator
     Power state: On
