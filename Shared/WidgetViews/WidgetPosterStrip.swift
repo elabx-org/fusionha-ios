@@ -20,15 +20,15 @@ struct WidgetPosterStrip: View {
         }
     }
 
-    /// The whole tile (poster, title, pills) is one link to the title. The poster
-    /// sits on a solid frame and the label carries a rectangular content shape: a
-    /// `Color.clear` base with the poster only in an overlay left the tile without
-    /// a tap region, so taps fell through to the widget's URL (Activity on the
-    /// Downloads widget). A row with no item id opens Library, never Activity.
+    /// The whole tile (poster, title, pills) is one link to the title; the label's
+    /// rectangular content shape gives it a tap region (taps never fall through to
+    /// the widget's URL). The poster's base stays transparent: an opaque fill
+    /// there becomes a solid white block in accented (tinted) rendering. A row
+    /// with no item id opens Library, never Activity.
     private func tile(_ row: RecentImportRow) -> some View {
         Link(destination: WidgetLink.item(row.item.itemId, fallback: .library)) {
             VStack(alignment: .leading, spacing: 4) {
-                Theme.card
+                Color.clear
                     .aspectRatio(2 / 3, contentMode: .fit)
                     .overlay(WidgetPoster(data: row.poster, radius: 6))
                     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))

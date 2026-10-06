@@ -253,6 +253,11 @@ jobs:
           for p in downloading upnext recent library indexers wanted requests; do
             shoot widget-page-$p SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_PAGE=$p
           done
+          # Accented (tinted Home Screen) layout, approximated in the app, and a
+          # page whose reload timed out (retry line + diagnostic).
+          shoot widgets-recent-accented SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGETS=recent SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_ACCENTED=1
+          shoot widget-page-library-accented SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_PAGE=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_ACCENTED=1
+          shoot widget-page-library-failed SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_PAGE=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_FAIL=1
           for bg in flow web hub orbits grid aurora gradient; do
             shoot login-bg-$bg SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN_BACKGROUND=$bg
           done

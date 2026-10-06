@@ -20,10 +20,11 @@ struct WidgetIndexersPage: View {
                     .font(.system(size: 10).monospacedDigit())
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                ForEach(Array(rows(s).enumerated()), id: \.offset) { _, row in
-                    WidgetIndexerLine(row: row)
+                let lines = s.lines(rows: large ? 4 : 2, flags: large ? 2 : 1, sharedSlots: !large)
+                ForEach(Array(zip(lines.rows, lines.notes).enumerated()), id: \.offset) { _, line in
+                    WidgetIndexerLine(row: line.0, note: line.1)
                 }
-                ForEach(Array(flags(s).enumerated()), id: \.offset) { _, flag in
+                ForEach(Array(lines.flags.enumerated()), id: \.offset) { _, flag in
                     WidgetIndexerFlagLine(flag: flag)
                 }
             }
@@ -31,24 +32,21 @@ struct WidgetIndexersPage: View {
             WidgetEmptyText("Indexer stats unavailable")
         }
     }
-
-    /// Medium keeps one row for a flagged indexer when there is one.
-    private func rows(_ s: WidgetIndexerSummary) -> [WidgetIndexerRow] {
-        Array(s.top.prefix(large ? 4 : (s.flagged.isEmpty ? 2 : 1)))
-    }
-
-    private func flags(_ s: WidgetIndexerSummary) -> [WidgetIndexerFlag] {
-        Array(s.flagged.prefix(large ? 2 : 1))
-    }
 }
 
+/// One indexer: health dot, name, its flag (`backing off`) when it has one,
+/// the activity sparkline and its success rate.
 struct WidgetIndexerLine: View {
     let row: WidgetIndexerRow
+    var note: String?
 
     var body: some View {
         HStack(spacing: 6) {
-            Circle().fill(row.healthy ? Theme.done : Theme.stuck).frame(width: 6, height: 6)
+            Circle().fill(row.healthy && note == nil ? Theme.done : Theme.stuck).frame(width: 6, height: 6)
             Text(row.name).font(.system(size: 11, weight: .semibold)).lineLimit(1)
+            if let note {
+                Text(note).font(.system(size: 10)).foregroundStyle(Theme.stuck).lineLimit(1)
+            }
             Spacer(minLength: 4)
             WidgetSparkBars(values: row.series, color: Theme.grab)
                 .frame(width: 44, height: 14)

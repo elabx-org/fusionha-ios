@@ -13,23 +13,47 @@ struct DownloadsProvider: AppIntentTimelineProvider {
     func timeline(for configuration: DownloadsPagesIntent, in context: Context) async -> Timeline<DownloadsEntry> {
         let entry = await Self.fetch(family: context.family, enabled: configuration.enabled)
         // Refresh sooner while something is downloading (the app also reloads on
-        // change); when idle, every ~45 minutes or just after the next item airs.
-        let refresh = entry.idle
-            ? WidgetLoader.nextRefresh(idleMinutes: 45, nextAir: entry.upNext.first?.item.airDate)
-            : Date.now.addingTimeInterval(15 * 60)
+        // change) or after a failed load; when idle, every ~45 minutes or just
+        // after the next item airs.
+        let refresh: Date
+        if entry.failed || entry.pageError != nil {
+            refresh = .now.addingTimeInterval(5 * 60)
+        } else if entry.idle {
+            refresh = WidgetLoader.nextRefresh(idleMinutes: 45, nextAir: entry.upNext.first?.item.airDate)
+        } else {
+            refresh = .now.addingTimeInterval(15 * 60)
+        }
         return Timeline(entries: [entry], policy: .after(refresh))
     }
 
+    /// Always returns within the reload budget: past it, the entry built so far.
     static func fetch(family: WidgetFamily, enabled: Set<WidgetPage>) async -> DownloadsEntry {
         guard let client = CredentialStore.client() else {
             return DownloadsEntry(date: .now, total: 0, rows: [], signedIn: false, failed: false,
                                   report: CredentialStore.sharingReport())
         }
         if family == .systemSmall {
-            return await WidgetLoader.downloads(client, limit: 2, idleUpNext: 1, idleRecent: 1)
+            let entry = try? await withTimeout(seconds: WidgetRun.budget) {
+                await WidgetLoader.downloads(client, limit: 2, idleUpNext: 1, idleRecent: 1)
+            }
+            return entry ?? DownloadsEntry(date: .now, total: 0, rows: [], signedIn: true, failed: true)
         }
         let stored = WidgetPageStore.page(family: WidgetPageStore.familyKey(family))
-        return await WidgetPageLoader.entry(client, family: family, enabled: enabled, stored: stored)
+        let run = WidgetRun(page: stored)
+        var entry: DownloadsEntry
+        var timedOut = false
+        do {
+            entry = try await withTimeout(seconds: WidgetRun.budget) {
+                await WidgetPageLoader.entry(client, family: family, enabled: enabled, stored: stored, run: run)
+            }
+        } catch {
+            timedOut = true
+            entry = run.entry
+            if entry.pageError == nil { entry.pageError = "timed out" }
+        }
+        let log = run.finish(timedOut: timedOut)
+        entry.diagnostic = WidgetRunLog.diagnostic(current: log, previous: run.previous)
+        return entry
     }
 }
 

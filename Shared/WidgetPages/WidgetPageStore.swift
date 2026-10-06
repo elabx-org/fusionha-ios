@@ -44,6 +44,11 @@ enum WidgetPageStore {
         write(Stamped(value: value, at: .now), .standard, "widget.cache.\(key)")
     }
 
+    /// The paged widget's last timeline reload (extension defaults only).
+    static var lastRun: WidgetRunLog? { read(WidgetRunLog.self, .standard, "widget.lastRun") }
+
+    static func saveRun(_ log: WidgetRunLog) { write(log, .standard, "widget.lastRun") }
+
     private static func read<T: Decodable>(_ type: T.Type, _ defaults: UserDefaults, _ key: String) -> T? {
         guard let data = defaults.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(T.self, from: data)

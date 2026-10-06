@@ -20,6 +20,15 @@ public struct WidgetIndexerRow: Codable, Sendable, Hashable {
     public var healthy: Bool { state == "healthy" }
 }
 
+/// What the Indexers page lists. Each indexer appears once: a flagged one in
+/// the busiest list carries its flag as a note there instead of a second row.
+public struct WidgetIndexerLines: Equatable, Sendable {
+    public var rows: [WidgetIndexerRow]
+    /// Per row, its flag's detail (`backing off`), nil when it is fine.
+    public var notes: [String?]
+    public var flags: [WidgetIndexerFlag]
+}
+
 public struct WidgetIndexerFlag: Codable, Sendable, Hashable {
     public let name: String
     /// `backing off · retry in 12m`, `off`.
@@ -80,6 +89,20 @@ public struct WidgetIndexerSummary: Codable, Sendable, Hashable {
             }
         }
         flagged = flags
+    }
+
+    /// The busiest `rows` indexers, then up to `flags` flagged ones not already
+    /// listed. With `sharedSlots` (medium), an unlisted flag takes the last row's place.
+    public func lines(rows rowLimit: Int, flags flagLimit: Int, sharedSlots: Bool) -> WidgetIndexerLines {
+        var shown = Array(top.prefix(rowLimit))
+        func unlisted() -> [WidgetIndexerFlag] {
+            flagged.filter { flag in !shown.contains { $0.name == flag.name } }
+        }
+        if sharedSlots, rowLimit > 1, shown.count == rowLimit, !unlisted().isEmpty { shown.removeLast() }
+        let notes = shown.map { row -> String? in
+            flagged.first { $0.name == row.name }?.detail ?? (row.state == "backoff" ? "backing off" : nil)
+        }
+        return WidgetIndexerLines(rows: shown, notes: notes, flags: Array(unlisted().prefix(flagLimit)))
     }
 
     /// `70 grabs · 1.3k queries · 4 indexers`.
