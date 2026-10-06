@@ -258,6 +258,12 @@ jobs:
           shoot widgets-recent-accented SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGETS=recent SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_ACCENTED=1
           shoot widget-page-library-accented SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_PAGE=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_ACCENTED=1
           shoot widget-page-library-failed SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_PAGE=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_FAIL=1
+          # Avatar menu › Widget diagnostics, over a sample run journal (read back from the keychain).
+          shoot widget-diagnostics SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_DIAG=sample
+          # Widget deep links, as a widget tap delivers them: cold (the link
+          # launches the app) and warm (the app is up, even under a sheet).
+          # The app's DEBUG probe logs each step to Caches/deeplink-log.txt.
+          scripts/deeplink_check.sh "$UDID" "$S" shots
           for bg in flow web hub orbits grid aurora gradient; do
             shoot login-bg-$bg SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN_BACKGROUND=$bg
           done

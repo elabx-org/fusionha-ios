@@ -37,6 +37,9 @@ struct DownloadsEntry: TimelineEntry, Sendable {
     /// A failed, timed-out or killed reload, in a few monospaced words; nil
     /// after a clean one.
     var diagnostic: String?
+    /// The journal record of the reload that built this entry (marked drawn
+    /// when the entry view renders it).
+    var runId: String?
 
     var idle: Bool { total == 0 && rows.isEmpty }
 
@@ -65,6 +68,8 @@ struct UpNextEntry: TimelineEntry {
     let rows: [UpNextRow]
     let signedIn: Bool
     let failed: Bool
+    /// The journal record of the reload that built this entry.
+    var runId: String? = nil
 
     static let placeholder = UpNextEntry(date: .now, rows: WidgetSamples.upNext, signedIn: true, failed: false)
 }
@@ -74,6 +79,8 @@ struct RecentEntry: TimelineEntry {
     let rows: [RecentImportRow]
     let signedIn: Bool
     let failed: Bool
+    /// The journal record of the reload that built this entry.
+    var runId: String? = nil
 
     static let placeholder = RecentEntry(date: .now, rows: WidgetSamples.recent, signedIn: true, failed: false)
 }

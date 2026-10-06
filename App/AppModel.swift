@@ -60,6 +60,12 @@ final class AppModel {
     var searchText = ""
     var searchScope: SearchScope = .library
     var presentedItem: ItemRef?
+    /// A `fusionha://` link waiting for the shell (`DeepLink.swift`). Each
+    /// applied link bumps `linkCloseTick`, which closes the avatar menu's covers
+    /// (Settings, Widget diagnostics); `avatarCoverOpen` says one is up.
+    var pendingLink: URL?
+    var linkCloseTick = 0
+    var avatarCoverOpen = false
     /// A deep link's sub-tab (`fusionha://activity/indexers`, `discover/requests`),
     /// taken by the screen when it shows.
     var pendingActivityTab: ActivityTab?
@@ -200,7 +206,7 @@ final class AppModel {
         }
         NotificationCenter.default.addObserver(forName: .openNotificationItem, object: nil, queue: .main) { [weak self] note in
             guard let id = note.object as? Int else { return }
-            Task { @MainActor in self?.open(id) }
+            Task { @MainActor in self?.receiveDeepLink(WidgetRoute.item(id).url) }
         }
     }
 
