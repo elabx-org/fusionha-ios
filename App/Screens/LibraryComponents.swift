@@ -623,7 +623,7 @@ struct PosterCard: View {
     }
 
     private var art: some View {
-        PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w342"))
+        PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w500"))
             .aspectRatio(2 / 3, contentMode: .fit)
             .saturation(monitored ? 1 : 0.75)
             .colorMultiply(monitored ? .white : Color(white: 0.82))
@@ -791,7 +791,7 @@ struct LibraryTableRow: View {
         Button { model.open(item.id) } label: {
             HStack(spacing: 8) {
                 HStack(spacing: 9) {
-                    PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w92"))
+                    PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w154"))
                         .frame(width: 34, height: 50)
                         .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                     VStack(alignment: .leading, spacing: 3) {

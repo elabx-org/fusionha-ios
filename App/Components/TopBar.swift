@@ -605,7 +605,7 @@ private struct OmniRow<Sub: View, Action: View>: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            PosterImage(url: TMDBImage.resized(posterUrl, to: "w92"))
+            PosterImage(url: TMDBImage.resized(posterUrl, to: "w154"))
                 .frame(width: 44, height: 66)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 5) {
@@ -662,7 +662,7 @@ struct LibraryResultRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w92"))
+            PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w154"))
                 .frame(width: 44, height: 66)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 5) {
@@ -688,7 +688,7 @@ struct SearchResultRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w92"))
+            PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w154"))
                 .frame(width: 44, height: 66)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             VStack(alignment: .leading, spacing: 4) {

@@ -369,7 +369,7 @@ private struct WeekStill: View {
 
     var body: some View {
         let src = entry.backdropUrl ?? entry.posterUrl
-        PosterImage(url: TMDBImage.resized(src, to: entry.backdropUrl != nil ? "w780" : "w342"))
+        PosterImage(url: TMDBImage.resized(src, to: entry.backdropUrl != nil ? "w1280" : "w342"))
             .frame(maxWidth: .infinity)
             .frame(height: 108)
             .clipped()

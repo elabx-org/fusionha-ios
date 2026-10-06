@@ -139,6 +139,7 @@ extension QualityTier {
 struct EditionChip: View {
     let tier: QualityTier
     var status: EditionStatus? = nil
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
         let tint = status?.color ?? tier.color
@@ -148,7 +149,13 @@ struct EditionChip: View {
             .padding(.vertical, 2)
             .foregroundStyle(tint)
             .background(tint.opacity(0.14), in: Capsule())
-            .overlay(Capsule().strokeBorder(tint.opacity(0.35), lineWidth: 0.5))
+            .overlay(Capsule().strokeBorder(tint.opacity(0.35), lineWidth: Self.hairline(displayScale)))
             .accessibilityLabel("\(tier.chipLabel)\(status.map { ", \($0.label)" } ?? "")")
+    }
+
+    /// The 0.5pt border snapped to whole device pixels: 0.5pt is 1.5px at @3x,
+    /// which leaves a half-covered, soft pixel row on every chip edge.
+    static func hairline(_ scale: CGFloat) -> CGFloat {
+        max(1, (0.5 * scale).rounded()) / max(scale, 1)
     }
 }

@@ -613,7 +613,7 @@ struct DiscoverCard: View {
         .task(id: model.libraryLoaded) { screenshotOpen() }
         #endif
         .contextMenu { menu } preview: {
-            PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w342"))
+            PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w780"))
                 .frame(width: 220, height: 330)
         }
     }
@@ -621,7 +621,7 @@ struct DiscoverCard: View {
     private var poster: some View {
         Color.clear
             .aspectRatio(2 / 3, contentMode: .fit)
-            .overlay { DiscoverArt(url: TMDBImage.resized(result.posterUrl, to: "w342")) }
+            .overlay { DiscoverArt(url: TMDBImage.resized(result.posterUrl, to: "w500")) }
             .background(Theme.card)
             .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Theme.line))
@@ -839,12 +839,18 @@ private struct TrailerCard: View {
     let trailer: TrailerResult
     let canAdd: Bool
 
+    /// 300pt wide is 900px at @3x: the w1280 backdrop (posters stop at w780).
+    private var art: URL? {
+        if let backdrop = trailer.backdropUrl { return TMDBImage.resized(backdrop, to: "w1280") }
+        return TMDBImage.resized(trailer.posterUrl, to: "w780")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button { store.trailer = trailer } label: {
                 Color.clear
                     .aspectRatio(16 / 9, contentMode: .fit)
-                    .overlay { DiscoverArt(url: TMDBImage.resized(trailer.backdropUrl ?? trailer.posterUrl, to: "w780")) }
+                    .overlay { DiscoverArt(url: art) }
                     .overlay { Color(red: 6 / 255, green: 7 / 255, blue: 10 / 255).opacity(0.28) }
                     .overlay {
                         Image(systemName: "play.fill")

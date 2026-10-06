@@ -13,7 +13,9 @@ struct DetailHero: View {
     @State private var artShown = false
 
     private var artURL: URL? {
-        TMDBImage.resized(detail.posterUrl ?? detail.backdropUrl, to: "w780")
+        // Full-bleed on a @3x phone the poster is ~1200px wide, past w780;
+        // the pipeline decodes `original` down to the hero's own pixel size.
+        TMDBImage.resized(detail.posterUrl ?? detail.backdropUrl, to: "original")
     }
 
     var body: some View {
