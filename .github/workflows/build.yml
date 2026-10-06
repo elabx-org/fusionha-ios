@@ -319,7 +319,8 @@ jobs:
           cat sweep/check.md | tee -a "$GITHUB_STEP_SUMMARY"
           hang_failed=""
           { echo; echo '### A–Z scrub hang check'; echo '```'; grep -E "SCRUB-CHECK|HANG" sweep/app.log | xcrun swift-demangle --simplified | cut -c1-220 || echo "(no output)"; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
-          grep -q "^HANG" sweep/app.log && hang_failed="the main thread stalled (see the HANG lines)"
+          grep -q "^HANG" sweep/app.log && hang_failed="the idle main thread stayed busy (see the HANG lines)"
+          grep -q "^HANG main thread has not answered" sweep/app.log && hang_failed="the main thread stalled over 1s (see the HANG lines)"
           grep -q "SCRUB-CHECK DONE" sweep/app.log || hang_failed="the scrub + scroll check never finished (app hung or crashed)"
           # Silhouette: one far jump, captured in-app two frames after it lands. It must
           # already show the grid (card frames, titles, HD/4K chips on dark poster frames).
