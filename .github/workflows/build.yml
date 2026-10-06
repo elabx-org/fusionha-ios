@@ -290,6 +290,27 @@ jobs:
           shoot shell-01-library-setup-pill $L
           shoot shell-02-scroll-thumb $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=thumb
           shoot shell-03-scrubbing $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=S
+          # A–Z scrub sweep: far jumps back and forth through the real drag path;
+          # frames grabbed mid-sweep must never be light (the old white flash).
+          env $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=sweep xcrun simctl launch --terminate-running-process "$UDID" org.elabx.fusionha > /dev/null
+          sleep 8
+          mkdir -p sweep
+          for i in $(seq -w 1 16); do
+            xcrun simctl io "$UDID" screenshot "sweep/shell-03-sweep-$i.png" > /dev/null
+            sips -Z 400 -s format bmp "sweep/shell-03-sweep-$i.png" --out "sweep/shell-03-sweep-$i.bmp" > /dev/null
+          done
+          # The same window under a plain scroll (no jumps): it must follow the finger.
+          env $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=drift xcrun simctl launch --terminate-running-process "$UDID" org.elabx.fusionha > /dev/null
+          sleep 8
+          for i in 1 2 3 4; do
+            xcrun simctl io "$UDID" screenshot "sweep/shell-03-drift-$i.png" > /dev/null
+            sips -Z 400 -s format bmp "sweep/shell-03-drift-$i.png" --out "sweep/shell-03-drift-$i.bmp" > /dev/null
+            sleep 0.7
+          done
+          cp sweep/shell-03-sweep-*.png sweep/shell-03-drift-*.png shots/
+          sweep_failed=""
+          python3 scripts/frame_check.py sweep/*.bmp > sweep/check.md || sweep_failed=1
+          cat sweep/check.md | tee -a "$GITHUB_STEP_SUMMARY"
           shoot shell-04-setup-steps $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETUP=steps
           shoot shell-05-setup-result $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETUP=result
           shoot shell-06-setup-multi $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETUP=multi
@@ -306,6 +327,7 @@ jobs:
           shoot shell-16-detail-setup-strip SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=103
           shoot shell-17-detail-seasons-waiting SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=103 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SCROLL=tabs
           ls -l shots
+          if [ -n "$sweep_failed" ]; then echo "::error::The A–Z scrub sweep painted a light frame (scripts/frame_check.py)"; exit 1; fi
 
       # Interactive (Manual) search results: The Matrix's HD edition against the
       # mock's 34-release list (mixed qualities, rejections, blocklisted rows,

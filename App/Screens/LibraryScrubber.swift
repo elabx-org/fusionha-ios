@@ -48,6 +48,8 @@ final class ScrubberState {
     @ObservationIgnored private var lastLetter: String?
     @ObservationIgnored private var lastJump = Date.distantPast
     @ObservationIgnored private var pending: String?
+    /// Holds poster loads while the finger keeps jumping.
+    let artGate = ArtLoadGate()
 
     func setGridTop(_ y: CGFloat) {
         // Frozen while scrubbing: a jump scrolls the page, and moving the track
@@ -109,6 +111,7 @@ final class ScrubberState {
         lastLetter = letter
         bubble = letter
         tick &+= 1
+        artGate.jumped()
         if Date().timeIntervalSince(lastJump) >= Self.jumpGap {
             lastJump = Date()
             pending = nil
@@ -146,6 +149,7 @@ final class ScrubberState {
         if let pending { jump(pending) }
         pending = nil
         lastJump = .distantPast
+        artGate.release()
         if was {
             lastScroll = Date()
             scheduleHide()
@@ -196,7 +200,7 @@ struct ScrollScrubber: View {
     private func track(height: CGFloat) -> some View {
         let y = state.progress * (height - ScrubberState.thumbHeight)
         return ZStack(alignment: .topTrailing) {
-            bubble
+            ScrubberBubble(letter: state.bubble, tick: state.tick)
                 .offset(x: -48, y: y - 4)
             thumb(height: height)
                 .offset(y: y)
@@ -221,30 +225,6 @@ struct ScrollScrubber: View {
             .animation(motion ? .easeOut(duration: 0.12) : nil, value: grabbed)
             .allowsHitTesting(state.visible)
             .gesture(drag(height: height))
-    }
-
-    private var bubble: some View {
-        let shown = state.bubble != nil
-        return Text(state.bubble ?? " ")
-            .font(.system(size: 24, weight: .bold))
-            .foregroundStyle(Theme.bg)
-            .frame(width: 56, height: 56)
-            .background(Theme.txt, in: Circle())
-            .overlay(Circle().strokeBorder(Theme.i1.opacity(0.6), lineWidth: 3).padding(-3))
-            .shadow(color: .black.opacity(0.45), radius: 13, y: 10)
-            // Replays a small "tick" pulse per letter.
-            .keyframeAnimator(initialValue: CGFloat(1), trigger: motion ? state.tick : 0) { content, scale in
-                content.scaleEffect(scale)
-            } keyframes: { _ in
-                KeyframeTrack {
-                    LinearKeyframe(1.14, duration: 0.001)
-                    CubicKeyframe(1, duration: 0.16)
-                }
-            }
-            .scaleEffect(shown ? 1 : 0.6)
-            .opacity(shown ? 1 : 0)
-            .animation(motion ? .easeOut(duration: 0.15) : nil, value: shown)
-            .allowsHitTesting(false)
     }
 
     private func drag(height: CGFloat) -> some Gesture {
@@ -278,11 +258,14 @@ struct ScrollScrubber: View {
 
     #if DEBUG
     /// `FUSIONHA_SCREENSHOT_SCRUB=thumb` shows the resting thumb mid-library;
-    /// a letter (e.g. `S`) shows the scrubbing state on it, bubble included.
+    /// a letter (e.g. `S`) shows the scrubbing state on it, bubble included;
+    /// `sweep` scrubs far back and forth (LibraryScrubberDebug.swift).
     private func screenshotScrub() async {
         guard let raw = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SCRUB"], !raw.isEmpty,
               letters.count > 1 else { return }
         try? await Task.sleep(for: .seconds(1.5))
+        if raw == "sweep" { return await state.screenshotSweep(letters: letters, jump: jump) }
+        if raw == "drift" { return await ScrubberState.screenshotDrift() }
         let thumb = raw == "thumb"
         let letter = thumb ? letters[letters.count / 2] : raw.uppercased()
         state.screenshotHold(letter: letter, bubble: !thumb, letters: letters, jump: jump)
