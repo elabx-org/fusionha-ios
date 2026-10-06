@@ -93,11 +93,41 @@ enum HangWatchdog {
     @MainActor
     static func checkIdle(seconds: Double) async {
         let thread = mach_thread_self()
+        startSampler()
         let before = cpuTime(thread)
         try? await Task.sleep(for: .seconds(seconds))
         let busy = (cpuTime(thread) - before) / seconds
         mark(String(format: "SCRUB-CHECK idle main-thread cpu %.0f%%", busy * 100))
-        if busy > idleLimit { mark("HANG main thread stayed busy while the page was idle") }
+        if busy > idleLimit {
+            mark("HANG main thread stayed busy while the page was idle")
+            reportSamples()
+        }
+    }
+
+    // MARK: Where the idle main thread went (PerfProbe's MainSampler)
+
+    @MainActor private static var sampling = false
+
+    @MainActor
+    private static func startSampler() {
+        #if arch(arm64)
+        if !sampling { sampling = true; MainSampler.shared.start() }
+        MainSampler.shared.reset()
+        #endif
+    }
+
+    /// The busiest app frames and inclusive frames of the idle window, as
+    /// `SCRUB-CHECK sample` lines (mangled; CI demangles them).
+    private static func reportSamples() {
+        #if arch(arm64)
+        let report = MainSampler.shared.report(limit: 25)
+        mark("SCRUB-CHECK sample total \(report["samples"] ?? 0)")
+        for kind in ["app", "incl"] {
+            for row in (report[kind] as? [[Any]]) ?? [] where row.count == 2 {
+                mark("SCRUB-CHECK sample \(kind) \(row[1]) \(row[0])")
+            }
+        }
+        #endif
     }
 
     private static func cpuTime(_ thread: thread_act_t) -> Double {

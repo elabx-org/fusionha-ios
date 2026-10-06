@@ -318,7 +318,7 @@ jobs:
           python3 scripts/frame_check.py sweep/*.bmp > sweep/check.md || sweep_failed=1
           cat sweep/check.md | tee -a "$GITHUB_STEP_SUMMARY"
           hang_failed=""
-          { echo; echo '### A–Z scrub hang check'; echo '```'; grep -E "SCRUB-CHECK|HANG" sweep/app.log || echo "(no output)"; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
+          { echo; echo '### A–Z scrub hang check'; echo '```'; grep -E "SCRUB-CHECK|HANG" sweep/app.log | xcrun swift-demangle --simplified | cut -c1-220 || echo "(no output)"; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
           grep -q "^HANG" sweep/app.log && hang_failed="the main thread stalled (see the HANG lines)"
           grep -q "SCRUB-CHECK DONE" sweep/app.log || hang_failed="the scrub + scroll check never finished (app hung or crashed)"
           # Silhouette: one far jump, captured in-app two frames after it lands. It must
