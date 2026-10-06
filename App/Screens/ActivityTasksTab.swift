@@ -378,9 +378,7 @@ struct ActivityTasksTab: View {
         .task {
             await store.load(model.client)
             // The web polls fast (2s) while any run is live, slowly otherwise.
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(store.anyRunning ? 2 : 15))
-                guard !Task.isCancelled else { return }
+            while await ActivityPoll.next(after: .seconds(store.anyRunning ? 2 : 15), model: model) {
                 await store.refresh(model.client)
             }
         }

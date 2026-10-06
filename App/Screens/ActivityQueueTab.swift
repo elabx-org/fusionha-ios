@@ -419,9 +419,7 @@ struct ActivityQueueTab: View {
             .animation(reduce ? nil : ActMotion.rows, value: store.items.map(\.id))
             .task(id: search) {
                 await store.reload(model.client, query: search)
-                while !Task.isCancelled {
-                    try? await Task.sleep(for: .milliseconds(store.hasActiveWork ? 1500 : 4000))
-                    guard !Task.isCancelled else { break }
+                while await ActivityPoll.next(after: .milliseconds(store.hasActiveWork ? 1500 : 4000), model: model) {
                     await store.refresh(model.client)
                 }
             }
