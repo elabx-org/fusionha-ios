@@ -57,7 +57,7 @@ struct RecentProvider: TimelineProvider {
             return RecentEntry(date: .now, rows: [], signedIn: false, failed: false)
         }
         run.stage("history")
-        let limit = family == .systemSmall ? 1 : (family == .systemMedium ? 5 : 8)
+        let limit = family == .systemSmall ? 1 : 8
         do {
             let rows = try await WidgetLoader.recent(client, limit: limit, posterSize: family == .systemSmall ? "w92" : "w154",
                                                      deadline: run.deadline)
@@ -83,6 +83,8 @@ struct RecentWidget: Widget {
         .configurationDisplayName("Recently added")
         .description("The latest titles fusionha imported, with their HD and 4K versions.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        // The small poster runs edge to edge; medium and large pad by the margins.
+        .contentMarginsDisabled()
     }
 }
 

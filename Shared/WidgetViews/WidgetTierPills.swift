@@ -19,8 +19,7 @@ struct WidgetTierPill: View {
         }
         .padding(.horizontal, 5)
         .padding(.vertical, 2)
-        .background(tier.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(tier.color.opacity(0.45), lineWidth: 0.75))
+        .background(tier.color.opacity(0.18), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
         .widgetAccentable()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(tier.chipLabel)\(status.map { ", \($0.label)" } ?? "")")

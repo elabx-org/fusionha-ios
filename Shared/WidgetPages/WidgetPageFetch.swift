@@ -30,8 +30,16 @@ enum WidgetPageFetch {
         return (summary, posters)
     }
 
+    /// Missing and cutoff-unmet counts only (Library's Wanted line): one row, no posters.
+    static func wantedCounts(_ client: APIClient, deadline: WidgetDeadline) async throws -> WidgetWantedSummary {
+        let page = try await withTimeout(seconds: deadline.slice(4, reserve: 1)) {
+            try await client.wantedPage(state: .missing, pageSize: 1)
+        }
+        return WidgetWantedSummary(missing: page, fourK: nil, limit: 0)
+    }
+
     /// Requests and the newest open issue, then (best-effort, in parallel)
-    /// their titles and the requesters' names.
+    /// their titles and posters and the requesters' names.
     static func requests(_ client: APIClient, rows: Int, into data: WidgetPageData,
                          deadline: WidgetDeadline) async throws -> WidgetPageData {
         var data = data
@@ -41,24 +49,37 @@ enum WidgetPageFetch {
         let summary = WidgetRequestsSummary(requests: try await requests, openIssues: await issues ?? [], limit: rows)
         data.requests = summary
         let extras = deadline.slice(3, reserve: 0.5)
-        async let titles = titles(client, summary.newest, timeout: extras)
+        async let previews = previews(client, summary.newest, timeout: extras)
         async let issueTitle = itemTitle(client, summary.issue?.mediaItemId, timeout: extras)
         async let names = userNames(client, timeout: extras)
-        data.requestTitles = await titles
+        let found = await previews
+        data.requestTitles = found.mapValues { $0.title }
         data.issueTitle = await issueTitle
         data.userNames = await names
+        let posters = await WidgetLoader.fetchPosters(summary.newest.map { found[$0.id]?.poster }, size: "w92",
+                                                      deadline: deadline)
+        for (row, poster) in zip(summary.newest, posters) { data.requestPosters[row.id] = poster }
         return data
     }
 
-    /// Request id → title, two TMDB previews at a time.
-    private static func titles(_ client: APIClient, _ rows: [WidgetRequestRow], timeout: TimeInterval) async -> [Int: String] {
-        let found = await concurrentMap(rows, maxConcurrent: 2) { row -> String? in
+    /// Request id → title and poster URL, two TMDB previews at a time.
+    private static func previews(_ client: APIClient, _ rows: [WidgetRequestRow],
+                                 timeout: TimeInterval) async -> [Int: (title: String, poster: String?)] {
+        let found = await concurrentMap(rows, maxConcurrent: 2) { row -> RequestPreview? in
             let kind: PreviewKind = row.kind == .movie ? .movie : .series
-            return try? await withTimeout(seconds: timeout) { try await client.previewDetail(kind: kind, tmdbId: row.tmdbId).title }
+            guard let detail = try? await withTimeout(seconds: timeout, {
+                try await client.previewDetail(kind: kind, tmdbId: row.tmdbId)
+            }) else { return nil }
+            return RequestPreview(title: detail.title, poster: detail.posterUrl)
         }
-        var out: [Int: String] = [:]
-        for (row, title) in zip(rows, found) { if let title { out[row.id] = title } }
+        var out: [Int: (title: String, poster: String?)] = [:]
+        for (row, preview) in zip(rows, found) { if let preview { out[row.id] = (preview.title, preview.poster) } }
         return out
+    }
+
+    private struct RequestPreview: Sendable {
+        let title: String
+        let poster: String?
     }
 
     private static func itemTitle(_ client: APIClient, _ id: Int?, timeout: TimeInterval) async -> String? {

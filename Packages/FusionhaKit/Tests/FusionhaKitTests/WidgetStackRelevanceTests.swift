@@ -62,4 +62,30 @@ final class WidgetStackRelevanceTests: XCTestCase {
         XCTAssertEqual(WidgetStack.kind(for: .recent), "RecentlyAdded")
         XCTAssertEqual(WidgetStack.kind(for: .wanted), "Downloads")
     }
+
+    func testDownloadRateAndLabels() {
+        XCTAssertEqual(WidgetDownloadStats.rate(size: 1000, sizeleft: 400, ageSeconds: 60, stalled: false), 10)
+        XCTAssertNil(WidgetDownloadStats.rate(size: 1000, sizeleft: 400, ageSeconds: 60, stalled: true))
+        XCTAssertNil(WidgetDownloadStats.rate(size: 1000, sizeleft: 0, ageSeconds: 60, stalled: false))
+        XCTAssertNil(WidgetDownloadStats.rate(size: 1000, sizeleft: 400, ageSeconds: nil, stalled: false))
+        XCTAssertEqual(WidgetDownloadStats.rateLabel(24.1 * 1024 * 1024), "24.1 MB/s")
+        XCTAssertEqual(WidgetDownloadStats.sizeLabel(41.2 * 1024 * 1024 * 1024), "41.2 GB")
+    }
+
+    /// A tap outside any row opens the screen that matches the widget.
+    func testEveryWidgetBackgroundOpensItsScreen() {
+        let urls = Dictionary(uniqueKeysWithValues: WidgetStack.allCases.map {
+            ($0.kind, WidgetRoute.page($0.page).url.absoluteString)
+        })
+        XCTAssertEqual(urls, [
+            "Downloading": "fusionha://activity",
+            "Library": "fusionha://library",
+            "Indexers": "fusionha://activity/indexers",
+            "Requests": "fusionha://discover/requests",
+        ])
+        XCTAssertEqual(WidgetRoute.page(.upNext).url.absoluteString, "fusionha://calendar")
+        XCTAssertEqual(WidgetRoute.page(.recent).url.absoluteString, "fusionha://library")
+        XCTAssertEqual(WidgetRoute.item(nil, fallback: .requests).url.absoluteString, "fusionha://discover/requests")
+        XCTAssertEqual(WidgetRoute.item(12, fallback: .requests).url.absoluteString, "fusionha://item/12")
+    }
 }

@@ -46,12 +46,8 @@ struct StackWidgetEntryView: View {
             .widgetURL(url)
     }
 
-    /// Small: the top download's title while downloading, else the view's
-    /// screen. Medium and large: the view's screen (rows link to their items).
-    private var url: URL {
-        if family == .systemSmall, entry.page == .downloading, let row = entry.rows.first {
-            return WidgetLink.item(row.itemId, fallback: .activity)
-        }
-        return WidgetRoute.page(entry.page).url
-    }
+    /// Anywhere outside a row: the view's screen (Downloading → Activity,
+    /// Library → Library, Indexers → Activity › Indexers, Requests & issues →
+    /// Discover › Requests). Rows and posters carry their own item links.
+    private var url: URL { WidgetRoute.page(entry.page).url }
 }

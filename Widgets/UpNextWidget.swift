@@ -29,7 +29,7 @@ struct UpNextProvider: TimelineProvider {
                                                     now: entry.date, until: refresh)
             let entries: [UpNextEntry] = WidgetProviderRun.steps(steps) { date, score in
                 var step = UpNextEntry(date: date, rows: entry.rows, signedIn: entry.signedIn, failed: entry.failed,
-                                       runId: entry.runId)
+                                       runId: entry.runId, weekCount: entry.weekCount)
                 step.relevanceScore = score
                 return step
             }
@@ -58,10 +58,11 @@ struct UpNextProvider: TimelineProvider {
             return UpNextEntry(date: .now, rows: [], signedIn: false, failed: false)
         }
         run.stage("calendar")
-        let limit = family == .systemSmall ? 1 : (family == .systemMedium ? 2 : 5)
+        let limit = family == .systemSmall ? 1 : 4
         do {
-            let rows = try await WidgetLoader.upNext(client, limit: limit, posterSize: "w92", deadline: run.deadline)
-            return UpNextEntry(date: .now, rows: rows, signedIn: true, failed: false)
+            let feed = try await WidgetLoader.upNextFeed(client, limit: limit, posterSize: family == .systemMedium ? "w154" : "w92",
+                                                         deadline: run.deadline)
+            return UpNextEntry(date: .now, rows: feed.rows, signedIn: true, failed: false, weekCount: feed.week)
         } catch {
             run.fail(error)
             return UpNextEntry(date: .now, rows: [], signedIn: true, failed: true)

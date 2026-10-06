@@ -2,8 +2,8 @@ import SwiftUI
 import WidgetKit
 import FusionhaKit
 
-/// Up next, small: when the next item airs (big), its poster, title, and
-/// code with the edition pills. One item, shown well.
+/// Up next, small: the next airing's poster beside its time (big) and day,
+/// then its title and episode, with the edition chips.
 struct WidgetUpNextSmall: View {
     let row: UpNextRow
 
@@ -12,20 +12,20 @@ struct WidgetUpNextSmall: View {
         VStack(alignment: .leading, spacing: 0) {
             WidgetTopBar(title: "Up next")
             Spacer(minLength: 6)
-            HStack(alignment: .top, spacing: 8) {
-                WidgetAirTime(item: item, size: 24)
-                Spacer(minLength: 0)
+            HStack(alignment: .center, spacing: 10) {
                 WidgetPoster(data: row.poster, radius: WidgetStyle.posterRadius)
-                    .frame(width: 34, height: 51)
+                    .frame(width: 44, height: 66)
+                VStack(alignment: .leading, spacing: 2) {
+                    WidgetAirClock(item: item, size: 26).widgetAccentable()
+                    Text(WidgetDay.label(item.airDate, hasTime: item.hasTime))
+                        .font(WidgetStyle.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    WidgetTierPills(editions: item.pills).padding(.top, 2)
+                }
             }
-            Spacer(minLength: 4)
-            Text(item.title).font(WidgetStyle.title).lineLimit(2)
-            HStack(spacing: 4) {
-                Text(item.code).font(WidgetStyle.caption).foregroundStyle(.secondary).lineLimit(1)
-                Spacer(minLength: 2)
-                WidgetTierPills(editions: item.pills)
-            }
-            .padding(.top, 3)
+            Spacer(minLength: 6)
+            Text("\(item.title) · \(item.code)").font(WidgetStyle.title).lineLimit(2)
         }
     }
 }

@@ -18,7 +18,7 @@ struct UpNextWidgetView: View {
                 WidgetSmallFailure(title: "Up next")
             } else {
                 VStack(alignment: .leading, spacing: WidgetStyle.headerGap) {
-                    WidgetTopBar(title: "Up next")
+                    WidgetTopBar(title: "Up next", figure: entry.weekCount.flatMap { $0 > 0 ? "\($0) this week" : nil })
                     content.frame(maxHeight: .infinity, alignment: .top)
                 }
             }

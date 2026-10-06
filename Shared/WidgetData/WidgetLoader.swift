@@ -33,20 +33,32 @@ enum WidgetLoader {
                 title: item.episodeLabel.map { "\(item.title) · \($0)" } ?? item.title,
                 tier: item.tier, fraction: item.fraction, stalled: item.stalled, poster: poster,
                 timeLeft: item.phase == "importing" ? "Importing"
-                    : WidgetFeeds.timeLeft(fraction: item.fraction, ageSeconds: item.ageSeconds, stalled: item.stalled))
+                    : WidgetFeeds.timeLeft(fraction: item.fraction, ageSeconds: item.ageSeconds, stalled: item.stalled),
+                size: item.size,
+                rate: WidgetDownloadStats.rate(size: item.size, sizeleft: item.sizeleft, ageSeconds: item.ageSeconds,
+                                               stalled: item.stalled))
         }
         return DownloadsEntry(date: .now, total: page.total, rows: rows, signedIn: true, failed: false)
     }
 
     static func upNext(_ client: APIClient, limit: Int, posterSize: String,
                        deadline: WidgetDeadline = WidgetDeadline(seconds: WidgetRun.budget)) async throws -> [UpNextRow] {
+        try await upNextFeed(client, limit: limit, posterSize: posterSize, deadline: deadline).rows
+    }
+
+    /// The next `limit` items with posters, and how many air within seven days.
+    static func upNextFeed(_ client: APIClient, limit: Int, posterSize: String,
+                           deadline: WidgetDeadline = WidgetDeadline(seconds: WidgetRun.budget)) async throws
+        -> (rows: [UpNextRow], week: Int) {
         let now = Date()
         let entries = try await withTimeout(seconds: deadline.slice(5, reserve: 1.5)) {
             try await client.calendar(start: now, end: CalendarMath.addDays(now, upNextDays))
         }
-        let items = WidgetFeeds.upNext(entries, now: now, limit: limit)
+        let all = WidgetFeeds.upNext(entries, now: now, limit: 100)
+        let week = all.filter { $0.airDate < CalendarMath.addDays(now, 7) }.count
+        let items = Array(all.prefix(limit))
         let posters = await fetchPosters(items.map(\.posterUrl), size: posterSize, deadline: deadline)
-        return zip(items, posters).map { UpNextRow(item: $0, poster: $1) }
+        return (zip(items, posters).map { UpNextRow(item: $0, poster: $1) }, week)
     }
 
     static func recent(_ client: APIClient, limit: Int, posterSize: String,

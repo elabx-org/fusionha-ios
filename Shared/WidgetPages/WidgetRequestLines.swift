@@ -2,58 +2,68 @@ import SwiftUI
 import WidgetKit
 import FusionhaKit
 
-/// A pending request: its title, `S1–3 · alice · 2h ago`, and the requested tiers.
+/// A pending request: poster, title, `Requested by Sam · 2h ago`, and the
+/// requested tiers.
 struct WidgetRequestLine: View {
     let row: WidgetRequestRow
     let title: String?
+    let poster: Data?
     let requester: String?
 
     var body: some View {
         WidgetRowLink(url: WidgetLink.item(row.mediaItemId, fallback: .requests)) {
-            HStack(spacing: 8) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title ?? "TMDB #\(row.tmdbId)").font(WidgetStyle.title).lineLimit(1)
-                    Text(subtitle).font(WidgetStyle.caption).foregroundStyle(.secondary).lineLimit(1)
-                }
-                Spacer(minLength: 4)
-                WidgetTierPills(editions: row.tiers.map { (tier: $0, status: EditionStatus?.none) })
-            }
+            WidgetRequestRowLayout(poster: poster, title: title ?? "TMDB #\(row.tmdbId)", subtitle: subtitle,
+                                   subtitleColor: .secondary,
+                                   pills: row.tiers.map { (tier: $0, status: EditionStatus?.none) })
         }
     }
 
     private var subtitle: String {
         var parts: [String] = []
         if let seasons = row.seasons { parts.append(seasons) }
-        if let requester { parts.append(requester) }
+        if let requester { parts.append("Requested by \(requester)") }
         if let at = row.requestedAt.flatMap(CalendarMath.parseUTC) { parts.append(WidgetFeeds.agoLabel(at)) }
         return parts.joined(separator: " · ")
     }
 }
 
+/// The newest open issue: `Issue · audio out of sync` in red.
 struct WidgetIssueLine: View {
     let issue: WidgetIssueRow
     let title: String?
 
     var body: some View {
         WidgetRowLink(url: WidgetLink.item(issue.mediaItemId, fallback: .requests)) {
-            HStack(spacing: 6) {
-                Image(systemName: "exclamationmark.bubble.fill")
-                    .font(.system(size: 14))
-                    .foregroundStyle(Theme.danger)
-                    .widgetAccentable()
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title ?? "Item #\(issue.mediaItemId)").font(WidgetStyle.title).lineLimit(1)
-                    Text(subtitle).font(WidgetStyle.caption).foregroundStyle(.secondary).lineLimit(1)
-                }
-                Spacer(minLength: 0)
-            }
+            WidgetRequestRowLayout(poster: nil, title: title ?? "Item #\(issue.mediaItemId)", subtitle: subtitle,
+                                   subtitleColor: Theme.danger, pills: [])
         }
     }
 
     private var subtitle: String {
-        var parts = [issue.label]
-        if let at = issue.createdAt.flatMap(CalendarMath.parseUTC) { parts.append(WidgetFeeds.agoLabel(at)) }
-        if let text = issue.description, !text.isEmpty { parts.append(text) }
+        var parts = ["Issue"]
+        if let text = issue.description, !text.isEmpty { parts.append(text) } else { parts.append(issue.label) }
         return parts.joined(separator: " · ")
+    }
+}
+
+/// Poster, title over subtitle, chips on the right: the Requests rows' shape.
+struct WidgetRequestRowLayout: View {
+    let poster: Data?
+    let title: String
+    let subtitle: String
+    let subtitleColor: Color
+    let pills: [(tier: QualityTier, status: EditionStatus?)]
+
+    var body: some View {
+        HStack(spacing: 12) {
+            WidgetPoster(data: poster, radius: WidgetStyle.posterRadius)
+                .frame(width: 32, height: 48)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(WidgetStyle.rowTitle).lineLimit(1)
+                Text(subtitle).font(WidgetStyle.caption).foregroundStyle(subtitleColor).lineLimit(1)
+            }
+            Spacer(minLength: 6)
+            WidgetTierPills(editions: pills)
+        }
     }
 }

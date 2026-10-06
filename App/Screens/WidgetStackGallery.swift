@@ -60,7 +60,9 @@ struct WidgetStackGalleryView: View {
     }
 
     private func card(_ family: WidgetFamily, alternate: Bool) -> some View {
-        content(family, alternate: alternate).galleryWidgetCard(Self.size(family))
+        // Recently added's small poster runs edge to edge (its margins are off).
+        let bleed = variant == .recent && family == .systemSmall && !alternate
+        return content(family, alternate: alternate).galleryWidgetCard(Self.size(family), bleed: bleed)
     }
 
     @ViewBuilder

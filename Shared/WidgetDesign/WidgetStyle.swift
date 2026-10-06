@@ -6,8 +6,10 @@ import SwiftUI
 enum WidgetStyle {
     /// Header title and row titles.
     static let title = Font.system(size: 13, weight: .semibold)
-    /// The one prominent title on a small widget or a hero row.
-    static let heroTitle = Font.system(size: 15, weight: .semibold)
+    /// A list row's title (large widgets, medium rows).
+    static let rowTitle = Font.system(size: 15, weight: .semibold)
+    /// The one prominent title on a hero.
+    static let heroTitle = Font.system(size: 17, weight: .semibold)
     /// Second lines, captions and legends.
     static let caption = Font.system(size: 11, weight: .medium)
     /// Uppercase section labels (`TODAY`, `LATER`).

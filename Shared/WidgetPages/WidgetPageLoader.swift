@@ -13,7 +13,7 @@ enum WidgetPageLoader {
         run.stage("queue")
         var entry: DownloadsEntry
         do {
-            entry = try await WidgetLoader.queue(client, limit: large ? 5 : 2, deadline: run.deadline)
+            entry = try await WidgetLoader.queue(client, limit: large ? 4 : 2, deadline: run.deadline)
         } catch {
             run.fail(error)
             entry = DownloadsEntry(date: .now, total: 0, rows: [], signedIn: true, failed: true)
@@ -56,11 +56,16 @@ enum WidgetPageLoader {
         case .downloading:
             break
         case .upNext:
-            entry.upNext = try await WidgetLoader.upNext(client, limit: large ? 5 : 2, posterSize: "w92", deadline: deadline)
+            let feed = try await WidgetLoader.upNextFeed(client, limit: 4, posterSize: "w154", deadline: deadline)
+            entry.upNext = feed.rows
+            entry.weekCount = feed.week
         case .recent:
-            entry.recent = try await WidgetLoader.recent(client, limit: large ? 8 : 5, posterSize: "w154", deadline: deadline)
+            entry.recent = try await WidgetLoader.recent(client, limit: 8, posterSize: "w154", deadline: deadline)
         case .library:
+            // The Wanted line rides along, best-effort.
+            async let wanted = try? WidgetPageFetch.wantedCounts(client, deadline: deadline)
             entry.pageData.library = try await WidgetPageFetch.library(client, deadline: deadline)
+            entry.pageData.wanted = await wanted
         case .indexers:
             entry.pageData.indexers = try await WidgetPageFetch.indexers(client, top: large ? 4 : 3, deadline: deadline)
         case .wanted:
@@ -68,7 +73,7 @@ enum WidgetPageLoader {
             entry.pageData.wanted = summary
             entry.pageData.wantedPosters = posters
         case .requests:
-            entry.pageData = try await WidgetPageFetch.requests(client, rows: large ? 3 : 2, into: entry.pageData,
+            entry.pageData = try await WidgetPageFetch.requests(client, rows: large ? 4 : 2, into: entry.pageData,
                                                                 deadline: deadline)
         }
     }

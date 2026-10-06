@@ -12,6 +12,8 @@ struct WidgetPageData: Hashable, Sendable {
     var requests: WidgetRequestsSummary?
     /// Request id → title (from the TMDB preview).
     var requestTitles: [Int: String] = [:]
+    /// Request id → poster (from the TMDB preview).
+    var requestPosters: [Int: Data] = [:]
     /// User id → display name (user managers only; else `user #id`).
     var userNames: [Int: String] = [:]
     var issueTitle: String?

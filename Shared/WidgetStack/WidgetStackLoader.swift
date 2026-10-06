@@ -65,7 +65,7 @@ enum WidgetStackLoader {
         switch stack {
         case .downloading:
             do {
-                var queue = try await WidgetLoader.queue(client, limit: large ? 5 : 2, deadline: deadline)
+                var queue = try await WidgetLoader.queue(client, limit: large ? 4 : 2, deadline: deadline)
                 queue.page = entry.page
                 queue.pages = entry.pages
                 entry = queue

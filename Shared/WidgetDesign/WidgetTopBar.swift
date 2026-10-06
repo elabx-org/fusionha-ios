@@ -2,12 +2,12 @@ import SwiftUI
 import WidgetKit
 
 /// Every widget's compact header: the fusionha glyph, the widget's title and
-/// one status figure (`5`, `6/7`), then an optional control (the paged
+/// one status figure on the right (`24.1 MB/s`, `5 this week`), then an optional control (the paged
 /// widget's dots, Process queue).
 struct WidgetTopBar<Trailing: View>: View {
     let title: String
     var figure: String?
-    var tint: Color = .secondary
+    var tint: Color = .primary
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
@@ -15,6 +15,7 @@ struct WidgetTopBar<Trailing: View>: View {
             WidgetGlyph()
             Text(title)
                 .font(WidgetStyle.title)
+                .foregroundStyle(.secondary)
                 .lineLimit(1)
                 .widgetAccentable()
             Spacer(minLength: 4)
@@ -32,7 +33,7 @@ struct WidgetTopBar<Trailing: View>: View {
 }
 
 extension WidgetTopBar where Trailing == EmptyView {
-    init(title: String, figure: String? = nil, tint: Color = .secondary) {
+    init(title: String, figure: String? = nil, tint: Color = .primary) {
         self.init(title: title, figure: figure, tint: tint) { EmptyView() }
     }
 }

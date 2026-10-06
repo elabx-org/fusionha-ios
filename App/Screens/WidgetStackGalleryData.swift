@@ -18,10 +18,11 @@ struct WidgetStackGalleryData {
         for family in WidgetStackGalleryView.families {
             switch variant {
             case .upnext:
-                let rows = (try? await WidgetLoader.upNext(client, limit: limit(family, 1, 2, 5), posterSize: "w92")) ?? []
-                data.upNext[family] = UpNextEntry(date: .now, rows: rows, signedIn: true, failed: false)
+                let feed = try? await WidgetLoader.upNextFeed(client, limit: limit(family, 1, 4, 4), posterSize: "w154")
+                data.upNext[family] = UpNextEntry(date: .now, rows: feed?.rows ?? [], signedIn: true, failed: false,
+                                                  weekCount: feed?.week)
             case .recent:
-                let rows = (try? await WidgetLoader.recent(client, limit: limit(family, 1, 5, 8),
+                let rows = (try? await WidgetLoader.recent(client, limit: limit(family, 1, 8, 8),
                                                            posterSize: family == .systemSmall ? "w92" : "w154")) ?? []
                 data.recent[family] = RecentEntry(date: .now, rows: rows, signedIn: true, failed: false)
             default:

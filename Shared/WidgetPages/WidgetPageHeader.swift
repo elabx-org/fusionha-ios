@@ -10,8 +10,7 @@ struct WidgetPageHeader: View {
     let familyKey: String
 
     var body: some View {
-        let figure = entry.pageFigure
-        WidgetTopBar(title: entry.page.title, figure: figure?.text, tint: figure?.tint ?? .secondary) {
+        WidgetTopBar(title: entry.page.title, figure: entry.pageFigure) {
             if entry.page == .downloading { ProcessQueueButton() }
             if pages.count > 1 {
                 WidgetPageDots(pages: pages, current: entry.page, familyKey: familyKey)
