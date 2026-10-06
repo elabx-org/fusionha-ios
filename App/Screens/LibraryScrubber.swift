@@ -49,7 +49,7 @@ final class ScrubberState {
     @ObservationIgnored private var lastJump = Date.distantPast
     @ObservationIgnored private var pending: String?
     /// Holds poster loads while the finger keeps jumping.
-    @ObservationIgnored let artGate = ArtLoadGate()
+    let artGate = ArtLoadGate()
 
     func setGridTop(_ y: CGFloat) {
         // Frozen while scrubbing: a jump scrolls the page, and moving the track
