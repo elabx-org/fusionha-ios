@@ -22,11 +22,12 @@ final class WidgetRun: @unchecked Sendable {
 
     init(kind: String, family: WidgetFamily, call: String = "timeline", page: WidgetPage? = nil) {
         let family = WidgetJournal.name(family)
-        record = WidgetRunRecord(kind: kind, family: family, call: call,
-                                 log: WidgetRunLog(stage: "start", page: page?.rawValue ?? "-"))
-        id = record.id
-        let before = WidgetJournal.save(record)
-        previous = WidgetRunJournal.previous(kind: kind, family: family, before: record.id, in: before)?.log
+        let first = WidgetRunRecord(kind: kind, family: family, call: call,
+                                    log: WidgetRunLog(stage: "start", page: page?.rawValue ?? "-"))
+        let before = WidgetJournal.save(first)
+        record = first
+        id = first.id
+        previous = WidgetRunJournal.previous(kind: kind, family: family, before: first.id, in: before)?.log
     }
 
     /// The entry so far.
