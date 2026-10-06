@@ -69,7 +69,11 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             MARKETING_VERSION="$APP_VERSION" \
-            build
+            build 2>&1 | tee xcodebuild.log || {
+            # Compile errors as annotations, readable from the checks API without the raw log.
+            grep -E ": error: " xcodebuild.log | sort -u | head -40 | sed 's/^/::error::/'
+            exit 1
+          }
 
       - name: Package IPA
         run: |

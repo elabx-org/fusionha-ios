@@ -35,7 +35,7 @@ enum StackWidgetConfiguration {
     }
 }
 
-private struct StackWidgetEntryView: View {
+struct StackWidgetEntryView: View {
     @Environment(\.widgetFamily) private var family
     let entry: DownloadsEntry
 
