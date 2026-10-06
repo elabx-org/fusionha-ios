@@ -56,6 +56,20 @@ open_link() {
   xcrun simctl openurl "$UDID" "fusionha://$1" 2>&1 | sed 's/^/openurl: /'
 }
 
+# The simulator asks "Open in “fusionha”?" for every simctl openurl (a widget
+# tap never does): the UI-test helper taps Open in the background.
+ACCEPT_LOG=$(mktemp)
+xcodebuild test-without-building -project Fusionha.xcodeproj -scheme Fusionha \
+  -destination "id=$UDID" -derivedDataPath build CODE_SIGNING_ALLOWED=NO \
+  -only-testing:FusionhaUITests/OpenPromptAcceptor/testAcceptOpenPrompts > "$ACCEPT_LOG" 2>&1 &
+ACCEPT_PID=$!
+for _ in $(seq 1 180); do
+  grep -q "ACCEPTOR READY" "$ACCEPT_LOG" && break
+  kill -0 "$ACCEPT_PID" 2> /dev/null || break
+  sleep 1
+done
+grep -q "ACCEPTOR READY" "$ACCEPT_LOG" && echo "prompt helper ready" || { echo "prompt helper did not start:"; tail -30 "$ACCEPT_LOG"; }
+
 # Cold: the link itself launches the app. A cold launch from openurl gets no
 # SIMCTL_CHILD_ variables, so the mock server goes in launchd's environment.
 xcrun simctl spawn "$UDID" launchctl setenv FUSIONHA_SCREENSHOT_SERVER "$SERVER"
@@ -85,6 +99,9 @@ warm deeplink-3-warm-item item/1 "detail 1 shown" SIMCTL_CHILD_FUSIONHA_SCREENSH
 warm deeplink-4-warm-over-account item/8 "detail 8 shown" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1
 warm deeplink-5-warm-other-title item/8 "detail 8 shown" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=1
 warm deeplink-6-warm-calendar calendar "applied fusionha://calendar tab=calendar" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=1
+
+kill "$ACCEPT_PID" 2> /dev/null
+echo "prompt helper taps: $(grep -c "ACCEPTOR tapped Open" "$ACCEPT_LOG")"
 
 {
   echo "## Widget deep links"

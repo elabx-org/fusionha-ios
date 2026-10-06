@@ -135,7 +135,7 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
-      - name: Build for the simulator
+      - name: Build for the simulator (with the deep-link prompt helper)
         run: |
           set -o pipefail
           xcodebuild \
@@ -146,7 +146,7 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
-            build
+            build-for-testing
 
       - name: Take screenshots
         run: |

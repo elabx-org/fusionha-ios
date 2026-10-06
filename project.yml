@@ -82,7 +82,9 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     scheme:
-      testTargets: []
+      # CI only: taps the simulator's "Open in fusionha?" prompt for the
+      # deep-link checks (scripts/deeplink_check.sh). Built by build-for-testing.
+      testTargets: [FusionhaUITests]
 
   FusionhaWidgets:
     type: app-extension
@@ -143,3 +145,16 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.notification-service
         SKIP_INSTALL: "YES"
+
+  FusionhaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - UITests
+    dependencies:
+      - target: Fusionha
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.uitests
+        GENERATE_INFOPLIST_FILE: "YES"
+        TEST_TARGET_NAME: Fusionha
