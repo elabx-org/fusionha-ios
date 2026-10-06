@@ -411,28 +411,8 @@ jobs:
         if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         run: |
           DIR=${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          cp -R shots "$RUNNER_TEMP/shots"
-          git fetch -q origin screenshots:refs/remotes/origin/screenshots || true
-          if git rev-parse -q --verify refs/remotes/origin/screenshots > /dev/null; then
-            git switch -q -c publish refs/remotes/origin/screenshots
-          else
-            git switch -q --orphan publish
-          fi
           # Keep the iPhone Duo job's $DIR/duo/ (published separately).
-          mkdir -p "$DIR" && find "$DIR" -maxdepth 1 -name '*.png' -delete
-          cp "$RUNNER_TEMP"/shots/*.png "$DIR/"
-          git add "$DIR"
-          git commit -qm "Screenshots for $DIR (${GITHUB_SHA::7})" || exit 0
-          # Several PRs publish at once: rebase onto the latest branch and retry.
-          for i in 1 2 3 4 5; do
-            git push -q origin publish:screenshots && exit 0
-            sleep $((i * 3))
-            git fetch -q origin screenshots:refs/remotes/origin/screenshots
-            git rebase -q refs/remotes/origin/screenshots
-          done
-          exit 1
+          scripts/publish_shots.sh shots "$DIR" --keep-subdirs
 
   # iPhone Duo: the main screens folded, unfolded and half open, in portrait
   # and landscape, on an iPhone Duo simulator from Xcode 27.1. Poses are
@@ -534,7 +514,7 @@ jobs:
           cp duo/probe.txt duo/shots/ 2>/dev/null || true
           DEST=${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}/duo
           if [ "${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}" = true ]; then
-            export DUO_PUBLISH="scripts/publish_duo.sh duo/shots $DEST"
+            export DUO_PUBLISH="scripts/publish_shots.sh duo/shots $DEST"
           fi
           # Opening the Device Hub has twice taken the hosted runner down; off until poses work headless.
           export DUO_UI=0
@@ -556,7 +536,7 @@ jobs:
         run: |
           mkdir -p duo/shots
           cp duo/probe.txt duo/shots/ 2>/dev/null || true
-          scripts/publish_duo.sh duo/shots ${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}/duo
+          scripts/publish_shots.sh duo/shots ${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}/duo
 
   # Drives the app through Activity (History at 1000+ events, Queue, Blocklist,
   # Tasks, Audit, Indexers) and Wanted against the mock server in volume mode,
