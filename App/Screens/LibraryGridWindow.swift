@@ -94,4 +94,13 @@ final class LibraryGridWindow {
             pinned = nil
         }
     }
+
+    #if DEBUG
+    /// CI sweep screenshots: the window's state, drawn over the page.
+    var debugLine: String {
+        let pin = pinned.map { "\($0.lowerBound)..<\($0.upperBound)" } ?? "-"
+        return "rows \(layout.rows.count) vis \(visible.lowerBound)..<\(visible.upperBound) pin \(pin) "
+            + "top \(Int(viewTop)) h \(Int(viewHeight)) total \(Int(layout.totalHeight))"
+    }
+    #endif
 }

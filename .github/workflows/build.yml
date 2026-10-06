@@ -294,7 +294,15 @@ jobs:
             xcrun simctl io "$UDID" screenshot "sweep/shell-03-sweep-$i.png" > /dev/null
             sips -Z 400 -s format bmp "sweep/shell-03-sweep-$i.png" --out "sweep/shell-03-sweep-$i.bmp" > /dev/null
           done
-          cp sweep/shell-03-sweep-0[1-4].png shots/
+          # The same window under a plain scroll (no jumps): it must follow the finger.
+          env $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=drift xcrun simctl launch --terminate-running-process "$UDID" org.elabx.fusionha > /dev/null
+          sleep 8
+          for i in 1 2 3 4; do
+            xcrun simctl io "$UDID" screenshot "sweep/shell-03-drift-$i.png" > /dev/null
+            sips -Z 400 -s format bmp "sweep/shell-03-drift-$i.png" --out "sweep/shell-03-drift-$i.bmp" > /dev/null
+            sleep 0.7
+          done
+          cp sweep/shell-03-sweep-*.png sweep/shell-03-drift-*.png shots/
           sweep_failed=""
           python3 scripts/frame_check.py sweep/*.bmp > sweep/check.md || sweep_failed=1
           cat sweep/check.md | tee -a "$GITHUB_STEP_SUMMARY"

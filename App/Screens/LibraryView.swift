@@ -66,6 +66,9 @@ struct LibraryView: View {
                         // Folding or unfolding re-flows the grid: keep the same titles on screen.
                         if let row = onScreen.anchorRow(in: derived) { jump(to: row, proxy) }
                     }
+                    #if DEBUG
+                    .overlay(alignment: .bottomLeading) { LibraryWindowDebugLabel(window: window) }
+                    #endif
                     .onChange(of: model.scrollToTopTick) {
                         withAnimation(motion ? .smooth : nil) { proxy.scrollTo("library-top", anchor: .top) }
                     }

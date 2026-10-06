@@ -265,6 +265,7 @@ struct ScrollScrubber: View {
               letters.count > 1 else { return }
         try? await Task.sleep(for: .seconds(1.5))
         if raw == "sweep" { return await state.screenshotSweep(letters: letters, jump: jump) }
+        if raw == "drift" { return await ScrubberState.screenshotDrift() }
         let thumb = raw == "thumb"
         let letter = thumb ? letters[letters.count / 2] : raw.uppercased()
         state.screenshotHold(letter: letter, bubble: !thumb, letters: letters, jump: jump)
