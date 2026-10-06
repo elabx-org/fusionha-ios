@@ -1,105 +1,6 @@
 import SwiftUI
 import FusionhaKit
 
-// MARK: - Filters (routes/library-filters.ts)
-
-enum LibraryTier: Hashable {
-    case all, hd, uhd
-
-    func matches(_ item: MediaItem) -> Bool {
-        switch self {
-        case .all: return true
-        case .hd: return item.editions.contains { $0.tier == .hd }
-        case .uhd: return item.editions.contains { $0.tier == .uhd }
-        }
-    }
-}
-
-/// The Library-Pulse stat filter (`status=`).
-enum LibraryStatus: String, CaseIterable, Hashable {
-    case all, downloading, missing, upcoming, complete, attention
-
-    func matches(_ item: MediaItem) -> Bool {
-        switch self {
-        case .all: return true
-        case .attention: return item.hasAttention == true
-        case .downloading: return item.cardStatus == .downloading
-        case .missing: return item.cardStatus == .missing
-        case .upcoming: return item.cardStatus == .upcoming
-        case .complete: return item.cardStatus == .complete
-        }
-    }
-}
-
-enum LibrarySort: String, CaseIterable, Identifiable {
-    case title
-    case yearDesc = "year-desc"
-    case yearAsc = "year-asc"
-    case addedDesc = "added-desc"
-    case releasedDesc = "released-desc"
-    var id: Self { self }
-
-    var label: String {
-        switch self {
-        case .title: return "Title A–Z"
-        case .yearDesc: return "Year · Newest"
-        case .yearAsc: return "Year · Oldest"
-        case .addedDesc: return "Recently added"
-        case .releasedDesc: return "Recently released"
-        }
-    }
-}
-
-enum LibraryRecency: String, CaseIterable, Hashable {
-    case all, added, released
-}
-
-/// Everything the page renders, derived once per input change (never per
-/// render): with thousands of titles, re-filtering on every frame of an A–Z
-/// rail drag froze the app.
-struct LibraryDerived {
-    var rows: [LibraryRowModel] = []
-    /// Cards per grid row: 3 on phones, more when unfolded (`PosterColumns`).
-    var columns = 3
-    var alpha = LibraryAlphaIndex()
-    var visibleIds: [Int] = []
-    var titleCount = 0
-    var editionCount = 0
-    var kindTitles: [LibraryKind: Int] = [:]
-    var kindEditions: [LibraryKind: Int] = [:]
-    var attentionCount = 0
-    var pulse = PulseStats()
-}
-
-/// `computePulse` over the filtered set.
-struct PulseStats {
-    var titles = 0
-    var totalEditions = 0
-    var counts: [CardStatus: Int] = [:]
-    var titleCounts: [CardStatus: Int] = [:]
-    var fourKTitles = 0
-    var onDisk: Double = 0
-
-    init() {}
-
-    init(_ items: [MediaItem]) {
-        for item in items {
-            for bucket in item.editionBuckets {
-                counts[bucket, default: 0] += 1
-                totalEditions += 1
-            }
-            titleCounts[item.cardStatus, default: 0] += 1
-            if item.editions.contains(where: { $0.tier == .uhd }) { fourKTitles += 1 }
-            onDisk += item.totalSize
-        }
-        titles = items.count
-    }
-
-    var healthPct: Int {
-        totalEditions > 0 ? Int((Double(counts[.complete] ?? 0) / Double(totalEditions) * 100).rounded()) : 0
-    }
-}
-
 // MARK: - Library page
 
 /// The web's Library page on mobile (routes/Library.tsx): header with live
@@ -109,6 +10,7 @@ struct PulseStats {
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
+    @Environment(\.railConsolidate) private var consolidate
     @AppStorage("library.kind") private var kindRaw = "all"
     @AppStorage("fusionha.library.density") private var density = "grid"
     @State private var tier: LibraryTier = .all
@@ -122,6 +24,10 @@ struct LibraryView: View {
     @State private var posterSheet: MediaItem?
     /// Cards per row for the grid's current width.
     @State private var columns = 3
+    /// The grid's width (the page less its side margins).
+    @State private var gridWidth: CGFloat = 0
+    /// The A–Z grid's window: known row heights, only the visible rows rendered.
+    @State private var window = LibraryGridWindow()
     /// The grid rows on screen, kept (unobserved) so a fold/unfold that changes
     /// the column count can scroll back to the same titles.
     @State private var onScreen = LibraryOnScreen()
@@ -136,78 +42,33 @@ struct LibraryView: View {
     private struct Inputs: Equatable {
         var version: Int, kind: String, tier: LibraryTier, status: LibraryStatus
         var sort: LibrarySort, recency: LibraryRecency, group: Bool, query: String, compact: Bool
-        var columns: Int
+        var columns: Int, gridWidth: CGFloat, consolidate: Bool
     }
 
     private var inputs: Inputs {
         Inputs(version: model.libraryVersion, kind: kindRaw, tier: tier, status: status, sort: sort,
-               recency: recency, group: group, query: query, compact: compact, columns: columns)
+               recency: recency, group: group, query: query, compact: compact, columns: columns,
+               gridWidth: gridWidth, consolidate: consolidate)
     }
 
     var body: some View {
         Screen(showsAdd: true, filtersInPlace: true) {
             ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 0) {
-                        Color.clear.frame(height: 0).id("library-top")
-                        PageHeader(title: "Library", subtitle: subtitle)
-                            .padding(.bottom, 20)
-                            .reveal(0)
-                        LibraryPulseCard(derived: derived, selection: $kindRaw, status: $status)
-                            .padding(.bottom, 20)
-                            .reveal(1)
-                        toolbar.reveal(2)
-                        Color.clear.frame(height: 1)
-                            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { y in
-                                scrubber.setGridTop(y)
+                scroll(proxy)
+                    .overlay {
+                        if showsRail {
+                            ScrollScrubber(state: scrubber, letters: derived.alpha.letters) { letter in
+                                if let row = derived.alpha.letterRow[letter] { jump(to: row, proxy) }
                             }
-                        content
-                    }
-                    .scrollTargetLayout()
-                    // Plex-app rhythm on phones: 16pt side margins.
-                    .padding(.horizontal, 16)
-                    .padding(.top, 20)
-                    .padding(.bottom, 90)
-                }
-                .scrollDismissesKeyboard(.immediately)
-                .onGeometryChange(for: Int.self) { proxy in
-                    PosterColumns.count(for: proxy.size.width - 32)
-                } action: { columns = $0 }
-                .refreshable { await model.loadLibrary() }
-                .onScrollGeometryChange(for: CGFloat.self) { geo in
-                    geo.contentOffset.y + geo.contentInsets.top
-                } action: { old, new in
-                    updateChrome(old: old, new: new)
-                }
-                .onScrollGeometryChange(for: ScrubberState.Metrics.self) { geo in
-                    ScrubberState.Metrics(geo)
-                } action: { _, metrics in
-                    if showsRail { scrubber.scrolled(metrics) }
-                }
-                .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.5) { ids in
-                    onScreen.rowIds = ids
-                    if showsRail { scrubber.activeLetter = derived.alpha.activeLetter(visible: ids) }
-                }
-                .onChange(of: derived.columns) {
-                    // Folding or unfolding re-flows the grid: keep the same titles on screen.
-                    if let row = onScreen.anchorRow(in: derived) { proxy.scrollTo(row, anchor: .top) }
-                }
-                .overlay {
-                    if showsRail {
-                        ScrollScrubber(state: scrubber, letters: derived.alpha.letters) { letter in
-                            // Always instant: an animated jump per letter while scrubbing
-                            // queued up scrolls and made the app unresponsive (F-A).
-                            if let row = derived.alpha.letterRow[letter] { proxy.scrollTo(row, anchor: .top) }
                         }
                     }
-                }
-                .onChange(of: model.scrollToTopTick) {
-                    if motion {
-                        withAnimation(.smooth) { proxy.scrollTo("library-top", anchor: .top) }
-                    } else {
-                        proxy.scrollTo("library-top", anchor: .top)
+                    .onChange(of: derived.columns) {
+                        // Folding or unfolding re-flows the grid: keep the same titles on screen.
+                        if let row = onScreen.anchorRow(in: derived) { jump(to: row, proxy) }
                     }
-                }
+                    .onChange(of: model.scrollToTopTick) {
+                        withAnimation(motion ? .smooth : nil) { proxy.scrollTo("library-top", anchor: .top) }
+                    }
             }
         }
         .toolbarVisibility(model.selectMode ? .hidden : .automatic, for: .tabBar)
@@ -264,10 +125,10 @@ struct LibraryView: View {
     private func rebuild() {
         let needle = query.lowercased()
         let now = Date()
-        let window: TimeInterval = 30 * 86_400
+        let recentWindow: TimeInterval = 30 * 86_400
         func recent(_ iso: String?) -> Bool {
             guard let date = Format.timestamp(iso) ?? Format.day(iso) else { return false }
-            return date <= now && now.timeIntervalSince(date) <= window
+            return date <= now && now.timeIntervalSince(date) <= recentWindow
         }
         // Tier + recency + search, before the kind narrowing (the kinds card counts this set).
         let kindBase = model.library.filter { item in
@@ -295,154 +156,105 @@ struct LibraryView: View {
             next.rows = LibraryRowModel.grouped(visible, columns: columns)
         } else if sort == .title {
             (next.rows, next.alpha) = LibraryRowModel.alpha(visible, columns: columns)
+            next.windowed = true
+            configureWindow(next.rows)
         } else {
             next.rows = LibraryRowModel.plain(visible, columns: columns)
         }
         derived = next
     }
 
-    /// `compare` in library-filters.ts: title uses localeCompare; other sorts
-    /// put missing keys last and tie-break by title.
-    static func sorted(_ items: [MediaItem], by sort: LibrarySort) -> [MediaItem] {
-        func byTitle(_ a: MediaItem, _ b: MediaItem) -> Bool {
-            a.title.localizedCompare(b.title) == .orderedAscending
+    /// Hands the A–Z rows and their rail counts to the window.
+    private func configureWindow(_ rows: [LibraryRowModel]) {
+        let entries = rows.compactMap { row -> LibraryGridWindow.Entry? in
+            guard case .items(let items) = row else { return nil }
+            return .init(id: row.id, slots: LibraryGridRow.slots(items, consolidate: consolidate))
         }
-        func dateDesc(_ a: MediaItem, _ b: MediaItem, _ ak: String?, _ bk: String?) -> Bool {
-            switch (ak, bk) {
-            case (nil, nil): return byTitle(a, b)
-            case (nil, _): return false
-            case (_, nil): return true
-            case let (x?, y?): return x != y ? x > y : byTitle(a, b)
-            }
-        }
-        switch sort {
-        case .title:
-            return items.sorted(by: byTitle)
-        case .addedDesc:
-            return items.sorted { dateDesc($0, $1, $0.addedAt, $1.addedAt) }
-        case .releasedDesc:
-            return items.sorted { dateDesc($0, $1, $0.releaseDate, $1.releaseDate) }
-        case .yearDesc, .yearAsc:
-            return items.sorted { a, b in
-                switch (a.year, b.year) {
-                case (nil, nil): return byTitle(a, b)
-                case (nil, _): return false
-                case (_, nil): return true
-                case let (x?, y?):
-                    if x != y { return sort == .yearDesc ? x > y : x < y }
-                    return byTitle(a, b)
-                }
-            }
-        }
+        let cols = CGFloat(max(columns, 1))
+        window.configure(entries: entries, cardWidth: max(0, (gridWidth - 6 * (cols - 1)) / cols))
     }
 
-    /// The rail's bucket (`letterOf`): the first character, uppercased; anything
-    /// outside A–Z is '#'. No article stripping: "The Matrix" files under T.
-    static func letter(for title: String) -> String {
-        guard let first = title.trimmingCharacters(in: .whitespaces).uppercased().unicodeScalars.first else { return "#" }
-        return (65...90).contains(first.value) ? String(first) : "#"
+    // MARK: Scroll
+
+    private func scroll(_ proxy: ScrollViewProxy) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                // Outside the lazy rows, so the header's entrance plays once and
+                // never replays when a jump back to the top re-realizes it.
+                pageTop
+                Color.clear.frame(height: 1)
+                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { y in
+                        scrubber.setGridTop(y)
+                    }
+                content
+            }
+            // Plex-app rhythm on phones: 16pt side margins.
+            .padding(.horizontal, 16)
+            .padding(.top, 20)
+            .padding(.bottom, 90)
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width - 32 } action: { width in
+            gridWidth = width
+            columns = PosterColumns.count(for: width)
+        }
+        .refreshable { await model.loadLibrary() }
+        .onScrollGeometryChange(for: CGFloat.self) { geo in
+            geo.contentOffset.y + geo.contentInsets.top
+        } action: { old, new in
+            updateChrome(old: old, new: new)
+        }
+        .onScrollGeometryChange(for: ScrubberState.Metrics.self) { geo in
+            ScrubberState.Metrics(geo)
+        } action: { _, metrics in
+            if showsRail { scrubber.scrolled(metrics) }
+        }
+        .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.5) { ids in
+            onScreen.rowIds = ids
+            if showsRail { scrubber.activeLetter = derived.alpha.activeLetter(visible: ids) }
+        }
+        // Poster loads wait while the scrubber keeps jumping; frames and titles never do.
+        .environment(\.artLoadGate, scrubber.artGate)
     }
 
-    // MARK: Toolbar (LibraryToolbar mobile branch)
+    private var pageTop: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Color.clear.frame(height: 0).id("library-top")
+            PageHeader(title: "Library", subtitle: subtitle)
+                .padding(.bottom, 20)
+                .reveal(0)
+            LibraryPulseCard(derived: derived, selection: $kindRaw, status: $status)
+                .padding(.bottom, 20)
+                .reveal(1)
+            LibraryToolbar(tier: $tier, status: $status, density: $density,
+                           attentionCount: derived.attentionCount, filterBadge: filterBadge) {
+                showingFilters = true
+            }
+            .reveal(2)
+        }
+    }
 
     private var filterBadge: Int {
         (recency != .all ? 1 : 0) + (group ? 1 : 0) + (sort != .title ? 1 : 0)
     }
 
-    private var toolbar: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            LibraryToolbarRow(spacing: 10) {
-                Button {
-                    if model.selectMode { model.exitSelectMode() } else { model.selectMode = true }
-                } label: {
-                    Image(systemName: model.selectMode ? "checkmark.square" : "viewfinder")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(model.selectMode ? Theme.i2 : Theme.mut)
-                        .frame(width: 38, height: 38)
-                        .background(model.selectMode ? Theme.i2.opacity(0.10) : Theme.panel,
-                                    in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .strokeBorder(model.selectMode ? Theme.i2 : Theme.line))
-                }
-                .buttonStyle(PressScaleStyle())
-                .accessibilityLabel(model.selectMode ? "Exit select mode" : "Select titles")
-
-                SegmentedPills(options: [(LibraryTier.all, "All"), (.hd, "HD"), (.uhd, "4K")], selection: $tier)
-
-                if derived.attentionCount > 0 || status == .attention {
-                    Button {
-                        withAnimation(motion ? .snappy : nil) { status = status == .attention ? .all : .attention }
-                    } label: {
-                        Text("Needs attention · \(derived.attentionCount)")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Theme.miss)
-                            .padding(.horizontal, 12)
-                            .frame(height: 38)
-                            .background(Theme.miss.opacity(status == .attention ? 0.2 : 0.12),
-                                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .strokeBorder(Theme.miss.opacity(status == .attention ? 0.7 : 0.4)))
-                    }
-                    .buttonStyle(PressScaleStyle())
-                }
-            } trailing: {
-                Button { showingFilters = true } label: {
-                    HStack(spacing: 7) {
-                        Image(systemName: "slider.horizontal.3")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(Theme.mut)
-                        Text("Filters").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
-                        if filterBadge > 0 {
-                            Text("\(filterBadge)")
-                                .font(.system(size: 10.5, weight: .heavy))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 5)
-                                .frame(minWidth: 17, minHeight: 17)
-                                .background(Theme.fusion, in: Capsule())
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .frame(height: 38)
-                    .panel(Theme.panel, radius: 10)
-                }
-                .buttonStyle(PressScaleStyle())
-            }
-            .padding(.bottom, 20)
-
-            densityToggle
-                .padding(.bottom, 20)
+    /// An instant jump (a scrub letter, a fold re-anchor). The windowed grid
+    /// renders the target rows first and scrolls on the next turn, so the jump
+    /// lands on rows that already exist: card frames, titles and version chips
+    /// at once, posters filling in behind them.
+    private func jump(to row: String, _ proxy: ScrollViewProxy) {
+        // Always instant: an animated jump per letter while scrubbing queued up
+        // scrolls and made the app unresponsive (F-A).
+        func go() {
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) { proxy.scrollTo(row, anchor: .top) }
         }
-    }
-
-    /// Grid / list toggle: 34×30 buttons in a `--panel` track.
-    private var densityToggle: some View {
-        HStack(spacing: 0) {
-            ForEach(["grid", "compact"], id: \.self) { value in
-                let active = density == value
-                Button {
-                    withAnimation(motion ? Motion.indicator : nil) { density = value }
-                } label: {
-                    Image(systemName: value == "grid" ? "square.grid.2x2" : "list.bullet")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(active ? Theme.segActiveText : Theme.mut)
-                        .frame(width: 34, height: 30)
-                        .background {
-                            if active {
-                                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                    .fill(Theme.indigo.opacity(0.14))
-                                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                        .strokeBorder(Theme.indigo.opacity(0.55)))
-                            }
-                        }
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(value == "grid" ? "Grid view" : "List view")
-            }
+        if derived.windowed, window.pin(row) {
+            Task { @MainActor in go() }
+        } else {
+            go()
         }
-        .padding(3)
-        .panel(Theme.panel, radius: 10)
-        .sensoryFeedback(.selection, trigger: density)
     }
 
     // MARK: Body states
@@ -460,22 +272,22 @@ struct LibraryView: View {
         } else if derived.rows.isEmpty || derived.titleCount == 0 {
             EmptyBox(message: "No titles match \(query.isEmpty ? "these filters" : "your search"). Try clearing a filter or the search box.")
         } else {
+            if derived.windowed {
+                LibraryWindowedGrid(rows: derived.rows, columns: derived.columns, window: window)
+            } else {
+                lazyRows
+            }
+        }
+    }
+
+    private var lazyRows: some View {
+        LazyVStack(alignment: .leading, spacing: 0) {
             ForEach(derived.rows) { row in
                 switch row {
                 case .section(let status, let count):
                     StatusSectionHeader(status: status, count: count)
                 case .items(let items):
-                    // Rows are only as tall as their own tallest card (7f2b50c7).
-                    HStack(alignment: .top, spacing: 6) {
-                        ForEach(0..<max(derived.columns, items.count), id: \.self) { i in
-                            if i < items.count {
-                                PosterCard(item: items[i]).frame(maxWidth: .infinity, alignment: .top)
-                            } else {
-                                Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
-                            }
-                        }
-                    }
-                    .padding(.bottom, 18)
+                    LibraryGridRow(items: items, columns: derived.columns)
                 case .tableHeader:
                     LibraryTableHeader()
                 case .tableRow(let item, let last):
@@ -483,196 +295,6 @@ struct LibraryView: View {
                 }
             }
         }
-    }
-}
-
-/// Lays out the toolbar's left group with a trailing control pinned right,
-/// wrapping the left group like the web's `flex-wrap` row.
-private struct LibraryToolbarRow<Leading: View, Trailing: View>: View {
-    var spacing: CGFloat
-    @ViewBuilder var leading: Leading
-    @ViewBuilder var trailing: Trailing
-
-    var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: spacing) {
-                leading
-                Spacer(minLength: 0)
-                trailing
-            }
-            VStack(alignment: .leading, spacing: spacing) {
-                HStack(spacing: spacing) {
-                    leading
-                }
-                HStack {
-                    Spacer(minLength: 0)
-                    trailing
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Rows
-
-/// One row of the Library scroll. Rows are flat so the scroll stays fully lazy
-/// and the scroll thumb can jump to any row.
-enum LibraryRowModel: Identifiable {
-    case section(CardStatus, Int)
-    case items([MediaItem])
-    case tableHeader
-    case tableRow(MediaItem, last: Bool)
-
-    var id: String {
-        switch self {
-        case .section(let status, _): return "status-\(status.rawValue)"
-        case .items(let items): return "row-\(items[0].id)"
-        case .tableHeader: return "table-header"
-        case .tableRow(let item, _): return "table-\(item.id)"
-        }
-    }
-
-    private static func chunk(_ group: ArraySlice<MediaItem>, columns: Int, into rows: inout [LibraryRowModel]) {
-        var start = group.startIndex
-        let columns = max(columns, 1)
-        while start < group.endIndex {
-            let end = min(start + columns, group.endIndex)
-            rows.append(.items(Array(group[start..<end])))
-            start = end
-        }
-    }
-
-    /// The A–Z grid on phones (`buildRowModel` with `headers: false`): one
-    /// continuous run of 3-card rows with no letter headers. Each letter's jump
-    /// target is the row holding its FIRST title; each row remembers the letter
-    /// of its first card for the thumb's "where am I" bubble.
-    static func alpha(_ items: [MediaItem], columns: Int = 3) -> (rows: [LibraryRowModel], index: LibraryAlphaIndex) {
-        var rows: [LibraryRowModel] = []
-        chunk(items[...], columns: columns, into: &rows)
-        var index = LibraryAlphaIndex()
-        for (i, row) in rows.enumerated() {
-            guard case .items(let cards) = row else { continue }
-            index.rowLetter[row.id] = (i, LibraryView.letter(for: cards[0].title))
-            for card in cards {
-                let letter = LibraryView.letter(for: card.title)
-                if index.letterRow[letter] == nil { index.letterRow[letter] = row.id }
-            }
-        }
-        index.letters = LibraryAlphaIndex.alphabet.filter { index.letterRow[$0] != nil }
-        return (rows, index)
-    }
-
-    /// A plain grid for the other sorts.
-    static func plain(_ items: [MediaItem], columns: Int = 3) -> [LibraryRowModel] {
-        var rows: [LibraryRowModel] = []
-        chunk(items[...], columns: columns, into: &rows)
-        return rows
-    }
-
-    /// Group by status (`groupByStatus`): Downloading, Needs attention, Upcoming, Complete.
-    static func grouped(_ items: [MediaItem], columns: Int = 3) -> [LibraryRowModel] {
-        var rows: [LibraryRowModel] = []
-        for status in CardStatus.allCases {
-            let members = items.filter { $0.cardStatus == status }
-            guard !members.isEmpty else { continue }
-            rows.append(.section(status, members.count))
-            chunk(members[...], columns: columns, into: &rows)
-        }
-        return rows
-    }
-
-    static func table(_ items: [MediaItem]) -> [LibraryRowModel] {
-        guard !items.isEmpty else { return [] }
-        return [.tableHeader] + items.enumerated().map { .tableRow($0.element, last: $0.offset == items.count - 1) }
-    }
-}
-
-/// The grid rows last seen on screen. A plain class so scrolling never
-/// re-renders the page; read only when the column count changes.
-final class LibraryOnScreen {
-    var rowIds: [String] = []
-
-    /// The row that now holds the topmost title that was on screen.
-    func anchorRow(in derived: LibraryDerived) -> String? {
-        let shown = Set(rowIds.compactMap { id -> Int? in
-            id.hasPrefix("row-") ? Int(id.dropFirst(4)) : (id.hasPrefix("table-") ? Int(id.dropFirst(6)) : nil)
-        })
-        guard !shown.isEmpty else { return nil }
-        // Row ids carry their first title; the topmost is the earliest in display order.
-        guard let top = derived.visibleIds.first(where: shown.contains) else { return nil }
-        // Still at the top of the page: stay there (header and all).
-        if top == derived.visibleIds.first { return nil }
-        for row in derived.rows {
-            switch row {
-            case .items(let items) where items.contains(where: { $0.id == top }): return row.id
-            case .tableRow(let item, _) where item.id == top: return row.id
-            default: continue
-            }
-        }
-        return nil
-    }
-}
-
-/// Jump targets for the scroll thumb (`buildAlphaIndex` + `startLetters`).
-struct LibraryAlphaIndex {
-    /// `ALPHABET`: '#' then A–Z.
-    static let alphabet = ["#"] + "ABCDEFGHIJKLMNOPQRSTUVWXYZ".map(String.init)
-    /// The letters that have titles, in ALPHABET order.
-    var letters: [String] = []
-    /// Letter → the row holding its first title.
-    var letterRow: [String: String] = [:]
-    /// Row id → (row position, letter of its first card).
-    var rowLetter: [String: (Int, String)] = [:]
-
-    /// The letter at the top of the grid, from the rows on screen.
-    func activeLetter(visible ids: [String]) -> String? {
-        ids.compactMap { rowLetter[$0] }.min { $0.0 < $1.0 }?.1
-    }
-}
-
-/// Status section header (group=status): dot, uppercase label, count, gradient rule.
-private struct StatusSectionHeader: View {
-    let status: CardStatus
-    let count: Int
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Circle().fill(status.color).frame(width: 8, height: 8)
-            Text(status.sectionLabel.uppercased())
-                .font(.system(size: 13, weight: .bold))
-                .tracking(0.6)
-                .foregroundStyle(Theme.mut)
-            Text("\(count)").font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.dim)
-            LinearGradient(colors: [Theme.line, .clear], startPoint: .leading, endPoint: .trailing)
-                .frame(height: 1)
-        }
-        .padding(.top, 4)
-        .padding(.bottom, 18)
-    }
-}
-
-// MARK: - Skeleton
-
-/// LibraryGridSkeleton: 12 cells, 3 columns, 18 × 6 gaps, shimmering.
-private struct LibraryGridSkeleton: View {
-    var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 18) {
-            ForEach(0..<12, id: \.self) { _ in
-                VStack(alignment: .leading, spacing: 7) {
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
-                        .aspectRatio(2 / 3, contentMode: .fit)
-                        .shimmer()
-                        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-                    GeometryReader { geo in
-                        VStack(alignment: .leading, spacing: 6) {
-                            SkeletonBar(height: 13, radius: 6).frame(width: geo.size.width * 0.82)
-                            SkeletonBar(height: 11, radius: 6).frame(width: geo.size.width * 0.52)
-                        }
-                    }
-                    .frame(height: 30)
-                }
-            }
-        }
+        .scrollTargetLayout()
     }
 }
