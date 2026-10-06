@@ -46,7 +46,7 @@ struct WidgetKindBar: View {
     }
 
     private var legend: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             ForEach(kinds.indices, id: \.self) { index in
                 let pair = kinds[index]
                 HStack(spacing: 4) {
@@ -54,35 +54,11 @@ struct WidgetKindBar: View {
                         .frame(width: 6, height: 6)
                         .clipShape(Circle())
                     Text("\(pair.0.plural) \(pair.1)")
-                        .font(.system(size: 10, weight: .medium).monospacedDigit())
+                        .font(WidgetStyle.caption.monospacedDigit())
+                        .lineLimit(1)
                         .foregroundStyle(.secondary)
                 }
             }
-        }
-    }
-}
-
-/// 4K coverage: the edition→cyan gradient meter and `12 / 48 titles · 25%`.
-struct WidgetCoverageMeter: View {
-    let summary: WidgetLibrarySummary
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack {
-                Text("4K coverage").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
-                Spacer(minLength: 0)
-                Text("\(summary.fourKTitles) / \(summary.titles) titles · \(summary.fourKPercent)%")
-                    .font(.system(size: 10).monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            GeometryReader { geo in
-                Capsule()
-                    .fill(LinearGradient(colors: [Theme.edition, Theme.grab], startPoint: .leading, endPoint: .trailing))
-                    .frame(width: geo.size.width * CGFloat(summary.fourKPercent) / 100)
-                    .widgetAccentable()
-            }
-            .frame(height: 6)
-            .background(Color.white.opacity(0.07), in: Capsule())
         }
     }
 }

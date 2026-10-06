@@ -2,6 +2,8 @@ import SwiftUI
 import WidgetKit
 import FusionhaKit
 
+/// Recently added: small shows the latest import alone; medium and large are
+/// the shared poster strip / grid under the compact header.
 struct RecentWidgetView: View {
     let entry: RecentEntry
     let family: WidgetFamily
@@ -10,28 +12,34 @@ struct RecentWidgetView: View {
         Group {
             if !entry.signedIn {
                 WidgetSignInPrompt(report: "")
+            } else if family == .systemSmall, let latest = entry.rows.first {
+                WidgetRecentSmall(row: latest)
+            } else if family == .systemSmall, entry.failed {
+                WidgetSmallFailure(title: "Recently added")
             } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    WidgetHeader(icon: "sparkles.tv", title: "Recently added", tint: Theme.done)
-                    if entry.rows.isEmpty {
-                        WidgetEmptyText(entry.failed ? "Server unreachable" : "Nothing imported yet")
-                    } else {
-                        switch family {
-                        case .systemSmall:
-                            Spacer(minLength: 0)
-                            WidgetRecentHero(row: entry.rows[0], posterWidth: 46)
-                        case .systemMedium:
-                            WidgetPosterStrip(rows: Array(entry.rows.prefix(5)), columns: 5, showsTitle: false)
-                            Spacer(minLength: 0)
-                        default:
-                            WidgetPosterStrip(rows: Array(entry.rows.prefix(4)), columns: 4, showsTitle: true)
-                            WidgetPosterStrip(rows: Array(entry.rows.dropFirst(4).prefix(4)), columns: 4, showsTitle: true)
-                            Spacer(minLength: 0)
-                        }
-                    }
+                VStack(alignment: .leading, spacing: WidgetStyle.headerGap) {
+                    WidgetTopBar(title: "Recently added", figure: freshFigure, tint: Theme.done)
+                    content.frame(maxHeight: .infinity, alignment: .top)
                 }
             }
         }
         .environment(\.colorScheme, .dark)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if entry.failed {
+            WidgetRetryLine(text: "Server unreachable", intent: ReloadWidgetIntent(kind: WidgetStack.kind(for: .recent)))
+        } else {
+            WidgetRecentPage(rows: entry.rows, large: family == .systemLarge)
+        }
+    }
+
+    /// `3 new`: imports in the last day.
+    private var freshFigure: String? {
+        let fresh = entry.rows.filter { row in
+            row.item.importedAt.map { Date.now.timeIntervalSince($0) < 86_400 } ?? false
+        }.count
+        return fresh > 0 ? "\(fresh) new" : nil
     }
 }

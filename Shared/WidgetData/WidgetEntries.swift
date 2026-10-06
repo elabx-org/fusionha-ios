@@ -40,6 +40,10 @@ struct DownloadsEntry: TimelineEntry, Sendable {
     /// The journal record of the reload that built this entry (marked drawn
     /// when the entry view renders it).
     var runId: String?
+    /// Smart Stack score (`relevance`); nil leaves the stack's order alone.
+    var relevanceScore: Float?
+    /// The Requests widget for an account that can't approve or manage issues.
+    var restricted = false
 
     var idle: Bool { total == 0 && rows.isEmpty }
 
@@ -70,6 +74,7 @@ struct UpNextEntry: TimelineEntry {
     let failed: Bool
     /// The journal record of the reload that built this entry.
     var runId: String? = nil
+    var relevanceScore: Float? = nil
 
     static let placeholder = UpNextEntry(date: .now, rows: WidgetSamples.upNext, signedIn: true, failed: false)
 }
@@ -81,6 +86,7 @@ struct RecentEntry: TimelineEntry {
     let failed: Bool
     /// The journal record of the reload that built this entry.
     var runId: String? = nil
+    var relevanceScore: Float? = nil
 
     static let placeholder = RecentEntry(date: .now, rows: WidgetSamples.recent, signedIn: true, failed: false)
 }

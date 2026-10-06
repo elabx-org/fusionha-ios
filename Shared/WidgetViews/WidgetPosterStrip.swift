@@ -7,6 +7,8 @@ struct WidgetPosterStrip: View {
     let rows: [RecentImportRow]
     let columns: Int
     let showsTitle: Bool
+    /// Caps the poster height (the large grid's two rows share its height).
+    var maxPosterHeight: CGFloat?
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
@@ -27,14 +29,15 @@ struct WidgetPosterStrip: View {
     /// with no item id opens Library, never Activity.
     private func tile(_ row: RecentImportRow) -> some View {
         Link(destination: WidgetLink.item(row.item.itemId, fallback: .library)) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 5) {
                 Color.clear
                     .aspectRatio(2 / 3, contentMode: .fit)
-                    .overlay(WidgetPoster(data: row.poster, radius: 6))
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .frame(maxHeight: maxPosterHeight)
+                    .overlay(WidgetPoster(data: row.poster, radius: WidgetStyle.posterRadius))
+                    .clipShape(RoundedRectangle(cornerRadius: WidgetStyle.posterRadius, style: .continuous))
                 if showsTitle {
                     Text(row.item.title)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(WidgetStyle.caption.weight(.semibold))
                         .lineLimit(1)
                 }
                 WidgetTierPills(editions: row.item.pills)

@@ -97,7 +97,7 @@ struct WidgetGalleryView: View {
             let large = family == .systemLarge
             switch variant {
             case .downloadsActive:
-                var entry = await WidgetLoader.downloads(client, limit: large ? 4 : 2, idleUpNext: 0, idleRecent: 0)
+                var entry = await WidgetLoader.downloads(client, limit: large ? 5 : 2, idleUpNext: 0, idleRecent: 0)
                 entry.pages = WidgetPage.allCases
                 entry.page = .downloading
                 downloads[family] = entry

@@ -13,7 +13,7 @@ enum WidgetPageLoader {
         run.stage("queue")
         var entry: DownloadsEntry
         do {
-            entry = try await WidgetLoader.queue(client, limit: large ? 4 : 2, deadline: run.deadline)
+            entry = try await WidgetLoader.queue(client, limit: large ? 5 : 2, deadline: run.deadline)
         } catch {
             run.fail(error)
             entry = DownloadsEntry(date: .now, total: 0, rows: [], signedIn: true, failed: true)
@@ -56,19 +56,19 @@ enum WidgetPageLoader {
         case .downloading:
             break
         case .upNext:
-            entry.upNext = try await WidgetLoader.upNext(client, limit: large ? 6 : 2, posterSize: "w92", deadline: deadline)
+            entry.upNext = try await WidgetLoader.upNext(client, limit: large ? 5 : 2, posterSize: "w92", deadline: deadline)
         case .recent:
             entry.recent = try await WidgetLoader.recent(client, limit: large ? 8 : 5, posterSize: "w154", deadline: deadline)
         case .library:
             entry.pageData.library = try await WidgetPageFetch.library(client, deadline: deadline)
         case .indexers:
-            entry.pageData.indexers = try await WidgetPageFetch.indexers(client, top: large ? 4 : 2, deadline: deadline)
+            entry.pageData.indexers = try await WidgetPageFetch.indexers(client, top: large ? 4 : 3, deadline: deadline)
         case .wanted:
             let (summary, posters) = try await WidgetPageFetch.wanted(client, rows: large ? 3 : 2, deadline: deadline)
             entry.pageData.wanted = summary
             entry.pageData.wantedPosters = posters
         case .requests:
-            entry.pageData = try await WidgetPageFetch.requests(client, rows: large ? 3 : 1, into: entry.pageData,
+            entry.pageData = try await WidgetPageFetch.requests(client, rows: large ? 3 : 2, into: entry.pageData,
                                                                 deadline: deadline)
         }
     }

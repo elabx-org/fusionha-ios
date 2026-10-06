@@ -11,15 +11,16 @@ struct WidgetTierPill: View {
     var body: some View {
         HStack(spacing: 3) {
             if let status {
-                Circle().fill(status.color).frame(width: 5, height: 5)
+                Circle().fill(status.color).frame(width: 6, height: 6)
             }
             Text(tier.pill)
-                .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                .font(.system(size: 10, weight: .heavy, design: .rounded))
                 .foregroundStyle(tier.color)
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 1.5)
-        .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(tier.color.opacity(0.5), lineWidth: 0.75))
+        .padding(.horizontal, 5)
+        .padding(.vertical, 2)
+        .background(tier.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(tier.color.opacity(0.45), lineWidth: 0.75))
         .widgetAccentable()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(tier.chipLabel)\(status.map { ", \($0.label)" } ?? "")")

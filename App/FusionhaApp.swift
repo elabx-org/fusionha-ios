@@ -11,6 +11,9 @@ struct FusionhaApp: App {
                 if let page = WidgetPageGalleryView.screenshotPage {
                     // CI screenshots of one paged-widget view, medium and large.
                     WidgetPageGalleryView(page: page)
+                } else if let stack = WidgetStackGalleryView.screenshotVariant {
+                    // CI screenshots of one Smart Stack widget, every size.
+                    WidgetStackGalleryView(variant: stack)
                 } else if let gallery = WidgetGalleryView.screenshotVariant {
                     // CI screenshots of the home-screen widgets.
                     WidgetGalleryView(variant: gallery)

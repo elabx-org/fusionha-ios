@@ -1,30 +1,26 @@
 import SwiftUI
 import WidgetKit
 
-/// A count tile: a dot in its colour, the number, and a label underneath.
+/// A count tile: a big rounded number, and a status dot with its label.
 struct WidgetStatTile: View {
     let value: String
     let label: String
     let color: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            HStack(spacing: 4) {
-                Circle().fill(color).frame(width: 6, height: 6).widgetAccentable()
-                Text(value)
-                    .font(.system(size: 15, weight: .bold).monospacedDigit())
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            }
-            Text(label)
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value)
+                .font(WidgetStyle.numeral(22))
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.7)
+            WidgetDotLine(color: color, text: label)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background {
+            WidgetFill(color: Color.white.opacity(0.06), accentedOpacity: 0.08)
+                .clipShape(RoundedRectangle(cornerRadius: WidgetStyle.tileRadius, style: .continuous))
+        }
     }
 }
