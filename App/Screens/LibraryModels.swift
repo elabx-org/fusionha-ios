@@ -62,9 +62,6 @@ struct LibraryDerived {
     /// Cards per grid row: 3 on phones, more when unfolded (`PosterColumns`).
     var columns = 3
     var alpha = LibraryAlphaIndex()
-    /// The A–Z grid: window-virtualized (`LibraryWindowedGrid`); the grouped,
-    /// other-sort and table views stay in a lazy stack.
-    var windowed = false
     var visibleIds: [Int] = []
     var titleCount = 0
     var editionCount = 0

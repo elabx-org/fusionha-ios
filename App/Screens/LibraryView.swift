@@ -10,7 +10,6 @@ import FusionhaKit
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
-    @Environment(\.railConsolidate) private var consolidate
     @AppStorage("library.kind") private var kindRaw = "all"
     @AppStorage("fusionha.library.density") private var density = "grid"
     @State private var tier: LibraryTier = .all
@@ -24,10 +23,6 @@ struct LibraryView: View {
     @State private var posterSheet: MediaItem?
     /// Cards per row for the grid's current width.
     @State private var columns = 3
-    /// The grid's width (the page less its side margins).
-    @State private var gridWidth: CGFloat = 0
-    /// The A–Z grid's window: known row heights, only the visible rows rendered.
-    @State private var window = LibraryGridWindow()
     /// The grid rows on screen, kept (unobserved) so a fold/unfold that changes
     /// the column count can scroll back to the same titles.
     @State private var onScreen = LibraryOnScreen()
@@ -42,13 +37,12 @@ struct LibraryView: View {
     private struct Inputs: Equatable {
         var version: Int, kind: String, tier: LibraryTier, status: LibraryStatus
         var sort: LibrarySort, recency: LibraryRecency, group: Bool, query: String, compact: Bool
-        var columns: Int, gridWidth: CGFloat, consolidate: Bool
+        var columns: Int
     }
 
     private var inputs: Inputs {
         Inputs(version: model.libraryVersion, kind: kindRaw, tier: tier, status: status, sort: sort,
-               recency: recency, group: group, query: query, compact: compact, columns: columns,
-               gridWidth: gridWidth, consolidate: consolidate)
+               recency: recency, group: group, query: query, compact: compact, columns: columns)
     }
 
     var body: some View {
@@ -66,9 +60,6 @@ struct LibraryView: View {
                         // Folding or unfolding re-flows the grid: keep the same titles on screen.
                         if let row = onScreen.anchorRow(in: derived) { jump(to: row, proxy) }
                     }
-                    #if DEBUG
-                    .overlay(alignment: .bottomLeading) { LibraryWindowDebugLabel(window: window) }
-                    #endif
                     .onChange(of: model.scrollToTopTick) {
                         withAnimation(motion ? .smooth : nil) { proxy.scrollTo("library-top", anchor: .top) }
                     }
@@ -159,22 +150,10 @@ struct LibraryView: View {
             next.rows = LibraryRowModel.grouped(visible, columns: columns)
         } else if sort == .title {
             (next.rows, next.alpha) = LibraryRowModel.alpha(visible, columns: columns)
-            next.windowed = true
-            configureWindow(next.rows)
         } else {
             next.rows = LibraryRowModel.plain(visible, columns: columns)
         }
         derived = next
-    }
-
-    /// Hands the A–Z rows and their rail counts to the window.
-    private func configureWindow(_ rows: [LibraryRowModel]) {
-        let entries = rows.compactMap { row -> LibraryGridWindow.Entry? in
-            guard case .items(let items) = row else { return nil }
-            return .init(id: row.id, slots: LibraryGridRow.slots(items, consolidate: consolidate))
-        }
-        let cols = CGFloat(max(columns, 1))
-        window.configure(entries: entries, cardWidth: max(0, (gridWidth - 6 * (cols - 1)) / cols))
     }
 
     // MARK: Scroll
@@ -197,10 +176,9 @@ struct LibraryView: View {
             .padding(.bottom, 90)
         }
         .scrollDismissesKeyboard(.immediately)
-        .onGeometryChange(for: CGFloat.self) { $0.size.width - 32 } action: { width in
-            gridWidth = width
-            columns = PosterColumns.count(for: width)
-        }
+        .onGeometryChange(for: Int.self) { proxy in
+            PosterColumns.count(for: proxy.size.width - 32)
+        } action: { columns = $0 }
         .refreshable { await model.loadLibrary() }
         .onScrollGeometryChange(for: CGFloat.self) { geo in
             geo.contentOffset.y + geo.contentInsets.top
@@ -216,8 +194,6 @@ struct LibraryView: View {
             onScreen.rowIds = ids
             if showsRail { scrubber.activeLetter = derived.alpha.activeLetter(visible: ids) }
         }
-        // Poster loads wait while the scrubber keeps jumping; frames and titles never do.
-        .environment(\.artLoadGate, scrubber.artGate)
     }
 
     private var pageTop: some View {
@@ -241,23 +217,16 @@ struct LibraryView: View {
         (recency != .all ? 1 : 0) + (group ? 1 : 0) + (sort != .title ? 1 : 0)
     }
 
-    /// An instant jump (a scrub letter, a fold re-anchor). The windowed grid
-    /// renders the target rows first and scrolls on the next turn, so the jump
-    /// lands on rows that already exist: card frames, titles and version chips
-    /// at once, posters filling in behind them.
+    /// An instant jump (a scrub letter, a fold re-anchor). It lands on the
+    /// grid's silhouette: every card has a fixed 2:3 poster frame with a dark
+    /// placeholder, so frames, titles and version chips paint at once and the
+    /// posters fill in behind them.
     private func jump(to row: String, _ proxy: ScrollViewProxy) {
         // Always instant: an animated jump per letter while scrubbing queued up
         // scrolls and made the app unresponsive (F-A).
-        func go() {
-            var instant = Transaction()
-            instant.disablesAnimations = true
-            withTransaction(instant) { proxy.scrollTo(row, anchor: .top) }
-        }
-        if derived.windowed, window.pin(row) {
-            Task { @MainActor in go() }
-        } else {
-            go()
-        }
+        var instant = Transaction()
+        instant.disablesAnimations = true
+        withTransaction(instant) { proxy.scrollTo(row, anchor: .top) }
     }
 
     // MARK: Body states
@@ -275,11 +244,7 @@ struct LibraryView: View {
         } else if derived.rows.isEmpty || derived.titleCount == 0 {
             EmptyBox(message: "No titles match \(query.isEmpty ? "these filters" : "your search"). Try clearing a filter or the search box.")
         } else {
-            if derived.windowed {
-                LibraryWindowedGrid(rows: derived.rows, columns: derived.columns, window: window)
-            } else {
-                lazyRows
-            }
+            lazyRows
         }
     }
 

@@ -292,25 +292,60 @@ jobs:
           shoot shell-03-scrubbing $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=S
           # A–Z scrub sweep: far jumps back and forth through the real drag path;
           # frames grabbed mid-sweep must never be light (the old white flash).
-          env $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=sweep xcrun simctl launch --terminate-running-process "$UDID" org.elabx.fusionha > /dev/null
-          sleep 8
+          # Then the finger lifts and the page scrolls normally under a main-thread
+          # watchdog (App/Debug/HangWatchdog.swift): any stall over 1s, a main
+          # thread that stays busy once the page is idle, or a check that never
+          # finishes fails the job (the post-scrub freeze of build 1.1.150).
           mkdir -p sweep
+          env $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=sweep xcrun simctl launch --terminate-running-process \
+            --stderr="$PWD/sweep/app.log" "$UDID" org.elabx.fusionha > /dev/null
+          sleep 8
           for i in $(seq -w 1 16); do
             xcrun simctl io "$UDID" screenshot "sweep/shell-03-sweep-$i.png" > /dev/null
             sips -Z 400 -s format bmp "sweep/shell-03-sweep-$i.png" --out "sweep/shell-03-sweep-$i.bmp" > /dev/null
           done
-          # The same window under a plain scroll (no jumps): it must follow the finger.
-          env $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=drift xcrun simctl launch --terminate-running-process "$UDID" org.elabx.fusionha > /dev/null
-          sleep 8
+          for i in $(seq 1 60); do grep -q "SCRUB-CHECK scroll" sweep/app.log 2>/dev/null && break; sleep 1; done
+          sleep 1
           for i in 1 2 3 4; do
             xcrun simctl io "$UDID" screenshot "sweep/shell-03-drift-$i.png" > /dev/null
             sips -Z 400 -s format bmp "sweep/shell-03-drift-$i.png" --out "sweep/shell-03-drift-$i.bmp" > /dev/null
             sleep 0.7
           done
+          for i in $(seq 1 90); do grep -q "SCRUB-CHECK DONE" sweep/app.log 2>/dev/null && break; sleep 1; done
           cp sweep/shell-03-sweep-*.png sweep/shell-03-drift-*.png shots/
           sweep_failed=""
           python3 scripts/frame_check.py sweep/*.bmp > sweep/check.md || sweep_failed=1
           cat sweep/check.md | tee -a "$GITHUB_STEP_SUMMARY"
+          hang_failed=""
+          { echo; echo '### A–Z scrub hang check'; echo '```'; grep -E "SCRUB-CHECK|HANG" sweep/app.log || echo "(no output)"; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
+          grep -q "^HANG" sweep/app.log && hang_failed="the main thread stalled (see the HANG lines)"
+          grep -q "SCRUB-CHECK DONE" sweep/app.log || hang_failed="the scrub + scroll check never finished (app hung or crashed)"
+          # Silhouette: one far jump, captured in-app two frames after it lands. It must
+          # already show the grid (card frames, titles, HD/4K chips on dark poster frames).
+          env $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=jump xcrun simctl launch --terminate-running-process \
+            --stderr="$PWD/sweep/jump.log" "$UDID" org.elabx.fusionha > /dev/null
+          for i in $(seq 1 40); do grep -q "SCRUB-CHECK DONE" sweep/jump.log 2>/dev/null && break; sleep 1; done
+          silhouette_failed=""
+          for n in 0 1; do
+            src=$(grep "SCRUB-CHECK snapshot silhouette-$n " sweep/jump.log | sed 's/^SCRUB-CHECK snapshot silhouette-[0-9] //')
+            if [ -n "$src" ] && [ -f "$src" ]; then
+              cp "$src" "shots/shell-03-jump-silhouette-$n.png"
+              sips -Z 400 -s format bmp "$src" --out "sweep/jump-silhouette-$n.bmp" > /dev/null
+            else
+              silhouette_failed="no in-app capture for silhouette-$n"
+            fi
+          done
+          { echo; echo '### A–Z jump silhouette'; grep "SCRUB-CHECK" sweep/jump.log || true; } | tee -a "$GITHUB_STEP_SUMMARY"
+          if [ -z "$silhouette_failed" ]; then
+            python3 scripts/frame_check.py --strict sweep/jump-silhouette-0.bmp > sweep/jump.md || silhouette_failed="the frame right after the jump is blank or light"
+            cat sweep/jump.md | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          # The watchdog must catch a planted 2.5s main-thread stall, or the check above proves nothing.
+          env $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=hang-selftest xcrun simctl launch --terminate-running-process \
+            --stderr="$PWD/sweep/selftest.log" "$UDID" org.elabx.fusionha > /dev/null
+          for i in $(seq 1 40); do grep -q "SCRUB-CHECK DONE" sweep/selftest.log 2>/dev/null && break; sleep 1; done
+          { echo '```'; grep -E "SCRUB-CHECK|HANG" sweep/selftest.log || echo "(no output)"; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
+          grep -q "^HANG main thread has not answered" sweep/selftest.log || hang_failed="the watchdog missed the planted stall in its self-test"
           shoot shell-04-setup-steps $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETUP=steps
           shoot shell-05-setup-result $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETUP=result
           shoot shell-06-setup-multi $L SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETUP=multi
@@ -328,6 +363,8 @@ jobs:
           shoot shell-17-detail-seasons-waiting SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$H SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=103 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SCROLL=tabs
           ls -l shots
           if [ -n "$sweep_failed" ]; then echo "::error::The A–Z scrub sweep painted a light frame (scripts/frame_check.py)"; exit 1; fi
+          if [ -n "$silhouette_failed" ]; then echo "::error::A–Z jump silhouette: $silhouette_failed"; exit 1; fi
+          if [ -n "$hang_failed" ]; then echo "::error::A–Z scrub hang check: $hang_failed"; exit 1; fi
 
       # Interactive (Manual) search results: The Matrix's HD edition against the
       # mock's 34-release list (mixed qualities, rejections, blocklisted rows,

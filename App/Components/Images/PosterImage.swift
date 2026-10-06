@@ -11,7 +11,6 @@ import UIKit
 struct PosterImage: View {
     let url: URL?
     @Environment(\.displayScale) private var displayScale
-    @Environment(\.artLoadGate) private var gate
     @State private var image: UIImage?
     @State private var shownURL: URL?
     @State private var fade = false
@@ -55,9 +54,6 @@ struct PosterImage: View {
             return
         }
         if shownURL != url { image = nil }
-        // Mid-scrub: the placeholder frame shows now, the art once the jumps pause.
-        await gate?.wait()
-        guard !Task.isCancelled else { return }
         let loaded = await pipeline.image(for: url, fill: request.pixels, scale: request.scale)
         guard !Task.isCancelled, let loaded else { return }
         fade = shownURL != url

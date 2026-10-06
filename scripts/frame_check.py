@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """Checks screenshots taken mid A-Z scrub for blank or light frames.
 
-Usage: frame_check.py shot1.bmp [shot2.bmp ...]
+Usage: frame_check.py [--strict] shot1.bmp [shot2.bmp ...]
 
 Each argument is a small uncompressed BMP (CI makes them with
 `sips -Z 400 -s format bmp`). The content band (between the top bar and the
 tab bar) of a healthy frame is the dark page with posters on it. A frame is
 LIGHT when most of that band is bright (the old scrub "white flash"), and
 BLANK when it is one flat colour (no cards painted at all). Light frames fail
-the run; blank-but-dark frames are reported only.
+the run; blank-but-dark frames are reported only, unless --strict (the shot
+right after a jump must already show the grid's silhouette).
 """
 import struct
 import sys
@@ -54,11 +55,13 @@ def verdict(rows):
 
 
 def main(paths):
+    strict = "--strict" in paths
+    paths = [p for p in paths if p != "--strict"]
     lines = ["| frame | verdict | mean luma | light px | spread |", "|---|---|---|---|---|"]
     failed = False
     for path in paths:
         kind, mean, light, spread = verdict(read_bmp(path))
-        failed |= kind == "LIGHT"
+        failed |= kind == "LIGHT" or (strict and kind == "BLANK")
         name = path.rsplit("/", 1)[-1]
         lines.append(f"| {name} | {kind} | {mean:.0f} | {light:.0%} | {spread:.0f} |")
     print("\n".join(lines))

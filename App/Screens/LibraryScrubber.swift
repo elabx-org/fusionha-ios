@@ -48,8 +48,6 @@ final class ScrubberState {
     @ObservationIgnored private var lastLetter: String?
     @ObservationIgnored private var lastJump = Date.distantPast
     @ObservationIgnored private var pending: String?
-    /// Holds poster loads while the finger keeps jumping.
-    let artGate = ArtLoadGate()
 
     func setGridTop(_ y: CGFloat) {
         // Frozen while scrubbing: a jump scrolls the page, and moving the track
@@ -111,7 +109,6 @@ final class ScrubberState {
         lastLetter = letter
         bubble = letter
         tick &+= 1
-        artGate.jumped()
         if Date().timeIntervalSince(lastJump) >= Self.jumpGap {
             lastJump = Date()
             pending = nil
@@ -149,7 +146,6 @@ final class ScrubberState {
         if let pending { jump(pending) }
         pending = nil
         lastJump = .distantPast
-        artGate.release()
         if was {
             lastScroll = Date()
             scheduleHide()
@@ -259,13 +255,17 @@ struct ScrollScrubber: View {
     #if DEBUG
     /// `FUSIONHA_SCREENSHOT_SCRUB=thumb` shows the resting thumb mid-library;
     /// a letter (e.g. `S`) shows the scrubbing state on it, bubble included;
-    /// `sweep` scrubs far back and forth (LibraryScrubberDebug.swift).
+    /// `sweep` scrubs far back and forth, then scrolls normally under the hang
+    /// check, `drift` only scrolls (LibraryScrubberDebug.swift), and `jump`
+    /// captures the silhouette a far jump lands on (LibraryJumpDebug.swift).
     private func screenshotScrub() async {
         guard let raw = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SCRUB"], !raw.isEmpty,
               letters.count > 1 else { return }
         try? await Task.sleep(for: .seconds(1.5))
         if raw == "sweep" { return await state.screenshotSweep(letters: letters, jump: jump) }
         if raw == "drift" { return await ScrubberState.screenshotDrift() }
+        if raw == "hang-selftest" { return await HangWatchdog.selfTest() }
+        if raw == "jump" { return await state.screenshotJump(letters: letters, jump: jump) }
         let thumb = raw == "thumb"
         let letter = thumb ? letters[letters.count / 2] : raw.uppercased()
         state.screenshotHold(letter: letter, bubble: !thumb, letters: letters, jump: jump)
