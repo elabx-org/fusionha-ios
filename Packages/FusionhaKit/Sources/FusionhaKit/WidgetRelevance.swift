@@ -66,7 +66,8 @@ public enum WidgetRelevance {
     public static func recentSteps(newest: Date?, now: Date, until: Date) -> [Step] {
         guard let newest else { return [Step(date: now, score: low)] }
         var steps = [Step(date: now, score: recent(secondsSinceImport: now.timeIntervalSince(newest)))]
-        for age in [3600.0, 6 * 3600, 24 * 3600] {
+        let ages: [TimeInterval] = [3600, 6 * 3600, 24 * 3600]
+        for age in ages {
             let date = newest.addingTimeInterval(age)
             if date > now, date < until { steps.append(Step(date: date, score: recent(secondsSinceImport: age))) }
         }
