@@ -183,12 +183,4 @@ struct LibraryGridRow: View {
         }
         .padding(.bottom, 18)
     }
-
-    /// Coverage-rail lines the row needs: its own tallest card (≥ 1), counted
-    /// with the card's own rule, so a complete HD + 4K pair is one line.
-    static func slots(_ items: [MediaItem], consolidate: Bool) -> Int {
-        items.reduce(1) { m, item in
-            max(m, CoverageRails.units(item: item, rails: item.rails, consolidate: consolidate).count)
-        }
-    }
 }
