@@ -27,6 +27,9 @@ check() {
   file=$(log_file)
   echo "== $name (expect: $expected)"
   cat "$file" 2>/dev/null || echo "(no probe log)"
+  ls "$(dirname "$file")" 2>/dev/null | head -5
+  xcrun simctl spawn "$UDID" log show --last 15s --style compact \
+    --predicate 'eventMessage CONTAINS[c] "fusionha://" OR eventMessage CONTAINS[c] "openURL"' 2>/dev/null | tail -12
   if grep -qF "$expected" "$file" 2>/dev/null; then
     report+="| $name | ok | \`$expected\` |"$'\n'
   else
@@ -40,6 +43,15 @@ launch() {
   sleep 8
 }
 
+# What the built app declares and where its container is (for a failed run).
+plutil -p "$(xcrun simctl get_app_container "$UDID" "$APP" app)/Info.plist" | grep -A6 CFBundleURLTypes
+echo "data container: $(xcrun simctl get_app_container "$UDID" "$APP" data)"
+
+# open <path>: as a widget tap does; prints simctl's answer and the system's log lines about it.
+open_link() {
+  xcrun simctl openurl "$UDID" "fusionha://$1" 2>&1 | sed 's/^/openurl: /'
+}
+
 # Cold: the link itself launches the app. A cold launch from openurl gets no
 # SIMCTL_CHILD_ variables, so the mock server goes in launchd's environment.
 xcrun simctl spawn "$UDID" launchctl setenv FUSIONHA_SCREENSHOT_SERVER "$SERVER"
@@ -48,7 +60,7 @@ for case in "item/8|detail 8 shown|deeplink-1-cold-item" "calendar|applied fusio
   xcrun simctl terminate "$UDID" "$APP" 2> /dev/null
   sleep 1
   clear_log
-  xcrun simctl openurl "$UDID" "fusionha://$path"
+  open_link "$path"
   sleep 10
   check "$name" "$expected"
 done
@@ -61,7 +73,7 @@ warm() {
   local name=$1 path=$2 expected=$3; shift 3
   launch "$S" "$@"
   clear_log
-  xcrun simctl openurl "$UDID" "fusionha://$path"
+  open_link "$path"
   sleep 5
   check "$name" "$expected"
 }
