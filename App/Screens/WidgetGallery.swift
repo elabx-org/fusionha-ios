@@ -101,14 +101,20 @@ struct WidgetGalleryView: View {
             let large = family == .systemLarge
             switch variant {
             case .downloadsActive:
-                downloads[family] = await WidgetLoader.downloads(client, limit: large ? 4 : 2, idleUpNext: 0, idleRecent: 0)
+                var entry = await WidgetLoader.downloads(client, limit: large ? 4 : 2, idleUpNext: 0, idleRecent: 0)
+                entry.pages = WidgetPage.allCases
+                entry.page = .downloading
+                downloads[family] = entry
             case .downloads:
                 // The mock queue is never empty: build the idle entry directly.
                 var entry = DownloadsEntry(date: .now, total: 0, rows: [], signedIn: true, failed: false)
                 entry.upNext = (try? await WidgetLoader.upNext(
-                    client, limit: family == .systemSmall ? 1 : (large ? 3 : 2), posterSize: "w92")) ?? []
+                    client, limit: family == .systemSmall ? 1 : (large ? 6 : 2), posterSize: "w92")) ?? []
                 entry.recent = (try? await WidgetLoader.recent(
-                    client, limit: family == .systemSmall ? 1 : 5, posterSize: "w154")) ?? []
+                    client, limit: family == .systemSmall ? 1 : (large ? 8 : 5), posterSize: "w154")) ?? []
+                // Medium and large are paged: show Up next, as an idle widget opens on it.
+                entry.pages = WidgetPage.allCases.filter { $0 != .downloading }
+                entry.page = .upNext
                 downloads[family] = entry
             case .upnext:
                 let rows = (try? await WidgetLoader.upNext(

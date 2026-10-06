@@ -651,18 +651,6 @@ private struct StatusSectionHeader: View {
     }
 }
 
-extension CardStatus {
-    /// `statusColor(CARD_STATUS_KEY[...])`.
-    var color: Color {
-        switch self {
-        case .downloading: return Theme.grab
-        case .missing: return Theme.miss
-        case .upcoming: return Theme.unaired
-        case .complete: return Theme.done
-        }
-    }
-}
-
 // MARK: - Skeleton
 
 /// LibraryGridSkeleton: 12 cells, 3 columns, 18 × 6 gaps, shimmering.

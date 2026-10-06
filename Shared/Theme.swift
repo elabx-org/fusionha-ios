@@ -90,6 +90,18 @@ extension RailState {
     }
 }
 
+extension CardStatus {
+    /// `statusColor(CARD_STATUS_KEY[...])` (Library stats and the widget's Library view).
+    var color: Color {
+        switch self {
+        case .downloading: return Theme.grab
+        case .missing: return Theme.miss
+        case .upcoming: return Theme.unaired
+        case .complete: return Theme.done
+        }
+    }
+}
+
 extension Color {
     init(hex: UInt32) {
         self.init(
