@@ -113,12 +113,12 @@ struct NumberingFixSheet: View {
             }
         } catch let failure as APIError {
             if case .http(409, _) = failure {
-                applyError = (failure.serverMessage, true)
+                applyError = (message: failure.serverMessage, recoverable: true)
             } else {
-                applyError = (failure.serverMessage, false)
+                applyError = (message: failure.serverMessage, recoverable: false)
             }
         } catch {
-            applyError = ("Couldn't apply the numbering fix.", false)
+            applyError = (message: "Couldn't apply the numbering fix.", recoverable: false)
         }
     }
 }
