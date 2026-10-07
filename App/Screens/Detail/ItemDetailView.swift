@@ -146,6 +146,7 @@ struct ItemDetailView: View {
                     .presentationDetents([.height(300)])
             }
         }
+        .detailActionSheets(store)
     }
 
     private func close() {
@@ -228,92 +229,12 @@ struct ItemDetailView: View {
         case "edit": store.showingEdit = true
         case "add": store.addPreset = AddEditionPreset()
         case "delete": store.showingDelete = true
+        case "rename": store.openRename()
+        case "aliases": store.showingAliases = true
+        case "numbering": store.showingNumbering = true
+        case "issue": store.showingIssue = true
         default: break
         }
         #endif
-    }
-}
-
-/// The hero art repeated behind everything: blurred, saturated and darkened,
-/// under a `--bg` scrim (MobileDetailFlyout `.ambient`). Content, not glass.
-private struct AmbientBackdrop: View {
-    let url: String?
-
-    var body: some View {
-        ZStack {
-            Theme.bg
-            if let url {
-                PosterImage(url: TMDBImage.resized(url, to: "w342"))
-                    .scaleEffect(1.28)
-                    .blur(radius: 72)
-                    .saturation(1.4)
-                    .brightness(-0.2)
-                    .clipped()
-            }
-            LinearGradient(stops: [
-                .init(color: Theme.bg.opacity(0.78), location: 0),
-                .init(color: Theme.bg.opacity(0.62), location: 0.3),
-                .init(color: Theme.bg.opacity(0.5), location: 1),
-            ], startPoint: .top, endPoint: .bottom)
-        }
-        .ignoresSafeArea()
-    }
-}
-
-/// The scrolling page body.
-private struct DetailPage: View {
-    @Environment(DetailStore.self) private var store
-    @Environment(AppModel.self) private var model
-    let detail: ItemDetail
-    let close: () -> Void
-    let openWeb: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            DetailHero(detail: detail, close: close)
-
-            VStack(alignment: .leading, spacing: 0) {
-                if let setup = model.setupProgress.activeSetup(for: detail.id) {
-                    SetupStepStrip(setup: setup)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                }
-                if let overview = detail.overview, !overview.isEmpty {
-                    Text(overview)
-                        .font(.system(size: 14))
-                        .lineSpacing(14 * 0.55 - 3)
-                        .foregroundStyle(Theme.txt.opacity(0.9))
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
-                        .detailReveal(delay: 0.18)
-                }
-
-                DetailSection(title: "Item actions")
-                ItemActionsRail(detail: detail, openWeb: openWeb)
-                (Text("applies to ").foregroundColor(Theme.dim)
-                    + Text(store.actsOnLabel).font(.system(size: 11.5, weight: .semibold, design: .monospaced)).foregroundColor(Theme.txt))
-                    .font(.system(size: 11.5))
-                    .padding(.top, 8)
-                    .contentTransition(.opacity)
-                    .detailAnimation(.easeInOut(duration: 0.2), value: store.actsOnLabel)
-
-                DetailSection(title: "Versions")
-                    .id("editions")
-                DetailVersionsPanel(detail: detail, openWeb: openWeb)
-
-                if detail.kind == .movie, ReleaseTimeline.hasData(detail) {
-                    DetailSection(title: "Release timeline")
-                    ReleaseTimeline(detail: detail)
-                }
-                DetailRailStack(detail: detail)
-
-                DetailTabsView(detail: detail, openWeb: openWeb)
-                    .id("tabs")
-                    .padding(.top, 6)
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 6)
-            .padding(.bottom, 24)
-        }
     }
 }

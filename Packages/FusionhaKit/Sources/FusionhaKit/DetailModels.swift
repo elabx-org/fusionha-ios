@@ -206,6 +206,8 @@ public struct CommandRun: Decodable, Sendable, Hashable, Identifiable {
     public let progressTotal: Int?
     public let detail: String?
     public let rescanSummary: RescanSummary?
+    /// Set on a completed numbering-apply run.
+    public let numberingSummary: NumberingApplyResult?
 
     public var isRunning: Bool { status == "running" }
 }
@@ -399,8 +401,17 @@ public struct TagCreate: Encodable, Sendable {
     public init(label: String) { self.label = label }
 }
 
-/// `GET /api/v1/library/{id}/numbering/preview` (only what the check needs).
+/// `GET /api/v1/library/{id}/numbering/preview`: the season-by-season diff the
+/// rail's check and the "Fix episode numbering" sheet read.
 public struct NumberingPreview: Decodable, Sendable {
     public let source: String?
     public let agrees: Bool?
+    public let diffHash: String?
+    public let activeQueueBlocked: Bool?
+    public let rows: [NumberingDiffRow]?
+    public let renumbered: [NumberingRenumbered]?
+    public let added: [NumberingEpisodeRef]?
+    public let relinked: [NumberingFileRef]?
+    public let removedPhantoms: [NumberingEpisodeRef]?
+    public let unparseable: [NumberingFileRef]?
 }
