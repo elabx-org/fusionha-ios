@@ -15,72 +15,44 @@ struct DownloadsWidgetView: View {
             } else if family != .systemSmall {
                 PagedDownloadsView(entry: entry, family: family)
             } else if entry.failed {
-                VStack(alignment: .leading) {
-                    DownloadsSmallHeader(entry: entry)
-                    WidgetEmptyText("Server unreachable")
-                }
-            } else if entry.idle {
-                idleSmall
+                WidgetSmallFailure(title: "Downloads")
+            } else if !entry.idle {
+                WidgetDownloadingSmall(entry: entry)
+            } else if let next = entry.upNext.first {
+                WidgetUpNextSmall(row: next)
+            } else if let latest = entry.recent.first {
+                WidgetRecentSmall(row: latest)
             } else {
-                activeSmall
+                WidgetDownloadingSmall(entry: entry)
             }
         }
         .environment(\.colorScheme, .dark)
     }
-
-    private var activeSmall: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            DownloadsSmallHeader(entry: entry)
-            Spacer(minLength: 0)
-            if let row = entry.rows.first {
-                Text(row.title).font(.caption.weight(.semibold)).lineLimit(2)
-                WidgetTierPill(tier: row.tier, status: row.stalled ? .stuck : .downloading)
-                ProgressView(value: row.fraction).tint(row.stalled ? Theme.stuck : Theme.grab)
-            }
-        }
-    }
-
-    private var idleSmall: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            DownloadsSmallHeader(entry: entry)
-            if let next = entry.upNext.first {
-                WidgetSectionLabel("Up next")
-                Spacer(minLength: 0)
-                WidgetUpNextHero(row: next, posterWidth: 0)
-            } else if let latest = entry.recent.first {
-                WidgetSectionLabel("Recently added")
-                Spacer(minLength: 0)
-                WidgetRecentHero(row: latest, posterWidth: 0)
-            } else {
-                WidgetEmptyText("Nothing downloading")
-            }
-        }
-    }
 }
 
-/// `Idle` / `3 downloading` and the Process queue button.
-struct DownloadsSmallHeader: View {
-    let entry: DownloadsEntry
+/// A small widget whose load failed: its header, the state in plain words and
+/// that it retries on its own. The technical reason (`timeout @page library
+/// 8.0s`) stays in the run journal (Widget diagnostics), not on the widget.
+struct WidgetSmallFailure: View {
+    let title: String
+    var text = "Couldn't reach fusionha"
 
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: entry.idle ? "checkmark.circle.fill" : "arrow.down.circle.fill")
-                .foregroundStyle(entry.idle ? Theme.done : Theme.grab)
-                .widgetAccentable()
-            Text(entry.idle ? "Idle" : "\(entry.total) downloading")
-                .font(.caption.weight(.semibold))
-                .widgetAccentable()
-            Spacer(minLength: 0)
-            ProcessQueueButton()
+        VStack(alignment: .leading, spacing: 0) {
+            WidgetTopBar(title: title)
+            WidgetStatusMessage(icon: "wifi.exclamationmark", text: text, detail: "Will retry soon")
         }
     }
 }
 
+/// Process queue: asks fusionha to check its download clients now.
 struct ProcessQueueButton: View {
     var body: some View {
         Button(intent: ProcessQueueIntent()) {
             Image(systemName: "arrow.triangle.2.circlepath")
-                .font(.caption)
+                .font(.system(size: 13, weight: .semibold))
+                .frame(width: 22, height: 18)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .foregroundStyle(.secondary)

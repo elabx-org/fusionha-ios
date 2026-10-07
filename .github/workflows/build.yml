@@ -69,7 +69,11 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             CURRENT_PROJECT_VERSION=${{ github.run_number }} \
             MARKETING_VERSION="$APP_VERSION" \
-            build
+            build 2>&1 | tee xcodebuild.log || {
+            # Compile errors as annotations, readable from the checks API without the raw log.
+            grep -E ": error: " xcodebuild.log | sort -u | head -40 | sed 's/^/::error::/'
+            exit 1
+          }
 
       - name: Package IPA
         run: |
@@ -265,6 +269,17 @@ jobs:
           # The paged Downloads widget: each view at medium and large.
           for p in downloading upnext recent library indexers wanted requests; do
             shoot widget-page-$p SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_PAGE=$p
+          done
+          # Smart Stack widgets (one view each): small (and its other state),
+          # medium and large, dark and in the tinted approximation.
+          for k in downloading upnext recent library indexers requests; do
+            shoot widget-stack-$k SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_STACK=$k
+            shoot widget-stack-$k-accented SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_STACK=$k SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_ACCENTED=1
+          done
+          # The paged Downloads widget, tinted: small, and each view at medium and large.
+          shoot widgets-downloads-active-accented SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGETS=downloads-active SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_ACCENTED=1
+          for p in downloading upnext recent indexers wanted requests; do
+            shoot widget-page-$p-accented SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_PAGE=$p SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_ACCENTED=1
           done
           # Accented (tinted Home Screen) layout, approximated in the app, and a
           # page whose reload timed out (retry line + diagnostic).

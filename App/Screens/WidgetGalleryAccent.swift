@@ -17,11 +17,11 @@ enum WidgetGalleryAccent {
 
 extension View {
     /// A gallery widget card at `size`, full colour or accented.
-    func galleryWidgetCard(_ size: CGSize) -> some View {
+    func galleryWidgetCard(_ size: CGSize, bleed: Bool = false) -> some View {
         let accented = WidgetGalleryAccent.isOn
         return environment(\.widgetAccentPreview, accented)
             .grayscale(accented ? 1 : 0)
-            .padding(16)
+            .padding(bleed ? 0 : 16)
             .frame(width: size.width, height: size.height, alignment: .topLeading)
             .background {
                 if accented {

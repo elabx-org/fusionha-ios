@@ -413,6 +413,7 @@ final class AppModel {
             if ids != lastQueueIds {
                 lastQueueIds = ids
                 WidgetCenter.shared.reloadTimelines(ofKind: "Downloads")
+                WidgetCenter.shared.reloadTimelines(ofKind: WidgetStack.downloading.kind)
             }
         } catch {
             queueError = error.localizedDescription

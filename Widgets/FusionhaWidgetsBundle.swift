@@ -7,6 +7,11 @@ struct FusionhaWidgetsBundle: WidgetBundle {
         DownloadsWidget()
         UpNextWidget()
         RecentWidget()
+        // One view each, for stacking (Smart Stack).
+        DownloadingWidget()
+        LibraryWidget()
+        IndexersWidget()
+        RequestsWidget()
         DownloadsLiveActivity()
     }
 }

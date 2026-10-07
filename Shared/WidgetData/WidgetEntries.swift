@@ -15,6 +15,10 @@ struct DownloadsEntry: TimelineEntry, Sendable {
         let poster: Data?
         /// `12m left`, `Importing`; nil when unknown.
         var timeLeft: String? = nil
+        /// The release size, bytes (0 when unknown).
+        var size: Double = 0
+        /// Average bytes per second since the grab; nil when unknown or stalled.
+        var rate: Double? = nil
     }
 
     let date: Date
@@ -40,6 +44,12 @@ struct DownloadsEntry: TimelineEntry, Sendable {
     /// The journal record of the reload that built this entry (marked drawn
     /// when the entry view renders it).
     var runId: String?
+    /// Smart Stack score (`relevance`); nil leaves the stack's order alone.
+    var relevanceScore: Float?
+    /// Up next: how many air in the next seven days (the header's `5 this week`).
+    var weekCount: Int?
+    /// The Requests widget for an account that can't approve or manage issues.
+    var restricted = false
 
     var idle: Bool { total == 0 && rows.isEmpty }
 
@@ -70,6 +80,9 @@ struct UpNextEntry: TimelineEntry {
     let failed: Bool
     /// The journal record of the reload that built this entry.
     var runId: String? = nil
+    var relevanceScore: Float? = nil
+    /// How many air in the next seven days.
+    var weekCount: Int? = nil
 
     static let placeholder = UpNextEntry(date: .now, rows: WidgetSamples.upNext, signedIn: true, failed: false)
 }
@@ -81,6 +94,7 @@ struct RecentEntry: TimelineEntry {
     let failed: Bool
     /// The journal record of the reload that built this entry.
     var runId: String? = nil
+    var relevanceScore: Float? = nil
 
     static let placeholder = RecentEntry(date: .now, rows: WidgetSamples.recent, signedIn: true, failed: false)
 }

@@ -62,7 +62,7 @@ struct WidgetPageGalleryView: View {
         let client = APIClient(baseURL: server, token: "screenshot")
         for family in [WidgetFamily.systemMedium, .systemLarge] {
             let large = family == .systemLarge
-            var entry = await WidgetLoader.downloads(client, limit: large ? 4 : 2, idleUpNext: 0, idleRecent: 0)
+            var entry = await WidgetLoader.downloads(client, limit: large ? 5 : 2, idleUpNext: 0, idleRecent: 0)
             entry.pages = WidgetPage.allCases
             entry.page = page
             await WidgetPageLoader.load(page, into: &entry, client, large: large)

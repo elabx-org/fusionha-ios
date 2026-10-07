@@ -2,17 +2,42 @@ import SwiftUI
 import WidgetKit
 import FusionhaKit
 
-/// A row of posters with their edition pills (and titles on the large family).
+/// One poster tile: the art, an optional caption (title or day) and the
+/// edition chips underneath. Never text on the art.
+struct WidgetPosterTileItem {
+    let poster: Data?
+    let url: URL
+    var caption: String?
+    let pills: [(tier: QualityTier, status: EditionStatus?)]
+}
+
+extension RecentImportRow {
+    func tile(caption: Bool) -> WidgetPosterTileItem {
+        WidgetPosterTileItem(poster: poster, url: WidgetLink.item(item.itemId, fallback: .library),
+                             caption: caption ? item.title : nil, pills: item.pills)
+    }
+}
+
+extension UpNextRow {
+    /// Captioned with its day (`Tonight`, `Thu`).
+    var tile: WidgetPosterTileItem {
+        WidgetPosterTileItem(poster: poster, url: WidgetLink.item(item.itemId, fallback: .calendar),
+                             caption: WidgetDay.label(item.airDate, hasTime: item.hasTime), pills: item.pills)
+    }
+}
+
+/// A row of poster tiles in equal columns; empty columns stay blank.
 struct WidgetPosterStrip: View {
-    let rows: [RecentImportRow]
+    let tiles: [WidgetPosterTileItem]
     let columns: Int
-    let showsTitle: Bool
+    /// Caps the poster height so the row fits the space it is given.
+    var maxPosterHeight: CGFloat?
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: 10) {
             ForEach(0..<columns, id: \.self) { index in
-                if index < rows.count {
-                    tile(rows[index])
+                if index < tiles.count {
+                    tile(tiles[index])
                 } else {
                     Color.clear.frame(maxWidth: .infinity)
                 }
@@ -20,24 +45,21 @@ struct WidgetPosterStrip: View {
         }
     }
 
-    /// The whole tile (poster, title, pills) is one link to the title; the label's
-    /// rectangular content shape gives it a tap region (taps never fall through to
-    /// the widget's URL). The poster's base stays transparent: an opaque fill
-    /// there becomes a solid white block in accented (tinted) rendering. A row
-    /// with no item id opens Library, never Activity.
-    private func tile(_ row: RecentImportRow) -> some View {
-        Link(destination: WidgetLink.item(row.item.itemId, fallback: .library)) {
-            VStack(alignment: .leading, spacing: 4) {
+    /// The whole tile is one link (a rectangular content shape, so taps never
+    /// fall through to the widget's URL). The poster's base stays transparent:
+    /// an opaque fill there becomes a solid white block in tinted rendering.
+    private func tile(_ item: WidgetPosterTileItem) -> some View {
+        Link(destination: item.url) {
+            VStack(alignment: .leading, spacing: 5) {
                 Color.clear
                     .aspectRatio(2 / 3, contentMode: .fit)
-                    .overlay(WidgetPoster(data: row.poster, radius: 6))
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                if showsTitle {
-                    Text(row.item.title)
-                        .font(.system(size: 10, weight: .semibold))
-                        .lineLimit(1)
+                    .frame(maxHeight: maxPosterHeight)
+                    .overlay(WidgetPoster(data: item.poster, radius: WidgetStyle.posterRadius))
+                    .clipShape(RoundedRectangle(cornerRadius: WidgetStyle.posterRadius, style: .continuous))
+                if let caption = item.caption {
+                    Text(caption).font(WidgetStyle.caption.weight(.semibold)).lineLimit(1)
                 }
-                WidgetTierPills(editions: row.item.pills)
+                WidgetTierPills(editions: item.pills)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .foregroundStyle(.primary)

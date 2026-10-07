@@ -97,7 +97,7 @@ struct WidgetGalleryView: View {
             let large = family == .systemLarge
             switch variant {
             case .downloadsActive:
-                var entry = await WidgetLoader.downloads(client, limit: large ? 4 : 2, idleUpNext: 0, idleRecent: 0)
+                var entry = await WidgetLoader.downloads(client, limit: large ? 5 : 2, idleUpNext: 0, idleRecent: 0)
                 entry.pages = WidgetPage.allCases
                 entry.page = .downloading
                 downloads[family] = entry
@@ -119,7 +119,7 @@ struct WidgetGalleryView: View {
             case .recent:
                 let rows = (try? await WidgetLoader.recent(
                     client, limit: family == .systemSmall ? 1 : (family == .systemMedium ? 5 : 8),
-                    posterSize: family == .systemSmall ? "w92" : "w154")) ?? []
+                    posterSize: family == .systemSmall ? WidgetLoader.heroPosterSize : "w154")) ?? []
                 recent[family] = RecentEntry(date: .now, rows: rows, signedIn: true, failed: false)
             }
         }

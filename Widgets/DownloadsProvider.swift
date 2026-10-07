@@ -68,6 +68,8 @@ struct DownloadsProvider: TimelineProvider {
         let log = run.finish(timedOut: timedOut)
         entry.diagnostic = WidgetRunLog.diagnostic(current: log, previous: run.previous)
         entry.runId = run.id
+        entry.relevanceScore = entry.failed ? WidgetStackRelevance.low
+            : WidgetStackRelevance.downloading(active: entry.total, stalled: entry.rows.filter(\.stalled).count)
         return entry
     }
 

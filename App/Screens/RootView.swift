@@ -48,9 +48,12 @@ struct RootView: View {
         .environment(\.motionEnabled, !reduceMotion && model.animationsEnabled)
         .environment(\.railStyle, model.railStyle)
         .environment(\.railConsolidate, model.railConsolidate)
-        .sheet(item: sheetItem) { ref in
+        .sheet(item: sheetItem, onDismiss: { DetailSheetPresence.dismissed() }) { ref in
             ItemDetailView(itemId: ref.id)
-                .onAppear { DeepLinkProbe.log("detail \(ref.id) shown") }
+                .onAppear {
+                    DetailSheetPresence.shown()
+                    DeepLinkProbe.log("detail \(ref.id) shown")
+                }
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Theme.bg)
         }

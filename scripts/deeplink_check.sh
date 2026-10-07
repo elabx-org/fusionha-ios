@@ -38,6 +38,7 @@ check() {
     report+="| $name | ok | \`$expected\` |"$'\n'
   else
     report+="| $name | **missed** | \`$expected\` |"$'\n'
+    echo "::error::$name missed (expected: $expected; probe log: $(tr '\n' ';' < "$file" 2>/dev/null))"
     failed=1
   fi
 }
@@ -73,7 +74,8 @@ grep -q "ACCEPTOR READY" "$ACCEPT_LOG" && echo "prompt helper ready" || { echo "
 # Cold: the link itself launches the app. A cold launch from openurl gets no
 # SIMCTL_CHILD_ variables, so the mock server goes in launchd's environment.
 xcrun simctl spawn "$UDID" launchctl setenv FUSIONHA_SCREENSHOT_SERVER "$SERVER"
-for case in "item/8|detail 8 shown|deeplink-1-cold-item" "calendar|applied fusionha://calendar tab=calendar|deeplink-2-cold-calendar"; do
+for case in "item/8|detail 8 shown|deeplink-1-cold-item" "calendar|applied fusionha://calendar tab=calendar|deeplink-2-cold-calendar" \
+            "activity|applied fusionha://activity tab=activity|deeplink-7-cold-activity"; do
   IFS='|' read -r path expected name <<< "$case"
   xcrun simctl terminate "$UDID" "$APP" 2> /dev/null
   sleep 1
@@ -99,6 +101,14 @@ warm deeplink-3-warm-item item/1 "detail 1 shown" SIMCTL_CHILD_FUSIONHA_SCREENSH
 warm deeplink-4-warm-over-account item/8 "detail 8 shown" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1
 warm deeplink-5-warm-other-title item/8 "detail 8 shown" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=1
 warm deeplink-6-warm-calendar calendar "applied fusionha://calendar tab=calendar" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=1
+# Every widget's background tap (widgetURL): Downloading → Activity, Recently
+# added / Library → Library, Indexers → Activity › Indexers, Requests &
+# issues → Discover › Requests, the paged widget's Wanted → Wanted.
+warm deeplink-8-warm-activity activity "applied fusionha://activity tab=activity" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
+warm deeplink-9-warm-library library "applied fusionha://library tab=library" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar
+warm deeplink-10-warm-indexers activity/indexers "applied fusionha://activity/indexers tab=activity" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
+warm deeplink-11-warm-requests discover/requests "applied fusionha://discover/requests tab=discover" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
+warm deeplink-12-warm-wanted wanted "applied fusionha://wanted tab=wanted" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
 
 kill "$ACCEPT_PID" 2> /dev/null
 echo "prompt helper taps: $(grep -c "ACCEPTOR tapped Open" "$ACCEPT_LOG")"

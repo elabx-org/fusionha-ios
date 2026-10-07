@@ -2,6 +2,8 @@ import SwiftUI
 import WidgetKit
 import FusionhaKit
 
+/// Up next: small shows the next airing alone; medium and large are the
+/// shared Up next view under the compact header.
 struct UpNextWidgetView: View {
     let entry: UpNextEntry
     let family: WidgetFamily
@@ -10,31 +12,26 @@ struct UpNextWidgetView: View {
         Group {
             if !entry.signedIn {
                 WidgetSignInPrompt(report: "")
+            } else if family == .systemSmall, let next = entry.rows.first {
+                WidgetUpNextSmall(row: next)
+            } else if family == .systemSmall, entry.failed {
+                WidgetSmallFailure(title: "Up next")
             } else {
-                VStack(alignment: .leading, spacing: family == .systemSmall ? 6 : 8) {
-                    WidgetHeader(icon: "calendar", title: "Up next", tint: Theme.unaired)
-                    if entry.rows.isEmpty {
-                        WidgetEmptyText(entry.failed ? "Server unreachable" : "Nothing airing soon")
-                    } else {
-                        switch family {
-                        case .systemSmall:
-                            Spacer(minLength: 0)
-                            WidgetUpNextHero(row: entry.rows[0], posterWidth: 0)
-                        case .systemMedium:
-                            VStack(spacing: 6) {
-                                ForEach(Array(entry.rows.prefix(3).enumerated()), id: \.offset) { _, row in
-                                    WidgetUpNextRow(row: row, posterHeight: 30)
-                                }
-                            }
-                            Spacer(minLength: 0)
-                        default:
-                            WidgetUpNextDayList(rows: Array(entry.rows.prefix(6)))
-                            Spacer(minLength: 0)
-                        }
-                    }
+                VStack(alignment: .leading, spacing: WidgetStyle.headerGap) {
+                    WidgetTopBar(title: "Up next", figure: entry.weekCount.flatMap { $0 > 0 ? "\($0) this week" : nil })
+                    content.frame(maxHeight: .infinity, alignment: .top)
                 }
             }
         }
         .environment(\.colorScheme, .dark)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if entry.failed {
+            WidgetRetryLine(text: "Server unreachable", intent: ReloadWidgetIntent(kind: WidgetStack.kind(for: .upNext)))
+        } else {
+            WidgetUpNextPage(rows: entry.rows, large: family == .systemLarge)
+        }
     }
 }
