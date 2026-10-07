@@ -23,7 +23,7 @@ struct WidgetStackGalleryData {
                                                   weekCount: feed?.week)
             case .recent:
                 let rows = (try? await WidgetLoader.recent(client, limit: limit(family, 1, 8, 8),
-                                                           posterSize: family == .systemSmall ? "w92" : "w154")) ?? []
+                                                           posterSize: family == .systemSmall ? WidgetLoader.heroPosterSize : "w154")) ?? []
                 data.recent[family] = RecentEntry(date: .now, rows: rows, signedIn: true, failed: false)
             default:
                 guard let stack = variant.stack else { continue }

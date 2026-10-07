@@ -2,7 +2,8 @@ import SwiftUI
 import WidgetKit
 import FusionhaKit
 
-/// Recently added, small: the latest import's poster edge to edge, with its
+/// Recently added, small: the latest import's poster edge to edge (the whole
+/// poster on a wash of itself, `WidgetPosterHero`), with its
 /// title, chips and `Added 12m ago` on a strip underneath (never on the art).
 /// `bleed` needs the widget's content margins off; the paged Downloads widget
 /// (margins on) shows the inset version under its header.
@@ -15,7 +16,7 @@ struct WidgetRecentSmall: View {
         if bleed {
             VStack(alignment: .leading, spacing: 0) {
                 Color.clear
-                    .overlay(WidgetPoster(data: row.poster, radius: 0))
+                    .overlay(WidgetPosterHero(data: row.poster))
                     .clipped()
                 caption.padding(.horizontal, inset).padding(.vertical, 10)
             }

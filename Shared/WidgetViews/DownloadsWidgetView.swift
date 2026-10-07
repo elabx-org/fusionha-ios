@@ -15,7 +15,7 @@ struct DownloadsWidgetView: View {
             } else if family != .systemSmall {
                 PagedDownloadsView(entry: entry, family: family)
             } else if entry.failed {
-                WidgetSmallFailure(title: "Downloads", diagnostic: entry.diagnostic)
+                WidgetSmallFailure(title: "Downloads")
             } else if !entry.idle {
                 WidgetDownloadingSmall(entry: entry)
             } else if let next = entry.upNext.first {
@@ -30,16 +30,17 @@ struct DownloadsWidgetView: View {
     }
 }
 
-/// A small widget whose load failed: its header, the state, and the reason.
+/// A small widget whose load failed: its header, the state in plain words and
+/// that it retries on its own. The technical reason (`timeout @page library
+/// 8.0s`) stays in the run journal (Widget diagnostics), not on the widget.
 struct WidgetSmallFailure: View {
     let title: String
-    var text = "Server unreachable"
-    var diagnostic: String?
+    var text = "Couldn't reach fusionha"
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             WidgetTopBar(title: title)
-            WidgetStatusMessage(icon: "wifi.exclamationmark", text: text, detail: diagnostic)
+            WidgetStatusMessage(icon: "wifi.exclamationmark", text: text, detail: "Will retry soon")
         }
     }
 }

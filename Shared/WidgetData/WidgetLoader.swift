@@ -5,6 +5,9 @@ import FusionhaKit
 enum WidgetLoader {
     /// Look far enough ahead to find a few upcoming titles in a quiet week.
     static let upNextDays = 30
+    /// The small Recently added poster runs the widget's full width (~510 px
+    /// at 3x): a w92 file stretched to that is a blur.
+    static let heroPosterSize = "w500"
 
     /// The queue, and when idle a little of Up next and Recently added. Never
     /// throws: a failed queue read is the `failed` entry.
@@ -69,16 +72,18 @@ enum WidgetLoader {
         return zip(items, posters).map { RecentImportRow(item: $0, poster: $1) }
     }
 
-    /// Small TMDB posters (w92/w154), three at a time, in input order. A slow
-    /// or oversized poster is dropped (the row shows the plain placeholder).
+    /// TMDB posters at `size` (w92/w154 for rows, `heroPosterSize` for the
+    /// small hero), three at a time, in input order. A slow or oversized
+    /// poster is dropped (the row shows the plain placeholder).
     static func fetchPosters(_ urls: [String?], size: String,
                              deadline: WidgetDeadline = WidgetDeadline(seconds: WidgetRun.budget)) async -> [Data?] {
         let limit = deadline.slice(3, reserve: 0.5)
+        let maxPixels = WidgetPosterData.pixelLimit(forSize: size)
         return await concurrentMap(urls, maxConcurrent: 3) { raw -> Data? in
             guard let url = TMDBImage.resized(raw, to: size) else { return nil }
             let request = URLRequest(url: url, timeoutInterval: limit)
             let data = try? await withTimeout(seconds: limit) { try await URLSession.shared.data(for: request).0 }
-            return data.flatMap(WidgetPosterData.small)
+            return data.flatMap { WidgetPosterData.small($0, maxPixels: maxPixels) }
         }
     }
 

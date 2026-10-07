@@ -59,7 +59,7 @@ struct RecentProvider: TimelineProvider {
         run.stage("history")
         let limit = family == .systemSmall ? 1 : 8
         do {
-            let rows = try await WidgetLoader.recent(client, limit: limit, posterSize: family == .systemSmall ? "w92" : "w154",
+            let rows = try await WidgetLoader.recent(client, limit: limit, posterSize: family == .systemSmall ? WidgetLoader.heroPosterSize : "w154",
                                                      deadline: run.deadline)
             return RecentEntry(date: .now, rows: rows, signedIn: true, failed: false)
         } catch {

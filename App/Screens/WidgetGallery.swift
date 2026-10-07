@@ -119,7 +119,7 @@ struct WidgetGalleryView: View {
             case .recent:
                 let rows = (try? await WidgetLoader.recent(
                     client, limit: family == .systemSmall ? 1 : (family == .systemMedium ? 5 : 8),
-                    posterSize: family == .systemSmall ? "w92" : "w154")) ?? []
+                    posterSize: family == .systemSmall ? WidgetLoader.heroPosterSize : "w154")) ?? []
                 recent[family] = RecentEntry(date: .now, rows: rows, signedIn: true, failed: false)
             }
         }

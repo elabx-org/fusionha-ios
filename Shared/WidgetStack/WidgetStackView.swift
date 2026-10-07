@@ -36,8 +36,7 @@ struct WidgetStackView: View {
     private var small: some View {
         let data = entry.pageData
         if entry.failed || entry.pageError != nil {
-            WidgetSmallFailure(title: entry.page.title, text: entry.failed ? "Server unreachable" : "Couldn't load",
-                               diagnostic: entry.diagnostic)
+            WidgetSmallFailure(title: entry.page.title, text: entry.failed ? "Couldn't reach fusionha" : "Couldn't load")
         } else if entry.restricted {
             VStack(alignment: .leading, spacing: 0) {
                 WidgetTopBar(title: "Requests")
