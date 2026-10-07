@@ -196,7 +196,7 @@ private struct HeroMetaLine: View {
                     .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.line))
             }
             dotSep
-            Text("Metadata via \(DetailText.provider(detail.resolvedMetadataProvider))")
+            MetadataCredit(provider: detail.resolvedMetadataProvider ?? "tmdb")
         }
         .font(.system(size: 12.5))
         .foregroundStyle(Theme.txt.opacity(0.8))
@@ -204,5 +204,26 @@ private struct HeroMetaLine: View {
 
     private var dotSep: some View {
         Text("·").opacity(0.5)
+    }
+}
+
+/// "Metadata via [wordmark]" (the web's `MetadataCredit`): the resolved
+/// provider's real mark, or the Hybrid ring mark with the sources it blends.
+private struct MetadataCredit: View {
+    let provider: String
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Text("Metadata via")
+            switch provider {
+            case "tvdb": TvdbLogo(size: 13, label: "TheTVDB")
+            case "tvmaze": TvmazeLogo(size: 13, label: "TVmaze")
+            case "hybrid":
+                HybridMark(size: 16, label: "Hybrid metadata (TMDB + TheTVDB)")
+                Text("TMDB + TheTVDB").accessibilityHidden(true)
+            default: TmdbLogo(size: 13, label: "The Movie Database")
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }

@@ -16,9 +16,7 @@ struct AddDetailsCard: View {
         ("daily", "Daily", "Dated episodes (talk shows, news)", "calendar"),
         ("anime", "Anime", "Absolute numbering, anime profiles", "sparkles"),
     ]
-    private static let providerNames: [String: String] = [
-        "auto": "Automatic", "tmdb": "TMDB", "tvdb": "TVDB", "tvmaze": "TVmaze", "hybrid": "Hybrid",
-    ]
+    private static let providerNames = AddProviderValue.names
     private static let providers = ["auto", "tmdb", "tvdb", "tvmaze", "hybrid"]
 
     var body: some View {
@@ -49,16 +47,16 @@ struct AddDetailsCard: View {
                                        p == "auto" ? "Your default (\(Self.providerNames[flow.defaultProvider] ?? flow.defaultProvider))"
                                            : p == "hybrid" ? "TMDB details, TVDB numbering" : nil)
                                   },
-                                  value: flow.provider, icon: { value in
-                                      if value != "auto" { ProviderLogo(provider: value, compact: true) }
+                                  value: flow.provider, iconOnly: ["tmdb", "tvdb", "tvmaze"], icon: { value in
+                                      AddProviderLogo(provider: value, size: 18)
                                   }, onChange: { flow.provider = $0 }) {
                             if flow.provider == "auto" {
                                 HStack(spacing: 5) {
                                     Text("Automatic →")
-                                    ProviderLogo(provider: flow.defaultProvider, compact: true)
+                                    AddProviderValue(provider: flow.defaultProvider)
                                 }
                             } else {
-                                ProviderLogo(provider: flow.provider, compact: true)
+                                AddProviderValue(provider: flow.provider)
                             }
                         }
                     } else {
@@ -66,7 +64,9 @@ struct AddDetailsCard: View {
                         HStack(spacing: 10) {
                             Text("Metadata").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
                             Spacer(minLength: 8)
-                            ProviderLogo(provider: flow.effectiveProvider, compact: true)
+                            AddProviderValue(provider: flow.effectiveProvider)
+                                .font(.system(size: 13.5))
+                                .foregroundStyle(Theme.mut)
                         }
                         .padding(.horizontal, 14)
                         .frame(minHeight: 56)
@@ -91,7 +91,7 @@ struct AddDetailsCard: View {
 
     private func choiceRow<Icon: View, Value: View>(
         key: String, label: String, tag: String?, options: [(String, String, String?)], value: String,
-        @ViewBuilder icon: @escaping (String) -> Icon, onChange: @escaping (String) -> Void,
+        iconOnly: Set<String> = [], @ViewBuilder icon: @escaping (String) -> Icon, onChange: @escaping (String) -> Void,
         @ViewBuilder phoneValue: () -> Value
     ) -> some View {
         let open = openRow == key
@@ -139,9 +139,14 @@ struct AddDetailsCard: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     HStack(spacing: 8) {
                                         icon(option.0)
-                                        Text(option.1)
-                                            .font(.system(size: 14, weight: on ? .semibold : .regular))
+                                        // A wordmark spells its own name: logo-only, like the web.
+                                        if !iconOnly.contains(option.0) {
+                                            Text(option.1)
+                                                .font(.system(size: 14, weight: on ? .semibold : .regular))
+                                        }
                                     }
+                                    .accessibilityElement(children: .ignore)
+                                    .accessibilityLabel(option.1)
                                     .foregroundStyle(on ? Theme.i2 : Theme.txt)
                                     if let note = option.2 {
                                         Text(note).font(.system(size: 11.5)).foregroundStyle(Theme.mut)

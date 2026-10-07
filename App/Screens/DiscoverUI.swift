@@ -15,7 +15,6 @@ enum DiscoverPalette {
     static let activeRing = Color(red: 111 / 255, green: 113 / 255, blue: 242 / 255).opacity(0.54)
     static let tmdb = Color(hex: 0x01B4E4)
     static let tvdb = Color(hex: 0x4FB862)
-    static let hybrid = Color(hex: 0xA07CF0)
 }
 
 // MARK: DiscoverMotion
@@ -325,39 +324,6 @@ struct DiscoverKindGlyph: View {
                 .foregroundStyle(color)
                 .frame(width: size, height: size)
                 .accessibilityLabel(kind == .movie ? "Movie" : "Series")
-        }
-    }
-}
-
-// MARK: Provider marks
-
-enum MetadataProviderChoice: String, CaseIterable {
-    case auto, tmdb, tvdb, hybrid
-}
-
-/// The TMDB / TVDB / Hybrid brand marks.
-struct DiscoverProviderMark: View {
-    let provider: String
-    var height: CGFloat = 11
-
-    var body: some View {
-        switch provider {
-        case "tvdb":
-            Image("tvdb-logo").resizable().scaledToFit().frame(height: height)
-                .accessibilityLabel("TVDB")
-        case "hybrid":
-            HStack(spacing: 5) {
-                Image(systemName: "circle.lefthalf.filled")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(DiscoverPalette.hybrid)
-                Text("Hybrid").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.txt)
-            }
-        default:
-            Image("tmdb-logo").resizable().scaledToFit().frame(height: height)
-                .padding(.horizontal, 5).padding(.vertical, 2)
-                .background(Color(hex: 0x0D253F), in: RoundedRectangle(cornerRadius: 5))
-                .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(.white.opacity(0.07)))
-                .accessibilityLabel("TMDB")
         }
     }
 }

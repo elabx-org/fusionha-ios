@@ -198,6 +198,7 @@ The Live Activity is **one aggregate activity, not one per download**. That keep
   - Edit = `pencil`, Refresh = `arrow.clockwise`, Delete = `trash`
   - Downloading = `arrow.down.circle` with `.symbolEffect(.pulse)`, Missing = a dashed amber ring
 - **Type:** SF Pro, with SF Mono for paths, release names, qualities and sizes, as on the web.
+- **Provider marks:** the web's official TMDB / TheTVDB / TVmaze logos (asset catalog; TVDB carries its light- and dark-surface variants) and the Borromean three-ring Hybrid mark, drawn in a `Canvas` with the same knockout weave as the web's SVG masks (`App/Components/ProviderMarks/`). Use them where the web does: TMDB/TVDB/TVmaze are logo-only, Hybrid is the mark beside the word "Hybrid". Discover's "Add as" list and Settings › Metadata's Default provider are custom controls (a popover of rows, a 2 × 2 segmented grid on phones) because a native `Menu` / segmented `Picker` flattens the chips and the drawn mark.
 
 ## 7. Repo, build and install
 
