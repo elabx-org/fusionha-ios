@@ -129,34 +129,7 @@ struct DetailRailStack: View {
 
             if let similar = detail.similar, !similar.isEmpty {
                 DetailSection(title: "More like this")
-                ScrollView(.horizontal) {
-                    HStack(alignment: .top, spacing: 10) {
-                        ForEach(similar.indices, id: \.self) { i in
-                            let title = similar[i]
-                            VStack(alignment: .leading, spacing: 4) {
-                                PosterImage(url: TMDBImage.resized(title.posterUrl, to: "w342"))
-                                    .frame(width: 96, height: 144)
-                                    .clipShape(RoundedRectangle(cornerRadius: 9))
-                                    .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Theme.line))
-                                Text(title.title ?? "")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(Theme.txt)
-                                    .lineLimit(1)
-                                HStack(spacing: 4) {
-                                    if let year = title.year {
-                                        Text(verbatim: String(year)).font(.system(size: 11)).foregroundStyle(Theme.mut)
-                                    }
-                                    if title.inLibrary == true {
-                                        Text("In library").font(.system(size: 9.5, weight: .bold)).foregroundStyle(Theme.done)
-                                    }
-                                }
-                            }
-                            .frame(width: 96)
-                            .detailReveal(delay: Double(min(i, 8)) * 0.04, y: 8, duration: 0.4)
-                        }
-                    }
-                }
-                .scrollIndicators(.hidden)
+                DetailSimilarRail(similar: similar)
             }
 
             if let cast = detail.cast, !cast.isEmpty {
