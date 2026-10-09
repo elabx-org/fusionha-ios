@@ -30,14 +30,20 @@ struct SheetDoneButton: View {
 }
 
 /// The label of a prominent action whose words carry state ("Approve · 2
-/// editions", "Add 3 films", "Rename 4 files"): in a horizontal bar the words
-/// stay visible beside the icon, like the web's button.
+/// editions", "Add 3 films", "Rename 4 files"): the icon and the words side by
+/// side, like the web's button. A plain `Label` would be cut to its icon by the
+/// toolbar (iOS 26 ignores `.labelStyle(.titleAndIcon)` there), losing the
+/// count, so this is drawn as its own content. Untested in a vertical bar.
 struct ToolbarActionLabel: View {
     let title: String
     let systemImage: String
 
     var body: some View {
-        Label(title, systemImage: systemImage)
-            .labelStyle(.titleAndIcon)
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+            Text(title)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
     }
 }

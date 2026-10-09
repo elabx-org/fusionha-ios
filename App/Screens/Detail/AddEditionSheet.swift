@@ -129,7 +129,7 @@ struct AddEditionSheet: View {
                     Button {
                         Task { await submit() }
                     } label: {
-                        if busy { ProgressView() } else { ToolbarActionLabel(title: "Add version", systemImage: "plus").fontWeight(.semibold) }
+                        if busy { ProgressView() } else { Label("Add version", systemImage: "plus") }
                     }
                     .disabled(!canSubmit)
                 }

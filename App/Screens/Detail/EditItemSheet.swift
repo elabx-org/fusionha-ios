@@ -95,7 +95,7 @@ struct EditItemSheet: View {
                     Button {
                         Task { await save() }
                     } label: {
-                        if busy { ProgressView() } else { ToolbarActionLabel(title: "Save changes", systemImage: "checkmark").fontWeight(.semibold) }
+                        if busy { ProgressView() } else { Label("Save changes", systemImage: "checkmark") }
                     }
                     .disabled(busy)
                 }

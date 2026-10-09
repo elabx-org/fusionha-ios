@@ -322,7 +322,7 @@ struct WantedAddEditionSheet: View {
                     Button {
                         Task { await submit() }
                     } label: {
-                        if saving { ProgressView() } else { ToolbarActionLabel(title: "Add version", systemImage: "plus").bold() }
+                        if saving { ProgressView() } else { Label("Add version", systemImage: "plus") }
                     }
                     .disabled(saving || rootId == 0 || profileId == 0)
                 }
