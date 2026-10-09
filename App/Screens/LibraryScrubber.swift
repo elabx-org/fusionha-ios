@@ -182,7 +182,9 @@ struct ScrollScrubber: View {
                 track(height: height)
                     .frame(width: 110, height: height)
                     .coordinateSpace(.named(Self.space))
-                    .offset(x: geo.size.width - 110, y: top)
+                    // Inside the trailing safe area: a vertical system bar (iPhone
+                    // Duo) or the camera housing (landscape) can sit on that edge.
+                    .offset(x: geo.size.width - geo.safeAreaInsets.trailing - 110, y: top)
             }
             .sensoryFeedback(.selection, trigger: state.tick)
             .accessibilityHidden(true)

@@ -29,12 +29,14 @@ struct RenameSheet: View {
             }
             .background(Theme.bg)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(RenameCopy.applyLabel(count: split.movable.count)) { Task { await apply() } }
-                        .buttonStyle(.glassProminent)
-                        .tint(Theme.indigo)
-                        .disabled(split.movable.isEmpty || applying)
+                    Button { Task { await apply() } } label: {
+                        ToolbarActionLabel(title: RenameCopy.applyLabel(count: split.movable.count), systemImage: "textformat")
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(Theme.indigo)
+                    .disabled(split.movable.isEmpty || applying)
                 }
             }
         }

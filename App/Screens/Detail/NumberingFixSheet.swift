@@ -37,12 +37,14 @@ struct NumberingFixSheet: View {
             }
             .background(Theme.bg)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(applying ? "Applying…" : "Confirm & apply") { Task { await apply() } }
-                        .buttonStyle(.glassProminent)
-                        .tint(Theme.indigo)
-                        .disabled(!canApply)
+                    Button { Task { await apply() } } label: {
+                        ToolbarActionLabel(title: applying ? "Applying…" : "Confirm & apply", systemImage: "checkmark")
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(Theme.indigo)
+                    .disabled(!canApply)
                 }
             }
         }

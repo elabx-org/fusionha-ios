@@ -84,15 +84,12 @@ struct ItemDetailView: View {
         .background { AmbientBackdrop(url: store.detail.flatMap { $0.posterUrl ?? $0.backdropUrl }) }
         .toolbar {
             if inColumn {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: close) { Image(systemName: "xmark") }
-                        .accessibilityLabel("Close detail")
+                ToolbarItem(placement: .cancellationAction) {
+                    SheetCancelButton(title: "Close detail", action: close)
                 }
                 ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button { Task { await store.load() } } label: { Image(systemName: "arrow.clockwise") }
-                        .accessibilityLabel("Refresh")
-                    Button(action: openWeb) { Image(systemName: "safari") }
-                        .accessibilityLabel("Open in the web app")
+                    Button("Refresh", systemImage: "arrow.clockwise") { Task { await store.load() } }
+                    Button("Open in the web app", systemImage: "safari", action: openWeb)
                 }
             }
         }

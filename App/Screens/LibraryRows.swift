@@ -141,10 +141,12 @@ struct StatusSectionHeader: View {
 
 // MARK: - Skeleton
 
-/// LibraryGridSkeleton: 12 cells, 3 columns, 18 × 6 gaps, shimmering.
+/// LibraryGridSkeleton: 12 cells, 18 × 6 gaps, shimmering, in the same
+/// columns as the grid it stands in for (`PosterColumns`: three on a phone,
+/// more on a wide display), so the first load does not re-flow.
 struct LibraryGridSkeleton: View {
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 18) {
+        AdaptivePosterGrid(spacing: 18) {
             ForEach(0..<12, id: \.self) { _ in
                 VStack(alignment: .leading, spacing: 7) {
                     RoundedRectangle(cornerRadius: 13, style: .continuous)

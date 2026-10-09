@@ -317,12 +317,12 @@ struct WantedAddEditionSheet: View {
             .navigationTitle("Add a version")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel", action: onCancel) }
+                ToolbarItem(placement: .cancellationAction) { SheetCancelButton(action: onCancel) }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
                         Task { await submit() }
                     } label: {
-                        if saving { ProgressView() } else { Text("Add version").bold() }
+                        if saving { ProgressView() } else { Label("Add version", systemImage: "plus") }
                     }
                     .disabled(saving || rootId == 0 || profileId == 0)
                 }

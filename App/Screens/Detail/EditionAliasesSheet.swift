@@ -52,7 +52,7 @@ struct EditionAliasesSheet: View {
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Close") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { SheetCancelButton(title: "Close") { dismiss() } }
             }
         }
         .presentationDragIndicator(.visible)

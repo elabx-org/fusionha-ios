@@ -39,7 +39,7 @@ struct WidgetDiagnosticsView: View {
             .navigationTitle("Widget diagnostics")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
             }
         }
         .task { report = await WidgetDiagnosticsReport.load() }

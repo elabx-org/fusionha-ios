@@ -241,7 +241,7 @@ private struct DemoConfigSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    SheetDoneButton { dismiss() }
                 }
             }
             .animation(motionOff ? nil : .easeOut(duration: 0.2), value: status?.demoRequireCredentials)
