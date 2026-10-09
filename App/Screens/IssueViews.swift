@@ -139,12 +139,14 @@ private struct ResolveDialog: View {
             .navigationTitle("Resolve issue")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(sending ? "Resolving…" : "Resolve") { Task { await submit() } }
-                        .buttonStyle(.glassProminent)
-                        .tint(Theme.done)
-                        .disabled(sending)
+                    Button { Task { await submit() } } label: {
+                        ToolbarActionLabel(title: sending ? "Resolving…" : "Resolve", systemImage: "checkmark.circle")
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(Theme.done)
+                    .disabled(sending)
                 }
             }
         }
@@ -232,12 +234,14 @@ struct IssueModal: View {
             .navigationTitle("Report an issue")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(sending ? "Reporting…" : "Report issue") { Task { await submit() } }
-                        .buttonStyle(.glassProminent)
-                        .tint(Theme.danger)
-                        .disabled(sending || !ready)
+                    Button { Task { await submit() } } label: {
+                        ToolbarActionLabel(title: sending ? "Reporting…" : "Report issue", systemImage: "flag")
+                    }
+                    .buttonStyle(.glassProminent)
+                    .tint(Theme.danger)
+                    .disabled(sending || !ready)
                 }
             }
         }

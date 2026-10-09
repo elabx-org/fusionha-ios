@@ -32,9 +32,8 @@ struct SettingsWebPanel: View {
             if let server = model.credentials?.serverURL {
                 ToolbarItem(placement: .topBarTrailing) {
                     Link(destination: server.appendingPathComponent("settings").appendingPathComponent(slug)) {
-                        Image(systemName: "safari")
+                        Label("Open in Safari", systemImage: "safari")
                     }
-                    .accessibilityLabel("Open in Safari")
                 }
             }
         }

@@ -11,12 +11,11 @@ struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var fold = FoldInfo()
 
-    /// Unfolded (regular width) the open title is the trailing column, not a sheet.
+    /// With room for two columns the open title is the trailing column, not a sheet.
     private var split: ShellSplit {
-        ShellSplit(fold: fold, wide: sizeClass == .regular, hasItem: model.presentedItem != nil)
+        ShellSplit(fold: fold, hasItem: model.presentedItem != nil)
     }
 
     /// The detail sheet's binding: empty while the title shows in the trailing

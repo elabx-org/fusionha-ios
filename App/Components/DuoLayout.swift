@@ -1,12 +1,14 @@
 import SwiftUI
+import FusionhaKit
 
-// MARK: - iPhone Duo / regular-width layout
+// MARK: - iPhone Duo / wide layout
 //
-// Folded (compact width) the app is the phone app: one column, the title
-// detail opens as a sheet. Unfolded (regular width: the iPhone Duo's inner
-// display, an iPad) the shell becomes two columns like the web's wide layout:
-// the tabs on the leading side and the open title on the trailing side, in
-// place of the sheet. When the Duo is half open (Book) the system reports the
+// Folded (a phone-sized window) the app is the phone app: one column, the
+// title detail opens as a sheet. With room for two columns (at least 560 x 500
+// points, `ShellSplitRule`, the web's rule: the iPhone Duo's inner display, an
+// iPad) the shell becomes two columns like the web's wide layout: the tabs on
+// the leading side and the open title on the trailing side, in place of the
+// sheet. When the Duo is half open (Book) the system reports the
 // fold as a reserved `.division` region; the split then lines up with the
 // fold so neither column runs across it, and nothing is drawn in the fold.
 //
@@ -97,8 +99,9 @@ struct ShellSplit: Equatable {
     /// Whether the trailing column shows at all.
     var shown = false
 
-    /// `wide`: regular horizontal size class. `hasItem`: a title is open.
-    init(fold: FoldInfo, wide: Bool, hasItem: Bool) {
+    /// `hasItem`: a title is open. Decided from the container's own size (not
+    /// the size class), so the app splits at the same sizes as the web.
+    init(fold: FoldInfo, hasItem: Bool) {
         let width = fold.size.width
         if let x = fold.vertical {
             // Half open, fold top to bottom: one column each side of it, always,
@@ -113,11 +116,11 @@ struct ShellSplit: Equatable {
             axis = .vertical
             primary = y.lowerBound
             gap = y.upperBound - y.lowerBound
-        } else if wide && hasItem && width >= 560 {
+        } else if ShellSplitRule.splits(width: Double(width), height: Double(fold.size.height), hasItem: hasItem) {
             // Flat open: the web's list | detail, the detail a phone-width-plus column.
             shown = true
             axis = .horizontal
-            let detail = min(max(width * 0.56, 360), 620)
+            let detail = CGFloat(ShellSplitRule.detailWidth(for: Double(width)))
             primary = max(width - detail - 1, 0)
             gap = 1
         }
