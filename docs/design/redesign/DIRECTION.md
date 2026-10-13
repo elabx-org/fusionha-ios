@@ -1,0 +1,132 @@
+# fusionha for iOS: redesign direction
+
+Made with the `app-designer-pro` skill (`.claude/skills/app-designer-pro`).
+
+## Brief (self-authored from the repos, the owner asked to see mock screens)
+
+1. **App:** native iOS client for fusionha, a self-hosted Sonarr and Radarr replacement. For the person who runs the server and the people they share it with.
+2. **Core action:** open it and see what changed. What landed, what's downloading, and which titles are missing a version (HD, 4K).
+3. **Platform:** iPhone and iPad, iOS 26+, SwiftUI. iPhone only in these mocks.
+4. **Feel:** *late, warm, sure.* References: a video rental shop after closing, the spine wall at Criterion, a cinema projection booth.
+5. **Money:** free and self-hosted. No paywall, no onboarding carousel.
+6. **Voice:** the person who runs the server, telling a housemate what's on.
+7. **Already exists:** the gradient F logo (kept as-is), the web app's dark tokens, the status colours in `status.ts`, the tab glyphs in `App/Assets.xcassets/nav-*.svg`.
+8. **Scope:** a few screens at the critic's bar. No store assets, no code.
+9. **Image generation:** not used. The posters are drawn stand-ins for TMDB art (no text on art, same rule as the app).
+
+## Current app
+
+The iOS app mirrors fusionha's mobile web layout: cool near-black `#0C0D11` panels, a system UI face, the blue→violet→magenta→amber brand gradient on the ＋ orb and the login screen, status-tinted HD/4K chips, five tabs and a top bar with logo, search pill and avatar. It's competent, but it looks like a dark admin panel. The posters are the only richness, and they sit in small tiles under a lot of chrome.
+
+**Slop faces it hits:** the gradient FAB orb (blue→violet→magenta), "everything is a panel", and a flat type scale (title 20, body 15, label 12).
+
+### Keep list (a contract: every feature stays)
+
+The owner's rule for this redesign: **no feature is lost.** This is a reskin and a re-weighting, not a rework of the information architecture. Every screen and control in `docs/ui-plan.md` §2 and §3 stays, including:
+
+- [x] The five tabs in the web's order: Library · Discover · Calendar · Activity · Wanted. Requester role: Discover · My requests · You
+- [x] The top bar: logo (tap = scroll to top), search pill scoped This library / Everything, avatar menu with the attention dot
+- [x] The Activity queue badge, the Discover pending-requests badge, the attention bell and its sheet
+- [x] Library: pulse chips (All · Downloading · Missing · Upcoming · Complete · Needs attention) with counts, the filter menu, Select mode and its bulk bar, the A–Z scrubber, grid and compact densities, the stats sheet
+- [x] Long-press poster sheet: Automatic search, Interactive search, Monitor, Refresh metadata, Edit, Delete
+- [x] Add (＋) on Library, Discover and Wanted. **Moved**, not removed: see decisions
+- [x] Detail: hero, status chip, meta line, genres, action rail, Versions panel, tabs (Seasons · Files · History · Searches), episode rows with a per-episode monitor and one chip per version, the setup step strip
+- [x] Activity: Queue · History · Blocklist · Tasks · Audit · Indexers, the bandwidth hero, section groups, progress with rate and ETA, held and stuck cards
+- [x] Calendar: Month · Week · Forecast · Day · Agenda, kind filters, ‹ Today ›, iCal feed
+- [x] Wanted, Discover, Settings, Interactive search, Add flow: unchanged structure, restyled by the tokens
+- [x] Toasts, the setup progress pill, the downloads accessory, the Live Activity and widgets
+
+The full web inventory (mobile and desktop) is in `before/FEATURES.md`.
+
+### Decisions for the owner (not made silently)
+
+1. **The ＋ orb becomes a glass ＋ toolbar button** in the top bar on Library, Discover and Wanted. Same sheet, same three screens, no gradient. This is the one visible deviation from the web's mobile FAB.
+2. **The brand gradient is kept inside the logo only.** It no longer paints buttons or the active tab.
+3. **Display type changes** from the system face to a condensed grotesque (Bricolage Grotesque, OFL) on page titles and detail titles. UI text stays SF Pro.
+
+## Exploration
+
+Three concepts, three grounds, three faces, three accents (`explore.html`, `shots/explore/sheet.png`):
+
+| | Concept | Family | Ground | Type | Accent | Richness |
+|---|---|---|---|---|---|---|
+| **A ✓** | fusionha is **a video rental shop after closing** | place | dark | condensed (Bricolage Grotesque) | neutral (warm house-light) | photo (poster art) |
+| B | fusionha is **a light table of contact prints** | object | light | serif (Newsreader) | red | photo (framed prints) |
+| C | fusionha is **a broadcast test card** | media | colour-field | expanded (Archivo) | yellow | shape (colour bars) |
+
+**Why A won:** it is the most *this app*. Posters are the content and they glow on a warm dark ground. It keeps the web app's dark identity, so the "stay close to the web app" rule holds. And every hue on screen is left to the status palette, which is the app's real information.
+
+- **B lost:** a light page fights the dark web app the owner wants iOS to match, and the white print frames make 347 posters into a stationery catalogue.
+- **C lost:** the cobalt field fights both the poster art and the status colours (blue already means *upcoming*). It's memorable, but loud in the wrong place.
+- **Taken from C:** the stacked status bar. It becomes the **coverage strip** under the Library title, a one-glance answer to "what state is the library in". It's built from the same counts as the pulse chips.
+
+## The category default we refuse
+
+Sonarr, Radarr, Overseerr and Plex-adjacent dashboards share a look: cool blue-grey panels, a sidebar of tables, a cyan or indigo accent, small posters inside bordered cards, and gradient buttons. The category's colour cliché is **cyan-on-slate tech blue** (and here, the indigo→magenta gradient). We refuse:
+
+- cool slate panels → a **warm** black, like a shop with the lights down
+- the gradient FAB and gradient active states → neutral warm-white chrome, colour only where it means state
+- posters boxed in cards → posters as objects on the shelf, bigger, with nothing on the art
+
+## Tokens
+
+**Colour (dark only, like the web app)**
+
+| Role | Hex | Use |
+|---|---|---|
+| ground | `#0F0D0B` | screen |
+| shelf | `#1A1714` | rows, panels that are objects (queue cards, version rows) |
+| shelf-2 | `#24201C` | pressed and selected |
+| ink | `#F4ECE1` | primary text, the selected chip, the primary button |
+| ink-2 | `#B3A796` | secondary text (7.9:1 on ground) |
+| ink-3 | `#857A6C` | tertiary text, captions (4.6:1) |
+| hairline | `rgba(244,236,225,.08)` | dividers |
+
+**Identity palette:** every saturated hue has one owner, the same on every screen, and these are the web's `status.ts` values unchanged:
+
+| Hue | Owner |
+|---|---|
+| `#34D399` green | done (on disk) |
+| `#22D3EE` cyan | grabbing (downloading) |
+| `#F59E0B` amber | wanted (missing) |
+| `#A78BFA` violet | upgrading |
+| `#3B82F6` blue | upcoming (unaired) |
+| `#F87171` red | danger, failures |
+
+Kind accents (movie sky, series purple, anime pink) appear only as the 3pt kind tick on calendar rows, as on the web.
+
+**Type**
+
+- Display: **Bricolage Grotesque** 800, width 75, optical size 96. Page titles 56/0.95 at −1.2 tracking, detail titles 44/1.0 at −0.8.
+- UI: SF Pro. 17 semibold (row titles), 15 regular (body), 13 medium (meta), 11 semibold mono (edition chips, SF Mono).
+- Figures: SF Pro tabular for rates, sizes and ETAs.
+
+**Layout:** 16pt side margin (as the web's page gutter at phone width). Spacing 4 · 8 · 12 · 16 · 24 · 32 · 48. Radii: chips are capsules, posters 8, shelf objects 20, sheets 34. Three depth levels: ground, shelf objects (a soft, warm two-layer shadow), Liquid Glass navigation.
+
+## Richness
+
+**The posters are the photography.** Grade: they sit on the warm black with a 1pt inner top highlight and a deep falloff shadow, like boxes on a lit shelf. Detail pages bleed the poster to the top edge and fade it into the ground. Nothing is printed on the art. Chips sit under it.
+
+## Signature: the chip fills
+
+An edition chip is also its own progress bar. While a version downloads, its cyan chip fills from left to right with the real percentage (`4K ▮▮▮▯ 62%`). When the import lands, the fill reaches the end, the chip turns green with a `symbolEffect(.bounce)` on a small checkmark, there's a `.success` haptic, and the toast says what landed: "Andor · 4K is on disk".
+
+- Frames: `signature-1` (97%, filling) → `signature-2` (landed, toast)
+- Timing: fill follows the queue poll; the colour swap is a 240ms crossfade, the bounce 400ms
+- Reduce Motion: no fill animation and no bounce. The chip text changes and the colour swaps instantly.
+
+## Voice
+
+The person who runs the server, telling a housemate what's on.
+
+1. **Says the thing and the number.** "4 downloading · 23 missing", never "Activity insights".
+2. **Names the title and the version.** "Andor · 4K is on disk", never "Download complete!".
+3. **The web's words win.** Labels match the web app exactly (Monitor, Automatic search, Interactive search, Versions). No new vocabulary on iOS.
+
+## Content
+
+- **Library:** 347 titles · 4 downloading · 23 missing. Chips All 347, Downloading 4, Missing 23, Upcoming 9, Complete 296, Needs attention 2. Grid: Andor (HD done, 4K 62%), Dune: Part Two (HD, 4K done), Frieren (HD), Shōgun (HD done, 4K wanted), Past Lives (HD), The Bear (HD upgrading), Severance (HD 18%, 4K wanted), Oppenheimer, Arcane, Slow Horses (HD wanted), Silo (4K upgrading), Perfect Days.
+- **Detail (Andor):** Series · 2022 · 2 seasons · 24 episodes · TV-14 · TMDB 8.4. Genres: Sci-Fi, Drama, Thriller. Versions: HD·1080p, 24 of 24 on disk, 61.2 GB; UHD·4K, 21 of 24, grabbing S2E10 at 62%. Season 2: E8 "Who Are You?", E9 "Welcome to the Rebellion", E10 "Make It Stop".
+- **Activity:** 41.6 MB/s · 4 in queue · 3.2 GB left. Andor S02E10 4K (62%, 28.4 MB/s, 3 min), Severance S02E01 HD (18%, 9.1 MB/s, 6 min), Dune: Part Two 4K remux (held: "Not enough free space on /media/4k"), Up next: Silo S02E04 4K.
+- **Calendar:** week of 13 Oct. Today (Mon 13): Slow Horses S5E4 at 03:00 (on disk HD), Silo S2E9 at 08:00 (HD grabbing, 4K wanted). Wed 15: The Bear S4E2. Thu 16: Frieren S2E2 (simulcast). Fri 17: Severance S2E3.
+- **Poster sheet (long-press Andor):** Automatic search, Interactive search, Monitor (on), Refresh metadata, Edit…, Delete….

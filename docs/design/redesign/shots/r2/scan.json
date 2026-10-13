@@ -1,0 +1,291 @@
+{
+  "surfaces": [
+    {
+      "name": "library",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "6 distinct left edges in the left third. Align to fewer verticals."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "core",
+        "fonts": {
+          "SF Pro": 17,
+          "Bricolage Grotesque": 1,
+          "SF Mono": 6
+        },
+        "sizes": [
+          56,
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "500",
+          "600",
+          "700",
+          "800"
+        ],
+        "leftEdges": 6,
+        "words": 45,
+        "headline": "56px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          192,
+          168,
+          216,
+          0,
+          264
+        ],
+        "identity": 6,
+        "cards": 0
+      }
+    },
+    {
+      "name": "detail",
+      "type": "screen",
+      "fails": [],
+      "warns": [],
+      "facts": {
+        "os": "ios",
+        "kind": "detail",
+        "fonts": {},
+        "sizes": [],
+        "weights": [],
+        "leftEdges": 0,
+        "words": 51,
+        "accentHues": [],
+        "cards": 0
+      }
+    },
+    {
+      "name": "poster-sheet",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "Only 3 text sizes across 12 text elements. Hierarchy is flat.",
+        "Largest text is 20px. No element owns the screen. (Mark data-dense if this is deliberate.)"
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "state",
+        "fonts": {
+          "SF Pro": 12
+        },
+        "sizes": [
+          20,
+          17,
+          15
+        ],
+        "weights": [
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "leftEdges": 2,
+        "words": 61,
+        "headline": "20px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          192,
+          168,
+          216,
+          0,
+          264
+        ],
+        "identity": 6,
+        "cards": 3
+      }
+    },
+    {
+      "name": "activity",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "Text inside the system's safe areas: \"Interactive search\" (home indicator); \"Remove\" (home indicator)"
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "list",
+        "fonts": {
+          "SF Pro": 24,
+          "Bricolage Grotesque": 2,
+          "SF Mono": 4
+        },
+        "sizes": [
+          72,
+          56,
+          20,
+          17,
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "500",
+          "600",
+          "700",
+          "800"
+        ],
+        "leftEdges": 5,
+        "words": 72,
+        "headline": "72px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          192,
+          24,
+          168
+        ],
+        "identity": 4,
+        "cards": 3
+      }
+    },
+    {
+      "name": "calendar",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "7 distinct left edges in the left third. Align to fewer verticals."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "list",
+        "fonts": {
+          "SF Pro": 30,
+          "Bricolage Grotesque": 1,
+          "SF Mono": 5
+        },
+        "sizes": [
+          56,
+          20,
+          17,
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "500",
+          "600",
+          "700",
+          "800"
+        ],
+        "leftEdges": 7,
+        "words": 69,
+        "headline": "56px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          168,
+          192,
+          216,
+          264,
+          0,
+          336
+        ],
+        "identity": 7,
+        "cards": 0
+      }
+    },
+    {
+      "name": "signature-1",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "6 distinct left edges in the left third. Align to fewer verticals."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "state",
+        "fonts": {
+          "SF Pro": 17,
+          "Bricolage Grotesque": 1,
+          "SF Mono": 6
+        },
+        "sizes": [
+          56,
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "500",
+          "600",
+          "700",
+          "800"
+        ],
+        "leftEdges": 6,
+        "words": 45,
+        "headline": "56px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          192,
+          168,
+          216,
+          0,
+          264
+        ],
+        "identity": 6,
+        "cards": 0
+      }
+    },
+    {
+      "name": "signature-2",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "5 different shadow styles. Depth has three levels with one shadow style each (finish.md §4)."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "state",
+        "fonts": {
+          "SF Pro": 20,
+          "Bricolage Grotesque": 1,
+          "SF Mono": 5
+        },
+        "sizes": [
+          56,
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "500",
+          "600",
+          "700",
+          "800"
+        ],
+        "leftEdges": 5,
+        "words": 59,
+        "headline": "56px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          192,
+          168,
+          216,
+          0,
+          264,
+          24
+        ],
+        "identity": 7,
+        "cards": 1
+      }
+    }
+  ],
+  "exports": [
+    "FAIL  page error: request failed: file:///System/Library/Fonts/SFNS.ttf",
+    "FAIL  page error: request failed: file:///System/Library/Fonts/SFNSMono.ttf",
+    "warn  identity palette on library, poster-sheet, activity, calendar, signature-1, signature-2: check every hue belongs to one thing, the same thing on every screen, with neutral chrome (color.md §9)."
+  ]
+}
