@@ -30,7 +30,7 @@
     const count = total ? `${have}/${total}` : "";
     const st = landed ? "done" : s;
     const cls = s === "grab" && inflight ? " fill" : landed ? " landed" : "";
-    return `<div class="rail-row"><span class="ed ed-${t}${cls}"${cls === " fill" ? ` style="--p:${inflight}%"` : ""}>${tier}</span><span class="rbar">${bar}</span><span class="rc rc-${st}${landed ? " rolled" : ""}">${s === "grab" && !landed ? "↓ " : ""}${count}${s !== "grab" || landed ? (mark[st] ? ` ${mark[st]}` : (s === "miss" ? "missing" : "")) : ""}</span></div>`;
+    return `<div class="rail-row"><span class="ed ed-${t}${cls}"${cls === " fill" ? ` style="--p:${inflight}%"` : ""}>${tier}${cls === " fill" ? ` ${inflight}%` : ""}</span><span class="rbar">${bar}</span><span class="rc rc-${st}${landed ? " rolled" : ""}">${s === "grab" && !landed ? "↓ " : ""}${count}${s !== "grab" || landed ? (mark[st] ? ` ${mark[st]}` : (s === "miss" ? "missing" : "")) : ""}</span></div>`;
   };
   const grid = (sig) => items(sig).map(([k, t, y, kind, vs]) =>
     `<div class="cell"><div class="poster" data-poster="${k}"></div><div class="t">${t}</div><div class="y">${y} · ${kindGlyph[kind]}</div><div class="rails">${vs.map(rail).join("")}</div></div>`).join("");
@@ -45,20 +45,11 @@
         <div class="g44 glass" data-icon="plus"></div>
         <div class="avatar">E<span class="dot"></span></div>
       </div>
-      <h1 class="display page-title">Library</h1>
+      <div class="title-row"><h1 class="display page-title">Library</h1><div class="g36 glass" data-icon="chart"><b class="adot"></b></div></div>
       <p class="caption"><b>347</b> titles · 512 versions · <b style="color:var(--grab)">${downloading} downloading</b></p>
-      <div class="kinds">
-        <div class="kbar"><i style="flex:141;background:var(--movie)"></i><i style="flex:172;background:var(--series)"></i><i style="flex:34;background:var(--anime)"></i></div>
-        <div class="g36 glass" data-icon="chart"><b class="adot"></b></div>
-      </div>
-      <div class="chips" data-scrolls>
-        <span class="on">All <em>347</em></span>
-        <span class="glass"><i class="sw" style="background:var(--movie)"></i>Movies <em>141</em></span>
-        <span class="glass"><i class="sw" style="background:var(--series)"></i>Series <em>172</em></span>
-        <span class="glass"><i class="sw" style="background:var(--anime)"></i>Anime <em>34</em></span>
-      </div>
       <div class="tools">
         <div class="tier glass" data-system><span class="on">All</span><span>HD</span><span>4K</span></div>
+        <div class="kmenu glass">All kinds <span data-icon="down"></span></div>
         <div class="g36 glass" data-icon="filter"></div>
         <div class="g36 glass" data-icon="grid"></div>
         <div class="g36 glass" data-icon="select"></div>
@@ -66,7 +57,7 @@
       <div class="grid" data-scrolls>${grid(sig)}</div>
     </div>
     <div class="edge" data-float></div>
-    ${landed ? `<div class="toast" data-float><div class="thumb poster" data-poster="andor"></div><div class="tt"><b>Andor · S2E10 in 4K is on disk</b><span>4.1 GB · 22 of 24 now in 4K</span></div><div class="act">Open</div></div>` : ""}
+    ${landed ? `<div class="toast" data-float><div class="thumb poster" data-poster="andor"></div><div class="tt"><b><span class="ed ed-uhd landed">4K</span> Andor · S2E10 is on disk</b><span>4.1 GB · 22 of 24 now in 4K</span></div><div class="act">Open</div></div>` : ""}
     <div data-tabs="library" data-badges='{"activity":${downloading}}'></div>`;
   };
 
