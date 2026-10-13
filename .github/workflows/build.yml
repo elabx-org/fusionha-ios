@@ -2,24 +2,71 @@ name: Build
 
 on:
   push:
-    # Feature branches get the quick suite (tests + unsigned build) on every
-    # push, so work in progress is checked without opening a PR.
+    # Feature branches get tests + the unsigned build on every push, so work
+    # in progress is checked without opening a PR.
     branches: [main, "feat/**", "claude/**"]
     tags: ["v*"]
   pull_request:
+    # labeled: adding the `screenshots` or `perf` label starts a run.
+    types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
     inputs:
-      suite:
-        description: "quick = tests + build; full = also screenshots, iPhone Duo and perf"
-        type: choice
-        options: [full, quick]
-        default: full
+      screenshots:
+        description: "Simulator and iPhone Duo screenshots (about an hour)"
+        type: boolean
+        default: false
+      perf:
+        description: "Activity perf check"
+        type: boolean
+        default: false
 
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  # Decides which heavy jobs run. Screenshots, iPhone Duo and perf are opt-in:
+  # a PR label (`screenshots`, `perf`), a manual run's checkboxes, or a push to
+  # main that changes something on screen. Feature-branch pushes never run them.
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    outputs:
+      screenshots: ${{ steps.plan.outputs.screenshots }}
+      duo: ${{ steps.plan.outputs.duo }}
+      perf: ${{ steps.plan.outputs.perf }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          BEFORE: ${{ github.event.before }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          IN_SHOTS: ${{ inputs.screenshots }}
+          IN_PERF: ${{ inputs.perf }}
+        run: |
+          shots=false; duo=false; perf=false
+          has() { echo "$LABELS" | grep -q "\"$1\""; }
+          case "$EVENT" in
+            pull_request)
+              has screenshots && { shots=true; duo=true; }
+              has perf && perf=true ;;
+            workflow_dispatch)
+              [ "$IN_SHOTS" = true ] && { shots=true; duo=true; }
+              [ "$IN_PERF" = true ] && perf=true ;;
+            push)
+              if [ "$REF" = refs/heads/main ] || [[ "$REF" == refs/tags/v* ]]; then
+                if [ -z "$BEFORE" ] || [ "$BEFORE" = 0000000000000000000000000000000000000000 ]; then ui=1
+                else ui=$(git diff --name-only "$BEFORE" HEAD | grep -cE '^(App|Widgets|Shared|NotificationService)/|^project\.yml$|^scripts/(mock_server\.py|.*shot.*)' || true); fi
+                if [ "${ui:-0}" -gt 0 ]; then shots=true; perf=true; fi
+              fi ;;
+          esac
+          echo "screenshots=$shots duo=$duo perf=$perf" | tee -a "$GITHUB_STEP_SUMMARY"
+          { echo "screenshots=$shots"; echo "duo=$duo"; echo "perf=$perf"; } >> "$GITHUB_OUTPUT"
+
   test:
     name: FusionhaKit tests
     runs-on: xcode-27
@@ -160,8 +207,9 @@ jobs:
   # compared with the web app.
   screenshots:
     name: Simulator screenshots
-    # Heavy (about an hour): PRs, main, tags and full manual runs only.
-    if: (github.event_name != 'push' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && (github.event_name != 'workflow_dispatch' || inputs.suite == 'full')
+    # Heavy (about an hour): only when the plan job asks for it.
+    needs: plan
+    if: needs.plan.outputs.screenshots == 'true'
     runs-on: xcode-27
     permissions:
       contents: write
@@ -492,7 +540,8 @@ jobs:
   # it never fails the run, and it only runs where the shots are reviewed.
   duo:
     name: iPhone Duo screenshots
-    if: github.event_name != 'push' && (github.event_name != 'workflow_dispatch' || inputs.suite == 'full')
+    needs: plan
+    if: needs.plan.outputs.duo == 'true'
     continue-on-error: true
     runs-on: xcode-27
     timeout-minutes: 100
@@ -615,7 +664,8 @@ jobs:
   # Optimised build (Release) with DEBUG set so the probe and mock hooks exist.
   perf:
     name: Activity perf
-    if: (github.event_name != 'push' || github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && (github.event_name != 'workflow_dispatch' || inputs.suite == 'full')
+    needs: plan
+    if: needs.plan.outputs.perf == 'true'
     runs-on: xcode-27
     steps:
       - uses: actions/checkout@v5
