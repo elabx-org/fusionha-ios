@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>fusionha requests and idle</title>
+<link rel="stylesheet" href="file:///home/user/fusionha-ios/.claude/skills/app-designer-pro/assets/device.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="screens.css">
+<link rel="stylesheet" href="requests.css">
+</head>
+<body>
+
+<!-- 13. Discover › Requests, requester view (MyRequests + RequestCard) -->
+<section class="screen req" data-name="requests-mine" data-kind="list" data-theme="dark" data-time="22:30" data-palette="identity" data-tall>
+  <div class="body">
+    <div class="topbar">
+      <img class="logo" src="fusionha-logo.png" alt="fusionha">
+      <div class="pill glass"><span class="ic" data-icon="search"></span>Search to request</div>
+      <div class="avatar">M</div>
+    </div>
+    <h1 class="display page-title">Discover</h1>
+    <div class="segs"><span>Browse</span><span class="on">Requests</span><span>Issues</span></div>
+    <div class="rq-bar">
+      <div class="mine glass" data-system><span class="on">Requests</span><span>Issues</span></div>
+      <div class="flt"><span class="on">Active 3</span><span>Available 12</span><span>All 15</span></div>
+    </div>
+    <div class="quota">
+      <div class="pips"><i class="u"></i><i class="u"></i><i class="u"></i><i></i><i></i></div>
+      <p><b>2 of 5</b> requests left this week</p>
+      <span>Resets Monday · auto-requests count too · 1 waiting</span>
+    </div>
+
+    <div class="obj rcard">
+      <div class="rc-head">
+        <div class="rc-p poster" data-poster="shogun"></div>
+        <div class="rc-t"><b>Shōgun <span>(2024)</span></b>
+          <p class="rc-meta"><span class="ed ed-uhd">UHD·4K</span> Series · S1 · 2 d ago</p>
+          <p class="rc-by"><i class="mini-av">E</i>Approved by Elena</p></div>
+      </div>
+      <div class="stepper5"><span class="d">Requested</span><span class="d">Approved</span><span class="d">Searching</span><span class="now">Downloading</span><span>Available</span></div>
+      <div class="rc-status"><div class="meter"><i style="width:42%;background:var(--grab)"></i></div><b class="c-grab">42%</b></div>
+      <div class="rc-acts"><span class="thread"><i data-icon="chat"></i>Conversation<b class="udot"></b></span><span class="ic-only" data-icon="trash" title="Withdraw request"></span></div>
+    </div>
+
+    <div class="obj rcard">
+      <div class="rc-head">
+        <div class="rc-p poster" data-poster="slowhorses"></div>
+        <div class="rc-t"><b>Slow Horses <span>(2022)</span></b>
+          <p class="rc-meta"><span class="ed ed-hd">HD·1080p</span> Series · S6 · 5 d ago</p>
+          <p class="rc-by"><i class="bolt" data-icon="bolt"></i>Auto-approved · rule: Series I follow</p></div>
+      </div>
+      <div class="stepper5"><span class="d">Requested</span><span class="d">Approved</span><span class="now">Waiting</span><span>Downloading</span><span>Available</span></div>
+      <div class="rc-status wait"><span class="cring" style="--p:70"></span><div><b>Waiting for release · 3 days</b><span>It grabs automatically once it's out</span></div></div>
+      <p class="demand"><b>Also requested by 2 others</b> · everyone is notified when it's available</p>
+      <div class="rc-acts"><span class="thread"><i data-icon="chat"></i>Conversation</span><span class="ic-only" data-icon="trash" title="Withdraw request"></span></div>
+    </div>
+
+    <div class="obj rcard">
+      <div class="rc-head">
+        <div class="rc-p poster" data-poster="bear"></div>
+        <div class="rc-t"><b>The Bear <span>(2022)</span></b>
+          <p class="rc-meta"><span class="ed ed-hd">HD·1080p</span> Series · S4 · 3 w ago</p>
+          <p class="rc-by"><i class="mini-av">E</i>Approved by Elena</p></div>
+      </div>
+      <div class="rc-status ok"><b class="c-done">In your library · HD·1080p</b></div>
+      <div class="rc-acts"><span class="plex">Open in Plex</span><span class="thread"><i data-icon="flag"></i>Report an issue</span></div>
+    </div>
+  </div>
+  <div class="edge" data-float></div>
+  <div data-tabs="discover"></div>
+</section>
+
+<!-- 14. Discover › Requests, approver Inbox on phone (SwipeDeck) -->
+<section class="screen req" data-name="requests-inbox" data-kind="core" data-theme="dark" data-time="22:31" data-palette="identity">
+  <div class="body">
+    <div class="topbar">
+      <img class="logo" src="fusionha-logo.png" alt="fusionha">
+      <div class="pill glass"><span class="ic" data-icon="search"></span>Search requests</div>
+      <div class="avatar">E<span class="dot"></span></div>
+    </div>
+    <div class="segs" data-scrolls><span class="on">Inbox <em>4</em></span><span>Board</span><span>History</span><span>Threads</span><span>Rules</span><span>Insights</span></div>
+    <div class="deck-h"><p><b>4</b> waiting · oldest 3 h</p><span>Select several</span></div>
+    <div class="deck">
+      <div class="dcard back2"></div><div class="dcard back1"></div>
+      <div class="dcard top">
+        <div class="dc-art poster" data-poster="oppen"><div class="who"><i class="mini-av">M</i>Maya + 2</div></div>
+        <div class="dc-body">
+          <b class="dc-title">Oppenheimer <span>(2023)</span></b>
+          <p class="rc-meta"><span class="ed ed-hd">HD·1080p</span><span class="ed ed-uhd">UHD·4K</span> Movie · Requested in fusionha</p>
+          <div class="tiles">
+            <div><span>Size</span><b>~14 GB + ~62 GB</b></div>
+            <div><span>Free after</span><b>1.14 TB</b></div>
+            <div><span>4K release</span><b class="c-done">Yes</b></div>
+            <div><span>Release</span><b>Out now</b></div>
+          </div>
+          <p class="onapp"><span class="ed ed-uhd">UHD·4K</span><b>/media/4k</b> · Remux-2160p · monitored <em>Adjust</em></p>
+        </div>
+      </div>
+    </div>
+    <div class="deck-btns">
+      <span class="db no" data-icon="close" title="Decline"></span>
+      <span class="db info" data-icon="info" title="Details"></span>
+      <span class="db yes" data-icon="check" title="Approve"></span>
+    </div>
+    <p class="hint">Swipe right to approve · left to decline</p>
+  </div>
+  <div class="undo" data-float><div><b>Approving Arcane</b> · UHD·4K</div><span>Undo</span><i class="drain"></i></div>
+  <div data-tabs="discover" data-badges='{"discover":4}'></div>
+</section>
+
+<!-- 15. Report an issue (IssueModal), a sheet over the title -->
+<section class="screen req" data-name="report-issue" data-kind="create" data-theme="dark" data-time="22:32" data-palette="identity">
+  <div class="behind" data-behind><div class="hero-mini poster" data-poster="andor"></div></div>
+  <div class="scrim2"></div>
+  <div class="isheet">
+    <div class="grabber"></div>
+    <div class="is-head"><div class="is-p poster" data-poster="andor"></div><div><b>Report an issue</b><span>Andor (2022)</span></div><div class="is-x" data-icon="close"></div></div>
+    <p class="is-q">What's wrong?</p>
+    <div class="probs"><span>Won't play</span><span class="on">Wrong language</span><span>Missing episodes</span><span>Not in Plex</span><span>Looks bad</span><span>Something else</span></div>
+    <p class="is-q">Which version? <em>You can see both</em></p>
+    <div class="radios"><span><i></i><b class="ed ed-hd">HD·1080p</b></span><span class="on"><i></i><b class="ed ed-uhd">UHD·4K</b></span></div>
+    <p class="is-q">Which part?</p>
+    <div class="part glass" data-system><span>Whole show</span><span>A season</span><span class="on">One episode</span></div>
+    <div class="pickers"><span>Season 2 <i data-icon="down"></i></span><span>Episode 10 <i data-icon="down"></i></span></div>
+    <p class="is-q">Anything else? <em>Optional</em></p>
+    <div class="field" data-ugc>Audio is Spanish only, English track missing.</div>
+    <div class="is-foot"><p>You can report once per problem and version.</p><div><span class="cancel">Cancel</span><span class="report" data-cta>Report</span></div></div>
+  </div>
+</section>
+
+<!-- 16. Activity › Queue clear (QueueIdle) -->
+<section class="screen req" data-name="queue-clear" data-kind="empty" data-theme="dark" data-time="22:33" data-palette="identity" data-tall>
+  <div class="body">
+    <div class="topbar">
+      <img class="logo" src="fusionha-logo.png" alt="fusionha">
+      <div class="pill glass"><span class="ic" data-icon="search"></span>Search by title</div>
+      <div class="avatar">E</div>
+    </div>
+    <h1 class="display page-title">Activity</h1>
+    <div class="segs" data-scrolls><span class="on">Queue</span><span>History</span><span>Blocklist</span><span>Tasks</span><span>Audit</span></div>
+    <div class="clear-hero">
+      <span class="ok-ring" data-icon="check"></span>
+      <div><b class="display">Queue clear</b><span class="c-done">All systems ready</span></div>
+    </div>
+    <div class="hpills"><div class="hp-seg"><span class="on">Today</span><span>7 days</span></div><p><b>14</b> grabbed · <b>13</b> imported · <b class="c-danger">1</b> failed</p></div>
+    <div class="ready" data-scrolls>
+      <div class="obj rt"><span>Free space</span><b>1.2 TB</b><em>of 4 TB · 2 roots, one volume</em></div>
+      <div class="obj rt"><span>Indexers</span><b>3 / 4 healthy</b><em>1 in backoff · 41 grabs 24h</em></div>
+      <div class="obj rt"><span>Next RSS sync</span><b class="num">4:59</b><em>every 15 min · last took 3s</em></div>
+    </div>
+    <div class="group-h">Coming up next <span>Calendar ›</span></div>
+    <p class="cu-sub"><b>5</b> episodes · <b>3</b> titles · next 48h. Monitored, grabbed automatically as each one airs.</p>
+    <p class="cu-day">Tonight <b>Mon 13 Oct</b> · 1</p>
+    <div class="cu-row"><div class="ev-p poster" data-poster="silo"></div><div class="ev-t"><b>Silo</b><span>S02·E10 · Into the Fire</span></div><div class="ev-r"><span class="num">23:00</span><em>in 37 min</em></div></div>
+    <p class="cu-day">Tomorrow <b>Tue 14 Oct</b> · 4</p>
+    <div class="cu-row"><div class="ev-p poster" data-poster="frieren"></div><div class="ev-t"><b>Frieren</b><span>#30 · S02·E02 <i class="prem">Premiere</i></span></div><div class="ev-r"><span class="num">16:30</span><em>in 18h</em></div></div>
+    <div class="cu-row"><div class="ev-p poster" data-poster="bear"></div><div class="ev-t"><b>The Bear</b><span>S04·E01–E03 <i class="prem">3 eps</i></span></div><div class="ev-r"><span class="num">02:00</span><em>in 28h</em></div></div>
+    <div class="group-h">Recently finished <span>View History ›</span></div>
+    <div class="jf-row"><span class="jf-ok">✓</span><b>Arcane</b><span>S02E09 · UHD·4K · Remux</span><em>12 min ago</em></div>
+    <div class="jf-row"><span class="jf-ok">✓</span><b>Andor</b><span>S02E10 · UHD·4K · WEB-DL</span><em>41 min ago</em></div>
+    <div class="jf-row"><span class="jf-ok">✓</span><b>Past Lives</b><span>HD·1080p · Bluray</span><em>2h ago</em></div>
+  </div>
+  <div class="edge" data-float></div>
+  <div data-tabs="activity"></div>
+</section>
+
+<script src="build.js"></script>
+<script src="kit.js"></script>
+<script src="file:///home/user/fusionha-ios/.claude/skills/app-designer-pro/assets/device.js"></script>
+</body>
+</html>

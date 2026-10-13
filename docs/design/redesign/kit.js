@@ -55,6 +55,10 @@
     textformat: wrap(`<path d="M5 6h14M12 6v13"/>`),
     feed: wrap(`<path d="M5 19a1 1 0 1 0 0-.01M5 12a7 7 0 0 1 7 7M5 5a14 14 0 0 1 14 14"/>`),
     left: wrap(`<path d="m15 6-6 6 6 6"/>`),
+    chat: wrap(`<path d="M5 18.5 4 21l3.2-1.4A8.5 8.5 0 1 0 5 18.5Z"/>`),
+    bolt: wrap(`<path d="M13 3 5 13.5h6L10 21l8-10.5h-6Z" fill="currentColor"/>`),
+    info: wrap(`<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8v.2"/>`),
+    check: wrap(`<path d="m5 12.5 4.5 4.5L19 7.5"/>`),
     ellipsis: wrap(`<circle cx="6" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18" cy="12" r="1.2" fill="currentColor"/>`),
   };
 

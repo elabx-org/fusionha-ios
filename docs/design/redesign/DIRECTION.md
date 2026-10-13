@@ -141,6 +141,8 @@ All five are OFL, bundle in the app, and only set titles and the hero numbers; U
 | **Anybody** Condensed 850 | VHS sleeve, squarer counters | the most retro |
 | **Instrument Serif** | Criterion title cards | calmer and editorial; changes the mood the most |
 
+Round 2 (`fonts2.html`, `shots/fonts2/sheet.png`) tried close relatives: Bricolage at width 88, Mona Sans Condensed, Sofia Sans Extra Condensed, Instrument Sans Condensed, League Gothic and Familjen Grotesk. **Recommendation: keep Bricolage Grotesque Condensed 800** (the owner agrees). Runner-up: Mona Sans Condensed, the crispest and most neutral, if Bricolage ever feels too playful.
+
 A sixth option, **SF Pro Compressed** (native, no bundling), could not be rendered on this Linux machine.
 
 ## Liquid Glass (screen `liquid-glass`)
@@ -169,7 +171,8 @@ The handoff lists server and web changes the iOS app has not caught up with. The
 
 - **Activity** follows the queue contract: groups *Needs you* (held, first, with "Resolve all held"), Downloading, Up next, Just finished (20 s lane). Held rows say why in plain words ("Not really 2160p: the file is 1920x1080. Release says 2160p."), with a measured-vs-claimed grid, Manual import, Block release group and Remove; status as an ambient wash, never a border. The Pipeline card is phase mode: the stage count moves only when a stage completes, the current stage is indeterminate, no percent and no ETA.
 - **Calendar** uses the new episode codes (`S05·E04`, anime `#30`).
-- **Not designed yet:** the Requests revamp (Discover › Requests: Inbox swipe deck with 5-second Undo, Board, Me too, quota, threads, Report an issue), "Queue clear" (idle summary), Manual Import (phone 3-line rows, Duo list | file split), notification preferences. These are the next screens to design; the API catch-up in code is a separate task.
+- **Now designed (`requests.html`, `shots/requests/`):** My requests (quota meter, five-step lifecycle, Conversation with unread dot, Withdraw, Open in Plex, Report an issue), the approver Inbox swipe deck (four facts, On approve, the 5-second Undo bar), the Report an issue sheet and Queue clear. All copy is the web's own (from the web components). Two deliberate deviations: no emoji in "Inbox zero", and the Undo bar shows a draining line (the web has no visible countdown).
+- **Previously not designed:** the Requests revamp (Discover › Requests: Inbox swipe deck with 5-second Undo, Board, Me too, quota, threads, Report an issue), "Queue clear" (idle summary), Manual Import (phone 3-line rows, Duo list | file split), notification preferences. These are the next screens to design; the API catch-up in code is a separate task.
 
 ## Dense data: progressive disclosure
 

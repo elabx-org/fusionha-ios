@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>fusionha display faces, round 2</title>
+<link rel="stylesheet" href="file:///home/user/fusionha-ios/.claude/skills/app-designer-pro/assets/device.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Mona+Sans:wdth,wght@75..125,200..900&family=Sofia+Sans+Extra+Condensed:wght@800&family=Instrument+Sans:wdth,wght@75..100,400..700&family=League+Gothic&family=Familjen+Grotesk:wght@700&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="screens.css">
+<style>
+  /* Each option sets the display face and its axes; nothing else changes. */
+  .f-bricolage { --display: "Bricolage Grotesque"; --dvar: "wdth" 75, "opsz" 96; --dw: 800; --dtrack: -1.2px; }
+  .f-bricowide { --display: "Bricolage Grotesque"; --dvar: "wdth" 88, "opsz" 96; --dw: 750; --dtrack: -1.6px; }
+  .f-mona      { --display: "Mona Sans"; --dvar: "wdth" 75; --dw: 850; --dtrack: -1.4px; }
+  .f-sofia     { --display: "Sofia Sans Extra Condensed"; --dvar: normal; --dw: 800; --dtrack: -0.5px; }
+  .f-instsans  { --display: "Instrument Sans"; --dvar: "wdth" 75; --dw: 700; --dtrack: -1.6px; }
+  .f-league    { --display: "League Gothic"; --dvar: normal; --dw: 400; --dtrack: 0px; }
+  .f-familjen  { --display: "Familjen Grotesk"; --dvar: normal; --dw: 700; --dtrack: -1.8px; }
+  .screen .display { font-family: var(--display); font-variation-settings: var(--dvar); font-weight: var(--dw); letter-spacing: var(--dtrack); }
+  .f-league .display, .f-sofia .display { font-size-adjust: 0.52; }
+  .spec-body { position: absolute; inset: var(--safe-top) 0 0; padding: 20px 20px 0; display: flex; flex-direction: column; }
+  .spec-body .name { font: 600 13px var(--sf); color: var(--ink-3); }
+  .spec-body .why { font: 400 15px/1.4 var(--sf); color: var(--ink-2); margin: 6px 0 0; }
+  .spec-body .a { font-size: 72px; line-height: .95; margin: 26px 0 0; }
+  .spec-body .b { font-size: 56px; line-height: .95; margin: 26px 0 0; }
+  .spec-body .b span { color: var(--ink-3); }
+  .spec-body .c { font-size: 72px; line-height: .9; margin: 26px 0 0; color: var(--grab); }
+  .spec-body .c small { font: 600 17px var(--sf); color: var(--ink-2); margin-left: 6px; letter-spacing: 0; }
+  .spec-body .d { font-size: 40px; line-height: 1; margin: 26px 0 0; }
+  .spec-body .lic { margin-top: auto; padding-bottom: 50px; font: 400 13px/1.4 var(--sf); color: var(--ink-3); }
+</style>
+</head>
+<body>
+<script>
+  const opts = [
+    ["bricolage", "Bricolage Grotesque, Condensed 800 (current)", "The reference. Warm, a little hand-cut; the 'a' and 'y' give it a voice.", "OFL · variable (width, optical size)"],
+    ["bricowide", "Bricolage Grotesque, width 88, 750", "The same face, less condensed. Friendlier, takes more room.", "OFL · same file as the current one"],
+    ["mona", "Mona Sans, Condensed 850", "GitHub's grotesque. Crisper and more engineered, still warm at heavy weights.", "OFL · variable (width, weight)"],
+    ["sofia", "Sofia Sans Extra Condensed 800", "Tall, soft corners, very space-efficient. Reads like a cinema listing.", "OFL · variable (weight)"],
+    ["instsans", "Instrument Sans, Condensed 700", "Quiet and precise. The most native-feeling next to SF Pro.", "OFL · variable (width, weight)"],
+    ["league", "League Gothic", "Classic gothic poster type. Strong marquee feel, one weight.", "OFL · variable (width)"],
+    ["familjen", "Familjen Grotesk 700", "A softer, rounder grotesque with quirky terminals.", "OFL · variable (weight)"],
+  ];
+  document.write(opts.map(([k, n, why, lic]) => `
+    <section class="screen f-${k}" data-name="font-${k}" data-kind="state" data-theme="dark" data-chrome="light" data-time="22:14">
+      <div class="spec-body"><div class="name">${n}</div><p class="why">${why}</p>
+        <div class="display a">Library</div>
+        <div class="display b">Andor <span>2022</span></div>
+        <div class="display c num">41.6<small>MB/s</small></div>
+        <div class="display d">October · Activity · Wanted</div>
+        <div class="lic">${lic}. Bundled in the app; UI text stays SF Pro.</div></div>
+    </section>`).join(""));
+</script>
+<script src="build.js"></script>
+<script src="kit.js"></script>
+<script src="file:///home/user/fusionha-ios/.claude/skills/app-designer-pro/assets/device.js"></script>
+</body>
+</html>
