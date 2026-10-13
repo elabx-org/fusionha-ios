@@ -100,44 +100,12 @@ fileprivate enum QueueLogic {
         }
     }
 
-    /// The per-job rail: torrent Downloading → Linking → Caching → Importing;
-    /// usenet Parsing → Processed → Linking → Caching → [Probing] → [Validating] → Importing.
-    static func rail(for item: QueueItem) -> [String] {
-        if item.protocol?.uppercased() == "TORRENT" { return ["Downloading", "Linking", "Caching", "Importing"] }
-        var rail = ["Parsing", "Processed", "Linking", "Caching"]
-        if item.phase == "probing" { rail.append("Probing") }
-        if item.phase == "validating" { rail.append("Validating") }
-        rail.append("Importing")
-        return rail
-    }
-
-    static func railIndex(for item: QueueItem, rail: [String]) -> Int {
-        let label: String
-        switch item.phase {
-        case "downloading": label = rail.first ?? "Parsing"
-        case "parsing": label = "Parsing"
-        case "processed": label = "Processed"
-        case "linking": label = "Linking"
-        case "caching": label = "Caching"
-        case "probing": label = "Probing"
-        case "validating": label = "Validating"
-        case "complete", "importing": label = "Importing"
-        default: label = rail.first ?? ""
-        }
-        return rail.firstIndex(of: label) ?? 0
-    }
-
-    static func stepFraction(_ step: String?) -> String? {
-        guard let step, let match = step.range(of: #"(\d+)\s*(?:/|of)\s*(\d+)"#, options: .regularExpression) else { return nil }
-        let nums = step[match].split(whereSeparator: { !$0.isNumber })
-        guard nums.count == 2 else { return nil }
-        return "\(nums[0]) / \(nums[1])"
-    }
-
     static func noteLine(_ item: QueueItem) -> String {
         let meta = item.phaseMeta
         if item.phase == "error" { return item.nextStep ?? item.warning ?? item.step ?? meta.note }
-        if item.phase == "linking", let frac = stepFraction(item.step) { return "Linking files into the library (\(frac))…" }
+        if item.phase == "linking", let linking = QueueRules.linking(step: item.step) {
+            return "Linking files into the library (\(linking.label))…"
+        }
         return meta.note
     }
 
@@ -287,6 +255,13 @@ fileprivate enum QueueLogic {
 
 // MARK: - Store (feed + live telemetry)
 
+/// Each job's furthest live phase, so an errored job holds at the stage it
+/// reached (QueueRules.state). Updated on every poll.
+@MainActor
+fileprivate enum QueuePhaseMemory {
+    static var last: [Int: String] = [:]
+}
+
 @MainActor
 @Observable
 fileprivate final class QueueStore {
@@ -363,6 +338,7 @@ fileprivate final class QueueStore {
         if total != page.total { total = page.total }
         let finished = page.justFinished ?? []
         if justFinished != finished { justFinished = finished }
+        QueuePhaseMemory.last = QueueRules.remember(QueuePhaseMemory.last, items: page.items.map { (id: $0.id, phase: $0.phase) })
         sample(page.items)
     }
 
@@ -1114,12 +1090,10 @@ private struct PhaseCard: View {
                         .actSpin(meta.indeterminate && lane == .working, duration: 0.9)
                     Text(QueueLogic.noteLine(item)).font(.system(size: 11.5)).foregroundStyle(Theme.mut).lineLimit(2)
                 }
-                if item.phase == "linking", let frac = QueueLogic.stepFraction(item.step) {
-                    let parts = frac.split(separator: "/").map { Double($0.trimmingCharacters(in: .whitespaces)) ?? 0 }
+                if item.phase == "linking", let linking = QueueRules.linking(step: item.step) {
                     HStack(spacing: 8) {
-                        ActProgressBar(fraction: parts.count == 2 && parts[1] > 0 ? parts[0] / parts[1] : 0, height: 4,
-                                       fill: AnyShapeStyle(Theme.grab))
-                        Text("\(frac) files").font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.mut)
+                        ActProgressBar(fraction: linking.fraction, height: 4, fill: AnyShapeStyle(Theme.grab))
+                        Text("\(linking.label) files").font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.mut)
                     }
                 } else {
                     HStack(spacing: 8) {
@@ -1153,15 +1127,21 @@ private struct PhaseReadout: View {
     @Environment(\.actReduceMotion) private var reduce
 
     var body: some View {
-        let rail = QueueLogic.rail(for: item)
-        let index = ghost ? -1 : QueueLogic.railIndex(for: item, rail: rail)
+        let state = QueueRules.state(protocol: item.protocol, phase: item.phase, phaseTerminal: item.phaseTerminal,
+                                     lastSeenPhase: QueuePhaseMemory.last[item.id])
+        let rail = state.stages
+        let index = ghost ? -1 : (state.current ?? -1)
         let meta = item.phaseMeta
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
                 if ghost {
                     Text("Waiting").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
+                } else if index < 0 {
+                    // A cold poll that is already errored: no stage position.
+                    Text("Failed").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.danger)
                 } else {
-                    Text(rail[max(index, 0)]).font(.system(size: 12, weight: .bold)).foregroundStyle(meta.tone)
+                    Text(state.failed ? "Failed at \(rail[index])" : rail[index])
+                        .font(.system(size: 12, weight: .bold)).foregroundStyle(state.failed ? Theme.danger : meta.tone)
                     Text("step \(index + 1) of \(rail.count)").font(.system(size: 11)).foregroundStyle(Theme.dim)
                 }
             }
