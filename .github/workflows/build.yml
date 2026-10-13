@@ -104,6 +104,9 @@ jobs:
               msg = (node.get("message") or node.text or "").strip().splitlines()[:1]
               print(f"- `{c.get('classname')}.{c.get('name')}`: {msg[0] if msg else ''}")
           PY
+          # The failing assertions at the end of the job log (and as annotations),
+          # so they are readable from the API without the artifact.
+          grep -E ": error: |error: .*\.swift" tests.log | sort -u | head -40 | sed 's/^/::error::/' || true
 
       - uses: actions/upload-artifact@v4
         if: always()
