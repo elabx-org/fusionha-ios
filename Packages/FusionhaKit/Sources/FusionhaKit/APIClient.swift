@@ -6,11 +6,15 @@ public enum APIError: Error, LocalizedError, Sendable {
     case notSignedIn
 
     public var errorDescription: String? {
+        // A coded refusal says what happened in plain words, never the server's prose.
+        if let code, let text = ErrorCopy.message(code: code) { return text }
         switch self {
         case .invalidServerURL:
             return "That doesn't look like a server address."
         case .http(401, _), .http(403, _):
             return "The server rejected the sign-in."
+        case .http(429, _):
+            return "Too many attempts. Wait a few minutes, then try again."
         case .http(let status, _):
             return "The server answered with HTTP \(status)."
         case .notSignedIn:
@@ -277,12 +281,22 @@ public final class APIClient: @unchecked Sendable {
     }
 
     func perform<T: Decodable>(_ req: URLRequest) async throws -> T {
-        let (data, response) = try await session.data(for: req)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200..<300).contains(status) else {
-            throw APIError.http(status: status, body: String(decoding: data.prefix(500), as: UTF8.self))
-        }
+        let (data, _) = try await data(for: req)
         if T.self == EmptyResponse.self { return EmptyResponse() as! T }
         return try Self.decoder.decode(T.self, from: data)
+    }
+
+    /// Sends a request and returns the body with its response (for headers such
+    /// as `X-Next-Cursor`), or throws `APIError.http` on a non-2xx status. The
+    /// error keeps up to 8 KB of the body: enough for any coded `detail` to stay
+    /// valid JSON, so `APIError.code` can read it.
+    func data(for req: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let (data, response) = try await session.data(for: req)
+        let http = response as? HTTPURLResponse
+        let status = http?.statusCode ?? 0
+        guard let http, (200..<300).contains(status) else {
+            throw APIError.http(status: status, body: String(decoding: data.prefix(8192), as: UTF8.self))
+        }
+        return (data, http)
     }
 }

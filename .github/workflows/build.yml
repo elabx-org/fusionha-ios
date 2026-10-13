@@ -83,7 +83,7 @@ jobs:
       - name: Unit tests
         run: |
           set -o pipefail
-          swift test --package-path Packages/FusionhaKit --parallel --xunit-output tests.xml 2>&1 | tee tests.log
+          swift test --package-path Packages/FusionhaKit --xunit-output tests.xml 2>&1 | tee tests.log
 
       # Pass/fail counts and every failing test on the run page (readable from
       # the API without the raw log).

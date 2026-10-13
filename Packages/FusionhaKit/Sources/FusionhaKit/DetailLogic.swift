@@ -82,41 +82,8 @@ public enum DetailText {
     /// Parses the server's timestamps, which are usually NAIVE UTC
     /// (`2026-10-02T02:52:39.007478`), sometimes with `Z` or an offset.
     public static func instant(_ iso: String?) -> Date? {
-        guard var text = iso, !text.isEmpty else { return nil }
-        if text.count == 10 { return dayFormatter.date(from: text) }
-        if text.range(of: #"([zZ]|[+-]\d\d:?\d\d)$"#, options: .regularExpression) == nil { text += "Z" }
-        if let d = isoFractional.date(from: text) { return d }
-        if let d = isoPlain.date(from: text) { return d }
-        // Microsecond fractions (6 digits) trip ISO8601DateFormatter: trim to 3.
-        if let dot = text.firstIndex(of: "."), let end = text[dot...].firstIndex(where: { !$0.isNumber && $0 != "." }) {
-            let frac = text[text.index(after: dot)..<end]
-            let trimmed = String(text[..<dot]) + "." + String(frac.prefix(3)) + String(text[end...])
-            return isoFractional.date(from: String(trimmed))
-        }
-        return nil
+        ServerTime.parse(iso)
     }
-
-    // Parsing only (never mutated after creation), so one shared instance each
-    // instead of a formatter per call: coverage parses every episode's air date.
-    private static let dayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = TimeZone(identifier: "UTC")
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
-    private static let isoFractional: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-
-    private static let isoPlain: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        return f
-    }()
 
     private static let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 

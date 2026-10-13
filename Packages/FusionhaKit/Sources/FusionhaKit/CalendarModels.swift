@@ -261,16 +261,7 @@ public enum CalendarMath {
     /// Parses `2026-10-04T21:00:00Z`, a naive `2026-10-04T21:00:00` (read as UTC) or a
     /// bare `2026-10-04` (UTC midnight), like the web's `parseUtc`.
     public static func parseUTC(_ raw: String) -> Date? {
-        var text = raw
-        let hasTime = text.contains("T")
-        let hasZone = text.range(of: #"(Z|[+-]\d{2}:?\d{2})$"#, options: .regularExpression) != nil
-        if hasTime && !hasZone { text += "Z" }
-        if !hasTime { text += "T00:00:00Z" }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let d = f.date(from: text) { return d }
-        f.formatOptions = [.withInternetDateTime]
-        return f.date(from: text)
+        ServerTime.parse(raw)
     }
 
     public static func iso(_ date: Date, _ calendar: Calendar = .current) -> String {

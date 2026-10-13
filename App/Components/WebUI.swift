@@ -643,11 +643,8 @@ enum Format {
         // Lists parse the same strings over and over (sorting, relative times),
         // and building formatters is slow: parse each string once.
         if let hit = parsed.object(forKey: iso as NSString) { return hit as Date }
-        var date = isoFractional.date(from: iso) ?? isoPlain.date(from: iso)
-        if date == nil {
-            // The server sends naive UTC timestamps (no zone): treat them as UTC.
-            for f in naiveUTC { if let d = f.date(from: iso) { date = d; break } }
-        }
+        // Naive server timestamps are UTC (ServerTime).
+        let date = ServerTime.parse(iso)
         if let date { parsed.setObject(date as NSDate, forKey: iso as NSString) }
         return date
     }
@@ -657,29 +654,6 @@ enum Format {
         c.countLimit = 20_000
         return c
     }()
-
-    private static let isoFractional: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-
-    private static let isoPlain: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        return f
-    }()
-
-    private static let naiveUTC: [DateFormatter] = [
-        "yyyy-MM-dd'T'HH:mm:ss.SSSSSS", "yyyy-MM-dd'T'HH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss",
-        "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX", "yyyy-MM-dd'T'HH:mm:ssXXXXX", "yyyy-MM-dd HH:mm:ss.SSSSSS", "yyyy-MM-dd HH:mm:ss",
-    ].map { format in
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = TimeZone(identifier: "UTC")
-        f.dateFormat = format
-        return f
-    }
 
     static func relative(_ iso: String?) -> String {
         guard let date = timestamp(iso) else { return "" }
