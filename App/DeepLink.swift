@@ -4,7 +4,8 @@ import FusionhaKit
 /// `fusionha://` deep links from the widgets, the Live Activity and notifications:
 /// `activity`, `calendar`, `library`, `wanted`, `discover` switch tabs (with an
 /// optional sub-tab: `activity/indexers`, `discover/requests`), and `item/{id}`
-/// opens that title's detail sheet.
+/// opens that title's detail sheet. `activity/queue?focus={id}&block=1` (from a
+/// held-fake push) also opens "Block release group?" on that download.
 ///
 /// A link is received at the app's root (`FusionhaApp`), which exists from the
 /// first frame of a cold launch, and kept in `pendingLink` until the shell is on
@@ -38,6 +39,7 @@ extension AppModel {
         switch url.host() ?? "" {
         case "activity" where !requestScoped:
             pendingActivityTab = path.first.flatMap(ActivityTab.init(rawValue:))
+            pendingQueueFocus = PushLink.queueFocus(in: url)
             tab = .activity
         case "calendar" where !requestScoped: tab = .calendar
         case "library" where !requestScoped: tab = .library

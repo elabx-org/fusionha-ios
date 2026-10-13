@@ -1,11 +1,12 @@
 import UIKit
+import FusionhaKit
 import UserNotifications
 
 extension Notification.Name {
     /// The APNs device token arrived (or changed); `PushRegistration` sends it to the server.
     static let apnsTokenChanged = Notification.Name("fusionha.apnsTokenChanged")
     /// A notification was tapped; `object` is the library item id to open.
-    static let openNotificationItem = Notification.Name("fusionha.openNotificationItem")
+    static let openNotificationLink = Notification.Name("fusionha.openNotificationLink")
 }
 
 /// Registers for push and hands the APNs device token to `PushRegistration`,
@@ -58,20 +59,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         completionHandler([.banner, .list, .sound])
     }
 
-    /// Tapping a notification opens its title (`item_id`, else the `/library/{id}` url).
+    /// Tapping a notification opens where the web would: its `url` path
+    /// (requests, issues, a queue row, the audit log, a title), else its `item_id`.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
         let info = response.notification.request.content.userInfo
-        var itemId = (info["item_id"] as? Int) ?? (info["item_id"] as? NSNumber)?.intValue
-        if itemId == nil, let url = info["url"] as? String, url.hasPrefix("/library/") {
-            itemId = Int(url.dropFirst("/library/".count))
-        }
-        if let itemId {
+        let itemId = (info["item_id"] as? Int) ?? (info["item_id"] as? NSNumber)?.intValue
+        let link = PushLink.deepLink(webPath: info["url"] as? String) ?? itemId.map { WidgetRoute.item($0).url }
+        if let link {
             DispatchQueue.main.async {
-                NotificationCenter.default.post(name: .openNotificationItem, object: itemId)
+                NotificationCenter.default.post(name: .openNotificationLink, object: link)
             }
         }
         completionHandler()

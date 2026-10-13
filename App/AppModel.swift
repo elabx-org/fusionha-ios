@@ -69,6 +69,9 @@ final class AppModel {
     /// A deep link's sub-tab (`fusionha://activity/indexers`, `discover/requests`),
     /// taken by the screen when it shows.
     var pendingActivityTab: ActivityTab?
+    /// A download a link asked the queue to bring forward (`focus`), and whether
+    /// to open "Block release group?" on it (`block=1`). Consumed by the row.
+    var pendingQueueFocus: (downloadId: Int, block: Bool)?
     var pendingDiscoverTab: DiscoverTab?
     var showingAdd = false
     /// The Account sheet (avatar menu → Account), owned by AccountView.swift.
@@ -203,9 +206,9 @@ final class AppModel {
         NotificationCenter.default.addObserver(forName: .apnsTokenChanged, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in await self?.registerPushDevice() }
         }
-        NotificationCenter.default.addObserver(forName: .openNotificationItem, object: nil, queue: .main) { [weak self] note in
-            guard let id = note.object as? Int else { return }
-            Task { @MainActor in self?.receiveDeepLink(WidgetRoute.item(id).url) }
+        NotificationCenter.default.addObserver(forName: .openNotificationLink, object: nil, queue: .main) { [weak self] note in
+            guard let url = note.object as? URL else { return }
+            Task { @MainActor in self?.receiveDeepLink(url) }
         }
     }
 

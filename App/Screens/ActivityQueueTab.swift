@@ -1037,12 +1037,21 @@ private struct AttentionCard: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
         .actWash(QueueLogic.wash(item))
+        .onAppear(perform: consumeFocus)
+        .onChange(of: model.pendingQueueFocus?.downloadId) { consumeFocus() }
         .sheet(isPresented: $blocking) {
             if let group = blockableGroup {
                 BlockReleaseGroupSheet(group: group, mediaItemId: item.mediaItemId, title: item.title,
                                        claimedResolution: item.heldDetail?.claimedResolution)
             }
         }
+    }
+
+    /// A held-fake push links here with `block=1`: open the dialog on this row.
+    private func consumeFocus() {
+        guard let focus = model.pendingQueueFocus, focus.downloadId == item.id else { return }
+        model.pendingQueueFocus = nil
+        if focus.block, blockableGroup != nil { blocking = true }
     }
 
     private func reason(_ held: Bool) -> String {
