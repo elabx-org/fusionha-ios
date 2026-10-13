@@ -129,6 +129,47 @@ Kind accents (movie sky, series purple, anime pink) appear only as the 3pt kind 
 
 **The posters are the photography.** Grade: they sit on the warm black with a 1pt inner top highlight and a deep falloff shadow, like boxes on a lit shelf. Detail pages bleed the poster to the top edge and fade it into the ground. Nothing is printed on the art. Chips sit under it.
 
+## Display face: options (`fonts.html`, `shots/fonts/sheet.png`)
+
+All five are OFL, bundle in the app, and only set titles and the hero numbers; UI text stays SF Pro. Each is shown as a specimen and on the Library screen.
+
+| Face | Character | Fit |
+|---|---|---|
+| **Bricolage Grotesque** Condensed 800 (current) | warm, slightly quirky, hand-cut | the shop's own lettering |
+| **Big Shoulders Display** 800 | Chicago signage | the closest to a lit marquee; very tall, wraps sooner |
+| **Archivo** ExtraCondensed 800 | neutral film-poster grotesque | the safest; reads well at 34pt too |
+| **Anybody** Condensed 850 | VHS sleeve, squarer counters | the most retro |
+| **Instrument Serif** | Criterion title cards | calmer and editorial; changes the mood the most |
+
+A sixth option, **SF Pro Compressed** (native, no bundling), could not be rendered on this Linux machine.
+
+## Liquid Glass (screen `liquid-glass`)
+
+Glass stays on the navigation layer only (iOS 26 rule, CLAUDE.md), but the mock now shows what the app can use beyond the static tab bar:
+
+- **Content under glass:** posters scroll beneath the top bar and its controls; a scroll-edge fade keeps the status bar legible. The large title collapses into a glass inline title.
+- **Tab bar minimises on scroll** (`tabBarMinimizeBehavior(.onScrollDown)`, already in RootView) to the current tab, and the **downloads bottom accessory** (`tabViewBottomAccessory`) sits beside it: poster, "Andor · S2E10", tier, speed, ETA and a progress ring. Tapping it opens Activity.
+- **Glass groups morph:** the All / HD / 4K segment, kind chips and toolbar groups live in a `GlassEffectContainer` with `glassEffectID`, so selection slides rather than swaps (Reduce Motion: instant).
+- Posters, cards and rows stay solid.
+
+## iPhone Duo (screens `duo-outer`, `duo-open`, `duo-portrait`, `duo-book`)
+
+Follows Apple's HIG page *Designing for iPhone Duo* (2026-09-09, via the HIGAgentSkills reference the owner shared) and the existing `ShellSplitRule` / `DuoLayout.swift`. Sizes are the handoff's calculated ones (not Apple-published): outer ~466 x 678, inner ~890 x 626 landscape, ~626 x 890 portrait.
+
+- **Closed (outer):** the phone layout, compact width. Bars go vertical on the trailing edge: status, then the toolbar (search, ＋, account), then the tab bar at the bottom. No custom top bar on this display.
+- **Open, landscape:** Library leads; the open title is the trailing column at `clamp(56% of width, 360, 620)`. Only the title column (the container on the display edge) gets the vertical bar, with Close · Refresh · Manual import first (Close leads, per HIG).
+- **Open, portrait:** the same split with horizontal bars: the tab bar along the bottom, the title's toolbar on top of its column.
+- **Half open (book):** the fold is a reserved region; the two columns meet at it and nothing is drawn across it.
+- Continuity: the open title and tab survive folding (sheet ↔ column), as built.
+
+## fusionha 0.4.141 to 0.4.187 (handoff, 2026-10-13)
+
+The handoff lists server and web changes the iOS app has not caught up with. The ones that change these screens are now in the mocks:
+
+- **Activity** follows the queue contract: groups *Needs you* (held, first, with "Resolve all held"), Downloading, Up next, Just finished (20 s lane). Held rows say why in plain words ("Not really 2160p: the file is 1920x1080. Release says 2160p."), with a measured-vs-claimed grid, Manual import, Block release group and Remove; status as an ambient wash, never a border. The Pipeline card is phase mode: the stage count moves only when a stage completes, the current stage is indeterminate, no percent and no ETA.
+- **Calendar** uses the new episode codes (`S05·E04`, anime `#30`).
+- **Not designed yet:** the Requests revamp (Discover › Requests: Inbox swipe deck with 5-second Undo, Board, Me too, quota, threads, Report an issue), "Queue clear" (idle summary), Manual Import (phone 3-line rows, Duo list | file split), notification preferences. These are the next screens to design; the API catch-up in code is a separate task.
+
 ## Dense data: progressive disclosure
 
 The web stacks every field of a download in a tall card. On iPhone the card is **compact by default** (what you check at a glance: progress, size, speed, ETA, and the source on one muted line) and **expands in place** on tap to show the release name, a labelled spec grid and labelled actions. Nothing is removed; the queue still fits on a screen. The same pattern applies to version rows on the detail page (tap to expand the spec grid: root, profile, cutoff, monitoring, files) and is the rule for any web card with more than two lines of metadata.

@@ -104,17 +104,16 @@
       "fails": [],
       "warns": [
         "10 distinct text sizes. A type scale has 5 to 7 steps: 72, 56, 34, 20, 17, 16, 15, 13, 12, 11",
-        "Text within 12pt of the screen edge: 5px \"Remove\"",
         "10 distinct left edges in the left third. Align to fewer verticals.",
-        "8 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
+        "10 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
       ],
       "facts": {
         "os": "ios",
         "kind": "list",
         "fonts": {
-          "SF Pro": 69,
+          "SF Pro": 84,
           "Bricolage Grotesque": 6,
-          "SF Mono": 4
+          "SF Mono": 5
         },
         "sizes": [
           72,
@@ -136,14 +135,14 @@
           "800"
         ],
         "leftEdges": 10,
-        "words": 155,
+        "words": 194,
         "headline": "72px, 1 words, 1 line(s)",
         "accentHues": [
           48,
           192,
-          0,
-          24,
           168,
+          24,
+          0,
           264
         ],
         "identity": 6,
@@ -277,11 +276,51 @@
         "identity": 6,
         "cards": 1
       }
+    },
+    {
+      "name": "liquid-glass",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "Largest text is 16px. No element owns the screen. (Mark data-dense if this is deliberate.)"
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "state",
+        "fonts": {
+          "SF Pro": 16,
+          "SF Mono": 18
+        },
+        "sizes": [
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700"
+        ],
+        "leftEdges": 5,
+        "words": 48,
+        "headline": "16px, 1 words, 1 line(s)",
+        "accentHues": [
+          264,
+          168,
+          192,
+          336,
+          48
+        ],
+        "identity": 5,
+        "cards": 0
+      }
     }
   ],
   "exports": [
     "FAIL  page error: request failed: file:///System/Library/Fonts/SFNS.ttf",
     "FAIL  page error: request failed: file:///System/Library/Fonts/SFNSMono.ttf",
-    "warn  identity palette on library, poster-sheet, activity, calendar, signature-1, signature-2: check every hue belongs to one thing, the same thing on every screen, with neutral chrome (color.md §9)."
+    "FAIL  page error: request failed: file:///System/Library/Fonts/SFNSItalic.ttf",
+    "warn  identity palette on library, poster-sheet, activity, calendar, signature-1, signature-2, liquid-glass: check every hue belongs to one thing, the same thing on every screen, with neutral chrome (color.md §9)."
   ]
 }

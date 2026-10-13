@@ -1,0 +1,392 @@
+{
+  "surfaces": [
+    {
+      "name": "font-bricolage",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "Text inside the system's safe areas: \"OFL · variable (width, o\" (home indicator)",
+        "Title Case: \"Bricolage Grotesque, Condensed 800\"; \"October · Activity · Wanted\". Sentence case reads as a person (mark data-proper on real names)."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "state",
+        "fonts": {
+          "SF Pro": 4,
+          "Bricolage Grotesque": 5
+        },
+        "sizes": [
+          72,
+          56,
+          40,
+          17,
+          15,
+          13
+        ],
+        "weights": [
+          "400",
+          "600",
+          "800"
+        ],
+        "leftEdges": 1,
+        "words": 36,
+        "headline": "72px, 1 words, 1 line(s)",
+        "accentHues": [
+          192
+        ],
+        "cards": 0
+      }
+    },
+    {
+      "name": "font-bricolage-library",
+      "type": "screen",
+      "fails": [],
+      "warns": [],
+      "facts": {
+        "os": "ios",
+        "kind": "core",
+        "fonts": {
+          "SF Pro": 14,
+          "Bricolage Grotesque": 1,
+          "SF Mono": 10
+        },
+        "sizes": [
+          56,
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700",
+          "800"
+        ],
+        "leftEdges": 4,
+        "words": 58,
+        "headline": "56px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          192,
+          264,
+          168,
+          336
+        ],
+        "identity": 5,
+        "cards": 0
+      }
+    },
+    {
+      "name": "font-shoulders",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "Text inside the system's safe areas: \"OFL · variable (weight).\" (home indicator)",
+        "Title Case: \"October · Activity · Wanted\". Sentence case reads as a person (mark data-proper on real names)."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "state",
+        "fonts": {
+          "SF Pro": 4,
+          "Big Shoulders Display": 5
+        },
+        "sizes": [
+          72,
+          56,
+          40,
+          17,
+          15,
+          13
+        ],
+        "weights": [
+          "400",
+          "600",
+          "800"
+        ],
+        "leftEdges": 1,
+        "words": 36,
+        "headline": "72px, 1 words, 1 line(s)",
+        "accentHues": [
+          192
+        ],
+        "cards": 0
+      }
+    },
+    {
+      "name": "font-shoulders-library",
+      "type": "screen",
+      "fails": [],
+      "warns": [],
+      "facts": {
+        "os": "ios",
+        "kind": "core",
+        "fonts": {
+          "SF Pro": 14,
+          "Big Shoulders Display": 1,
+          "SF Mono": 10
+        },
+        "sizes": [
+          56,
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700",
+          "800"
+        ],
+        "leftEdges": 4,
+        "words": 58,
+        "headline": "56px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          192,
+          264,
+          168,
+          336
+        ],
+        "identity": 5,
+        "cards": 0
+      }
+    },
+    {
+      "name": "font-archivo",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "Text inside the system's safe areas: \"OFL · variable (width, w\" (home indicator)",
+        "Title Case: \"October · Activity · Wanted\". Sentence case reads as a person (mark data-proper on real names)."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "state",
+        "fonts": {
+          "SF Pro": 4,
+          "Archivo": 5
+        },
+        "sizes": [
+          72,
+          56,
+          40,
+          17,
+          15,
+          13
+        ],
+        "weights": [
+          "400",
+          "600",
+          "800"
+        ],
+        "leftEdges": 1,
+        "words": 34,
+        "headline": "72px, 1 words, 1 line(s)",
+        "accentHues": [
+          192
+        ],
+        "cards": 0
+      }
+    },
+    {
+      "name": "font-archivo-library",
+      "type": "screen",
+      "fails": [],
+      "warns": [],
+      "facts": {
+        "os": "ios",
+        "kind": "core",
+        "fonts": {
+          "SF Pro": 14,
+          "Archivo": 1,
+          "SF Mono": 10
+        },
+        "sizes": [
+          56,
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700",
+          "800"
+        ],
+        "leftEdges": 4,
+        "words": 58,
+        "headline": "56px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          192,
+          264,
+          168,
+          336
+        ],
+        "identity": 5,
+        "cards": 0
+      }
+    },
+    {
+      "name": "font-anybody",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "Text inside the system's safe areas: \"OFL · variable (width, w\" (home indicator)",
+        "Title Case: \"October · Activity · Wanted\". Sentence case reads as a person (mark data-proper on real names)."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "state",
+        "fonts": {
+          "SF Pro": 4,
+          "Anybody": 5
+        },
+        "sizes": [
+          72,
+          56,
+          40,
+          17,
+          15,
+          13
+        ],
+        "weights": [
+          "400",
+          "600",
+          "850"
+        ],
+        "leftEdges": 1,
+        "words": 32,
+        "headline": "72px, 1 words, 1 line(s)",
+        "accentHues": [
+          192
+        ],
+        "cards": 0
+      }
+    },
+    {
+      "name": "font-anybody-library",
+      "type": "screen",
+      "fails": [],
+      "warns": [],
+      "facts": {
+        "os": "ios",
+        "kind": "core",
+        "fonts": {
+          "SF Pro": 14,
+          "Anybody": 1,
+          "SF Mono": 10
+        },
+        "sizes": [
+          56,
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700",
+          "850"
+        ],
+        "leftEdges": 4,
+        "words": 58,
+        "headline": "56px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          192,
+          264,
+          168,
+          336
+        ],
+        "identity": 5,
+        "cards": 0
+      }
+    },
+    {
+      "name": "font-instrument",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "Text inside the system's safe areas: \"OFL · one weight, with i\" (home indicator)",
+        "Title Case: \"October · Activity · Wanted\". Sentence case reads as a person (mark data-proper on real names)."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "state",
+        "fonts": {
+          "SF Pro": 4,
+          "Instrument Serif": 5
+        },
+        "sizes": [
+          72,
+          56,
+          40,
+          17,
+          15,
+          13
+        ],
+        "weights": [
+          "400",
+          "600"
+        ],
+        "leftEdges": 1,
+        "words": 31,
+        "headline": "72px, 1 words, 1 line(s)",
+        "accentHues": [
+          192
+        ],
+        "cards": 0
+      }
+    },
+    {
+      "name": "font-instrument-library",
+      "type": "screen",
+      "fails": [],
+      "warns": [],
+      "facts": {
+        "os": "ios",
+        "kind": "core",
+        "fonts": {
+          "SF Pro": 14,
+          "Instrument Serif": 1,
+          "SF Mono": 10
+        },
+        "sizes": [
+          60,
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700"
+        ],
+        "leftEdges": 4,
+        "words": 58,
+        "headline": "60px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          192,
+          264,
+          168,
+          336
+        ],
+        "identity": 5,
+        "cards": 0
+      }
+    }
+  ],
+  "exports": [
+    "FAIL  page error: request failed: file:///System/Library/Fonts/SFNS.ttf",
+    "FAIL  page error: request failed: file:///System/Library/Fonts/SFNSMono.ttf",
+    "warn  identity palette on font-bricolage-library, font-shoulders-library, font-archivo-library, font-anybody-library, font-instrument-library: check every hue belongs to one thing, the same thing on every screen, with neutral chrome (color.md §9)."
+  ]
+}

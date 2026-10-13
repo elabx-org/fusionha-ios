@@ -67,6 +67,7 @@
   </nav>`;
 
   window.KIT = { poster, I, chip, tabs };
+  for (const el of document.querySelectorAll(".tabdot")) el.innerHTML = I.library;
   for (const el of document.querySelectorAll("[data-poster]")) el.insertAdjacentHTML("afterbegin", poster(el.dataset.poster));
   for (const el of document.querySelectorAll("[data-icon]")) el.insertAdjacentHTML("afterbegin", I[el.dataset.icon] || "");
   for (const el of document.querySelectorAll("[data-tabs]")) el.outerHTML = tabs(el.dataset.tabs, JSON.parse(el.dataset.badges || "{}"));

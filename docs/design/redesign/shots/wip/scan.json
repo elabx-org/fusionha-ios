@@ -6,16 +6,16 @@
       "fails": [],
       "warns": [
         "10 distinct text sizes. A type scale has 5 to 7 steps: 72, 56, 34, 20, 17, 16, 15, 13, 12, 11",
-        "8 distinct left edges in the left third. Align to fewer verticals.",
-        "8 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
+        "9 distinct left edges in the left third. Align to fewer verticals.",
+        "10 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
       ],
       "facts": {
         "os": "ios",
         "kind": "list",
         "fonts": {
-          "SF Pro": 69,
+          "SF Pro": 84,
           "Bricolage Grotesque": 6,
-          "SF Mono": 4
+          "SF Mono": 5
         },
         "sizes": [
           72,
@@ -36,25 +36,75 @@
           "700",
           "800"
         ],
-        "leftEdges": 8,
-        "words": 155,
+        "leftEdges": 9,
+        "words": 191,
         "headline": "72px, 1 words, 1 line(s)",
         "accentHues": [
           48,
           192,
-          0,
-          24,
           168,
+          24,
+          0,
           264
         ],
         "identity": 6,
         "cards": 5
+      }
+    },
+    {
+      "name": "calendar",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "Text within 12pt of the screen edge: 8px \"Anime\"",
+        "10 distinct left edges in the left third. Align to fewer verticals."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "list",
+        "fonts": {
+          "SF Pro": 39,
+          "Bricolage Grotesque": 1,
+          "SF Mono": 7
+        },
+        "sizes": [
+          56,
+          20,
+          17,
+          16,
+          15,
+          13,
+          11
+        ],
+        "weights": [
+          "400",
+          "500",
+          "600",
+          "700",
+          "800",
+          "900"
+        ],
+        "leftEdges": 10,
+        "words": 80,
+        "headline": "56px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          168,
+          192,
+          216,
+          264,
+          336,
+          0
+        ],
+        "identity": 7,
+        "cards": 0
       }
     }
   ],
   "exports": [
     "FAIL  page error: request failed: file:///System/Library/Fonts/SFNS.ttf",
     "FAIL  page error: request failed: file:///System/Library/Fonts/SFNSMono.ttf",
-    "warn  identity palette on activity: check every hue belongs to one thing, the same thing on every screen, with neutral chrome (color.md §9)."
+    "FAIL  page error: request failed: file:///System/Library/Fonts/SFNSItalic.ttf",
+    "warn  identity palette on activity, calendar: check every hue belongs to one thing, the same thing on every screen, with neutral chrome (color.md §9)."
   ]
 }

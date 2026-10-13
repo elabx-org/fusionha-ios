@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>fusionha display faces</title>
+<link rel="stylesheet" href="file:///home/user/fusionha-ios/.claude/skills/app-designer-pro/assets/device.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Big+Shoulders+Display:wght@700;800;900&family=Archivo:wdth,wght@62..125,400..900&family=Instrument+Serif:ital@0;1&family=Anybody:wdth,wght@50..150,400..900&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="screens.css">
+<style>
+  /* Each option sets the display face and its axes; nothing else changes. */
+  .f-bricolage { --display: "Bricolage Grotesque"; --dvar: "wdth" 75, "opsz" 96; --dw: 800; --dtrack: -1.2px; }
+  .f-shoulders { --display: "Big Shoulders Display"; --dvar: normal; --dw: 800; --dtrack: -0.5px; }
+  .f-archivo   { --display: "Archivo"; --dvar: "wdth" 62; --dw: 800; --dtrack: -1px; }
+  .f-anybody   { --display: "Anybody"; --dvar: "wdth" 60; --dw: 850; --dtrack: -1px; }
+  .f-instrument{ --display: "Instrument Serif"; --dvar: normal; --dw: 400; --dtrack: -1px; }
+  .screen .display { font-family: var(--display); font-variation-settings: var(--dvar); font-weight: var(--dw); letter-spacing: var(--dtrack); }
+  .f-instrument .page-title { font-size: 60px; }
+  .spec-body { position: absolute; inset: var(--safe-top) 0 0; padding: 20px 20px 0; display: flex; flex-direction: column; }
+  .spec-body .name { font: 600 13px var(--sf); color: var(--ink-3); }
+  .spec-body .why { font: 400 15px/1.4 var(--sf); color: var(--ink-2); margin: 6px 0 0; }
+  .spec-body .a { font-size: 72px; line-height: .95; margin: 26px 0 0; }
+  .spec-body .b { font-size: 56px; line-height: .95; margin: 26px 0 0; }
+  .spec-body .b span { color: var(--ink-3); }
+  .spec-body .c { font-size: 72px; line-height: .9; margin: 26px 0 0; color: var(--grab); }
+  .spec-body .c small { font: 600 17px var(--sf); color: var(--ink-2); margin-left: 6px; letter-spacing: 0; }
+  .spec-body .d { font-size: 40px; line-height: 1; margin: 26px 0 0; }
+  .spec-body .lic { margin-top: auto; padding-bottom: 50px; font: 400 13px/1.4 var(--sf); color: var(--ink-3); }
+</style>
+</head>
+<body>
+<script>
+  const opts = [
+    ["bricolage", "Bricolage Grotesque, Condensed 800", "Current pick. Warm, a little quirky, like hand-cut shop lettering.", "OFL · variable (width, optical size)"],
+    ["shoulders", "Big Shoulders Display 800", "Chicago signage. The closest to a lit marquee over a rental shop.", "OFL · variable (weight)"],
+    ["archivo", "Archivo ExtraCondensed 800", "A film-poster grotesque: neutral, tall, very legible at 34pt too.", "OFL · variable (width, weight)"],
+    ["anybody", "Anybody, Condensed 850", "A VHS-sleeve face: squarer counters, a little retro.", "OFL · variable (width, weight)"],
+    ["instrument", "Instrument Serif", "Criterion-style title cards. Calmer and more editorial.", "OFL · one weight, with italic"],
+  ];
+  document.write(opts.map(([k, n, why, lic]) => `
+    <section class="screen f-${k}" data-name="font-${k}" data-kind="state" data-theme="dark" data-chrome="light" data-time="22:14">
+      <div class="spec-body"><div class="name">${n}</div><p class="why">${why}</p>
+        <div class="display a">Library</div>
+        <div class="display b">Andor <span>2022</span></div>
+        <div class="display c num">41.6<small>MB/s</small></div>
+        <div class="display d">October · Activity · Wanted</div>
+        <div class="lic">${lic}. Bundled in the app; UI text stays SF Pro.</div></div>
+    </section>
+    <section class="screen f-${k}" data-name="font-${k}-library" data-kind="core" data-theme="dark" data-time="22:14" data-palette="identity" data-build="library" data-andor="62"></section>`).join(""));
+</script>
+<script src="build.js"></script>
+<script src="kit.js"></script>
+<script src="file:///home/user/fusionha-ios/.claude/skills/app-designer-pro/assets/device.js"></script>
+</body>
+</html>
