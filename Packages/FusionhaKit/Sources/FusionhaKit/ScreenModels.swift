@@ -360,7 +360,7 @@ public struct WantedEpisode: Decodable, Sendable, Identifiable, Hashable {
     public let title: String?
     public let airDate: String?
 
-    public var code: String { String(format: "S%02dE%02d", seasonNumber, episodeNumber) }
+    public var code: String { EpisodeCode.episode(season: seasonNumber, episode: episodeNumber, separator: "") }
 }
 
 // MARK: - History  (GET /api/v1/history)

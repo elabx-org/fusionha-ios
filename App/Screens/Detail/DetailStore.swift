@@ -333,7 +333,7 @@ final class DetailStore {
     /// Per-episode monitor toggle (`PATCH /api/v1/library/{id}/episodes/{eid}`).
     func setEpisodeMonitored(_ episode: Episode, seasonNumber: Int, _ on: Bool) async {
         guard let client else { return }
-        let code = "S\(seasonNumber)·E\(String(format: "%02d", episode.episodeNumber))"
+        let code = EpisodeCode.episode(season: seasonNumber, episode: episode.episodeNumber)
         episodeMonitorOverride[episode.id] = on
         do {
             try await client.setEpisodeMonitored(itemId: itemId, episodeId: episode.id, monitored: on)

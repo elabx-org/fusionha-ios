@@ -168,18 +168,18 @@ extension CalendarEntry {
         return instant <= now
     }
 
-    /// `entryLabel`: `Theatrical` / `Release` / `#28` / `S1·E5` / `Episode`.
+    /// `entryLabel`: `Theatrical` / `Release` / `#28` / `S01·E05` / `Episode`.
     public var label: String {
         if isMovie { return movieReleaseType?.label ?? "Release" }
-        if isAnime, let abs = absoluteNumber { return "#\(abs)" }
-        if let s = seasonNumber, let e = episodeNumber { return "S\(s)·E\(e)" }
+        if isAnime, let abs = absoluteNumber { return EpisodeCode.absolute(abs) }
+        if let s = seasonNumber, let e = episodeNumber { return EpisodeCode.episode(season: s, episode: e) }
         return "Episode"
     }
 
     /// Anime keeps its season·episode as well as the absolute number.
     public var animeSE: String? {
         guard isAnime, let s = seasonNumber, let e = episodeNumber else { return nil }
-        return "S\(s)·E\(e)"
+        return EpisodeCode.episode(season: s, episode: e)
     }
 
     /// The code shown on rows and week cards.

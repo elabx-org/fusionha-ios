@@ -289,7 +289,7 @@ struct RequestModal: View {
                         Button { toggleEpisode(season, e) } label: {
                             HStack(spacing: 10) {
                                 WebCheckSquare(checked: selected, size: 18)
-                                Text("S\(n)·E\(e)").font(.system(size: 11.5, design: .monospaced)).foregroundStyle(Theme.mut)
+                                Text(EpisodeCode.episode(season: n, episode: e)).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(Theme.mut)
                                     .frame(minWidth: 56, alignment: .leading)
                                 Text(episodeTitles[n]?[e] ?? "Episode \(e)")
                                     .font(.system(size: 12.5)).foregroundStyle(selected ? Theme.txt : Theme.mut)

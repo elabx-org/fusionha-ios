@@ -32,7 +32,7 @@ final class CalendarTests: XCTestCase {
         XCTAssertEqual(movie.movieReleaseType, .digital)
         XCTAssertEqual(movie.label, "Digital")
         XCTAssertEqual(movie.backdropUrl, "b.jpg")
-        XCTAssertEqual(try episode().label, "S1·E5")
+        XCTAssertEqual(try episode().label, "S01·E05")
         XCTAssertEqual(try episode(anime: true, abs: 28).label, "#28")
         XCTAssertEqual(try episode(anime: true, abs: 28).code, "S1·E5")
     }

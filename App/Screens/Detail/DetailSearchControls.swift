@@ -175,7 +175,7 @@ struct InteractiveSearchButton<Face: View>: View {
                     ForEach(detail.seasonsNewestFirst) { season in
                         Button {
                             store.interactive = InteractiveTarget(editionIds: [edition.id], seasonNumber: season.seasonNumber,
-                                                                  subtitle: "S\(season.seasonNumber) · Season pack")
+                                                                  subtitle: "\(EpisodeCode.season(season.seasonNumber)) · Season pack")
                         } label: {
                             Label {
                                 Text(season.title)
@@ -191,9 +191,9 @@ struct InteractiveSearchButton<Face: View>: View {
                                 Button {
                                     store.interactive = InteractiveTarget(
                                         editionIds: [edition.id], episodeId: episode.id,
-                                        subtitle: "S\(season.seasonNumber)·E\(episode.episodeNumber)")
+                                        subtitle: EpisodeCode.episode(season: season.seasonNumber, episode: episode.episodeNumber))
                                 } label: {
-                                    Text("S\(season.seasonNumber)·E\(episode.episodeNumber)")
+                                    Text(EpisodeCode.episode(season: season.seasonNumber, episode: episode.episodeNumber))
                                     Text(episode.title ?? "TBA")
                                 }
                             }

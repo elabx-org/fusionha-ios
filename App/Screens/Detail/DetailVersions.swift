@@ -768,7 +768,7 @@ struct DetailEpisodeTicks: View {
     }
 
     private func code(_ episode: Episode) -> String {
-        "S\(season.seasonNumber)·E\(String(format: "%02d", episode.episodeNumber))"
+        EpisodeCode.episode(season: season.seasonNumber, episode: episode.episodeNumber)
     }
 
     private func statusText(_ episode: Episode, kind: TickKind, now: Date) -> String {

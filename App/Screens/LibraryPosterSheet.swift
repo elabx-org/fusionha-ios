@@ -118,8 +118,8 @@ enum PosterSheetModel {
     /// The heading subtitle the search sheet shows for a target.
     static func subtitle(_ target: SheetSearchTarget, version: DetailEdition) -> String {
         switch target {
-        case .episode(let season, _, let number): return "S\(season)·E\(number)"
-        case .season(let season): return "S\(season) · Season pack"
+        case .episode(let season, _, let number): return EpisodeCode.episode(season: season, episode: number)
+        case .season(let season): return "\(EpisodeCode.season(season)) · Season pack"
         case .item: return version.label
         }
     }
@@ -410,7 +410,7 @@ struct LibraryPosterSheet: View {
     private func versionsPage(_ target: SheetSearchTarget, back: Page) -> some View {
         let what: String
         switch target {
-        case .episode(let season, _, let number): what = "S\(season)·E\(number)"
+        case .episode(let season, _, let number): what = EpisodeCode.episode(season: season, episode: number)
         case .season(let season): what = "Season \(season) · season pack"
         case .item: what = isSeries ? "Whole series" : item.title
         }

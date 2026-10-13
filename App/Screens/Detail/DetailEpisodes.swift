@@ -31,7 +31,7 @@ private struct EpisodeCard: View {
     @State private var expanded = false
 
     private var code: String {
-        "S\(String(format: "%02d", season.seasonNumber))E\(String(format: "%02d", episode.episodeNumber))"
+        EpisodeCode.episode(season: season.seasonNumber, episode: episode.episodeNumber, separator: "")
     }
 
     var body: some View {
