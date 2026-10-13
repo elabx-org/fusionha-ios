@@ -56,6 +56,15 @@ public struct HeldDetail: Decodable, Sendable, Hashable {
     public let currentCf: Int?
     public let currentGroup: String?
     public let verdict: String?
+    // Mislabel guard (fusionha 0.4.166-0.4.174) and HDR proof; all optional.
+    public let releaseGroup: String?
+    public let claimedResolution: Int?
+    public let probedResolutionBucket: Int?
+    public let currentFormats: [String]?
+    public let releaseBlocklisted: Bool?
+    public let keptStagingPaths: [String]?
+    public let claimedHdr: [String]?
+    public let probedHdr: String?
 }
 
 public struct HeldResolution: Decodable, Sendable, Hashable {
