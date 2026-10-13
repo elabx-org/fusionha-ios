@@ -44,6 +44,12 @@ Checked against `before/web-mobile-*.png` and brought in line in rounds 3 and 4:
 
 - [x] Library cell: one **rail per version** under the poster (tier chip · bar · have/total with ✓ / ↓ / ↑), plus year · kind glyph. Chips are coloured by **tier** (HD purple `#A78BFA`, 4K cyan `#22D3EE`); the rail carries the status colour.
 - [x] Library header: "N titles · M versions", the stats button (beside the title), the All / HD / 4K segment, the kinds as an "All kinds ▾" menu with counts (the web's kinds bar lives in the stats sheet), Filters, grid / list, Select.
+- [x] **Field-level audit (owner review):** every per-item field the web shows is on the iOS screen, or one tap away:
+  - Activity download card: poster with progress ring, title, SxxEyy · episode, tier chip, big %, bar, transferred / total, speed, ETA, and, on tap (expanded in place), the release name, Size, Client, Indexer, Protocol, State, Queued, plus Interactive search, More (the web's ⋯ menu) and Remove. The web's poster-colour progress wash is kept.
+  - Activity Pipeline card: "1 job queued · 3 downloading · speed", Step n/6, the six named stages, the ETA note. Up next card with the Downloading → Linking → Caching → Importing stepper and "Waiting to start…".
+  - Library card: monitor bookmark (filled / outline, beside the year since iOS keeps art clean), year · kind glyph, Anime tag, the rails with ✓ ↓ ↑ or "Wanted"; "n need attention" in the header.
+  - Detail: the monitor bookmark beside the title, Manual search / import and Refresh ▾ in the action rail, Versions footprint bar, "Tabs show all versions", Search all, Add version, per-version quality / media / CF chips and a per-version search, the Overview tab, Metadata via TMDB.
+  - Calendar: the status legend and the Anime tag.
 - [x] Activity: Manual import, the queue toolbar (refresh, Clear queue, Select) and the Pipeline job line (step n of 6) next to the bandwidth hero.
 - [x] Monitor and in-flight state on the poster: the web shows small corner badges; iOS keeps posters clean (iOS rule), so monitor shows as the filled bookmark in the rail row and in-flight as the rail's ↓.
 - [x] Detail: status chip, title + year, tagline, meta line ending "Metadata via TMDB", genres, overview, the item-action rail (Refresh ▾, Automatic search, Interactive search, Preview rename, Manage files, Report an issue, Edit, Delete) with "applies to all versions", then Versions with "Tabs show".
@@ -122,6 +128,10 @@ Kind accents (movie sky, series purple, anime pink) appear only as the 3pt kind 
 ## Richness
 
 **The posters are the photography.** Grade: they sit on the warm black with a 1pt inner top highlight and a deep falloff shadow, like boxes on a lit shelf. Detail pages bleed the poster to the top edge and fade it into the ground. Nothing is printed on the art. Chips sit under it.
+
+## Dense data: progressive disclosure
+
+The web stacks every field of a download in a tall card. On iPhone the card is **compact by default** (what you check at a glance: progress, size, speed, ETA, and the source on one muted line) and **expands in place** on tap to show the release name, a labelled spec grid and labelled actions. Nothing is removed; the queue still fits on a screen. The same pattern applies to version rows on the detail page (tap to expand the spec grid: root, profile, cutoff, monitoring, files) and is the rule for any web card with more than two lines of metadata.
 
 ## Signature: the chip fills
 

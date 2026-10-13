@@ -14,7 +14,7 @@
 <section class="screen" data-name="library" data-kind="core" data-theme="dark" data-time="22:14" data-palette="identity" data-build="library" data-andor="62"></section>
 
 <!-- 2. Detail: Andor, as the large sheet over Library -->
-<section class="screen detail" data-name="detail" data-kind="detail" data-theme="dark" data-time="22:15" data-palette="identity">
+<section class="screen detail" data-name="detail" data-kind="detail" data-theme="dark" data-time="22:15" data-palette="identity" data-tall>
   <div class="sheet" data-system>
     <div class="hero" data-poster="andor"><div class="hero-fade"></div></div>
     <div class="sheet-bar">
@@ -24,7 +24,7 @@
     <div class="dscroll" data-scrolls>
       <div class="d-head">
         <span class="status-chip">Ended</span>
-        <h1 class="display d-title">Andor <span class="yr">2022</span></h1>
+        <div class="d-titlerow"><h1 class="display d-title">Andor <span class="yr">2022</span></h1><div class="rb glass on" data-icon="bookmark" title="Monitored"></div></div>
         <p class="tagline">Every rebellion starts somewhere.</p>
         <p class="d-meta">Series · 2 versions · 24 episodes · <b>★ 8.4</b> · TV-14</p>
         <div class="genres"><span>Sci-Fi</span><span>Drama</span><span>Thriller</span></div>
@@ -34,25 +34,33 @@
       <div class="rail" data-scrolls>
         <div class="primary"><span data-icon="magnifier"></span>Automatic search</div>
         <div class="rb glass" data-icon="person" title="Interactive search"></div>
-        <div class="rb glass" data-icon="refresh" title="Refresh"></div>
+        <div class="rb glass" data-icon="tray" title="Manual search / import"></div>
+        <div class="rcaret glass"><span data-icon="refresh"></span><span data-icon="down"></span></div>
         <div class="rb glass" data-icon="ellipsis" title="More: Preview rename, Manage episodes, Report an issue, Edit, Delete"></div>
       </div>
 
-      <div class="section-h">Versions <span>2 versions · 118.6 GB on disk</span></div>
+      <div class="section-h">Versions <span>2 versions · 1 complete · 118.6 GB</span></div>
+      <div class="vhead">
+        <div class="foot-bar"><i style="flex:61.2;background:var(--hd)"></i><i style="flex:57.4;background:var(--uhd)"></i></div>
+        <span class="scope">Tabs show <b>all versions</b></span>
+      </div>
+      <div class="vacts"><span><i data-icon="magnifier"></i>Search all</span><span><i data-icon="plus"></i>Add version</span></div>
       <div class="versions">
         <div class="obj ver">
           <div class="vtop"><span class="ed ed-hd lg">HD·1080p</span><span class="vsize num">61.2 GB</span></div>
           <div class="vline">24 of 24 on disk · best quality reached</div>
+          <div class="qchips"><span>WEBDL-1080p</span><span>DDP5.1</span><span>x264</span><span>CF +1250</span><i class="vs" data-icon="magnifier"></i></div>
           <div class="meter"><i style="width:100%;background:var(--done)"></i></div>
         </div>
         <div class="obj ver">
           <div class="vtop"><span class="ed ed-uhd lg">UHD·4K</span><span class="vsize num">57.4 GB</span></div>
           <div class="vline"><b class="c-grab">↓ S2E10 at 62%</b> · 21 of 24 on disk · 2 missing</div>
+          <div class="qchips"><span>WEBDL-2160p</span><span>DV HDR10</span><span>Atmos</span><span>CF +2100</span><i class="vs" data-icon="magnifier"></i></div>
           <div class="meter"><i style="width:87.5%;background:var(--done)"></i><i style="width:4.2%;background:var(--grab)"></i><i style="width:8.3%;background:var(--miss)"></i></div>
         </div>
       </div>
 
-      <div class="tabs-u"><span class="on">Seasons</span><span>Files</span><span>History</span><span>Searches</span></div>
+      <div class="tabs-u" data-scrolls><span>Overview</span><span class="on">Seasons</span><span>Files</span><span>History</span><span>Searches</span></div>
       <div class="season">
         <div class="s-h"><b>Season 2</b><span class="num">12 episodes · 9 of 12 in 4K</span><span class="sv" data-icon="down"></span></div>
         <div class="ep">
@@ -98,15 +106,16 @@
   </div>
 </section>
 
-<!-- 4. Activity: Queue -->
-<section class="screen activity" data-name="activity" data-kind="list" data-theme="dark" data-time="22:16" data-palette="identity">
+<!-- 4. Activity: Queue (the whole scrolling page) -->
+<section class="screen activity" data-name="activity" data-kind="list" data-theme="dark" data-time="22:16" data-palette="identity" data-tall>
   <div class="body">
     <div class="topbar">
       <img class="logo" src="fusionha-logo.png" alt="fusionha">
-      <div class="pill glass"><span class="ic" data-icon="search"></span>Search activity</div>
+      <div class="pill glass"><span class="ic" data-icon="search"></span>Search by title</div>
       <div class="avatar">E<span class="dot"></span></div>
     </div>
     <div class="title-row"><h1 class="display page-title">Activity</h1><div class="mi glass"><span data-icon="tray"></span>Manual import</div></div>
+    <p class="caption"><b style="color:var(--grab)">4 downloading</b> · live</p>
     <div class="segs" data-scrolls>
       <span class="on">Queue <em>4</em></span><span>History</span><span>Blocklist</span><span>Tasks</span><span>Audit</span><span>Indexers</span>
     </div>
@@ -114,28 +123,58 @@
       <div class="bw">
         <div class="bw-num display num">41.6<small>MB/s</small></div>
         <div class="bw-side"><b class="num">3.2 GB left</b><span>4 in queue · ends 22:24</span></div>
-        <div class="pipe"><b>Pipeline</b><span>1 job queued · step 1 of 6</span><div class="steps"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div></div>
         <svg class="spark" viewBox="0 0 370 44" preserveAspectRatio="none" aria-hidden="true"><path d="M0 34 L20 30 40 32 60 22 80 26 100 18 120 20 140 12 160 16 180 9 200 14 220 8 240 12 260 6 280 10 300 7 320 11 340 5 370 8" fill="none" stroke="#22D3EE" stroke-width="2" stroke-linejoin="round"/><path d="M0 34 L20 30 40 32 60 22 80 26 100 18 120 20 140 12 160 16 180 9 200 14 220 8 240 12 260 6 280 10 300 7 320 11 340 5 370 8 V44 H0Z" fill="#F4ECE1" opacity=".05"/></svg>
       </div>
 
-      <div class="group-h">Downloading <span>2</span><div class="qtools"><span class="g36 glass" data-icon="refresh"></span><span class="g36 glass warn" data-icon="trash"></span><span class="g36 glass" data-icon="select"></span></div></div>
-      <div class="obj q">
-        <div class="q-poster poster" data-poster="andor"></div>
-        <div class="q-main">
-          <b>Andor</b><span class="q-sub">S02E10 · Make It Stop</span>
-          <div class="q-meta"><span class="pair"><span class="ed ed-uhd">4K</span><b class="st c-grab">62%</b></span><span class="num">28.4 MB/s · 3 min</span></div>
-          <div class="meter"><i style="width:62%;background:var(--grab)"></i></div>
-        </div>
-        <div class="q-more" data-icon="ellipsis"></div>
+      <div class="obj pipe-card">
+        <div class="pc-top"><b>Pipeline</b><span>1 job queued · <em>3 downloading</em> · 41.6 MB/s</span></div>
+        <div class="pc-step"><b class="display">Step 1<small>/6</small></b><span>Queued</span></div>
+        <div class="pc-bar"><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="pc-stages"><span class="on">Queued</span><span>Parsing</span><span>Processed</span><span>Linking</span><span>Caching</span><span>Importing</span></div>
+        <p class="pc-note">Symlink jobs finish in seconds, so there's no ETA.</p>
       </div>
-      <div class="obj q">
-        <div class="q-poster poster" data-poster="severance"></div>
-        <div class="q-main">
-          <b>Severance</b><span class="q-sub">S02E01 · Hello, Ms. Cobel</span>
-          <div class="q-meta"><span class="pair"><span class="ed ed-hd">HD</span><b class="st c-grab">18%</b></span><span class="num">9.1 MB/s · 6 min</span></div>
-          <div class="meter"><i style="width:18%;background:var(--grab)"></i></div>
+
+      <div class="group-h">Downloading <span>2</span><div class="qtools"><span class="g36 glass" data-icon="refresh"></span><span class="g36 glass warn" data-icon="trash"></span><span class="g36 glass" data-icon="select"></span></div></div>
+      <div class="obj dl open" style="--p:64%">
+        <div class="dl-head">
+          <div class="ring" style="--p:64"><div class="q-poster poster" data-poster="andor"></div></div>
+          <div class="dl-t"><b>Andor</b><span>S02E10 · Make It Stop</span><span class="ed ed-uhd">UHD·4K</span></div>
+          <b class="dl-pct display num">64%</b>
         </div>
-        <div class="q-more" data-icon="ellipsis"></div>
+        <div class="meter"><i style="width:64%;background:var(--grab)"></i></div>
+        <p class="dl-line num"><b>5.0 of 7.8 GB</b> · 28.4 MB/s · 3 min left</p>
+        <p class="rel" data-ugc>Andor.S02E10.2160p.DSNP.WEB-DL.DDP5.1.Atmos.DV.HDR.H.265-FLUX</p>
+        <dl class="spec">
+          <div><dt>Size</dt><dd>7.8 GB</dd></div><div><dt>Client</dt><dd>qBittorrent</dd></div>
+          <div><dt>Indexer</dt><dd>Torznab</dd></div><div><dt>Protocol</dt><dd>torrent</dd></div>
+          <div><dt>State</dt><dd class="c-grab">downloading</dd></div><div><dt>Queued</dt><dd>1h ago</dd></div>
+        </dl>
+        <div class="dl-acts">
+          <span><i data-icon="person"></i>Interactive search</span>
+          <span><i data-icon="ellipsis"></i>More</span>
+          <span class="danger"><i data-icon="trash"></i>Remove</span>
+        </div>
+      </div>
+      <div class="obj dl" style="--p:18%">
+        <div class="dl-head">
+          <div class="ring" style="--p:18"><div class="q-poster poster" data-poster="severance"></div></div>
+          <div class="dl-t"><b>Severance</b><span>S02E01 · Hello, Ms. Cobel</span><span class="ed ed-hd">HD·1080p</span></div>
+          <b class="dl-pct display num">18%</b>
+        </div>
+        <div class="meter"><i style="width:18%;background:var(--grab)"></i></div>
+        <p class="dl-line num"><b>0.6 of 3.1 GB</b> · 9.1 MB/s · 6 min left</p>
+        <p class="dl-src">qBittorrent · Nyaa · torrent · queued 12 min ago <span class="chev" data-icon="down"></span></p>
+      </div>
+
+      <div class="group-h">Up next <span>1</span></div>
+      <div class="obj dl next">
+        <div class="dl-head">
+          <div class="q-poster poster" data-poster="silo"></div>
+          <div class="dl-t"><b>Silo</b><span>S02E04 · Barricade</span><span class="ed ed-uhd">UHD·4K</span></div>
+          <div class="q-more" data-icon="ellipsis"></div>
+        </div>
+        <div class="stepper"><span class="on">Downloading</span><i></i><span>Linking</span><i></i><span>Caching</span><i></i><span>Importing</span></div>
+        <p class="dl-meta">Waiting to start…</p>
       </div>
 
       <div class="group-h">Held <span>1</span></div>
@@ -178,6 +217,7 @@
       <div class="g36 glass" data-icon="feed"></div>
     </div>
     <div class="agenda" data-scrolls>
+      <div class="legend"><span><i style="background:var(--done)"></i>Downloaded</span><span><i style="background:var(--grab)"></i>Downloading</span><span><i style="background:var(--miss)"></i>Missing</span><span><i style="background:var(--unaired)"></i>Unaired</span></div>
       <div class="day-h" data-proper>Today <span>Monday 13 October</span></div>
       <div class="ev"><div class="ev-p poster" data-poster="slowhorses"></div>
         <div class="ev-t"><b>Slow Horses</b><span>S5E4 · Missing Persons</span></div>
@@ -192,7 +232,7 @@
         <div class="ev-r"><span class="num">02:00</span><div class="eds"><span class="ed ed-hd">HD</span></div></div></div>
       <div class="day-h" data-proper>Thursday <span>16 October</span></div>
       <div class="ev"><div class="ev-p poster" data-poster="frieren"></div>
-        <div class="ev-t"><b>Frieren</b><span>S2E2 · simulcast</span></div>
+        <div class="ev-t"><b>Frieren</b><span>S2E2 · simulcast · <em class="an">Anime</em></span></div>
         <div class="ev-r"><span class="num">16:30</span><div class="eds"><span class="ed ed-hd">HD</span></div></div></div>
     </div>
   </div>

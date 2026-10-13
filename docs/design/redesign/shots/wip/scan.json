@@ -1,0 +1,60 @@
+{
+  "surfaces": [
+    {
+      "name": "activity",
+      "type": "screen",
+      "fails": [],
+      "warns": [
+        "10 distinct text sizes. A type scale has 5 to 7 steps: 72, 56, 34, 20, 17, 16, 15, 13, 12, 11",
+        "8 distinct left edges in the left third. Align to fewer verticals.",
+        "8 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "list",
+        "fonts": {
+          "SF Pro": 69,
+          "Bricolage Grotesque": 6,
+          "SF Mono": 4
+        },
+        "sizes": [
+          72,
+          56,
+          34,
+          20,
+          17,
+          16,
+          15,
+          13,
+          12,
+          11
+        ],
+        "weights": [
+          "400",
+          "500",
+          "600",
+          "700",
+          "800"
+        ],
+        "leftEdges": 8,
+        "words": 155,
+        "headline": "72px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          192,
+          0,
+          24,
+          168,
+          264
+        ],
+        "identity": 6,
+        "cards": 5
+      }
+    }
+  ],
+  "exports": [
+    "FAIL  page error: request failed: file:///System/Library/Fonts/SFNS.ttf",
+    "FAIL  page error: request failed: file:///System/Library/Fonts/SFNSMono.ttf",
+    "warn  identity palette on activity: check every hue belongs to one thing, the same thing on every screen, with neutral chrome (color.md §9)."
+  ]
+}

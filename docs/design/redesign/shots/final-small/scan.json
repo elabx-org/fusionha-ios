@@ -9,9 +9,9 @@
         "os": "ios",
         "kind": "core",
         "fonts": {
-          "SF Pro": 12,
+          "SF Pro": 14,
           "Bricolage Grotesque": 1,
-          "SF Mono": 10
+          "SF Mono": 6
         },
         "sizes": [
           56,
@@ -27,15 +27,16 @@
           "800"
         ],
         "leftEdges": 4,
-        "words": 38,
+        "words": 42,
         "headline": "56px, 1 words, 1 line(s)",
         "accentHues": [
           48,
           192,
           264,
-          168
+          168,
+          336
         ],
-        "identity": 4,
+        "identity": 5,
         "cards": 0
       }
     },
@@ -51,7 +52,7 @@
         "sizes": [],
         "weights": [],
         "leftEdges": 0,
-        "words": 52,
+        "words": 155,
         "accentHues": [],
         "cards": 0
       }
@@ -83,16 +84,17 @@
           "700"
         ],
         "leftEdges": 2,
-        "words": 55,
+        "words": 59,
         "headline": "20px, 1 words, 1 line(s)",
         "accentHues": [
           48,
           192,
           264,
           168,
+          336,
           0
         ],
-        "identity": 5,
+        "identity": 6,
         "cards": 2
       }
     },
@@ -101,24 +103,29 @@
       "type": "screen",
       "fails": [],
       "warns": [
-        "7 distinct left edges in the left third. Align to fewer verticals."
+        "10 distinct text sizes. A type scale has 5 to 7 steps: 72, 56, 34, 20, 17, 16, 15, 13, 12, 11",
+        "Text within 12pt of the screen edge: 5px \"Remove\"",
+        "10 distinct left edges in the left third. Align to fewer verticals.",
+        "8 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
       ],
       "facts": {
         "os": "ios",
         "kind": "list",
         "fonts": {
-          "SF Pro": 20,
-          "Bricolage Grotesque": 2,
-          "SF Mono": 2
+          "SF Pro": 69,
+          "Bricolage Grotesque": 6,
+          "SF Mono": 4
         },
         "sizes": [
           72,
           56,
+          34,
           20,
           17,
           16,
           15,
           13,
+          12,
           11
         ],
         "weights": [
@@ -128,8 +135,8 @@
           "700",
           "800"
         ],
-        "leftEdges": 7,
-        "words": 61,
+        "leftEdges": 10,
+        "words": 155,
         "headline": "72px, 1 words, 1 line(s)",
         "accentHues": [
           48,
@@ -140,7 +147,7 @@
           264
         ],
         "identity": 6,
-        "cards": 2
+        "cards": 5
       }
     },
     {
@@ -148,13 +155,13 @@
       "type": "screen",
       "fails": [],
       "warns": [
-        "9 distinct left edges in the left third. Align to fewer verticals."
+        "10 distinct left edges in the left third. Align to fewer verticals."
       ],
       "facts": {
         "os": "ios",
         "kind": "list",
         "fonts": {
-          "SF Pro": 26,
+          "SF Pro": 30,
           "Bricolage Grotesque": 1,
           "SF Mono": 2
         },
@@ -175,8 +182,8 @@
           "800",
           "900"
         ],
-        "leftEdges": 9,
-        "words": 61,
+        "leftEdges": 10,
+        "words": 65,
         "headline": "56px, 1 words, 1 line(s)",
         "accentHues": [
           48,
@@ -199,9 +206,9 @@
         "os": "ios",
         "kind": "state",
         "fonts": {
-          "SF Pro": 12,
+          "SF Pro": 14,
           "Bricolage Grotesque": 1,
-          "SF Mono": 10
+          "SF Mono": 6
         },
         "sizes": [
           56,
@@ -217,15 +224,16 @@
           "800"
         ],
         "leftEdges": 4,
-        "words": 38,
+        "words": 42,
         "headline": "56px, 1 words, 1 line(s)",
         "accentHues": [
           48,
           192,
           264,
-          168
+          168,
+          336
         ],
-        "identity": 4,
+        "identity": 5,
         "cards": 0
       }
     },
@@ -256,16 +264,17 @@
           "800"
         ],
         "leftEdges": 4,
-        "words": 52,
+        "words": 56,
         "headline": "56px, 1 words, 1 line(s)",
         "accentHues": [
           48,
           192,
           264,
           168,
+          336,
           24
         ],
-        "identity": 5,
+        "identity": 6,
         "cards": 1
       }
     }

@@ -53,6 +53,11 @@
 .cell .t { font: 600 13px/1.2 var(--sf); margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cell .y { display: flex; align-items: center; gap: 4px; font: 400 13px/1.2 var(--sf); color: var(--ink-3); margin-top: 2px; }
 .cell .y svg { width: 13px; height: 13px; }
+.cell .y .anime { font: 600 11px var(--sf); color: var(--anime); background: color-mix(in srgb, var(--anime) 16%, transparent); border-radius: 5px; padding: 1px 5px; margin-left: 2px; }
+.cell .y .mon { margin-left: auto; color: var(--ink-3); display: flex; }
+.cell .y .mon.on { color: var(--ink); }
+.cell .y .mon svg { width: 14px; height: 14px; }
+.attn { color: var(--miss); font-weight: 600; }
 .rails { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
 .rail-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .rail-row .ed { min-width: 27px; justify-content: center; padding: 3px 4px; flex: none; }

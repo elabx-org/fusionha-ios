@@ -7,7 +7,7 @@
   const items = (sig) => [
     ["andor", "Andor", 2022, "tv", [["HD", "done", 24, 24], sig === "landed" ? ["4K", "grab", 22, 24, 0, "landed"] : ["4K", "grab", 21, 24, sig]]],
     ["dune", "Dune: Part Two", 2024, "film", [["HD", "done", 1, 0], ["4K", "done", 1, 0]]],
-    ["frieren", "Frieren", 2023, "tv", [["HD", "done", 28, 28]]],
+    ["frieren", "Frieren", 2023, "anime", [["HD", "done", 28, 28]]],
     ["shogun", "Shōgun", 2024, "tv", [["HD", "done", 10, 10], ["4K", "miss", 0, 10]]],
     ["pastlives", "Past Lives", 2023, "film", [["HD", "done", 1, 0]]],
     ["bear", "The Bear", 2022, "tv", [["HD", "upg", 38, 38]]],
@@ -17,8 +17,11 @@
   ];
   const kindGlyph = {
     tv: `<svg viewBox="0 0 16 16" aria-label="Series"><rect x="2" y="4.5" width="12" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 1.8 8 4.3l2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`,
+    anime: `<svg viewBox="0 0 16 16" aria-label="Anime"><path d="M2 4.5h12M3.5 4.5 3 2.5M12.5 4.5l.5-2M4.5 4.5V14M11.5 4.5V14M4.5 8h7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`,
     film: `<svg viewBox="0 0 16 16" aria-label="Movie"><rect x="2.5" y="2" width="11" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 2v12M10.5 2v12M2.5 6h3M2.5 10h3M10.5 6h3M10.5 10h3" stroke="currentColor" stroke-width="1.2"/></svg>`,
   };
+  const bmOn = `<svg viewBox="0 0 16 16" aria-label="Monitored"><path d="M4 2h8v12l-4-2.7L4 14Z" fill="currentColor"/></svg>`;
+  const bmOff = `<svg viewBox="0 0 16 16" aria-label="Not monitored"><path d="M4 2h8v12l-4-2.7L4 14Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>`;
   const mark = { done: "✓", grab: "↓", miss: "", upg: "↑" };
   const rail = ([tier, s, have, total, inflight, landed]) => {
     const t = tier === "4K" ? "uhd" : "hd";
@@ -30,10 +33,10 @@
     const count = total ? `${have}/${total}` : "";
     const st = landed ? "done" : s;
     const cls = s === "grab" && inflight ? " fill" : landed ? " landed" : "";
-    return `<div class="rail-row"><span class="ed ed-${t}${cls}"${cls === " fill" ? ` style="--p:${inflight}%"` : ""}>${tier}${cls === " fill" ? ` ${inflight}%` : ""}</span><span class="rbar">${bar}</span><span class="rc rc-${st}${landed ? " rolled" : ""}">${s === "grab" && !landed ? "↓ " : ""}${count}${s !== "grab" || landed ? (mark[st] ? ` ${mark[st]}` : (s === "miss" ? "missing" : "")) : ""}</span></div>`;
+    return `<div class="rail-row"><span class="ed ed-${t}${cls}"${cls === " fill" ? ` style="--p:${inflight}%"` : ""}>${tier}${cls === " fill" ? ` ${inflight}%` : ""}</span><span class="rbar">${bar}</span><span class="rc rc-${st}${landed ? " rolled" : ""}">${s === "grab" && !landed ? "↓ " : ""}${count}${s !== "grab" || landed ? (mark[st] ? ` ${mark[st]}` : (s === "miss" ? "Wanted" : "")) : ""}</span></div>`;
   };
   const grid = (sig) => items(sig).map(([k, t, y, kind, vs]) =>
-    `<div class="cell"><div class="poster" data-poster="${k}"></div><div class="t">${t}</div><div class="y">${y} · ${kindGlyph[kind]}</div><div class="rails">${vs.map(rail).join("")}</div></div>`).join("");
+    `<div class="cell"><div class="poster" data-poster="${k}"></div><div class="t">${t}</div><div class="y">${y} · ${kind === "anime" ? `<span class="anime">Anime</span>` : kindGlyph[kind]}<span class="mon${k === "pastlives" ? "" : " on"}">${k === "pastlives" ? bmOff : bmOn}</span></div><div class="rails">${vs.map(rail).join("")}</div></div>`).join("");
 
   const library = (sig) => {
     const landed = sig === "landed";
@@ -46,7 +49,7 @@
         <div class="avatar">E<span class="dot"></span></div>
       </div>
       <div class="title-row"><h1 class="display page-title">Library</h1><div class="g36 glass" data-icon="chart"><b class="adot"></b></div></div>
-      <p class="caption"><b>347</b> titles · 512 versions · <b style="color:var(--grab)">${downloading} downloading</b></p>
+      <p class="caption"><b>347</b> titles · 512 versions<br><b style="color:var(--grab)">${downloading} downloading</b> · <span class="attn">2 need attention</span></p>
       <div class="tools">
         <div class="tier glass" data-system><span class="on">All</span><span>HD</span><span>4K</span></div>
         <div class="kmenu glass"><span class="full">All kinds</span><span class="short">Kinds</span><span data-icon="down"></span></div>
