@@ -1,32 +1,42 @@
 // Builds the Library screen in its states (core, signature frames, the view
 // behind the poster sheet) from one source, so the frames never drift.
+// Cells follow the web's LibraryCard: poster, title, year · kind, then one
+// rail per version: tier chip · bar · have/total with ✓ / ↓ / ↑.
 (() => {
-  const items = (andor) => [
-    ["andor", "Andor", andor === "done" ? [["HD", "done"], ["4K", "done", "", true]] : [["HD", "done"], ["4K", "grab", andor]]],
-    ["dune", "Dune: Part Two", [["HD", "done"], ["4K", "done"]]],
-    ["frieren", "Frieren", [["HD", "done"]]],
-    ["shogun", "Shōgun", [["HD", "done"], ["4K", "miss"]]],
-    ["pastlives", "Past Lives", [["HD", "done"]]],
-    ["bear", "The Bear", [["HD", "upg"]]],
-    ["severance", "Severance", [["HD", "grab", 18], ["4K", "miss"]]],
-    ["oppen", "Oppenheimer", [["HD", "done"], ["4K", "done"]]],
-    ["arcane", "Arcane", [["HD", "done"], ["4K", "done"]]],
-    ["slowhorses", "Slow Horses", [["HD", "miss"]]],
-    ["silo", "Silo", [["HD", "done"], ["4K", "upg"]]],
-    ["perfectdays", "Perfect Days", [["HD", "done"]]],
+  // [tier, state, have, total, inflight%]. total 0 = a movie (no counts).
+  const items = (sig) => [
+    ["andor", "Andor", 2022, "tv", [["HD", "done", 24, 24], sig === "landed" ? ["4K", "grab", 22, 24, 0, "landed"] : ["4K", "grab", 21, 24, sig]]],
+    ["dune", "Dune: Part Two", 2024, "film", [["HD", "done", 1, 0], ["4K", "done", 1, 0]]],
+    ["frieren", "Frieren", 2023, "tv", [["HD", "done", 28, 28]]],
+    ["shogun", "Shōgun", 2024, "tv", [["HD", "done", 10, 10], ["4K", "miss", 0, 10]]],
+    ["pastlives", "Past Lives", 2023, "film", [["HD", "done", 1, 0]]],
+    ["bear", "The Bear", 2022, "tv", [["HD", "upg", 38, 38]]],
+    ["severance", "Severance", 2022, "tv", [["HD", "grab", 9, 10, 18], ["4K", "miss", 0, 10]]],
+    ["oppen", "Oppenheimer", 2023, "film", [["HD", "done", 1, 0], ["4K", "done", 1, 0]]],
+    ["arcane", "Arcane", 2021, "tv", [["HD", "done", 18, 18], ["4K", "done", 18, 18]]],
   ];
-  const check = `<svg class="ck" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6.4 5 8.8l4.5-5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-  const chip = ([tier, s, p, landed]) =>
-    s === "grab" ? `<span class="ed ed-grab" style="--p:${p}%">${tier} <i>${p}%</i></span>`
-      : `<span class="ed ed-${s}${landed ? " landed" : ""}">${tier}${landed ? check : ""}</span>`;
-  const grid = (andor) => items(andor).map(([k, t, eds]) =>
-    `<div class="cell${k === "andor" && andor !== 62 ? " focus" : ""}"><div class="poster" data-poster="${k}"></div><div class="t">${t}</div><div class="eds">${eds.map(chip).join("")}</div></div>`).join("");
+  const kindGlyph = {
+    tv: `<svg viewBox="0 0 16 16" aria-label="Series"><rect x="2" y="4.5" width="12" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 1.8 8 4.3l2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>`,
+    film: `<svg viewBox="0 0 16 16" aria-label="Movie"><rect x="2.5" y="2" width="11" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 2v12M10.5 2v12M2.5 6h3M2.5 10h3M10.5 6h3M10.5 10h3" stroke="currentColor" stroke-width="1.2"/></svg>`,
+  };
+  const mark = { done: "✓", grab: "↓", miss: "", upg: "↑" };
+  const rail = ([tier, s, have, total, inflight, landed]) => {
+    const t = tier === "4K" ? "uhd" : "hd";
+    const pct = total ? (have / total) * 100 : 100;
+    const live = s === "grab" && inflight ? (100 / Math.max(total, 1)) * (inflight / 100) : 0;
+    const bar = s === "miss"
+      ? `<i style="width:100%;background:color-mix(in srgb,var(--miss) 30%,transparent)"></i>`
+      : `<i class="have" style="width:${pct}%;background:var(--${s === "grab" ? "done" : s})"></i>${live ? `<i class="live" style="width:${live}%"></i>` : ""}${landed ? `<i class="new" style="width:${100 / total}%"></i>` : ""}`;
+    const count = total ? `${have}/${total}` : "";
+    const st = landed ? "done" : s;
+    const cls = s === "grab" && inflight ? " fill" : landed ? " landed" : "";
+    return `<div class="rail-row"><span class="ed ed-${t}${cls}"${cls === " fill" ? ` style="--p:${inflight}%"` : ""}>${tier}</span><span class="rbar">${bar}</span><span class="rc rc-${st}${landed ? " rolled" : ""}">${s === "grab" && !landed ? "↓ " : ""}${count}${s !== "grab" || landed ? (mark[st] ? ` ${mark[st]}` : (s === "miss" ? "missing" : "")) : ""}</span></div>`;
+  };
+  const grid = (sig) => items(sig).map(([k, t, y, kind, vs]) =>
+    `<div class="cell"><div class="poster" data-poster="${k}"></div><div class="t">${t}</div><div class="y">${y} · ${kindGlyph[kind]}</div><div class="rails">${vs.map(rail).join("")}</div></div>`).join("");
 
-  const coverage = `<div class="coverage" aria-label="296 complete, 23 missing, 9 upcoming, 4 downloading, 2 need attention">
-      <i style="flex:296;background:var(--done)"></i><i style="flex:23;background:var(--miss)"></i><i style="flex:9;background:var(--unaired)"></i><i style="flex:4;background:var(--grab)"></i><i style="flex:2;background:var(--danger)"></i></div>`;
-
-  const library = (andor) => {
-    const landed = andor === "done";
+  const library = (sig) => {
+    const landed = sig === "landed";
     const downloading = landed ? 3 : 4;
     return `<div class="body">
       <div class="topbar">
@@ -36,24 +46,33 @@
         <div class="avatar">E<span class="dot"></span></div>
       </div>
       <h1 class="display page-title">Library</h1>
-      <p class="caption"><b>347</b> titles · <b style="color:var(--grab)">${downloading} downloading</b> · <b style="color:var(--miss)">23 missing</b></p>
-      ${coverage}
+      <p class="caption"><b>347</b> titles · 512 versions · <b style="color:var(--grab)">${downloading} downloading</b></p>
+      <div class="kinds">
+        <div class="kbar"><i style="flex:141;background:var(--movie)"></i><i style="flex:172;background:var(--series)"></i><i style="flex:34;background:var(--anime)"></i></div>
+        <div class="g36 glass" data-icon="chart"><b class="adot"></b></div>
+      </div>
       <div class="chips" data-scrolls>
         <span class="on">All <em>347</em></span>
-        <span class="glass"><i class="sw" style="background:var(--grab)"></i>Downloading <em>${downloading}</em></span>
-        <span class="glass"><i class="sw" style="background:var(--miss)"></i>Missing <em>23</em></span>
-        <span class="glass"><i class="sw" style="background:var(--unaired)"></i>Upcoming <em>9</em></span>
+        <span class="glass"><i class="sw" style="background:var(--movie)"></i>Movies <em>141</em></span>
+        <span class="glass"><i class="sw" style="background:var(--series)"></i>Series <em>172</em></span>
+        <span class="glass"><i class="sw" style="background:var(--anime)"></i>Anime <em>34</em></span>
       </div>
-      <div class="grid" data-scrolls>${grid(andor)}</div>
+      <div class="tools">
+        <div class="tier glass" data-system><span class="on">All</span><span>HD</span><span>4K</span></div>
+        <div class="g36 glass" data-icon="filter"></div>
+        <div class="g36 glass" data-icon="grid"></div>
+        <div class="g36 glass" data-icon="select"></div>
+      </div>
+      <div class="grid" data-scrolls>${grid(sig)}</div>
     </div>
     <div class="edge" data-float></div>
-    ${landed ? `<div class="toast" data-float><div class="thumb poster" data-poster="andor"></div><div class="tt"><b>Andor · 4K is on disk</b><span>S02E10 · 4.1 GB · 21 of 24 now in 4K</span></div><div class="act">Open</div><div class="timer"></div></div>` : ""}
+    ${landed ? `<div class="toast" data-float><div class="thumb poster" data-poster="andor"></div><div class="tt"><b>Andor · S2E10 in 4K is on disk</b><span>4.1 GB · 22 of 24 now in 4K</span></div><div class="act">Open</div></div>` : ""}
     <div data-tabs="library" data-badges='{"activity":${downloading}}'></div>`;
   };
 
   for (const s of document.querySelectorAll('[data-build="library"]')) {
     const a = s.dataset.andor;
-    s.innerHTML = library(a === "done" ? "done" : Number(a));
+    s.innerHTML = library(a === "landed" ? "landed" : Number(a));
   }
   for (const b of document.querySelectorAll('[data-build="library-behind"]')) b.innerHTML = library(62);
 })();

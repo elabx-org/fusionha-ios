@@ -49,6 +49,12 @@
     play: wrap(`<path d="M7 4.5v15l13-7.5Z" fill="currentColor"/>`),
     flag: wrap(`<path d="M5 21V4h11l-2 4 2 4H5"/>`),
     folder: wrap(`<path d="M3 6h6l2 2h10v11H3Z"/>`),
+    chart: wrap(`<path d="M4 4v16h16"/><path d="M8 16v-4M12 16V8M16 16v-6"/>`),
+    grid: wrap(`<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>`),
+    select: wrap(`<circle cx="12" cy="12" r="8.5"/><path d="m8.3 12.2 2.5 2.5 5-5.3"/>`),
+    textformat: wrap(`<path d="M5 6h14M12 6v13"/>`),
+    feed: wrap(`<path d="M5 19a1 1 0 1 0 0-.01M5 12a7 7 0 0 1 7 7M5 5a14 14 0 0 1 14 14"/>`),
+    left: wrap(`<path d="m15 6-6 6 6 6"/>`),
     ellipsis: wrap(`<circle cx="6" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="18" cy="12" r="1.2" fill="currentColor"/>`),
   };
 

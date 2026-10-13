@@ -36,7 +36,16 @@ The owner's rule for this redesign: **no feature is lost.** This is a reskin and
 - [x] Wanted, Discover, Settings, Interactive search, Add flow: unchanged structure, restyled by the tokens
 - [x] Toasts, the setup progress pill, the downloads accessory, the Live Activity and widgets
 
-The full web inventory (mobile and desktop) is in `before/FEATURES.md`.
+The full web inventory (mobile and desktop) is in `before/FEATURES.md`, with screenshots in `before/` (stubbed data, placeholder posters).
+
+### Fidelity to the web app (fusionha is the source of truth)
+
+Checked against `before/web-mobile-*.png`; round 3 brings the mocks in line:
+
+- [ ] Library cell: one **rail per version** under the poster (tier chip · bar · have/total with ✓ / ↓ / ↑), plus year · kind glyph. Chips are coloured by **tier** (HD purple `#A78BFA`, 4K cyan `#22D3EE`); the rail carries the status colour.
+- [ ] Library header: "N titles · M versions", the kinds bar (Movies · Series · Anime with counts) and the stats button, the All / HD / 4K segment, Filters, grid / list, Select.
+- [ ] Monitor and in-flight state on the poster: the web shows small corner badges; iOS keeps posters clean (iOS rule), so monitor shows as the filled bookmark in the rail row and in-flight as the rail's ↓.
+- [ ] Detail: status chip, title + year, tagline, meta line ending "Metadata via TMDB", genres, overview, the item-action rail (Refresh ▾, Automatic search, Interactive search, Preview rename, Manage files, Report an issue, Edit, Delete) with "applies to all versions", then Versions with "Tabs show".
 
 ### Decisions for the owner (not made silently)
 
