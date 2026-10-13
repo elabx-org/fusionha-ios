@@ -59,18 +59,18 @@
 .onapp { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font: 400 13px var(--sf); color: var(--ink-2); margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--hair); }
 .onapp b { color: var(--ink); } .onapp em { font-style: normal; font-weight: 600; color: var(--ink); margin-left: auto; }
 .deck-btns { display: flex; justify-content: center; gap: 22px; margin-top: 18px; flex: none; }
-.db { width: 60px; height: 60px; border-radius: 30px; display: grid; place-items: center; background: #24201C; box-shadow: 0 10px 20px -10px rgba(0,0,0,.9); }
+.db { width: 60px; height: 60px; border-radius: 30px; display: grid; place-items: center; }
 .db svg { width: 26px; height: 26px; }
 .db.info { width: 48px; height: 48px; margin-top: 6px; color: var(--ink-2); } .db.info svg { width: 22px; height: 22px; }
 .db.no { color: var(--danger); } .db.yes { color: #15110D; background: linear-gradient(180deg, #FBF5EC, #E9DECF); }
 .hint { text-align: center; font: 400 13px var(--sf); color: var(--ink-3); margin: 12px 0 0; flex: none; }
-.undo { position: absolute; left: 16px; right: 16px; bottom: 96px; z-index: 60; display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 20px; font: 400 15px var(--sf); background: #2A2520; box-shadow: 0 24px 40px -18px rgba(0,0,0,.9); overflow: hidden; }
+.undo { position: absolute; left: 16px; right: 16px; bottom: 96px; z-index: 60; display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 24px; font: 400 15px var(--sf); overflow: hidden; }
 .undo div { flex: 1; } .undo span { font: 700 15px var(--sf); }
 .drain { position: absolute; left: 0; bottom: 0; height: 3px; width: 64%; background: var(--done); }
 /* Report an issue sheet */
 .hero-mini { position: absolute; inset: 0 0 auto; height: 420px; border-radius: 0; aspect-ratio: auto; }
 .scrim2 { position: absolute; inset: 0; background: rgba(6,5,4,.6); z-index: 5; }
-.isheet { position: absolute; z-index: 10; left: 0; right: 0; bottom: 0; top: 100px; border-radius: 34px 34px 0 0; background: #1C1915; padding: 8px 20px 0; display: flex; flex-direction: column; }
+.isheet { position: absolute; z-index: 10; left: 0; right: 0; bottom: 0; top: 100px; border-radius: 34px 34px 0 0; padding: 8px 20px 0; display: flex; flex-direction: column; }
 .is-head { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
 .is-p { width: 40px; flex: none; border-radius: 5px; }
 .is-head b { display: block; font: 700 20px var(--sf); } .is-head span { font: 400 13px var(--sf); color: var(--ink-2); }
@@ -116,3 +116,4 @@
 .cu-row .ev-r em { font-style: normal; color: var(--ink-3); }
 .prem { font-style: normal; font: 600 11px var(--sf); color: #9CC0FF; background: rgba(59,130,246,.16); border-radius: 5px; padding: 1px 5px; margin-left: 4px; }
 .req .jf-row { margin: 0 16px; }
+.screen[data-theme="dark"] .db.yes { background: linear-gradient(180deg, #FBF5EC, #E9DECF); box-shadow: inset 0 1px 0 rgba(255,255,255,.7), 0 10px 26px rgba(0,0,0,.42); }

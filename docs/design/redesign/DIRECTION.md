@@ -153,6 +153,8 @@ Glass stays on the navigation layer only (iOS 26 rule, CLAUDE.md), but the mock 
 - **Tab bar minimises on scroll** (`tabBarMinimizeBehavior(.onScrollDown)`, already in RootView) to the current tab, and the **downloads bottom accessory** (`tabViewBottomAccessory`) sits beside it: poster, "Andor · S2E10", tier, speed, ETA and a progress ring. Tapping it opens Activity.
 - **Glass groups morph:** the All / HD / 4K segment, kind chips and toolbar groups live in a `GlassEffectContainer` with `glassEffectID`, so selection slides rather than swaps (Reduce Motion: instant).
 - Posters, cards and rows stay solid.
+- **Every mock uses it (owner review, 2026-10-13):** the lens glass is the default for every floating control (top-bar pill and buttons, tab bar, tab strips and segmented controls, filter and kind chips, the Inbox swipe buttons, toolbar groups, the Duo side bar). Sheets, toasts and the Undo bar use a denser *regular* glass so their text stays legible. Content scrolls under the tab bar; only a 46pt scroll-edge fade remains for the home indicator. Approve stays solid ink (`.glassProminent`).
+- **Font:** keep Bricolage Grotesque Condensed 800 for titles (owner, 2026-10-13).
 
 ## iPhone Duo (screens `duo-outer`, `duo-open`, `duo-portrait`, `duo-book`)
 

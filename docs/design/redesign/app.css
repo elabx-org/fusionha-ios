@@ -122,3 +122,32 @@
 .mut { color: var(--ink-2); } .dim { color: var(--ink-3); }
 .num { font-variant-numeric: tabular-nums; }
 .kmenu .short { display: none; }
+
+/* ---------- Liquid Glass, the default for every floating control ----------
+   iOS 26 glass is a lens, not a frosted grey: a light blur so the content
+   under it shows as colour, high saturation, a bright rim at the top-left,
+   a darker lip at the bottom and a floating shadow. Controls use the clear
+   variant; sheets, toasts and the Undo bar use the denser "regular" variant
+   so their text stays legible over any poster. Content stays solid. */
+.screen[data-theme="dark"] .glass,
+.screen[data-theme="dark"] .segs,
+.screen[data-theme="dark"] .db {
+  background: linear-gradient(180deg, rgba(255,248,236,.15), rgba(255,248,236,.04)), rgba(26,22,19,.30);
+  -webkit-backdrop-filter: blur(9px) saturate(1.9) brightness(1.06); backdrop-filter: blur(9px) saturate(1.9) brightness(1.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.34), inset 1px 0 0 rgba(255,255,255,.12), inset 0 -1px 0 rgba(0,0,0,.28),
+              inset 0 0 0 .5px rgba(255,255,255,.10), 0 10px 26px rgba(0,0,0,.42);
+}
+.screen[data-theme="dark"] .glass-regular,
+.screen[data-theme="dark"] .toast,
+.screen[data-theme="dark"] .undo,
+.screen[data-theme="dark"] .msheet,
+.screen[data-theme="dark"] .isheet {
+  background: linear-gradient(180deg, rgba(255,248,236,.12), rgba(255,248,236,.03)), rgba(28,24,20,.74) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.8) !important; backdrop-filter: blur(24px) saturate(1.8) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.26), inset 0 0 0 .5px rgba(255,255,255,.08), 0 24px 48px -16px rgba(0,0,0,.8) !important;
+}
+/* The tab strip is a glass capsule holding its tabs. */
+.segs { margin: 16px 16px 0; padding: 4px !important; border-radius: 22px; width: max-content; max-width: calc(100% - 32px); }
+/* Content runs under the tab bar so the glass has something to bend; only a
+   short scroll-edge fade keeps the home indicator legible. */
+.edge { height: 46px !important; background: linear-gradient(to bottom, rgba(15,13,11,0), rgba(15,13,11,.75)) !important; z-index: 40 !important; }

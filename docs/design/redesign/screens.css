@@ -169,7 +169,7 @@
   .screen .rail-row .ed.fill ~ .rbar { display: none; }
   .screen .rail-row .ed.fill ~ .rc { margin-left: auto; }
 }
-.msheet.glass { background: #1E1A16 !important; backdrop-filter: none !important; }
+/* .msheet uses the regular glass (app.css) */
 
 /* ---------- Whole-page (data-tall) screens: content flows, nothing clips ---------- */
 .screen[data-tall] .body { position: relative; inset: auto; padding-top: var(--safe-top); padding-bottom: 130px; }

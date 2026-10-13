@@ -4,12 +4,14 @@
       "name": "library",
       "type": "screen",
       "fails": [],
-      "warns": [],
+      "warns": [
+        "6 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
+      ],
       "facts": {
         "os": "ios",
         "kind": "core",
         "fonts": {
-          "SF Pro": 14,
+          "SF Pro": 19,
           "Bricolage Grotesque": 1,
           "SF Mono": 10
         },
@@ -63,7 +65,7 @@
       "fails": [],
       "warns": [
         "Largest text is 20px. No element owns the screen. (Mark data-dense if this is deliberate.)",
-        "6 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
+        "8 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
       ],
       "facts": {
         "os": "ios",
@@ -104,8 +106,8 @@
       "fails": [],
       "warns": [
         "10 distinct text sizes. A type scale has 5 to 7 steps: 72, 56, 34, 20, 17, 16, 15, 13, 12, 11",
-        "9 distinct left edges in the left third. Align to fewer verticals.",
-        "10 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
+        "10 distinct left edges in the left third. Align to fewer verticals.",
+        "11 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
       ],
       "facts": {
         "os": "ios",
@@ -134,7 +136,7 @@
           "700",
           "800"
         ],
-        "leftEdges": 9,
+        "leftEdges": 10,
         "words": 194,
         "headline": "72px, 1 words, 1 line(s)",
         "accentHues": [
@@ -202,12 +204,14 @@
       "name": "signature-1",
       "type": "screen",
       "fails": [],
-      "warns": [],
+      "warns": [
+        "6 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
+      ],
       "facts": {
         "os": "ios",
         "kind": "state",
         "fonts": {
-          "SF Pro": 14,
+          "SF Pro": 19,
           "Bricolage Grotesque": 1,
           "SF Mono": 10
         },
@@ -243,13 +247,13 @@
       "type": "screen",
       "fails": [],
       "warns": [
-        "6 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
+        "7 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
       ],
       "facts": {
         "os": "ios",
         "kind": "state",
         "fonts": {
-          "SF Pro": 18,
+          "SF Pro": 20,
           "Bricolage Grotesque": 1,
           "SF Mono": 10
         },
@@ -365,7 +369,8 @@
       "type": "screen",
       "fails": [],
       "warns": [
-        "Sentences over 24 words: \"Cassian Andor drifts from thief to rebel...\" (28 words). Nobody reads them on a phone."
+        "Sentences over 24 words: \"Cassian Andor drifts from thief to rebel...\" (28 words). Nobody reads them on a phone.",
+        "6 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
       ],
       "facts": {
         "os": "ios",
@@ -411,7 +416,7 @@
       "fails": [],
       "warns": [
         "Sentences over 24 words: \"Cassian Andor drifts from thief to rebel...\" (28 words). Nobody reads them on a phone.",
-        "7 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration.",
+        "8 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration.",
         "5 different shadow styles. Depth has three levels with one shadow style each (finish.md §4)."
       ],
       "facts": {
@@ -457,7 +462,7 @@
       "fails": [],
       "warns": [
         "Sentences over 24 words: \"Cassian Andor drifts from thief to rebel...\" (28 words). Nobody reads them on a phone.",
-        "6 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
+        "7 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
       ],
       "facts": {
         "os": "ios",

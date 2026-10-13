@@ -5,16 +5,17 @@
       "type": "screen",
       "fails": [],
       "warns": [
-        "7 distinct left edges in the left third. Align to fewer verticals.",
-        "7 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
+        "Text inside the system's safe areas: \"Conversation\" (home indicator)",
+        "9 distinct left edges in the left third. Align to fewer verticals.",
+        "8 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration."
       ],
       "facts": {
         "os": "ios",
         "kind": "list",
         "fonts": {
-          "SF Pro": 45,
+          "SF Pro": 34,
           "Bricolage Grotesque": 1,
-          "SF Mono": 3
+          "SF Mono": 2
         },
         "sizes": [
           56,
@@ -32,19 +33,17 @@
           "800",
           "900"
         ],
-        "leftEdges": 7,
-        "words": 119,
+        "leftEdges": 9,
+        "words": 96,
         "headline": "56px, 1 words, 1 line(s)",
         "accentHues": [
           0,
           192,
           48,
-          264,
-          216,
-          168
+          264
         ],
-        "identity": 6,
-        "cards": 3
+        "identity": 4,
+        "cards": 2
       }
     },
     {
@@ -53,8 +52,9 @@
       "fails": [],
       "warns": [
         "Largest text is 20px. No element owns the screen. (Mark data-dense if this is deliberate.)",
-        "9 distinct left edges in the left third. Align to fewer verticals.",
+        "10 distinct left edges in the left third. Align to fewer verticals.",
         "Empty words: \"insights\". Replace each with the fact it stands for.",
+        "7 different gradients. A crafted gradient has an owner and a role (finish.md §2); this many reads as decoration.",
         "5 different shadow styles. Depth has three levels with one shadow style each (finish.md §4)."
       ],
       "facts": {
@@ -77,7 +77,7 @@
           "600",
           "700"
         ],
-        "leftEdges": 9,
+        "leftEdges": 10,
         "words": 65,
         "headline": "20px, 2 words, 1 line(s)",
         "accentHues": [
@@ -132,9 +132,11 @@
     {
       "name": "queue-clear",
       "type": "screen",
-      "fails": [],
+      "fails": [
+        "Text on an image/illustration fails contrast over part of its ground (3.68:1, needs 4.5): \"Queue\". Add a scrim, move it, or change the ink."
+      ],
       "warns": [
-        "11 distinct left edges in the left third. Align to fewer verticals."
+        "13 distinct left edges in the left third. Align to fewer verticals."
       ],
       "facts": {
         "os": "ios",
@@ -161,7 +163,7 @@
           "800",
           "900"
         ],
-        "leftEdges": 11,
+        "leftEdges": 13,
         "words": 135,
         "headline": "56px, 1 words, 1 line(s)",
         "accentHues": [
