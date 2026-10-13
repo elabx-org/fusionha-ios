@@ -53,10 +53,10 @@ final class ServerTimeTests: XCTestCase {
         XCTAssertEqual(CalendarMath.parseUTC(raw), ServerTime.parse(raw))
     }
 
-    func testLocalMidnightCarriesTheViewersOffset() {
+    func testLocalMidnightIsTheViewersDayAsUTC() {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(identifier: "Europe/London")!
         let now = ServerTime.parse("2026-10-13T22:30:00Z")!   // 23:30 BST
-        XCTAssertEqual(ServerTime.localMidnightISO(now: now, calendar: cal), "2026-10-13T00:00:00+01:00")
+        XCTAssertEqual(ServerTime.localMidnightISO(now: now, calendar: cal), "2026-10-12T23:00:00Z")
     }
 }

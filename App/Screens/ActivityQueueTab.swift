@@ -443,7 +443,8 @@ struct ActivityQueueTab: View {
         } else if store.items.isEmpty && !search.isEmpty {
             ActEmpty(message: "No downloads match “\(search)”.")
         } else if store.items.isEmpty && finished.rows.isEmpty {
-            ActEmpty(message: "Nothing is downloading right now. Grabbed releases appear here while they transfer.")
+            // Nothing downloading: system status instead of a blank list (0.4.156).
+            QueueClearView()
         } else {
             // Flat children of the page's lazy stack: each section header and card is its own child.
             toolbar.padding(.bottom, 12)

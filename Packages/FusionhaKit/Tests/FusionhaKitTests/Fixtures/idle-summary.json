@@ -1,0 +1,11 @@
+{
+  "history": {"today": {"grabbed": 14, "imported": 13, "failed": 1}, "week": {"grabbed": 96, "imported": 92, "failed": 4}, "grabbed_24h": 21},
+  "clients": {"total": 2, "enabled": 2, "items": [{"id": 1, "name": "qBittorrent", "protocol": "TORRENT", "enabled": true}, {"id": 2, "name": "decypharr", "protocol": "USENET", "enabled": true}]},
+  "indexers": {"total": 4, "healthy": 3, "backoff": 1, "off": 0},
+  "disk": {"free_bytes": 1320000000000, "total_bytes": 4000000000000, "roots": 2, "volumes": 1},
+  "tasks": {
+    "rss": {"next_run": "2026-10-13T22:38:00.123456", "interval_seconds": 900, "last_duration": 3.2, "running": false},
+    "search": {"next_run": "2026-10-14T14:00:00", "interval_seconds": 43200, "last_duration": null, "running": false},
+    "upgrade": null
+  }
+}

@@ -29,11 +29,12 @@ public enum ServerTime {
         return nil
     }
 
-    /// The viewer's local midnight today as ISO 8601 with its offset, for
-    /// `GET /activity/idle-summary?today_start=` ("today" means the viewer's day).
+    /// The viewer's local midnight today as a UTC instant (`…Z`), for
+    /// `GET /activity/idle-summary?today_start=` ("today" means the viewer's
+    /// day), the same form the web sends (`localMidnightIso`).
     public static func localMidnightISO(now: Date = Date(), calendar: Calendar = .current) -> String {
         let f = ISO8601DateFormatter()
-        f.timeZone = calendar.timeZone
+        f.timeZone = TimeZone(identifier: "UTC")
         f.formatOptions = [.withInternetDateTime]
         return f.string(from: calendar.startOfDay(for: now))
     }
