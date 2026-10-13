@@ -161,6 +161,7 @@ Follows Apple's HIG page *Designing for iPhone Duo* (2026-09-09, via the HIGAgen
 - **Open, portrait:** the same split with horizontal bars: the tab bar along the bottom, the title's toolbar on top of its column.
 - **Half open (book):** the fold is a reserved region; the two columns meet at it and nothing is drawn across it.
 - Continuity: the open title and tab survive folding (sheet ↔ column), as built.
+- **Decision (owner, 2026-10-13): the top bar's search, ＋ and account move into the system toolbar** so they join the vertical bar on the Duo; ordinary iPhones still show them along the top. Order of work: finish the redesign, then the 0.4.187 API catch-up, then the Duo code changes (skill audit in `HIGAgentSkills` `/duo`).
 
 ## fusionha 0.4.141 to 0.4.187 (handoff, 2026-10-13)
 
