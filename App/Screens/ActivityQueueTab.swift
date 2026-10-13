@@ -969,7 +969,16 @@ private struct QueueRowCard: View {
 private struct AttentionCard: View {
     let item: QueueItem
     let actions: QueueRowActions
+    @Environment(AppModel.self) private var model
     @State private var showWhy = false
+    @State private var blocking = false
+
+    /// A proven fake from a named group, for someone who may block groups.
+    private var blockableGroup: String? {
+        guard HeldCopy.isProvenMislabel(item.heldDetail), let group = item.heldDetail?.releaseGroup,
+              model.me?.can("integrations.manage") == true else { return nil }
+        return group
+    }
 
     var body: some View {
         let held = item.cockpitState == .held
@@ -1010,6 +1019,12 @@ private struct AttentionCard: View {
                     QueueMetaLine(item: item, showStatus: false)
                 }
                 HStack {
+                    if let group = blockableGroup {
+                        Button("Block \(group)…", systemImage: "nosign") { blocking = true }
+                            .font(.system(size: 12, weight: .semibold))
+                            .buttonStyle(.bordered)
+                            .tint(Theme.miss)
+                    }
                     Spacer(minLength: 0)
                     QueueActionsView(item: item, actions: actions,
                                      primary: held ? QueuePrimary(icon: "square.and.arrow.down", label: "Manual import", run: actions.manualImport)
@@ -1022,10 +1037,18 @@ private struct AttentionCard: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
         .actWash(QueueLogic.wash(item))
+        .sheet(isPresented: $blocking) {
+            if let group = blockableGroup {
+                BlockReleaseGroupSheet(group: group, mediaItemId: item.mediaItemId, title: item.title,
+                                       claimedResolution: item.heldDetail?.claimedResolution)
+            }
+        }
     }
 
     private func reason(_ held: Bool) -> String {
-        if held { return item.heldReason ?? "Not an upgrade — manual import required" }
+        if held {
+            return HeldCopy.headline(item.heldDetail, reason: item.heldReason) ?? "Not an upgrade — manual import required"
+        }
         return item.nextStep ?? "No eligible release left — needs attention"
     }
 }
