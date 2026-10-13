@@ -40,18 +40,21 @@ The full web inventory (mobile and desktop) is in `before/FEATURES.md`, with scr
 
 ### Fidelity to the web app (fusionha is the source of truth)
 
-Checked against `before/web-mobile-*.png`; round 3 brings the mocks in line:
+Checked against `before/web-mobile-*.png` and brought in line in rounds 3 and 4:
 
-- [ ] Library cell: one **rail per version** under the poster (tier chip · bar · have/total with ✓ / ↓ / ↑), plus year · kind glyph. Chips are coloured by **tier** (HD purple `#A78BFA`, 4K cyan `#22D3EE`); the rail carries the status colour.
-- [ ] Library header: "N titles · M versions", the kinds bar (Movies · Series · Anime with counts) and the stats button, the All / HD / 4K segment, Filters, grid / list, Select.
-- [ ] Monitor and in-flight state on the poster: the web shows small corner badges; iOS keeps posters clean (iOS rule), so monitor shows as the filled bookmark in the rail row and in-flight as the rail's ↓.
-- [ ] Detail: status chip, title + year, tagline, meta line ending "Metadata via TMDB", genres, overview, the item-action rail (Refresh ▾, Automatic search, Interactive search, Preview rename, Manage files, Report an issue, Edit, Delete) with "applies to all versions", then Versions with "Tabs show".
+- [x] Library cell: one **rail per version** under the poster (tier chip · bar · have/total with ✓ / ↓ / ↑), plus year · kind glyph. Chips are coloured by **tier** (HD purple `#A78BFA`, 4K cyan `#22D3EE`); the rail carries the status colour.
+- [x] Library header: "N titles · M versions", the stats button (beside the title), the All / HD / 4K segment, the kinds as an "All kinds ▾" menu with counts (the web's kinds bar lives in the stats sheet), Filters, grid / list, Select.
+- [x] Activity: Manual import, the queue toolbar (refresh, Clear queue, Select) and the Pipeline job line (step n of 6) next to the bandwidth hero.
+- [x] Monitor and in-flight state on the poster: the web shows small corner badges; iOS keeps posters clean (iOS rule), so monitor shows as the filled bookmark in the rail row and in-flight as the rail's ↓.
+- [x] Detail: status chip, title + year, tagline, meta line ending "Metadata via TMDB", genres, overview, the item-action rail (Refresh ▾, Automatic search, Interactive search, Preview rename, Manage files, Report an issue, Edit, Delete) with "applies to all versions", then Versions with "Tabs show".
 
 ### Decisions for the owner (not made silently)
 
 1. **The ＋ orb becomes a glass ＋ toolbar button** in the top bar on Library, Discover and Wanted. Same sheet, same three screens, no gradient. This is the one visible deviation from the web's mobile FAB.
 2. **The brand gradient is kept inside the logo only.** It no longer paints buttons or the active tab.
-3. **Display type changes** from the system face to a condensed grotesque (Bricolage Grotesque, OFL) on page titles and detail titles. UI text stays SF Pro.
+3. **The kinds bar moves into a menu.** The web's Library shows a kinds bar and kind chips above the grid; iOS puts kinds in an "All kinds ▾" menu (with counts) so the posters start a third of the way down the screen. The bar stays in the stats sheet.
+4. **Status is shown beside the chip, not inside it.** Chips are tier-coloured (HD violet, 4K cyan) as on the web; the status is the rail bar, the count and a coloured mark ("4K" + amber "wanted"). The in-flight chip fills with the episode's percentage (the signature).
+5. **Display type changes** from the system face to a condensed grotesque (Bricolage Grotesque, OFL) on page titles and detail titles. UI text stays SF Pro.
 
 ## Exploration
 
@@ -76,6 +79,10 @@ Sonarr, Radarr, Overseerr and Plex-adjacent dashboards share a look: cool blue-g
 - cool slate panels → a **warm** black, like a shop with the lights down
 - the gradient FAB and gradient active states → neutral warm-white chrome, colour only where it means state
 - posters boxed in cards → posters as objects on the shelf, bigger, with nothing on the art
+
+## Result
+
+Four critique rounds by one fresh critic (`CRITIQUE.md`), done by the skill's stop rule in round 3 (12 of 14 lines at 4+, none below 3). Final renders: `shots/final/sheet.png` (iPhone 17 Pro), `shots/final-small/sheet.png` (375 x 667), and `before-after.png` (web today vs redesign).
 
 ## Tokens
 

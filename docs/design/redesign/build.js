@@ -49,7 +49,7 @@
       <p class="caption"><b>347</b> titles · 512 versions · <b style="color:var(--grab)">${downloading} downloading</b></p>
       <div class="tools">
         <div class="tier glass" data-system><span class="on">All</span><span>HD</span><span>4K</span></div>
-        <div class="kmenu glass">All kinds <span data-icon="down"></span></div>
+        <div class="kmenu glass"><span class="full">All kinds</span><span class="short">Kinds</span><span data-icon="down"></span></div>
         <div class="g36 glass" data-icon="filter"></div>
         <div class="g36 glass" data-icon="grid"></div>
         <div class="g36 glass" data-icon="select"></div>

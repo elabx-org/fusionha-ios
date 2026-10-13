@@ -1,2 +1,4 @@
 shots/r1/
+shots/r4/
 shots/*-small/
+!shots/final-small/
