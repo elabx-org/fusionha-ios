@@ -1,3 +1,4 @@
+import SwiftUI
 import UIKit
 import CoreImage
 import ObjectiveC
@@ -41,5 +42,16 @@ enum PosterWashRenderer {
         } else {
             objc_setAssociatedObject(image, &softKey, washed, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
         }
+    }
+}
+
+extension View {
+    /// Monochrome's poster wash for small SwiftUI art (the app logo, the
+    /// avatar): the same Greyscale / Soft wash / Full colour choice, applied
+    /// as a saturation change. Other palettes leave it as is.
+    func monochromeWash() -> some View {
+        let wash = Theme.isMono ? PaletteStore.shared.posterWash : .colour
+        return saturation(wash == .greyscale ? 0 : wash == .soft ? 0.35 : 1)
+            .contrast(wash == .greyscale ? 1.06 : 1)
     }
 }

@@ -286,6 +286,7 @@ struct AboutSettingsPanel: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 40, height: 40)
+                .monochromeWash()
                 .frame(width: 54, height: 54)
                 .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).strokeBorder(Theme.line))

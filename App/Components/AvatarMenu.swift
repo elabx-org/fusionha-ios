@@ -107,7 +107,7 @@ struct Avatar: View {
         ZStack {
             Circle().fill(Theme.fusion)
             if let image {
-                Image(uiImage: image).resizable().scaledToFill().clipShape(Circle())
+                Image(uiImage: PosterWashRenderer.washed(image)).resizable().scaledToFill().clipShape(Circle())
             } else {
                 Text(me?.initials ?? "")
                     .font(.system(size: size * 13 / 32, weight: .bold))
