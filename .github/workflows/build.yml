@@ -275,6 +275,15 @@ jobs:
             xcrun simctl io "$UDID" screenshot "shots/$name.png" > /dev/null
           }
           S=http://127.0.0.1:8765
+          # The app palettes (Settings › Appearance) on the main screens.
+          for P in graphite oled noir aurora frost eclipse daylight; do
+            PAL=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$P
+            shoot palette-$P-library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library $PAL
+            shoot palette-$P-activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity $PAL
+            shoot palette-$P-detail SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8 $PAL
+          done
+          # A filtered run (shots_only) stops here: the rest are the full set and its checks.
+          if [ -n "${ONLY:-}" ]; then ls -l shots; exit 0; fi
           shoot 01-login SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=
           shoot 02-login-methods SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S
           shoot 03-login-form SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_METHOD=fusionha
@@ -509,6 +518,7 @@ jobs:
       # torrent + usenet), then the rejected rows, the 4K tab, a grab, the
       # loading banner and the no-match state.
       - name: Interactive search screenshots
+        if: inputs.shots_only == ''
         run: |
           python3 scripts/mock_server.py 8766 &
           sleep 2
@@ -528,13 +538,6 @@ jobs:
           shoot search-4-grabbed $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=grabbed
           shoot search-5-loading $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=loading
           shoot search-6-nomatch $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=nomatch
-          # The app palettes (Settings › Appearance) on the main screens.
-          for P in graphite oled noir aurora frost eclipse daylight; do
-            PAL=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$P
-            shoot palette-$P-library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library $PAL
-            shoot palette-$P-activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity $PAL
-            shoot palette-$P-detail SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8 $PAL
-          done
           ls -l shots/search-*
 
       - uses: actions/upload-artifact@v4
