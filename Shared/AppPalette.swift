@@ -20,7 +20,7 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
-    static let dark: [AppPalette] = [.videoStore, .graphite, .oled, .noir, .aurora, .frost, .eclipse]
+    static let dark: [AppPalette] = [.aurora, .videoStore, .graphite, .oled, .noir, .frost, .eclipse]
     static let light: [AppPalette] = [.daylight]
 
     var isLight: Bool { tokens.isLight }
@@ -43,7 +43,7 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
         case .videoStore: return "Warm black, cream and brass."
         case .graphite: return "The web app's cool greys with its indigo accent."
         case .oled: return "True black and white; colour comes only from posters and statuses."
-        case .aurora: return "The web app exactly: cool ink, indigo to cyan."
+        case .aurora: return "The main theme, as on the web: cool ink, indigo to cyan, and the full status colours."
         case .frost: return "Blue-black slate with a frosted, pale-blue light."
         case .eclipse: return "Ink black lit by a sunset corona, coral to magenta to violet."
         case .daylight: return "The web app's light theme with the indigo accent."
@@ -78,8 +78,11 @@ enum AppAppearance: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// One palette's colours. Status and tier hues are the web's `status.ts`; the
-/// light palette deepens them a step so they stay readable on white.
+/// One palette's colours. Status and tier colours keep the web's meaning and
+/// hue family (`status.ts`: green done, cyan 4K and downloading, amber wanted,
+/// purple HD, pink anime). Aurora, the main theme, uses the web's values;
+/// every other palette tunes their shade to its ground (calmer on the warm
+/// and mono palettes, deeper on Daylight's white).
 struct PaletteTokens: Sendable {
     let isLight: Bool
     let bg: UInt32, panel: UInt32, panel2: UInt32
@@ -109,17 +112,20 @@ struct PaletteTokens: Sendable {
     static let videoStore = PaletteTokens(
         isLight: false, bg: 0x0F0D0B, panel: 0x1A1714, panel2: 0x24201C, line: 0xF4ECE1, lineOpacity: 0.08,
         txt: 0xF4ECE1, mut: 0xB3A796, dim: 0x8C8172, i1: 0xD9C3A0, i2: 0xEDE0CB,
-        primaryFrom: 0xFBF5EC, primaryTo: 0xE9DECF, onPrimary: 0x15110D, onAccent: 0x15110D)
+        primaryFrom: 0xFBF5EC, primaryTo: 0xE9DECF, onPrimary: 0x15110D, onAccent: 0x15110D,
+        done: 0x7FC8A0, grab: 0x6CC4CF, miss: 0xE0A458, unaired: 0x7FA4DB, unmonitored: 0x857A6C, onair: 0xE5C07B, premiere: 0xA7A8E0, stuck: 0xE39563, edition: 0xB39DDB, anime: 0xE39BBE, danger: 0xE58A7F)
 
     static let graphite = PaletteTokens(
         isLight: false, bg: 0x0E0F13, panel: 0x16181E, panel2: 0x1D2028, line: 0xFFFFFF, lineOpacity: 0.08,
         txt: 0xECEDF3, mut: 0xA0A5B3, dim: 0x6E7381, i1: 0x818CF8, i2: 0xA5B4FC,
-        primaryFrom: 0x6366F1, primaryTo: 0x818CF8, onPrimary: 0xFFFFFF, onAccent: 0xFFFFFF)
+        primaryFrom: 0x6366F1, primaryTo: 0x818CF8, onPrimary: 0xFFFFFF, onAccent: 0xFFFFFF,
+        done: 0x5FD3A7, grab: 0x5CCFE6, miss: 0xF2B347, unaired: 0x6E9BF0, unmonitored: 0x6E7381, onair: 0xF5C85A, premiere: 0x8F96F7, stuck: 0xF59E62, edition: 0xA5A0F5, anime: 0xEE8EC4, danger: 0xF28B8B)
 
     static let oled = PaletteTokens(
         isLight: false, bg: 0x000000, panel: 0x111113, panel2: 0x1A1A1D, line: 0xFFFFFF, lineOpacity: 0.09,
         txt: 0xF5F5F7, mut: 0xA1A1A6, dim: 0x6E6E73, i1: 0xD1D1D6, i2: 0xFFFFFF,
-        primaryFrom: 0xFFFFFF, primaryTo: 0xE5E5EA, onPrimary: 0x000000, onAccent: 0x000000)
+        primaryFrom: 0xFFFFFF, primaryTo: 0xE5E5EA, onPrimary: 0x000000, onAccent: 0x000000,
+        done: 0x8FD9B6, grab: 0x8ED8E8, miss: 0xF0C27A, unaired: 0x93B4F5, unmonitored: 0x6E6E73, onair: 0xF3D08A, premiere: 0xAEB4FA, stuck: 0xF4B083, edition: 0xC4B5FD, anime: 0xF2A7CC, danger: 0xF5A3A3)
 
     static let aurora = PaletteTokens(
         isLight: false, bg: 0x0C0D11, panel: 0x14161D, panel2: 0x181B23, line: 0xFFFFFF, lineOpacity: 0.08,
@@ -130,25 +136,26 @@ struct PaletteTokens: Sendable {
         isLight: false, bg: 0x09080B, panel: 0x131116, panel2: 0x1B181F, line: 0xFFF0F5, lineOpacity: 0.08,
         txt: 0xF4F0F6, mut: 0xABA3B0, dim: 0x726B78, i1: 0xFF5C7A, i2: 0xFF9DB4,
         primaryFrom: 0xFF7A45, primaryTo: 0x8B5CF6, onPrimary: 0xFFFFFF, onAccent: 0xFFFFFF,
+        done: 0x4ADE9A, grab: 0x38D6E8, miss: 0xFFB347, unaired: 0x6EA8FF, unmonitored: 0x726B78, onair: 0xFFC94D, premiere: 0x9B8CFF, stuck: 0xFF9050, edition: 0xB794FF, anime: 0xFF7EB6, danger: 0xFF6B6B,
         primaryVia: 0xFF2E7E)
 
     static let frost = PaletteTokens(
         isLight: false, bg: 0x0B0E13, panel: 0x121821, panel2: 0x19212C, line: 0xC8DCFF, lineOpacity: 0.08,
         txt: 0xE8EEF6, mut: 0x93A1B5, dim: 0x627086, i1: 0x8EA8EE, i2: 0xB9CCFF,
-        primaryFrom: 0xF4F8FF, primaryTo: 0xC8D7F5, onPrimary: 0x0B1220, onAccent: 0x0B1220)
+        primaryFrom: 0xF4F8FF, primaryTo: 0xC8D7F5, onPrimary: 0x0B1220, onAccent: 0x0B1220,
+        done: 0x74D9C0, grab: 0x7DD3F0, miss: 0xF5C26B, unaired: 0x8AB0FF, unmonitored: 0x627086, onair: 0xF7D07E, premiere: 0xA3B0FF, stuck: 0xF5A97A, edition: 0xB4A9FF, anime: 0xF0A0CF, danger: 0xF59A9A)
 
     static let daylight = PaletteTokens(
         isLight: true, bg: 0xF5F6F8, panel: 0xFFFFFF, panel2: 0xF0F1F4, line: 0x0F1115, lineOpacity: 0.10,
         txt: 0x14161D, mut: 0x55606F, dim: 0x8A94A3, i1: 0x4F46E5, i2: 0x4338CA,
         primaryFrom: 0x4F46E5, primaryTo: 0x6366F1, onPrimary: 0xFFFFFF, onAccent: 0xFFFFFF,
-        done: 0x059669, grab: 0x0891B2, miss: 0xD97706, unaired: 0x2563EB, unmonitored: 0x6B7280,
-        onair: 0xCA8A04, premiere: 0x6366F1, stuck: 0xEA580C, edition: 0x7C3AED, anime: 0xDB2777,
-        danger: 0xDC2626)
+        done: 0x047857, grab: 0x0E7490, miss: 0xB45309, unaired: 0x1D4ED8, unmonitored: 0x6B7280, onair: 0xA16207, premiere: 0x4F46E5, stuck: 0xC2410C, edition: 0x6D28D9, anime: 0xBE185D, danger: 0xB91C1C)
 
     static let noir = PaletteTokens(
         isLight: false, bg: 0x000000, panel: 0x000000, panel2: 0x0E0E0E, line: 0xFFFFFF, lineOpacity: 0.22,
         txt: 0xFFFFFF, mut: 0xC7C7C7, dim: 0x8A8A8A, i1: 0xFFFFFF, i2: 0xFFFFFF,
-        primaryFrom: 0xFFFFFF, primaryTo: 0xFFFFFF, onPrimary: 0x000000, onAccent: 0x000000)
+        primaryFrom: 0xFFFFFF, primaryTo: 0xFFFFFF, onPrimary: 0x000000, onAccent: 0x000000,
+        done: 0xB5E8CF, grab: 0xB3E7F1, miss: 0xF3D6A6, unaired: 0xB9CDF8, unmonitored: 0x8A8A8A, onair: 0xF5E0B0, premiere: 0xC8CCFC, stuck: 0xF6C8A8, edition: 0xDAD0FE, anime: 0xF6C6DD, danger: 0xF8BDBD)
 }
 
 extension PaletteTokens {
@@ -186,8 +193,8 @@ final class PaletteStore {
 
     private init() {
         let d = Self.defaults
-        let dark = AppPalette(rawValue: d.string(forKey: Self.paletteKey) ?? "") ?? .videoStore
-        darkPalette = AppPalette.dark.contains(dark) ? dark : .videoStore
+        let dark = AppPalette(rawValue: d.string(forKey: Self.paletteKey) ?? "") ?? .aurora
+        darkPalette = AppPalette.dark.contains(dark) ? dark : .aurora
         let light = AppPalette(rawValue: d.string(forKey: Self.lightKey) ?? "") ?? .daylight
         lightPalette = AppPalette.light.contains(light) ? light : .daylight
         appearance = AppAppearance(rawValue: d.string(forKey: Self.appearanceKey) ?? "") ?? .dark

@@ -251,7 +251,7 @@ private struct ActionPill: View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 11.5, weight: .heavy))
-                .foregroundStyle(ghost ? tint : Color(hex: 0x20160A))
+                .foregroundStyle(ghost ? tint : Theme.bg)
                 .lineLimit(1)
                 .padding(.horizontal, 12)
                 .frame(height: 30)

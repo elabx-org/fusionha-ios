@@ -12,7 +12,7 @@ enum DetailTokens {
     static var line2: Color { Theme.txt.opacity(0.14) }
     static let star = Color(hex: 0xF5C518)
     /// Text on the gradient quality badge.
-    static let badgeText = Color(hex: 0x08131A)
+    static var badgeText: Color { Theme.bg }
 
     static func tier(_ tier: QualityTier) -> Color { tier == .hd ? Theme.edition : Theme.grab }
 

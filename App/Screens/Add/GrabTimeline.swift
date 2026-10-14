@@ -37,7 +37,7 @@ struct GrabTimeline: View {
                             Text("TODAY")
                                 .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
                                 .tracking(0.76)
-                                .foregroundStyle(Color(hex: 0x1A1204))
+                                .foregroundStyle(Theme.bg)
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 4)
                                 .background(Theme.miss, in: Capsule())

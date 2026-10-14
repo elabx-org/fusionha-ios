@@ -147,7 +147,7 @@ struct DiscoverTabs<Value: Hashable>: View {
                         if let badge = options[index].2, badge > 0 {
                             Text("\(badge)")
                                 .font(.system(size: 11, weight: .bold).monospacedDigit())
-                                .foregroundStyle(Color(hex: 0x04121A))
+                                .foregroundStyle(Theme.bg)
                                 .padding(.horizontal, 5)
                                 .frame(minWidth: 18, minHeight: 18)
                                 .background(Theme.grab, in: Capsule())

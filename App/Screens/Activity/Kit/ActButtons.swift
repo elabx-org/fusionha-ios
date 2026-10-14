@@ -37,7 +37,7 @@ struct ActButtonStyle: ButtonStyle {
         case .ghost: return Theme.mut
         case .danger: return Theme.danger
         case .warn: return Theme.miss
-        case .amber: return Color(hex: 0x1A1206)
+        case .amber: return Theme.bg
         }
     }
 }
