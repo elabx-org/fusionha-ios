@@ -11,7 +11,7 @@ import FusionhaKit
 struct AvatarMenu: View {
     @Environment(AppModel.self) private var model
     @State private var showingSheet = false
-    @State private var pending: AccountSheet.Destination?
+    @State private var pending: AccountHubSheet.Destination?
     @State private var showingSettings = SettingsScreenshot.openAtLaunch
     @State private var settingsPanel = SettingsScreenshot.panel
     @State private var showingWidgets = WidgetDiagnosticsView.openAtLaunch
@@ -27,7 +27,7 @@ struct AvatarMenu: View {
                 diagnostics = await Task.detached(priority: .utility) { CredentialStore.diagnostics() }.value
             }
             .sheet(isPresented: $showingSheet, onDismiss: openPending) {
-                AccountSheet(diagnostics: diagnostics) { pending = $0 }
+                AccountHubSheet(diagnostics: diagnostics) { pending = $0 }
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }

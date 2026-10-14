@@ -6,7 +6,7 @@ import FusionhaKit
 /// notifications, widgets, start tab), then the server, then reset and log
 /// out. iOS 26 sheet glass at half height, so it has no background of its
 /// own; rows sit on solid cells. Long-press the version for diagnostics.
-struct AccountSheet: View {
+struct AccountHubSheet: View {
     enum Destination { case settings(String?), account, widgets }
 
     @Environment(AppModel.self) private var model
