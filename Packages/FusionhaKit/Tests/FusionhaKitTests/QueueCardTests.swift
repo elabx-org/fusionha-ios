@@ -64,7 +64,8 @@ final class QueueCardTests: XCTestCase {
     }
 
     func testNewErrorCodesHavePlainCopy() {
-        for code in ["rows_open", "not_held", "finish_in_progress", "db_busy"] {
+        for code in ["rows_open", "not_held", "finish_in_progress", "db_busy",
+                     "bad_password", "reauth_unavailable", "reauth_plex_mismatch", "reauth_grant_invalid"] {
             XCTAssertNotNil(ErrorCopy.messages[code], code)
         }
     }

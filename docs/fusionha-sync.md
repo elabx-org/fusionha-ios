@@ -49,6 +49,23 @@ Still open from 0.4.187:
 - Requests and Issues revamp (mocks in `docs/design/redesign/requests.html`).
 - Manual Import native (the web flow opens signed in meanwhile).
 
+## Waiting on fusionha
+
+From the handover doc's reply (2026-10-14), shipping after the next two
+releases; switch over when the release number is posted there:
+- `POST /api/v1/auth/session` (device token → web session cookie). Then
+  `FusionhaWebView` can mint a cookie instead of injecting `X-Api-Key`.
+  Refused for limited-scope tokens; revoking the token ends its sessions.
+- `progress` (0–100 or null) on `grabbing` calendar versions (`/calendar`,
+  `/calendar/lean`); null for decypharr phase-mode jobs.
+- Re-auth with Plex (`password` or `reauth_grant` from
+  `POST /auth/reauth/plex/pin` → `POST /auth/reauth/plex`; `GET /auth/reauth`
+  lists an account's methods). The backup password prompt should offer Plex
+  for Plex-only accounts once it lands. New codes already have copy.
+- Per-device sessions (`GET /auth/sessions`, `POST /auth/sessions/revoke-others`,
+  …): additive; a candidate for the Account page.
+- Monolith splits start after their requests Phase 7 merges.
+
 ## How to continue
 
 1. In the fusionha repo: `git log --first-parent --oneline 50d785bb..origin/main` and read the

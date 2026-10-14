@@ -50,6 +50,12 @@ public enum ErrorCopy {
         "reauth_required": "Enter your password again to continue.",
         "secrets_locked": "The server’s secrets are locked. An admin needs to unlock them on the server.",
         "placeholder_unresolved": "That field has no saved value to keep. Enter it again.",
+        // Re-auth for key actions and key-holding backups (`secrets-errors.ts`;
+        // the Plex re-auth codes are announced for the next fusionha releases).
+        "bad_password": "That password is wrong.",
+        "reauth_unavailable": "This sign-in has no password to confirm. Sign in as an admin with a password, or read the key file from the data volume on the server.",
+        "reauth_plex_mismatch": "That Plex account isn’t the one linked to your fusionha account.",
+        "reauth_grant_invalid": "That confirmation has expired. Try again.",
         // Library.
         "tmdb_not_configured": "Adding needs a TMDB key. Add one in Settings › Metadata.",
         // Queue: finishing a held download (fusionha 0.4.190, `queue-finish.ts`).
