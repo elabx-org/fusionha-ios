@@ -194,7 +194,7 @@ struct WantedFourKCard: View {
                 .foregroundStyle(Theme.onPrimary)
                 .padding(.horizontal, 12)
                 .frame(minWidth: 40, minHeight: 40)
-                .background(Theme.fusion, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .background(Theme.fusion, in: Capsule())
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

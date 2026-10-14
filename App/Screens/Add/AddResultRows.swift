@@ -149,7 +149,7 @@ struct AddListRow: View {
                         .foregroundStyle(Theme.onPrimary)
                         .padding(.horizontal, 14)
                         .frame(height: 30)
-                        .background(Theme.fusion, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .background(Theme.fusion, in: Capsule())
                 }
             }
             .buttonStyle(PressScaleStyle())

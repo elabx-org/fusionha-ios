@@ -309,7 +309,7 @@ struct AddConfigView: View {
                             LinearGradient(colors: [Theme.i1, Theme.i2], startPoint: .leading, endPoint: .trailing)
                         }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .clipShape(Capsule())
                     .saturation(!done && !busy && !flow.canSubmit ? 0.2 : 1)
                     .brightness(!done && !busy && !flow.canSubmit ? -0.3 : 0)
                     .scaleEffect(busy && motion ? 0.97 : 1)

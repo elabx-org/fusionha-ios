@@ -77,9 +77,9 @@ struct CalButtonStyle: ButtonStyle {
             .frame(maxWidth: fullWidth ? .infinity : nil, minHeight: 30, maxHeight: 30)
             .background { background }
             .overlay {
-                RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(border)
+                Capsule().strokeBorder(border)
             }
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .contentShape(Capsule())
             .opacity(isEnabled ? 1 : 0.5)
             .offset(y: configuration.isPressed ? 1 : 0)
     }
@@ -103,7 +103,7 @@ struct CalButtonStyle: ButtonStyle {
 
     @ViewBuilder
     private var background: some View {
-        let shape = RoundedRectangle(cornerRadius: 9, style: .continuous)
+        let shape = Capsule()
         switch variant {
         case .subtle: shape.fill(Theme.panel)
         case .ghost, .danger: shape.fill(Color.clear)

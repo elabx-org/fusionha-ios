@@ -45,7 +45,7 @@ struct RequestConfigurator: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(Theme.onPrimary)
                     .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(Theme.fusion, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+                    .background(Theme.fusion, in: Capsule())
             }
             .buttonStyle(PressScaleStyle())
             .disabled(sending)

@@ -64,7 +64,7 @@ struct OmniAddRow: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(Theme.onPrimary)
                 .frame(width: 30, height: 30)
-                .background(Theme.fusion, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .background(Theme.fusion, in: Circle())
         }
         .buttonStyle(PressScaleStyle(scale: 0.92))
         .accessibilityLabel(label)
