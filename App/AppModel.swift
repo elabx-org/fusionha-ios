@@ -60,6 +60,8 @@ final class AppModel {
         didSet {
             if tab == .calendar { calendarTodayTick += 1 }
             if tab == .search { searchFocusTick += 1 }
+            // Tapping the tab you are on scrolls it back to the top, as on iOS.
+            if tab == oldValue { scrollToTopTick += 1 }
             AppStartTab.remember(tab)
         }
     }
