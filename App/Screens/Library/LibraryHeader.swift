@@ -31,6 +31,10 @@ struct LibraryHeader: View {
             }
             caption
         }
+        // Warm the stats sheet's In progress / Needs attention, so it opens filled.
+        .task {
+            if let client = model.client { await StatsSheetFeed.shared.load(client: client, queue: model.queue) }
+        }
         .sheet(isPresented: $showingStats, onDismiss: {
             if pendingIndexerSettings {
                 pendingIndexerSettings = false

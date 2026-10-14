@@ -14,7 +14,7 @@ struct LibraryStatsSheet: View {
     /// Close the sheet, then open Settings › Indexers.
     var manageIndexers: () -> Void = {}
     @State private var grown = false
-    @State private var feed = StatsSheetFeed()
+    @State private var feed = StatsSheetFeed.shared
 
     private let order: [(LibraryStatus, String)] = [
         (.all, "titles"), (.complete, "complete"), (.downloading, "downloading"),

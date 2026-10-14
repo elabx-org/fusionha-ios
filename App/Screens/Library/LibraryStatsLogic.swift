@@ -226,29 +226,54 @@ enum StatsSheetLogic {
 }
 
 /// The sheet's live sources, polled every 2s while it is open (the web's
-/// `useOperations({ open: true })` cadence).
+/// `useOperations({ open: true })` cadence). One shared feed, so reopening the
+/// sheet shows the last answers at once; each source fills in as it lands
+/// instead of the sheet waiting for the slowest, and held downloads come from
+/// the queue the app already has.
 @MainActor
 @Observable
 final class StatsSheetFeed {
+    static let shared = StatsSheetFeed()
+
     private(set) var inProgress: [StatsOperation] = []
     private(set) var rows: [StatsAttentionRow] = []
     private(set) var indexers: [UnavailableIndexer] = []
     private(set) var loaded = false
 
+    private var commands: [OperationCommand] = []
+    private var runs: [ActivityRun] = []
+    private var library: [LibraryAttentionEntry] = []
+    private var runAttention: [RunAttentionEntry] = []
+    private var queue: [QueueItem] = []
+
     func load(client: APIClient, queue: [QueueItem]) async {
-        async let commands = try? client.operationCommands()
-        async let runs = try? client.systemRuns(page: 1, pageSize: 50)
-        async let library = try? client.libraryAttentionEntries()
-        async let runAttention = try? client.runAttentionEntries()
-        async let down = try? client.stoppedIndexers()
-        let ops = StatsSheetLogic.compose(commands: await commands ?? [], queue: queue, runs: await runs?.items ?? [])
-        let nextRows = StatsSheetLogic.attentionRows(library: await library ?? [], held: ops.attention,
-                                                     runs: await runAttention ?? [])
-        let nextIndexers = await down ?? []
+        self.queue = queue
+        recompute()
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { if let v = try? await client.operationCommands() { await self.update(commands: v) } }
+            group.addTask { if let v = try? await client.systemRuns(page: 1, pageSize: 50) { await self.update(runs: v.items) } }
+            group.addTask { if let v = try? await client.libraryAttentionEntries() { await self.update(library: v) } }
+            group.addTask { if let v = try? await client.runAttentionEntries() { await self.update(runAttention: v) } }
+            group.addTask {
+                if let v = try? await client.stoppedIndexers() {
+                    await self.update(indexers: v)
+                }
+            }
+        }
+        loaded = true
+    }
+
+    private func update(commands: [OperationCommand]) { self.commands = commands; recompute() }
+    private func update(runs: [ActivityRun]) { self.runs = runs; recompute() }
+    private func update(library: [LibraryAttentionEntry]) { self.library = library; recompute() }
+    private func update(runAttention: [RunAttentionEntry]) { self.runAttention = runAttention; recompute() }
+    private func update(indexers: [UnavailableIndexer]) { if indexers != self.indexers { self.indexers = indexers } }
+
+    private func recompute() {
+        let ops = StatsSheetLogic.compose(commands: commands, queue: queue, runs: runs)
+        let nextRows = StatsSheetLogic.attentionRows(library: library, held: ops.attention, runs: runAttention)
         if ops.inProgress != inProgress { inProgress = ops.inProgress }
         if nextRows != rows { rows = nextRows }
-        if nextIndexers != indexers { indexers = nextIndexers }
-        loaded = true
     }
 
     func drop(rowId: String) { rows.removeAll { $0.id == rowId } }
