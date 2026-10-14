@@ -306,7 +306,8 @@ struct AddConfigView: View {
                         if done {
                             Theme.done
                         } else {
-                            LinearGradient(colors: [Theme.i1, Theme.i2], startPoint: .leading, endPoint: .trailing)
+                            // The palette's primary, like every other main button.
+                            Theme.fusion
                         }
                     }
                     .clipShape(Capsule())
