@@ -292,7 +292,7 @@ struct DiscoverView: View {
         }
         return DiscoverRail(title: title, key: "upcoming|\(railKind.rawValue)", trending: false,
                             canAdd: canAdd, canRequest: canRequest) {
-            Image(systemName: icon).font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.cyan)
+            Image(systemName: icon).font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.i2)
         } load: { client in
             switch railKind {
             case .movie:

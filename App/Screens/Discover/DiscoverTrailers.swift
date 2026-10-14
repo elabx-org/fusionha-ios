@@ -13,7 +13,7 @@ struct TrailerRail: View {
 
     var body: some View {
         RailSection(title: "Latest Trailers", count: count) {
-            Image(systemName: "play.fill").font(.system(size: 18)).foregroundStyle(Theme.cyan)
+            Image(systemName: "play.fill").font(.system(size: 18)).foregroundStyle(Theme.i2)
         } toggle: {
             DiscoverSegmented(options: [("popular", "Popular"), ("trending", "Trending"), ("top_rated", "Top Rated")],
                               selection: $list)
@@ -82,7 +82,7 @@ struct TrailerCard: View {
                             .foregroundStyle(Theme.onPrimary)
                             .frame(width: 52, height: 52)
                             .background(Theme.fusion, in: Circle())
-                            .shadow(color: Theme.cyan.opacity(0.5), radius: 14, y: 12)
+                            .shadow(color: Theme.i2.opacity(0.5), radius: 14, y: 12)
                             .scaleEffect(0.86)
                     }
                     .background(Theme.card)

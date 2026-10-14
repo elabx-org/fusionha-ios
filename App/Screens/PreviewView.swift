@@ -82,7 +82,7 @@ struct PreviewPage: View {
             } else if failed {
                 VStack(spacing: 14) {
                     (Text("That title could not be found on TMDB. Head back to ")
-                        + Text("Discover").foregroundColor(Theme.cyan).fontWeight(.semibold) + Text("."))
+                        + Text("Discover").foregroundColor(Theme.i2).fontWeight(.semibold) + Text("."))
                         .font(.system(size: 14))
                         .foregroundStyle(Theme.mut)
                         .multilineTextAlignment(.center)
@@ -295,7 +295,7 @@ struct PreviewPage: View {
             if let url = URL(string: "https://www.youtube.com/watch?v=\(key)") {
                 Link("Watch on YouTube", destination: url)
                     .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.i2)
             }
         }
     }
@@ -345,7 +345,7 @@ private struct CastCard: View {
     var body: some View {
         VStack(spacing: 6) {
             ZStack {
-                LinearGradient(colors: [Theme.indigo, Theme.cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+                LinearGradient(colors: [Theme.i1, Theme.i2], startPoint: .topLeading, endPoint: .bottomTrailing)
                 Text(initials).font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
                 if let url = member.profileUrl.flatMap({ TMDBImage.resized($0, to: "h632") }) {
                     DiscoverArt(url: url)

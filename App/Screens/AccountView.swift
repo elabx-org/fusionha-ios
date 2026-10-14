@@ -159,7 +159,7 @@ struct AccountSheet: View {
 private struct AccountRowButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(configuration.isPressed ? Theme.cyan : Theme.txt)
+            .foregroundStyle(configuration.isPressed ? Theme.i2 : Theme.txt)
     }
 }
 

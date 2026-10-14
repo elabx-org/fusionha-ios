@@ -229,7 +229,7 @@ struct ActBulkBar<Actions: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                (Text("\(count)").foregroundColor(Theme.cyan).bold() + Text(" selected"))
+                (Text("\(count)").foregroundColor(Theme.i2).bold() + Text(" selected"))
                     .font(.system(size: 12.5))
                     .foregroundStyle(Theme.mut)
                 Button("Select all", action: onSelectAll)

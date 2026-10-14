@@ -306,7 +306,7 @@ struct AddConfigView: View {
                         if done {
                             Theme.done
                         } else {
-                            LinearGradient(colors: [Theme.indigo, Theme.cyan], startPoint: .leading, endPoint: .trailing)
+                            LinearGradient(colors: [Theme.i1, Theme.i2], startPoint: .leading, endPoint: .trailing)
                         }
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))

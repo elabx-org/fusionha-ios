@@ -178,7 +178,7 @@ struct YouView: View {
 private struct RowPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .foregroundStyle(configuration.isPressed ? Theme.cyan : Theme.txt)
+            .foregroundStyle(configuration.isPressed ? Theme.i2 : Theme.txt)
             .opacity(configuration.isPressed ? 0.85 : 1)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }

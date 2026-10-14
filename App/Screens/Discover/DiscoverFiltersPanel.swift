@@ -35,7 +35,7 @@ struct DiscoverFiltersPanel: View {
     private var panel: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 12) {
-                Image(systemName: "line.3.horizontal.decrease").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.cyan)
+                Image(systemName: "line.3.horizontal.decrease").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.i2)
                 Text("Discover with filters").font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
                 Spacer(minLength: 0)
                 Button { withAnimation(DiscoverMotion.reduced(reduceMotion) ? nil : DiscoverMotion.reveal(0.3)) { open.toggle() } } label: {

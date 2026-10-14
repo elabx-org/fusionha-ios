@@ -41,7 +41,7 @@ struct ActFooter: View {
                     hairline
                     (Text("You’ve reached the end").bold().foregroundColor(Theme.mut)
                      + Text(" · showing all ")
-                     + Text("\(total)").font(.system(size: 12.5, design: .monospaced)).foregroundColor(Theme.cyan)
+                     + Text("\(total)").font(.system(size: 12.5, design: .monospaced)).foregroundColor(Theme.i2)
                      + Text(" \(noun)")
                      + Text(query.trimmingCharacters(in: .whitespaces).isEmpty ? "" : " matching “\(query.trimmingCharacters(in: .whitespaces))”"))
                         .multilineTextAlignment(.center)
@@ -57,7 +57,7 @@ struct ActFooter: View {
     }
 
     private var hairline: some View {
-        LinearGradient(colors: [Theme.indigo.opacity(0), Theme.cyan.opacity(0.6)], startPoint: .leading, endPoint: .trailing)
+        LinearGradient(colors: [Theme.i1.opacity(0), Theme.i2.opacity(0.6)], startPoint: .leading, endPoint: .trailing)
             .frame(width: 34, height: 1)
     }
 }

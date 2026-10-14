@@ -23,21 +23,21 @@ struct WantedGradualStrip: View {
         HStack(spacing: 12) {
             Circle()
                 .trim(from: 0, to: 0.75)
-                .stroke(Theme.cyan, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                .background(Circle().stroke(Theme.cyan.opacity(0.3), lineWidth: 2))
+                .stroke(Theme.i2, style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .background(Circle().stroke(Theme.i2.opacity(0.3), lineWidth: 2))
                 .frame(width: 15, height: 15)
                 .actSpin(true, duration: 0.8)
             TimelineView(.periodic(from: .now, by: 1)) { context in
                 let remaining = max(0, interval - Int(context.date.timeIntervalSince(tickStamp)))
                 let hasNext = current.map { $0 < total } ?? false
-                (Text(current.map { "Searching episode \($0) of \(total)" } ?? "Starting gradual search…").foregroundColor(Theme.cyan).fontWeight(.semibold)
+                (Text(current.map { "Searching episode \($0) of \(total)" } ?? "Starting gradual search…").foregroundColor(Theme.i2).fontWeight(.semibold)
                  + Text((tail.flatMap { $0.isEmpty ? nil : " · \($0)" } ?? "") + (hasNext && remaining > 0 ? " · next in \(remaining)s" : ""))
                     .foregroundColor(Theme.mut))
                     .font(.system(size: 12.5))
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            ActProgressBar(fraction: pct, height: 5, fill: AnyShapeStyle(Theme.cyan), shimmer: false)
+            ActProgressBar(fraction: pct, height: 5, fill: AnyShapeStyle(Theme.i2), shimmer: false)
                 .frame(width: 80)
             Button {
                 stopping = true
@@ -59,7 +59,7 @@ struct WantedGradualStrip: View {
         .padding(.leading, 15)
         .padding(.trailing, 6)
         .padding(.vertical, 3)
-        .background(LinearGradient(stops: [.init(color: Theme.cyan.opacity(0.09), location: 0), .init(color: .clear, location: 0.8)],
+        .background(LinearGradient(stops: [.init(color: Theme.i2.opacity(0.09), location: 0), .init(color: .clear, location: 0.8)],
                                    startPoint: .leading, endPoint: .trailing))
         .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
         .task(id: runId) {

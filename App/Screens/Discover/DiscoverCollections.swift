@@ -20,7 +20,7 @@ struct CollectionsRail: View {
             case .loaded(let items):
                 RailSection(title: "Complete your collections",
                             count: items.count == 1 ? "1 franchise" : "\(items.count) franchises") {
-                    Image(systemName: "square.grid.2x2").font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.cyan)
+                    Image(systemName: "square.grid.2x2").font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.i2)
                 } toggle: {
                     EmptyView()
                 } track: {

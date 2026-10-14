@@ -13,7 +13,7 @@ struct OnDeckCard: View {
             ActPoster(url: item.posterUrl, title: item.title, size: .sm)
             VStack(alignment: .leading, spacing: 5) {
                 QueueHead(item: item, chip: item.phase != nil && item.phase != "queued"
-                          ? (item.phaseMeta.label, item.phaseMeta.tone) : ("ON DECK", Theme.cyan))
+                          ? (item.phaseMeta.label, item.phaseMeta.tone) : ("ON DECK", Theme.i2))
                 ReleaseLine(text: item.releaseTitle)
                 PhaseReadout(item: item, ghost: true)
                 HStack {
