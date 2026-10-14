@@ -43,7 +43,10 @@ extension AppModel {
             tab = .activity
         case "calendar" where !requestScoped: tab = .calendar
         case "library" where !requestScoped: tab = .library
-        case "wanted" where !requestScoped: tab = .wanted
+        case "wanted" where !requestScoped:
+            // Wanted lives under Activity.
+            pendingActivityTab = .wanted
+            tab = .activity
         case "discover":
             pendingDiscoverTab = path.first.flatMap(DiscoverTab.init(rawValue:))
             tab = requestScoped && pendingDiscoverTab == .requests ? .requests : .discover

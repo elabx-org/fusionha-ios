@@ -17,7 +17,7 @@ Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`g
 
 | Web | iOS |
 |---|---|
-| Mobile bottom nav: Library · Discover · Calendar · Activity · Wanted | `TabView` with the native glass tab bar and **the same five tabs in the same order, with the web's own icons** (SVG template assets copied from `shell/destinations.tsx`) and the cyan active tint. |
+| Mobile bottom nav: Library · Discover · Calendar · Activity · Wanted | `TabView` with the native glass tab bar: **Library · Discover · Calendar · Activity**, with the web's own icons (SVG template assets copied from `shell/destinations.tsx`) and the cyan active tint. **Deviation (owner's call, 2026-10):** Wanted is not a tab; it is Activity's second sub-tab (Queue · Wanted · History · …), so the bar has room for the iOS 26 search tab. `fusionha://wanted` and "Open on Wanted" land there. |
 | Discover page (search field + poster rails) | Its own **Discover tab**, like the web: kind filter, TMDB search, Browse rails and Requests. |
 | Mobile top bar: logo · search pill · avatar | The same custom top bar on every tab. The search pill scopes to **This library** (filters the Library grid in place) or **Everything** (library matches plus TMDB titles to add). |
 | Top bar hides on scroll down | The custom top bar slides away on scroll down (and the ＋ orb with it); the tab bar uses `.tabBarMinimizeBehavior(.onScrollDown)`. Tapping the logo scrolls to the top. |
@@ -112,7 +112,8 @@ The web phone layout is a swipe-down bottom sheet (`MobileDetailFlyout`). On iOS
 - **iCal feed:** a menu with **Copy feed URL** (the web's action) and **Subscribe in Calendar**, which opens the `webcal://` form of `/api/v1/calendar/feed.ics?apikey=…` (the app API key from `GET /api/v1/settings/api-key`).
 - **API:** `GET /api/v1/calendar?start&end`.
 
-### Wanted (`/wanted`)
+### Wanted (`/wanted`, Activity › Wanted on iOS)
+- **Placement:** shown under Activity's header and tab strip in place of its own title (`WantedView(embedded: true)`); everything below is unchanged.
 - **Layout (as the mobile web):** head "Wanted" + "{n} wanted titles · m missing, c below cutoff, u upcoming[, k seen in 4K]" from the state-independent totals (`GET /api/v1/wanted?page_size=1`, `GET /api/v1/wanted/4k-available?page_size=1`); the OverviewStrip; filter chips **Missing · Cutoff Unmet · Upcoming · 4K Available** with counts; the title search; the lead text; one GroupCard per title (tone wash, kind pill, state, per-edition HD/4K chips with a state dot, the context cue). Series on Missing list their missing episodes with a per-episode search. Infinite-scroll footer.
 - **Actions:** "Search all missing / upgrades" (the web's loop: `GET /api/v1/wanted?page_size=500&state&q`, then `POST /library/{id}/search` per title); a native search-mode `Menu` per card (Search all / Search missing only / Search each episode, the last two via `POST /api/v1/library/{id}/search/gradual` with a live progress strip and Stop); Open in library; Why this decision.
 - **4K Available:** cards with HD-owned / 4K-available rails, format tags, sightings and provenance, **Check for 4K now** (`POST /api/v1/library/{id}/check-4k`) and **＋ Add** (a native Form sheet: tier, root folder, quality profile, monitored, search now → `POST /api/v1/library/{id}/editions`). Observer off → "Turn on observing" (`PUT /api/v1/settings`).

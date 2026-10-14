@@ -2,7 +2,7 @@ import SwiftUI
 import FusionhaKit
 
 enum ActivityTab: String, Hashable {
-    case queue, history, blocklist, tasks, audit, indexers
+    case queue, wanted, history, blocklist, tasks, audit, indexers
 }
 
 /// Bulk-bar contents published by the tab in select mode, so the glass bar can sit
@@ -124,6 +124,7 @@ struct ActivityView: View {
         Screen {
             switch chrome.tab {
             case .queue: ActivityQueueTab(search: chrome.search)
+            case .wanted: WantedView(embedded: true)
             case .history: ActivityHistoryTab(search: chrome.search)
             case .blocklist: ActivityBlocklistTab(search: chrome.search)
             case .tasks: ActivityTasksTab()
@@ -222,7 +223,7 @@ struct ActivityPageHeader: View {
     @Environment(\.actTabsNamespace) private var tabsNamespace
 
     private var visibleTabs: [ActivityTab] {
-        var tabs: [ActivityTab] = [.queue, .history, .blocklist, .tasks]
+        var tabs: [ActivityTab] = [.queue, .wanted, .history, .blocklist, .tasks]
         if model.me?.hasPermission("system.admin") == true { tabs.append(.audit) }
         if model.me?.hasPermission("integrations.manage") == true { tabs.append(.indexers) }
         return tabs
@@ -297,6 +298,7 @@ struct ActivityPageHeader: View {
     private func label(_ t: ActivityTab) -> String {
         switch t {
         case .queue: return "Queue"
+        case .wanted: return "Wanted"
         case .history: return "History"
         case .blocklist: return "Blocklist"
         case .tasks: return "Tasks"

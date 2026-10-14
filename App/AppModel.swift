@@ -6,7 +6,7 @@ import FusionhaKit
 
 /// The web's mobile bottom-nav destinations (shell/destinations.tsx).
 enum AppTab: Hashable {
-    case library, discover, calendar, activity, wanted
+    case library, discover, calendar, activity
     /// Requester accounts (REQUESTOR_DESTINATIONS).
     case requests, you
 }
@@ -158,6 +158,7 @@ final class AppModel {
 
     init() {
         tab = AppStartTab.launchTab()
+        pendingActivityTab = AppStartTab.launchActivityTab()
         #if DEBUG
         // CI screenshots: point at the mock server and open a given screen.
         let env = ProcessInfo.processInfo.environment
@@ -167,7 +168,9 @@ final class AppModel {
             case "discover": tab = .discover
             case "calendar": tab = .calendar
             case "activity": tab = .activity
-            case "wanted": tab = .wanted
+            case "wanted":
+                tab = .activity
+                pendingActivityTab = .wanted
             default: tab = .library
             }
             presentedItem = env["FUSIONHA_SCREENSHOT_ITEM"].flatMap(Int.init).map(ItemRef.init(id:))

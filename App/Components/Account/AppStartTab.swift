@@ -33,10 +33,14 @@ enum AppStartTab: String, CaseIterable, Identifiable {
         switch choice {
         case .discover: return .discover
         case .calendar: return .calendar
-        case .activity: return .activity
-        case .wanted: return .wanted
+        case .activity, .wanted: return .activity
         case .library, .last: return .library
         }
+    }
+
+    /// Wanted is an Activity sub-tab, so "Open on Wanted" picks it there.
+    static func launchActivityTab() -> ActivityTab? {
+        current == .wanted ? .wanted : nil
     }
 
     /// Remembers the tab in use, for "Last used".
@@ -47,7 +51,6 @@ enum AppStartTab: String, CaseIterable, Identifiable {
         case .discover: raw = "discover"
         case .calendar: raw = "calendar"
         case .activity: raw = "activity"
-        case .wanted: raw = "wanted"
         case .requests, .you: raw = nil
         }
         if let raw { UserDefaults.standard.set(raw, forKey: lastKey) }

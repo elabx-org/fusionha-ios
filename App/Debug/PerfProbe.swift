@@ -170,7 +170,7 @@ final class PerfProbe: NSObject {
         await switchActivityTab("history")
         await phase("history.return", 5)
 
-        model.tab = .wanted
+        await switchActivityTab("wanted")
         await phase("wanted.load", 4)
         await phase("wanted.idle", 5)
         await phase("wanted.scroll", 8, scroll: true)

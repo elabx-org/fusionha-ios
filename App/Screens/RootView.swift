@@ -76,7 +76,6 @@ struct RootView: View {
                 Tab("Calendar", image: "nav-calendar", value: AppTab.calendar) { CalendarView() }
                 Tab("Activity", image: "nav-activity", value: AppTab.activity) { ActivityView() }
                     .badge(model.queueTotal > 0 ? Text(model.queueTotal > 99 ? "99+" : "\(model.queueTotal)") : nil)
-                Tab("Wanted", image: "nav-wanted", value: AppTab.wanted) { WantedView() }
             }
         }
         .tint(Theme.indigo)

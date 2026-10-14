@@ -9,6 +9,8 @@ import FusionhaKit
 
 struct WantedView: View {
     @Environment(AppModel.self) private var model
+    /// Shown as Activity's Wanted tab rather than a tab of its own.
+    var embedded = false
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @State private var tab: WantedTab = WantedView.initialTab
     @State private var searchInput = ""
@@ -45,27 +47,8 @@ struct WantedView: View {
 
     var body: some View {
         let _ = PerfCount.hit("WantedView.body")
-        Screen(showsAdd: true) {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    header
-                    if totals == nil && !totalsFailed {
-                        ActEmpty(message: "Loading wanted titles…").padding(.top, 14)
-                    } else if totalsFailed && totals == nil {
-                        ActEmpty(message: "The wanted list could not be loaded. Check the backend and try again.").padding(.top, 14)
-                    } else {
-                        overview.padding(.top, 14).padding(.bottom, 16)
-                        filterBar
-                        lead.padding(.top, 10).padding(.bottom, 14)
-                        if tab == .fourk { fourkList } else { wantedList }
-                    }
-                }
-                .padding(.horizontal, 10)
-                .padding(.top, 20)
-                .padding(.bottom, 90)
-            }
-            .scrollDismissesKeyboard(.immediately)
-            .refreshable { await reloadAll() }
+        Group {
+            if embedded { page } else { Screen(showsAdd: true) { page } }
         }
         .overlay { ActToastOverlay(toaster: toaster).padding(.bottom, 70) }
         .environment(\.actReduceMotion, reduce)
@@ -88,6 +71,36 @@ struct WantedView: View {
                 Task { await reloadAll() }
             } onCancel: { addEditionFor = nil }
         }
+    }
+
+    /// Under Activity the page opens with Activity's header and tab strip in
+    /// place of its own title.
+    private var page: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                if embedded {
+                    ActivityPageHeader()
+                    summary
+                } else {
+                    header
+                }
+                if totals == nil && !totalsFailed {
+                    ActEmpty(message: "Loading wanted titles…").padding(.top, 14)
+                } else if totalsFailed && totals == nil {
+                    ActEmpty(message: "The wanted list could not be loaded. Check the backend and try again.").padding(.top, 14)
+                } else {
+                    overview.padding(.top, 14).padding(.bottom, 16)
+                    filterBar
+                    lead.padding(.top, 10).padding(.bottom, 14)
+                    if tab == .fourk { fourkList } else { wantedList }
+                }
+            }
+            .padding(.horizontal, embedded ? Theme.pageGutter : 10)
+            .padding(.top, 20)
+            .padding(.bottom, 90)
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .refreshable { await reloadAll() }
     }
 
     // MARK: Data
@@ -135,18 +148,22 @@ struct WantedView: View {
     // MARK: Head
 
     private var header: some View {
-        let total = totals?.total ?? 0
-        return ActFlow(spacing: 12, lineSpacing: 8) {
+        ActFlow(spacing: 12, lineSpacing: 8) {
             Text("Wanted")
                 .pageTitle()
-            (Text(total == 1 ? "1 wanted title" : "\(total) wanted titles")
-             + Text(total > 0 ? " · \(count(.missing)) missing, \(count(.cutoff)) below cutoff, \(count(.upcoming)) upcoming\(fourkCount > 0 ? ", \(fourkCount) seen in 4K" : "")" : "")
-                .foregroundColor(Theme.dim))
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.mut)
-                .fixedSize(horizontal: false, vertical: true)
+            summary
         }
         .padding(.bottom, 4)
+    }
+
+    private var summary: some View {
+        let total = totals?.total ?? 0
+        return (Text(total == 1 ? "1 wanted title" : "\(total) wanted titles")
+         + Text(total > 0 ? " · \(count(.missing)) missing, \(count(.cutoff)) below cutoff, \(count(.upcoming)) upcoming\(fourkCount > 0 ? ", \(fourkCount) seen in 4K" : "")" : "")
+            .foregroundColor(Theme.dim))
+            .font(.system(size: 13))
+            .foregroundStyle(Theme.mut)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     private var overview: some View {
