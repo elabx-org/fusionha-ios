@@ -63,7 +63,7 @@ struct NumberingFixSheet: View {
                 DialogBanner(text: "Downloads are currently in flight for this series — wait for the queue to drain and try again.")
             }
             if !isAdmin {
-                DialogBanner(text: "Only an admin can apply this fix. You can still review the changes below.", tint: Theme.cyan)
+                DialogBanner(text: "Only an admin can apply this fix. You can still review the changes below.", tint: Theme.i2)
             }
             NumberingDiffList(preview: preview, sourceLabel: sourceLabel)
             if let applyError {

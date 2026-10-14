@@ -90,7 +90,7 @@ struct SeasonActionsSheet: View {
                 }
                 Spacer(minLength: 0)
                 if let value {
-                    Text(value).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.cyan)
+                    Text(value).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
                         .contentTransition(.opacity)
                 }
             }

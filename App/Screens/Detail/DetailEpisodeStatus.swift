@@ -24,7 +24,7 @@ struct EpisodeStatusChip: View {
                     .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.edition.opacity(0.65), lineWidth: 1.5))
                 Text("↑").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.edition)
                 if let target = episode.download(for: edition.id)?.releaseQuality {
-                    Text(DetailText.quality(target)).font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(Theme.cyan)
+                    Text(DetailText.quality(target)).font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(Theme.edition)
                 }
             }
         case .downloading:
@@ -115,7 +115,7 @@ struct DownloadPill: View {
                     model.presentedItem = nil
                 }
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(Theme.cyan)
+                .foregroundStyle(Theme.i2)
             }
             .padding(14)
             .frame(width: 280)

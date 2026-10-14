@@ -58,9 +58,8 @@ struct ReleaseTimeline: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(14)
-        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 11))
-        .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line))
+        .padding(16)
+        .detailCard()
     }
 
     private func icon(_ kind: String) -> String {
@@ -95,7 +94,7 @@ struct DetailRailStack: View {
                     PosterImage(url: URL(string: "https://img.youtube.com/vi/\(key)/hqdefault.jpg"))
                         .aspectRatio(16 / 9, contentMode: .fill)
                         .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: 11))
+                        .shelfPoster(radius: 12)
                         .overlay {
                             Image(systemName: "play.fill")
                                 .font(.system(size: 20))
@@ -103,7 +102,6 @@ struct DetailRailStack: View {
                                 .frame(width: 54, height: 54)
                                 .glassEffect(.regular.interactive(), in: .circle)
                         }
-                        .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line))
                 }
                 .buttonStyle(DetailPressStyle())
                 .accessibilityLabel("Play trailer")
@@ -115,14 +113,13 @@ struct DetailRailStack: View {
                     withAnimation { store.tab = .collection }
                 } label: {
                     HStack {
-                        Image(systemName: "square.stack.3d.up").foregroundStyle(Theme.edition)
+                        Image(systemName: "square.stack.3d.up").foregroundStyle(Theme.mut)
                         Text(name).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
                         Spacer()
                         Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
                     }
-                    .padding(14)
-                    .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 11))
-                    .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line))
+                    .padding(16)
+                    .detailCard()
                 }
                 .buttonStyle(DetailPressStyle())
             }
@@ -182,11 +179,10 @@ struct CollectionTab: View {
                 .foregroundStyle(Theme.mut)
             Button("Open in the web app", action: openWeb)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(Theme.cyan)
+                .foregroundStyle(Theme.i2)
         }
-        .padding(14)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 11))
-        .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line))
+        .detailCard()
     }
 }

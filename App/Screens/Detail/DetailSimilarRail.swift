@@ -43,25 +43,29 @@ struct DetailSimilarRail: View {
         }
     }
 
-    /// Web `.card`: 2:3 poster (radius 13, line border, drop shadow, in-library
-    /// badge top-right), then title 12.5 semibold and year 11.5.
+    /// Web `.card`: a 2:3 lit shelf poster (no badge on the art), then the
+    /// title and "year · In library".
     private func cardLabel(_ title: SimilarTitle) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Color.clear
                 .aspectRatio(2 / 3, contentMode: .fit)
                 .overlay { DiscoverArt(url: TMDBImage.resized(title.posterUrl, to: "w500")) }
-                .background(Theme.panel2)
-                .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Theme.line))
-                .shadow(color: .black.opacity(0.55), radius: 12, y: 12)
-                .overlay(alignment: .topTrailing) {
-                    if title.inLibrary == true { PosterStatusBadge(kind: .inLibrary).padding(8) }
+                .shelfPoster()
+                .padding(.bottom, 8)
+            Text(title.title ?? "").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
+            // Nothing on the art: "in library" sits in the caption line.
+            HStack(spacing: 4) {
+                if let year = title.year {
+                    Text(verbatim: "\(year)")
                 }
-                .padding(.bottom, 6)
-            Text(title.title ?? "").font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-            if let year = title.year {
-                Text(verbatim: "\(year)").font(.system(size: 11.5)).foregroundStyle(Theme.mut)
+                if title.inLibrary == true {
+                    if title.year != nil { Text("·") }
+                    Text("In library").foregroundStyle(Theme.txt)
+                }
             }
+            .font(.system(size: 12))
+            .foregroundStyle(Theme.mut)
+            .lineLimit(1)
         }
         .contentShape(Rectangle())
     }

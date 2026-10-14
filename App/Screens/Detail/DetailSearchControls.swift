@@ -40,17 +40,14 @@ struct SearchActionButton: View {
                     Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
                 }
             }
-            .frame(maxWidth: title == nil ? nil : .infinity)
-            .frame(height: title == nil ? nil : 44)
-            .background {
-                if bordered || (title != nil && framed) {
-                    RoundedRectangle(cornerRadius: 10).fill(Theme.panel2)
-                    RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.line)
-                }
-            }
+            // Labelled: a hugging glass capsule, or the stretching half of a split.
+            .padding(.horizontal, title != nil && framed ? 14 : 0)
+            .frame(maxWidth: title != nil && !framed ? .infinity : nil)
+            .frame(height: title == nil ? nil : (framed ? 40 : 44))
             .contentShape(Rectangle())
         }
         .buttonStyle(DetailPressStyle())
+        .modifier(SearchButtonGlass(round: bordered && title == nil, capsule: title != nil && framed))
         .disabled(phase == .searching)
         .detailShake(trigger: shakes)
         .sensoryFeedback(.success, trigger: popped) { _, new in new }
@@ -60,7 +57,7 @@ struct SearchActionButton: View {
     @ViewBuilder private var icon: some View {
         switch phase {
         case .idle:
-            Image(systemName: "magnifyingglass").foregroundStyle(title == nil ? Theme.mut : Theme.txt)
+            Image(systemName: "magnifyingglass").foregroundStyle(title == nil && !bordered ? Theme.mut : Theme.txt)
         case .searching:
             DetailSpinner(size: glyph, color: Theme.grab)
         case .ok:
@@ -94,6 +91,24 @@ struct SearchActionButton: View {
             }
             try? await Task.sleep(for: .seconds(2.2))
             phase = .idle
+        }
+    }
+}
+
+/// The glass behind a SearchActionButton: a circle when bordered, a capsule
+/// when labelled and framed, nothing when it sits inside another control.
+private struct SearchButtonGlass: ViewModifier {
+    let round: Bool
+    let capsule: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if round {
+            content.glassEffect(.regular.interactive(), in: .circle)
+        } else if capsule {
+            content.glassControl()
+        } else {
+            content
         }
     }
 }
@@ -151,7 +166,7 @@ struct SearchModeMenu: View {
         } label: {
             Image(systemName: "chevron.down")
                 .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Theme.cyan)
+                .foregroundStyle(Theme.mut)
                 .frame(width: width, height: height)
                 .contentShape(Rectangle())
         }

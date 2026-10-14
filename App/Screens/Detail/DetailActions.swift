@@ -1,8 +1,8 @@
 import SwiftUI
 import FusionhaKit
 
-/// The item actions rail (HeroActionRail at ≤720px): a glass pill of icon
-/// buttons in the web's order — Refresh (split: tap = metadata only, caret =
+/// The item actions rail (HeroActionRail at ≤720px, redesign `.rail`): round
+/// glass buttons in the web's order — Refresh (split: tap = metadata only, caret =
 /// menu), Preview rename, Manage files / episodes, Report an issue, Check
 /// episode numbering (series), Edition aliases (a title with a non-Standard
 /// edition), Edit & monitoring, Delete. Like the web it wraps to a second row
@@ -21,29 +21,29 @@ struct ItemActionsRail: View {
     }
 
     var body: some View {
-        FlowRow(spacing: 4) {
-            ForEach(actions, id: \.self) { action in
-                if action == .refresh {
-                    RefreshSplitButton()
-                } else {
-                    button(action)
+        GlassEffectContainer(spacing: 4) {
+            FlowRow(spacing: 8, lineSpacing: 8) {
+                ForEach(actions, id: \.self) { action in
+                    if action == .refresh {
+                        RefreshSplitButton()
+                    } else {
+                        button(action)
+                    }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(5)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.panel.opacity(0.8), in: RoundedRectangle(cornerRadius: 12))
-        .glassEffect(.regular, in: .rect(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.line))
     }
 
     private func button(_ action: ItemAction) -> some View {
         let flagged = detail.numberingMismatch == true
         return DetailRailButton(systemImage: Self.symbol(action), label: action.label(isSeries: detail.isSeries, numberingFlagged: flagged),
-                                glyph: 17, tint: action == .checkNumbering && flagged ? Theme.miss : Theme.mut,
+                                size: 48, glyph: 19,
+                                tint: action == .checkNumbering && flagged ? Theme.miss : action == .delete ? Theme.danger : Theme.txt,
                                 busy: action == .checkNumbering && store.checkingNumbering) {
             perform(action)
         }
+        .glassEffect(.regular.interactive(), in: .circle)
     }
 
     private func perform(_ action: ItemAction) {
@@ -76,7 +76,7 @@ struct ItemActionsRail: View {
     }
 }
 
-/// Split "Refresh": the main half is a one-tap metadata refresh; the caret
+/// Split "Refresh" (`.rcaret`), one glass capsule: the main half is a one-tap metadata refresh; the caret
 /// opens the menu offering both "Refresh metadata" and "Refresh & scan files".
 /// Both halves disable while the refresh runs.
 private struct RefreshSplitButton: View {
@@ -84,9 +84,11 @@ private struct RefreshSplitButton: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            DetailRailButton(systemImage: "arrow.clockwise", label: "Refresh metadata", glyph: 17, busy: store.refreshing) {
+            DetailRailButton(systemImage: "arrow.clockwise", label: "Refresh metadata", size: 48, glyph: 19,
+                             tint: Theme.txt, busy: store.refreshing) {
                 Task { await store.refresh(metadataOnly: true) }
             }
+            .padding(.trailing, -10)
             Menu {
                 Button {
                     Task { await store.refresh(metadataOnly: true) }
@@ -106,13 +108,15 @@ private struct RefreshSplitButton: View {
                 }
             } label: {
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Theme.dim)
-                    .frame(width: 18, height: 44)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Theme.mut)
+                    .frame(width: 30, height: 48)
                     .contentShape(Rectangle())
             }
             .disabled(store.refreshing)
             .accessibilityLabel("Refresh options")
         }
+        .padding(.trailing, 4)
+        .glassEffect(.regular.interactive(), in: .capsule)
     }
 }

@@ -17,10 +17,11 @@ struct AmbientBackdrop: View {
                     .brightness(-0.2)
                     .clipped()
             }
+            // The redesign's ground is a warm black: the art is only a glow under it.
             LinearGradient(stops: [
-                .init(color: Theme.bg.opacity(0.78), location: 0),
-                .init(color: Theme.bg.opacity(0.62), location: 0.3),
-                .init(color: Theme.bg.opacity(0.5), location: 1),
+                .init(color: Theme.bg.opacity(0.9), location: 0),
+                .init(color: Theme.bg.opacity(0.84), location: 0.3),
+                .init(color: Theme.bg.opacity(0.8), location: 1),
             ], startPoint: .top, endPoint: .bottom)
         }
         .ignoresSafeArea()
@@ -29,7 +30,7 @@ struct AmbientBackdrop: View {
 
 /// The scrolling page body (MobileDetailFlyout `.body`): setup strip,
 /// overview, Item actions + its "applies to" echo, Versions, the release
-/// timeline, the rails and the tabs.
+/// timeline, the rails, the tabs and the metadata credit.
 struct DetailPage: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
@@ -44,27 +45,24 @@ struct DetailPage: View {
             VStack(alignment: .leading, spacing: 0) {
                 if let setup = model.setupProgress.activeSetup(for: detail.id) {
                     SetupStepStrip(setup: setup)
-                        .padding(.top, 8)
+                        .padding(.top, 14)
                         .padding(.bottom, 4)
                 }
                 if let overview = detail.overview, !overview.isEmpty {
                     Text(overview)
-                        .font(.system(size: 14))
-                        .lineSpacing(14 * 0.55 - 3)
-                        .foregroundStyle(Theme.txt.opacity(0.9))
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
+                        .font(.system(size: 15))
+                        .lineSpacing(15 * 0.45 - 3)
+                        .foregroundStyle(Theme.txt)
+                        .padding(.top, 16)
                         .detailReveal(delay: 0.18)
                 }
 
-                DetailSection(title: "Item actions")
+                appliesTo
                     .id("actions")
                 ItemActionsRail(detail: detail, openWeb: openWeb)
-                appliesTo
 
-                DetailSection(title: "Versions")
-                    .id("editions")
                 DetailVersionsPanel(detail: detail, openWeb: openWeb)
+                    .id("editions")
 
                 if detail.kind == .movie, ReleaseTimeline.hasData(detail) {
                     DetailSection(title: "Release timeline")
@@ -75,21 +73,28 @@ struct DetailPage: View {
                 DetailTabsView(detail: detail, openWeb: openWeb)
                     .id("tabs")
                     .padding(.top, 6)
+
+                MetadataCredit(provider: detail.resolvedMetadataProvider ?? "tmdb")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.dim)
+                    .padding(.top, 32)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 6)
-            .padding(.bottom, 24)
+            .padding(.horizontal, Theme.pageGutter)
+            .padding(.bottom, 32)
         }
     }
 
-    /// The rail's read-only `applies to {all versions | tier}` echo (the web's
-    /// `.railRow` wraps it under the full-width rail with a 12px gap).
+    /// The rail's caption (`.applies`): "Item actions · applies to {all
+    /// versions | tier}", echoing the page scope the actions act on.
     private var appliesTo: some View {
-        (Text("applies to ").foregroundColor(Theme.dim)
-            + Text(store.actsOnLabel).font(.system(size: 11.5, weight: .semibold, design: .monospaced)).foregroundColor(Theme.txt))
-            .font(.system(size: 11.5))
-            .padding(.top, 12)
+        (Text("Item actions · applies to ")
+            + Text(store.actsOnLabel).fontWeight(.semibold).foregroundColor(Theme.txt))
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Theme.dim)
+            .padding(.top, 22)
+            .padding(.bottom, 10)
             .contentTransition(.opacity)
             .detailAnimation(.easeInOut(duration: 0.2), value: store.actsOnLabel)
+            .accessibilityAddTraits(.isHeader)
     }
 }

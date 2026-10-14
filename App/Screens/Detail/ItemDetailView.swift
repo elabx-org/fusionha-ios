@@ -99,7 +99,7 @@ struct ItemDetailView: View {
         .environment(store)
         .environment(\.detailReduceMotion, reduceMotion)
         .presentationDetents([.large])
-        .presentationCornerRadius(14)
+        .presentationCornerRadius(34)
         .task {
             store.client = model.client
             store.queue = model.queue
@@ -177,22 +177,15 @@ struct ItemDetailView: View {
     private func compactBar(_ title: String) -> some View {
         HStack(spacing: 10) {
             Text(title)
-                .font(.system(size: 14, weight: .heavy))
+                .font(Theme.display(22, relativeTo: .headline))
+                .tracking(Theme.displayTracking(22))
                 .foregroundStyle(Theme.txt)
                 .lineLimit(1)
             Spacer(minLength: 0)
-            Button(action: close) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Theme.mut)
-                    .frame(width: 40, height: 40)
-            }
-            .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 9))
-            .accessibilityLabel("Close detail")
+            GlassIconButton(systemName: "xmark", label: "Close detail", size: 40, action: close)
         }
-        .padding(.horizontal, 12)
-        .frame(height: 50)
+        .padding(.horizontal, Theme.pageGutter)
+        .frame(height: 56)
         .frame(maxWidth: .infinity)
         .glassEffect(.regular, in: .rect)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }

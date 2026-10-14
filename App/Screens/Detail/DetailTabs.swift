@@ -37,15 +37,15 @@ struct DetailTabsView: View {
                             }
                         } label: {
                             Text(label)
-                                .font(.system(size: 13.5, weight: .semibold))
-                                .foregroundStyle(current == tab ? Theme.txt : Theme.mut)
-                                .padding(.horizontal, 16)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(current == tab ? Theme.txt : Theme.dim)
+                                .padding(.horizontal, 11)
                                 .padding(.vertical, 10)
                                 .frame(minHeight: 44)
                                 .overlay(alignment: .bottom) {
                                     if current == tab {
                                         RoundedRectangle(cornerRadius: 2)
-                                            .fill(Theme.cyan)
+                                            .fill(Theme.txt)
                                             .frame(height: 2)
                                             .matchedGeometryEffect(id: "underline", in: underline)
                                     }
@@ -64,7 +64,7 @@ struct DetailTabsView: View {
                 Spacer()
                 (Text("showing ").foregroundColor(Theme.dim)
                     + Text(store.showingLabel).font(.system(size: 11.5, weight: .semibold, design: .monospaced)).foregroundColor(Theme.txt))
-                    .font(.system(size: 11.5))
+                    .font(.system(size: 12))
             }
             .padding(.top, 6)
             .padding(.bottom, 6)

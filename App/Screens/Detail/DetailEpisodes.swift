@@ -1,8 +1,9 @@
 import SwiftUI
 import FusionhaKit
 
-// The Seasons tab's episode list (MobileEpisodeList): carded episode rows with
-// one status chip per scoped version, and the expanded per-version facts + actions.
+// The Seasons tab's episode list (MobileEpisodeList, redesign `.ep`): episode
+// rows on the ground, split by hairlines, with one status chip per scoped
+// version, and the expanded per-version facts + actions.
 
 struct EpisodeList: View {
     @Environment(DetailStore.self) private var store
@@ -12,13 +13,12 @@ struct EpisodeList: View {
     var body: some View {
         let oldest = store.oldestFirst.contains(season.seasonNumber)
         let episodes = season.episodes.sorted { oldest ? $0.episodeNumber < $1.episodeNumber : $0.episodeNumber > $1.episodeNumber }
-        LazyVStack(spacing: 8) {
+        LazyVStack(spacing: 0) {
             ForEach(episodes) { episode in
                 EpisodeCard(detail: detail, season: season, episode: episode)
             }
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 2)
+        .padding(.vertical, 4)
     }
 }
 
@@ -43,11 +43,11 @@ private struct EpisodeCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 10) {
                         Text(numberText)
-                            .font(.system(size: 13, weight: .bold).monospacedDigit())
+                            .font(.system(size: 15, weight: .semibold).monospacedDigit())
                             .foregroundStyle(Theme.mut)
                             .fixedSize()
                         Text(episode.title ?? "TBA")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(Theme.txt)
                             .lineLimit(1)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -86,9 +86,8 @@ private struct EpisodeCard: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(expanded ? "Collapse \(code)" : "Expand \(code)")
             }
-            .padding(.leading, 12)
-            .padding(.trailing, 4)
-            .padding(.vertical, 6)
+            .padding(.trailing, -8)
+            .padding(.vertical, 7)
             .frame(minHeight: 44)
 
             if expanded {
@@ -98,14 +97,10 @@ private struct EpisodeCard: View {
         }
         .background {
             if failed {
-                LinearGradient(colors: [Theme.miss.mix(0.1, Theme.card), Theme.card], startPoint: .leading, endPoint: .trailing)
-            } else {
-                Theme.card
+                LinearGradient(colors: [Theme.miss.opacity(0.08), .clear], startPoint: .leading, endPoint: .trailing)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 11))
-        .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line))
-        .padding(.horizontal, 8)
+        .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
         .detailAnimation(.easeInOut(duration: 0.2), value: expanded)
     }
 
@@ -121,7 +116,7 @@ private struct EpisodeCard: View {
             } label: {
                 Image(systemName: on ? "bookmark.fill" : "bookmark")
                     .font(.system(size: 15))
-                    .foregroundStyle(on ? Theme.cyan : Theme.dim)
+                    .foregroundStyle(on ? Theme.txt : Theme.dim)
                     .contentTransition(.symbolEffect(.replace))
                     .frame(width: 36, height: 44)
                     .contentShape(Rectangle())
@@ -131,7 +126,7 @@ private struct EpisodeCard: View {
             .accessibilityAddTraits(on ? .isSelected : [])
         } else {
             Circle()
-                .fill(on ? Theme.cyan : .clear)
+                .fill(on ? Theme.txt : .clear)
                 .overlay(Circle().strokeBorder(Theme.mut, lineWidth: 1.5))
                 .frame(width: 9, height: 9)
                 .accessibilityLabel(on ? "Monitored" : "Not monitored")
@@ -174,8 +169,8 @@ private struct AirTimeText: View {
                 Text("—")
             }
         }
-        .font(.system(size: 12))
-        .foregroundStyle(Theme.mut)
+        .font(.system(size: 13))
+        .foregroundStyle(Theme.dim)
         .lineLimit(1)
         .fixedSize()
     }
@@ -206,9 +201,8 @@ private struct EpisodeBody: View {
                         Text("No file for this version.").font(.system(size: 12.5)).foregroundStyle(Theme.mut)
                     }
                 }
-                .padding(10)
-                .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 9))
-                .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(Theme.line))
+                .padding(14)
+                .detailCard(radius: 16, shadow: false)
             }
             if model.me?.can("search") ?? true {
                 HStack(spacing: 8) {
@@ -218,7 +212,8 @@ private struct EpisodeBody: View {
                 }
             }
         }
-        .padding(12)
+        .padding(.top, 4)
+        .padding(.bottom, 14)
     }
 
     private func facts(_ file: MovieFile) -> some View {
@@ -235,7 +230,7 @@ private struct EpisodeBody: View {
                          alignment: .leading, spacing: 10) {
             ForEach(rows.indices, id: \.self) { i in
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(rows[i].0.uppercased()).font(.system(size: 10, weight: .bold)).tracking(0.5).foregroundStyle(Theme.dim)
+                    Text(rows[i].0).font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.dim)
                     Text(rows[i].1)
                         .font(.system(size: 12.5, design: rows[i].0 == "Size" ? Font.Design.monospaced : Font.Design.default))
                         .foregroundStyle(rows[i].0 == "Size" ? Theme.mut : Theme.txt)
@@ -280,10 +275,10 @@ private struct EpisodeBody: View {
             } label: {
                 Image(systemName: "person")
                     .font(.system(size: 16))
-                    .foregroundStyle(Theme.mut)
+                    .foregroundStyle(Theme.txt)
                     .frame(width: 44, height: 44)
-                    .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.line))
+                    .contentShape(Circle())
+                    .glassEffect(.regular.interactive(), in: .circle)
             }
             .accessibilityLabel("Interactive search")
         }

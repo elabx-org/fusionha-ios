@@ -1,9 +1,9 @@
 import SwiftUI
 import FusionhaKit
 
-// The Seasons tab (SeasonsAccordion + MobileEpisodeList): season cards with a
-// striped progress bar and a ⋮ sheet, carded episode rows with one status chip
-// per scoped version, and the expanded per-version facts + actions.
+// The Seasons tab (SeasonsAccordion + MobileEpisodeList, redesign `.season`):
+// season sections on the ground with a striped progress bar and a glass ⋮
+// sheet, then the episode rows (DetailEpisodes).
 
 struct SeasonsTab: View {
     @Environment(DetailStore.self) private var store
@@ -25,10 +25,9 @@ struct SeasonsTab: View {
         let openSet = open ?? Set(seasons.prefix(1).map(\.seasonNumber))
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
-                Text("SEASONS")
-                    .font(.system(size: 12, weight: .bold))
-                    .tracking(0.72)
-                    .foregroundStyle(Theme.mut)
+                Text("Seasons")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.dim)
                 Spacer(minLength: 4)
                 if let e = store.enrichment, let pending = e.pendingFiles, pending > 0 {
                     AnalysisPill(status: e) {
@@ -180,16 +179,16 @@ struct SeasonCard: View {
                                 .rotationEffect(.degrees(isOpen ? 90 : 0))
                                 .detailAnimation(.easeInOut(duration: 0.2), value: isOpen)
                             Text(season.title)
-                                .font(.system(size: 13.5, weight: .bold))
+                                .font(.system(size: 17, weight: .bold))
                                 .foregroundStyle(Theme.txt)
                                 .lineLimit(1)
                                 .fixedSize()
-                            Text("\(c.done)/\(c.total)").font(.system(size: 12).monospacedDigit()).foregroundStyle(Theme.mut)
+                            Text("\(c.done)/\(c.total)").font(.system(size: 13).monospacedDigit()).foregroundStyle(Theme.mut)
                                 .contentTransition(.numericText(value: Double(c.done)))
                                 .detailAnimation(.easeOut(duration: 0.4), value: c.done)
                             Spacer(minLength: 4)
                             Text(DetailText.bytes(season.bytes(editionIds: ids)))
-                                .font(.system(size: 12)).foregroundStyle(Theme.mut)
+                                .font(.system(size: 13)).foregroundStyle(Theme.mut)
                         }
                         .contentShape(Rectangle())
                     }
@@ -200,12 +199,12 @@ struct SeasonCard: View {
                     } label: {
                         Image(systemName: "ellipsis")
                             .rotationEffect(.degrees(90))
-                            .foregroundStyle(Theme.mut)
-                            .frame(width: 44, height: 44)
-                            .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 8))
-                            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Theme.line))
+                            .foregroundStyle(Theme.txt)
+                            .frame(width: 40, height: 40)
+                            .contentShape(Circle())
                     }
                     .buttonStyle(DetailPressStyle())
+                    .glassEffect(.regular.interactive(), in: .circle)
                     .accessibilityLabel("\(season.title) actions")
                 }
                 SeasonBar(total: c.total, done: c.done, downloading: c.downloading, attention: c.attention)
@@ -220,7 +219,6 @@ struct SeasonCard: View {
                         .accessibilityHint("Cooling down after failed downloads · a manual search runs now and ignores the cooldown")
                 }
             }
-            .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(season.seasonNumber == 0 ? Theme.miss.opacity(0.06) : .clear)
 
@@ -230,10 +228,7 @@ struct SeasonCard: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 13))
-        .clipShape(RoundedRectangle(cornerRadius: 13))
-        .overlay(RoundedRectangle(cornerRadius: 13).strokeBorder(Theme.line))
-        .padding(.bottom, 12)
+        .padding(.bottom, 16)
         .detailAnimation(.timingCurve(0.52, 0.01, 0.16, 1, duration: 0.42), value: isOpen)
     }
 
