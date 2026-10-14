@@ -69,7 +69,6 @@ extension AppModel {
         if showingAdd { showingAdd = false; closed = true }
         if showingAccount { showingAccount = false; closed = true }
         if deleteTarget != nil { deleteTarget = nil; closed = true }
-        if showingOmni { showingOmni = false; closed = true }
         if let open = presentedItem, open.id != itemId { presentedItem = nil; closed = true }
         linkCloseTick += 1
         return closed

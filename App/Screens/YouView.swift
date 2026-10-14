@@ -15,6 +15,7 @@ struct YouView: View {
         Screen {
             ScrollView {
                 VStack(spacing: 0) {
+                    ShellTitleRow("You").padding(.bottom, 12)
                     profile.discoverReveal(index: 0, step: 0.05)
                     row {
                         HStack {
@@ -41,7 +42,7 @@ struct YouView: View {
                 }
                 .frame(maxWidth: 420)
                 .padding(.horizontal, 20)
-                .padding(.top, 26)
+                .padding(.top, 20)
                 .padding(.bottom, 90)
                 .frame(maxWidth: .infinity)
             }

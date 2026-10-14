@@ -2,15 +2,14 @@ import SwiftUI
 import UIKit
 import FusionhaKit
 
-// MARK: - Omni search
+// MARK: - Search tab
 
-/// The web's full-screen omni search (OmniSearchOverlay + OmniResults): owned
-/// titles first ("In your library", capped at 8), then a TMDB add lane that
-/// arms itself when nothing owned matches.
-struct OmniSearchView: View {
+/// The iOS 26 search tab, holding the web's omni search (OmniSearchOverlay +
+/// OmniResults): owned titles first ("In your library", capped at 8), then a
+/// TMDB add lane that arms itself when nothing owned matches. The field is the
+/// system's, at the bottom where the tab bar was.
+struct SearchTabView: View {
     @Environment(AppModel.self) private var model
-    @Environment(\.dismiss) private var dismiss
-    @State private var term = ""
     @State private var armed = false
     @State private var remote: [MediaSearchResult] = []
     @State private var searching = false
@@ -18,26 +17,30 @@ struct OmniSearchView: View {
     /// The server has no TMDB key (409 `tmdb_not_configured`).
     @State private var noKey = false
     @State private var searchedTerm = ""
-    @FocusState private var focused: Bool
 
+    private var term: String { model.searchQuery }
     private var trimmed: String { term.trimmingCharacters(in: .whitespaces) }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
+        @Bindable var model = model
+        NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    if !trimmed.isEmpty { results }
+                    ShellTitleRow("Search")
+                        .padding(.horizontal, Theme.pageGutter)
+                        .padding(.top, 20)
+                        .padding(.bottom, 4)
+                    if trimmed.isEmpty { hint } else { results }
                 }
                 .padding(.bottom, 40)
             }
             .scrollDismissesKeyboard(.immediately)
+            .background(Theme.bg.ignoresSafeArea())
+            .overlay(alignment: .top) { StatusBarFade() }
+            .toolbarVisibility(.hidden, for: .navigationBar)
         }
-        .background(Theme.bg.ignoresSafeArea())
-        .onAppear {
-            term = model.omniQuery
-            focused = true
-        }
+        .searchable(text: $model.searchQuery, prompt: Text(model.requestScoped ? "Find something to request" : "Your library or something new"))
+        .onSubmit(of: .search) { armed = true }
         .task {
             if !model.libraryLoaded && !model.requestScoped { await model.loadLibrary() }
         }
@@ -66,29 +69,14 @@ struct OmniSearchView: View {
         }
     }
 
-    private var header: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundStyle(Theme.mut)
-            TextField("", text: $term,
-                      prompt: Text("Search your library or add something new…").foregroundStyle(Theme.dim))
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Theme.txt)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-                .focused($focused)
-                .onSubmit { armed = true }
-            Button("Cancel") { dismiss() }
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Theme.i2)
-                .buttonStyle(.plain)
-        }
-        .padding(.top, 14)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 12)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
+    private var hint: some View {
+        Text(model.requestScoped
+             ? "Search for a movie or series to request."
+             : "Search your library, or find something new to add.")
+            .font(.system(size: 15))
+            .foregroundStyle(Theme.mut)
+            .padding(.horizontal, Theme.pageGutter)
+            .padding(.top, 8)
     }
 
     // MARK: Owned lane
@@ -137,7 +125,6 @@ struct OmniSearchView: View {
                 groupLabel("In your library", count: owned.total)
                 ForEach(owned.rows) { item in
                     Button {
-                        dismiss()
                         model.open(item.id)
                     } label: {
                         OmniRow(posterUrl: item.posterUrl, dot: Theme.kind(item.kindBucket), title: item.title,
@@ -154,7 +141,6 @@ struct OmniSearchView: View {
                         model.searchText = trimmed
                         model.searchScope = .library
                         model.tab = .library
-                        dismiss()
                     } label: {
                         Text("+ \(owned.total - owned.rows.count) more in Library")
                             .font(.system(size: 13, weight: .semibold))
@@ -228,7 +214,7 @@ struct OmniSearchView: View {
         } else {
             groupLabel("Available to add · via TMDB", count: remote.count)
             ForEach(remote) { result in
-                OmniAddRow(result: result) { dismiss() }
+                OmniAddRow(result: result) {}
             }
         }
     }

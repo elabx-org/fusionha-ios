@@ -180,8 +180,7 @@ struct DiscoverView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Discover")
-                .pageTitle()
+            ShellTitleRow("Discover")
                 .padding(.bottom, 14)
             DiscoverSegmented(options: SearchKind.allCases.map { ($0, $0.title) }, selection: $kind, size: .md)
                 .padding(.bottom, 14)

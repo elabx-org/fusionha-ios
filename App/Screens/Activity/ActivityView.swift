@@ -234,12 +234,7 @@ struct ActivityPageHeader: View {
         let held = model.queueHeld
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .lastTextBaseline, spacing: 14) {
-                    Text("Activity")
-                        .pageTitle()
-                        .lineLimit(1)
-                        .fixedSize()
-                    Spacer(minLength: 0)
+                ShellTitleRow("Activity") {
                     Button {
                         router.manualImport()
                     } label: {
@@ -256,7 +251,6 @@ struct ActivityPageHeader: View {
                     }
                     .buttonStyle(.plain)
                     .glassControl()
-                    .alignmentGuide(.lastTextBaseline) { $0[.bottom] - 6 }
                     .accessibilityLabel("Manual import")
                 }
                 Text(caption(held: held))

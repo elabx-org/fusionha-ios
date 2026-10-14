@@ -9,10 +9,7 @@ extension CalendarView {
     var toolbar: some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .pageTitle()
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                ShellTitleRow(title)
                 Text(subline)
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.mut)

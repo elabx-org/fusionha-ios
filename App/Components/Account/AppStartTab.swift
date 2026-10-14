@@ -51,7 +51,7 @@ enum AppStartTab: String, CaseIterable, Identifiable {
         case .discover: raw = "discover"
         case .calendar: raw = "calendar"
         case .activity: raw = "activity"
-        case .requests, .you: raw = nil
+        case .requests, .you, .search: raw = nil
         }
         if let raw { UserDefaults.standard.set(raw, forKey: lastKey) }
     }

@@ -1,9 +1,9 @@
 import SwiftUI
 import FusionhaKit
 
-/// The app shell, mirroring the web's mobile layout: the five bottom-nav
-/// destinations (Library, Discover, Calendar, Activity, Wanted) with the web's
-/// icons in the native Liquid Glass tab bar, which hides on scroll like the
+/// The app shell, mirroring the web's mobile layout: Library, Discover,
+/// Calendar and Activity (Wanted is an Activity tab) with the web's icons in
+/// the native Liquid Glass tab bar, plus the iOS 26 search tab, which hides on scroll like the
 /// web's floating bar. Requester accounts get Discover, My requests and You.
 /// Item details, Add, the omni search and the Delete confirmation open as
 /// sheets, and toasts float above the tab bar, as they do on the web.
@@ -69,6 +69,7 @@ struct RootView: View {
                 Tab("Discover", image: "nav-discover", value: AppTab.discover) { DiscoverView() }
                 Tab("My requests", image: "nav-requests", value: AppTab.requests) { RequestsView() }
                 Tab("You", image: "nav-you", value: AppTab.you) { YouView() }
+                Tab(value: AppTab.search, role: .search) { SearchTabView() }
             } else {
                 Tab("Library", image: "nav-library", value: AppTab.library) { LibraryView() }
                 Tab("Discover", image: "nav-discover", value: AppTab.discover) { DiscoverView() }
@@ -76,6 +77,7 @@ struct RootView: View {
                 Tab("Calendar", image: "nav-calendar", value: AppTab.calendar) { CalendarView() }
                 Tab("Activity", image: "nav-activity", value: AppTab.activity) { ActivityView() }
                     .badge(model.queueTotal > 0 ? Text(model.queueTotal > 99 ? "99+" : "\(model.queueTotal)") : nil)
+                Tab(value: AppTab.search, role: .search) { SearchTabView() }
             }
         }
         .tint(Theme.indigo)
@@ -106,10 +108,6 @@ private struct ShellPresentations: ViewModifier {
                 .presentationDetents([.height(320)])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Theme.panel)
-        }
-        .fullScreenCover(isPresented: $model.showingOmni) {
-            OmniSearchView()
-                .environment(\.motionEnabled, !reduceMotion && model.animationsEnabled)
         }
         .onChange(of: model.pendingLink, initial: true) {
             // fusionha://activity, calendar, item/{id}… from the widgets, the
@@ -148,9 +146,9 @@ private struct ShellPresentations: ViewModifier {
     }
 }
 
-/// Wraps a tab's content in the web's mobile chrome: the top bar (logo, search
-/// pill, avatar) that hides on scroll-down, the dark page background and,
-/// where the web shows it, the gradient + button.
+/// Wraps a tab's content: the page background, a fade behind the status bar
+/// and, where the web shows it, the gradient + button. The logo and avatar
+/// sit in each page's own title row (`ShellTitleRow`).
 struct Screen<Content: View>: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
@@ -159,7 +157,6 @@ struct Screen<Content: View>: View {
     /// top-bar pill, every other tab opens the omni search.
     var filtersInPlace = false
     @ViewBuilder var content: Content
-    @State private var barHeight: CGFloat = 56
 
     var body: some View {
         let hidden = model.chromeHidden
@@ -176,15 +173,9 @@ struct Screen<Content: View>: View {
                     .transition(.scale.combined(with: .opacity))
             }
         }
-        .safeAreaInset(edge: .top, spacing: 0) {
-            TopBar()
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { barHeight = $0 }
-                .visualEffect { view, proxy in
-                    view.offset(y: hidden ? -proxy.frame(in: .global).maxY : 0)
-                }
-        }
+        .overlay(alignment: .top) { StatusBarFade() }
         .overlay(alignment: .top) {
-            if !model.requestScoped { SetupProgressPill(barHeight: barHeight) }
+            if !model.requestScoped { SetupProgressPill(barHeight: 0) }
         }
         .webBackground()
         .animation(motion ? .timingCurve(0.2, 0.7, 0.2, 1, duration: 0.32) : nil, value: hidden)

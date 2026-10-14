@@ -7,6 +7,8 @@ import FusionhaKit
 /// The web's mobile bottom-nav destinations (shell/destinations.tsx).
 enum AppTab: Hashable {
     case library, discover, calendar, activity
+    /// The iOS 26 search tab (the old top bar's omni search).
+    case search
     /// Requester accounts (REQUESTOR_DESTINATIONS).
     case requests, you
 }
@@ -88,8 +90,8 @@ final class AppModel {
     /// Discover's session "Add as" provider for the next Add sheet (nil = none).
     var addProviderOverride: String?
     /// The full-screen omni search (top-bar "Everything", or any non-Library tab).
-    var showingOmni = false
-    var omniQuery = ""
+    /// The Search tab's words (Library's "Everything" hands them over).
+    var searchQuery = ""
     /// The web hides the top bar and FAB while scrolling down.
     var chromeHidden = false
     /// Bumped by the top-bar logo: the visible tab scrolls to the top.
@@ -178,8 +180,8 @@ final class AppModel {
             showingAccount = env["FUSIONHA_SCREENSHOT_ACCOUNT"] != nil
             searchText = env["FUSIONHA_SCREENSHOT_SEARCH"] ?? ""
             if let omni = env["FUSIONHA_SCREENSHOT_OMNI"] {
-                omniQuery = omni
-                showingOmni = true
+                searchQuery = omni
+                tab = .search
             }
             if env["FUSIONHA_SCREENSHOT_SELECT"] != nil {
                 selectMode = true
@@ -320,7 +322,7 @@ final class AppModel {
         guard let client else { return }
         if let me = try? await client.me() {
             self.me = me
-            if me.requestScoped == true, ![.discover, .requests, .you].contains(tab) { tab = .discover }
+            if me.requestScoped == true, ![.discover, .requests, .you, .search].contains(tab) { tab = .discover }
         }
     }
 

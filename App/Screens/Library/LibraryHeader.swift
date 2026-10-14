@@ -21,15 +21,12 @@ struct LibraryHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .lastTextBaseline) {
-                Text("Library").pageTitle()
-                    .accessibilityAddTraits(.isHeader)
-                Spacer(minLength: 12)
+            ShellTitleRow("Library") {
                 GlassIconButton(systemName: "chart.bar.xaxis", label: "Library stats",
                                 dot: needsAttention ? Theme.miss : nil) { showingStats = true }
-                    .alignmentGuide(.lastTextBaseline) { $0[.bottom] - 6 }
             }
             caption
+            LibraryFilterField().padding(.top, 4)
         }
         // Warm the stats sheet's In progress / Needs attention, so it opens filled.
         .task {
