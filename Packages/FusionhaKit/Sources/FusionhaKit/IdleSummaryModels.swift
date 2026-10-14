@@ -18,6 +18,25 @@ public struct IdleSummary: Decodable, Sendable, Equatable {
         /// Rolling 7 days.
         public let week: Counts
         public let grabbed24h: Int
+
+        private struct Key: CodingKey {
+            let stringValue: String
+            init(_ name: String) { stringValue = name }
+            init?(stringValue: String) { self.stringValue = stringValue }
+            var intValue: Int? { nil }
+            init?(intValue: Int) { nil }
+        }
+
+        // `grabbed_24h` doesn't survive convertFromSnakeCase as `grabbed24h`
+        // (the digit segment comes out capitalised, `grabbed24H`), so that key is
+        // read by either spelling instead of trusting the conversion.
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: Key.self)
+            today = try c.decode(Counts.self, forKey: Key("today"))
+            week = try c.decode(Counts.self, forKey: Key("week"))
+            let spelling = c.allKeys.first { $0.stringValue.lowercased() == "grabbed24h" || $0.stringValue == "grabbed_24h" }
+            grabbed24h = try spelling.map { try c.decode(Int.self, forKey: $0) } ?? 0
+        }
     }
 
     public struct Client: Decodable, Sendable, Equatable, Identifiable {
