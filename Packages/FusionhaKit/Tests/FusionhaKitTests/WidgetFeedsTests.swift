@@ -60,7 +60,7 @@ final class WidgetFeedsTests: XCTestCase {
         ]
         let rows = WidgetFeeds.upNext(entries, now: now, calendar: utc, limit: 2)
         XCTAssertEqual(rows.map(\.itemId), [8, 9])
-        XCTAssertEqual(rows[0].code, "S1·E1 +2")
+        XCTAssertEqual(rows[0].code, "S01·E01 +2")
         XCTAssertNil(rows[0].episodeTitle)
         XCTAssertEqual(rows[1].episodeTitle, "Ep 5")
     }
