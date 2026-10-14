@@ -16,12 +16,12 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
     case frost
     case eclipse
     case daylight
-    case paper
+    case noir
 
     var id: String { rawValue }
 
-    static let dark: [AppPalette] = [.videoStore, .graphite, .oled, .aurora, .frost, .eclipse]
-    static let light: [AppPalette] = [.daylight, .paper]
+    static let dark: [AppPalette] = [.videoStore, .graphite, .oled, .noir, .aurora, .frost, .eclipse]
+    static let light: [AppPalette] = [.daylight]
 
     var isLight: Bool { tokens.isLight }
 
@@ -34,7 +34,7 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
         case .frost: return "Frost"
         case .eclipse: return "Eclipse"
         case .daylight: return "Daylight"
-        case .paper: return "Paper"
+        case .noir: return "Noir"
         }
     }
 
@@ -47,7 +47,7 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
         case .frost: return "Blue-black slate with a frosted, pale-blue light."
         case .eclipse: return "Ink black lit by a sunset corona, coral to magenta to violet."
         case .daylight: return "The web app's light theme with the indigo accent."
-        case .paper: return "Black ink on white paper; colour comes only from posters and statuses."
+        case .noir: return "Black and white at full contrast: white type and hairlines on black, like a film title card."
         }
     }
 
@@ -60,7 +60,7 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
         case .frost: return .frost
         case .eclipse: return .eclipse
         case .daylight: return .daylight
-        case .paper: return .paper
+        case .noir: return .noir
         }
     }
 }
@@ -145,13 +145,10 @@ struct PaletteTokens: Sendable {
         onair: 0xCA8A04, premiere: 0x6366F1, stuck: 0xEA580C, edition: 0x7C3AED, anime: 0xDB2777,
         danger: 0xDC2626)
 
-    static let paper = PaletteTokens(
-        isLight: true, bg: 0xFAFAFA, panel: 0xFFFFFF, panel2: 0xF1F1F1, line: 0x000000, lineOpacity: 0.10,
-        txt: 0x0A0A0A, mut: 0x5C5C5C, dim: 0x8E8E8E, i1: 0x111111, i2: 0x000000,
-        primaryFrom: 0x1C1C1C, primaryTo: 0x000000, onPrimary: 0xFFFFFF, onAccent: 0xFFFFFF,
-        done: 0x059669, grab: 0x0891B2, miss: 0xD97706, unaired: 0x2563EB, unmonitored: 0x6B7280,
-        onair: 0xCA8A04, premiere: 0x6366F1, stuck: 0xEA580C, edition: 0x7C3AED, anime: 0xDB2777,
-        danger: 0xDC2626)
+    static let noir = PaletteTokens(
+        isLight: false, bg: 0x000000, panel: 0x000000, panel2: 0x0E0E0E, line: 0xFFFFFF, lineOpacity: 0.22,
+        txt: 0xFFFFFF, mut: 0xC7C7C7, dim: 0x8A8A8A, i1: 0xFFFFFF, i2: 0xFFFFFF,
+        primaryFrom: 0xFFFFFF, primaryTo: 0xFFFFFF, onPrimary: 0x000000, onAccent: 0x000000)
 }
 
 extension PaletteTokens {

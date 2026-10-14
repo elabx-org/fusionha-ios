@@ -173,16 +173,15 @@ const palettes = [
          glass:"rgba(34,26,36,.5)", "glass-line":"rgba(255,200,220,.14)", "tab-on":"rgba(255,92,122,.22)", "tab-on-ink":"#FFFFFF" },
     sw: [["#09080B","bg"],["#131116","panel"],["#F4F0F6","text"],["#ABA3B0","muted"],["#FF2E7E","corona"],["#8B5CF6","violet"]],
     notes: ["<b>Ink black lit by a sunset corona:</b> coral to magenta to violet, only on the primary action and the logo.", "Everything else stays quiet, so the one lit object is unmistakable.", "The most striking option; the coral sits near the delete red, which stays on delete buttons only."] },
-  { key: "paper", name: "Paper", tag: "New · black and white",
-    t: { bg:"#FAFAFA", panel:"#FFFFFF", panel2:"#F1F1F1", line:"rgba(0,0,0,.10)", line2:"rgba(0,0,0,.12)", txt:"#0A0A0A", title:"#000000", mut:"#5C5C5C", dim:"#8E8E8E",
-         accent:"#000000", primary:"linear-gradient(135deg,#1C1C1C,#000000)", onprimary:"#FFFFFF", sel:"#0A0A0A", "sel-ink":"#FFFFFF",
-         glass:"rgba(255,255,255,.62)", "glass-line":"rgba(0,0,0,.08)", "tab-on":"rgba(0,0,0,.08)", "tab-on-ink":"#000000",
-         done:"#059669", grab:"#0891B2", miss:"#D97706", hd:"#7C3AED", uhd:"#0891B2", anime:"#DB2777" },
-    sw: [["#FAFAFA","bg"],["#FFFFFF","panel"],["#0A0A0A","text"],["#5C5C5C","muted"],["#000000","primary"],["#8E8E8E","dim"]],
-    notes: ["<b>Black ink on white paper,</b> the light partner of OLED mono.", "No brand colour at all: posters, tiers and statuses carry every hue.", "Like a printed programme or a film's press notes."] },
+  { key: "noir", name: "Noir", tag: "New · black and white",
+    t: { bg:"#000000", panel:"#000000", panel2:"#0E0E0E", line:"rgba(255,255,255,.22)", line2:"rgba(255,255,255,.28)", txt:"#FFFFFF", title:"#FFFFFF", mut:"#C7C7C7", dim:"#8A8A8A",
+         accent:"#FFFFFF", primary:"#FFFFFF", onprimary:"#000000", sel:"#FFFFFF", "sel-ink":"#000000",
+         glass:"rgba(0,0,0,.55)", "glass-line":"rgba(255,255,255,.28)", "tab-on":"#FFFFFF", "tab-on-ink":"#000000" },
+    sw: [["#000000","bg"],["#000000","panel"],["#FFFFFF","text"],["#C7C7C7","muted"],["#FFFFFF","primary"],["#8A8A8A","dim"]],
+    notes: ["<b>Black and white at full contrast:</b> white type and white hairlines on pure black, like a film's title card.", "Unlike OLED mono, panels are black too and outlined in white, and the selected tab is solid white.", "Posters, tiers and statuses carry every colour."] },
 ];
 
-const ORDER = ["current","graphite","oled","aurora","frost","eclipse","daylight","paper","midnight"];
+const ORDER = ["current","graphite","oled","noir","aurora","frost","eclipse","daylight","midnight"];
 palettes.sort((a,b) => ORDER.indexOf(a.key) - ORDER.indexOf(b.key));
 const icon = {
   lib: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>',

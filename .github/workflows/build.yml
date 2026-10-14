@@ -529,7 +529,7 @@ jobs:
           shoot search-5-loading $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=loading
           shoot search-6-nomatch $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=nomatch
           # The app palettes (Settings › Appearance) on the main screens.
-          for P in graphite oled aurora frost eclipse daylight paper; do
+          for P in graphite oled noir aurora frost eclipse daylight; do
             PAL=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$P
             shoot palette-$P-library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library $PAL
             shoot palette-$P-activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity $PAL
