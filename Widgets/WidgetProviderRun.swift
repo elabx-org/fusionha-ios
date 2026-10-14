@@ -10,6 +10,7 @@ enum WidgetProviderRun {
     static func snapshot<Entry>(kind: String, family: WidgetFamily, completion: @escaping (Entry) -> Void,
                                 fallback: @escaping (WidgetRun) -> Entry,
                                 fetch: @escaping (WidgetRun) async -> Entry) {
+        PaletteStore.shared.reload()  // the app may have switched palettes
         let once = WidgetOnce(completion)
         let run = WidgetRun(kind: kind, family: family, call: "snapshot")
         once.watchdog(after: WidgetRun.watchdog) { fallback(run) }
@@ -22,6 +23,7 @@ enum WidgetProviderRun {
                                                completion: @escaping (Timeline<Entry>) -> Void,
                                                fallback: @escaping (WidgetRun) -> Entry,
                                                fetch: @escaping (WidgetRun) async -> Timeline<Entry>) {
+        PaletteStore.shared.reload()  // the app may have switched palettes
         let once = WidgetOnce(completion)
         let run = WidgetRun(kind: kind, family: family)
         once.watchdog(after: WidgetRun.watchdog) {
