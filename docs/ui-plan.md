@@ -17,7 +17,7 @@ Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`g
 
 | Web | iOS |
 |---|---|
-| Mobile bottom nav: Library · Discover · Calendar · Activity · Wanted | `TabView` with the native glass tab bar: **Library · Discover · Calendar · Activity**, with the web's own icons (SVG template assets copied from `shell/destinations.tsx`) and the cyan active tint. **Deviation (owner's call, 2026-10):** Wanted is not a tab; it is Activity's second sub-tab (Queue · Wanted · History · …), so the bar has room for the iOS 26 search tab. `fusionha://wanted` and "Open on Wanted" land there. |
+| Mobile bottom nav: Library · Discover · Calendar · Activity · Wanted | `TabView` with the native glass tab bar: **Library · Discover · Calendar · Activity**, with the web's own icons (SVG template assets copied from `shell/destinations.tsx`) and the cyan active tint. **Deviation (owner's call, 2026-10):** Wanted is not a tab; it is an Activity sub-tab after History (Queue · History · Wanted · Blocklist · …), so the bar has room for the iOS 26 search tab. `fusionha://wanted` and "Open on Wanted" land there. |
 | Discover page (search field + poster rails) | Its own **Discover tab**, like the web: kind filter, TMDB search, Browse rails and Requests. |
 | Mobile top bar: logo · search pill · avatar | The same custom top bar on every tab. The search pill scopes to **This library** (filters the Library grid in place) or **Everything** (library matches plus TMDB titles to add). |
 | Top bar hides on scroll down | The custom top bar slides away on scroll down (and the ＋ orb with it); the tab bar uses `.tabBarMinimizeBehavior(.onScrollDown)`. Tapping the logo scrolls to the top. |

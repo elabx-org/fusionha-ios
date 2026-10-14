@@ -2,7 +2,7 @@ import SwiftUI
 import FusionhaKit
 
 enum ActivityTab: String, Hashable {
-    case queue, wanted, history, blocklist, tasks, audit, indexers
+    case queue, history, wanted, blocklist, tasks, audit, indexers
 }
 
 /// Bulk-bar contents published by the tab in select mode, so the glass bar can sit
@@ -223,7 +223,7 @@ struct ActivityPageHeader: View {
     @Environment(\.actTabsNamespace) private var tabsNamespace
 
     private var visibleTabs: [ActivityTab] {
-        var tabs: [ActivityTab] = [.queue, .wanted, .history, .blocklist, .tasks]
+        var tabs: [ActivityTab] = [.queue, .history, .wanted, .blocklist, .tasks]
         if model.me?.hasPermission("system.admin") == true { tabs.append(.audit) }
         if model.me?.hasPermission("integrations.manage") == true { tabs.append(.indexers) }
         return tabs
