@@ -242,7 +242,7 @@ struct AboutSettingsPanel: View {
                             if let url = URL(string: item.url) {
                                 Link("\(item.site) ↗", destination: url)
                                     .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(Theme.cyan)
+                                    .foregroundStyle(Theme.i2)
                             }
                         }
                         Text(item.text).font(.system(size: 12)).foregroundStyle(Theme.mut)
@@ -296,7 +296,7 @@ struct AboutSettingsPanel: View {
                 HStack(spacing: 8) {
                     Text(version.map { "v\($0)" } ?? "—")
                         .font(.system(size: 16, weight: .bold, design: .monospaced))
-                        .foregroundStyle(Theme.cyan)
+                        .foregroundStyle(Theme.i2)
                     HStack(spacing: 6) {
                         Circle().fill(Theme.done).frame(width: 6, height: 6)
                         Text("Up to date")

@@ -186,9 +186,9 @@ private struct FlashRowBackground: View {
 
     var body: some View {
         Theme.card
-            .overlay(Theme.cyan.opacity(lit ? 0.12 : 0))
+            .overlay(Theme.i2.opacity(lit ? 0.12 : 0))
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(Theme.cyan.opacity(lit ? 0.7 : 0), lineWidth: 2))
+                .strokeBorder(Theme.i2.opacity(lit ? 0.7 : 0), lineWidth: 2))
             .onAppear { if active { flash() } }
             .onChange(of: active) { if active { flash() } }
     }
@@ -236,8 +236,8 @@ extension View {
 
 // MARK: Page
 
-/// A native panel page: a dark Form whose first block is the web's panel
-/// heading (20/750) and subtitle (13 `--mut`), revealed on entry. Scrolls to
+/// A native panel page: a dark Form whose first block is the panel title in
+/// the display face and its subtitle, revealed on entry. Scrolls to
 /// and flashes a searched-for field.
 struct SettingsForm<Content: View>: View {
     let slug: String
@@ -253,11 +253,11 @@ struct SettingsForm<Content: View>: View {
                 } header: {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(info?.title ?? slug)
-                            .font(.system(size: 20, weight: .bold))
-                            .tracking(-0.2)
-                            .foregroundStyle(Theme.txt)
+                            .pageTitle(36)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.7)
                         Text(info?.subtitle ?? "")
-                            .font(.system(size: 13))
+                            .font(.system(size: 15))
                             .foregroundStyle(Theme.mut)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -321,8 +321,8 @@ private struct SettingsSaveErrorBanner: View {
 
 // MARK: Sections and rows
 
-/// A Form section with the web's section title (12.5/700 uppercase `--mut`)
-/// and the card colour behind its rows.
+/// A Form section: a sentence-case title (15/600 `--mut`) and the card colour
+/// behind its rows.
 struct SettingsSection<Content: View>: View {
     var title: String?
     var footer: String?
@@ -340,14 +340,13 @@ struct SettingsSection<Content: View>: View {
         } header: {
             if let title {
                 Text(title)
-                    .font(.system(size: 12.5, weight: .bold))
-                    .tracking(0.25)
-                    .textCase(.uppercase)
+                    .font(.system(size: 15, weight: .semibold))
+                    .textCase(nil)
                     .foregroundStyle(Theme.mut)
             }
         } footer: {
             if let footer {
-                Text(footer).font(.system(size: 12)).foregroundStyle(Theme.mut)
+                Text(footer).font(.system(size: 13)).foregroundStyle(Theme.dim)
             }
         }
         .listRowBackground(Theme.card)
@@ -572,24 +571,28 @@ struct MonoText: View {
 
 // MARK: Buttons
 
-/// The web's `Button` (size sm): 30 tall, 12/650, radius 9.
+/// The web's `Button` (size sm) as a capsule: cream for primary, glass for
+/// subtle and danger (danger tints the text), plain for ghost.
 struct WebButtonStyle: ButtonStyle {
     enum Variant { case subtle, ghost, danger, primary }
     var variant: Variant = .subtle
     @Environment(\.isEnabled) private var enabled
 
+    @ViewBuilder
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 12, weight: variant == .primary ? .bold : .semibold))
+        let label = configuration.label
+            .font(.system(size: 13, weight: variant == .primary ? .bold : .semibold))
             .lineLimit(1)
             .foregroundStyle(foreground)
-            .padding(.horizontal, 11)
-            .frame(height: 30)
-            .background(background, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(border))
-            .offset(y: configuration.isPressed ? 1 : 0)
-            .opacity(enabled ? 1 : 0.5)
-            .contentShape(Rectangle())
+            .padding(.horizontal, 14)
+            .frame(height: 32)
+            .contentShape(Capsule())
+            .opacity(enabled ? (configuration.isPressed ? 0.75 : 1) : 0.5)
+        switch variant {
+        case .primary: label.background(Theme.fusion, in: Capsule())
+        case .ghost: label
+        case .subtle, .danger: label.glassEffect(.regular.interactive(), in: Capsule())
+        }
     }
 
     private var foreground: Color {
@@ -597,23 +600,7 @@ struct WebButtonStyle: ButtonStyle {
         case .subtle: return Theme.txt
         case .ghost: return Theme.mut
         case .danger: return Theme.danger
-        case .primary: return Theme.bg
-        }
-    }
-
-    private var background: AnyShapeStyle {
-        switch variant {
-        case .subtle: return AnyShapeStyle(Theme.panel)
-        case .ghost, .danger: return AnyShapeStyle(Color.clear)
-        case .primary: return AnyShapeStyle(Theme.fusion)
-        }
-    }
-
-    private var border: Color {
-        switch variant {
-        case .subtle: return Theme.line
-        case .ghost, .primary: return .clear
-        case .danger: return Theme.danger.opacity(0.4)
+        case .primary: return Theme.onPrimary
         }
     }
 }

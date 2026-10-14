@@ -89,7 +89,7 @@ struct DefaultProfilesSettingsPanel: View {
                 Circle().fill(tier.color).frame(width: 7, height: 7)
                 Text(tier.chipLabel).font(.system(size: 12, weight: .bold)).foregroundStyle(tier.color)
             }
-            pickerRow(title: "Quality profile", tag: "Add + Import", tagColor: Theme.cyan,
+            pickerRow(title: "Quality profile", tag: "Add + Import", tagColor: Theme.i2,
                       selection: binding(kind, tier, \.profile),
                       options: profilesFor(kind).map { ($0.id, $0.name) })
                 .accessibilityLabel("Quality profile · \(kindLabel) · \(tier.chipLabel)")
@@ -323,7 +323,7 @@ struct ReleaseFiltersSettingsPanel: View {
             }
         } header: {
             HStack(spacing: 7) {
-                Circle().fill(Theme.cyan).frame(width: 7, height: 7)
+                Circle().fill(Theme.i2).frame(width: 7, height: 7)
                 Text("Test a release title")
                     .font(.system(size: 12.5, weight: .bold))
                     .textCase(.uppercase)

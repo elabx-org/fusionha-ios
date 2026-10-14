@@ -112,7 +112,7 @@ struct NotificationAgentSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } } }
         }
-        .tint(Theme.cyan)
+        .tint(Theme.indigo)
     }
 }
 

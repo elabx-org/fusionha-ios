@@ -256,7 +256,8 @@ struct LibraryPosterSheet: View {
         let color: Color?
         switch rail.state {
         case .owned: color = Theme.done
-        case .downloading, .upgrading: color = Theme.i2
+        case .downloading: color = Theme.grab
+        case .upgrading: color = Theme.edition
         case .wanted: color = Theme.miss
         default: color = nil
         }

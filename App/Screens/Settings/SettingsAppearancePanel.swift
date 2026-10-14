@@ -360,7 +360,7 @@ private struct LoginPreview: View {
             Circle()
                 .fill(Theme.fusion)
                 .frame(width: dot, height: dot)
-                .shadow(color: Theme.cyan.opacity(0.5), radius: 8, y: 6)
+                .shadow(color: Theme.i2.opacity(0.5), radius: 8, y: 6)
         }
         if showWordmark {
             Text("FUSIONHA")
@@ -432,14 +432,14 @@ private struct LayoutTile: View {
                     Spacer(minLength: 0)
                     ZStack(alignment: .trailing) {
                         Color.white.opacity(0.14)
-                        RoundedRectangle(cornerRadius: 2).fill(Theme.cyan.opacity(0.35))
+                        RoundedRectangle(cornerRadius: 2).fill(Theme.i2.opacity(0.35))
                             .frame(width: 26, height: 5)
                             .padding(.trailing, 4)
                     }
                     .frame(width: 74 * 0.38)
                 }
             } else {
-                RoundedRectangle(cornerRadius: 2).fill(Theme.cyan.opacity(0.28)).frame(width: 34, height: 24)
+                RoundedRectangle(cornerRadius: 2).fill(Theme.i2.opacity(0.28)).frame(width: 34, height: 24)
             }
         }
         .frame(width: 74, height: 48)
@@ -477,10 +477,10 @@ private struct BackgroundTile: View {
                         .font(.system(size: 10, design: .monospaced))
                         .tracking(0.4)
                         .textCase(.uppercase)
-                        .foregroundStyle(mode.animated ? Theme.cyan : Theme.dim)
+                        .foregroundStyle(mode.animated ? Theme.i2 : Theme.dim)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 2)
-                        .overlay(Capsule().strokeBorder(mode.animated ? Theme.cyan.opacity(0.4) : Theme.line))
+                        .overlay(Capsule().strokeBorder(mode.animated ? Theme.i2.opacity(0.4) : Theme.line))
                 }
                 .padding(.horizontal, 11)
                 .padding(.vertical, 9)
@@ -513,10 +513,10 @@ private struct SelectedRing: ViewModifier {
     func body(content: Content) -> some View {
         content
             .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-                .strokeBorder(selected ? Theme.cyan : Theme.line))
+                .strokeBorder(selected ? Theme.i2 : Theme.line))
             .background(
                 RoundedRectangle(cornerRadius: Theme.radius + 3, style: .continuous)
-                    .fill(Theme.cyan.opacity(selected ? 0.22 : 0))
+                    .fill(Theme.i2.opacity(selected ? 0.22 : 0))
                     .padding(-3))
     }
 }

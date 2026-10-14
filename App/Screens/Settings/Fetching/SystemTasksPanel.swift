@@ -93,7 +93,7 @@ struct SystemTasksPanel: View {
                             .rotationEffect(.degrees(groupOpen ? 90 : 0))
                         Image(systemName: "cylinder.split.1x2")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Theme.cyan)
+                            .foregroundStyle(Theme.i2)
                             .frame(width: 26, height: 26)
                             .background(Theme.indigo.opacity(0.16), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                         VStack(alignment: .leading, spacing: 1) {

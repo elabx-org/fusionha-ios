@@ -47,10 +47,10 @@ private struct ActionTag: View {
         Text("ACTION")
             .font(.system(size: 8.5, weight: .heavy))
             .tracking(0.34)
-            .foregroundStyle(Theme.cyan)
+            .foregroundStyle(Theme.i2)
             .padding(.horizontal, 5)
             .padding(.vertical, 1)
-            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Theme.cyan.opacity(0.4)))
+            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Theme.i2.opacity(0.4)))
             .padding(.top, 3)
     }
 }
@@ -122,7 +122,7 @@ struct SettingsSearchResults: View {
         if let keyword = hit.matchedKeyword {
             var match = AttributedString(" · matches “\(keyword)”")
             match.font = .system(size: 10.5, design: .monospaced)
-            match.foregroundColor = Theme.cyan
+            match.foregroundColor = Theme.i2
             text += match
         }
         return text

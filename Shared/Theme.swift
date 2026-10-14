@@ -34,9 +34,11 @@ enum Theme {
     /// system toggle's white knob still reads. Never a status.
     static let indigo = Color(hex: 0xD9C3A0)
     static let cyan = Color(hex: 0x22D3EE)
-    /// `--i1` / `--i2` aliases, so ports read like the CSS.
+    /// `--i1` / `--i2` aliases, so ports read like the CSS. In the redesign the
+    /// interface accent is brass (i1) to pale brass (i2); cyan means 4K or
+    /// grabbing and is only ever used for that.
     static let i1 = indigo
-    static let i2 = cyan
+    static let i2 = Color(hex: 0xEDE0CB)
     /// The primary action: cream house light, lit from the top. Text on it is
     /// `onPrimary`. (Was the indigo→cyan "fusion" gradient; the brand gradient
     /// now lives only in the logo.)

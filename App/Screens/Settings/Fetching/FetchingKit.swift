@@ -190,7 +190,7 @@ extension View {
 /// The 40pt rounded icon tile at the start of a resource card (`--i2` glyph).
 struct FetchIconTile: View {
     let systemName: String
-    var tint: Color = Theme.cyan
+    var tint: Color = Theme.i2
     var size: CGFloat = 40
 
     var body: some View {
@@ -214,7 +214,7 @@ struct FetchPill: View {
         case .err: (Theme.danger, Theme.danger.opacity(0.16))
         case .off: (Theme.mut, Color.white.opacity(0.08))
         case .warn: (Theme.miss, Theme.miss.opacity(0.16))
-        case .accent: (Theme.cyan, Theme.cyan.opacity(0.14))
+        case .accent: (Theme.i2, Theme.i2.opacity(0.14))
         }
         Text(text)
             .font(.system(size: 10.5, weight: .heavy))

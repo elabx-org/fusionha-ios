@@ -573,7 +573,7 @@ private struct WantedCardView: View {
         } label: {
             ZStack {
                 if searchingKey == "title" {
-                    ProgressView().controlSize(.mini).tint(Theme.cyan)
+                    ProgressView().controlSize(.mini).tint(Theme.indigo)
                 } else {
                     Image(systemName: "magnifyingglass").font(.system(size: 14, weight: .semibold))
                 }

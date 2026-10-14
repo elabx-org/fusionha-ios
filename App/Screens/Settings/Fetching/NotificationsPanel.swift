@@ -185,13 +185,13 @@ struct NotificationsPanel: View {
         if let note = thisDeviceNote(state) {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: note.warn ? "exclamationmark.triangle" : "info.circle")
-                    .foregroundStyle(note.warn ? Theme.miss : Theme.cyan)
+                    .foregroundStyle(note.warn ? Theme.miss : Theme.i2)
                 Text(note.text)
                     .font(.system(size: 12)).foregroundStyle(Theme.mut)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(10)
-            .background((note.warn ? Theme.miss : Theme.cyan).opacity(0.07),
+            .background((note.warn ? Theme.miss : Theme.i2).opacity(0.07),
                         in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         HStack(spacing: 10) {
@@ -406,7 +406,7 @@ struct NotificationsPanel: View {
             set: { update([key: .string(Self.hhmm($0))]) })
         return DatePicker(label, selection: binding, displayedComponents: .hourAndMinute)
             .labelsHidden()
-            .tint(Theme.cyan)
+            .tint(Theme.indigo)
     }
 
     private static func date(from hhmm: String?) -> Date {

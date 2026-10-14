@@ -172,7 +172,7 @@ private struct HybridPrecedenceRows: View {
                 Spacer()
                 Button("Reset to recommended") { save(Self.defaults) }
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Theme.cyan)
+                    .foregroundStyle(Theme.i2)
                     .buttonStyle(.plain)
             }
             Text("Each field is filled from the first enabled source that has it. Tap a source to promote it to primary. The highlighted chip wins.")
@@ -191,17 +191,17 @@ private struct HybridPrecedenceRows: View {
                             HStack(spacing: 5) {
                                 ProviderMark(provider: source, size: 14)
                                 if index == 0 {
-                                    Text("PRIMARY").font(.system(size: 8.5, weight: .heavy)).foregroundStyle(Theme.cyan)
+                                    Text("PRIMARY").font(.system(size: 8.5, weight: .heavy)).foregroundStyle(Theme.i2)
                                 }
                             }
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(index == 0 ? Theme.txt : Theme.mut)
                             .padding(.horizontal, 10)
                             .frame(height: 28)
-                            .background(index == 0 ? Theme.cyan.opacity(0.12) : Theme.panel,
+                            .background(index == 0 ? Theme.i2.opacity(0.12) : Theme.panel,
                                         in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                             .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .strokeBorder(index == 0 ? Theme.cyan.opacity(0.45) : Theme.line))
+                                .strokeBorder(index == 0 ? Theme.i2.opacity(0.45) : Theme.line))
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Promote \(Self.sourceLabel[source] ?? source) to primary for \(field.label)")

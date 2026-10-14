@@ -211,7 +211,7 @@ struct ProviderCard: View {
                 Image(systemName: "bolt")
             }
             .buttonStyle(.web())
-            .foregroundStyle(Theme.cyan)
+            .foregroundStyle(Theme.i2)
             .disabled(testing)
             .accessibilityLabel(testing ? "Testing…" : "Test connection")
         }
@@ -310,7 +310,7 @@ struct TvdbAttribution: View {
             Text("Metadata provided by TheTVDB. Please consider adding missing information or subscribing. [thetvdb.com ↗](https://thetvdb.com)")
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.mut)
-                .tint(Theme.cyan)
+                .tint(Theme.indigo)
         }
     }
 }

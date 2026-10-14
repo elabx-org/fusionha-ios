@@ -55,7 +55,7 @@ struct SettingsView: View {
                 }
             }
         }
-        .tint(Theme.cyan)
+        .tint(Theme.indigo)
         .environment(store)
         .environment(flash)
         .environment(\.settingsMotionOff, motionOff)

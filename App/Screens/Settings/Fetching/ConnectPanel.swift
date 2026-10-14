@@ -130,7 +130,7 @@ struct ConnectPanel: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(webhook.name).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                    if let source = webhook.source { FetchChip(text: source, color: Theme.cyan, border: Theme.cyan.opacity(0.35)) }
+                    if let source = webhook.source { FetchChip(text: source, color: Theme.i2, border: Theme.i2.opacity(0.35)) }
                 }
                 if let url = webhook.url { MonoText(url).lineLimit(1).truncationMode(.middle) }
                 FetchFlow(spacing: 4, lineSpacing: 4) {

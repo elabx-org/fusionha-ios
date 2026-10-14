@@ -62,7 +62,7 @@ struct PublicAccessPanel: View {
                     DemoBadge(text: "Viewer", color: Theme.mut, background: Theme.panel2, dot: true)
                     DemoBadge(text: "PUBLIC", color: Theme.indigo, background: Theme.indigo.opacity(0.15), size: 10)
                     if data.demoInstanceEnv == true {
-                        DemoBadge(text: "DEDICATED", color: Theme.cyan, background: Theme.cyan.opacity(0.15), size: 10)
+                        DemoBadge(text: "DEDICATED", color: Theme.i2, background: Theme.i2.opacity(0.15), size: 10)
                     }
                     DemoBadge(text: on ? "Live" : "Off", color: on ? Theme.done : Theme.dim,
                               background: (on ? Theme.done : Theme.dim).opacity(0.14), dot: true)
@@ -82,9 +82,9 @@ struct PublicAccessPanel: View {
             }
         }
         .padding(15)
-        .background(Theme.card.mix(with: Theme.cyan, by: 0.04), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .background(Theme.card.mix(with: Theme.i2, by: 0.04), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous)
-            .strokeBorder(on ? Theme.cyan.opacity(0.35) : Theme.line, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+            .strokeBorder(on ? Theme.i2.opacity(0.35) : Theme.line, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
         .opacity(on ? 1 : 0.72)
         .animation(.easeOut(duration: 0.16), value: on)
     }
@@ -246,7 +246,7 @@ private struct DemoConfigSheet: View {
             }
             .animation(motionOff ? nil : .easeOut(duration: 0.2), value: status?.demoRequireCredentials)
         }
-        .tint(Theme.cyan)
+        .tint(Theme.indigo)
         .fetchToasts(toaster)
         .presentationDragIndicator(.visible)
         .onAppear { username = status?.demoUsername ?? "" }
@@ -263,7 +263,7 @@ private struct DemoConfigSheet: View {
                 return (Theme.done, "Running on sample data (\(counts?.movies ?? 0) movies · \(counts?.series ?? 0) series · \(counts?.anime ?? 0) anime).")
             }
             if data.demoInstanceEnv == true {
-                return (Theme.cyan, "Dedicated demo instance — seed the sample library to fill it, then reset or wipe any time.")
+                return (Theme.i2, "Dedicated demo instance — seed the sample library to fill it, then reset or wipe any time.")
             }
             return (Theme.dim, "Empty instance — seed the sample library to start the demo.")
         }()

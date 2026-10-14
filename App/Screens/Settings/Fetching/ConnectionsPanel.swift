@@ -545,7 +545,7 @@ private struct InstanceEditSheet: View {
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: isOn ? "checkmark.square.fill" : "square")
-                                .foregroundStyle(isOn ? Theme.cyan : Theme.dim)
+                                .foregroundStyle(isOn ? Theme.i2 : Theme.dim)
                             Text(label).font(.system(size: 13.5)).foregroundStyle(Theme.txt).lineLimit(1)
                             Spacer(minLength: 4)
                         }
@@ -646,7 +646,7 @@ private struct MintTokenSheet: View {
                     Toggle(isOn: $expires) { FieldLabel(label: "Expires") }.tint(Theme.indigo)
                     if expires {
                         DatePicker("Expires on", selection: $expiresOn, in: Date.now..., displayedComponents: .date)
-                            .tint(Theme.cyan)
+                            .tint(Theme.indigo)
                     }
                 }
                 if let saveError {

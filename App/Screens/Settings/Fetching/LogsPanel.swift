@@ -105,7 +105,7 @@ struct LogsPanel: View {
                     Text("Auto-scroll").font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.mut)
                 }
                 .toggleStyle(.switch)
-                .tint(Theme.cyan)
+                .tint(Theme.indigo)
                 .fixedSize()
                 Spacer(minLength: 4)
                 Button { live.toggle() } label: {

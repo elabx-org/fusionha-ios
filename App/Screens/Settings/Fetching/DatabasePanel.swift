@@ -54,7 +54,7 @@ struct DatabasePanel: View {
                     ])
 
         HStack(alignment: .top, spacing: 11) {
-            Text("◆").foregroundStyle(Theme.cyan).padding(.top, 1)
+            Text("◆").foregroundStyle(Theme.i2).padding(.top, 1)
             (Text("Why move? ").fontWeight(.semibold).foregroundStyle(Theme.txt)
              + Text("Under heavy polling + RSS sync + enrichment, SQLite's single writer can stall reads (")
              + Text("database is locked").font(.system(size: 13, design: .monospaced))

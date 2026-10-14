@@ -200,9 +200,9 @@ private struct RecommendedSetupSection: View {
                         HStack(alignment: .top, spacing: 10) {
                             Text("\(step.id)")
                                 .font(.system(size: 11, weight: .bold).monospacedDigit())
-                                .foregroundStyle(Theme.cyan)
+                                .foregroundStyle(Theme.i2)
                                 .frame(width: 20, height: 20)
-                                .background(Theme.cyan.opacity(0.12), in: Circle())
+                                .background(Theme.i2.opacity(0.12), in: Circle())
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(step.label)
                                     .font(.system(size: 13.5, weight: .semibold))

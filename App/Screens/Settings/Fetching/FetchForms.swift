@@ -92,7 +92,7 @@ struct FetchFormSheet<Content: View>: View {
                 }
             }
         }
-        .tint(Theme.cyan)
+        .tint(Theme.indigo)
         .presentationDragIndicator(.visible)
     }
 }

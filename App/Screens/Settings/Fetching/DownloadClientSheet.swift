@@ -87,7 +87,7 @@ struct DownloadClientSheet: View {
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20).padding(.top, 4)
             }
         }
-        .tint(Theme.cyan)
+        .tint(Theme.indigo)
     }
 
     private func pickHeader(_ text: String) -> some View {

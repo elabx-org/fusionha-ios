@@ -77,7 +77,7 @@ struct RootView: View {
                 Tab("Wanted", image: "nav-wanted", value: AppTab.wanted) { WantedView() }
             }
         }
-        .tint(Theme.cyan)
+        .tint(Theme.indigo)
         .tabBarMinimizeBehavior(.onScrollDown)
     }
 }

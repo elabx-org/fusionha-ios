@@ -16,7 +16,7 @@ struct ActFooter: View {
         Group {
             if loading {
                 HStack(spacing: 8) {
-                    ProgressView().controlSize(.small).tint(Theme.cyan)
+                    ProgressView().controlSize(.small).tint(Theme.indigo)
                     Text("Loading more…")
                 }
             } else if hasMore {
