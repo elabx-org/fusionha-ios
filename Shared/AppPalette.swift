@@ -192,20 +192,25 @@ final class PaletteStore {
     private let isWidget = Bundle.main.bundleIdentifier?.hasSuffix(".widgets") == true
 
     private init() {
+        // Locals first: an @Observable class can't read its own properties
+        // until every one is set.
         let d = Self.defaults
-        let dark = AppPalette(rawValue: d.string(forKey: Self.paletteKey) ?? "") ?? .aurora
-        darkPalette = AppPalette.dark.contains(dark) ? dark : .aurora
-        let light = AppPalette(rawValue: d.string(forKey: Self.lightKey) ?? "") ?? .daylight
-        lightPalette = AppPalette.light.contains(light) ? light : .daylight
-        appearance = AppAppearance(rawValue: d.string(forKey: Self.appearanceKey) ?? "") ?? .dark
+        let storedDark = AppPalette(rawValue: d.string(forKey: Self.paletteKey) ?? "") ?? .aurora
+        var dark = AppPalette.dark.contains(storedDark) ? storedDark : .aurora
+        let storedLight = AppPalette(rawValue: d.string(forKey: Self.lightKey) ?? "") ?? .daylight
+        var light = AppPalette.light.contains(storedLight) ? storedLight : .daylight
+        var mode = AppAppearance(rawValue: d.string(forKey: Self.appearanceKey) ?? "") ?? .dark
         #if DEBUG
         // CI screenshots: `FUSIONHA_SCREENSHOT_PALETTE=daylight` shows one palette.
         if let raw = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_PALETTE"], let forced = AppPalette(rawValue: raw) {
-            if forced.isLight { lightPalette = forced; appearance = .light } else { darkPalette = forced; appearance = .dark }
+            if forced.isLight { light = forced; mode = .light } else { dark = forced; mode = .dark }
         }
         #endif
-        active = darkPalette
-        active = resolve()
+        darkPalette = dark
+        lightPalette = light
+        appearance = mode
+        let widget = Bundle.main.bundleIdentifier?.hasSuffix(".widgets") == true
+        active = mode == .light && !widget ? light : dark
     }
 
     /// The colour scheme to force (nil follows the system).
