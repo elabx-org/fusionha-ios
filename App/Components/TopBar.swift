@@ -38,14 +38,16 @@ struct TopBar: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        // No bar: the glass pills float over the page, and a fade from the
+        // ground keeps the status bar legible as content scrolls under.
         .background {
-            ZStack {
-                Rectangle().fill(.ultraThinMaterial)
-                Theme.bg.opacity(0.72)
-            }
-            .ignoresSafeArea(edges: .top)
+            LinearGradient(stops: [.init(color: Theme.bg, location: 0),
+                                   .init(color: Theme.bg.opacity(0.85), location: 0.55),
+                                   .init(color: Theme.bg.opacity(0), location: 1)],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea(edges: .top)
+                .allowsHitTesting(false)
         }
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
         .animation(.snappy(duration: 0.2), value: focused)
         .onChange(of: model.chromeHidden) { if model.chromeHidden { focused = false } }
         .zIndex(1)
@@ -56,7 +58,7 @@ struct TopBar: View {
     private var libraryPill: some View {
         @Bindable var model = model
         return pill(focusedRing: focused) {
-            TextField("", text: $model.searchText, prompt: Text("Search").foregroundStyle(Theme.mut))
+            TextField("", text: $model.searchText, prompt: Text("Search the library").foregroundStyle(Theme.mut))
                 .font(.system(size: 16))
                 .foregroundStyle(Theme.txt)
                 .textInputAutocapitalization(.never)
@@ -113,19 +115,16 @@ struct TopBar: View {
         .padding(.trailing, 8)
         .frame(maxWidth: .infinity)
         .frame(height: 44)
-        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .strokeBorder(focusedRing ? Theme.cyan.opacity(0.45) : Theme.line))
-        .contentShape(Rectangle())
+        .contentShape(Capsule())
+        .glassControl(on: focusedRing)
     }
 
     private func clearButton(_ action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Image(systemName: "xmark")
-                .font(.system(size: 11, weight: .bold))
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 17))
                 .foregroundStyle(Theme.mut)
                 .frame(width: 32, height: 32)
-                .background(Theme.txt.opacity(0.1), in: Circle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Clear search")
@@ -143,8 +142,7 @@ private struct ScopeBar: View {
             segment("Everything", .everything)
         }
         .padding(4)
-        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.line))
+        .glassEffect(.regular, in: Capsule())
         .shadow(color: .black.opacity(0.5), radius: 14, y: 10)
     }
 
@@ -153,12 +151,11 @@ private struct ScopeBar: View {
             pick(value)
         } label: {
             Text(title)
-                .font(.system(size: 12.5, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(scope == value ? Theme.txt : Theme.mut)
                 .frame(maxWidth: .infinity, minHeight: 32)
-                .background(scope == value ? Theme.indigo.opacity(0.22) : .clear,
-                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                .contentShape(Rectangle())
+                .background(scope == value ? Theme.txt.opacity(0.16) : .clear, in: Capsule())
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
     }
