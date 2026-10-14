@@ -530,7 +530,11 @@ jobs:
       - name: Publish to the screenshots branch
         if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         run: |
-          DIR=${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}
+          # pr-N for a PR, main for main and tags, branch-<name> for a manual run on
+          # a branch (so it never overwrites the main baseline).
+          if [ -n "${{ github.event.pull_request.number }}" ]; then DIR="pr-${{ github.event.pull_request.number }}"
+          elif [ "$GITHUB_REF" = refs/heads/main ] || [[ "$GITHUB_REF" == refs/tags/* ]]; then DIR=main
+          else DIR="branch-$(echo "$GITHUB_REF_NAME" | tr '/' '-' | tr -cd 'A-Za-z0-9._-')"; fi
           # Keep the iPhone Duo job's $DIR/duo/ (published separately).
           scripts/publish_shots.sh shots "$DIR" --keep-subdirs
 
@@ -633,7 +637,9 @@ jobs:
           sleep 2
           mkdir -p duo/shots
           cp duo/probe.txt duo/shots/ 2>/dev/null || true
-          DEST=${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}/duo
+          if [ -n "${{ github.event.pull_request.number }}" ]; then DEST="pr-${{ github.event.pull_request.number }}/duo"
+          elif [ "$GITHUB_REF" = refs/heads/main ]; then DEST=main/duo
+          else DEST="branch-$(echo "$GITHUB_REF_NAME" | tr '/' '-' | tr -cd 'A-Za-z0-9._-')/duo"; fi
           if [ "${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}" = true ]; then
             export DUO_PUBLISH="scripts/publish_shots.sh duo/shots $DEST"
           fi
