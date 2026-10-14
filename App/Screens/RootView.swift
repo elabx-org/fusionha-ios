@@ -62,7 +62,9 @@ struct RootView: View {
     /// The tabs: the whole app when folded, the leading column when unfolded.
     private var tabs: some View {
         @Bindable var model = model
-        return TabView(selection: $model.tab) {
+        // A custom binding so tapping the current tab again still reaches the model.
+        let selection = Binding(get: { model.tab }, set: { model.tab = $0 })
+        return TabView(selection: selection) {
             if model.requestScoped {
                 Tab("Discover", image: "nav-discover", value: AppTab.discover) { DiscoverView() }
                 Tab("My requests", image: "nav-requests", value: AppTab.requests) { RequestsView() }

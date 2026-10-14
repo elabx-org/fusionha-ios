@@ -21,6 +21,7 @@ extension CalendarView {
     }
 
     func goToday() {
+        todayTick += 1
         withAnimation(motionOff ? nil : .snappy) {
             switch view {
             case .week: weekAnchor = Date()

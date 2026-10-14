@@ -53,7 +53,11 @@ enum PlexSignInError: Error {
 @Observable
 final class AppModel {
     var credentials: Credentials? = CredentialStore.load()
-    var tab: AppTab = .library
+    var tab: AppTab = .library {
+        // Opening the Calendar tab, or tapping it again, brings it back to today.
+        didSet { if tab == .calendar { calendarTodayTick += 1 } }
+    }
+    var calendarTodayTick = 0
     private(set) var me: Me?
 
     // Shell state shared by the top bar, the + button and every screen.

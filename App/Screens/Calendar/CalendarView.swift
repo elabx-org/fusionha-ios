@@ -9,6 +9,7 @@ import FusionhaKit
 struct CalendarView: View {
     @Environment(AppModel.self) var model
     @Environment(\.accessibilityReduceMotion) var reduceMotion
+    @Environment(\.horizontalSizeClass) var sizeClass
     /// The last chosen view, remembered per device (web `fusionha.calendar.view`).
     @AppStorage("calendar.view") var storedView = ""
     /// A view switched to without choosing it (tapping a month day opens Day).
@@ -25,6 +26,8 @@ struct CalendarView: View {
     @State var collapsed = false
     @State var toast: CalToast?
     @State var copyingFeed = false
+    /// Bumped to bring the view back to today (Today, the tab, a re-tap).
+    @State var todayTick = 0
 
     enum LoadPhase: Equatable {
         case loading, failed, loaded
@@ -99,6 +102,7 @@ struct CalendarView: View {
         .calToast($toast)
         .environment(\.calMotionOff, settings?.animationsEnabled == false)
         .task { await loadSettings() }
+        .onChange(of: model.calendarTodayTick) { goToday() }
         .task(id: fetchKey) { await load() }
         .onAppear(perform: applyScreenshotView)
     }
@@ -142,6 +146,7 @@ struct CalendarView: View {
                     days: CalendarMath.weekDays(weekAnchor, firstDay: firstDay, cal),
                     entries: entries,
                     todayIso: todayIso,
+                    todayTick: todayTick,
                     cardStyle: cardStyle,
                     collapsed: $collapsed,
                     title: title,
@@ -176,7 +181,8 @@ struct CalendarView: View {
     @ViewBuilder
     private var loadedContent: some View {
         switch view {
-        case .month:
+        case .month where sizeClass == .regular:
+            // iPad width: the full grid with event pills.
             MonthGridView(month: monthAnchor, entries: entries, todayIso: todayIso, firstDay: firstDay) { iso in
                 if let date = CalendarMath.date(iso, cal) {
                     dayAnchor = date
@@ -184,6 +190,11 @@ struct CalendarView: View {
                 }
             }
             .padding(.top, 12)
+        case .month:
+            // Phone: dots and counts in the grid, the picked day listed below (web `MonthMobile`).
+            MonthMobileView(month: monthAnchor, entries: entries, todayIso: todayIso, firstDay: firstDay,
+                            cardStyle: cardStyle, todayTick: todayTick)
+                .padding(.top, 8)
         case .agenda:
             groupedList(
                 "Nothing is scheduled this month. Aired episodes and movie releases show up here as your monitored titles hit their dates.",

@@ -9,6 +9,8 @@ struct WeekMobileView: View {
     let days: [String]
     let entries: [CalendarEntry]
     let todayIso: String
+    /// Bumped by Today and the Calendar tab: land on today again.
+    var todayTick = 0
     let cardStyle: WeekCardStyle
     @Binding var collapsed: Bool
     let title: String
@@ -50,10 +52,16 @@ struct WeekMobileView: View {
                     if next != collapsed { collapsed = next }
                 }
             }
-            .task(id: days.first) {
+            .task(id: "\(days.first ?? "")|\(todayTick)") {
                 guard days.contains(todayIso) else { return }
-                try? await Task.sleep(for: .milliseconds(60))
-                proxy.scrollTo("week-\(todayIso)", anchor: .top)
+                selected = nil
+                // Twice: once the groups exist, again after they have laid out
+                // and revealed (one early scroll on a device lands on Sunday).
+                for delay in [80, 400] {
+                    try? await Task.sleep(for: .milliseconds(delay))
+                    if Task.isCancelled { return }
+                    proxy.scrollTo("week-\(todayIso)", anchor: .top)
+                }
             }
         }
     }
