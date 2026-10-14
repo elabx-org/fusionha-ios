@@ -30,6 +30,10 @@ header p { margin: 0; color: var(--page-mut); font-size: 15px; line-height: 1.55
 .seg button[aria-pressed="true"] { background: var(--pick); color: #0b0b0c; }
 .seg button:focus-visible, .chip:focus-visible { outline: 2px solid var(--pick); outline-offset: 2px; }
 .hint { color: var(--page-mut); font-size: 13px; }
+.band { display: grid; gap: 14px; }
+.bandhead { display: grid; gap: 4px; max-width: 80ch; }
+.bandhead h3 { margin: 0; font: 700 19px var(--ui); }
+.bandhead p { margin: 0; color: var(--page-mut); font-size: 14px; line-height: 1.5; }
 .track { overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; }
 .row { display: grid; grid-auto-flow: column; grid-auto-columns: 320px; gap: 22px; width: max-content; }
 .col { scroll-snap-align: start; display: grid; gap: 14px; align-content: start; }
@@ -105,7 +109,7 @@ footer { color: var(--page-mut); font-size: 13px; max-width: 75ch; line-height: 
 <div class="wrap">
   <header>
     <h1>Palettes for fusionha iOS</h1>
-    <p>The same two screens in every palette. All but Midnight blue are being added to the app: pick one in Settings › Appearance, with a dark and a light choice and an Automatic mode. Posters are cut from the current app's screenshots. The tier and status colours (HD purple, 4K cyan, downloaded green, wanted amber) stay fixed in every palette, so only the surfaces, text and the brand accent change.</p>
+    <p>The same two screens in every palette. All but Midnight blue are being added to the app: pick one in Settings › Appearance, with a dark and a light choice and an Automatic mode. Posters are cut from the current app's screenshots. The first row keeps the web status colours everywhere; the second tunes them to each palette.</p>
   </header>
 
   <div class="controls">
@@ -116,7 +120,14 @@ footer { color: var(--page-mut); font-size: 13px; max-width: 75ch; line-height: 
     <span class="hint">Scroll sideways to compare.</span>
   </div>
 
-  <div class="track"><div class="row" id="row"></div></div>
+  <section class="band">
+    <div class="bandhead"><h3>Web status colours in every palette</h3><p>Today's app: the rails, tier chips and status pills use the web's colours whatever the palette.</p></div>
+    <div class="track"><div class="row" id="row"></div></div>
+  </section>
+  <section class="band">
+    <div class="bandhead"><h3>Shades matched to each palette</h3><p>Same meaning, same hue family (green done, cyan 4K and downloading, amber wanted, purple HD, pink anime), tuned to each palette's ground. Aurora is the main theme and keeps the web's full, mixed colours; the others are calmer.</p></div>
+    <div class="track"><div class="row" id="row2"></div></div>
+  </section>
 
   <footer>Every option keeps Liquid Glass on the tab bar, search and menus, and the Bricolage display face. A palette is about twelve colour tokens in <code>Shared/Theme.swift</code>, so switching is one change. It could also become a choice in Settings › Appearance, like the web's accent themes.</footer>
 </div>
@@ -233,7 +244,20 @@ function activity() {
   </div>${tabbar("act")}`;
 }
 
+/* Status shades per palette (row 2). Aurora is the web's, verbatim. */
+const SHADES = {
+  current:  { done:"#7FC8A0", grab:"#6CC4CF", miss:"#E0A458", hd:"#B39DDB", uhd:"#6CC4CF", anime:"#E39BBE", danger:"#E58A7F" },
+  graphite: { done:"#5FD3A7", grab:"#5CCFE6", miss:"#F2B347", hd:"#A5A0F5", uhd:"#5CCFE6", anime:"#EE8EC4", danger:"#F28B8B" },
+  oled:     { done:"#8FD9B6", grab:"#8ED8E8", miss:"#F0C27A", hd:"#C4B5FD", uhd:"#8ED8E8", anime:"#F2A7CC", danger:"#F5A3A3" },
+  noir:     { done:"#B5E8CF", grab:"#B3E7F1", miss:"#F3D6A6", hd:"#DAD0FE", uhd:"#B3E7F1", anime:"#F6C6DD", danger:"#F8BDBD" },
+  aurora:   { done:"#34D399", grab:"#22D3EE", miss:"#F59E0B", hd:"#A78BFA", uhd:"#22D3EE", anime:"#F472B6", danger:"#F87171" },
+  frost:    { done:"#74D9C0", grab:"#7DD3F0", miss:"#F5C26B", hd:"#B4A9FF", uhd:"#7DD3F0", anime:"#F0A0CF", danger:"#F59A9A" },
+  eclipse:  { done:"#4ADE9A", grab:"#38D6E8", miss:"#FFB347", hd:"#B794FF", uhd:"#38D6E8", anime:"#FF7EB6", danger:"#FF6B6B" },
+  daylight: { done:"#047857", grab:"#0E7490", miss:"#B45309", hd:"#6D28D9", uhd:"#0E7490", anime:"#BE185D", danger:"#B91C1C" },
+  midnight: { done:"#5ED6AC", grab:"#5ACDEB", miss:"#F3B44E", hd:"#A9A2F7", uhd:"#5ACDEB", anime:"#EE90C6", danger:"#F28E8E" },
+};
 const row = document.getElementById("row");
+const row2 = document.getElementById("row2");
 let screen = "library";
 try { screen = localStorage.getItem("fh-palette-screen") || "library"; } catch (e) {}
 function render() {
@@ -244,6 +268,16 @@ function render() {
       <div class="phone" style="${vars}">${screen === "library" ? library() : activity()}</div>
       <div class="swatches">${p.sw.map(([c,l]) => `<div class="sw"><i style="background:${c}"></i><span>${l}</span><span>${c}</span></div>`).join("")}</div>
       <ul class="notes">${p.notes.map(n => `<li>${n.replace(/`([^`]+)`/g,"<code>$1</code>")}</li>`).join("")}</ul>
+    </section>`;
+  }).join("");
+  row2.innerHTML = palettes.map(p => {
+    const s = SHADES[p.key] || {};
+    const vars = Object.entries({ ...p.t, ...s }).map(([k,v]) => `--${k}:${v}`).join(";");
+    const labels = [["done","done"],["grab","4K · grab"],["miss","wanted"],["hd","HD"],["anime","anime"],["danger","danger"]];
+    return `<section class="col" aria-label="${p.name}, matched shades">
+      <div class="name"><h2>${p.name}</h2><span class="tag${p.key==="aurora"?" rec":""}">${p.key==="aurora"?"Main · web colours":"Matched"}</span></div>
+      <div class="phone" style="${vars}">${screen === "library" ? library() : activity()}</div>
+      <div class="swatches">${labels.map(([k,l]) => `<div class="sw"><i style="background:${s[k]}"></i><span>${l}</span><span>${s[k]}</span></div>`).join("")}</div>
     </section>`;
   }).join("");
   document.querySelectorAll("[data-screen]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.screen === screen)));
