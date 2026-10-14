@@ -183,7 +183,7 @@ struct ActivityPage<Content: View>: View {
                 ActivityPageHeader()
                 content
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, Theme.pageGutter)
             .padding(.top, 20)
             .padding(.bottom, bulk.config == nil ? 90 : 190)
         }
@@ -220,18 +220,20 @@ struct ActivityPageHeader: View {
                     Button {
                         router.manualImport()
                     } label: {
-                        Image(systemName: "square.and.arrow.down")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Theme.txt)
-                            .frame(width: 30, height: 30)
-                            .background(Theme.panel, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.line))
-                            .frame(width: 40, height: 40)
-                            .contentShape(Rectangle())
+                        ViewThatFits(in: .horizontal) {
+                            Label("Manual import", systemImage: "square.and.arrow.down")
+                                .padding(.horizontal, 14)
+                            Image(systemName: "square.and.arrow.down")
+                                .frame(width: 36)
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Theme.txt)
+                        .frame(height: 36)
+                        .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
-                    .padding(.vertical, -5)
-                    .padding(.trailing, -5)
+                    .glassControl()
+                    .alignmentGuide(.lastTextBaseline) { $0[.bottom] - 6 }
                     .accessibilityLabel("Manual import")
                 }
                 Text(caption(held: held))
@@ -248,14 +250,13 @@ struct ActivityPageHeader: View {
                             Image(systemName: "square.and.arrow.down").font(.system(size: 13, weight: .semibold))
                             Text("Resolve all held (\(held))").font(.system(size: 13, weight: .semibold))
                         }
-                        .foregroundStyle(Theme.txt)
-                        .padding(.horizontal, 12)
-                        .frame(height: 32)
-                        .background(Theme.panel, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.line))
-                        .contentShape(Rectangle())
+                        .foregroundStyle(Theme.miss)
+                        .padding(.horizontal, 14)
+                        .frame(height: 36)
+                        .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .glassEffect(.regular.tint(Theme.miss.opacity(0.14)).interactive(), in: Capsule())
                 }
                 if chrome.searchable {
                     ActSearch(placeholder: "Search by title…", text: $chrome.searchInput)

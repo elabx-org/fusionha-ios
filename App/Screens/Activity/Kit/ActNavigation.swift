@@ -1,7 +1,8 @@
 import SwiftUI
 import FusionhaKit
 
-// MARK: Tabs (Tabs.module.css) — horizontally scrolling on mobile
+// MARK: Tabs (Tabs.module.css): a glass capsule, horizontally scrolling on
+// mobile; the active tab is a solid cream pill (the house lights).
 
 struct ActTabs<Value: Hashable>: View {
     struct Item {
@@ -40,28 +41,25 @@ struct ActTabs<Value: Hashable>: View {
                                     .background(item.badgeColor, in: Capsule())
                             }
                         }
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(active ? Theme.txt : Theme.mut)
-                        .padding(.horizontal, 13)
-                        .frame(height: 30)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(active ? Theme.onPrimary : Theme.mut)
+                        .padding(.horizontal, 14)
+                        .frame(height: 36)
                         .background {
                             if active {
-                                RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                    .fill(Theme.panel)
-                                    .shadow(color: .black.opacity(0.3), radius: 1, y: 1)
+                                Capsule().fill(Theme.txt)
                                     .matchedGeometryEffect(id: "tab-indicator", in: namespace ?? indicator)
                             }
                         }
-                        .contentShape(Rectangle())
+                        .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(active ? .isSelected : [])
                 }
             }
-            .padding(3)
+            .padding(4)
         }
-        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Theme.line))
+        .glassEffect(.regular.interactive(), in: Capsule())
         .sensoryFeedback(.selection, trigger: selection)
     }
 }
@@ -168,19 +166,17 @@ struct ActSearch: View {
                 .focused($focused)
             if !text.isEmpty {
                 Button { text = "" } label: {
-                    Text("✕").font(.system(size: 13)).foregroundStyle(Theme.mut).frame(width: 22, height: 22)
+                    Image(systemName: "xmark.circle.fill").font(.system(size: 15)).foregroundStyle(Theme.mut)
+                        .frame(width: 24, height: 24)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Clear search")
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-            .strokeBorder(focused ? Theme.cyan.opacity(0.55) : Theme.line))
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous)
-            .stroke(Theme.cyan.opacity(focused ? 0.13 : 0), lineWidth: 3))
+        .padding(.horizontal, 14)
+        .frame(height: 40)
+        .glassEffect(focused ? .regular.tint(Theme.txt.opacity(0.10)).interactive() : .regular.interactive(),
+                     in: Capsule())
     }
 }
 
@@ -266,7 +262,7 @@ struct ActEmpty: View {
     }
 }
 
-// MARK: Section header (`.section`)
+// MARK: Section header (`.section`): sentence case, 20pt, a quiet count
 
 struct ActSection: View {
     let title: String
@@ -274,22 +270,19 @@ struct ActSection: View {
     var hint: String?
 
     var body: some View {
-        HStack(spacing: 8) {
-            Text(title.uppercased())
-                .font(.system(size: 12, weight: .bold))
-                .tracking(0.6)
-                .foregroundStyle(Theme.mut)
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(title)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(Theme.txt)
+                .accessibilityAddTraits(.isHeader)
             if let count {
                 Text("\(count)")
-                    .font(.system(size: 10.5, weight: .heavy).monospacedDigit())
+                    .font(.system(size: 17).monospacedDigit())
                     .foregroundStyle(Theme.dim)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 1)
-                    .background(Theme.panel2, in: Capsule())
             }
             Spacer(minLength: 0)
             if let hint {
-                Text(hint).font(.system(size: 11)).foregroundStyle(Theme.dim).lineLimit(1)
+                Text(hint).font(.system(size: 13)).foregroundStyle(Theme.dim).lineLimit(1)
             }
         }
     }

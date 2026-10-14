@@ -5,30 +5,34 @@ import FusionhaKit
 
 enum ActButtonKind { case primary, subtle, ghost, danger, warn, amber }
 
+/// Capsules in the redesign: cream for the one primary action, glass for the
+/// rest (danger and warn tint the text, never the glass), solid amber only for
+/// the held-download call to action.
 struct ActButtonStyle: ButtonStyle {
     var kind: ActButtonKind = .subtle
     var small = true
 
+    @ViewBuilder
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: small ? 12 : 13, weight: .semibold))
+        let label = configuration.label
+            .font(.system(size: small ? 13 : 14, weight: .semibold))
             .lineLimit(1)
-            .padding(.horizontal, small ? 11 : 14)
-            .frame(minHeight: small ? 30 : 36)
+            .padding(.horizontal, small ? 12 : 16)
+            .frame(minHeight: small ? 32 : 36)
             .foregroundStyle(foreground)
-            .background { background }
-            .overlay {
-                if let border {
-                    RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(border)
-                }
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .contentShape(Capsule())
             .opacity(configuration.isPressed ? 0.75 : 1)
+        switch kind {
+        case .primary: label.background(Theme.fusion, in: Capsule())
+        case .amber: label.background(Theme.miss, in: Capsule())
+        case .ghost: label
+        case .subtle, .danger, .warn: label.glassEffect(.regular.interactive(), in: Capsule())
+        }
     }
 
     private var foreground: Color {
         switch kind {
-        case .primary: return Theme.bg
+        case .primary: return Theme.onPrimary
         case .subtle: return Theme.txt
         case .ghost: return Theme.mut
         case .danger: return Theme.danger
@@ -36,28 +40,9 @@ struct ActButtonStyle: ButtonStyle {
         case .amber: return Color(hex: 0x1A1206)
         }
     }
-
-    private var border: Color? {
-        switch kind {
-        case .danger: return Theme.danger.opacity(0.4)
-        case .warn: return Theme.miss.opacity(0.45)
-        case .subtle: return Theme.line
-        default: return nil
-        }
-    }
-
-    @ViewBuilder
-    private var background: some View {
-        switch kind {
-        case .primary: RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Theme.fusion)
-        case .subtle: RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Theme.panel)
-        case .amber: RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Theme.miss)
-        default: Color.clear
-        }
-    }
 }
 
-/// The 26pt `.iact` / `.ib` row action button (40pt tap target).
+/// The row action button: a 32pt glass circle in a 40pt tap target.
 struct ActIconButton: View {
     let systemImage: String
     let label: String
@@ -74,9 +59,9 @@ struct ActIconButton: View {
                     Image(systemName: systemImage).font(.system(size: 13, weight: .semibold))
                 }
             }
-            .foregroundStyle(tint)
-            .frame(width: 26, height: 26)
-            .background(tint == Theme.mut ? Color.clear : tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .foregroundStyle(tint == Theme.mut ? Theme.txt : tint)
+            .frame(width: 32, height: 32)
+            .glassEffect(.regular.interactive(), in: Circle())
             .frame(width: 40, height: 40)
             .contentShape(Rectangle())
         }
@@ -110,37 +95,35 @@ struct ActMoreMenu<Content: View>: View {
 
 // MARK: Chips
 
-/// The queue `TierChip`: mono 9/700, `HD·1080p` / `UHD·4K`.
+/// The queue `TierChip` as a lit edition chip: `HD·1080p` / `UHD·4K`.
 struct ActTierChip: View {
     let tier: QualityTier
     var big = false
 
     var body: some View {
         Text(big ? tier.rawValue : tier.chipLabel)
-            .font(.system(size: big ? 10 : 9, weight: .bold, design: .monospaced))
+            .font(.system(size: big ? 12 : 11, weight: .semibold, design: .monospaced))
             .foregroundStyle(tier.color)
             .padding(.horizontal, big ? 7 : 5)
-            .padding(.vertical, 1)
-            .background(tier.color.opacity(big ? 0.12 : 0.06), in: RoundedRectangle(cornerRadius: big ? 6 : 4))
-            .overlay(RoundedRectangle(cornerRadius: big ? 6 : 4).strokeBorder(tier.color.opacity(0.4)))
+            .padding(.vertical, big ? 3 : 2)
+            .background(EditionChipBackground(color: tier.color))
             .lineLimit(1)
             .fixedSize()
     }
 }
 
-/// `QualityChip`: mono 10/700, tinted by the quality's tier.
+/// `QualityChip`: a lit chip tinted by the quality's tier.
 struct ActQualityChip: View {
     let quality: String
 
     var body: some View {
         let tint: Color = quality.contains("2160") ? Theme.grab : (quality.contains("1080") ? Theme.edition : Theme.mut)
         Text(ActFmt.quality(quality))
-            .font(.system(size: 10, weight: .bold, design: .monospaced))
+            .font(.system(size: 11, weight: .semibold, design: .monospaced))
             .foregroundStyle(tint)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(tint.opacity(0.3)))
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(EditionChipBackground(color: tint))
             .lineLimit(1)
             .fixedSize()
     }
