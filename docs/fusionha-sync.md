@@ -47,7 +47,10 @@ source group, 4K+HD pair lanes, the narrow layout and the pack episode list
 Still open from 0.4.187:
 - Activity: history lifecycle sheet; the remove sheet's three opt-ins.
 - Requests and Issues revamp (mocks in `docs/design/redesign/requests.html`).
-- Manual Import native (the web flow opens signed in meanwhile).
+- Manual Import native, step 2: the folder scan (`POST /scan`, `GET /browse`),
+  re-match to any title (item search), the bulk Actions / Edit N selected
+  sheet. Step 1 (held-download rescue) is native: `App/Screens/ManualImport/`,
+  rules in FusionhaKit `ManualImport*.swift`.
 
 ## Waiting on fusionha
 

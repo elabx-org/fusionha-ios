@@ -11,7 +11,7 @@ public enum ConfigCollection: String, Sendable {
 /// Endpoints for the native Settings panels (Root Folders … Logs). Same routes and
 /// bodies as the web panels.
 extension APIClient {
-    private static let jsonBodyEncoder = JSONEncoder()
+    static let jsonBodyEncoder = JSONEncoder()
 
     /// Sends a `SettingsJSON` body verbatim (keys stay snake_case; `null`s are kept).
     func sendJSON<T: Decodable>(_ method: String, _ path: String, _ body: SettingsJSON? = nil,

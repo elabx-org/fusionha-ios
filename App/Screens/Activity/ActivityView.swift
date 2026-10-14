@@ -29,23 +29,33 @@ final class ActBulk {
     var config: Config?
 }
 
-/// Opens web-only flows (Manual import) in an in-app Safari sheet.
+/// Opens Manual import: a held-download rescue natively, the folder scan (and
+/// the rescue's "Open on the web" fallback) as the signed-in web page.
 @MainActor
 @Observable
 final class ActRouter {
     var webURL: URL?
     var server: URL?
+    /// The held downloads a native Manual import sheet is open for.
+    var rescue: ManualImportRequest?
 
-    /// The web's Manual import modal is a large flow (scan, per-file overrides,
-    /// import mode); it opens as the web page. `rescue` pre-scopes it to a held download.
+    struct ManualImportRequest: Identifiable {
+        let downloadIds: [Int]
+        var id: String { downloadIds.map(String.init).joined(separator: ",") }
+    }
+
     func manualImport(rescue downloadId: Int? = nil) {
         manualImport(rescue: downloadId.map { [$0] } ?? [])
     }
 
-    /// A bulk queue rescue: one Manual import scan over several held downloads
-    /// (a whole season, or every held row). The web's `?rescue=` takes a
-    /// comma list.
+    /// A queue rescue (one held download, a season, or every held row) opens
+    /// natively as one scan; with no ids it is the folder scan, still the web's.
     func manualImport(rescue downloadIds: [Int]) {
+        if downloadIds.isEmpty { openWeb(rescue: []) } else { rescue = ManualImportRequest(downloadIds: downloadIds) }
+    }
+
+    /// The web's Manual import (`/activity?rescue=1,2`), opened signed in.
+    func openWeb(rescue downloadIds: [Int]) {
         guard let server else { return }
         var components = URLComponents(url: server.appendingPathComponent("activity"), resolvingAgainstBaseURL: false)
         if !downloadIds.isEmpty {
@@ -154,6 +164,16 @@ struct ActivityView: View {
             // Manual import is the web app's, opened signed in (not Safari, which
             // has no fusionha session and showed the sign-in page).
             FusionhaWebSheet(url: url)
+        }
+        .sheet(item: $router.rescue) { request in
+            ManualImportSheet(downloadIds: request.downloadIds, client: model.client) {
+                // After the native sheet closes, open the web version of the same rescue.
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(450))
+                    router.openWeb(rescue: request.downloadIds)
+                }
+            }
+            .environment(model)
         }
         .task(id: chrome.searchInput) {
             if chrome.searchInput.isEmpty { chrome.search = ""; return }
