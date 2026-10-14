@@ -46,11 +46,17 @@ struct QueueMetaLine: View {
 struct QueueHead: View {
     let item: QueueItem
     var chip: (String, Color)?
+    /// Inside a group card the title is the group's, so the episode leads.
+    var showTitle = true
 
     var body: some View {
         ActFlow(spacing: 6, lineSpacing: 3) {
-            Text(item.title).font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
-            if let ep = item.episodeLabel {
+            if showTitle || item.episodeLabel == nil {
+                Text(item.title).font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
+            }
+            if let ep = item.episodeLabel, !showTitle {
+                Text(ep).font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
+            } else if let ep = item.episodeLabel {
                 Text(ep).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(Theme.mut).lineLimit(1)
             }
             ActTierChip(tier: item.tier)

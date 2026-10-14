@@ -20,6 +20,8 @@ struct QueueGroupCard: View {
     /// reading for two polls first, so a lone zero sample between two real ones
     /// never blinks the speed out (the web's `useHeldRate`).
     @State private var shownRate: Double = 0
+    /// The one member row opened in place (the web's single expanded row).
+    @State private var openId: Int?
 
     var body: some View {
         let downloads = group.downloads
@@ -146,29 +148,62 @@ struct QueueGroupCard: View {
         return Int(label[r].dropFirst())
     }
 
+    /// A member of the group. Held / stuck members get the attention card's
+    /// nested variant (reason, why, Manual import, block); the rest are compact
+    /// rows that open in place to show the release, client and actions.
     @ViewBuilder
     private func nestedRow(_ item: QueueItem) -> some View {
         let state = item.cockpitState
-        let stripe: Color = state == .stalled ? Theme.miss : (state == .queued ? Theme.dim : (state == .held ? Theme.stuck : Theme.grab))
-        HStack(spacing: 10) {
-            if selecting { ActCheckbox(checked: selected.contains(item.id)) }
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(item.episodeLabel ?? item.tier.chipLabel).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                    if item.episodeLabel != nil { ActTierChip(tier: item.tier) }
-                    Spacer(minLength: 0)
-                    Text(state == .queued ? "queued" : (state == .stalled ? "stalled" : ActFmt.rate(telemetry[item.id]?.bps ?? 0)))
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(state == .stalled ? Theme.miss : Theme.mut)
-                    Text("\(item.pct)%").font(.system(size: 11, weight: .bold).monospacedDigit()).foregroundStyle(Theme.txt).frame(width: 36, alignment: .trailing)
+        if (state == .held || state == .stuck) && !selecting {
+            AttentionCard(item: item, actions: actionsFor(item), nested: true)
+                .padding(.horizontal, 6)
+                .overlay(alignment: .leading) {
+                    Capsule().fill(Theme.stuck).frame(width: 3).padding(.vertical, 10).offset(x: 5)
                 }
-                ActProgressBar(fraction: Double(item.pct) / 100, height: 4, shimmer: state == .downloading)
+        } else {
+            compactRow(item)
+        }
+    }
+
+    private func compactRow(_ item: QueueItem) -> some View {
+        let state = item.cockpitState
+        let stripe: Color = state == .stalled ? Theme.miss : (state == .queued ? Theme.dim : (state == .held ? Theme.stuck : Theme.grab))
+        let open = openId == item.id && !selecting
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                if selecting { ActCheckbox(checked: selected.contains(item.id)) }
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Text(item.episodeLabel ?? item.tier.chipLabel).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
+                        if item.episodeLabel != nil { ActTierChip(tier: item.tier) }
+                        Spacer(minLength: 0)
+                        Text(state == .queued ? "queued" : (state == .stalled ? "stalled" : ActFmt.rate(telemetry[item.id]?.bps ?? 0)))
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(state == .stalled ? Theme.miss : Theme.mut)
+                        Text("\(item.pct)%").font(.system(size: 11, weight: .bold).monospacedDigit()).foregroundStyle(Theme.txt).frame(width: 36, alignment: .trailing)
+                    }
+                    ActProgressBar(fraction: Double(item.pct) / 100, height: 4, shimmer: state == .downloading)
+                }
+                if !selecting {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Theme.mut)
+                        .rotationEffect(.degrees(open ? 180 : 0))
+                        .frame(width: 24)
+                        .accessibilityHidden(true)
+                }
             }
-            if !selecting {
-                let actions = actionsFor(item)
-                ActIconButton(systemImage: "trash", label: "Remove from queue") { actions.remove(false) }
-                    .padding(.horizontal, -8)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if selecting {
+                    if selected.contains(item.id) { selected.remove(item.id) } else { selected.insert(item.id) }
+                } else {
+                    withAnimation(reduce ? nil : .snappy(duration: 0.25)) { openId = open ? nil : item.id }
+                }
             }
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint(open ? "Hides the details" : "Shows the details")
+            if open { memberDetails(item) }
         }
         .padding(.leading, 20)
         .padding(.trailing, 16)
@@ -176,13 +211,27 @@ struct QueueGroupCard: View {
         .overlay(alignment: .leading) {
             Capsule().fill(stripe).frame(width: 3).padding(.vertical, 8).offset(x: 5)
         }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            if selecting {
-                if selected.contains(item.id) { selected.remove(item.id) } else { selected.insert(item.id) }
-            } else {
-                model.open(item.mediaItemId)
+    }
+
+    /// The opened member: release, client · indexer · protocol · age, the next
+    /// step, then Open title and the row's actions (search, remove, more).
+    private func memberDetails(_ item: QueueItem) -> some View {
+        let actions = actionsFor(item)
+        return VStack(alignment: .leading, spacing: 6) {
+            ReleaseLine(text: item.releaseTitle)
+            QueueMetaLine(item: item)
+            if let next = item.nextStep {
+                Text(next).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut)
+            }
+            HStack {
+                Button("Open title", systemImage: "arrow.up.right") { model.open(item.mediaItemId) }
+                    .buttonStyle(ActButtonStyle(kind: .subtle))
+                Spacer(minLength: 0)
+                QueueActionsView(item: item, actions: actions,
+                                 primary: QueuePrimary(icon: "magnifyingglass", label: "Search", run: actions.search),
+                                 offerSearch: true)
             }
         }
+        .transition(.opacity.combined(with: .move(edge: .top)))
     }
 }

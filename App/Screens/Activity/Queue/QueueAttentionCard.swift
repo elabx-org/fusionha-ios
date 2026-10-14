@@ -6,6 +6,9 @@ import FusionhaKit
 struct AttentionCard: View {
     let item: QueueItem
     let actions: QueueRowActions
+    /// A member of a group card (the web's `variant="nested"`): no poster or
+    /// title, no card of its own; the reason, details and actions stay.
+    var nested = false
     @Environment(AppModel.self) private var model
     @State private var showWhy = false
     @State private var blocking = false
@@ -20,9 +23,10 @@ struct AttentionCard: View {
     var body: some View {
         let held = item.cockpitState == .held
         HStack(alignment: .top, spacing: 12) {
-            ActPoster(url: item.posterUrl, title: item.title, size: .sm)
+            if !nested { ActPoster(url: item.posterUrl, title: item.title, size: .sm) }
             VStack(alignment: .leading, spacing: 5) {
-                QueueHead(item: item, chip: held ? ("Manual import required", Theme.miss) : ("Needs attention", Theme.danger))
+                QueueHead(item: item, chip: held ? ("Manual import required", Theme.miss) : ("Needs attention", Theme.danger),
+                          showTitle: !nested)
                 ReleaseLine(text: item.releaseTitle)
                 HStack(alignment: .top, spacing: 6) {
                     if held {
@@ -73,7 +77,7 @@ struct AttentionCard: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
-        .actWash(QueueLogic.wash(item))
+        .actWash(QueueLogic.wash(item), base: nested ? .clear : Theme.card, border: nested ? .clear : Theme.line)
         .onAppear(perform: consumeFocus)
         .onChange(of: model.pendingQueueFocus?.downloadId) { consumeFocus() }
         .sheet(isPresented: $blocking) {
