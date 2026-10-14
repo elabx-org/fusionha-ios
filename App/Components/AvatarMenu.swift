@@ -111,7 +111,7 @@ struct Avatar: View {
             } else {
                 Text(me?.initials ?? "")
                     .font(.system(size: size * 13 / 32, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onPrimary)
             }
         }
         .frame(width: size, height: size)
