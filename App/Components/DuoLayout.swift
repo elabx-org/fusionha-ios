@@ -177,19 +177,19 @@ enum PosterColumns {
         guard width > 0 else { return 3 }
         if width < 300 { return 2 }
         if width < 520 { return 3 }
-        return max(4, Int((width + 6) / 150))
+        return max(4, Int((width + 10) / 150))
     }
 }
 
 /// A poster grid whose column count follows its own width (`PosterColumns`):
-/// three tracks on phones, more when unfolded. 18 × 6 gaps like the Library.
+/// three tracks on phones, more when unfolded. 22 × 10 gaps like the Library.
 struct AdaptivePosterGrid<Content: View>: View {
-    var spacing: CGFloat = 18
+    var spacing: CGFloat = 22
     @ViewBuilder var content: Content
     @State private var columns = 3
 
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6, alignment: .top), count: columns),
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: columns),
                   alignment: .leading, spacing: spacing) {
             content
         }

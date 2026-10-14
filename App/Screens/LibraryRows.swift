@@ -135,7 +135,7 @@ struct StatusSectionHeader: View {
                 .frame(height: 1)
         }
         .padding(.top, 4)
-        .padding(.bottom, 18)
+        .padding(.bottom, 22)
     }
 }
 
@@ -174,7 +174,7 @@ struct LibraryGridRow: View {
     let columns: Int
 
     var body: some View {
-        HStack(alignment: .top, spacing: 6) {
+        HStack(alignment: .top, spacing: 10) {
             ForEach(0..<max(columns, items.count), id: \.self) { i in
                 if i < items.count {
                     PosterCard(item: items[i]).frame(maxWidth: .infinity, alignment: .top)
@@ -183,6 +183,6 @@ struct LibraryGridRow: View {
                 }
             }
         }
-        .padding(.bottom, 18)
+        .padding(.bottom, 22)
     }
 }
