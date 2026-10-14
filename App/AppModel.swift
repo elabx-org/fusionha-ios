@@ -55,7 +55,10 @@ final class AppModel {
     var credentials: Credentials? = CredentialStore.load()
     var tab: AppTab = .library {
         // Opening the Calendar tab, or tapping it again, brings it back to today.
-        didSet { if tab == .calendar { calendarTodayTick += 1 } }
+        didSet {
+            if tab == .calendar { calendarTodayTick += 1 }
+            AppStartTab.remember(tab)
+        }
     }
     var calendarTodayTick = 0
     private(set) var me: Me?
@@ -154,6 +157,7 @@ final class AppModel {
     private var lastQueueIds: [Int] = []
 
     init() {
+        tab = AppStartTab.launchTab()
         #if DEBUG
         // CI screenshots: point at the mock server and open a given screen.
         let env = ProcessInfo.processInfo.environment

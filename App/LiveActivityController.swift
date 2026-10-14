@@ -15,6 +15,11 @@ enum LiveActivityController {
     private static let worker = LiveActivityWorker()
 
     static func sync(with items: [QueueItem]) {
+        // Account › Live Activity › Show on Lock Screen.
+        guard LiveActivityPrefs.enabled else {
+            if lastState != nil { endAll() }
+            return
+        }
         guard let top = items.first else {
             if var finished = lastState {
                 finished.finished = true

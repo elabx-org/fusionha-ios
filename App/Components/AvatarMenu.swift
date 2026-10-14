@@ -5,92 +5,78 @@ import FusionhaKit
 
 // MARK: - User menu
 
-/// The avatar and its menu (UserMenu.tsx): name + "Administrator", Settings,
-/// Reset cache & reload, Log out. The amber dot shows when something needs
-/// attention. "Open web app" and the version are iOS-only extras.
+/// The avatar and its account sheet (UserMenu.tsx's items plus This iPhone).
+/// The amber dot shows when something needs attention. The sheet is a short
+/// glass sheet; Settings, Account and Widgets open once it has closed.
 struct AvatarMenu: View {
     @Environment(AppModel.self) private var model
-    @Environment(\.openURL) private var openURL
+    @State private var showingSheet = false
+    @State private var pending: AccountSheet.Destination?
     @State private var showingSettings = SettingsScreenshot.openAtLaunch
+    @State private var settingsPanel = SettingsScreenshot.panel
     @State private var showingWidgets = WidgetDiagnosticsView.openAtLaunch
-    /// Keychain + App Group probes are synchronous IPC; this menu's body runs on
-    /// every screen, so they are read once, off the main thread.
+    /// Keychain + App Group probes are synchronous IPC; this view's body runs
+    /// on every screen, so they are read once, off the main thread.
     @State private var diagnostics = ""
 
     var body: some View {
-        Menu {
-            if let me = model.me {
-                Section {
-                    Button {} label: {
-                        Text(me.username)
-                        if me.isAdmin { Text("Administrator") }
-                    }
-                    .disabled(true)
+        Button { showingSheet = true } label: { label }
+            .buttonStyle(.plain)
+            .accessibilityLabel(model.attentionCount > 0 ? "Account, \(model.attentionCount) need attention" : "Account")
+            .task(id: model.credentials?.serverURL) {
+                diagnostics = await Task.detached(priority: .utility) { CredentialStore.diagnostics() }.value
+            }
+            .sheet(isPresented: $showingSheet, onDismiss: openPending) {
+                AccountSheet(diagnostics: diagnostics) { pending = $0 }
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
+            .fullScreenCover(isPresented: $showingSettings) {
+                SettingsView(client: model.client, initialPanel: settingsPanel)
+            }
+            .sheet(isPresented: $showingWidgets) {
+                WidgetDiagnosticsView()
+                    .presentationDragIndicator(.visible)
+                    .presentationBackground(Theme.bg)
+            }
+            // A deep link closes these so its sheet can show (DeepLink.swift).
+            .onChange(of: showingSheet || showingSettings || showingWidgets) { _, open in model.avatarCoverOpen = open }
+            .onChange(of: model.linkCloseTick) {
+                pending = nil
+                showingSheet = false
+                showingSettings = false
+                showingWidgets = false
+            }
+    }
+
+    private var label: some View {
+        Avatar(me: model.me, size: 32)
+            .overlay(alignment: .topTrailing) {
+                if model.attentionCount > 0 && !model.requestScoped {
+                    Circle()
+                        .fill(Theme.miss)
+                        .frame(width: 9, height: 9)
+                        .overlay(Circle().strokeBorder(Theme.bg, lineWidth: 2).padding(-2))
+                        .offset(x: 1, y: -1)
                 }
             }
-            Section {
-                Button("Account", systemImage: "person.crop.circle") { model.showingAccount = true }
-            }
-            Section {
-                if model.credentials != nil, !model.requestScoped {
-                    Button("Settings", systemImage: "slider.horizontal.3") {
-                        showingSettings = true
-                    }
-                }
-                // The in-app docs (`/docs`) live on the web app; open them there.
-                if let server = model.credentials?.serverURL {
-                    Button("Documentation", systemImage: "book.closed") {
-                        openURL(server.appendingPathComponent("docs"))
-                    }
-                }
-            }
-            Section {
-                Button("Reset cache & reload", systemImage: "arrow.clockwise") {
-                    Task { await model.resetCacheAndReload() }
-                }
-            }
-            Section {
-                Button("Log out", systemImage: "rectangle.portrait.and.arrow.right", role: .destructive) {
-                    Task { await model.logOut() }
-                }
-            }
-            Section("Version \(Bundle.main.appVersion)\(diagnostics.isEmpty ? "" : " · \(diagnostics)")") {
-                if let server = model.credentials?.serverURL {
-                    Button("Open web app", systemImage: "safari") { openURL(server) }
-                }
-                Button("Widget diagnostics", systemImage: "stethoscope") { showingWidgets = true }
-            }
-        } label: {
-            Avatar(me: model.me, size: 32)
-                .overlay(alignment: .topTrailing) {
-                    if model.attentionCount > 0 && !model.requestScoped {
-                        Circle()
-                            .fill(Theme.miss)
-                            .frame(width: 9, height: 9)
-                            .overlay(Circle().strokeBorder(Theme.bg, lineWidth: 2).padding(-2))
-                            .offset(x: 1, y: -1)
-                    }
-                }
-                .frame(width: 32, height: 32)
-                .contentShape(Circle())
-        }
-        .accessibilityLabel(model.attentionCount > 0 ? "Account, \(model.attentionCount) need attention" : "Account")
-        .task(id: model.credentials?.serverURL) {
-            diagnostics = await Task.detached(priority: .utility) { CredentialStore.diagnostics() }.value
-        }
-        .fullScreenCover(isPresented: $showingSettings) {
-            SettingsView(client: model.client, initialPanel: SettingsScreenshot.panel)
-        }
-        .sheet(isPresented: $showingWidgets) {
-            WidgetDiagnosticsView()
-                .presentationDragIndicator(.visible)
-                .presentationBackground(Theme.bg)
-        }
-        // A deep link closes these so its sheet can show (DeepLink.swift).
-        .onChange(of: showingSettings || showingWidgets) { _, open in model.avatarCoverOpen = open }
-        .onChange(of: model.linkCloseTick) {
-            showingSettings = false
-            showingWidgets = false
+            .frame(width: 32, height: 32)
+            .padding(6)
+            .contentShape(Circle())
+            .padding(-6)
+    }
+
+    private func openPending() {
+        guard let destination = pending else { return }
+        pending = nil
+        switch destination {
+        case .settings(let panel):
+            settingsPanel = panel
+            showingSettings = true
+        case .account:
+            model.showingAccount = true
+        case .widgets:
+            showingWidgets = true
         }
     }
 }
