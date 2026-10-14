@@ -109,8 +109,7 @@ struct ActPoster: View {
                 }
             }
             .frame(width: size.size.width, height: size.size.height)
-            .clipShape(RoundedRectangle(cornerRadius: size.radius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: size.radius, style: .continuous).strokeBorder(Color.white.opacity(0.06)))
+            .shelfPoster(radius: size.radius)
             .accessibilityHidden(true)
     }
 }
