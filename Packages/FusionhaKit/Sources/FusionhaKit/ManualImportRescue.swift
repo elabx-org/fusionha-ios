@@ -73,7 +73,8 @@ public struct ManualImportHeldStrip: Equatable, Sendable {
         if let row = single {
             let reason = Self.reasonShort(scan, row)
             let detail = Self.bannerText(scan, row)
-            let guardLine = Self.guardLine(scan.heldDetail?.currentGroup ?? row.existingFile?.releaseGroup, tier: row.target.tier)
+            let guardLine = Self.guardLine(scan.heldDetail?.currentGroup ?? row.existingFile?.releaseGroup, tier: row.target.tier,
+                                           edition: row.target.edition)
             line1 = [reason] + (guardLine.map { [$0] } ?? [])
             line2 = detail.isEmpty || detail == reason ? nil : detail
             bulkEligible = 0
@@ -103,7 +104,7 @@ public struct ManualImportHeldStrip: Equatable, Sendable {
 
     /// A held row over a current file that is not an upgrade.
     static func isDowngrade(_ r: ManualImportRow) -> Bool {
-        r.held != nil && r.existingFile != nil && r.existingFile?.verdict?.upgrade != true
+        r.held != nil && r.existingFile != nil && !ManualImportRules.titleBlocked(r) && r.existingFile?.verdict?.upgrade != true
     }
 
     /// The rows Keep all current / Import all act on: undecided-or-not held downgrades with a known file.
@@ -139,10 +140,12 @@ public struct ManualImportHeldStrip: Equatable, Sendable {
     }
 
     /// "would replace your 4K FUZEER copy"; nil with no group.
-    static func guardLine(_ group: String?, tier: String?) -> String? {
+    static func guardLine(_ group: String?, tier: String?, edition: String? = nil) -> String? {
         guard let group, !group.isEmpty else { return nil }
         let short = tier.flatMap(QualityTier.init(rawValue:))?.tierShort
-        return "would replace your \(short.map { "\($0) \(group)" } ?? group) copy"
+        let slot = short.map { "\($0) \(group)" } ?? group
+        // Edition first, like the version label: "Extended · 4K FUZEER".
+        return "would replace your \(edition.map { "\($0) · \(slot)" } ?? slot) copy"
     }
 
     static func uniformReason(_ scan: ManualImportScan, _ downs: [ManualImportRow]) -> String? {

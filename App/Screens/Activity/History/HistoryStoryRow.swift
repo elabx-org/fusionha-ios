@@ -67,7 +67,7 @@ struct HistoryStoryRow: View {
                 if let ep = story.episodeLabel {
                     Text(ep).font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineLimit(1)
                 }
-                if let tier = story.tier { ActTierChip(tier: tier, big: true) }
+                if let tier = story.tier { ActTierChip(tier: tier, big: true, edition: story.edition) }
                 if let trigger = story.actionEntry.grabTrigger { ActProvenance(trigger: trigger) }
             }
             line2

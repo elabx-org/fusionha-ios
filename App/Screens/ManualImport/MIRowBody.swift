@@ -94,6 +94,11 @@ struct MIRowDecision: View {
                 Label("New · nothing on disk for this slot", systemImage: "plus.circle")
                     .font(.footnote).foregroundStyle(Theme.mut)
             }
+            MITitleNote(row: row)
+            MIAssignNote(row: row)
+            if let runtime = ManualImportRules.runtimeLine(row) {
+                Label("Runtime · \(runtime)", systemImage: "clock").font(.footnote).foregroundStyle(Theme.mut)
+            }
             if mislabel, let m = row.measured, let p = row.probe { mislabelPanel(m, p) }
             if let alt = titleCheck { titlePanel(alt) }
             if picker {

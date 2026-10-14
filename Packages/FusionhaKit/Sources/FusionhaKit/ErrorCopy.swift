@@ -51,7 +51,7 @@ public enum ErrorCopy {
         "secrets_locked": "The server’s secrets are locked. An admin needs to unlock them on the server.",
         "placeholder_unresolved": "That field has no saved value to keep. Enter it again.",
         // Re-auth for key actions and key-holding backups (`secrets-errors.ts`;
-        // the Plex re-auth codes are announced for the next fusionha releases).
+        // Plex re-auth shipped in fusionha 0.4.191).
         "bad_password": "That password is wrong.",
         "reauth_unavailable": "This sign-in has no password to confirm. Sign in as an admin with a password, or read the key file from the data volume on the server.",
         "reauth_plex_mismatch": "That Plex account isn’t the one linked to your fusionha account.",
@@ -63,6 +63,14 @@ public enum ErrorCopy {
         "not_held": "This download isn’t waiting on you any more. Refresh the queue.",
         "finish_in_progress": "This download is already being finished. Refresh the queue in a moment.",
         "db_busy": "The database is busy. Try again in a moment.",
+        // Web sign-in from the device token (fusionha 0.4.192, `POST /auth/session`).
+        "device_token_required": "This device isn't signed in. Sign in again.",
+        "device_token_invalid": "This device's sign-in has ended. Sign in again.",
+        "app_api_key_not_allowed": "The app API key can't open the web app. Sign in with your account.",
+        "account_disabled": "This account is turned off. Ask an admin.",
+        "session_exchange_rate_limited": "Too many sign-ins from this device. Try again in 15 minutes.",
+        // Manual Import (fusionha 0.4.193).
+        "keep_current_empty_slot": "There's no current file to keep. Import this file or re-match it.",
     ]
 
     /// Per-surface wording for codes the server reuses (`ISSUE_ERROR_OVERRIDES`).

@@ -5,7 +5,8 @@ import FusionhaKit
 
 enum CalRailMeta: Hashable {
     case check
-    case down
+    /// Grabbing: `↓`, or `↓ 42%` once the download reports a percent.
+    case down(Int?)
     case wanted
     case soon
     /// A season drop: `2/3`, plus a check when complete or ↓ while grabbing.
@@ -22,6 +23,11 @@ struct CalRailModel: Hashable {
     let downloading: Bool
     let meta: CalRailMeta
 
+    var percentLabel: String {
+        if case .down(let pct?) = meta { return ", \(pct) percent" }
+        return ""
+    }
+
     /// One edition of an entry, unaired-aware.
     init(entry: CalendarEntry, edition: CalendarEdition, now: Date) {
         let key = entry.statusKey(for: edition, now: now)
@@ -30,7 +36,12 @@ struct CalRailModel: Hashable {
         statusLabel = key.label
         switch key {
         case .downloaded: fill = 1; striped = false; downloading = false; meta = .check
-        case .downloading: fill = 0.45; striped = false; downloading = true; meta = .down
+        case .downloading:
+            // The real percent when the server has one (0.4.192); a phase-mode
+            // symlink job has none, so the rail keeps its indeterminate fill.
+            let pct = edition.progress.map { min(max($0, 0), 100) }
+            fill = pct.map { max(Double($0) / 100, 0.04) } ?? 0.45
+            striped = false; downloading = true; meta = .down(pct)
         case .missing: fill = 0; striped = true; downloading = false; meta = .wanted
         case .unaired: fill = 0; striped = true; downloading = false; meta = .soon
         }
@@ -76,7 +87,7 @@ struct CalRail: View {
                 .fixedSize()
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(rail.tier.chipLabel) \(rail.statusLabel)")
+        .accessibilityLabel("\(rail.tier.chipLabel) \(rail.statusLabel)\(rail.percentLabel)")
     }
 
     @ViewBuilder
@@ -84,8 +95,8 @@ struct CalRail: View {
         switch rail.meta {
         case .check:
             Image(systemName: "checkmark").font(.system(size: metaSize + 1, weight: .heavy))
-        case .down:
-            Text("↓")
+        case .down(let pct):
+            Text(pct.map { "↓ \($0)%" } ?? "↓")
         case .wanted:
             Text("wanted")
         case .soon:

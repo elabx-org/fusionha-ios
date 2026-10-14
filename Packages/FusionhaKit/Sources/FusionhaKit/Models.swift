@@ -188,6 +188,10 @@ public struct QueueItem: Decodable, Sendable, Identifiable, Hashable {
     public let packRanges: QueuePackRanges?
     public let grabHistoryId: Int?
     public let parsed: ReleaseFacts?
+    /// The version's cut ("Extended", "Black & White"); nil for Standard (0.4.192).
+    public let edition: String?
+    /// The title tracks more than one edition, so Standard is named too.
+    public let hasMultipleEditions: Bool?
 
     public var fraction: Double { min(max(progress / 100, 0), 1) }
 }
@@ -279,6 +283,9 @@ public struct CalendarEdition: Decodable, Sendable, Hashable {
     public let tier: QualityTier
     public let monitored: Bool
     public let status: EditionStatus
+    /// `grabbing` only (0.4.192): the download's percent, 0–100. Nil before the
+    /// first poll and for decypharr phase-mode jobs (no byte percent).
+    public var progress: Int? = nil
 }
 
 // MARK: - Images

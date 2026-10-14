@@ -59,7 +59,7 @@ struct QueueHead: View {
             } else if let ep = item.episodeLabel {
                 Text(ep).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(Theme.mut).lineLimit(1)
             }
-            ActTierChip(tier: item.tier)
+            ActTierChip(tier: item.tier, edition: item.edition, multipleEditions: item.hasMultipleEditions == true)
             if let chip {
                 Text(chip.0)
                     .font(.system(size: 10, weight: .bold))

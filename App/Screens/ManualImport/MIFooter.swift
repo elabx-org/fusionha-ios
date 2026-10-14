@@ -15,8 +15,8 @@ struct MIHeldStripView: View {
                     .font(.subheadline).foregroundStyle(Theme.txt)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            if let line2 = strip.line2 {
-                Text(line2).font(.footnote).foregroundStyle(Theme.mut).padding(.leading, 26)
+            ForEach([strip.line2, ManualImportRules.titleSummary(session.rows)].compactMap { $0 }, id: \.self) { line in
+                Text(line).font(.footnote).foregroundStyle(Theme.mut).padding(.leading, 26)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if strip.bulkEligible > 0 {

@@ -13,7 +13,8 @@ struct SettingsWebPanel: View {
         Group {
             if let server = model.credentials?.serverURL {
                 FusionhaWebView(url: server.appendingPathComponent("settings").appendingPathComponent(slug),
-                                server: server, token: model.credentials?.token, loading: $loading)
+                                server: server, token: model.credentials?.token,
+                                method: model.credentials?.method ?? .apiToken, loading: $loading)
                     .ignoresSafeArea(edges: .bottom)
                     .overlay {
                         if loading { ProgressView().controlSize(.large).tint(Theme.mut) }

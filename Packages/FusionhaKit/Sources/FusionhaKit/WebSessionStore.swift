@@ -10,15 +10,24 @@ public enum WebSessionStore {
     public struct Session: Sendable, Equatable {
         public let serverURL: URL
         public let token: String
+        /// When the server ends it; nil for a cookie captured at sign-in.
+        public var expiresAt: Date? = nil
+
+        /// Still usable for a while (a minute's margin before the server's end).
+        public func isFresh(now: Date = .now) -> Bool {
+            guard let expiresAt else { return true }
+            return expiresAt.timeIntervalSince(now) > 60
+        }
     }
 
     /// Stores the cookie for this server. A nil token (e.g. the cookie was not
     /// set) clears any older one, so a stale session never leaks across servers.
-    public static func save(_ token: String?, server: URL) {
+    public static func save(_ token: String?, server: URL, expiresAt: Date? = nil) {
         clear()
         guard let token, !token.isEmpty else { return }
         var q = base
         q[kSecAttrAccount as String] = server.absoluteString
+        if let expiresAt { q[kSecAttrComment as String] = String(expiresAt.timeIntervalSince1970) }
         q[kSecValueData as String] = Data(token.utf8)
         q[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
         SecItemAdd(q as CFDictionary, nil)
@@ -36,7 +45,8 @@ public enum WebSessionStore {
               let token = String(data: data, encoding: .utf8),
               let account = item[kSecAttrAccount as String] as? String,
               let url = URL(string: account) else { return nil }
-        return Session(serverURL: url, token: token)
+        let expiry = (item[kSecAttrComment as String] as? String).flatMap(Double.init).map(Date.init(timeIntervalSince1970:))
+        return Session(serverURL: url, token: token, expiresAt: expiry)
     }
 
     public static func clear() {

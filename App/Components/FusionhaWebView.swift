@@ -2,18 +2,17 @@ import SwiftUI
 import WebKit
 import FusionhaKit
 
-/// The fusionha web app inside the app, signed in. Two things make the page
-/// open as the signed-in user:
-/// - the `fusionha_session` cookie captured at sign-in, when there is one;
-/// - the device's API token, added as `X-Api-Key` to the page's own same-origin
-///   `fetch` / XHR calls. The server accepts that token on every route the web
-///   app uses (`/auth/me` included), so the page stays signed in after the
-///   session cookie expires. The token never goes to another origin.
+/// The fusionha web app inside the app, signed in through `WebSignIn`: the
+/// web session cookie swapped from the device token, or, when the server
+/// refuses that swap, the device token added as `X-Api-Key` to the page's own
+/// same-origin `fetch` / XHR calls (never to another origin).
 /// Links that leave the server open in Safari.
 struct FusionhaWebView: UIViewRepresentable {
     let url: URL
     let server: URL
     let token: String?
+    /// Only a personal API token can be swapped for a web session.
+    var method: AuthMethod = .apiToken
     @Binding var loading: Bool
 
     func makeCoordinator() -> Coordinator { Coordinator(server: server, loading: $loading) }
@@ -21,9 +20,6 @@ struct FusionhaWebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
-        if let token, let script = Self.apiKeyScript(token: token) {
-            config.userContentController.addUserScript(script)
-        }
         let view = WKWebView(frame: .zero, configuration: config)
         view.isOpaque = false
         view.backgroundColor = UIColor(Theme.bg)
@@ -31,30 +27,24 @@ struct FusionhaWebView: UIViewRepresentable {
         view.navigationDelegate = context.coordinator
         view.allowsBackForwardNavigationGestures = true
         let request = URLRequest(url: url)
-        if let cookie = Self.sessionCookie(for: server) {
-            config.websiteDataStore.httpCookieStore.setCookie(cookie) { view.load(request) }
-        } else {
+        let (server, token, method) = (server, token, method)
+        Task { @MainActor in
+            switch await WebSignIn.plan(server: server, token: token, method: method) {
+            case .cookie(let cookie):
+                await config.websiteDataStore.httpCookieStore.setCookie(cookie)
+            case .apiKeyScript:
+                if let token, let script = Self.apiKeyScript(token: token) {
+                    view.configuration.userContentController.addUserScript(script)
+                }
+            case .none:
+                break
+            }
             view.load(request)
         }
         return view
     }
 
     func updateUIView(_ view: WKWebView, context: Context) {}
-
-    /// The stored `fusionha_session` cookie, when it belongs to this server.
-    static func sessionCookie(for server: URL) -> HTTPCookie? {
-        guard let session = WebSessionStore.load(), session.serverURL.host == server.host,
-              let host = server.host else { return nil }
-        var props: [HTTPCookiePropertyKey: Any] = [
-            .name: APIClient.sessionCookieName,
-            .value: session.token,
-            .domain: host,
-            .path: "/",
-            .expires: Date().addingTimeInterval(30 * 24 * 3600),
-        ]
-        if server.scheme == "https" { props[.secure] = "TRUE" }
-        return HTTPCookie(properties: props)
-    }
 
     /// Runs before the page's own scripts: wraps `fetch` and `XMLHttpRequest`
     /// so same-origin requests carry `X-Api-Key` unless they already set one.
@@ -128,7 +118,8 @@ struct FusionhaWebSheet: View {
         ZStack(alignment: .topLeading) {
             Theme.bg.ignoresSafeArea()
             if let server = model.credentials?.serverURL {
-                FusionhaWebView(url: url, server: server, token: model.credentials?.token, loading: $loading)
+                FusionhaWebView(url: url, server: server, token: model.credentials?.token,
+                                method: model.credentials?.method ?? .apiToken, loading: $loading)
                     .ignoresSafeArea(edges: .bottom)
             }
             if loading {

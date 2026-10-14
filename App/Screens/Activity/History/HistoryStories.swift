@@ -68,6 +68,8 @@ struct HistoryStory: Identifiable, Equatable, Sendable {
     let title: String
     let episodeLabel: String?
     let tier: QualityTier?
+    /// The version's cut; nil for Standard.
+    var edition: String? = nil
     let posterUrl: String?
     let oldQuality: String?
     let oldCf: Int?
@@ -232,7 +234,8 @@ enum HistoryLogic {
             return HistoryStory(
                 key: key, type: type, time: leadEntry.createdAt, date: date(leadEntry), mediaItemId: e.mediaItemId, title: leadTitle(e),
                 episodeLabel: episodeLabel(old?.sourceTitle, e.sourceTitle, grab?.sourceTitle),
-                tier: e.tier ?? grab?.tier ?? old?.tier, posterUrl: e.posterUrl ?? grab?.posterUrl ?? old?.posterUrl,
+                tier: e.tier ?? grab?.tier ?? old?.tier,
+                edition: e.edition ?? grab?.edition ?? old?.edition, posterUrl: e.posterUrl ?? grab?.posterUrl ?? old?.posterUrl,
                 oldQuality: old?.quality, oldCf: old?.cfScore,
                 newQuality: type == .deleted ? nil : (e.quality ?? grab?.quality),
                 newSize: type == .deleted ? nil : (grab?.size ?? (type == .added || type == .upgraded ? nil : e.size)),
@@ -260,7 +263,7 @@ enum HistoryLogic {
         for del in deletes where !usedDel.contains(del.id) {
             let s = story("del:\(del.id)", .deleted, del, events: [del])
             stories.append(HistoryStory(key: s.key, type: s.type, time: s.time, date: s.date, mediaItemId: s.mediaItemId, title: s.title,
-                                        episodeLabel: s.episodeLabel, tier: s.tier, posterUrl: s.posterUrl, oldQuality: del.quality,
+                                        episodeLabel: s.episodeLabel, tier: s.tier, edition: s.edition, posterUrl: s.posterUrl, oldQuality: del.quality,
                                         oldCf: del.cfScore, newQuality: nil, newSize: nil, newCf: nil, indexer: nil, downloadClient: nil,
                                         failReason: nil, releaseTitle: del.sourceTitle, chips: del.chips ?? [], actionEntry: del,
                                         events: [del]))

@@ -97,25 +97,25 @@ struct CalEditionMarks: View {
                 let key = entry.statusKey(for: edition, now: now)
                 HStack(spacing: 4) {
                     TierPill(tier: edition.tier)
-                    mark(key)
+                    mark(key, progress: edition.progress)
                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
                         .foregroundStyle(key.color)
                         .lineLimit(1)
                         .fixedSize()
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(edition.tier.chipLabel) \(key.label)")
+                .accessibilityLabel("\(edition.tier.chipLabel) \(key.label)\(key == .downloading ? edition.progress.map { ", \($0) percent" } ?? "" : "")")
             }
         }
     }
 
     @ViewBuilder
-    private func mark(_ key: CalendarStatusKey) -> some View {
+    private func mark(_ key: CalendarStatusKey, progress: Int?) -> some View {
         switch key {
         case .downloaded:
             Image(systemName: "checkmark").font(.system(size: 10, weight: .bold))
         case .downloading:
-            Text("↓")
+            Text(progress.map { "↓ \(min(max($0, 0), 100))%" } ?? "↓")
         case .missing:
             Text("wanted")
         case .unaired:

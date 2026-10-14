@@ -175,7 +175,7 @@ struct QueueGroupCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Text(item.episodeLabel ?? item.tier.chipLabel).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                        if item.episodeLabel != nil { ActTierChip(tier: item.tier) }
+                        if item.episodeLabel != nil { ActTierChip(tier: item.tier, edition: item.edition, multipleEditions: item.hasMultipleEditions == true) }
                         Spacer(minLength: 0)
                         Text(state == .queued ? "queued" : (state == .stalled ? "stalled" : ActFmt.rate(telemetry[item.id]?.bps ?? 0)))
                             .font(.system(size: 11, weight: .semibold, design: .monospaced))

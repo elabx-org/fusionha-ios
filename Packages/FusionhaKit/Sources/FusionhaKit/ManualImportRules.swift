@@ -37,6 +37,7 @@ public enum ManualImportRules {
     public static func status(_ row: ManualImportRow) -> ManualImportStatus {
         if row.committed { return .imported }
         if row.status == "no_match" { return .noMatch }
+        if titleBlocked(row) { return .titleEpisode }
         if row.wouldOrphan != nil { return .held }
         if row.measured?.mislabeled == true, row.mismatchChoice == nil, row.held == nil { return .nameFile }
         if row.replaceChoice == "keep_current" { return .keep }
@@ -61,6 +62,7 @@ public enum ManualImportRules {
     public static func statusShort(_ row: ManualImportRow) -> String {
         if row.committed { return "Imported" }
         if row.status == "no_match" { return "No match" }
+        if titleBlocked(row) { return "Title ≠ episode" }
         if row.wouldOrphan != nil { return "Shared file" }
         if row.measured?.mislabeled == true, row.mismatchChoice == nil, row.held == nil { return "Name ≠ file" }
         if row.replaceChoice == "keep_current" { return "Keeping the current file" }
@@ -85,7 +87,10 @@ public enum ManualImportRules {
     /// The status in full (`statusLong`): "Held · not an upgrade · replaces your 4K FUZEER copy".
     public static func statusLong(_ row: ManualImportRow) -> String {
         let short = statusShort(row)
-        if let orphan = row.wouldOrphan, !row.committed { return "\(short) · \(orphan)" }
+        if titleBlocked(row), let tc = row.titleCheck {
+            return "Title ≠ episode · the file says '\(tc.says ?? "")', that is \(tc.matchesEpisode?.code ?? "another episode")"
+        }
+        if row.wouldOrphan != nil, !row.committed, let orphan = orphanText(row) { return "\(short) · \(orphan)" }
         let group = row.existingFile?.releaseGroup ?? copyName(row)
         switch status(row) {
         case .imported: return short
@@ -107,7 +112,9 @@ public enum ManualImportRules {
     static func copyName(_ row: ManualImportRow) -> String {
         let cur = row.existingFile
         let group = cur?.releaseGroup ?? cur.map { DetailText.quality($0.quality) } ?? ""
-        return row.target.tier == QualityTier.uhd.rawValue ? "4K \(group)" : group
+        let named = row.target.tier == QualityTier.uhd.rawValue ? "4K \(group)" : group
+        // A non-Standard cut leads, so Standard and Extended copies of one tier differ.
+        return row.target.edition.map { "\($0) · \(named)" } ?? named
     }
 
     private static func withReason(_ short: String, _ reason: String?) -> String {
@@ -124,7 +131,7 @@ public enum ManualImportRules {
 
     /// The advisory the server attaches (corroboration, or the competing match).
     public static func advisory(_ row: ManualImportRow) -> String? {
-        if let orphan = row.wouldOrphan { return orphan }
+        if row.wouldOrphan != nil { return orphanText(row) }
         if let note = row.corroboration { return note }
         guard let alt = row.match.alternative,
               !(alt.reason == "episode_title" && row.titleCheckDismissed == true) else { return nil }
@@ -155,13 +162,13 @@ public enum ManualImportRules {
 
     /// What the default selection and select-all pick.
     public static func isBulkSelectable(_ row: ManualImportRow) -> Bool {
-        if row.committed || row.replaceChoice == "keep_current" || row.wouldOrphan != nil { return false }
+        if row.committed || row.replaceChoice == "keep_current" || row.wouldOrphan != nil || titleBlocked(row) { return false }
         if provenMislabelHold(row), row.replaceChoice != "import" { return false }
         return row.status == "ready" || (heldWarning(row) && (row.statusReason ?? "").hasPrefix("Replaces"))
     }
 
     static func isSelectable(_ row: ManualImportRow) -> Bool {
-        if row.committed || row.replaceChoice == "keep_current" || row.wouldOrphan != nil { return false }
+        if row.committed || row.replaceChoice == "keep_current" || row.wouldOrphan != nil || titleBlocked(row) { return false }
         return isBulkSelectable(row) || heldWarning(row) || awaitsReplaceChoice(row)
     }
 

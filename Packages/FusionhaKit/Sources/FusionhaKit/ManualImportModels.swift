@@ -60,8 +60,43 @@ public struct ManualImportRow: Decodable, Sendable, Hashable, Identifiable {
     public let corroboration: String?
     /// `keep_current` or `import`; nil until the user answers.
     public let replaceChoice: String?
+    // Episode-title and runtime checks (fusionha 0.4.193; series rows only).
+    public let titleCheck: ManualImportTitleCheck?
+    public let runtimeCheck: ManualImportRuntimeCheck?
+    /// The suggested fix: `keep_current`, `rematch` or `assign_episodes`.
+    public let recommended: String?
+    /// The episode numbers for `assign_episodes`.
+    public let recommendedEpisodes: [Int]?
+    /// Re-matched to different episodes: lifts the title block.
+    public let episodeOverridden: Bool?
+    /// "Dismiss this check": import as numbered despite the title.
+    public let episodeTitleDismissed: Bool?
 
     public var id: Int { rowId }
+}
+
+/// The file name's own episode title against the matched episode(s).
+public struct ManualImportTitleCheck: Decodable, Sendable, Hashable {
+    /// `agrees`, `names_other` or `unknown`.
+    public let status: String
+    public let says: String?
+    /// The other episode the title names (`S06E04-E05` spans a two-parter).
+    public let matchesEpisode: TitleMatch?
+    /// That episode already holds this release (same group and quality, or name).
+    public let sameReleaseExists: Bool?
+
+    public struct TitleMatch: Decodable, Sendable, Hashable {
+        public let id: Int
+        public let code: String
+        public let title: String?
+    }
+}
+
+/// The probed runtime against the season's median episode runtime.
+public struct ManualImportRuntimeCheck: Decodable, Sendable, Hashable {
+    public let seconds: Int
+    public let medianEpisodeSeconds: Int
+    public let episodesEstimate: Int
 }
 
 /// What the parser read off the file name.

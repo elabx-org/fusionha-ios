@@ -27,15 +27,18 @@ extension APIClient {
     /// key needs the password again (0.4.188): pass it and the download goes
     /// through `POST …/{id}/download`, which re-authenticates and is audited.
     /// Without one, the plain GET is refused for such a backup with 403
-    /// `reauth_required`.
-    public func downloadBackup(id: String, password: String? = nil) async throws -> Data {
+    /// `reauth_required`. A Plex re-auth `grant` (0.4.191) stands in for the password.
+    public func downloadBackup(id: String, password: String? = nil, grant: String? = nil) async throws -> Data {
         let path = "/api/v1/system/backups/\(id)/download"
-        guard let password else { return try await downloadRaw(path) }
+        let body: [String: String]
+        if let password { body = ["password": password] } else if let grant { body = ["reauth_grant": grant] } else {
+            return try await downloadRaw(path)
+        }
         var req = request(method: "POST", path: path, query: [])
         req.timeoutInterval = 300
         req.setValue("*/*", forHTTPHeaderField: "Accept")
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.httpBody = try JSONEncoder().encode(["password": password])
+        req.httpBody = try JSONEncoder().encode(body)
         let (data, response) = try await session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(status) else {

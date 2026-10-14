@@ -95,13 +95,17 @@ struct ActMoreMenu<Content: View>: View {
 
 // MARK: Chips
 
-/// The queue `TierChip` as a lit edition chip: `HD·1080p` / `UHD·4K`.
+/// The queue `TierChip` as a lit edition chip: `HD·1080p` / `UHD·4K`, or the
+/// version label when the version has a cut (`Extended · HD`, `VersionLabel`).
 struct ActTierChip: View {
     let tier: QualityTier
     var big = false
+    var edition: String? = nil
+    var multipleEditions = false
 
     var body: some View {
-        Text(big ? tier.rawValue : tier.chipLabel)
+        Text(VersionLabel.text(tier: tier, edition: edition, multipleEditions: multipleEditions)
+             ?? (big ? tier.rawValue : tier.chipLabel))
             .font(.system(size: big ? 12 : 11, weight: .semibold, design: .monospaced))
             .foregroundStyle(tier.color)
             .padding(.horizontal, big ? 7 : 5)
