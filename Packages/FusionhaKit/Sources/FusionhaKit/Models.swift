@@ -186,6 +186,10 @@ public struct QueueItem: Decodable, Sendable, Identifiable, Hashable {
     public let stages: QueueStages?
     public let fileCount: Int?
     public let packRanges: QueuePackRanges?
+    /// A held pack's per-file decisions (0.4.196, `QueuePackDecisions.swift`).
+    public let packSummary: QueuePackSummary?
+    public let packMixed: QueuePackMixed?
+    public let packOutcomeRanges: [QueuePackOutcomeRange]?
     public let grabHistoryId: Int?
     public let parsed: ReleaseFacts?
     /// The version's cut ("Extended", "Black & White"); nil for Standard (0.4.192).

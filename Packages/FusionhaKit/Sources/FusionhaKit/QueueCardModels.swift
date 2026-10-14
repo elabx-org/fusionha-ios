@@ -77,6 +77,8 @@ public struct QueuePackEpisode: Decodable, Sendable, Hashable, Identifiable {
     public let episode: Int
     public let absolute: Int?
     public let title: String?
+    /// A held pack's decision for this episode's file (0.4.196).
+    public let outcome: QueuePackOutcome?
     public var id: Int { episodeId }
 }
 

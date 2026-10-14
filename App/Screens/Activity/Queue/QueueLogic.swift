@@ -228,6 +228,13 @@ enum QueueLogic {
             case .solo(_, let eta), .group(_, let eta): return eta
             }
         }
+        /// Downloads, not cards: a group or a 4K + HD pair holds several (0.4.196).
+        var downloadCount: Int {
+            switch self {
+            case .solo: return 1
+            case .group(let g, _): return g.downloads.count
+            }
+        }
     }
 
     static func split(_ groups: [Group], telemetry: [Int: QueueTelemetry]) -> (active: [Entry], upNext: [QueueItem]) {

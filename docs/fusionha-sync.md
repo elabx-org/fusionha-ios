@@ -10,16 +10,32 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `299b0251` |
-| fusionha release | **0.4.195** (2026-10-14, "capsule buttons") |
+| fusionha commit | `818b8b7f` |
+| fusionha release | **0.4.196** (2026-10-14, "held pack outcomes") |
 | Checked on | 2026-10-14 |
-| Previous sync | `50d785bb` / 0.4.190 (2026-10-14) |
+| Previous sync | `299b0251` / 0.4.195 (2026-10-14) |
 
 `Packages/FusionhaKit/openapi.json` still reports `info.version` 0.2.0: the
 catch-ups added models and calls by hand. Re-pin it from a tagged fusionha
 release when you next touch the API layer.
 
-## 0.4.191 – 0.4.193 (this sync)
+## 0.4.196 (this sync)
+
+Done:
+- **Held pack outcomes.** `QueueItem.packSummary`, `packMixed`,
+  `packOutcomeRanges` and `QueuePackEpisode.outcome` (`QueuePackDecisions.swift`,
+  wording from the web's `pack-decisions.ts`). A held pack's card reads
+  "Pack · 13 files · 9 import-ready · 3 held · 1 already owned", then one
+  capsule per outcome run ("E01–E09 import-ready": ok green, held amber, skipped
+  dim). A pack whose files differ gets an amber "1080p · Mixed" chip; a tap
+  shows "E03–E05 probe 1280×720, the other 10 probe 1920×1080".
+- **Section counts count downloads.** Downloading counts each download in a
+  group or 4K + HD pair, not cards.
+
+Not ported: the expandable per-episode file list (the iOS card has no pack
+expansion yet; `outcome` is decoded for when it does).
+
+## 0.4.191 – 0.4.193
 
 Done:
 - **0.4.191 Plex re-auth.** A key-holding backup on a Plex-only account is
@@ -94,11 +110,6 @@ Still open from 0.4.187:
 
 ## Waiting on fusionha
 
-- Queue pack detail (announced after 0.4.195): `QueueRead.pack_summary`
-  `{imported, ready, held, owned, unmatched}`, `QueueRead.pack_mixed`
-  `{resolution, codec, hdr}` and a per-episode `outcome` on
-  `GET /queue/{id}/pack-episodes`, for "4 imported · 6 import-ready · 3 held ·
-  1 already owned", outcome ranges and an amber "· Mixed" chip.
 - Per-device sessions (`GET /auth/sessions`, `POST /auth/sessions/revoke-others`,
   …): additive; a candidate for the Account page.
 - Monolith splits start after their requests Phase 7 merges.

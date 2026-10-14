@@ -163,7 +163,7 @@ struct ActivityQueueTab: View {
                 }
             }
             if !split.active.isEmpty {
-                section("Downloading", split.active.count, "finishing soonest", first: firstSection) {
+                section("Downloading", split.active.reduce(0) { $0 + $1.downloadCount }, "finishing soonest", first: firstSection) {
                     ForEach(Array(split.active.enumerated()), id: \.element.id) { index, entry in
                         Group {
                             switch entry {
