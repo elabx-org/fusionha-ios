@@ -52,7 +52,7 @@ private struct FourKRail: View {
                 .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(tier.color.opacity(0.45)))
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Color.white.opacity(0.07))
+                    Capsule().fill(Theme.txt.opacity(0.07))
                     Capsule().fill(rc).frame(width: geo.size.width * fraction * (reduce || grown ? 1 : 0))
                 }
             }
@@ -191,7 +191,7 @@ struct WantedFourKCard: View {
                     Image(systemName: "plus").font(.system(size: 13, weight: .bold))
                     Text("Add").font(.system(size: 11, weight: .bold))
                 }
-                .foregroundStyle(Color(hex: 0x08131A))
+                .foregroundStyle(Theme.onPrimary)
                 .padding(.horizontal, 12)
                 .frame(minWidth: 40, minHeight: 40)
                 .background(Theme.fusion, in: RoundedRectangle(cornerRadius: 9, style: .continuous))

@@ -150,7 +150,7 @@ struct LibraryGridSkeleton: View {
             ForEach(0..<12, id: \.self) { _ in
                 VStack(alignment: .leading, spacing: 7) {
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(Theme.txt.opacity(0.06))
                         .aspectRatio(2 / 3, contentMode: .fit)
                         .shimmer()
                         .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))

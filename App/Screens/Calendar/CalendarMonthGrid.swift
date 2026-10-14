@@ -89,7 +89,7 @@ struct MonthGridView: View {
     private func dayNumber(_ iso: String, isToday: Bool) -> some View {
         Text(iso.suffix(2).hasPrefix("0") ? String(iso.suffix(1)) : String(iso.suffix(2)))
             .font(.system(size: 12, weight: .semibold).monospacedDigit())
-            .foregroundStyle(isToday ? Theme.onPrimary : Theme.mut)
+            .foregroundStyle(isToday ? Theme.onInk : Theme.mut)
             .frame(minWidth: 20, minHeight: 20)
             .background {
                 if isToday {

@@ -117,7 +117,7 @@ struct CalNowMarker: View {
             HStack(spacing: 8) {
                 Text(CalendarMath.clock(context.date))
                     .font(.system(size: 11, weight: .bold).monospacedDigit())
-                    .foregroundStyle(Theme.onPrimary)
+                    .foregroundStyle(Theme.onInk)
                     .lineLimit(1)
                     .fixedSize()
                     .padding(.horizontal, 6)

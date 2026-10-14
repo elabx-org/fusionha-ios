@@ -292,12 +292,12 @@ struct AddConfigView: View {
                 Button { Task { await add() } } label: {
                     ZStack(alignment: .leading) {
                         GeometryReader { geo in
-                            Rectangle().fill(.white.opacity(0.35))
+                            Rectangle().fill(Theme.onPrimary.opacity(0.18))
                                 .frame(width: geo.size.width * (phase == .done ? 1 : phase == .progress ? 0.9 : 0))
                         }
                         Text(done ? "✓ Added" : busy ? "Adding…" : "Add \(flow.isSeries ? "series" : "movie")")
                             .font(.system(size: 14.5, weight: .bold))
-                            .foregroundStyle(Color(hex: 0x08131A))
+                            .foregroundStyle(Theme.onPrimary)
                             .frame(maxWidth: .infinity)
                             .contentTransition(.opacity)
                     }

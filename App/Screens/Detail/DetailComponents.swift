@@ -9,7 +9,7 @@ import FusionhaKit
 
 enum DetailTokens {
     /// `--line2` (undefined in the web CSS; its intended value).
-    static let line2 = Color.white.opacity(0.14)
+    static var line2: Color { Theme.txt.opacity(0.14) }
     static let star = Color(hex: 0xF5C518)
     /// Text on the gradient quality badge.
     static let badgeText = Color(hex: 0x08131A)
@@ -83,10 +83,10 @@ extension View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         return background {
             shape
-                .fill(LinearGradient(colors: [Color(hex: 0x1D1A16), Color(hex: 0x181512)], startPoint: .top, endPoint: .bottom))
+                .fill(LinearGradient(colors: [Theme.panel2, Theme.panel], startPoint: .top, endPoint: .bottom))
                 .shadow(color: .black.opacity(shadow ? 0.55 : 0), radius: shadow ? 14 : 0, y: shadow ? 10 : 0)
         }
-        .overlay(shape.strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5))
+        .overlay(shape.strokeBorder(Theme.txt.opacity(0.06), lineWidth: 0.5))
     }
 }
 

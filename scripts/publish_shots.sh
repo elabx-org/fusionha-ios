@@ -6,8 +6,9 @@
 # Publishing is a convenience for review: if every attempt fails it warns
 # and exits 0 rather than failing the build.
 #
-#   scripts/publish_shots.sh <src-dir> <dest-dir> [--keep-subdirs]
+#   scripts/publish_shots.sh <src-dir> <dest-dir> [--keep-subdirs|--add]
 #
+# --add copies the files in and removes nothing (a filtered run).
 # --keep-subdirs replaces only the top-level *.png in <dest-dir> (the main
 # screenshots job keeps the iPhone Duo job's <dest>/duo/); without it the
 # whole <dest-dir> is replaced.
@@ -25,7 +26,9 @@ for i in 1 2 3 4 5 6 7 8; do
   else
     git worktree add -q --detach "$WT" && (cd "$WT" && git checkout -q --orphan tmp && { git rm -rqf . 2>/dev/null || true; })
   fi
-  if [ "$MODE" = --keep-subdirs ]; then
+  if [ "$MODE" = --add ]; then
+    mkdir -p "$WT/$DEST"
+  elif [ "$MODE" = --keep-subdirs ]; then
     mkdir -p "$WT/$DEST" && find "$WT/$DEST" -maxdepth 1 -name '*.png' -delete
   else
     rm -rf "${WT:?}/$DEST" && mkdir -p "$WT/$DEST"

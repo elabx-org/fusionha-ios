@@ -81,7 +81,8 @@ struct AppearanceSettingsPanel: View {
 
     @ViewBuilder
     private var themeSection: some View {
-        SettingsSection("Accent theme") {
+        AppPaletteSection()
+        SettingsSection("Web accent theme", footer: "The web app's accent, for everyone who uses it. The iPhone's colours are set above.") {
             let active = store.string("ui_theme", "aurora")
             ForEach(Self.accents, id: \.key) { theme in
                 Button {

@@ -51,7 +51,7 @@ struct LibraryStatsSheet: View {
                             }
                         }
                         .frame(height: 9)
-                        .background(Color.white.opacity(0.06))
+                        .background(Theme.txt.opacity(0.06))
                         .clipShape(Capsule())
                     } value: { "\(pulse.healthPct)%" }
                     meter("4K coverage") {
@@ -61,7 +61,7 @@ struct LibraryStatsSheet: View {
                                 .frame(width: grown && pulse.titles > 0 ? geo.size.width * CGFloat(pulse.fourKTitles) / CGFloat(pulse.titles) : 0)
                         }
                         .frame(height: 9)
-                        .background(Color.white.opacity(0.07), in: Capsule())
+                        .background(Theme.txt.opacity(0.07), in: Capsule())
                     } value: { "\(pulse.fourKTitles) / \(pulse.titles) titles" }
                     meter("On disk") { Spacer() } value: { Format.bytes(pulse.onDisk) }
                 }

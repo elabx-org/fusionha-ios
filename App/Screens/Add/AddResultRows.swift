@@ -54,7 +54,7 @@ struct AddTile: View {
                 .overlay(alignment: .topLeading) {
                     Image(systemName: result.kind == .movie && !result.isAnime ? "film" : "tv")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(result.isAnime ? Theme.anime : .white)
+                        .foregroundStyle(result.isAnime ? Theme.anime : Theme.txt)
                         .frame(width: 27, height: 27)
                         .glassEffect(.regular, in: Circle())
                         .padding(6)
@@ -77,7 +77,7 @@ struct AddTile: View {
                             Button(action: preview) {
                                 Image(systemName: "eye")
                                     .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(Theme.txt)
                                     .frame(width: 30, height: 30)
                                     .glassEffect(.regular.interactive(), in: Circle())
                             }

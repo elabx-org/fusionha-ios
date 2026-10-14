@@ -212,7 +212,7 @@ struct FetchPill: View {
         let (fg, bg): (Color, Color) = switch tone {
         case .ok: (Theme.done, Theme.done.opacity(0.16))
         case .err: (Theme.danger, Theme.danger.opacity(0.16))
-        case .off: (Theme.mut, Color.white.opacity(0.08))
+        case .off: (Theme.mut, Theme.txt.opacity(0.08))
         case .warn: (Theme.miss, Theme.miss.opacity(0.16))
         case .accent: (Theme.i2, Theme.i2.opacity(0.14))
         }
@@ -319,7 +319,7 @@ struct FetchSectionHead: View {
                         .foregroundStyle(Theme.mut)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 1)
-                        .background(Color.white.opacity(0.07), in: Capsule())
+                        .background(Theme.txt.opacity(0.07), in: Capsule())
                 }
             }
             if let description {

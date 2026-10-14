@@ -106,7 +106,7 @@ struct CalKindChip: View {
                 }
                 Text(filter.label)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(on ? Theme.onPrimary : Theme.mut)
+                    .foregroundStyle(on ? Theme.onInk : Theme.mut)
             }
             .lineLimit(1)
             .padding(.horizontal, 12)

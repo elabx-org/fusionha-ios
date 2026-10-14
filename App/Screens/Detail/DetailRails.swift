@@ -98,7 +98,7 @@ struct DetailRailStack: View {
                         .overlay {
                             Image(systemName: "play.fill")
                                 .font(.system(size: 20))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Theme.txt)
                                 .frame(width: 54, height: 54)
                                 .glassEffect(.regular.interactive(), in: .circle)
                         }

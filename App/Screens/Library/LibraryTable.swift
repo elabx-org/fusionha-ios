@@ -70,7 +70,7 @@ struct LibraryTableRow: View {
         }
         .buttonStyle(TableRowStyle())
         .overlay(alignment: .bottom) {
-            if !last { Rectangle().fill(Color.white.opacity(0.05)).frame(height: 1).padding(.horizontal, 1) }
+            if !last { Rectangle().fill(Theme.txt.opacity(0.05)).frame(height: 1).padding(.horizontal, 1) }
         }
         .overlay(TableBorder(top: false, bottom: last))
         .contextMenu { PosterActions(item: item) }

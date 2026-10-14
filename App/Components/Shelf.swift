@@ -15,7 +15,7 @@ extension View {
             .clipShape(shape)
             .overlay(shape.strokeBorder(.white.opacity(0.14), lineWidth: 1)
                 .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .init(x: 0.5, y: 0.04))))
-            .overlay(shape.strokeBorder(ring ?? .white.opacity(0.07), lineWidth: ringWidth))
+            .overlay(shape.strokeBorder(ring ?? Theme.txt.opacity(0.07), lineWidth: ringWidth))
             .shadow(color: .black.opacity(shadow ? 0.9 : 0), radius: shadow ? 11 : 0, y: shadow ? 12 : 0)
     }
 }

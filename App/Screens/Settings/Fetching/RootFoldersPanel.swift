@@ -309,7 +309,7 @@ private struct RootFolderCard: View {
         } else {
             // Unreported mount → hatched, never a fake percentage.
             Capsule()
-                .fill(Color.white.opacity(0.07))
+                .fill(Theme.txt.opacity(0.07))
                 .overlay(
                     HStack(spacing: 6) {
                         ForEach(0..<60, id: \.self) { _ in

@@ -282,7 +282,7 @@ struct WebCheckboxStyle: ToggleStyle {
                         .strokeBorder(configuration.isOn ? Theme.indigo : Theme.mut.opacity(0.6), lineWidth: 1.5))
                     .overlay {
                         if configuration.isOn {
-                            Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy)).foregroundStyle(.white)
+                            Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.onAccent)
                         }
                     }
                     .frame(width: 18, height: 18)

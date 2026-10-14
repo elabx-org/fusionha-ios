@@ -270,7 +270,7 @@ private struct AddSeasonRow: View {
             if let sliding {
                 Text(SeasonSlider.bubble(from: sliding.from, episodeCount: n))
                     .font(.system(size: 11.5, weight: .bold))
-                    .foregroundStyle(Color(hex: 0x08131A))
+                    .foregroundStyle(Theme.bg)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Theme.i2, in: Capsule())

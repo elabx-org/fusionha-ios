@@ -147,7 +147,7 @@ struct PreviewPage: View {
         }
         .padding(.horizontal, 12)
         .frame(height: 50)
-        .background(Color(hex: 0x121419))
+        .background(Theme.panel)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
         .opacity(compact ? 1 : 0)
         .offset(y: compact ? 0 : -8)

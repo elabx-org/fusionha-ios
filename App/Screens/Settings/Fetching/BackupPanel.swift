@@ -331,7 +331,7 @@ private struct BackupPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 13.5, weight: .semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(Theme.onAccent)
             .padding(.horizontal, 16)
             .frame(minHeight: 38)
             .background(Theme.indigo, in: RoundedRectangle(cornerRadius: Theme.radiusSm, style: .continuous))

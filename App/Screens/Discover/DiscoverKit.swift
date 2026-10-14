@@ -9,9 +9,9 @@ import FusionhaKit
 
 enum DiscoverPalette {
     /// The hard-coded search/segment well in Discover's CSS.
-    static let well = Theme.bg
+    static var well: Color { Theme.bg }
     /// `color-mix(--i2 45%, --txt)`: the active segment text.
-    static let activeText = Theme.txt
+    static var activeText: Color { Theme.txt }
     static let activeRing = Color.clear
     static let tmdb = Color(hex: 0x01B4E4)
     static let tvdb = Color(hex: 0x4FB862)
@@ -59,7 +59,7 @@ struct DiscoverShimmer: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .fill(Color.white.opacity(0.06))
+            .fill(Theme.txt.opacity(0.06))
             .overlay {
                 if !DiscoverMotion.reduced(osReduceMotion) {
                     GeometryReader { geo in
@@ -143,7 +143,7 @@ struct DiscoverTabs<Value: Hashable>: View {
                     HStack(spacing: 7) {
                         Text(options[index].1)
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(selected ? Theme.onPrimary : Theme.mut)
+                            .foregroundStyle(selected ? Theme.onInk : Theme.mut)
                         if let badge = options[index].2, badge > 0 {
                             Text("\(badge)")
                                 .font(.system(size: 11, weight: .bold).monospacedDigit())

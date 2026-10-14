@@ -72,7 +72,7 @@ private struct AddTierCard: View {
                         .foregroundStyle(Theme.mut)
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(Color.white.opacity(0.14), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                            .strokeBorder(Theme.txt.opacity(0.14), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(PressScaleStyle())
@@ -312,7 +312,7 @@ private struct FourKRow: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Theme.mut)
                 .frame(width: 44, height: 44)
-                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Color.white.opacity(0.14)))
+                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.txt.opacity(0.14)))
                 .contentShape(Rectangle())
         }
         .buttonStyle(PressScaleStyle())

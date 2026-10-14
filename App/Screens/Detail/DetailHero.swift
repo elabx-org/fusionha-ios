@@ -158,7 +158,7 @@ private struct HeroStatusChip: View {
         .lineLimit(1)
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
-        .background(Color(hex: 0x1E1A16).opacity(0.8), in: Capsule())
+        .background(Theme.bg.opacity(0.8), in: Capsule())
         .accessibilityLabel("Status: \(status)")
     }
 }

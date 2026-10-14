@@ -10,10 +10,10 @@ import FusionhaKit
 // MARK: Colours
 
 enum ActColor {
-    /// `#111319`, the SegmentedControl group fill.
-    static let segTrack = Color(hex: 0x111319)
-    /// `mix(--i2 45%, --txt)`, the SegmentedControl active text.
-    static let segText = Color(hex: 0x90E0EF)
+    /// The SegmentedControl group fill.
+    static var segTrack: Color { Theme.panel }
+    /// The SegmentedControl active text.
+    static var segText: Color { Theme.i2 }
 }
 
 // MARK: Status wash (StatusWash.module.css)

@@ -226,7 +226,7 @@ struct InteractiveSearchSheet: View {
                 .foregroundStyle(at != nil ? Theme.done : Theme.mut)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(at != nil ? Theme.done.opacity(0.16) : Color.white.opacity(0.05), in: Capsule())
+                .background(at != nil ? Theme.done.opacity(0.16) : Theme.txt.opacity(0.05), in: Capsule())
             }
         }
         .padding(.bottom, 8)

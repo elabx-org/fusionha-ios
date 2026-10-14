@@ -19,6 +19,10 @@ on:
         description: "Activity perf check"
         type: boolean
         default: false
+      shots_only:
+        description: "Only the simulator screenshots whose name matches this regex (e.g. ^palette-); skips iPhone Duo and adds to the published set"
+        type: string
+        default: ""
 
 concurrency:
   group: build-${{ github.ref }}
@@ -47,6 +51,7 @@ jobs:
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
           IN_SHOTS: ${{ inputs.screenshots }}
           IN_PERF: ${{ inputs.perf }}
+          IN_ONLY: ${{ inputs.shots_only }}
         run: |
           shots=false; duo=false; perf=false
           has() { echo "$LABELS" | grep -q "\"$1\""; }
@@ -56,6 +61,7 @@ jobs:
               has perf && perf=true ;;
             workflow_dispatch)
               [ "$IN_SHOTS" = true ] && { shots=true; duo=true; }
+              [ -n "$IN_ONLY" ] && { shots=true; duo=false; }
               [ "$IN_PERF" = true ] && perf=true ;;
             push)
               if [ "$REF" = refs/heads/main ] || [[ "$REF" == refs/tags/v* ]]; then
@@ -246,6 +252,8 @@ jobs:
             build-for-testing
 
       - name: Take screenshots
+        env:
+          ONLY: ${{ inputs.shots_only }}
         run: |
           python3 scripts/mock_server.py 8765 &
           UDID=$(xcrun simctl list devices available -j | python3 -c '
@@ -261,6 +269,7 @@ jobs:
           mkdir -p shots
           shoot() {
             name=$1; shift
+            if [ -n "${ONLY:-}" ] && ! echo "$name" | grep -qE "$ONLY"; then return 0; fi
             env "$@" xcrun simctl launch --terminate-running-process "$UDID" org.elabx.fusionha > /dev/null
             sleep 9
             xcrun simctl io "$UDID" screenshot "shots/$name.png" > /dev/null
@@ -519,6 +528,13 @@ jobs:
           shoot search-4-grabbed $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=grabbed
           shoot search-5-loading $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=loading
           shoot search-6-nomatch $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=nomatch
+          # The app palettes (Settings › Appearance) on the main screens.
+          for P in graphite oled aurora frost eclipse daylight paper; do
+            PAL=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$P
+            shoot palette-$P-library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library $PAL
+            shoot palette-$P-activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity $PAL
+            shoot palette-$P-detail SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8 $PAL
+          done
           ls -l shots/search-*
 
       - uses: actions/upload-artifact@v4
@@ -537,7 +553,9 @@ jobs:
           elif [ "$GITHUB_REF" = refs/heads/main ] || [[ "$GITHUB_REF" == refs/tags/* ]]; then DIR=main
           else DIR="branch-$(echo "$GITHUB_REF_NAME" | tr '/' '-' | tr -cd 'A-Za-z0-9._-')"; fi
           # Keep the iPhone Duo job's $DIR/duo/ (published separately).
-          scripts/publish_shots.sh shots "$DIR" --keep-subdirs
+          # A filtered run (shots_only) adds its shots without removing the rest.
+          if [ -n "${{ inputs.shots_only }}" ]; then scripts/publish_shots.sh shots "$DIR" --add
+          else scripts/publish_shots.sh shots "$DIR" --keep-subdirs; fi
 
   # iPhone Duo: the main screens folded, unfolded and half open, in portrait
   # and landscape, on an iPhone Duo simulator from Xcode 27.1. Poses are

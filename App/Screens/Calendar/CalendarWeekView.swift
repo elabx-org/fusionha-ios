@@ -114,10 +114,10 @@ private struct CalWeekDayChip: View {
             VStack(spacing: 4) {
                 Text(CalendarMath.dow[CalendarMath.weekday(iso: iso, cal)])
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(on ? Color(hex: 0x5A4F43) : Theme.dim)
+                    .foregroundStyle(on ? Theme.onInk.opacity(0.6) : Theme.dim)
                 Text("\(Int(iso.suffix(2)) ?? 0)")
                     .font(.system(size: 20, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(on ? Theme.onPrimary : Theme.txt)
+                    .foregroundStyle(on ? Theme.onInk : Theme.txt)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 HStack(spacing: 3) {

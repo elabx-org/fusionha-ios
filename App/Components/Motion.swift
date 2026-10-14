@@ -144,7 +144,7 @@ struct SkeletonBar: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: radius, style: .continuous)
-            .fill(Color.white.opacity(0.06))
+            .fill(Theme.txt.opacity(0.06))
             .frame(height: height)
             .shimmer()
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))

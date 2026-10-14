@@ -63,7 +63,7 @@ enum IndexerRange: String, CaseIterable, Identifiable {
 }
 
 /// The leaderboard colour ramp (`SHARE_PALETTE`).
-let indexerSharePalette: [Color] = [Theme.indigo, Theme.cyan, Theme.done, Theme.edition, Theme.miss]
+var indexerSharePalette: [Color] { [Theme.indigo, Theme.cyan, Theme.done, Theme.edition, Theme.miss] }
 
 struct IndexerFleetOverview: View {
     let summary: IndexerStatsSummary?
@@ -555,7 +555,7 @@ struct IndexerSplitBar: View {
                 }
             }
         }
-        .background(Capsule().fill(Color.white.opacity(0.06)))
+        .background(Capsule().fill(Theme.txt.opacity(0.06)))
         .clipShape(Capsule())
         .onAppear { shown = true }
     }
@@ -656,7 +656,7 @@ struct IndexerRing: View {
     var body: some View {
         let v = Double(value ?? 0) / 100
         ZStack {
-            Circle().stroke(Color.white.opacity(0.08), lineWidth: 4)
+            Circle().stroke(Theme.txt.opacity(0.08), lineWidth: 4)
             Circle()
                 .trim(from: 0, to: motionOff || shown ? v : 0)
                 .stroke((value ?? 0) < 90 ? Theme.miss : Theme.done, style: StrokeStyle(lineWidth: 4, lineCap: .round))

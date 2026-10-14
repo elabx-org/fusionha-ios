@@ -353,7 +353,7 @@ private struct DoneBadge: View {
                 .frame(width: geo.size.width, height: geo.size.height)
                 .background(Color(red: 10 / 255, green: 12 / 255, blue: 18 / 255).opacity(0.5), in: Circle())
                 .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().strokeBorder(.white.opacity(0.16)))
+                .overlay(Circle().strokeBorder(Theme.txt.opacity(0.16)))
         }
     }
 }
@@ -371,7 +371,7 @@ private struct StepIcon: View {
                 .foregroundStyle(status == .failed ? Theme.danger : Theme.done)
                 .frame(width: 18, height: 18)
                 .background(Color(red: 10 / 255, green: 12 / 255, blue: 18 / 255).opacity(0.5), in: Circle())
-                .overlay(Circle().strokeBorder(.white.opacity(0.16)))
+                .overlay(Circle().strokeBorder(Theme.txt.opacity(0.16)))
         case .running:
             Circle()
                 .trim(from: 0, to: motion ? 0.75 : 1)

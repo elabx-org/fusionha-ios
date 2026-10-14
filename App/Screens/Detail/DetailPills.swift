@@ -141,6 +141,6 @@ struct DetailVersionTag: View {
             .lineLimit(1)
             .padding(.horizontal, 7)
             .padding(.vertical, 2)
-            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 5))
+            .background(Theme.txt.opacity(0.06), in: RoundedRectangle(cornerRadius: 5))
     }
 }

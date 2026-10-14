@@ -64,7 +64,7 @@ struct PreviewHero: View {
                                            startPoint: .top, endPoint: .bottom)
                         }
                 } else {
-                    RadialGradient(colors: [Color(hex: 0x1B1F2E), Theme.bg], center: .top, startRadius: 0, endRadius: 420)
+                    RadialGradient(colors: [Theme.panel2, Theme.bg], center: .top, startRadius: 0, endRadius: 420)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -178,7 +178,7 @@ struct StatusToneChip: View {
         if ["continuing", "returning", "airing", "on air", "production", "planned", "upcoming"].contains(where: { s.contains($0) }) {
             return (Color(hex: 0x443716), Color(hex: 0xF4D076), Color(hex: 0xF4D076).opacity(0.3))
         }
-        return (Color(hex: 0x2A2D34), Theme.mut, Theme.line)
+        return (Theme.panel2, Theme.mut, Theme.line)
     }
 
     var body: some View {

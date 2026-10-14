@@ -416,7 +416,7 @@ private struct IndexerCard: View {
     private func mixGroup(_ key: String, parts: [(Double, Color)], legend: [(String, Color)]) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             mixKey(key)
-            IndexerSplitBar(parts: parts.allSatisfy { $0.0 == 0 } ? [(1, Color.white.opacity(0.06))] : parts, gap: 0)
+            IndexerSplitBar(parts: parts.allSatisfy { $0.0 == 0 } ? [(1, Theme.txt.opacity(0.06))] : parts, gap: 0)
                 .frame(height: 6)
             HStack(spacing: 10) {
                 ForEach(legend, id: \.0) { text, color in

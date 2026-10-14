@@ -97,7 +97,7 @@ struct PosterCard: View {
 
     private var ringColor: Color {
         if selecting && selected { return Theme.txt }
-        return attentionColor?.opacity(0.7) ?? .white.opacity(0.07)
+        return attentionColor?.opacity(0.7) ?? Theme.txt.opacity(0.07)
     }
 
     private var art: some View {
@@ -121,7 +121,7 @@ struct PosterCard: View {
     private var checkbox: some View {
         Image(systemName: "checkmark")
             .font(.system(size: 12, weight: .heavy))
-            .foregroundStyle(Theme.onPrimary)
+            .foregroundStyle(Theme.onInk)
             .opacity(selected ? 1 : 0)
             .scaleEffect(selected ? 1 : 0.5)
             .frame(width: 24, height: 24)

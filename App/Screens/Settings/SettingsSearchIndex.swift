@@ -244,6 +244,7 @@ let settingsFieldIndex: [SettingsField] = [
     SettingsField(panel: "system", label: "Commands", keywords: ["activity", "background jobs", "in-flight", "queue", "running"]),
     SettingsField(panel: "system", label: "Library metadata", keywords: ["air times", "anidb", "anime ids", "enrichment", "refresh", "run all", "tmdb", "tvmaze"]),
     SettingsField(panel: "system", label: "Scheduled tasks", keywords: ["command", "cron", "import poll", "interval", "jobs", "rss sync", "run now"]),
+    SettingsField(panel: "appearance", label: "App colours", keywords: ["dark", "light", "automatic", "palette", "oled", "graphite", "frost", "daylight", "colour", "color", "theme"]),
     SettingsField(panel: "appearance", label: "Accent theme", keywords: ["aurora", "brand", "color", "colour", "look", "swatch", "theme"]),
     SettingsField(panel: "trash", label: "Auto-sync interval", keywords: ["automatic update", "cadence", "daily", "off", "schedule", "trash guides refresh", "weekly"]),
     SettingsField(panel: "trash", label: "Avoid Raws / LQ", keywords: ["anime", "low quality", "nudge", "penalise", "raw", "score down"]),

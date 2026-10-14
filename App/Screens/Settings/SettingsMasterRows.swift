@@ -74,7 +74,7 @@ struct SettingsChevron: View {
 struct SettingsRowButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(Color.white.opacity(configuration.isPressed ? 0.05 : 0),
+            .background(Theme.txt.opacity(configuration.isPressed ? 0.05 : 0),
                         in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

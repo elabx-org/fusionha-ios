@@ -3,24 +3,34 @@ import FusionhaKit
 
 /// fusionha's design tokens, shared by the app and widgets.
 ///
-/// The redesign (`docs/design/redesign/DIRECTION.md`): "a video rental shop
-/// after closing". A warm black ground, posters as lit objects on a shelf,
-/// cream "house light" for chrome and primary actions, and every saturated hue
-/// left to status (the web's `status.ts`, unchanged).
+/// The redesign (`docs/design/redesign/DIRECTION.md`): posters as lit objects
+/// on a shelf, a quiet ground, one house light for chrome and primary actions,
+/// and every saturated hue left to status (the web's `status.ts`). The ground,
+/// text and accent come from the palette chosen in Settings › Appearance
+/// (`AppPalette`); Video store is the original warm one.
 enum Theme {
+    /// The active palette's colours (Settings › Appearance). Reading one
+    /// registers the view with `PaletteStore`, so it redraws on a switch.
+    static var palette: PaletteTokens { PaletteStore.shared.active.tokens }
+    static var isLight: Bool { palette.isLight }
+
     // Ground, shelf objects and ink.
-    static let bg = Color(hex: 0x0F0D0B)
-    static let panel = Color(hex: 0x1A1714)
-    static let panel2 = Color(hex: 0x24201C)
-    static let card = Color(hex: 0x1A1714)
-    static let line = Color(hex: 0xF4ECE1).opacity(0.08)
-    static let txt = Color(hex: 0xF4ECE1)
-    static let mut = Color(hex: 0xB3A796)
-    static let dim = Color(hex: 0x8C8172)
-    /// Text on the cream primary (`fusion`) and on the selected chip.
-    static let onPrimary = Color(hex: 0x15110D)
-    /// The cream house light: primary buttons, the selected chip.
-    static let ink = txt
+    static var bg: Color { Color(hex: palette.bg) }
+    static var panel: Color { Color(hex: palette.panel) }
+    static var panel2: Color { Color(hex: palette.panel2) }
+    static var card: Color { Color(hex: palette.panel) }
+    static var line: Color { Color(hex: palette.line).opacity(palette.lineOpacity) }
+    static var txt: Color { Color(hex: palette.txt) }
+    static var mut: Color { Color(hex: palette.mut) }
+    static var dim: Color { Color(hex: palette.dim) }
+    /// Text on the primary (`fusion`).
+    static var onPrimary: Color { Color(hex: palette.onPrimary) }
+    /// Text and ticks on a fill of the accent (`indigo` / `i1`).
+    static var onAccent: Color { Color(hex: palette.onAccent) }
+    /// The house light: the selected chip and today's date are filled with it.
+    static var ink: Color { txt }
+    /// Text on an `ink` (text-coloured) fill: the ground colour.
+    static var onInk: Color { bg }
 
     static let kindMovie = Color(hex: 0x38BDF8)
     static let kindSeries = Color(hex: 0xA855F7)
@@ -30,31 +40,28 @@ enum Theme {
     static let radius: CGFloat = 11
     static let radiusLg: CGFloat = 14
 
-    /// The control tint (toggles, links, quiet accents): warm brass, so a
-    /// system toggle's white knob still reads. Never a status.
-    static let indigo = Color(hex: 0xD9C3A0)
-    static let cyan = Color(hex: 0x22D3EE)
-    /// `--i1` / `--i2` aliases, so ports read like the CSS. In the redesign the
-    /// interface accent is brass (i1) to pale brass (i2); cyan means 4K or
-    /// grabbing and is only ever used for that.
-    static let i1 = indigo
-    static let i2 = Color(hex: 0xEDE0CB)
-    /// The primary action: cream house light, lit from the top. Text on it is
-    /// `onPrimary`. (Was the indigo→cyan "fusion" gradient; the brand gradient
-    /// now lives only in the logo.)
-    static let fusion = LinearGradient(colors: [Color(hex: 0xFBF5EC), Color(hex: 0xE9DECF)], startPoint: .top, endPoint: .bottom)
+    /// The control tint (toggles, links, quiet accents). Never a status.
+    static var indigo: Color { Color(hex: palette.i1) }
+    /// 4K and grabbing, and nothing else.
+    static var cyan: Color { grab }
+    /// `--i1` / `--i2` aliases, so ports read like the CSS: the interface
+    /// accent and its lighter (or, in Daylight, deeper) partner for links.
+    static var i1: Color { indigo }
+    static var i2: Color { Color(hex: palette.i2) }
+    /// The primary action's fill. Text on it is `onPrimary`.
+    static var fusion: LinearGradient { palette.primaryGradient }
 
-    static let done = Color(hex: 0x34D399)
-    static let grab = Color(hex: 0x22D3EE)
-    static let miss = Color(hex: 0xF59E0B)
-    static let unaired = Color(hex: 0x3B82F6)
-    static let unmonitored = Color(hex: 0x6B7280)
-    static let onair = Color(hex: 0xFBBF24)
-    static let premiere = Color(hex: 0x818CF8)
-    static let stuck = Color(hex: 0xFB923C)
-    static let edition = Color(hex: 0xA78BFA)
-    static let anime = Color(hex: 0xF472B6)
-    static let danger = Color(hex: 0xF87171)
+    static var done: Color { Color(hex: palette.done) }
+    static var grab: Color { Color(hex: palette.grab) }
+    static var miss: Color { Color(hex: palette.miss) }
+    static var unaired: Color { Color(hex: palette.unaired) }
+    static var unmonitored: Color { Color(hex: palette.unmonitored) }
+    static var onair: Color { Color(hex: palette.onair) }
+    static var premiere: Color { Color(hex: palette.premiere) }
+    static var stuck: Color { Color(hex: palette.stuck) }
+    static var edition: Color { Color(hex: palette.edition) }
+    static var anime: Color { Color(hex: palette.anime) }
+    static var danger: Color { Color(hex: palette.danger) }
     static let plexGold = Color(hex: 0xE5A00D)
 
     /// The login screen's brand gradient (Login.module.css `.stage --grad`).
@@ -77,7 +84,7 @@ enum Theme {
     }
 
     /// SegGroup active text.
-    static let segActiveText = txt
+    static var segActiveText: Color { txt }
 
     /// The redesign's 16pt side margin.
     static let pageGutter: CGFloat = 16

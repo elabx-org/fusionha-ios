@@ -109,7 +109,7 @@ struct CollectionRingBadge: View {
     var body: some View {
         let fraction = total > 0 ? Double(owned) / Double(total) : 0
         ZStack {
-            Circle().stroke(Color.white.opacity(0.18), lineWidth: 3.5)
+            Circle().stroke(Theme.txt.opacity(0.18), lineWidth: 3.5)
             Circle()
                 .trim(from: 0, to: fraction)
                 .stroke(Theme.done, style: StrokeStyle(lineWidth: 3.5, lineCap: .butt))

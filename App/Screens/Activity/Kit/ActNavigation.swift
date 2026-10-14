@@ -42,7 +42,7 @@ struct ActTabs<Value: Hashable>: View {
                             }
                         }
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(active ? Theme.onPrimary : Theme.mut)
+                        .foregroundStyle(active ? Theme.onInk : Theme.mut)
                         .padding(.horizontal, 14)
                         .frame(height: 36)
                         .background {

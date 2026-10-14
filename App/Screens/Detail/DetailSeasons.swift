@@ -273,7 +273,7 @@ private struct SeasonBar: View {
                 }
                 Spacer(minLength: 0)
             }
-            .background(Theme.miss.mix(0.3, Color(white: 0.08)))
+            .background(Theme.miss.mix(0.3, Theme.bg))
             .clipShape(Capsule())
         }
         .frame(height: 6)

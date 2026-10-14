@@ -14,7 +14,7 @@ struct ActivityIndexersTab: View {
     @State private var grown = false
 
     private static let ranges: [(String, String)] = [("24h", "24h"), ("7d", "7d"), ("30d", "30d"), ("all", "All-time")]
-    private static let palette: [Color] = [Theme.indigo, Theme.cyan, Theme.done, Theme.edition, Theme.miss]
+    private static var palette: [Color] { [Theme.indigo, Theme.cyan, Theme.done, Theme.edition, Theme.miss] }
 
     private var phrase: String {
         switch range {

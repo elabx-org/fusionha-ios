@@ -85,7 +85,7 @@ struct FetchBar: View {
     let fraction: Double
     var color: Color = Theme.grab
     var height: CGFloat = 8
-    var track: Color = Color.white.opacity(0.07)
+    var track: Color = Theme.txt.opacity(0.07)
     var delay: Double = 0
     @Environment(\.settingsMotionOff) private var motionOff
     @State private var shown = false
