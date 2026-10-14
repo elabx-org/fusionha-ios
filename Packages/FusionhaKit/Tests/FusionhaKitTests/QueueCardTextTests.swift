@@ -6,7 +6,7 @@ final class QueueCardTextTests: XCTestCase {
         let json = """
         {"id":7,"title":"The Office (US)","episode_label":"S06E04","release_title":"The.Office.S06E04.1080p.BluRay.DDP.5.1.x265-edge2020",
          "status":"held","size":1800000000,"sizeleft":0,"progress":100,"stalled":false,"media_item_id":3,"edition_id":9,
-         "tier":"hd","protocol":"USENET","download_client":"SABnzbd (decypharr)","indexer":"Digitalcarnage (Prowlarr)",
+         "tier":"HD-1080p","protocol":"USENET","download_client":"SABnzbd (decypharr)","indexer":"Digitalcarnage (Prowlarr)",
          "age_seconds":79200\(extra)}
         """
         return try APIClient.decoder.decode(QueueItem.self, from: Data(json.utf8))
