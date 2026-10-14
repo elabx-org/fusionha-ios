@@ -187,6 +187,8 @@ struct ItemDetailView: View {
         .padding(.horizontal, Theme.pageGutter)
         .frame(height: 56)
         .frame(maxWidth: .infinity)
+        // Darkened so the page scrolling underneath never reads through the title.
+        .background(Theme.bg.opacity(0.82))
         .glassEffect(.regular, in: .rect)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
     }

@@ -47,12 +47,16 @@ struct PosterCard: View {
                     .foregroundStyle(monitored ? Theme.txt : Theme.mut)
                     .lineLimit(1)
                 HStack(spacing: 4) {
+                    // The year never truncates; anime shows its chip in place of the kind glyph.
                     if let year = item.year {
-                        Text(String(year)).lineLimit(1)
+                        Text(String(year)).lineLimit(1).fixedSize().layoutPriority(2)
                         Text("·")
                     }
-                    KindGlyph(kind: item.kind)
-                    if item.isAnime == true { AnimeChip().fixedSize().layoutPriority(1) }
+                    if item.isAnime == true {
+                        AnimeChip().fixedSize().layoutPriority(1)
+                    } else {
+                        KindGlyph(kind: item.kind)
+                    }
                     Spacer(minLength: 2)
                     Image(systemName: monitored ? "bookmark.fill" : "bookmark")
                         .font(.system(size: 11, weight: .semibold))

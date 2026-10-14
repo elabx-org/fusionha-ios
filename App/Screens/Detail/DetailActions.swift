@@ -22,7 +22,7 @@ struct ItemActionsRail: View {
 
     var body: some View {
         GlassEffectContainer(spacing: 4) {
-            FlowRow(spacing: 8, lineSpacing: 8) {
+            FlowRow(spacing: 7, lineSpacing: 8) {
                 ForEach(actions, id: \.self) { action in
                     if action == .refresh {
                         RefreshSplitButton()
@@ -38,7 +38,7 @@ struct ItemActionsRail: View {
     private func button(_ action: ItemAction) -> some View {
         let flagged = detail.numberingMismatch == true
         return DetailRailButton(systemImage: Self.symbol(action), label: action.label(isSeries: detail.isSeries, numberingFlagged: flagged),
-                                size: 48, glyph: 19,
+                                size: 42, glyph: 16,
                                 tint: action == .checkNumbering && flagged ? Theme.miss : action == .delete ? Theme.danger : Theme.txt,
                                 busy: action == .checkNumbering && store.checkingNumbering) {
             perform(action)
@@ -84,7 +84,7 @@ private struct RefreshSplitButton: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            DetailRailButton(systemImage: "arrow.clockwise", label: "Refresh metadata", size: 48, glyph: 19,
+            DetailRailButton(systemImage: "arrow.clockwise", label: "Refresh metadata", size: 42, glyph: 16,
                              tint: Theme.txt, busy: store.refreshing) {
                 Task { await store.refresh(metadataOnly: true) }
             }
@@ -110,7 +110,7 @@ private struct RefreshSplitButton: View {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Theme.mut)
-                    .frame(width: 30, height: 48)
+                    .frame(width: 26, height: 42)
                     .contentShape(Rectangle())
             }
             .disabled(store.refreshing)

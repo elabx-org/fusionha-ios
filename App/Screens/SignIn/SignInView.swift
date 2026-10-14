@@ -266,6 +266,7 @@ struct SignInView: View {
                 .font(.system(size: 15))
                 .foregroundStyle(Theme.mut)
                 .multilineTextAlignment(centered ? .center : .leading)
+                .fixedSize(horizontal: false, vertical: true)
                 .padding(.bottom, 26)
                 .loginEntrance(.fadeUp(0.7), delay: 0.5)
         }
