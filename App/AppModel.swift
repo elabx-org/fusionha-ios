@@ -59,10 +59,13 @@ final class AppModel {
         // Opening the Calendar tab, or tapping it again, brings it back to today.
         didSet {
             if tab == .calendar { calendarTodayTick += 1 }
+            if tab == .search { searchFocusTick += 1 }
             AppStartTab.remember(tab)
         }
     }
     var calendarTodayTick = 0
+    /// Opening the Search tab, or tapping it again, puts the cursor in its field.
+    var searchFocusTick = 0
     private(set) var me: Me?
 
     // Shell state shared by the top bar, the + button and every screen.

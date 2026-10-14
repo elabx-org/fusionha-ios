@@ -6,8 +6,9 @@ import FusionhaKit
 
 /// The iOS 26 search tab, holding the web's omni search (OmniSearchOverlay +
 /// OmniResults): owned titles first ("In your library", capped at 8), then a
-/// TMDB add lane that arms itself when nothing owned matches. The field is the
-/// system's, at the bottom where the tab bar was.
+/// TMDB add lane that arms itself when nothing owned matches. The field is our
+/// own glass field docked above the tab bar, focused when the tab opens (the
+/// system's `.searchable` field never showed in this shell).
 struct SearchTabView: View {
     @Environment(AppModel.self) private var model
     @State private var armed = false
@@ -17,30 +18,34 @@ struct SearchTabView: View {
     /// The server has no TMDB key (409 `tmdb_not_configured`).
     @State private var noKey = false
     @State private var searchedTerm = ""
+    @FocusState private var focused: Bool
 
     private var term: String { model.searchQuery }
     private var trimmed: String { term.trimmingCharacters(in: .whitespaces) }
 
     var body: some View {
-        @Bindable var model = model
-        NavigationStack {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    ShellTitleRow("Search")
-                        .padding(.horizontal, Theme.pageGutter)
-                        .padding(.top, 20)
-                        .padding(.bottom, 4)
-                    if trimmed.isEmpty { hint } else { results }
-                }
-                .padding(.bottom, 40)
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                ShellTitleRow("Search")
+                    .padding(.horizontal, Theme.pageGutter)
+                    .padding(.top, 20)
+                    .padding(.bottom, 4)
+                if trimmed.isEmpty { hint } else { results }
             }
-            .scrollDismissesKeyboard(.immediately)
-            .background(Theme.bg.ignoresSafeArea())
-            .overlay(alignment: .top) { StatusBarFade() }
-            .toolbarVisibility(.hidden, for: .navigationBar)
+            .padding(.bottom, 40)
         }
-        .searchable(text: $model.searchQuery, prompt: Text(model.requestScoped ? "Find something to request" : "Your library or something new"))
-        .onSubmit(of: .search) { armed = true }
+        .scrollDismissesKeyboard(.interactively)
+        .contentShape(Rectangle())
+        .onTapGesture { if trimmed.isEmpty { focused = true } }
+        .background(Theme.bg.ignoresSafeArea())
+        .overlay(alignment: .top) { StatusBarFade() }
+        .safeAreaInset(edge: .bottom, spacing: 0) { field }
+        .task {
+            // Open ready to type, as a search tab does.
+            try? await Task.sleep(for: .milliseconds(350))
+            focused = true
+        }
+        .onChange(of: model.searchFocusTick) { focused = true }
         .task {
             if !model.libraryLoaded && !model.requestScoped { await model.loadLibrary() }
         }
@@ -67,6 +72,46 @@ struct SearchTabView: View {
             searchedTerm = trimmed
             searching = false
         }
+    }
+
+    private var field: some View {
+        @Bindable var model = model
+        return HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Theme.mut)
+            TextField("", text: $model.searchQuery,
+                      prompt: Text(model.requestScoped ? "Find something to request" : "Your library or something new")
+                        .foregroundStyle(Theme.mut))
+                .font(.system(size: 16))
+                .foregroundStyle(Theme.txt)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+                .focused($focused)
+                .onSubmit { armed = true }
+            if !model.searchQuery.isEmpty {
+                Button {
+                    model.searchQuery = ""
+                    focused = true
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 17))
+                        .foregroundStyle(Theme.mut)
+                        .frame(width: 32, height: 32)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.leading, 14)
+        .padding(.trailing, 6)
+        .frame(height: 48)
+        .contentShape(Capsule())
+        .onTapGesture { focused = true }
+        .glassControl(on: focused)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
     }
 
     private var hint: some View {
