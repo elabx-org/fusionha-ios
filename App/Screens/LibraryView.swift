@@ -4,8 +4,8 @@ import FusionhaKit
 // MARK: - Library page
 
 /// The web's Library page on mobile (routes/Library.tsx): header with live
-/// counts, the kinds card, the toolbar (select · tier · attention · Filters ·
-/// density) and the A–Z poster grid with its scroll thumb, the status-grouped
+/// counts and the stats sheet, one glass control row (tier · kinds · Filters ·
+/// density · select) and the A–Z poster grid with its scroll thumb, the status-grouped
 /// grid, a plain grid for other sorts, or the compact table.
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
@@ -109,11 +109,6 @@ struct LibraryView: View {
 
     private var showsRail: Bool { sort == .title && !group && !compact && derived.titleCount > 0 }
 
-    private var subtitle: String {
-        let t = derived.titleCount, e = derived.editionCount
-        return "\(t) \(t == 1 ? "title" : "titles") · \(e) \(e == 1 ? "version" : "versions")"
-    }
-
     // MARK: Derivation
 
     private func rebuild() {
@@ -199,17 +194,15 @@ struct LibraryView: View {
     private var pageTop: some View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear.frame(height: 0).id("library-top")
-            PageHeader(title: "Library", subtitle: subtitle)
-                .padding(.bottom, 20)
+            LibraryHeader(derived: derived, status: $status)
                 .reveal(0)
-            LibraryPulseCard(derived: derived, selection: $kindRaw, status: $status)
-                .padding(.bottom, 20)
-                .reveal(1)
-            LibraryToolbar(tier: $tier, status: $status, density: $density,
-                           attentionCount: derived.attentionCount, filterBadge: filterBadge) {
+            LibraryToolbar(derived: derived, kind: $kindRaw, tier: $tier, density: $density,
+                           filterBadge: filterBadge) {
                 showingFilters = true
             }
-            .reveal(2)
+            .padding(.top, 16)
+            .padding(.bottom, 18)
+            .reveal(1)
         }
     }
 

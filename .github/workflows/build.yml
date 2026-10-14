@@ -36,9 +36,9 @@ jobs:
       duo: ${{ steps.plan.outputs.duo }}
       perf: ${{ steps.plan.outputs.perf }}
     steps:
+      # Shallow: a full clone drags in the screenshots branch's PNG history.
+      # A diff needs only the two trees, so the push case fetches `before`.
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
       - id: plan
         env:
           EVENT: ${{ github.event_name }}
@@ -60,6 +60,7 @@ jobs:
             push)
               if [ "$REF" = refs/heads/main ] || [[ "$REF" == refs/tags/v* ]]; then
                 if [ -z "$BEFORE" ] || [ "$BEFORE" = 0000000000000000000000000000000000000000 ]; then ui=1
+                elif ! git fetch -q --depth=1 origin "$BEFORE"; then ui=1
                 else ui=$(git diff --name-only "$BEFORE" HEAD | grep -cE '^(App|Widgets|Shared|NotificationService)/|^project\.yml$|^scripts/(mock_server\.py|.*shot.*)' || true); fi
                 if [ "${ui:-0}" -gt 0 ]; then shots=true; perf=true; fi
               fi ;;

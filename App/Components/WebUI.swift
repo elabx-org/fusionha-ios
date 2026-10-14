@@ -111,15 +111,14 @@ struct EmptyBox: View {
 // MARK: Segmented pills
 
 enum SegmentStyle {
-    /// The web's SegGroup: indigo-tinted selection with cyan-mixed text
-    /// (filters: All / HD / 4K, Recency).
+    /// Filters (All / HD / 4K, Recency): a cream wash marks the selection.
     case accent
-    /// Neutral raised selection (`--card` + shadow): page tabs, Add kind tabs.
+    /// Page tabs, Add kind tabs: the same, with heavier text off.
     case plain
 }
 
-/// The web's SegGroup: segments in a bordered `--panel` track (padding 3,
-/// radius 10); buttons 12.5/600 `--mut`, padding 6/13, radius 7.
+/// The web's SegGroup in the redesign: segments on a glass capsule, the
+/// selection a sliding cream wash (status colours never mark a control).
 struct SegmentedPills<Value: Hashable>: View {
     let options: [(Value, String)]
     @Binding var selection: Value
@@ -138,8 +137,8 @@ struct SegmentedPills<Value: Hashable>: View {
                     withAnimation(motion ? Motion.indicator : nil) { selection = value }
                 } label: {
                     Text(label)
-                        .font(.system(size: 12.5, weight: selected && style == .accent ? .heavy : .semibold))
-                        .foregroundStyle(selected ? selectedText : Theme.mut)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(selected ? Theme.txt : Theme.mut)
                         .lineLimit(1)
                         .padding(.horizontal, 13)
                         .padding(.vertical, 6)
@@ -149,38 +148,24 @@ struct SegmentedPills<Value: Hashable>: View {
                                 selectedBackground.matchedGeometryEffect(id: "segment", in: indicator)
                             }
                         }
-                        .contentShape(Rectangle())
+                        .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
         .padding(3)
-        .panel(style == .plain ? Theme.panel2 : Theme.panel, radius: style == .plain ? 11 : 10)
+        .glassEffect(.regular.interactive(), in: Capsule())
         .sensoryFeedback(.selection, trigger: selection)
     }
 
-    private var selectedText: Color {
-        style == .accent ? Theme.segActiveText : Theme.txt
-    }
-
-    @ViewBuilder
     private var selectedBackground: some View {
-        switch style {
-        case .accent:
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Theme.indigo.opacity(0.14))
-                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .strokeBorder(Theme.indigo.opacity(0.55)))
-        case .plain:
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Theme.card)
-                .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
-        }
+        Capsule().fill(Theme.txt.opacity(0.16))
     }
 }
 
-/// The web's kind chip (`.kchip`): swatch, count and label in a hairline pill
-/// that tints with its colour when active. Also used for Wanted tabs and the
+/// The web's kind chip (`.kchip`) as a glass filter chip: swatch, count and
+/// label; the selected chip gets the cream wash. Also used for Wanted tabs and the
 /// calendar kinds.
 struct DotChip: View {
     let label: String
@@ -192,7 +177,6 @@ struct DotChip: View {
     let action: () -> Void
 
     var body: some View {
-        let tint = topAccent ?? dot ?? Theme.cyan
         Button(action: action) {
             HStack(spacing: 7) {
                 if let swatch {
@@ -203,8 +187,8 @@ struct DotChip: View {
                 if let count, topAccent == nil {
                     Text("\(count)").font(.system(size: 12.5, weight: .bold).monospacedDigit()).foregroundStyle(Theme.txt)
                 }
-                Text(label).font(.system(size: 11.5, weight: .semibold))
-                    .foregroundStyle(selected && topAccent != nil ? Theme.txt : Theme.mut)
+                Text(label).font(.system(size: 12.5, weight: .semibold))
+                    .foregroundStyle(selected ? Theme.txt : Theme.mut)
                 if let count, topAccent != nil {
                     Text("\(count)").font(.system(size: 12.5, weight: .bold).monospacedDigit()).foregroundStyle(Theme.mut)
                 }
@@ -212,12 +196,12 @@ struct DotChip: View {
             .lineLimit(1)
             .padding(.leading, 9)
             .padding(.trailing, 11)
-            .padding(.vertical, 5)
-            .background(selected ? tint.opacity(0.14) : .clear, in: Capsule())
-            .overlay(Capsule().strokeBorder(selected ? tint.opacity(0.55) : Theme.line))
+            .padding(.vertical, 7)
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .glassControl(on: selected)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
