@@ -46,6 +46,8 @@ struct AppearanceSettingsPanel: View {
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets())
 
+            // This iPhone's colours never wait on the server's settings.
+            if tab == "theme" { AppPaletteSection() }
             if store.loaded {
                 Group {
                     switch tab {
@@ -81,7 +83,6 @@ struct AppearanceSettingsPanel: View {
 
     @ViewBuilder
     private var themeSection: some View {
-        AppPaletteSection()
         SettingsSection("Web accent theme", footer: "The web app's accent, for everyone who uses it. The iPhone's colours are set above.") {
             let active = store.string("ui_theme", "aurora")
             ForEach(Self.accents, id: \.key) { theme in
