@@ -100,17 +100,18 @@ struct SettingsView: View {
     // MARK: Header
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("Settings")
-                .font(.system(size: 26, weight: .heavy))
-                .tracking(-0.26)
-                .foregroundStyle(Theme.txt)
+                .pageTitle()
+                .accessibilityAddTraits(.isHeader)
             Text("DB-backed · effective without restart")
-                .font(.system(size: 12.5))
+                .font(.system(size: 15))
                 .foregroundStyle(Theme.mut)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
         }
+        .padding(.horizontal, Theme.pageGutter)
+        .padding(.top, 8)
         .padding(.bottom, 22)
     }
 
