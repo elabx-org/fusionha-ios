@@ -10,8 +10,8 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `9e947786` |
-| fusionha release | **0.4.194** (2026-10-14, "Activity queue redesign") |
+| fusionha commit | `299b0251` |
+| fusionha release | **0.4.195** (2026-10-14, "capsule buttons") |
 | Checked on | 2026-10-14 |
 | Previous sync | `50d785bb` / 0.4.190 (2026-10-14) |
 
@@ -55,7 +55,9 @@ Done:
   full queue cards without poster or title. `has_multiple_editions` drives
   "Standard". No pack summary line or "Mixed" marker yet (fusionha deferred them).
 
-Next from the handover doc: app-wide capsule buttons.
+- **0.4.195 Capsule buttons.** The app's buttons were already capsules with
+  round icon buttons; `ActButtonStyle`'s press is now scale 0.97 + dim (dim
+  only with Reduce Motion). No API changes.
 
 ## 0.4.188 – 0.4.190
 
@@ -92,15 +94,20 @@ Still open from 0.4.187:
 
 ## Waiting on fusionha
 
+- Queue pack detail (announced after 0.4.195): `QueueRead.pack_summary`
+  `{imported, ready, held, owned, unmatched}`, `QueueRead.pack_mixed`
+  `{resolution, codec, hdr}` and a per-episode `outcome` on
+  `GET /queue/{id}/pack-episodes`, for "4 imported · 6 import-ready · 3 held ·
+  1 already owned", outcome ranges and an amber "· Mixed" chip.
 - Per-device sessions (`GET /auth/sessions`, `POST /auth/sessions/revoke-others`,
   …): additive; a candidate for the Account page.
 - Monolith splits start after their requests Phase 7 merges.
 
 ## How to continue
 
-1. In the fusionha repo: `git log --first-parent --oneline 9e947786..origin/main` and read the
+1. In the fusionha repo: `git log --first-parent --oneline 299b0251..origin/main` and read the
    release commits (`release: 0.4.x — …`) for new screens, endpoints and copy.
-2. Diff the API: `git diff 9e947786 origin/main -- backend/` (routes and
+2. Diff the API: `git diff 299b0251 origin/main -- backend/` (routes and
    schemas) and the web client under `frontend/src/` (routes, `lib/api`).
 3. Map each new screen or flow onto `docs/ui-plan.md` and build it in the
    redesign (`docs/design/redesign/DIRECTION.md`).

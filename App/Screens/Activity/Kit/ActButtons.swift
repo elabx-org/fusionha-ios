@@ -11,6 +11,7 @@ enum ActButtonKind { case primary, subtle, ghost, danger, warn, amber }
 struct ActButtonStyle: ButtonStyle {
     var kind: ActButtonKind = .subtle
     var small = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @ViewBuilder
     func makeBody(configuration: Configuration) -> some View {
@@ -21,7 +22,10 @@ struct ActButtonStyle: ButtonStyle {
             .frame(minHeight: small ? 32 : 36)
             .foregroundStyle(foreground)
             .contentShape(Capsule())
-            .opacity(configuration.isPressed ? 0.75 : 1)
+            // fusionha 0.4.195: press = scale 0.97 + dim; dim only with Reduce Motion.
+            .opacity(configuration.isPressed ? 0.8 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .animation(reduceMotion ? nil : .snappy(duration: 0.15), value: configuration.isPressed)
         switch kind {
         case .primary: label.background(Theme.fusion, in: Capsule())
         case .amber: label.background(Theme.miss, in: Capsule())
