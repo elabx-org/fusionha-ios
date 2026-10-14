@@ -137,6 +137,8 @@ footer { color: var(--page-mut); font-size: 13px; max-width: 75ch; line-height: 
 .mchrome .sub .live, .mchrome .link { color: #FFFFFF; text-decoration: underline dotted; text-underline-offset: 3px; }
 .mchrome .btn.held { background: transparent; color: #F2F2F2; border: 1px dashed #F2F2F2; }
 .mchrome .tabs .n { background: #F2F2F2; color: #000; }
+.monorow[data-wash="grey"] .mchrome .poster { filter: grayscale(1) contrast(1.06); }
+.monorow[data-wash="soft"] .mchrome .poster { filter: grayscale(.65) brightness(.92); }
 @keyframes monoflow { to { background-position: 11.3px 0; } }
 @media (prefers-reduced-motion: reduce) { .mchrome .bar[data-s="grab"] b::after, .mchrome .steps .g { animation: none; } }
 </style>
@@ -170,6 +172,14 @@ footer { color: var(--page-mut); font-size: 13px; max-width: 75ch; line-height: 
 
   <section class="band">
     <div class="bandhead"><h3>Monochrome: status by shade and pattern</h3><p>No status colours at all. Each state keeps its own look through brightness, gradient and texture: done is a lit white bar, downloading a moving stripe, wanted dotted, upcoming an outline, failed a hatched bar with a mark. HD is an outlined chip and 4K a solid one. The key compares it with Aurora's colours.</p></div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Poster wash">
+        <button type="button" id="w-grey" data-wash="grey" aria-pressed="true">Greyscale posters</button>
+        <button type="button" id="w-soft" data-wash="soft" aria-pressed="false">Soft wash</button>
+        <button type="button" id="w-colour" data-wash="colour" aria-pressed="false">Full colour</button>
+      </div>
+      <span class="hint">Only Monochrome washes its posters; every other palette keeps them in colour.</span>
+    </div>
     <div class="monorow">
       <div class="track"><div class="row" id="row3"></div></div>
       <div class="legend" id="legend"></div>
@@ -368,5 +378,17 @@ document.querySelectorAll("button[data-head]").forEach(b => b.addEventListener("
   applyHead();
 }));
 applyHead();
+let wash = "grey";
+try { wash = localStorage.getItem("fh-palette-wash") || "grey"; } catch (e) {}
+function applyWash() {
+  document.querySelector(".monorow").dataset.wash = wash;
+  document.querySelectorAll("button[data-wash]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.wash === wash)));
+}
+document.querySelectorAll("button[data-wash]").forEach(b => b.addEventListener("click", () => {
+  wash = b.dataset.wash;
+  try { localStorage.setItem("fh-palette-wash", wash); } catch (e) {}
+  applyWash();
+}));
+applyWash();
 render();
 </script>
