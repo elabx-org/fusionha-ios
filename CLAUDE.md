@@ -52,6 +52,10 @@ Every push to `main` publishes a `build-N` GitHub release with the IPA and an Al
 
 ## API notes
 
+- **Sync point:** `docs/fusionha-sync.md` records the last fusionha commit/release the
+  app was checked against and what is still open. Start every catch-up there and
+  update it when you finish.
+
 - Auth: `POST /api/v1/auth/login` (session cookie) → `POST /api/v1/tokens` mints a
   per-device token → every call sends `X-Api-Key`.
 - The decision-engine search is `POST /library/{id}/search` — **no** `/api/v1` prefix.
