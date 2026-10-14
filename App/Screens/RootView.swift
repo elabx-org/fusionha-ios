@@ -78,6 +78,8 @@ struct RootView: View {
             }
         }
         .tint(Theme.indigo)
+        // Count badges in the accent, as on the web, not the system red.
+        .tabBadgeTint(key: "\(model.pendingRequests)-\(model.queueTotal)-\(model.tab)")
         .tabBarMinimizeBehavior(.onScrollDown)
     }
 }
