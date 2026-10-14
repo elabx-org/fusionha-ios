@@ -15,9 +15,8 @@ struct BackupPanel: View {
     @State private var folderText = ""
     @State private var savingSchedule = false
     @State private var creating = false
-    @State private var downloading: String?
+    @State private var downloader = BackupDownloader()
     @State private var deleting: String?
-    @State private var shareItem: FetchShareItem?
     @State private var toaster = FetchToaster()
     @State private var confirm: FetchConfirm?
 
@@ -45,11 +44,7 @@ struct BackupPanel: View {
             }
         }
         .task { await load() }
-        .sheet(item: $shareItem) { item in
-            FetchActivityView(url: item.url)
-                .presentationDetents([.medium, .large])
-                .ignoresSafeArea()
-        }
+        .backupDownloadUI(downloader, client: model.client, toaster: toaster)
     }
 
     // MARK: Cards
@@ -166,6 +161,14 @@ struct BackupPanel: View {
                     .foregroundStyle(Theme.txt)
                     .lineLimit(1)
                     .truncationMode(.middle)
+                if record.keyIncluded == true {
+                    Label("Contains key", systemImage: "key.fill")
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .foregroundStyle(Theme.miss)
+                        .labelStyle(.titleAndIcon)
+                        .fixedSize()
+                        .accessibilityLabel("Contains the secret key; downloading needs your password")
+                }
             }
             HStack(spacing: 10) {
                 Text(Self.when(record.createdAt))
@@ -175,16 +178,16 @@ struct BackupPanel: View {
                 }
                 Spacer(minLength: 6)
                 Button {
-                    download(record)
+                    downloader.start(record, client: model.client, toaster: toaster)
                 } label: {
-                    if downloading == record.id {
+                    if downloader.downloading == record.id {
                         ProgressView().controlSize(.mini)
                     } else {
                         Text("Download")
                     }
                 }
                 .buttonStyle(.web(.subtle))
-                .disabled(downloading != nil)
+                .disabled(downloader.downloading != nil)
                 .accessibilityLabel("Download \(record.id)")
                 Button("Delete") { askDelete(record) }
                     .buttonStyle(.web(.danger))
@@ -274,27 +277,6 @@ struct BackupPanel: View {
                 await loadList()
             } catch {
                 toaster.show(error.settingsMessage, title: "Could not delete backup", tone: .error)
-            }
-        }
-    }
-
-    /// Fetches the archive into a temp file named like the web's `download`
-    /// attribute, then hands it to the share sheet (Save to Files, AirDrop …).
-    private func download(_ record: BackupRecord) {
-        guard let client = model.client else { return }
-        downloading = record.id
-        Task {
-            defer { downloading = nil }
-            do {
-                let data = try await client.downloadBackup(id: record.id)
-                let dir = FileManager.default.temporaryDirectory.appendingPathComponent("backups", isDirectory: true)
-                try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-                let url = dir.appendingPathComponent(record.id)
-                try? FileManager.default.removeItem(at: url)
-                try data.write(to: url, options: .atomic)
-                shareItem = FetchShareItem(url: url)
-            } catch {
-                toaster.show(error.settingsMessage, title: "Download failed", tone: .error)
             }
         }
     }

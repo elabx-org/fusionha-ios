@@ -137,6 +137,8 @@ public struct QueuePage: Decodable, Sendable {
     public let items: [QueueItem]
     public let total: Int
     public let justFinished: [QueueItem]?
+    /// The idle "Pipeline idle · Last import …" line (0.4.189; page 1 only).
+    public let pipeline: QueuePipeline?
 }
 
 public struct QueueItem: Decodable, Sendable, Identifiable, Hashable {
@@ -176,6 +178,16 @@ public struct QueueItem: Decodable, Sendable, Identifiable, Hashable {
     public let outcome: String?
     public let terminalReason: String?
     public let finishedAt: String?
+    // Queue card (0.4.189, `QueueCardModels.swift`): the furthest decypharr
+    // stage reached, the server's stage plan, a pack's file count and
+    // done/current/waiting ranges, the grab behind it (for Re-grab), and the
+    // release facts parsed from its name.
+    public let lastPhase: String?
+    public let stages: QueueStages?
+    public let fileCount: Int?
+    public let packRanges: QueuePackRanges?
+    public let grabHistoryId: Int?
+    public let parsed: ReleaseFacts?
 
     public var fraction: Double { min(max(progress / 100, 0), 1) }
 }

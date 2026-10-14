@@ -30,6 +30,7 @@ struct DownloadClientsPanel: View {
                     .padding(.bottom, 14)
             }
             Button("+ Add client") { adding = true }.buttonStyle(.web())
+            DecypharrStagesCard().padding(.top, 18)
         }
         .task { await load() }
         .sheet(isPresented: $adding) {

@@ -16,6 +16,8 @@ final class QueueStore {
     private(set) var items: [QueueItem] = []
     private(set) var total = 0
     private(set) var justFinished: [QueueItem] = []
+    /// The idle pipeline line (0.4.189; page 1 only, so later pages keep it).
+    private(set) var lastImport: QueuePipeline.LastImport?
     private(set) var loaded = false
     private(set) var error: String?
     private(set) var loadingMore = false
@@ -86,6 +88,7 @@ final class QueueStore {
         if total != page.total { total = page.total }
         let finished = page.justFinished ?? []
         if justFinished != finished { justFinished = finished }
+        if let pipeline = page.pipeline, lastImport != pipeline.lastImport { lastImport = pipeline.lastImport }
         QueuePhaseMemory.last = QueueRules.remember(QueuePhaseMemory.last, items: page.items.map { (id: $0.id, phase: $0.phase) })
         sample(page.items)
     }

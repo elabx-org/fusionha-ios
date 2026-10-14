@@ -55,6 +55,28 @@ enum ActActions {
         }
     }
 
+    /// Re-grab the release behind a queue card (`POST /history/{id}/regrab`,
+    /// fusionha 0.4.189's `grab_history_id`), with History's outcome copy.
+    static func regrab(_ client: APIClient?, _ toaster: ActToaster, historyId: Int, done: @escaping () -> Void) async {
+        guard let client else { return }
+        do {
+            let r = try await client.regrab(historyId: historyId, override: false)
+            if r.grabbed {
+                let indexer = r.indexerName ?? "the indexer"
+                toaster.show(r.fromOriginalIndexer == false ? "Grabbed from \(indexer) (original unavailable)" : "Re-grabbed from \(indexer)")
+                done()
+            } else {
+                toaster.show(r.reason ?? "Nothing to re-grab", tone: .warning)
+            }
+        } catch let error as APIError where error.status == 409 {
+            toaster.show(error.serverDetail ?? "That release is already being grabbed.", tone: .warning)
+        } catch let error as APIError where error.status == 422 || error.status == 404 {
+            toaster.show(error.serverDetail ?? "Couldn't re-grab this release — try again", tone: .warning)
+        } catch {
+            toaster.show("Couldn't re-grab this release — try again", tone: .error)
+        }
+    }
+
     static func copy(_ text: String?, _ toaster: ActToaster) {
         guard let text, !text.isEmpty else { return }
         UIPasteboard.general.string = text

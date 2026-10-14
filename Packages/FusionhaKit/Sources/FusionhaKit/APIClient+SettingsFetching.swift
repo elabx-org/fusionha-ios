@@ -194,33 +194,6 @@ extension APIClient {
         try await get("/api/v1/migrate/postgres/backend")
     }
 
-    // MARK: Backup
-
-    public func backupConfig() async throws -> BackupConfig {
-        try await get("/api/v1/system/backups/config")
-    }
-
-    public func updateBackupConfig(_ body: SettingsJSON) async throws -> BackupConfig {
-        try await sendJSON("PUT", "/api/v1/system/backups/config", body)
-    }
-
-    public func backups() async throws -> [BackupRecord] {
-        try await get("/api/v1/system/backups")
-    }
-
-    public func createBackup() async throws -> BackupCreateResult {
-        try await sendJSON("POST", "/api/v1/system/backups")
-    }
-
-    public func deleteBackup(id: String) async throws {
-        try await sendJSON("DELETE", "/api/v1/system/backups/\(id)")
-    }
-
-    /// The archive's bytes (`GET …/{id}/download`), for the share sheet.
-    public func downloadBackup(id: String) async throws -> Data {
-        try await downloadRaw("/api/v1/system/backups/\(id)/download")
-    }
-
     /// The whole log buffer as text (`GET /api/v1/system/logs/download`).
     public func downloadLogs() async throws -> Data {
         try await downloadRaw("/api/v1/system/logs/download")

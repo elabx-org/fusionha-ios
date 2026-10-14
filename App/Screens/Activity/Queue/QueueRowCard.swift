@@ -20,6 +20,7 @@ struct QueueRowCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     QueueHead(item: item, chip: state == .stalled ? ("Stalled", Theme.miss) : nil)
                     ReleaseLine(text: item.releaseTitle)
+                    QueueFacts(item: item)
                     QueueMetaLine(item: item)
                     if let next = item.nextStep {
                         Text(next).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut)

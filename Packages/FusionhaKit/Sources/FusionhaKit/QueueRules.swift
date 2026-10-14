@@ -97,6 +97,34 @@ public enum QueueRules {
         /// The ring's value: completed / total, never `phase_percent`.
         public var ring: Double { total == 0 ? 0 : Double(completed) / Double(total) }
         public var currentLabel: String? { current.map { stages[$0] } }
+        /// Stages this install skips (drawn greyed, left out of the ring);
+        /// only the server's plan knows them.
+        public var skipped: Set<Int> = []
+        /// Stages that run, for "step N of M".
+        public var runningTotal: Int { total - skipped.count }
+    }
+
+    /// The server's plan (fusionha 0.4.189 `stages`) as a `StageState`. The
+    /// server already holds a failed job at the furthest stage it reached, so
+    /// no client memory is needed.
+    public static func state(stages plan: QueueStages) -> StageState {
+        let steps = plan.steps ?? []
+        let labels = steps.map { stageLabel($0.key) }
+        let skipped = Set(steps.indices.filter { !steps[$0].runs })
+        let current = plan.current.flatMap { key in steps.firstIndex { $0.key == key } }
+        var state = StageState(stages: labels, current: current, completed: plan.completed ?? 0,
+                               failed: plan.failed ?? false)
+        state.skipped = skipped
+        return state
+    }
+
+    /// The rail label for a server stage key.
+    static func stageLabel(_ key: String) -> String {
+        switch key {
+        case "queued": return "Queued"
+        case "complete": return "Importing"
+        default: return key.prefix(1).uppercased() + key.dropFirst()
+        }
     }
 
     /// Where a job stands on its rail. `lastSeenPhase` is the client's memory of

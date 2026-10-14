@@ -52,6 +52,11 @@ public enum ErrorCopy {
         "placeholder_unresolved": "That field has no saved value to keep. Enter it again.",
         // Library.
         "tmdb_not_configured": "Adding needs a TMDB key. Add one in Settings › Metadata.",
+        // Queue: finishing a held download (fusionha 0.4.190, `queue-finish.ts`).
+        "rows_open": "Some files still need a choice. Pick Current or This file for each one.",
+        "not_held": "This download isn’t waiting on you any more. Refresh the queue.",
+        "finish_in_progress": "This download is already being finished. Refresh the queue in a moment.",
+        "db_busy": "The database is busy. Try again in a moment.",
     ]
 
     /// Per-surface wording for codes the server reuses (`ISSUE_ERROR_OVERRIDES`).

@@ -1,8 +1,9 @@
 import SwiftUI
 
 /// Routes a Settings panel slug (the web's `/settings/<slug>`) to its page.
-/// Native panels get a `case`; everything else opens the web panel in an
-/// in-app web view, signed in with the stored session cookie.
+/// Native panels get a `case`; everything else (Security's secrets at rest,
+/// Plex server, Sign-in methods with trusted proxies …) opens the web panel in
+/// the signed-in `FusionhaWebView`.
 @ViewBuilder
 func settingsPanel(_ slug: String) -> some View {
     switch slug {
@@ -11,7 +12,7 @@ func settingsPanel(_ slug: String) -> some View {
     case "filemanagement": FileManagementSettingsPanel()
     case "releasefilters": ReleaseFiltersSettingsPanel()
     case "defaultprofiles": DefaultProfilesSettingsPanel()
-    case "security": SecuritySettingsPanel()
+    case "apikey": SecuritySettingsPanel()
     case "appearance": AppearanceSettingsPanel()
     case "about": AboutSettingsPanel()
     case "versions", "editions": MediaVersionsSettingsPanel()

@@ -17,7 +17,7 @@ struct SecuritySettingsPanel: View {
     @State private var error: String?
 
     var body: some View {
-        SettingsForm(slug: "security") {
+        SettingsForm(slug: "apikey") {
             SettingsSection {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 12) {

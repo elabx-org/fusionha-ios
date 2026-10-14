@@ -32,7 +32,26 @@ extension QueueItem {
         return .downloading
     }
 
-    var isPhaseMode: Bool { phase != nil && phase != "downloading" }
+    /// The server's plan decides (0.4.189); older servers fall back to the phase.
+    var isPhaseMode: Bool {
+        if let stages { return stages.isPhaseMode }
+        return phase != nil && phase != "downloading"
+    }
+
+    /// `Linking (n/total)`: the server's parsed count, else the step text.
+    var linkingCount: QueueRules.Linking? {
+        guard phase == "linking" else { return nil }
+        return stages?.linking ?? QueueRules.linking(step: step)
+    }
+
+    /// Where the job stands on its rail: the server's plan when it sends one,
+    /// else the client rules with this device's memory of the last phase.
+    @MainActor
+    var stageState: QueueRules.StageState {
+        if let stages, !(stages.steps ?? []).isEmpty { return QueueRules.state(stages: stages) }
+        return QueueRules.state(protocol: self.protocol, phase: phase, phaseTerminal: phaseTerminal,
+                                lastSeenPhase: lastPhase ?? QueuePhaseMemory.last[id])
+    }
 
     var lane: QueueLane {
         guard isPhaseMode, let phase else { return .byte }
@@ -97,7 +116,7 @@ enum QueueLogic {
     static func noteLine(_ item: QueueItem) -> String {
         let meta = item.phaseMeta
         if item.phase == "error" { return item.nextStep ?? item.warning ?? item.step ?? meta.note }
-        if item.phase == "linking", let linking = QueueRules.linking(step: item.step) {
+        if let linking = item.linkingCount {
             return "Linking files into the library (\(linking.label))…"
         }
         return meta.note

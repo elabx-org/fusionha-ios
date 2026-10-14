@@ -1,0 +1,39 @@
+{
+  "items": [
+    {
+      "id": 77, "title": "The Office (US)", "episode_label": "S06E01–E04",
+      "release_title": "The.Office.US.S06.1080p.AMZN.WEB-DL.DDP5.1.H.264-NTb",
+      "status": "downloading", "protocol": "torrent", "download_client": "decypharr",
+      "indexer": "Torznab", "grab_trigger": "search", "size": 4700000000.0,
+      "sizeleft": 0.0, "progress": 100.0, "stalled": false,
+      "held_reason": null, "held_detail": null, "warning": null,
+      "has_downloaded_file": false, "grabbed_at": "2026-10-14T05:01:02",
+      "age_seconds": 120, "next_step": null, "needs_attention": false,
+      "media_item_id": 9, "edition_id": 21, "tier": "HD-1080p", "episode_id": null,
+      "poster_url": null, "phase": "linking", "step": "Linking (3/4)", "phase_percent": 55,
+      "phase_terminal": false, "outcome": null, "terminal_reason": null, "finished_at": null,
+      "parsed": {"title": "The Office US", "year": null, "season": 6, "episodes": [],
+                 "absolute_numbers": [], "quality": "WEBDL-1080p", "edition": null,
+                 "release_group": "NTb", "languages": ["English"], "resolution": 1080,
+                 "source": "WEB-DL", "is_remux": false, "streaming_service": "AMZN",
+                 "video_codec": "H.264", "encoder": null, "dynamic_range": [],
+                 "audio_label": "DD+ 5.1", "is_repack": false, "is_proper": false, "revision": 1},
+      "probe": null,
+      "last_phase": "linking",
+      "stages": {"mode": "phase", "route": "debrid",
+                 "steps": [{"key": "downloading", "runs": true}, {"key": "linking", "runs": true},
+                           {"key": "caching", "runs": true}, {"key": "probing", "runs": false},
+                           {"key": "complete", "runs": true}],
+                 "current": "linking", "completed": 1, "total": 4, "failed": false,
+                 "linking_done": 3, "linking_total": 4, "optional_source": "settings"},
+      "file_count": 4,
+      "pack_ranges": {"done": {"start_label": "S06E01", "end_label": "S06E03", "count": 3},
+                      "current": {"start_label": "S06E04", "end_label": "S06E04", "count": 1},
+                      "waiting": null},
+      "grab_history_id": 512
+    }
+  ],
+  "total": 1, "page": 1, "page_size": 50, "just_finished": [],
+  "pipeline": {"last_import": {"at": "2026-10-14T04:58:00", "title": "Andor",
+                               "episode_label": "S02E10", "media_item_id": 3}}
+}

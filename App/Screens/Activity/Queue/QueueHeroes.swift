@@ -84,6 +84,8 @@ struct PipelineHero: View {
     let items: [QueueItem]
     let aggregateBps: Double
     let hasPhaseWork: Bool
+    /// "Last import …" for the idle line (0.4.189 `pipeline.last_import`).
+    var lastImport: QueuePipeline.LastImport? = nil
     @Environment(\.actReduceMotion) private var reduce
 
     var body: some View {
@@ -140,8 +142,16 @@ struct PipelineHero: View {
                     }
                 }
             }
-            Text(hasPhaseWork ? "symlink jobs finish in seconds — no time ETA" : "waiting for a free download slot")
-                .font(.system(size: 11)).italic().foregroundStyle(Theme.dim)
+            if wf.working == 0, let last = lastImport {
+                (Text("Pipeline idle · Last import ") + Text(last.title).foregroundColor(Theme.txt)
+                 + Text(last.episodeLabel.map { " \($0)" } ?? "")
+                 + Text(" · \(ActFmt.relative(last.at))"))
+                    .font(.system(size: 11)).foregroundStyle(Theme.dim)
+                    .lineLimit(1)
+            } else {
+                Text(hasPhaseWork ? "symlink jobs finish in seconds — no time ETA" : "waiting for a free download slot")
+                    .font(.system(size: 11)).italic().foregroundStyle(Theme.dim)
+            }
         }
         .padding(14)
         .background(

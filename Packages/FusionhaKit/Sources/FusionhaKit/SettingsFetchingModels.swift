@@ -513,29 +513,6 @@ public struct DatabaseBackendInfo: Decodable, Sendable {
     public let target: TargetFacts?
 }
 
-// MARK: Backup
-
-public struct BackupConfig: Decodable, Sendable, Hashable {
-    public let enabled: Bool
-    public let intervalHours: Int
-    public let retention: Int
-    public let folder: String
-    public let available: Bool?
-    public let backend: String?
-}
-
-public struct BackupRecord: Decodable, Sendable, Identifiable, Hashable {
-    public let id: String
-    public let sizeBytes: Int
-    public let createdAt: String
-    public let kind: String
-    public let appVersion: String?
-}
-
-public struct BackupCreateResult: Decodable, Sendable {
-    public let backup: BackupRecord
-}
-
 // MARK: Logs
 
 public struct LogRecord: Decodable, Sendable, Hashable {

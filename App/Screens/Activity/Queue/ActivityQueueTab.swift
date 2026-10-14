@@ -139,7 +139,7 @@ struct ActivityQueueTab: View {
         if !hasPhase && (items.contains { $0.isByteTransferring } || realBps > 0) {
             BandwidthPulseHero(items: items, history: store.bandwidth)
         } else {
-            PipelineHero(items: items, aggregateBps: realBps, hasPhaseWork: hasPhase)
+            PipelineHero(items: items, aggregateBps: realBps, hasPhaseWork: hasPhase, lastImport: store.lastImport)
         }
     }
 
@@ -279,7 +279,14 @@ struct ActivityQueueTab: View {
                     Task { await store.refresh(model.client) }
                 } }
             },
-            copy: { ActActions.copy(item.releaseTitle, toaster) })
+            copy: { ActActions.copy(item.releaseTitle, toaster) },
+            regrab: item.grabHistoryId.map { historyId -> () -> Void in
+                return {
+                    Task { await ActActions.regrab(model.client, toaster, historyId: historyId) {
+                        Task { await store.refresh(model.client) }
+                    } }
+                }
+            })
     }
 
     private func processNow() async {
@@ -380,4 +387,6 @@ struct QueueRowActions {
     var interactive: () -> Void
     var blocklist: (_ search: Bool) -> Void
     var copy: () -> Void
+    /// Re-grab this release (0.4.189); nil when no grab record survives.
+    var regrab: (() -> Void)? = nil
 }

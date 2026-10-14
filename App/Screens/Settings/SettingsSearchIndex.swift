@@ -240,7 +240,7 @@ let settingsFieldIndex: [SettingsField] = [
     SettingsField(panel: "roots", label: "Import mode", keywords: ["copy", "debrid", "hardlink", "move", "per root", "rclone", "symlink"]),
     SettingsField(panel: "roots", label: "Path", keywords: ["directory", "folder path", "location", "mount", "root"]),
     SettingsField(panel: "roots", label: "Root folders", keywords: ["anime", "disk space", "mount", "movies", "movies-4k", "path", "tier", "tv"]),
-    SettingsField(panel: "security", label: "App API key", keywords: ["api", "credential", "regenerate", "reveal", "rotate", "secret", "token", "x-api-key"]),
+    SettingsField(panel: "apikey", label: "App API key", keywords: ["api", "credential", "regenerate", "reveal", "rotate", "secret", "token", "x-api-key"]),
     SettingsField(panel: "system", label: "Commands", keywords: ["activity", "background jobs", "in-flight", "queue", "running"]),
     SettingsField(panel: "system", label: "Library metadata", keywords: ["air times", "anidb", "anime ids", "enrichment", "refresh", "run all", "tmdb", "tvmaze"]),
     SettingsField(panel: "system", label: "Scheduled tasks", keywords: ["command", "cron", "import poll", "interval", "jobs", "rss sync", "run now"]),

@@ -76,8 +76,14 @@ enum SettingsNav {
         .init(id: "appearance", label: "Appearance", title: "Appearance",
               subtitle: "App accent, sign-in screen, and library display — Theme · Login screen · Library display.",
               icon: "paintpalette"),
+        // 0.4.188: the app API key panel is `apikey`; `security` is now secrets at rest.
+        .init(id: "apikey", label: "API key", title: "API key",
+              subtitle: "The fusionha app API key for direct /api/v1 access.", icon: "key.horizontal"),
         .init(id: "security", label: "Security", title: "Security",
-              subtitle: "The fusionha app API key for direct /api/v1 access.", icon: "lock"),
+              subtitle: "Encryption at rest for every stored secret: passwords, API keys and tokens.", icon: "lock"),
+        .init(id: "plexserver", label: "Plex server", title: "Plex server",
+              subtitle: "Your Plex Media Server, which Plex libraries are 4K, and UHD·4K access from Plex shares.",
+              icon: "server.rack"),
         .init(id: "access", label: "Users", title: "Users",
               subtitle: "Login accounts and their access to virtual instances (RBAC).", icon: "person.2"),
         .init(id: "roles", label: "Roles", title: "Roles",
@@ -115,14 +121,14 @@ enum SettingsNav {
         .init(id: "quality", label: "Quality", icon: "clock",
               children: ["qualitydefinitions", "formats", "releasefilters", "profiles", "defaultprofiles", "trash"]),
         .init(id: "access", label: "Access", icon: "checkmark.shield",
-              children: ["access", "roles", "signin", "publicaccess", "security"]),
+              children: ["access", "roles", "signin", "plexserver", "publicaccess", "apikey"]),
     ]
 
     static let sections: [SettingsSectionInfo] = [
         .init(id: "fetching", label: "Fetching",
               panels: ["clients", "indexers", "connect", "notifications", "instances"]),
         .init(id: "system", label: "System",
-              panels: ["appearance", "system", "database", "backup", "logs", "about", "versions",
+              panels: ["appearance", "system", "database", "backup", "security", "logs", "about", "versions",
                        "experimental", "discover", "maintenance"]),
     ]
 
