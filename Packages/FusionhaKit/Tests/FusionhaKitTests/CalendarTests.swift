@@ -34,7 +34,7 @@ final class CalendarTests: XCTestCase {
         XCTAssertEqual(movie.backdropUrl, "b.jpg")
         XCTAssertEqual(try episode().label, "S01·E05")
         XCTAssertEqual(try episode(anime: true, abs: 28).label, "#28")
-        XCTAssertEqual(try episode(anime: true, abs: 28).code, "S1·E5")
+        XCTAssertEqual(try episode(anime: true, abs: 28).code, "S01·E05")
     }
 
     func testLocalDayFollowsAirInstant() throws {
