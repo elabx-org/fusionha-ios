@@ -47,7 +47,7 @@ struct YouView: View {
             }
         }
         .discoverToastOverlay()
-        .sheet(item: $webPage) { SafariView(url: $0).ignoresSafeArea() }
+        .sheet(item: $webPage) { FusionhaWebSheet(url: $0) }
         .task(id: me?.id) {
             requestCount = (try? await model.client?.requests(status: nil).count) ?? 0
         }

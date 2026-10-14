@@ -151,7 +151,9 @@ struct ActivityView: View {
         .environment(bulk)
         .environment(router)
         .sheet(item: $router.webURL) { url in
-            SafariView(url: url).ignoresSafeArea()
+            // Manual import is the web app's, opened signed in (not Safari, which
+            // has no fusionha session and showed the sign-in page).
+            FusionhaWebSheet(url: url)
         }
         .task(id: chrome.searchInput) {
             if chrome.searchInput.isEmpty { chrome.search = ""; return }
