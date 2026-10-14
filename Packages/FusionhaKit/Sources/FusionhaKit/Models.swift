@@ -192,6 +192,8 @@ public struct QueueItem: Decodable, Sendable, Identifiable, Hashable {
     public let packOutcomeRanges: [QueuePackOutcomeRange]?
     public let grabHistoryId: Int?
     public let parsed: ReleaseFacts?
+    /// What ffprobe measured on a held download (the card's probed chips).
+    public let probe: ManualImportProbe?
     /// The version's cut ("Extended", "Black & White"); nil for Standard (0.4.192).
     public let edition: String?
     /// The title tracks more than one edition, so Standard is named too.

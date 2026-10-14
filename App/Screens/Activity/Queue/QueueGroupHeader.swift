@@ -84,43 +84,37 @@ enum QueueGroupMemory {
     }
 }
 
-/// The group header's text block.
+/// The group header's text block (web `QueueGroupCard` header): title,
+/// the version on its own line, "4 downloads · 4.7 GB total · 4 held", the
+/// episode strip. The Manual Import button runs under it, full width.
 struct QueueGroupHeaderText: View {
     let summary: QueueGroupSummary
     let open: Bool
     let openTitle: () -> Void
-    let review: () -> Void
 
     var body: some View {
         let lead = summary.group.downloads[0]
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(lead.title).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
-                    .onTapGesture(perform: openTitle)
-                    .accessibilityAddTraits(.isButton)
-                Text(summary.versionLabel).font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(lead.tier.color).lineLimit(1).fixedSize()
-            }
-            Text(summary.countLine).font(.system(size: 12.5).monospacedDigit()).foregroundStyle(Theme.dim)
-            statesLine
+        VStack(alignment: .leading, spacing: 4) {
+            Text(lead.title).font(.system(size: 18, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(2)
+                .onTapGesture(perform: openTitle)
+                .accessibilityAddTraits(.isButton)
+            Text(summary.versionLabel).font(.system(size: 15)).foregroundStyle(Theme.mut).lineLimit(1)
+            countAndStates
             if !open, let strip = summary.episodeStrip {
-                Text(strip).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(Theme.dim)
+                Text(strip).font(.system(size: 13.5, design: .monospaced)).foregroundStyle(Theme.dim)
                     .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-            }
-            if let label = summary.reviewLabel {
-                Button(label, systemImage: "arrow.right", action: review)
-                    .buttonStyle(ActButtonStyle(kind: .primary))
-                    .padding(.top, 4)
             }
         }
     }
 
-    private var statesLine: some View {
-        summary.states.enumerated().reduce(Text("")) { line, entry in
-            let part = Text(entry.element.text).foregroundColor(entry.element.failure ? Theme.danger : Theme.mut)
-                .fontWeight(entry.element.failure ? .semibold : .regular)
-            return entry.offset == 0 ? part : line + Text(" · ").foregroundColor(Theme.dim) + part
+    /// "4 downloads · 4.7 GB total · 4 held": failures red, held amber.
+    private var countAndStates: some View {
+        summary.states.reduce(Text(summary.countLine).foregroundColor(Theme.mut)) { line, part in
+            let color = part.failure ? Theme.danger : (part.text.hasSuffix("held") ? Theme.miss : Theme.mut)
+            return line + Text(" · ").foregroundColor(Theme.dim)
+                + Text(part.text).foregroundColor(color).fontWeight(part.failure || part.text.hasSuffix("held") ? .semibold : .regular)
         }
-        .font(.system(size: 12.5))
+        .font(.system(size: 15).monospacedDigit())
+        .fixedSize(horizontal: false, vertical: true)
     }
 }

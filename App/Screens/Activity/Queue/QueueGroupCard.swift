@@ -42,20 +42,12 @@ struct QueueGroupCard: View {
         ActGroupCard(wash: QueueGroupSummary(group: group).heldIds.isEmpty ? Theme.grab : Theme.stuck, base: Theme.panel,
                      defaultOpen: group.isPair || isOpen,
                      onToggle: { open in groupOpen = open; QueueGroupMemory.set(group.id, open: open) }) {
-            ZStack(alignment: .bottomTrailing) {
-                ActPoster(url: lead.posterUrl, title: lead.title, size: .md)
-                    .rotationEffect(.degrees(-6)).offset(x: 6, y: -2).opacity(0.5)
-                ActPoster(url: lead.posterUrl, title: lead.title, size: .md)
-                Text("×\(downloads.count)").font(.system(size: 9, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(Theme.txt).padding(.horizontal, 4).padding(.vertical, 1)
-                    .background(Theme.bg.opacity(0.85), in: Capsule()).offset(x: 6, y: 4)
-            }
-            .frame(width: 48)
+            ActPoster(url: lead.posterUrl, title: lead.title, size: .md)
+                .onTapGesture { model.open(group.mediaItemId) }
         } title: {
             VStack(alignment: .leading, spacing: 8) {
                 QueueGroupHeaderText(summary: QueueGroupSummary(group: group), open: isOpen,
-                                     openTitle: { model.open(group.mediaItemId) },
-                                     review: { router.manualImport(rescue: QueueGroupSummary(group: group).heldIds) })
+                                     openTitle: { model.open(group.mediaItemId) })
                 if counts.dl > 0 {
                     HStack(spacing: 8) {
                         ActProgressBar(fraction: Double(pct) / 100, shimmer: true)
@@ -65,6 +57,15 @@ struct QueueGroupCard: View {
             }
         } trailing: {
             HStack(spacing: 14) {
+                // The group's Manual Import, full width (web `groupAction`).
+                if let label = QueueGroupSummary(group: group).reviewLabel {
+                    Button {
+                        router.manualImport(rescue: QueueGroupSummary(group: group).heldIds)
+                    } label: {
+                        Label(label, systemImage: "square.and.arrow.down").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(ActButtonStyle(kind: .primary, small: false))
+                }
                 // Size is in the header's count line; only live transfer facts here.
                 if counts.dl > 0 {
                     VStack(alignment: .trailing, spacing: 1) {
@@ -78,36 +79,20 @@ struct QueueGroupCard: View {
                         Text("NEXT DONE").font(.system(size: 9.5, weight: .bold)).foregroundStyle(Theme.dim)
                     }
                 }
-                Menu {
-                    Button("Remove all (\(downloads.count))") { removeMany(downloads.map(\.id), false) }
-                    if seasons.keys.compactMap({ $0 }).count >= 2 {
-                        ForEach(seasons.keys.compactMap { $0 }.sorted(), id: \.self) { s in
-                            Button("Remove Season \(s) (\(seasons[s]?.count ?? 0))") { removeMany((seasons[s] ?? []).map(\.id), false) }
-                        }
-                    }
-                    Divider()
-                    Button("Remove + blocklist all", role: .destructive) { removeMany(downloads.map(\.id), true) }
-                    Divider()
-                    Button("Pick downloads…", action: pick)
-                } label: {
-                    Image(systemName: "trash").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.mut)
-                        .frame(width: 26, height: 26).frame(width: 36, height: 36).contentShape(Rectangle())
-                }
-                .accessibilityLabel("Remove downloads for \(lead.title)")
+                removeMenu(downloads: downloads, seasons: seasons, title: lead.title)
             }
+            // Ahead of the card's leading spacer, so the button runs full width.
+            .layoutPriority(1)
         } content: {
             VStack(alignment: .leading, spacing: 0) {
                 let keys = isSeries ? seasons.keys.sorted { ($0 ?? 0) < ($1 ?? 0) } : [nil]
                 ForEach(keys, id: \.self) { key in
-                    if isSeries, let key {
-                        seasonHead(key, heldIds: (seasons[key] ?? []).filter { $0.status.lowercased() == "held" }.map(\.id))
-                    }
                     ForEach(isSeries ? (seasons[key] ?? []) : downloads) { item in
                         nestedRow(item)
                     }
                 }
             }
-            .padding(.bottom, 6)
+            .padding(.vertical, 8)
         }
         .overlay {
             if soonest { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.grab.opacity(0.45)) }
@@ -119,32 +104,19 @@ struct QueueGroupCard: View {
         }
     }
 
-    /// The season sub-head; with held members it carries the "Manual import (N)"
-    /// bulk rescue (one scan for the whole season instead of one per episode).
-    private func seasonHead(_ season: Int, heldIds: [Int]) -> some View {
-        HStack(spacing: 8) {
-            Text("SEASON \(season)").font(.system(size: 9.5, weight: .heavy)).tracking(0.6).foregroundStyle(Theme.dim)
-            Spacer(minLength: 0)
-            if !heldIds.isEmpty {
-                Button {
-                    router.manualImport(rescue: heldIds)
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "square.and.arrow.down").font(.system(size: 10, weight: .bold))
-                        Text("MANUAL IMPORT (\(heldIds.count))").font(.system(size: 9.5, weight: .heavy)).tracking(0.4)
-                    }
-                    .foregroundStyle(Theme.miss)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Theme.miss.opacity(0.14), in: Capsule())
-                    .frame(minHeight: 32)
-                    .contentShape(Rectangle())
+    /// The group's remove choices behind ⋯ (all, per season, with blocklist, pick).
+    private func removeMenu(downloads: [QueueItem], seasons: [Int?: [QueueItem]], title: String) -> some View {
+        ActMoreMenu(label: "Remove downloads for \(title)") {
+            Button("Remove all (\(downloads.count))", systemImage: "trash") { removeMany(downloads.map(\.id), false) }
+            if seasons.keys.compactMap({ $0 }).count >= 2 {
+                ForEach(seasons.keys.compactMap { $0 }.sorted(), id: \.self) { s in
+                    Button("Remove Season \(s) (\(seasons[s]?.count ?? 0))") { removeMany((seasons[s] ?? []).map(\.id), false) }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Manual import \(heldIds.count) held in season \(season)")
             }
+            Button("Remove + blocklist all", systemImage: "nosign", role: .destructive) { removeMany(downloads.map(\.id), true) }
+            Divider()
+            Button("Pick downloads…", systemImage: "checkmark.circle", action: pick)
         }
-        .padding(.horizontal, 16).padding(.top, 10).padding(.bottom, 2)
     }
 
     private func season(_ item: QueueItem) -> Int? {
@@ -158,12 +130,14 @@ struct QueueGroupCard: View {
     @ViewBuilder
     private func nestedRow(_ item: QueueItem) -> some View {
         let state = item.cockpitState
-        if (state == .held || state == .stuck) && !selecting {
+        if state == .held && !selecting {
+            // The web's GroupRow: the single card's parts, no poster or title.
+            QueueHeldCard(item: item, actions: actionsFor(item), nested: true)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+        } else if state == .stuck && !selecting {
             AttentionCard(item: item, actions: actionsFor(item), nested: true)
                 .padding(.horizontal, 6)
-                .overlay(alignment: .leading) {
-                    Capsule().fill(Theme.stuck).frame(width: 3).padding(.vertical, 10).offset(x: 5)
-                }
         } else if selecting {
             compactRow(item)
         } else {

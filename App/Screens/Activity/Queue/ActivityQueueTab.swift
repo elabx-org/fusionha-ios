@@ -168,7 +168,9 @@ struct ActivityQueueTab: View {
                         Group {
                             switch entry {
                             case .solo(let item, _):
-                                if item.cockpitState == .held || item.cockpitState == .stuck {
+                                if item.cockpitState == .held {
+                                    selectable(item) { QueueHeldCard(item: item, actions: actions(for: item)) }
+                                } else if item.cockpitState == .stuck {
                                     selectable(item) { AttentionCard(item: item, actions: actions(for: item)) }
                                 } else {
                                     selectable(item) {
