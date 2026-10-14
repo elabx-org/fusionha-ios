@@ -43,6 +43,10 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UIUserInterfaceStyle: Dark
+        # Bricolage Grotesque Condensed (OFL, Shared/Fonts): the redesign's display face.
+        UIAppFonts:
+          - BricolageGrotesqueCondensed-ExtraBold.ttf
+          - BricolageGrotesqueCondensed-SemiBold.ttf
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIApplicationSceneManifest:
@@ -104,6 +108,10 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        # Bricolage Grotesque Condensed (OFL, Shared/Fonts): the redesign's display face.
+        UIAppFonts:
+          - BricolageGrotesqueCondensed-ExtraBold.ttf
+          - BricolageGrotesqueCondensed-SemiBold.ttf
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     entitlements:

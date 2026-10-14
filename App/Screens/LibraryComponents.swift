@@ -856,7 +856,7 @@ private struct ChangeRootSheet: View {
             } label: {
                 Text("Apply")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onPrimary)
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .background(Theme.fusion, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             }

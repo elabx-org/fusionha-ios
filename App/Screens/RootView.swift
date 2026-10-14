@@ -201,7 +201,7 @@ struct AddButton: View {
         Button(action: action) {
             Image(systemName: "plus")
                 .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onPrimary)
                 .frame(width: 56, height: 56)
                 .background(Theme.fusion, in: Circle())
                 .shadow(color: .black.opacity(0.5), radius: 12, y: 8)

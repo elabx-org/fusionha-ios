@@ -60,7 +60,7 @@ struct LibraryToolbar: View {
                         if filterBadge > 0 {
                             Text("\(filterBadge)")
                                 .font(.system(size: 10.5, weight: .heavy))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(Theme.onPrimary)
                                 .padding(.horizontal, 5)
                                 .frame(minWidth: 17, minHeight: 17)
                                 .background(Theme.fusion, in: Capsule())

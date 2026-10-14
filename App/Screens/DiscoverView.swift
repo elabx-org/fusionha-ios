@@ -815,7 +815,7 @@ private struct TrailerCard: View {
                     .overlay {
                         Image(systemName: "play.fill")
                             .font(.system(size: 20))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Theme.onPrimary)
                             .frame(width: 52, height: 52)
                             .background(Theme.fusion, in: Circle())
                             .shadow(color: Theme.cyan.opacity(0.5), radius: 14, y: 12)

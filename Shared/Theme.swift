@@ -1,17 +1,26 @@
 import SwiftUI
 import FusionhaKit
 
-/// fusionha's design tokens (`design/DESIGN-STANDARDS.md`), shared by the app and widgets.
+/// fusionha's design tokens, shared by the app and widgets.
+///
+/// The redesign (`docs/design/redesign/DIRECTION.md`): "a video rental shop
+/// after closing". A warm black ground, posters as lit objects on a shelf,
+/// cream "house light" for chrome and primary actions, and every saturated hue
+/// left to status (the web's `status.ts`, unchanged).
 enum Theme {
-    // Surfaces and text (web `styles/tokens.css`, dark theme).
-    static let bg = Color(hex: 0x0C0D11)
-    static let panel = Color(hex: 0x14161D)
-    static let panel2 = Color(hex: 0x181B23)
-    static let card = Color(hex: 0x151821)
-    static let line = Color.white.opacity(0.08)
-    static let txt = Color(hex: 0xE9EAF0)
-    static let mut = Color(hex: 0x9AA0AD)
-    static let dim = Color(hex: 0x6B7280)
+    // Ground, shelf objects and ink.
+    static let bg = Color(hex: 0x0F0D0B)
+    static let panel = Color(hex: 0x1A1714)
+    static let panel2 = Color(hex: 0x24201C)
+    static let card = Color(hex: 0x1A1714)
+    static let line = Color(hex: 0xF4ECE1).opacity(0.08)
+    static let txt = Color(hex: 0xF4ECE1)
+    static let mut = Color(hex: 0xB3A796)
+    static let dim = Color(hex: 0x8C8172)
+    /// Text on the cream primary (`fusion`) and on the selected chip.
+    static let onPrimary = Color(hex: 0x15110D)
+    /// The cream house light: primary buttons, the selected chip.
+    static let ink = txt
 
     static let kindMovie = Color(hex: 0x38BDF8)
     static let kindSeries = Color(hex: 0xA855F7)
@@ -21,13 +30,17 @@ enum Theme {
     static let radius: CGFloat = 11
     static let radiusLg: CGFloat = 14
 
-    static let indigo = Color(hex: 0x6366F1)
+    /// The control tint (toggles, links, quiet accents): warm brass, so a
+    /// system toggle's white knob still reads. Never a status.
+    static let indigo = Color(hex: 0xD9C3A0)
     static let cyan = Color(hex: 0x22D3EE)
     /// `--i1` / `--i2` aliases, so ports read like the CSS.
     static let i1 = indigo
     static let i2 = cyan
-    /// The "fusion" gradient. Brand mark and primary actions only, never a status.
-    static let fusion = LinearGradient(colors: [indigo, cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+    /// The primary action: cream house light, lit from the top. Text on it is
+    /// `onPrimary`. (Was the indigo→cyan "fusion" gradient; the brand gradient
+    /// now lives only in the logo.)
+    static let fusion = LinearGradient(colors: [Color(hex: 0xFBF5EC), Color(hex: 0xE9DECF)], startPoint: .top, endPoint: .bottom)
 
     static let done = Color(hex: 0x34D399)
     static let grab = Color(hex: 0x22D3EE)
@@ -61,11 +74,11 @@ enum Theme {
         }
     }
 
-    /// Mobile layout tokens (`--page-gutter`, `--bottom-nav-clearance`).
-    /// SegGroup active text: `color-mix(in srgb, var(--i2) 45%, var(--txt))`.
-    static let segActiveText = Color(hex: 0x8FE0EF)
+    /// SegGroup active text.
+    static let segActiveText = txt
 
-    static let pageGutter: CGFloat = 10
+    /// The redesign's 16pt side margin.
+    static let pageGutter: CGFloat = 16
     static let bottomNavClearance: CGFloat = 76
 
     static func kind(_ bucket: KindBucket) -> Color {
@@ -74,6 +87,28 @@ enum Theme {
         case .series: return kindSeries
         case .anime: return kindAnime
         }
+    }
+}
+
+// MARK: - Display type
+
+extension Theme {
+    /// Bricolage Grotesque, condensed (bundled, OFL): page and detail titles and
+    /// the hero numbers only; every other string stays the system font. Scales
+    /// with Dynamic Type relative to `style`.
+    static func display(_ size: CGFloat, relativeTo style: Font.TextStyle = .largeTitle, semibold: Bool = false) -> Font {
+        .custom(semibold ? "BricolageGrotesqueCondensed-SemiBold" : "BricolageGrotesqueCondensed-ExtraBold",
+                size: size, relativeTo: style)
+    }
+
+    /// Tight tracking for display sizes (-2% of the size).
+    static func displayTracking(_ size: CGFloat) -> CGFloat { -size * 0.022 }
+}
+
+extension View {
+    /// A page title in the display face: `Library`, `Activity`, `October`.
+    func pageTitle(_ size: CGFloat = 56) -> some View {
+        font(Theme.display(size)).tracking(Theme.displayTracking(size)).foregroundStyle(Theme.txt)
     }
 }
 

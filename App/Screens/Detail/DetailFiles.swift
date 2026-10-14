@@ -323,7 +323,7 @@ struct MovieEditionsTab: View {
                                 Text("Search all monitored")
                             }
                             .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Theme.onPrimary)
                             .padding(.horizontal, 12)
                             .frame(height: 34)
                             .background(Theme.fusion, in: RoundedRectangle(cornerRadius: 9))

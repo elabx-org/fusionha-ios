@@ -704,7 +704,7 @@ struct ActCheckbox: View {
             .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
                 .strokeBorder(checked ? Color.clear : Theme.mut, lineWidth: 1.5))
             .overlay {
-                if checked { Image(systemName: "checkmark").font(.system(size: 10, weight: .heavy)).foregroundStyle(.white) }
+                if checked { Image(systemName: "checkmark").font(.system(size: 10, weight: .heavy)).foregroundStyle(Theme.onPrimary) }
             }
             .frame(width: 18, height: 18)
             .accessibilityLabel(checked ? "Selected" : "Not selected")

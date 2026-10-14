@@ -62,7 +62,7 @@ struct OmniAddRow: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Theme.onPrimary)
                 .frame(width: 30, height: 30)
                 .background(Theme.fusion, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
         }

@@ -613,7 +613,7 @@ private struct AddTile: View {
                             Button(action: pick) {
                                 Image(systemName: "plus")
                                     .font(.system(size: 14, weight: .bold))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(Theme.onPrimary)
                                     .frame(width: 30, height: 30)
                                     .background(Theme.fusion, in: Circle())
                             }
@@ -674,7 +674,7 @@ private struct AddListRow: View {
                 } else {
                     Text("Add")
                         .font(.system(size: 12.5, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.onPrimary)
                         .padding(.horizontal, 14)
                         .frame(height: 30)
                         .background(Theme.fusion, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
@@ -772,7 +772,7 @@ private struct RequestConfigurator: View {
             } label: {
                 Text(sending ? "Requesting…" : "Request")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.onPrimary)
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .background(Theme.fusion, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
             }
