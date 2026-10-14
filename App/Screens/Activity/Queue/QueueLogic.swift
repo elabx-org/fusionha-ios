@@ -153,23 +153,39 @@ enum QueueLogic {
         return (working, failed)
     }
 
+    /// Downloads of one title and version (tier + edition) in one section
+    /// (fusionha's queue redesign). A title whose 4K and HD are one download
+    /// each stays one pair card instead (`editionId` nil).
     struct Group: Identifiable {
         let mediaItemId: Int
+        let editionId: Int?
         var downloads: [QueueItem]
-        var id: Int { mediaItemId }
+        var id: String { "\(mediaItemId):\(editionId.map(String.init) ?? "pair")" }
+        /// Several versions of the title, one download each.
+        var isPair: Bool { editionId == nil }
     }
 
     static func group(_ items: [QueueItem]) -> [Group] {
-        var order: [Int] = []
-        var map: [Int: Group] = [:]
+        var order: [String] = []
+        var map: [String: Group] = [:]
         for item in items {
-            if map[item.mediaItemId] == nil {
-                map[item.mediaItemId] = Group(mediaItemId: item.mediaItemId, downloads: [])
-                order.append(item.mediaItemId)
+            let key = "\(item.mediaItemId):\(item.editionId)"
+            if map[key] == nil {
+                map[key] = Group(mediaItemId: item.mediaItemId, editionId: item.editionId, downloads: [])
+                order.append(key)
             }
-            map[item.mediaItemId]?.downloads.append(item)
+            map[key]?.downloads.append(item)
         }
-        return order.compactMap { map[$0] }
+        var groups = order.compactMap { map[$0] }
+        // The 4K + HD pair: every version of the title is a single download.
+        let byTitle = Dictionary(grouping: groups, by: \.mediaItemId)
+        for (title, versions) in byTitle where versions.count >= 2 && versions.allSatisfy({ $0.downloads.count == 1 }) {
+            guard let first = groups.firstIndex(where: { $0.mediaItemId == title }) else { continue }
+            let pair = Group(mediaItemId: title, editionId: nil, downloads: versions.flatMap(\.downloads))
+            groups.removeAll { $0.mediaItemId == title }
+            groups.insert(pair, at: min(first, groups.count))
+        }
+        return groups
     }
 
     enum Entry: Identifiable {
@@ -178,7 +194,7 @@ enum QueueLogic {
         var id: String {
             switch self {
             case .solo(let item, _): return "solo:\(item.id)"
-            case .group(let g, _): return "group:\(g.mediaItemId)"
+            case .group(let g, _): return "group:\(g.id)"
             }
         }
         var eta: Double? {

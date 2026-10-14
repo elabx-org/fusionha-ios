@@ -68,6 +68,8 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
     var wash: Color?
     var base: Color = Theme.panel
     var hasTrailing = true
+    /// Told each time the card opens or closes (to remember it).
+    var onToggle: ((Bool) -> Void)? = nil
     @State private var open: Bool
     @Environment(\.actReduceMotion) private var reduceMotion
     private let poster: PosterV
@@ -76,11 +78,13 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
     private let content: BodyV
 
     init(wash: Color? = nil, base: Color = Theme.panel, defaultOpen: Bool = true, hasTrailing: Bool = true,
+         onToggle: ((Bool) -> Void)? = nil,
          @ViewBuilder poster: () -> PosterV, @ViewBuilder title: () -> TitleV,
          @ViewBuilder trailing: () -> TrailingV, @ViewBuilder content: () -> BodyV) {
         self.wash = wash
         self.base = base
         self.hasTrailing = hasTrailing
+        self.onToggle = onToggle
         _open = State(initialValue: defaultOpen)
         self.poster = poster()
         self.title = title()
@@ -96,6 +100,7 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
                     title.frame(maxWidth: .infinity, alignment: .leading)
                     Button {
                         if reduceMotion { open.toggle() } else { withAnimation(.easeOut(duration: 0.2)) { open.toggle() } }
+                        onToggle?(open)
                     } label: {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 12, weight: .semibold))
@@ -109,6 +114,7 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
                     .padding(.top, -6)
                     .padding(.trailing, -6)
                     .accessibilityLabel(open ? "Collapse" : "Expand")
+                    .accessibilityValue(open ? "Expanded" : "Collapsed")
                 }
                 if hasTrailing {
                     HStack(spacing: 10) {

@@ -22,6 +22,10 @@ struct QueueGroupCard: View {
     @State private var shownRate: Double = 0
     /// The one member row opened in place (the web's single expanded row).
     @State private var openId: Int?
+    /// Collapsed by default; remembered for this run (`QueueGroupMemory`).
+    @State private var groupOpen: Bool?
+
+    private var isOpen: Bool { groupOpen ?? QueueGroupMemory.open.contains(group.id) }
 
     var body: some View {
         let downloads = group.downloads
@@ -31,11 +35,12 @@ struct QueueGroupCard: View {
         let pct = size > 0 ? Int((done / size * 100).rounded()) : 0
         let rate = downloads.reduce(0) { $0 + (telemetry[$1.id]?.bps ?? 0) }
         let counts = (dl: downloads.filter { [.downloading, .awaiting, .importing].contains($0.cockpitState) }.count,
-                      st: downloads.filter { $0.cockpitState == .stalled }.count,
-                      q: downloads.filter { $0.cockpitState == .queued }.count)
+                      held: downloads.filter { $0.cockpitState == .held }.count)
         let seasons = Dictionary(grouping: downloads) { season($0) }
         let isSeries = downloads.contains { $0.episodeLabel != nil }
-        ActGroupCard(wash: Theme.grab, base: Theme.panel) {
+        ActGroupCard(wash: QueueGroupSummary(group: group).heldIds.isEmpty ? Theme.grab : Theme.stuck, base: Theme.panel,
+                     defaultOpen: isOpen,
+                     onToggle: { open in groupOpen = open; QueueGroupMemory.set(group.id, open: open) }) {
             ZStack(alignment: .bottomTrailing) {
                 ActPoster(url: lead.posterUrl, title: lead.title, size: .md)
                     .rotationEffect(.degrees(-6)).offset(x: 6, y: -2).opacity(0.5)
@@ -46,33 +51,31 @@ struct QueueGroupCard: View {
             }
             .frame(width: 48)
         } title: {
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(spacing: 6) {
-                    Text(lead.title).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
-                        .onTapGesture { model.open(group.mediaItemId) }
-                    Text(isSeries ? "\(downloads.count) downloads" : "\(downloads.count) versions")
-                        .font(.system(size: 10.5, weight: .semibold)).foregroundStyle(Theme.mut)
-                        .padding(.horizontal, 7).padding(.vertical, 1).background(Theme.panel2, in: Capsule())
-                }
-                Text([counts.dl > 0 ? "\(counts.dl) downloading" : nil, counts.st > 0 ? "\(counts.st) stalled" : nil,
-                      counts.q > 0 ? "\(counts.q) queued" : nil].compactMap { $0 }.joined(separator: " · "))
-                    .font(.system(size: 11.5)).foregroundStyle(Theme.mut)
-                HStack(spacing: 8) {
-                    ActProgressBar(fraction: Double(pct) / 100, shimmer: counts.dl > 0)
-                    Text("\(pct)% overall").font(.system(size: 11, weight: .semibold).monospacedDigit()).foregroundStyle(Theme.mut).fixedSize()
+            VStack(alignment: .leading, spacing: 8) {
+                QueueGroupHeaderText(summary: QueueGroupSummary(group: group), open: isOpen,
+                                     openTitle: { model.open(group.mediaItemId) },
+                                     review: { router.manualImport(rescue: QueueGroupSummary(group: group).heldIds) })
+                if counts.dl > 0 {
+                    HStack(spacing: 8) {
+                        ActProgressBar(fraction: Double(pct) / 100, shimmer: true)
+                        Text("\(pct)% overall").font(.system(size: 11, weight: .semibold).monospacedDigit()).foregroundStyle(Theme.mut).fixedSize()
+                    }
                 }
             }
         } trailing: {
             HStack(spacing: 14) {
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text(ActFmt.rate(shownRate)).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Theme.grab)
-                        .contentTransition(.opacity)
-                        .animation(reduce ? nil : .easeOut(duration: 0.2), value: shownRate > 0)
-                    Text("\(ActFmt.bytes(done)) / \(ActFmt.bytes(size))").font(.system(size: 10.5)).foregroundStyle(Theme.mut)
-                }
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text(ActFmt.etaShort(eta)).font(.system(size: 13, weight: .bold).monospacedDigit()).foregroundStyle(Theme.txt)
-                    Text("NEXT DONE").font(.system(size: 9.5, weight: .bold)).foregroundStyle(Theme.dim)
+                // Size is in the header's count line; only live transfer facts here.
+                if counts.dl > 0 {
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text(ActFmt.rate(shownRate)).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Theme.grab)
+                            .contentTransition(.opacity)
+                            .animation(reduce ? nil : .easeOut(duration: 0.2), value: shownRate > 0)
+                        Text("speed").font(.system(size: 9.5, weight: .bold)).foregroundStyle(Theme.dim)
+                    }
+                    VStack(alignment: .trailing, spacing: 1) {
+                        Text(ActFmt.etaShort(eta)).font(.system(size: 13, weight: .bold).monospacedDigit()).foregroundStyle(Theme.txt)
+                        Text("NEXT DONE").font(.system(size: 9.5, weight: .bold)).foregroundStyle(Theme.dim)
+                    }
                 }
                 Menu {
                     Button("Remove all (\(downloads.count))") { removeMany(downloads.map(\.id), false) }
