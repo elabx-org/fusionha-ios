@@ -1,7 +1,7 @@
 <title>fusionha Dark Palettes</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Mona+Sans:wdth,wght@75..125,400..900&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 /* Layout: a page about dark palettes, so the page itself commits to one neutral dark look.
    A row of phones (one per palette) scrolls sideways inside its own track; notes sit under each. */
@@ -14,12 +14,18 @@
   --page-card: #141416;
   --pick: #f2f2f3;
   --display: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
+  /* The phones' page headings: Mona Sans Condensed (the runner-up in DIRECTION.md), or Bricolage. */
+  --head: "Mona Sans", "Arial Narrow", system-ui, sans-serif;
+  --head-stretch: 75%;
+  --head-weight: 850;
+  --head-track: -.015em;
   --ui: "Inter Tight", -apple-system, "SF Pro Text", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
   /* status colours never change between palettes (the web's status.ts) */
   --done: #34d399; --grab: #22d3ee; --miss: #f59e0b; --hd: #a78bfa; --uhd: #22d3ee; --anime: #f472b6; --danger: #f87171;
 }
 body { background: var(--page); color: var(--page-ink); font-family: var(--ui); }
+body[data-head="bricolage"] { --head: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif; --head-weight: 800; --head-track: -.02em; }
 .wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px;  display: grid; gap: 22px; }
 header { display: grid; gap: 10px; max-width: 70ch; }
 h1 { font-family: var(--display); font-weight: 800; font-stretch: 75%; font-size: clamp(36px, 6vw, 60px); line-height: .95; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
@@ -59,7 +65,7 @@ footer { color: var(--page-mut); font-size: 13px; max-width: 75ch; line-height: 
 .glass { background: var(--glass); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); border: 1px solid var(--glass-line); box-shadow: inset 0 1px 0 rgba(255,255,255,.08); }
 .search { flex: 1; height: 34px; border-radius: 999px; display: flex; align-items: center; gap: 7px; padding: 0 12px; color: var(--dim); font-size: 13px; }
 .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--panel2); display: grid; place-items: center; font: 700 11px var(--ui); color: var(--mut); border: 1px solid var(--line); }
-.big { font-family: var(--display); font-weight: 800; font-stretch: 75%; font-size: 44px; line-height: .9; letter-spacing: -.02em; color: var(--title); margin-top: 6px; }
+.big { font-family: var(--head); font-weight: var(--head-weight); font-stretch: var(--head-stretch); font-size: 44px; line-height: .9; letter-spacing: var(--head-track); color: var(--title); margin-top: 6px; }
 .sub { font-size: 13px; color: var(--mut); line-height: 1.35; }
 .sub .live { color: var(--grab); }
 .pills { display: flex; gap: 6px; align-items: center; }
@@ -99,7 +105,7 @@ footer { color: var(--page-mut); font-size: 13px; max-width: 75ch; line-height: 
 .steps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
 .steps i { height: 4px; border-radius: 3px; background: var(--line2); }
 .steps .g { background: var(--grab); }
-.h3 { font-family: var(--display); font-weight: 700; font-stretch: 80%; font-size: 21px; color: var(--title); margin-top: 2px; }
+.h3 { font-family: var(--head); font-weight: 750; font-stretch: var(--head-stretch); font-size: 21px; color: var(--title); margin-top: 2px; }
 .job { display: grid; grid-template-columns: 38px 1fr; gap: 9px; }
 .job .poster { border-radius: 6px; }
 .mono { font: 10px var(--mono); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -117,6 +123,10 @@ footer { color: var(--page-mut); font-size: 13px; max-width: 75ch; line-height: 
       <button type="button" id="s-library" data-screen="library" aria-pressed="true">Library</button>
       <button type="button" id="s-activity" data-screen="activity" aria-pressed="false">Activity</button>
     </div>
+    <div class="seg" role="group" aria-label="Heading font">
+      <button type="button" id="h-mona" data-head="mona" aria-pressed="true">Mona Sans Condensed</button>
+      <button type="button" id="h-bricolage" data-head="bricolage" aria-pressed="false">Bricolage (current)</button>
+    </div>
     <span class="hint">Scroll sideways to compare.</span>
   </div>
 
@@ -129,7 +139,7 @@ footer { color: var(--page-mut); font-size: 13px; max-width: 75ch; line-height: 
     <div class="track"><div class="row" id="row2"></div></div>
   </section>
 
-  <footer>Every option keeps Liquid Glass on the tab bar, search and menus, and the Bricolage display face. A palette is about twelve colour tokens in <code>Shared/Theme.swift</code>, so switching is one change. It could also become a choice in Settings › Appearance, like the web's accent themes.</footer>
+  <footer>Every option keeps Liquid Glass on the tab bar, search and menus. Screen headings are shown in Mona Sans Condensed, the runner-up display face; the toggle above switches back to Bricolage. A palette is about twelve colour tokens in <code>Shared/Theme.swift</code>, so switching is one change. It could also become a choice in Settings › Appearance, like the web's accent themes.</footer>
 </div>
 
 <script>
@@ -287,5 +297,17 @@ document.querySelectorAll("[data-screen]").forEach(b => b.addEventListener("clic
   try { localStorage.setItem("fh-palette-screen", screen); } catch (e) {}
   render();
 }));
+let head = "mona";
+try { head = localStorage.getItem("fh-palette-head") || "mona"; } catch (e) {}
+function applyHead() {
+  document.body.dataset.head = head;
+  document.querySelectorAll("[data-head]").forEach(b => { if (b.tagName === "BUTTON") b.setAttribute("aria-pressed", String(b.dataset.head === head)); });
+}
+document.querySelectorAll("button[data-head]").forEach(b => b.addEventListener("click", () => {
+  head = b.dataset.head;
+  try { localStorage.setItem("fh-palette-head", head); } catch (e) {}
+  applyHead();
+}));
+applyHead();
 render();
 </script>
