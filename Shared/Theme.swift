@@ -7,7 +7,7 @@ import FusionhaKit
 /// on a shelf, a quiet ground, one house light for chrome and primary actions,
 /// and every saturated hue left to status (the web's `status.ts`). The ground,
 /// text and accent come from the palette chosen in Settings › Appearance
-/// (`AppPalette`); Video store is the original warm one.
+/// (`AppPalette`); Aurora, the web app's own, is the main one.
 enum Theme {
     /// The active palette's colours (Settings › Appearance). Reading one
     /// registers the view with `PaletteStore`, so it redraws on a switch.
@@ -102,12 +102,11 @@ enum Theme {
 // MARK: - Display type
 
 extension Theme {
-    /// Bricolage Grotesque, condensed (bundled, OFL): page and detail titles and
-    /// the hero numbers only; every other string stays the system font. Scales
-    /// with Dynamic Type relative to `style`.
+    /// Mona Sans Condensed (bundled, OFL): page and detail titles and the hero
+    /// numbers only; every other string stays the system font. Scales with
+    /// Dynamic Type relative to `style`.
     static func display(_ size: CGFloat, relativeTo style: Font.TextStyle = .largeTitle, semibold: Bool = false) -> Font {
-        .custom(semibold ? "BricolageGrotesqueCondensed-SemiBold" : "BricolageGrotesqueCondensed-ExtraBold",
-                size: size, relativeTo: style)
+        Font(DisplayFace.font(size: size, weight: semibold ? 650 : 850, style: style) as CTFont)
     }
 
     /// Tight tracking for display sizes (-2% of the size).

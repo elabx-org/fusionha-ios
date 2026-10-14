@@ -46,7 +46,7 @@ struct PageHeader<Trailing: View>: View {
         }
     }
 
-    /// The redesign's page title: Bricolage, 56pt, tight.
+    /// The redesign's page title: the display face, 56pt, tight.
     private var titleText: some View {
         Text(title)
             .pageTitle(56)

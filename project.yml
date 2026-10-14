@@ -42,11 +42,10 @@ targets:
         CFBundleDisplayName: fusionha
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        UIUserInterfaceStyle: Dark
-        # Bricolage Grotesque Condensed (OFL, Shared/Fonts): the redesign's display face.
+        # Mona Sans (OFL, Shared/Fonts), the variable font unmodified: the display face,
+        # set condensed and heavy in code (Theme.display).
         UIAppFonts:
-          - BricolageGrotesqueCondensed-ExtraBold.ttf
-          - BricolageGrotesqueCondensed-SemiBold.ttf
+          - MonaSansVF.ttf
         UILaunchScreen:
           UIColorName: LaunchBackground
         UIApplicationSceneManifest:
@@ -108,10 +107,10 @@ targets:
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
-        # Bricolage Grotesque Condensed (OFL, Shared/Fonts): the redesign's display face.
+        # Mona Sans (OFL, Shared/Fonts), the variable font unmodified: the display face,
+        # set condensed and heavy in code (Theme.display).
         UIAppFonts:
-          - BricolageGrotesqueCondensed-ExtraBold.ttf
-          - BricolageGrotesqueCondensed-SemiBold.ttf
+          - MonaSansVF.ttf
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     entitlements:

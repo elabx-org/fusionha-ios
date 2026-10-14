@@ -144,6 +144,8 @@ All five are OFL, bundle in the app, and only set titles and the hero numbers; U
 
 Round 2 (`fonts2.html`, `shots/fonts2/sheet.png`) tried close relatives: Bricolage at width 88, Mona Sans Condensed, Sofia Sans Extra Condensed, Instrument Sans Condensed, League Gothic and Familjen Grotesk. **Recommendation: keep Bricolage Grotesque Condensed 800** (the owner agrees). Runner-up: Mona Sans Condensed, the crispest and most neutral, if Bricolage ever feels too playful.
 
+**Update (2026-10-14):** with the app palettes (Aurora main; Graphite indigo, OLED mono, Noir, Frost, Eclipse, Daylight; mocks in `docs/design/palettes/dark-palettes.html`) the look moved cooler, and the owner chose **Mona Sans Condensed** (width 75, weight 850; 650 for semibold uses). It ships as the unmodified variable font (the OFL reserves the name "Mona", so no static cut) and is set through its axes in `Shared/DisplayFace.swift`. The warm Video store palette is retired.
+
 A sixth option, **SF Pro Compressed** (native, no bundling), could not be rendered on this Linux machine.
 
 ## Liquid Glass (screen `liquid-glass`)

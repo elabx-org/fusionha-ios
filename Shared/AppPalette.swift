@@ -9,7 +9,6 @@ import FusionhaKit
 /// re-renders when the palette changes, so switching keeps your place.
 /// Mocks: `docs/design/palettes/dark-palettes.html`.
 enum AppPalette: String, CaseIterable, Identifiable, Sendable {
-    case videoStore = "video-store"
     case graphite
     case oled
     case aurora
@@ -20,14 +19,13 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
-    static let dark: [AppPalette] = [.aurora, .videoStore, .graphite, .oled, .noir, .frost, .eclipse]
+    static let dark: [AppPalette] = [.aurora, .graphite, .oled, .noir, .frost, .eclipse]
     static let light: [AppPalette] = [.daylight]
 
     var isLight: Bool { tokens.isLight }
 
     var name: String {
         switch self {
-        case .videoStore: return "Video store"
         case .graphite: return "Graphite indigo"
         case .oled: return "OLED mono"
         case .aurora: return "Aurora"
@@ -40,7 +38,6 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
 
     var blurb: String {
         switch self {
-        case .videoStore: return "Warm black, cream and brass."
         case .graphite: return "The web app's cool greys with its indigo accent."
         case .oled: return "True black and white; colour comes only from posters and statuses."
         case .aurora: return "The main theme, as on the web: cool ink, indigo to cyan, and the full status colours."
@@ -53,7 +50,6 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
 
     var tokens: PaletteTokens {
         switch self {
-        case .videoStore: return .videoStore
         case .graphite: return .graphite
         case .oled: return .oled
         case .aurora: return .aurora
@@ -108,12 +104,6 @@ struct PaletteTokens: Sendable {
     var danger: UInt32 = 0xF87171
     /// An optional middle stop for the primary fill (Eclipse's three-colour corona).
     var primaryVia: UInt32? = nil
-
-    static let videoStore = PaletteTokens(
-        isLight: false, bg: 0x0F0D0B, panel: 0x1A1714, panel2: 0x24201C, line: 0xF4ECE1, lineOpacity: 0.08,
-        txt: 0xF4ECE1, mut: 0xB3A796, dim: 0x8C8172, i1: 0xD9C3A0, i2: 0xEDE0CB,
-        primaryFrom: 0xFBF5EC, primaryTo: 0xE9DECF, onPrimary: 0x15110D, onAccent: 0x15110D,
-        done: 0x7FC8A0, grab: 0x6CC4CF, miss: 0xE0A458, unaired: 0x7FA4DB, unmonitored: 0x857A6C, onair: 0xE5C07B, premiere: 0xA7A8E0, stuck: 0xE39563, edition: 0xB39DDB, anime: 0xE39BBE, danger: 0xE58A7F)
 
     static let graphite = PaletteTokens(
         isLight: false, bg: 0x0E0F13, panel: 0x16181E, panel2: 0x1D2028, line: 0xFFFFFF, lineOpacity: 0.08,
