@@ -9,7 +9,7 @@ private func clamp(_ v: Double, _ a: Double, _ b: Double) -> Double { v < a ? a 
 private func rnd() -> Double { Double.random(in: 0..<1) }
 
 /// An sRGB colour as the canvas sees it.
-private struct RGB {
+struct BackdropRGB {
     let r: Double, g: Double, b: Double
 
     init(_ r: Double, _ g: Double, _ b: Double) {
@@ -28,14 +28,14 @@ private struct RGB {
 }
 
 /// `lc(a, b, t)`: a rounded linear mix of two hex colours.
-private func lc(_ a: UInt32, _ b: UInt32, _ t: Double) -> RGB {
-    let A = RGB(hex: a), B = RGB(hex: b)
-    return RGB((A.r + (B.r - A.r) * t).rounded(), (A.g + (B.g - A.g) * t).rounded(), (A.b + (B.b - A.b) * t).rounded())
+private func lc(_ a: UInt32, _ b: UInt32, _ t: Double) -> BackdropRGB {
+    let A = BackdropRGB(hex: a), B = BackdropRGB(hex: b)
+    return BackdropRGB((A.r + (B.r - A.r) * t).rounded(), (A.g + (B.g - A.g) * t).rounded(), (A.b + (B.b - A.b) * t).rounded())
 }
 
 private let transparentBlack = Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 0)
-private let cyan = RGB(hex: 0x22D3EE)
-private let green = RGB(hex: 0x34D399)
+private let cyan = BackdropRGB(hex: 0x22D3EE)
+private let green = BackdropRGB(hex: 0x34D399)
 
 private func dot(_ c: GraphicsContext, _ x: Double, _ y: Double, _ r: Double, _ color: Color) {
     c.fill(Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)), with: .color(color))
@@ -64,7 +64,7 @@ private func chance(_ p: Double, _ k: Double) -> Bool { rnd() < 1 - pow(1 - p, k
 // MARK: - grid
 
 final class GridFX: BackdropFX {
-    struct Dot { let x: Double, y: Double, ph: Double, col: RGB }
+    struct Dot { let x: Double, y: Double, ph: Double, col: BackdropRGB }
     private var d: [Dot] = []
 
     init(w: Double, h: Double) {
@@ -102,9 +102,9 @@ final class AuroraFX: BackdropFX {
             radial(c, Path(ellipseIn: CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)), x, y, r, col, transparentBlack)
         }
         blob(w * 0.32 + sin(t * 0.0006) * w * 0.08, h * 0.36 + cos(t * 0.0005) * h * 0.12, mn * 0.72,
-             RGB(99, 102, 241).color(0.5))
+             BackdropRGB(99, 102, 241).color(0.5))
         blob(w * 0.7 + cos(t * 0.0007) * w * 0.08, h * 0.66 + sin(t * 0.0006) * h * 0.12, mn * 0.66,
-             RGB(34, 211, 238).color(0.45))
+             BackdropRGB(34, 211, 238).color(0.45))
     }
 }
 
@@ -145,14 +145,14 @@ final class FlowFX: BackdropFX {
     }
 
     func render(_ c: GraphicsContext, t: Double) {
-        let laneColor = RGB(120, 150, 250).color(0.07)
+        let laneColor = BackdropRGB(120, 150, 250).color(0.07)
         for y in lanes { line(c, 0, y, rx, y, laneColor) }
         for p in pk {
             let y = lanes[p.l]
             dot(c, p.x, y, p.r, cyan.color(0.85))
             dot(c, p.x - 6, y, p.r * 0.8, cyan.color(0.2))
         }
-        let idle = RGB(hex: 0x2A3350)
+        let idle = BackdropRGB(hex: 0x2A3350)
         for i in shelf.indices {
             let y = (Double(i) + 0.5) / Double(shelf.count) * h
             let lit = shelf[i] != 0 && t - shelf[i] < 1400 ? 1 - (t - shelf[i]) / 1400 : 0
@@ -165,7 +165,7 @@ final class FlowFX: BackdropFX {
 // MARK: - web
 
 final class WebFX: BackdropFX {
-    struct Node { var x: Double, y: Double, vx: Double, vy: Double; let col: RGB; var res: Double }
+    struct Node { var x: Double, y: Double, vx: Double, vy: Double; let col: BackdropRGB; var res: Double }
     struct Pulse { let a: Int, b: Int; let t: Double, d: Double }
     let w: Double, h: Double
     private var nd: [Node] = []
@@ -213,7 +213,7 @@ final class WebFX: BackdropFX {
                 let dx = nd[i].x - nd[j].x, dy = nd[i].y - nd[j].y, d2 = dx * dx + dy * dy
                 if d2 > md * md { continue }
                 let alpha = (((1 - d2.squareRoot() / md) * 0.2) * 1000).rounded() / 1000
-                line(c, nd[i].x, nd[i].y, nd[j].x, nd[j].y, RGB(125, 150, 250).color(alpha))
+                line(c, nd[i].x, nd[i].y, nd[j].x, nd[j].y, BackdropRGB(125, 150, 250).color(alpha))
             }
         }
         for pu in pulses {
@@ -230,7 +230,7 @@ final class WebFX: BackdropFX {
 // MARK: - hub
 
 final class HubFX: BackdropFX {
-    struct Particle { var ang: Double, rad: Double; let born: Double, sp: Double; let col: RGB; var res: Double }
+    struct Particle { var ang: Double, rad: Double; let born: Double, sp: Double; let col: BackdropRGB; var res: Double }
     let w: Double, h: Double
     private var pa: [Particle] = []
 
@@ -259,7 +259,7 @@ final class HubFX: BackdropFX {
     func render(_ c: GraphicsContext, t: Double) {
         let cx = w / 2, cy = h * 0.5
         radial(c, Path(CGRect(x: 0, y: 0, width: w, height: h)), cx, cy, w * 0.22,
-               RGB(34, 211, 238).color(0.16), RGB(34, 211, 238).color(0))
+               BackdropRGB(34, 211, 238).color(0.16), BackdropRGB(34, 211, 238).color(0))
         var recent = 0
         for p in pa {
             if p.res != 0 && t - p.res < 450 { recent += 1 }
@@ -276,7 +276,7 @@ final class HubFX: BackdropFX {
 
 final class OrbitsFX: BackdropFX {
     struct Sat { let rad: Double; var ang: Double; let sp: Double; var done: Double }
-    struct Orbit { var x: Double, y: Double, vx: Double, vy: Double; let col: RGB; var sats: [Sat] }
+    struct Orbit { var x: Double, y: Double, vx: Double, vy: Double; let col: BackdropRGB; var sats: [Sat] }
     let w: Double, h: Double
     private var co: [Orbit] = []
 
@@ -333,9 +333,9 @@ final class GradientFX: BackdropFX {
 
     func render(_ c: GraphicsContext, t: Double) {
         let all = Path(CGRect(x: 0, y: 0, width: w, height: h))
-        c.fill(all, with: .linearGradient(Gradient(colors: [RGB(hex: 0x2B2F66).color(), RGB(hex: 0x123B46).color()]),
+        c.fill(all, with: .linearGradient(Gradient(colors: [BackdropRGB(hex: 0x2B2F66).color(), BackdropRGB(hex: 0x123B46).color()]),
                                           startPoint: .zero, endPoint: CGPoint(x: w, y: h)))
-        radial(c, all, w * 0.5, h * 0.4, max(w, h) * 0.6, RGB(34, 211, 238).color(0.14), transparentBlack)
+        radial(c, all, w * 0.5, h * 0.4, max(w, h) * 0.6, BackdropRGB(34, 211, 238).color(0.14), transparentBlack)
     }
 }
 
@@ -347,7 +347,7 @@ final class SolidFX: BackdropFX {
     }
 
     func render(_ c: GraphicsContext, t: Double) {
-        c.fill(Path(CGRect(x: 0, y: 0, width: w, height: h)), with: .color(RGB(hex: 0x0F1116).color()))
+        c.fill(Path(CGRect(x: 0, y: 0, width: w, height: h)), with: .color(BackdropRGB(hex: 0x0F1116).color()))
     }
 }
 
