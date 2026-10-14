@@ -1,7 +1,7 @@
 <title>fusionha Dark Palettes</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Mona+Sans:wdth,wght@75..125,400..900&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&family=Mona+Sans:wdth,wght@75..125,400..900&family=Inter+Tight:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 /* Layout: a page about dark palettes, so the page itself commits to one neutral dark look.
    A row of phones (one per palette) scrolls sideways inside its own track; notes sit under each. */
@@ -25,6 +25,7 @@
   --done: #34d399; --grab: #22d3ee; --miss: #f59e0b; --hd: #a78bfa; --uhd: #22d3ee; --anime: #f472b6; --danger: #f87171;
 }
 body { background: var(--page); color: var(--page-ink); font-family: var(--ui); }
+body[data-head="sf"] { --head: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter Tight", system-ui, sans-serif; --head-stretch: 100%; --head-weight: 800; --head-track: -.035em; }
 body[data-head="bricolage"] { --head: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif; --head-weight: 800; --head-track: -.02em; }
 .wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 48px;  display: grid; gap: 22px; }
 header { display: grid; gap: 10px; max-width: 70ch; }
@@ -156,7 +157,8 @@ footer { color: var(--page-mut); font-size: 13px; max-width: 75ch; line-height: 
     </div>
     <div class="seg" role="group" aria-label="Heading font">
       <button type="button" id="h-mona" data-head="mona" aria-pressed="true">Mona Sans Condensed</button>
-      <button type="button" id="h-bricolage" data-head="bricolage" aria-pressed="false">Bricolage (current)</button>
+      <button type="button" id="h-sf" data-head="sf" aria-pressed="false">SF Pro Display</button>
+      <button type="button" id="h-bricolage" data-head="bricolage" aria-pressed="false">Bricolage (old)</button>
     </div>
     <span class="hint">Scroll sideways to compare.</span>
   </div>
@@ -186,7 +188,7 @@ footer { color: var(--page-mut); font-size: 13px; max-width: 75ch; line-height: 
     </div>
   </section>
 
-  <footer>Every option keeps Liquid Glass on the tab bar, search and menus. Screen headings are shown in Mona Sans Condensed, the runner-up display face; the toggle above switches back to Bricolage. A palette is about twelve colour tokens in <code>Shared/Theme.swift</code>, so switching is one change. It could also become a choice in Settings › Appearance, like the web's accent themes.</footer>
+  <footer>Every option keeps Liquid Glass on the tab bar, search and menus. Screen headings are shown in Mona Sans Condensed (the app’s new heading face); the toggle above compares SF Pro Display Heavy (real SF Pro on Apple devices, Inter Tight elsewhere) and the old Bricolage. A palette is about twelve colour tokens in <code>Shared/Theme.swift</code>, so switching is one change. It could also become a choice in Settings › Appearance, like the web's accent themes.</footer>
 </div>
 
 <script>
