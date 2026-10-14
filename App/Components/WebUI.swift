@@ -26,7 +26,8 @@ extension View {
 struct PageHeader<Trailing: View>: View {
     let title: String
     var subtitle: String?
-    var stacked = false
+    /// Title above the subtitle (the redesign's layout, now the default).
+    var stacked = true
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
@@ -45,19 +46,19 @@ struct PageHeader<Trailing: View>: View {
         }
     }
 
+    /// The redesign's page title: Bricolage, 56pt, tight.
     private var titleText: some View {
         Text(title)
-            .font(.system(size: 21, weight: .bold))
-            .tracking(-0.42)
-            .foregroundStyle(Theme.txt)
+            .pageTitle(56)
             .lineLimit(1)
+            .minimumScaleFactor(0.7)
     }
 
     @ViewBuilder
     private var subtitleText: some View {
         if let subtitle {
             Text(subtitle)
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 15))
                 .foregroundStyle(Theme.mut)
                 .lineLimit(stacked ? 2 : 1)
         }

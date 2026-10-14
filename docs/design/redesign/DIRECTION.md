@@ -34,6 +34,7 @@ The owner's rule for this redesign: **no feature is lost.** This is a reskin and
 - [x] Activity: Queue · History · Blocklist · Tasks · Audit · Indexers, the bandwidth hero, section groups, progress with rate and ETA, held and stuck cards
 - [x] Calendar: Month · Week · Forecast · Day · Agenda, kind filters, ‹ Today ›, iCal feed
 - [x] Wanted, Discover, Settings, Interactive search, Add flow: unchanged structure, restyled by the tokens
+- [x] **The animated sign-in** (owner, 2026-10-14): the living logo and every login background (flow, web, hub, orbits, grid, aurora, gradient) stay; the redesign restyles around them.
 - [x] Toasts, the setup progress pill, the downloads accessory, the Live Activity and widgets
 
 The full web inventory (mobile and desktop) is in `before/FEATURES.md`, with screenshots in `before/` (stubbed data, placeholder posters).

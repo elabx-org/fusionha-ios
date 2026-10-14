@@ -204,13 +204,11 @@ struct CalendarView: View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 20, weight: .heavy))
-                    .tracking(-0.2)
-                    .foregroundStyle(Theme.txt)
+                    .pageTitle()
                     .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+                    .minimumScaleFactor(0.6)
                 Text(subline)
-                    .font(.system(size: 11.5))
+                    .font(.system(size: 15))
                     .foregroundStyle(Theme.mut)
             }
             filterChips

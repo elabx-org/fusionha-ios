@@ -256,10 +256,9 @@ struct WantedView: View {
 
     private var header: some View {
         let total = totals?.total ?? 0
-        return ActFlow(spacing: 12, lineSpacing: 4) {
+        return ActFlow(spacing: 12, lineSpacing: 8) {
             Text("Wanted")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(Theme.txt)
+                .pageTitle()
             (Text(total == 1 ? "1 wanted title" : "\(total) wanted titles")
              + Text(total > 0 ? " · \(count(.missing)) missing, \(count(.cutoff)) below cutoff, \(count(.upcoming)) upcoming\(fourkCount > 0 ? ", \(fourkCount) seen in 4K" : "")" : "")
                 .foregroundColor(Theme.dim))

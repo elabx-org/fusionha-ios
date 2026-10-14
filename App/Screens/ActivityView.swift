@@ -211,18 +211,11 @@ struct ActivityPageHeader: View {
         let held = model.queueHeld
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .center, spacing: 14) {
+                HStack(alignment: .lastTextBaseline, spacing: 14) {
                     Text("Activity")
-                        .font(.system(size: 22, weight: .bold))
-                        .tracking(-0.3)
-                        .foregroundStyle(Theme.txt)
+                        .pageTitle()
                         .lineLimit(1)
                         .fixedSize()
-                    Text(caption(held: held))
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.mut)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
                     Spacer(minLength: 0)
                     Button {
                         router.manualImport()
@@ -241,6 +234,11 @@ struct ActivityPageHeader: View {
                     .padding(.trailing, -5)
                     .accessibilityLabel("Manual import")
                 }
+                Text(caption(held: held))
+                    .font(.system(size: 15))
+                    .foregroundStyle(Theme.mut)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 if held > 0 {
                     // "Resolve all held (N)": one Manual import over every held download.
                     Button {
