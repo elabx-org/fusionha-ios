@@ -115,6 +115,9 @@ public struct ReleaseFacts: Decodable, Sendable, Hashable {
     public let audioLabel: String?
     public let isRepack: Bool?
     public let isProper: Bool?
+    /// The parsed season (packs) and year (movies).
+    public let season: Int?
+    public let year: Int?
 
     /// The chips in the web card's order: source/service, codec, HDR/DV,
     /// audio, edition, REPACK/PROPER, group. Languages are separate.

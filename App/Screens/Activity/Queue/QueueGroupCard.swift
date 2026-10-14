@@ -25,7 +25,8 @@ struct QueueGroupCard: View {
     /// Collapsed by default; remembered for this run (`QueueGroupMemory`).
     @State private var groupOpen: Bool?
 
-    private var isOpen: Bool { groupOpen ?? QueueGroupMemory.open.contains(group.id) }
+    /// A pair always shows its lanes; a group remembers being opened.
+    private var isOpen: Bool { group.isPair || (groupOpen ?? QueueGroupMemory.open.contains(group.id)) }
 
     var body: some View {
         let downloads = group.downloads
@@ -39,7 +40,7 @@ struct QueueGroupCard: View {
         let seasons = Dictionary(grouping: downloads) { season($0) }
         let isSeries = downloads.contains { $0.episodeLabel != nil }
         ActGroupCard(wash: QueueGroupSummary(group: group).heldIds.isEmpty ? Theme.grab : Theme.stuck, base: Theme.panel,
-                     defaultOpen: isOpen,
+                     defaultOpen: group.isPair || isOpen,
                      onToggle: { open in groupOpen = open; QueueGroupMemory.set(group.id, open: open) }) {
             ZStack(alignment: .bottomTrailing) {
                 ActPoster(url: lead.posterUrl, title: lead.title, size: .md)
@@ -163,8 +164,13 @@ struct QueueGroupCard: View {
                 .overlay(alignment: .leading) {
                     Capsule().fill(Theme.stuck).frame(width: 3).padding(.vertical, 10).offset(x: 5)
                 }
-        } else {
+        } else if selecting {
             compactRow(item)
+        } else {
+            // The full single-card data, without the poster and title (0.4.194).
+            QueueRowCard(item: item, telemetry: telemetry[item.id], soonest: false,
+                         actions: actionsFor(item), nested: true)
+                .padding(.horizontal, 6)
         }
     }
 

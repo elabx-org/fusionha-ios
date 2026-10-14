@@ -153,40 +153,66 @@ enum QueueLogic {
         return (working, failed)
     }
 
-    /// Downloads of one title and version (tier + edition) in one section
-    /// (fusionha's queue redesign). A title whose 4K and HD are one download
-    /// each stays one pair card instead (`editionId` nil).
+    /// Several downloads on one card (fusionha 0.4.194, `queue-groups.ts`):
+    /// a pair is one title + episode in two or more versions (4K + HD), a lane
+    /// each; a group is separate downloads of one title + version, collapsed by
+    /// default. `section` keys the remembered open state.
     struct Group: Identifiable {
         let mediaItemId: Int
-        let editionId: Int?
+        let isPair: Bool
+        let section: String
         var downloads: [QueueItem]
-        var id: String { "\(mediaItemId):\(editionId.map(String.init) ?? "pair")" }
-        /// Several versions of the title, one download each.
-        var isPair: Bool { editionId == nil }
+        var id: String {
+            isPair ? "pair:\(QueueLogic.pairKey(downloads[0]))"
+                : "group:\(section):\(mediaItemId):\(downloads[0].editionId)"
+        }
     }
 
-    static func group(_ items: [QueueItem]) -> [Group] {
-        var order: [String] = []
-        var map: [String: Group] = [:]
-        for item in items {
-            let key = "\(item.mediaItemId):\(item.editionId)"
-            if map[key] == nil {
-                map[key] = Group(mediaItemId: item.mediaItemId, editionId: item.editionId, downloads: [])
-                order.append(key)
-            }
-            map[key]?.downloads.append(item)
-        }
-        var groups = order.compactMap { map[$0] }
-        // The 4K + HD pair: every version of the title is a single download.
-        let byTitle = Dictionary(grouping: groups, by: \.mediaItemId)
-        for (title, versions) in byTitle where versions.count >= 2 && versions.allSatisfy({ $0.downloads.count == 1 }) {
-            guard let first = groups.firstIndex(where: { $0.mediaItemId == title }) else { continue }
-            let pair = Group(mediaItemId: title, editionId: nil, downloads: versions.flatMap(\.downloads))
-            groups.removeAll { $0.mediaItemId == title }
-            groups.insert(pair, at: min(first, groups.count))
-        }
-        return groups
+    /// Same title, same episode (a movie's is nil) and the same season or pack.
+    static func pairKey(_ i: QueueItem) -> String {
+        [String(i.mediaItemId), i.episodeId.map(String.init) ?? "m", i.episodeLabel ?? "",
+         i.parsed?.season.map(String.init) ?? ""].joined(separator: ":")
     }
+
+    /// `foldVersionPairs` then `foldDownloadGroups`; a lone download stays solo.
+    static func group(_ items: [QueueItem], section: String = "downloading") -> [Group] {
+        var out: [Group] = []
+        // Pairs: one title + episode in distinct versions.
+        let pairBuckets = Dictionary(grouping: items, by: pairKey)
+        var emitted = Set<String>()
+        var solos: [QueueItem] = []
+        var slots: [Either] = []
+        for item in items {
+            let key = pairKey(item)
+            let list = pairBuckets[key] ?? [item]
+            if list.count > 1, Set(list.map(\.editionId)).count == list.count {
+                if emitted.insert(key).inserted {
+                    slots.append(.pair(Group(mediaItemId: item.mediaItemId, isPair: true, section: section, downloads: list)))
+                }
+            } else {
+                solos.append(item)
+                slots.append(.solo(item))
+            }
+        }
+        // Groups: the remaining downloads of one title + version.
+        let versionKey = { (i: QueueItem) in "\(i.mediaItemId):\(i.editionId)" }
+        let groupBuckets = Dictionary(grouping: solos, by: versionKey)
+        var emittedGroups = Set<String>()
+        for slot in slots {
+            switch slot {
+            case .pair(let pair): out.append(pair)
+            case .solo(let item):
+                let key = versionKey(item)
+                let list = groupBuckets[key] ?? [item]
+                if emittedGroups.insert(key).inserted {
+                    out.append(Group(mediaItemId: item.mediaItemId, isPair: false, section: section, downloads: list))
+                }
+            }
+        }
+        return out
+    }
+
+    private enum Either { case solo(QueueItem), pair(Group) }
 
     enum Entry: Identifiable {
         case solo(QueueItem, eta: Double?)

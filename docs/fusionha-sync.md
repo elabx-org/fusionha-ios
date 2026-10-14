@@ -10,8 +10,8 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `c0d05d5e` |
-| fusionha release | **0.4.193** (2026-10-14, "episode-title check") |
+| fusionha commit | `9e947786` |
+| fusionha release | **0.4.194** (2026-10-14, "Activity queue redesign") |
 | Checked on | 2026-10-14 |
 | Previous sync | `50d785bb` / 0.4.190 (2026-10-14) |
 
@@ -45,9 +45,17 @@ Done:
   line and the strip summary. `keep_current_empty_slot` has copy. The
   season-level `numbering_mismatch` attention row needs nothing new.
 
-Next from the handover doc: the Activity queue redesign (grouping by title +
-version, collapsed groups, pair lanes, packs; no pack summary line or "Mixed"
-marker yet) and app-wide capsule buttons.
+- **0.4.194 Activity queue redesign.** `QueueLogic.group` ports
+  `queue-groups.ts`: one title + episode in several versions folds into a pair
+  card (always open), then separate downloads of one title + version into a
+  group card, collapsed by default and remembered per section for the run.
+  The header (`QueueGroupHeader`) has the version label, "N downloads · total",
+  the states summary in the web's order (failures red), an 8-code episode
+  strip and "Review all N / Review K held in Manual Import". Expanded rows are
+  full queue cards without poster or title. `has_multiple_editions` drives
+  "Standard". No pack summary line or "Mixed" marker yet (fusionha deferred them).
+
+Next from the handover doc: app-wide capsule buttons.
 
 ## 0.4.188 – 0.4.190
 
@@ -84,17 +92,15 @@ Still open from 0.4.187:
 
 ## Waiting on fusionha
 
-- `QueueRead.has_multiple_editions` (announced with the queue redesign);
-  decoded already, treated as false until it ships.
 - Per-device sessions (`GET /auth/sessions`, `POST /auth/sessions/revoke-others`,
   …): additive; a candidate for the Account page.
 - Monolith splits start after their requests Phase 7 merges.
 
 ## How to continue
 
-1. In the fusionha repo: `git log --first-parent --oneline c0d05d5e..origin/main` and read the
+1. In the fusionha repo: `git log --first-parent --oneline 9e947786..origin/main` and read the
    release commits (`release: 0.4.x — …`) for new screens, endpoints and copy.
-2. Diff the API: `git diff c0d05d5e origin/main -- backend/` (routes and
+2. Diff the API: `git diff 9e947786 origin/main -- backend/` (routes and
    schemas) and the web client under `frontend/src/` (routes, `lib/api`).
 3. Map each new screen or flow onto `docs/ui-plan.md` and build it in the
    redesign (`docs/design/redesign/DIRECTION.md`).

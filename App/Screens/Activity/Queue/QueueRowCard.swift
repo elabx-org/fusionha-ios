@@ -8,6 +8,9 @@ struct QueueRowCard: View {
     let telemetry: QueueTelemetry?
     let soonest: Bool
     let actions: QueueRowActions
+    /// A row of a group or pair card: no poster, and the episode (or the
+    /// version) leads, since the card's header carries the title.
+    var nested = false
     @Environment(\.actReduceMotion) private var reduce
 
     var body: some View {
@@ -16,9 +19,9 @@ struct QueueRowCard: View {
         let fill: Color = state == .importing ? Theme.indigo : (state == .stalled ? Theme.miss : Theme.grab)
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 12) {
-                PosterRing(item: item, pct: pct)
+                if !nested { PosterRing(item: item, pct: pct) }
                 VStack(alignment: .leading, spacing: 4) {
-                    QueueHead(item: item, chip: state == .stalled ? ("Stalled", Theme.miss) : nil)
+                    QueueHead(item: item, chip: state == .stalled ? ("Stalled", Theme.miss) : nil, showTitle: !nested)
                     ReleaseLine(text: item.releaseTitle)
                     QueueFacts(item: item)
                     QueueMetaLine(item: item)
@@ -65,7 +68,8 @@ struct QueueRowCard: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .actWash(QueueLogic.wash(item), border: soonest ? Theme.grab.opacity(0.45) : Theme.line)
+        .actWash(QueueLogic.wash(item), base: nested ? .clear : Theme.card,
+                 border: nested ? .clear : (soonest ? Theme.grab.opacity(0.45) : Theme.line))
         .shadow(color: soonest ? Theme.grab.opacity(0.18) : .clear, radius: 10)
         .accessibilityElement(children: .contain)
     }

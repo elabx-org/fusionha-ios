@@ -23,7 +23,7 @@ struct QueueGroupSummary {
     /// "4 downloads · 4.7 GB total".
     var countLine: String {
         let noun = group.isPair ? "versions" : "downloads"
-        let size = downloads.reduce(0) { $0 + $1.size }
+        let size = downloads.reduce(0) { $0 + max(0, $1.size) }
         return "\(downloads.count) \(noun) · \(ActFmt.bytes(size)) total"
     }
 
@@ -32,26 +32,35 @@ struct QueueGroupSummary {
         let failure: Bool
     }
 
-    /// "1 downloading · 1 held · 1 importing"; a failure is its own red part.
+    /// The states summary, failures first (`group-model.ts`): "1 failed · 3 held".
     var states: [StatePart] {
-        let order: [(QueueCockpitState, String)] = [
-            (.downloading, "downloading"), (.awaiting, "waiting"), (.stalled, "stalled"),
-            (.held, "held"), (.stuck, "need a look"), (.importing, "importing"), (.queued, "queued"),
-        ]
-        var parts: [StatePart] = []
-        let failed = downloads.filter { $0.lane == .retrying || $0.outcome == "failed" }.count
-        if failed > 0 { parts.append(StatePart(text: "\(failed) failed", failure: true)) }
-        for (state, word) in order {
-            let n = downloads.filter { $0.cockpitState == state }.count
-            if n > 0 { parts.append(StatePart(text: "\(n) \(word)", failure: false)) }
+        func mode(_ i: QueueItem) -> String {
+            if i.outcome == "failed" || (i.phaseTerminal == true && i.phase != nil && i.phase != "complete") { return "failed" }
+            if i.lane == .retrying { return "retrying" }
+            switch i.cockpitState {
+            case .stuck: return "stuck"
+            case .held: return "held"
+            case .awaiting: return "waiting"
+            case .stalled: return "stalled"
+            case .importing: return "importing"
+            case .queued: return "queued"
+            case .downloading: return i.isPhaseMode ? "in progress" : "downloading"
+            }
         }
-        return parts
+        let order = ["failed", "stuck", "held", "retrying", "waiting", "stalled", "downloading", "in progress", "importing", "queued"]
+        let counts = Dictionary(grouping: downloads, by: mode).mapValues(\.count)
+        return order.compactMap { m in
+            counts[m].map { StatePart(text: "\($0) \(m)", failure: m == "failed" || m == "stuck") }
+        }
     }
 
-    /// "S06E04 · S06E05 · S06E17"; nil for movies.
+    /// "S06E04 · S06E05 · S06E17", at most 8 then "+N"; a pack's "S02" stays; nil for movies.
     var episodeStrip: String? {
-        let codes = downloads.compactMap { $0.episodeLabel?.components(separatedBy: " · ").first }
-        return codes.isEmpty ? nil : codes.joined(separator: " · ")
+        let codes = downloads.compactMap { $0.episodeLabel?.components(separatedBy: " · ").first?
+            .trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        guard !codes.isEmpty else { return nil }
+        let more = codes.count - 8
+        return codes.prefix(8).joined(separator: " · ") + (more > 0 ? " · +\(more)" : "")
     }
 
     var heldIds: [Int] { downloads.filter { $0.cockpitState == .held }.map(\.id) }
