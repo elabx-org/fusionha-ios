@@ -13,6 +13,8 @@ enum Theme {
     /// registers the view with `PaletteStore`, so it redraws on a switch.
     static var palette: PaletteTokens { PaletteStore.shared.active.tokens }
     static var isLight: Bool { palette.isLight }
+    /// Monochrome: status as shade and pattern (`MonoStatusFill`), not hue.
+    static var isMono: Bool { palette.isMono }
 
     // Ground, shelf objects and ink.
     static var bg: Color { Color(hex: palette.bg) }
@@ -185,14 +187,16 @@ struct EditionChip: View {
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
+        let mono = Theme.isMono
         let tint = status?.color ?? tier.color
         Text(tier.chipLabel)
             .font(.caption2.monospaced().weight(.semibold))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .foregroundStyle(tint)
-            .background(tint.opacity(0.14), in: Capsule())
-            .overlay(Capsule().strokeBorder(tint.opacity(0.35), lineWidth: Self.hairline(displayScale)))
+            // Monochrome: HD outlined, 4K solid (no hue to tell them apart).
+            .foregroundStyle(mono ? (tier == .uhd ? Theme.bg : Theme.txt) : tint)
+            .background(mono ? (tier == .uhd ? Theme.txt : .clear) : tint.opacity(0.14), in: Capsule())
+            .overlay(Capsule().strokeBorder(mono ? Theme.txt.opacity(0.9) : tint.opacity(0.35), lineWidth: Self.hairline(displayScale)))
             .accessibilityLabel("\(tier.chipLabel)\(status.map { ", \($0.label)" } ?? "")")
     }
 

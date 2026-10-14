@@ -19,3 +19,4 @@ extension View {
             .shadow(color: .black.opacity(shadow ? 0.9 : 0), radius: shadow ? 11 : 0, y: shadow ? 12 : 0)
     }
 }
+

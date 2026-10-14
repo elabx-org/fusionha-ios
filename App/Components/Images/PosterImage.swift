@@ -32,7 +32,7 @@ struct PosterImage: View {
             if let image {
                 Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
                     .hidden()
-                    .overlay { PosterArt(image: image, fade: fade) }
+                    .overlay { PosterArt(image: PosterWashRenderer.washed(image), fade: fade) }
                     .background { placeholder }
             } else {
                 placeholder

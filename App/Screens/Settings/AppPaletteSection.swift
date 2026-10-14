@@ -21,6 +21,14 @@ struct AppPaletteSection: View {
                 row(palette, selected: store.darkPalette == palette, showing: store.active == palette) { store.select(palette) }
             }
         }
+        if store.darkPalette == .monochrome {
+            SettingsSection("Poster wash", footer: "How Monochrome shows poster art. Other palettes always show posters in colour.") {
+                Picker("Poster wash", selection: Binding(get: { store.posterWash }, set: { store.select(wash: $0) })) {
+                    ForEach(PosterWash.allCases) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.segmented)
+            }
+        }
         SettingsSection("Light palettes") {
             ForEach(AppPalette.light) { palette in
                 row(palette, selected: store.lightPalette == palette, showing: store.active == palette) { store.select(palette) }

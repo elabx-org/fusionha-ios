@@ -171,7 +171,7 @@ footer { color: var(--page-mut); font-size: 13px; max-width: 75ch; line-height: 
   </section>
 
   <section class="band">
-    <div class="bandhead"><h3>Monochrome: status by shade and pattern</h3><p>No status colours at all. Each state keeps its own look through brightness, gradient and texture: done is a lit white bar, downloading a moving stripe, wanted dotted, upcoming an outline, failed a hatched bar with a mark. HD is an outlined chip and 4K a solid one. The key compares it with Aurora's colours.</p></div>
+    <div class="bandhead"><h3>Monochrome: status by shade and pattern (being added)</h3><p>No status colours at all. Each state keeps its own look through brightness, gradient and texture: done is a lit white bar, downloading a moving stripe, wanted dotted, upcoming an outline, failed a hatched bar with a mark. HD is an outlined chip and 4K a solid one. The key compares it with Aurora's colours.</p></div>
     <div class="controls">
       <div class="seg" role="group" aria-label="Poster wash">
         <button type="button" id="w-grey" data-wash="grey" aria-pressed="true">Greyscale posters</button>
@@ -356,7 +356,7 @@ function render() {
   }).join("");
   const mvars = Object.entries(MONO.t).map(([k,v]) => `--${k}:${v}`).join(";");
   document.getElementById("row3").innerHTML = ["library","activity"].map(sc => `<section class="col" aria-label="Monochrome, ${sc}">
-      <div class="name"><h2>Monochrome · ${sc === "library" ? "Library" : "Activity"}</h2><span class="tag rec">New · idea</span></div>
+      <div class="name"><h2>Monochrome · ${sc === "library" ? "Library" : "Activity"}</h2><span class="tag rec">Adding</span></div>
       <div class="phone mchrome" style="${mvars}">${sc === "library" ? library() : activity()}</div></section>`).join("");
   document.getElementById("legend").innerHTML = legend();
   document.querySelectorAll("[data-screen]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.screen === screen)));

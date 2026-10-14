@@ -276,7 +276,7 @@ jobs:
           }
           S=http://127.0.0.1:8765
           # The app palettes (Settings › Appearance) on the main screens.
-          for P in graphite oled noir aurora frost eclipse daylight; do
+          for P in graphite oled noir aurora frost eclipse monochrome daylight; do
             PAL=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$P
             shoot palette-$P-library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library $PAL
             shoot palette-$P-activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity $PAL

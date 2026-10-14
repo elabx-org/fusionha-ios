@@ -14,12 +14,13 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
     case aurora
     case frost
     case eclipse
+    case monochrome
     case daylight
     case noir
 
     var id: String { rawValue }
 
-    static let dark: [AppPalette] = [.aurora, .graphite, .oled, .noir, .frost, .eclipse]
+    static let dark: [AppPalette] = [.aurora, .graphite, .oled, .noir, .frost, .eclipse, .monochrome]
     static let light: [AppPalette] = [.daylight]
 
     var isLight: Bool { tokens.isLight }
@@ -31,6 +32,7 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
         case .aurora: return "Aurora"
         case .frost: return "Frost"
         case .eclipse: return "Eclipse"
+        case .monochrome: return "Monochrome"
         case .daylight: return "Daylight"
         case .noir: return "Noir"
         }
@@ -43,6 +45,7 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
         case .aurora: return "The main theme, as on the web: cool ink, indigo to cyan, and the full status colours."
         case .frost: return "Blue-black slate with a frosted, pale-blue light."
         case .eclipse: return "Ink black lit by a sunset corona, coral to magenta to violet."
+        case .monochrome: return "No colour at all: status shows as shade and pattern, and posters can be washed too."
         case .daylight: return "The web app's light theme with the indigo accent."
         case .noir: return "Black and white at full contrast: white type and hairlines on black, like a film title card."
         }
@@ -55,8 +58,22 @@ enum AppPalette: String, CaseIterable, Identifiable, Sendable {
         case .aurora: return .aurora
         case .frost: return .frost
         case .eclipse: return .eclipse
+        case .monochrome: return .monochrome
         case .daylight: return .daylight
         case .noir: return .noir
+        }
+    }
+}
+
+/// How Monochrome treats poster art (other palettes always show it in colour).
+enum PosterWash: String, CaseIterable, Identifiable, Sendable {
+    case greyscale, soft, colour
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .greyscale: return "Greyscale"
+        case .soft: return "Soft wash"
+        case .colour: return "Full colour"
         }
     }
 }
@@ -104,6 +121,8 @@ struct PaletteTokens: Sendable {
     var danger: UInt32 = 0xF87171
     /// An optional middle stop for the primary fill (Eclipse's three-colour corona).
     var primaryVia: UInt32? = nil
+    /// Monochrome: status is drawn as shade and pattern (rails, tier chips) instead of hue.
+    var isMono = false
 
     static let graphite = PaletteTokens(
         isLight: false, bg: 0x0E0F13, panel: 0x16181E, panel2: 0x1D2028, line: 0xFFFFFF, lineOpacity: 0.08,
@@ -141,6 +160,13 @@ struct PaletteTokens: Sendable {
         primaryFrom: 0x4F46E5, primaryTo: 0x6366F1, onPrimary: 0xFFFFFF, onAccent: 0xFFFFFF,
         done: 0x047857, grab: 0x0E7490, miss: 0xB45309, unaired: 0x1D4ED8, unmonitored: 0x6B7280, onair: 0xA16207, premiere: 0x4F46E5, stuck: 0xC2410C, edition: 0x6D28D9, anime: 0xBE185D, danger: 0xB91C1C)
 
+    static let monochrome = PaletteTokens(
+        isLight: false, bg: 0x0A0A0A, panel: 0x141414, panel2: 0x1C1C1C, line: 0xFFFFFF, lineOpacity: 0.10,
+        txt: 0xF2F2F2, mut: 0xA6A6A6, dim: 0x707070, i1: 0xD9D9D9, i2: 0xFFFFFF,
+        primaryFrom: 0xFFFFFF, primaryTo: 0xD4D4D4, onPrimary: 0x000000, onAccent: 0x000000,
+        done: 0xF2F2F2, grab: 0xF2F2F2, miss: 0xBDBDBD, unaired: 0xD9D9D9, unmonitored: 0x707070, onair: 0xE0E0E0, premiere: 0xD0D0D0, stuck: 0xCFCFCF, edition: 0xF2F2F2, anime: 0xD0D0D0, danger: 0xF2F2F2,
+        isMono: true)
+
     static let noir = PaletteTokens(
         isLight: false, bg: 0x000000, panel: 0x000000, panel2: 0x0E0E0E, line: 0xFFFFFF, lineOpacity: 0.22,
         txt: 0xFFFFFF, mut: 0xC7C7C7, dim: 0x8A8A8A, i1: 0xFFFFFF, i2: 0xFFFFFF,
@@ -165,6 +191,7 @@ final class PaletteStore {
     private static let paletteKey = "app_palette"
     private static let lightKey = "app_palette_light"
     private static let appearanceKey = "app_appearance"
+    private static let washKey = "app_poster_wash"
     private static var defaults: UserDefaults { UserDefaults(suiteName: CredentialStore.appGroup) ?? .standard }
 
     /// The dark palette (used for Dark, and at night with Automatic).
@@ -172,6 +199,8 @@ final class PaletteStore {
     /// The light palette (used for Light, and by day with Automatic).
     private(set) var lightPalette: AppPalette
     private(set) var appearance: AppAppearance
+    /// Monochrome's poster treatment.
+    private(set) var posterWash: PosterWash
     /// What the system is showing, for Automatic.
     private(set) var systemIsLight = false
     /// The palette on screen now.
@@ -196,6 +225,7 @@ final class PaletteStore {
             if forced.isLight { light = forced; mode = .light } else { dark = forced; mode = .dark }
         }
         #endif
+        posterWash = PosterWash(rawValue: d.string(forKey: Self.washKey) ?? "") ?? .greyscale
         darkPalette = dark
         lightPalette = light
         appearance = mode
@@ -238,6 +268,11 @@ final class PaletteStore {
         apply()
     }
 
+    func select(wash: PosterWash) {
+        posterWash = wash
+        Self.defaults.set(wash.rawValue, forKey: Self.washKey)
+    }
+
     func setSignInShowing(_ on: Bool) {
         guard signInShowing != on else { return }
         signInShowing = on
@@ -255,6 +290,7 @@ final class PaletteStore {
         let fresh = PaletteStore()
         darkPalette = fresh.darkPalette
         lightPalette = fresh.lightPalette
+        posterWash = fresh.posterWash
         appearance = fresh.appearance
         apply()
     }

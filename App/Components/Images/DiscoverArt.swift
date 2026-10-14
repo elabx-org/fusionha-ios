@@ -23,7 +23,7 @@ struct DiscoverArt: View {
             }
             .overlay {
                 if let image {
-                    Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
+                    Image(uiImage: PosterWashRenderer.washed(image)).resizable().aspectRatio(contentMode: .fill)
                         .blur(radius: shown ? 0 : 6)
                         .opacity(shown ? 1 : 0)
                 }

@@ -219,7 +219,7 @@ struct RailBar: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                if state == .upcoming && !attention {
+                if state == .upcoming && !attention && !Theme.isMono {
                     Stripes(color: Theme.unaired.opacity(0.22))
                 } else {
                     Capsule().fill(Theme.txt.opacity(0.1))
@@ -236,7 +236,9 @@ struct RailBar: View {
 
     @ViewBuilder
     private var fill: some View {
-        if combo {
+        if Theme.isMono {
+            MonoRailFill(status: MonoStatus(state, attention: attention))
+        } else if combo {
             Capsule().fill(LinearGradient(colors: [Theme.edition, Theme.grab], startPoint: .leading, endPoint: .trailing))
         } else if state == .downloading && !attention {
             Capsule().fill(LinearGradient(colors: [Theme.grab, Theme.grab.opacity(0.3)], startPoint: .leading, endPoint: .trailing))
