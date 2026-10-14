@@ -11,26 +11,54 @@ enum ActButtonKind { case primary, subtle, ghost, danger, warn, amber }
 struct ActButtonStyle: ButtonStyle {
     var kind: ActButtonKind = .subtle
     var small = true
+    /// 0…1: the capsule fills left to right (work with known progress).
+    var fill: Double? = nil
+    /// Overrides the text colour for a moment (a failed action's red).
+    var tint: Color? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var height: CGFloat { small ? 32 : 36 }
+    /// Glass reacts to touch itself (`.interactive()`); only solid capsules
+    /// get the 0.97 press, so nothing presses twice.
+    private var glass: Bool { [.subtle, .danger, .warn].contains(kind) }
 
     @ViewBuilder
     func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed && !glass
         let label = configuration.label
             .font(.system(size: small ? 13 : 14, weight: .semibold))
             .lineLimit(1)
             .padding(.horizontal, small ? 12 : 16)
-            .frame(minHeight: small ? 32 : 36)
-            .foregroundStyle(foreground)
-            .contentShape(Capsule())
-            // fusionha 0.4.195: press = scale 0.97 + dim; dim only with Reduce Motion.
-            .opacity(configuration.isPressed ? 0.8 : 1)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
-            .animation(reduceMotion ? nil : .snappy(duration: 0.15), value: configuration.isPressed)
-        switch kind {
-        case .primary: label.background(Theme.fusion, in: Capsule())
-        case .amber: label.background(Theme.miss, in: Capsule())
-        case .ghost: label
-        case .subtle, .danger, .warn: label.glassEffect(.regular.interactive(), in: Capsule())
+            .frame(minHeight: height)
+            .foregroundStyle(tint ?? foreground)
+            .background(alignment: .leading) { fillBar }
+        Group {
+            switch kind {
+            case .primary: label.background(Theme.fusion, in: Capsule())
+            case .amber: label.background(Theme.miss, in: Capsule())
+            case .ghost: label
+            case .subtle, .danger, .warn: label.glassEffect(.regular.interactive(), in: Capsule())
+            }
+        }
+        // fusionha 0.4.195: press = scale 0.97 + dim; dim only with Reduce Motion.
+        .opacity(pressed ? 0.8 : 1)
+        .scaleEffect(pressed && !reduceMotion ? 0.97 : 1)
+        .animation(reduceMotion ? nil : .snappy(duration: 0.15), value: pressed)
+        // A 44pt touch target around the drawn capsule, without moving the layout.
+        .padding(.vertical, (44 - height) / 2)
+        .contentShape(Rectangle())
+        .padding(.vertical, -(44 - height) / 2)
+    }
+
+    @ViewBuilder
+    private var fillBar: some View {
+        if let fill {
+            GeometryReader { geo in
+                Rectangle().fill(foreground.opacity(0.18))
+                    .frame(width: geo.size.width * min(max(fill, 0), 1))
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: fill)
+            }
+            .clipShape(Capsule())
         }
     }
 
@@ -46,7 +74,7 @@ struct ActButtonStyle: ButtonStyle {
     }
 }
 
-/// The row action button: a 32pt glass circle in a 40pt tap target.
+/// The row action button: a 32pt glass circle in a 44pt tap target.
 struct ActIconButton: View {
     let systemImage: String
     let label: String
@@ -67,7 +95,9 @@ struct ActIconButton: View {
             .frame(width: 32, height: 32)
             .glassEffect(.regular.interactive(), in: Circle())
             .frame(width: 40, height: 40)
+            .padding(2)
             .contentShape(Rectangle())
+            .padding(-2)
         }
         .buttonStyle(.plain)
         .disabled(busy)

@@ -133,9 +133,9 @@ struct ActivityBlocklistTab: View {
                      + Text(" may have recovered — retry to re-check the source"))
                         .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
                     Spacer(minLength: 0)
-                    Button("Retry recoverable") { Task { await retryRecoverable() } }
-                        .buttonStyle(ActButtonStyle(kind: .amber))
-                        .disabled(busy)
+                    ActAsyncButton(label: "Retry recoverable", kind: .amber, externalWorking: busy) {
+                        await retryRecoverable(); return true
+                    }
                 }
             }
         }

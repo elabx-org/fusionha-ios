@@ -83,7 +83,7 @@ struct ManualImportSheet: View {
             ContentUnavailableView {
                 Label("Couldn't open the files", systemImage: "exclamationmark.triangle")
             } description: { Text(error) } actions: {
-                Button("Try again") { Task { await session.retryStart() } }.buttonStyle(ActButtonStyle(kind: .primary))
+                ActAsyncButton(label: "Try again", kind: .primary) { await session.retryStart(); return session.loadError == nil }
                 Button("Open on the web") { dismiss(); onOpenWeb() }.buttonStyle(ActButtonStyle(kind: .ghost))
             }
         } else {

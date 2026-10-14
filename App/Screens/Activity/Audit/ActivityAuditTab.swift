@@ -91,8 +91,7 @@ struct ActivityAuditTab: View {
             if loadingMore {
                 Text("Loading more…")
             } else if hasMore {
-                Button("Load older") { Task { await loadOlder() } }
-                    .buttonStyle(ActButtonStyle(kind: .ghost))
+                ActAsyncButton(label: "Load older", kind: .ghost) { await loadOlder(); return true }
             } else {
                 Text("You’ve reached the end · \(items.count.formatted()) loaded")
             }

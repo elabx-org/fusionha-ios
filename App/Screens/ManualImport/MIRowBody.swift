@@ -148,8 +148,11 @@ struct MIRowDecision: View {
     }
 
     private func action(_ label: String, primary: Bool, _ fields: @escaping () -> [String: SettingsJSON]) -> some View {
-        Button(label) { Task { await session.patch(row, fields()) } }
-            .buttonStyle(ActButtonStyle(kind: primary ? .primary : .subtle))
-            .disabled(session.pendingRows.contains(row.rowId))
+        ActAsyncButton(label: label, kind: primary ? .primary : .subtle) {
+            await session.patch(row, fields())
+            return session.rowErrors[row.rowId] == nil
+        }
+        // The tapped button shows the work; the row's others wait.
+        .disabled(session.pendingRows.contains(row.rowId))
     }
 }

@@ -21,10 +21,8 @@ struct MIHeldStripView: View {
             }
             if strip.bulkEligible > 0 {
                 HStack(spacing: 8) {
-                    Button("Keep all current", systemImage: "internaldrive") { Task { await session.bulkHeld("keep_current") } }
-                        .buttonStyle(ActButtonStyle(kind: .subtle))
-                    Button("Import all", systemImage: "arrow.down") { Task { await session.bulkHeld("import") } }
-                        .buttonStyle(ActButtonStyle(kind: .subtle))
+                    ActAsyncButton(label: "Keep all current", systemImage: "internaldrive") { await bulk("keep_current") }
+                    ActAsyncButton(label: "Import all", systemImage: "arrow.down") { await bulk("import") }
                 }
                 .disabled(session.bulkBusy || session.working)
                 .padding(.leading, 26)
@@ -36,6 +34,12 @@ struct MIHeldStripView: View {
         .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.miss.opacity(0.25)))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Held download")
+    }
+
+    /// Worked when no row the bulk touched came back with an error.
+    private func bulk(_ choice: String) async -> Bool {
+        await session.bulkHeld(choice)
+        return session.rows.allSatisfy { session.rowErrors[$0.rowId] == nil }
     }
 }
 
@@ -73,15 +77,13 @@ struct MIFooter: View {
                     .accessibilityLabel("Import mode, \(session.importMode.label)")
                 }
                 Spacer(minLength: 0)
-                Button { Task { await session.runPrimary() } } label: {
-                    HStack(spacing: 6) {
-                        if session.working { ProgressView().controlSize(.small).tint(Theme.onPrimary) }
-                        else { Image(systemName: plan.kind == .keep ? "internaldrive" : "square.and.arrow.down") }
-                        Text(session.working ? (plan.finishes ? "Working…" : "Importing…") : plan.label)
-                    }
+                ActAsyncButton(label: plan.label, systemImage: plan.kind == .keep ? "internaldrive" : "square.and.arrow.down",
+                               kind: .primary, workingLabel: plan.finishes ? "Working…" : "Importing…",
+                               externalWorking: session.working) {
+                    await session.runPrimary()
+                    return session.notice?.error != true
                 }
-                .buttonStyle(ActButtonStyle(kind: .primary))
-                .disabled(plan.disabled || session.working || session.bulkBusy)
+                .disabled(plan.disabled || session.bulkBusy)
                 .opacity(plan.disabled ? 0.5 : 1)
             }
             if session.showBlocklist {

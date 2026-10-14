@@ -86,17 +86,12 @@ struct MINoteButton: View {
     @Environment(ManualImportSession.self) private var session
 
     var body: some View {
-        Button { Task { await session.patch(row, fields()) } } label: {
-            HStack(spacing: 6) {
-                Text(label)
-                if recommended {
-                    Text("Recommended").font(.caption2.weight(.bold))
-                        .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background(Theme.onPrimary.opacity(0.2), in: Capsule())
-                }
-            }
+        ActAsyncButton(label: label, kind: recommended ? .primary : .subtle,
+                       badge: recommended ? "Recommended" : nil) {
+            await session.patch(row, fields())
+            return session.rowErrors[row.rowId] == nil
         }
-        .buttonStyle(ActButtonStyle(kind: recommended ? .primary : .subtle))
+        // The tapped button shows the work; the row's others wait.
         .disabled(session.pendingRows.contains(row.rowId))
         .accessibilityLabel((accessibility ?? label) + (recommended ? ", recommended" : ""))
     }
