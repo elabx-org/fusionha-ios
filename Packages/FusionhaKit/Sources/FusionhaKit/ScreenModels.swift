@@ -492,10 +492,10 @@ public struct MediaRequest: Decodable, Sendable, Identifiable, Hashable {
     public let reason: String?
     // Requests revamp (fusionha phases 1–7, `RequestRevampModels.swift`); all
     // optional so an older server still decodes.
-    public let tiers: [QualityTier]?
     public let decidedAt: String?
     public let quotaExceeded: Bool?
     public let joined: Bool?
+    public let joinedRequestId: Int?
     public let title: String?
     public let year: Int?
     public let poster: String?

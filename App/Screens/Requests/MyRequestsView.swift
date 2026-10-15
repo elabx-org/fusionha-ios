@@ -51,7 +51,7 @@ struct MyRequestsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if let quota { RequestQuotaMeter(quota: quota) }
-            DiscoverSegmented(options: Filter.allCases.map { f in
+            DiscoverSegmented(options: Filter.allCases.map { f -> (Filter, String) in
                 (f, f.count(counts).map { $0 > 0 ? "\(f.title) \($0)" : f.title } ?? f.title)
             }, selection: $filter, fullTrack: true)
             content

@@ -70,7 +70,7 @@ struct RequestThreadSheet: View {
                     .font(.system(size: 18))
                     .foregroundStyle(Theme.txt)
                 HStack(spacing: 6) {
-                    ForEach(request.tiers ?? [request.tier], id: \.self) { ActTierChip(tier: $0) }
+                    ForEach(request.tiers, id: \.self) { ActTierChip(tier: $0) }
                     if joinedView {
                         Text("Joined · \(request.demand?.count ?? 1) asked")
                             .font(.system(size: 11.5, weight: .semibold))

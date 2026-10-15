@@ -73,7 +73,7 @@ struct RequestCardView: View {
 
     private var metaLine: some View {
         HStack(spacing: 6) {
-            ForEach(request.tiers ?? [request.tier], id: \.self) { ActTierChip(tier: $0) }
+            ForEach(request.tiers, id: \.self) { ActTierChip(tier: $0) }
             Text("·").foregroundStyle(Theme.dim)
             Text(RequestLifecycle.kindLabel(request))
             if let at = request.requestedAt.flatMap(ServerTime.parse) {

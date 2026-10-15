@@ -303,14 +303,20 @@ public struct RequestCreateBody: Encodable, Sendable {
     public let seasons: [Int]
     public let episodes: [EpisodeRef]
     public let note: String?
+    /// Only join someone else's request (a join is never charged).
+    public var join: Bool
+    /// Over quota: keep it as WAITING, requested when the quota resets.
+    public var wishlist: Bool
     public init(tmdbId: Int, kind: MediaKind, editions: [QualityTier], seasons: [Int] = [],
-                episodes: [EpisodeRef] = [], note: String? = nil) {
+                episodes: [EpisodeRef] = [], note: String? = nil, join: Bool = false, wishlist: Bool = false) {
         self.tmdbId = tmdbId
         self.kind = kind
         self.editions = editions
         self.seasons = seasons
         self.episodes = episodes
         self.note = note
+        self.join = join
+        self.wishlist = wishlist
     }
 }
 

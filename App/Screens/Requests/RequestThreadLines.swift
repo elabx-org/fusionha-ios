@@ -15,7 +15,7 @@ struct RequestStatusTimeline: View {
             stop(.done(Theme.mut), title: Text("Requested"),
                  sub: [request.requester?.displayName, ActFmt.relative(request.requestedAt)].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
             if let by = request.approvedBy {
-                let tiers = (request.tiers ?? [request.tier]).map(\.chipLabel).joined(separator: " + ")
+                let tiers = (request.tiers).map(\.chipLabel).joined(separator: " + ")
                 stop(.done(Theme.i1),
                      title: Text(by.kind == "auto" ? RequestLifecycle.autoText(by) : "Approved by \(by.displayName ?? "an admin")"),
                      sub: [ActFmt.relative(request.decidedAt), tiers].filter { !$0.isEmpty }.joined(separator: " · "))

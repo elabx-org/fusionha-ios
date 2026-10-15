@@ -6,7 +6,6 @@ import FusionhaKit
 struct RequestModal: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let pick: MediaSearchResult
     let onDone: () -> Void
 
@@ -16,22 +15,30 @@ struct RequestModal: View {
     @State private var selectedTiers: Set<QualityTier> = []
     @State private var selSeasons: Set<Int> = []
     @State private var selEpisodes: Set<EpisodeRef> = []
-    @State private var openSeasons: Set<Int> = []
-    @State private var episodeTitles: [Int: [Int: String]] = [:]
     @State private var note = ""
     @State private var sending = false
     @State private var previewLoaded = false
+    @State private var demand: RequestTitleDemand?
+    @State private var quota: RequestQuota?
+    /// The ask the server refused for quota; non-nil shows the wishlist prompt.
+    @State private var blocked: RequestCreateBody?
 
     private var isSeries: Bool { pick.kind == .series }
+    /// The versions on offer: the server's per-viewer demand list (join, Watch
+    /// or a new ask) when it answered, else the offerable set.
+    private var offerTiers: [QualityTier] {
+        guard let offer else { return [] }
+        return RequestOffer.tiers(demand: demand, fallback: offer.isAuto ? offer.autoEditions : offer.editions)
+    }
     private var editionsToSend: [QualityTier] {
         guard let offer else { return [] }
-        if offer.isAuto { return offer.autoEditions }
-        return [QualityTier.hd, .uhd].filter { selectedTiers.contains($0) }
+        return offer.isAuto ? offerTiers : offerTiers.filter { selectedTiers.contains($0) }
     }
-    private var nothingOfferable: Bool {
-        guard let offer else { return false }
-        return offer.isAuto ? offer.autoEditions.isEmpty : offer.editions.isEmpty
+    private var picks: [(tier: QualityTier, act: RequestOffer.Act)] {
+        editionsToSend.map { ($0, RequestOffer.act(demand, tier: $0)) }
     }
+    private var joinTiers: [QualityTier] { picks.filter { $0.act == .join }.map(\.tier) }
+    private var nothingOfferable: Bool { offer != nil && offerTiers.isEmpty }
     private var canSubmit: Bool { offer != nil && !nothingOfferable && !editionsToSend.isEmpty && !sending }
 
     var body: some View {
@@ -64,10 +71,14 @@ struct RequestModal: View {
         guard let client = model.client else { return }
         async let offerCall = client.offerableEditions(kind: pick.kind, tmdbId: pick.tmdbId)
         async let previewCall = client.previewDetail(kind: pick.previewKind, tmdbId: pick.tmdbId)
+        async let demandCall = try? client.requestDemand(kind: pick.kind, tmdbIds: [pick.tmdbId])
+        async let quotaCall = try? client.requestQuota()
         do {
             let loaded = try await offerCall
+            demand = await demandCall?.first { $0.tmdbId == pick.tmdbId }
+            quota = await quotaCall
             offer = loaded
-            if !loaded.isAuto { selectedTiers = Set(loaded.editions) }
+            selectedTiers = Set(offerTiers)
         } catch {
             offerFailed = true
         }
@@ -139,27 +150,31 @@ struct RequestModal: View {
 
     private var optionsPane: some View {
         VStack(alignment: .leading, spacing: 20) {
+            if demand?.state == "me_too", let asked = demand?.asked { RequestDemandBanner(asked: asked) }
             VStack(alignment: .leading, spacing: 10) {
-                DialogSectionLabel(text: "Editions")
+                DialogSectionLabel(text: "Versions")
                 editions
             }
             if isSeries {
                 VStack(alignment: .leading, spacing: 10) {
                     DialogSectionLabel(text: "Seasons & episodes")
-                    seasons
+                    RequestSeasonPicker(pick: pick, preview: preview, loaded: previewLoaded,
+                                        selSeasons: $selSeasons, selEpisodes: $selEpisodes)
                 }
             }
-            VStack(alignment: .leading, spacing: 10) {
-                DialogSectionLabel(text: "Note for the approver", trailing: "optional")
-                TextField("", text: $note, prompt: Text("Anything the approver should know…").foregroundStyle(Theme.dim),
-                          axis: .vertical)
-                    .lineLimit(3...6)
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.txt)
-                    .padding(11)
-                    .frame(minHeight: 64, alignment: .topLeading)
-                    .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Theme.line))
+            if picks.isEmpty || !picks.allSatisfy({ $0.act == .watch }) {
+                VStack(alignment: .leading, spacing: 10) {
+                    DialogSectionLabel(text: "Note for the approver", trailing: "optional")
+                    TextField("", text: $note, prompt: Text("Anything the approver should know…").foregroundStyle(Theme.dim),
+                              axis: .vertical)
+                        .lineLimit(3...6)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.txt)
+                        .padding(11)
+                        .frame(minHeight: 64, alignment: .topLeading)
+                        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Theme.line))
+                }
             }
         }
         .padding(.horizontal, 18).padding(.top, 18).padding(.bottom, 8)
@@ -171,18 +186,18 @@ struct RequestModal: View {
             dashed("Could not load your access — try again.")
         } else if let offer {
             if nothingOfferable {
-                dashed("Nothing to request — you already have every edition you can access.", color: Theme.mut, centred: true)
+                dashed("Nothing to request — you already have every version you can access.", color: Theme.mut, centred: true)
             } else if offer.isAuto {
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(alignment: .top, spacing: 10) {
                         Image(systemName: "lock").font(.system(size: 14)).foregroundStyle(Theme.dim)
                         (Text("Quality is set by the admin. This request goes to your ")
-                         + Text(offer.autoEditions.map(\.chipLabel).joined(separator: " + ")).foregroundColor(Theme.txt).fontWeight(.semibold)
+                         + Text(offerTiers.map(\.chipLabel).joined(separator: " + ")).foregroundColor(Theme.txt).fontWeight(.semibold)
                          + Text(" library — you don't choose per-request."))
                             .font(.system(size: 13)).foregroundStyle(Theme.mut)
                     }
                     HStack(spacing: 6) {
-                        ForEach(offer.autoEditions, id: \.self) { tier in
+                        ForEach(offerTiers, id: \.self) { tier in
                             Text(tier.chipLabel).font(.system(size: 11, weight: .bold)).foregroundStyle(tier.color)
                                 .padding(.horizontal, 9).padding(.vertical, 3)
                                 .background(tier.color.opacity(0.15), in: Capsule())
@@ -195,7 +210,7 @@ struct RequestModal: View {
                     .strokeBorder(Theme.line, style: StrokeStyle(lineWidth: 1, dash: [4, 4])))
             } else {
                 VStack(alignment: .leading, spacing: 8) {
-                    ForEach(offer.editions, id: \.self) { tier in
+                    ForEach(offerTiers, id: \.self) { tier in
                         let selected = selectedTiers.contains(tier)
                         Button {
                             if selected { selectedTiers.remove(tier) } else { selectedTiers.insert(tier) }
@@ -205,6 +220,9 @@ struct RequestModal: View {
                                 RoundedRectangle(cornerRadius: 3).fill(tier.color).frame(width: 9, height: 9)
                                 Text(tier.chipLabel).font(.system(size: 14.5, weight: .semibold)).foregroundStyle(Theme.txt)
                                 Spacer(minLength: 0)
+                                if RequestOffer.tagged(demand) {
+                                    RequestTierTag(act: RequestOffer.act(demand, tier: tier), asked: demand?.asked ?? 0)
+                                }
                             }
                             .padding(.horizontal, 14).padding(.vertical, 13)
                             .background(Theme.card, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
@@ -215,7 +233,9 @@ struct RequestModal: View {
                         .buttonStyle(DiscoverPressStyle())
                         .accessibilityAddTraits(selected ? .isSelected : [])
                     }
-                    Text("Pick one or both — HD and 4K are separate libraries, each grabbed & tracked on its own.")
+                    Text(offerTiers.allSatisfy { RequestOffer.act(demand, tier: $0) == .watch }
+                         ? "No approval and no quota. You're told when it lands."
+                         : "Pick one or both — HD and 4K are separate libraries, each grabbed & tracked on its own.")
                         .font(.system(size: 11.5)).foregroundStyle(Theme.dim)
                 }
             }
@@ -235,128 +255,14 @@ struct RequestModal: View {
                 .strokeBorder(Theme.line, style: StrokeStyle(lineWidth: 1, dash: [4, 4])))
     }
 
-    @ViewBuilder
-    private var seasons: some View {
-        if !previewLoaded {
-            Text("Loading seasons…").font(.system(size: 12.5)).foregroundStyle(Theme.dim)
-        } else if let list = preview?.seasons, !list.isEmpty {
-            VStack(alignment: .leading, spacing: 7) {
-                ForEach(list) { season in seasonRow(season) }
-                Text("Tick a whole season, or expand for specific episodes. Select nothing to request the whole series.")
-                    .font(.system(size: 11.5)).foregroundStyle(Theme.dim)
-                    .padding(.top, 1)
-            }
-        } else {
-            Text("No season data available.").font(.system(size: 12.5)).foregroundStyle(Theme.dim)
-        }
-    }
-
-    private func seasonRow(_ season: PreviewSeason) -> some View {
-        let n = season.seasonNumber
-        let full = selSeasons.contains(n)
-        let open = openSeasons.contains(n)
-        let label = n == 0 ? "Specials" : "Season \(n)"
-        return VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                Button { toggleSeason(season) } label: {
-                    WebCheckSquare(checked: full).frame(width: 44, height: 44).contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Select \(label)")
-                Button {
-                    withAnimation(DiscoverMotion.reduced(reduceMotion) ? nil : .easeOut(duration: 0.2)) {
-                        if open { openSeasons.remove(n) } else { openSeasons.insert(n) }
-                    }
-                } label: {
-                    HStack(spacing: 8) {
-                        Text(label).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
-                        Spacer(minLength: 0)
-                        Text("\(season.episodeCount) eps").font(.system(size: 11)).foregroundStyle(Theme.dim)
-                        Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.mut)
-                            .rotationEffect(.degrees(open ? 90 : 0))
-                    }
-                    .padding(.trailing, 13)
-                    .frame(minHeight: 44)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(open ? "Collapse" : "Expand") \(label)")
-            }
-            if open {
-                VStack(spacing: 0) {
-                    ForEach(1...max(1, season.episodeCount), id: \.self) { e in
-                        let selected = full || selEpisodes.contains(EpisodeRef(season: n, episode: e))
-                        Button { toggleEpisode(season, e) } label: {
-                            HStack(spacing: 10) {
-                                WebCheckSquare(checked: selected, size: 18)
-                                Text(EpisodeCode.episode(season: n, episode: e)).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(Theme.mut)
-                                    .frame(minWidth: 56, alignment: .leading)
-                                Text(episodeTitles[n]?[e] ?? "Episode \(e)")
-                                    .font(.system(size: 12.5)).foregroundStyle(selected ? Theme.txt : Theme.mut)
-                                    .lineLimit(1)
-                                Spacer(minLength: 0)
-                            }
-                            .padding(.leading, 38).padding(.trailing, 13).padding(.vertical, 8)
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .background(Theme.panel2)
-                .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
-                .transition(.opacity)
-                .task {
-                    guard episodeTitles[n] == nil, let client = model.client else { return }
-                    let eps = (try? await client.previewSeason(kind: pick.previewKind, tmdbId: pick.tmdbId, season: n)) ?? []
-                    var map: [Int: String] = [:]
-                    for ep in eps { if let t = ep.title { map[ep.episodeNumber] = t } }
-                    episodeTitles[n] = map
-                }
-            }
-        }
-        .background(Theme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
-            .strokeBorder(full ? Theme.indigo.opacity(0.4) : Theme.line))
-    }
-
-    private func toggleSeason(_ season: PreviewSeason) {
-        let n = season.seasonNumber
-        if selSeasons.contains(n) {
-            selSeasons.remove(n)
-        } else {
-            selSeasons.insert(n)
-            selEpisodes = selEpisodes.filter { $0.season != n }
-        }
-    }
-
-    private func toggleEpisode(_ season: PreviewSeason, _ e: Int) {
-        let n = season.seasonNumber
-        let ref = EpisodeRef(season: n, episode: e)
-        if selSeasons.contains(n) {
-            selSeasons.remove(n)
-            for other in 1...max(1, season.episodeCount) where other != e {
-                selEpisodes.insert(EpisodeRef(season: n, episode: other))
-            }
-        } else if selEpisodes.contains(ref) {
-            selEpisodes.remove(ref)
-        } else {
-            selEpisodes.insert(ref)
-            let all = (1...max(1, season.episodeCount)).allSatisfy { selEpisodes.contains(EpisodeRef(season: n, episode: $0)) }
-            if all {
-                selSeasons.insert(n)
-                selEpisodes = selEpisodes.filter { $0.season != n }
-            }
-        }
-    }
-
     // MARK: Footer
 
     private var summary: String {
         if offer == nil && !offerFailed { return "Checking what you can request…" }
-        if offerFailed { return "Could not check available editions." }
-        if nothingOfferable { return "Nothing to request — you already have every edition you can access." }
-        if editionsToSend.isEmpty { return "Select an edition" }
+        if offerFailed { return "Could not check available versions." }
+        if nothingOfferable { return "Nothing to request — you already have every version you can access." }
+        if editionsToSend.isEmpty { return "Select a version" }
+        if picks.contains(where: { $0.act != .new }) { return RequestOffer.summary(picks, limited: quota?.limit != nil) }
         let tiers = editionsToSend.map(\.chipLabel).joined(separator: " + ")
         let title = preview?.title ?? pick.title
         guard isSeries else { return "Requesting \(title) · \(tiers)" }
@@ -366,34 +272,67 @@ struct RequestModal: View {
         return "Requesting \(title) · \(tiers) · \(parts.isEmpty ? "Whole series" : parts.joined(separator: " + "))"
     }
 
+    @ViewBuilder
     private var footer: some View {
-        HStack(spacing: 12) {
-            Text(summary).font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineLimit(2)
+        if blocked != nil {
+            RequestQuotaPrompt(quota: quota, pending: sending, wishlistDisabled: editionsToSend.isEmpty, joinTiers: joinTiers,
+                               onWishlist: { send(currentBody(wishlist: true)) },
+                               onJoinOnly: { send(currentBody(tiers: joinTiers, join: true)) },
+                               onCancel: { blocked = nil })
+                .background(Theme.panel)
+                .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
+        } else {
+            let label = RequestOffer.submitLabel(picks.map(\.act))
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(summary).font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineLimit(3)
+                    RequestQuotaMini(quota: quota)
+                }
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Button(sending ? "Requesting…" : "Request") { Task { await submit() } }
+                Button {
+                    if canSubmit { send(currentBody()) }
+                } label: {
+                    Label(sending ? "\(label == "Request" ? "Requesting" : label)…" : label,
+                          systemImage: label == "Watch" ? "eye" : (label == "Me too" ? "person.2.fill" : "plus"))
+                }
                 .buttonStyle(.discover(.primary))
                 .disabled(!canSubmit)
+            }
+            .padding(.horizontal, 22).padding(.vertical, 14)
+            .background(Theme.panel)
+            .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
         }
-        .padding(.horizontal, 22).padding(.vertical, 14)
-        .background(Theme.panel)
-        .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
     }
 
-    private func submit() async {
-        guard canSubmit, let client = model.client else { return }
-        sending = true
-        defer { sending = false }
+    /// The ask as the form stands now; the quota prompt's re-sends rebuild it too.
+    private func currentBody(tiers: [QualityTier]? = nil, join: Bool = false, wishlist: Bool = false) -> RequestCreateBody {
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
         let episodes = selEpisodes.sorted { ($0.season, $0.episode) < ($1.season, $1.episode) }
+        return RequestCreateBody(
+            tmdbId: pick.tmdbId, kind: pick.kind, editions: tiers ?? editionsToSend,
+            seasons: isSeries ? selSeasons.sorted() : [], episodes: isSeries ? episodes : [],
+            note: trimmed.isEmpty ? nil : trimmed, join: join, wishlist: wishlist)
+    }
+
+    private func send(_ body: RequestCreateBody) {
+        Task { await submit(body) }
+    }
+
+    /// A 409 `quota` swaps the footer for the wishlist prompt instead of a toast.
+    private func submit(_ body: RequestCreateBody) async {
+        guard !sending, let client = model.client else { return }
+        sending = true
+        defer { sending = false }
         do {
-            try await client.createRequest(RequestCreateBody(
-                tmdbId: pick.tmdbId, kind: pick.kind, editions: editionsToSend,
-                seasons: isSeries ? selSeasons.sorted() : [], episodes: isSeries ? episodes : [],
-                note: trimmed.isEmpty ? nil : trimmed))
-            DiscoverToasts.shared.show(.success, "\(preview?.title ?? pick.title) requested")
+            let result = try await client.submitRequest(body)
+            blocked = nil
+            DiscoverToasts.shared.show(.success, RequestOffer.successCopy(result, title: preview?.title ?? pick.title))
             onDone()
             dismiss()
+        } catch let error as APIError where error.code == "quota" && !body.wishlist {
+            blocked = body
         } catch {
+            blocked = nil
             DiscoverToasts.shared.error("Could not submit request", error)
         }
     }
