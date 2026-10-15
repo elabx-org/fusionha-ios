@@ -18,6 +18,8 @@ struct SearchTabView: View {
     /// The server has no TMDB key (409 `tmdb_not_configured`).
     @State private var noKey = false
     @State private var searchedTerm = ""
+    /// A requester's pick: the request modal (web OmniResults → RequestModal).
+    @State private var requestPick: MediaSearchResult?
     @FocusState private var focused: Bool
 
     private var term: String { model.searchQuery }
@@ -35,11 +37,12 @@ struct SearchTabView: View {
             .padding(.bottom, 40)
         }
         .scrollDismissesKeyboard(.interactively)
-        .contentShape(Rectangle())
-        .onTapGesture { if trimmed.isEmpty { focused = true } }
         .background(Theme.bg.ignoresSafeArea())
         .overlay(alignment: .top) { StatusBarFade() }
         .safeAreaInset(edge: .bottom, spacing: 0) { field }
+        .sheet(item: $requestPick) { pick in
+            RequestModal(pick: pick) {}
+        }
         .task {
             // Open ready to type, as a search tab does.
             try? await Task.sleep(for: .milliseconds(350))
@@ -122,6 +125,9 @@ struct SearchTabView: View {
             .foregroundStyle(Theme.mut)
             .padding(.horizontal, Theme.pageGutter)
             .padding(.top, 8)
+            .frame(maxWidth: .infinity, minHeight: 320, alignment: .topLeading)
+            .contentShape(Rectangle())
+            .onTapGesture { focused = true }
     }
 
     // MARK: Owned lane
@@ -259,7 +265,7 @@ struct SearchTabView: View {
         } else {
             groupLabel("Available to add · via TMDB", count: remote.count)
             ForEach(remote) { result in
-                OmniAddRow(result: result) {}
+                OmniAddRow(result: result, close: {}, request: { requestPick = $0 })
             }
         }
     }

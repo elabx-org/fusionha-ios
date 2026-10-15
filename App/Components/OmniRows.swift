@@ -5,14 +5,22 @@ import FusionhaKit
 // The omni search's rows: owned titles, the TMDB add lane, and their press style.
 
 /// A TMDB result in the omni add lane: ★ rating, then Add (preview) /
-/// Request / Open ↗.
+/// Request / Open ↗. The whole row does what its button does; a requester's
+/// Request opens the request modal (tiers, seasons, note), as on the web.
 struct OmniAddRow: View {
     @Environment(AppModel.self) private var model
     let result: MediaSearchResult
     let close: () -> Void
-    @State private var requested = false
+    let request: (MediaSearchResult) -> Void
 
     var body: some View {
+        Button(action: primary) {
+            row
+        }
+        .buttonStyle(OmniRowStyle())
+    }
+
+    private var row: some View {
         OmniRow(posterUrl: result.posterUrl,
                 dot: result.isAnime ? Theme.kindAnime : (result.kind == .series ? Theme.kindSeries : Theme.kindMovie),
                 title: result.title, year: result.year) {
@@ -24,37 +32,36 @@ struct OmniAddRow: View {
         } action: {
             action
         }
-        .padding(.horizontal, 8)
+    }
+
+    private var openable: Int? {
+        guard result.inLibrary, !model.requestScoped else { return nil }
+        return model.libraryItemId(for: result)
+    }
+
+    private func primary() {
+        if let id = openable {
+            close()
+            model.open(id)
+        } else if model.requestScoped {
+            request(result)
+        } else {
+            close()
+            model.openPreview(result)
+        }
     }
 
     @ViewBuilder
     private var action: some View {
-        if result.inLibrary, let id = model.libraryItemId(for: result), !model.requestScoped {
-            Button {
-                close()
-                model.open(id)
-            } label: {
+        if openable != nil {
+            Button(action: primary) {
                 Text("Open ↗").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
             }
             .buttonStyle(.plain)
         } else if model.requestScoped {
-            iconButton(requested ? "checkmark" : "paperplane", label: "Request") {
-                Task {
-                    do {
-                        try await model.client?.request(MediaRequestCreate(tmdbId: result.tmdbId, kind: result.kind, tier: .hd))
-                        requested = true
-                        model.toast("Requested \(result.title)")
-                    } catch {
-                        model.toast("Couldn't request \(result.title)", variant: .error)
-                    }
-                }
-            }
-            .disabled(requested || result.inLibrary)
+            iconButton("paperplane", label: "Request", action: primary)
         } else {
-            iconButton("plus", label: "Add") {
-                close()
-                model.openPreview(result)
-            }
+            iconButton("plus", label: "Add", action: primary)
         }
     }
 
