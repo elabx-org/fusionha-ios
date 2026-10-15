@@ -94,7 +94,8 @@ enum LiveActivityStateBuilder {
             }
     }
 
-    /// Held downloads grouped like the queue: one line per title.
+    /// Held downloads grouped like the queue: one line per title (three, for
+    /// the poster fan; the Lock Screen writes out two).
     private static func held(_ waiting: [QueueItem]) -> [State.Held] {
         var order: [Int] = []
         var byTitle: [Int: [QueueItem]] = [:]
@@ -102,7 +103,7 @@ enum LiveActivityStateBuilder {
             if byTitle[item.mediaItemId] == nil { order.append(item.mediaItemId) }
             byTitle[item.mediaItemId, default: []].append(item)
         }
-        return order.prefix(2).compactMap { id in
+        return order.prefix(3).compactMap { id in
             guard let items = byTitle[id], let first = items.first else { return nil }
             let lead = QueueCardText.heldReason(first).lead
             return State.Held(mediaItemId: id, title: first.title, count: items.count,

@@ -39,22 +39,7 @@ struct LiveActivityLockScreen: View {
         }
     }
 
-    private var held: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            header(title: "\(state.needYou) need you", tone: Theme.miss, trailing: "nothing downloading")
-            ForEach(state.held, id: \.mediaItemId) { LiveActivityHeldRowView(line: $0) }
-            if let link = LiveActivityLinks.review(state.held.flatMap(\.downloadIds)) {
-                Link(destination: link) {
-                    Label(state.needYou > 1 ? "Review all in Manual Import" : "Review in Manual Import",
-                          systemImage: "square.and.arrow.down")
-                        .font(.system(size: 14, weight: .semibold))
-                        .padding(.horizontal, 14)
-                        .frame(height: 34)
-                        .background(Theme.miss.opacity(0.25), in: Capsule())
-                }
-            }
-        }
-    }
+    private var held: some View { LiveActivityHeldView(state: state) }
 
     private var problem: some View {
         VStack(alignment: .leading, spacing: 9) {
@@ -205,41 +190,6 @@ struct LiveActivityRowView: View {
                 if let fraction = row.fraction {
                     ProgressView(value: fraction).tint(LiveActivityTone.version(row.version))
                 }
-            }
-        }
-    }
-}
-
-/// One held title: poster, title, version, how many episodes, and why it
-/// stopped (amber, like the queue's held card).
-struct LiveActivityHeldRowView: View {
-    let line: DownloadsActivityAttributes.ContentState.Held
-
-    var body: some View {
-        HStack(spacing: 10) {
-            LiveActivityPoster(mediaItemId: line.mediaItemId)
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(line.title).font(.system(size: 14, weight: .bold)).lineLimit(1)
-                    if let version = line.version {
-                        Text(version).font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(LiveActivityTone.version(version))
-                            .fixedSize()
-                    }
-                    Spacer(minLength: 4)
-                    if line.count > 1 {
-                        Text("\(line.count) eps")
-                            .font(.system(size: 11, weight: .bold).monospacedDigit())
-                            .padding(.horizontal, 7)
-                            .frame(height: 18)
-                            .background(.white.opacity(0.14), in: Capsule())
-                            .fixedSize()
-                    }
-                }
-                Label(line.reason, systemImage: "pause.circle.fill")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.miss)
-                    .lineLimit(1)
             }
         }
     }
