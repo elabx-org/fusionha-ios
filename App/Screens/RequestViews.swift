@@ -174,8 +174,23 @@ struct RequestsPanel: View {
     @Environment(DiscoverStore.self) private var store
     let approver: Bool
 
+    @State private var lane: Lane = .approvals
+
+    enum Lane: Hashable { case approvals, mine }
+
     var body: some View {
-        if approver { ApprovalQueue() } else { MyRequests() }
+        if approver {
+            VStack(alignment: .leading, spacing: 16) {
+                Picker("Requests", selection: $lane) {
+                    Text("Approvals").tag(Lane.approvals)
+                    Text("Mine").tag(Lane.mine)
+                }
+                .pickerStyle(.segmented)
+                if lane == .approvals { ApprovalQueue() } else { MyRequestsView() }
+            }
+        } else {
+            MyRequestsView()
+        }
     }
 }
 
@@ -275,53 +290,6 @@ private extension View {
             }
         } else {
             self
-        }
-    }
-}
-
-private struct MyRequests: View {
-    @Environment(AppModel.self) private var model
-    @Environment(DiscoverStore.self) private var store
-    @State private var reporting: MediaRequest?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if !store.requestsLoaded {
-                DiscoverEmptyState(message: "Loading your requests…")
-            } else if store.requestsFailed {
-                DiscoverEmptyState(message: "Could not load your requests.")
-            } else if store.requests.isEmpty {
-                DiscoverEmptyState(message: "You haven't requested anything yet.")
-            } else {
-                ForEach(Array(store.requests.enumerated()), id: \.element.id) { index, request in
-                    RequestRow(request: request, approverMeta: false) {
-                        if request.status == "pending" {
-                            DiscoverIconButton(systemImage: "trash", label: "Withdraw request", tint: Theme.danger) {
-                                Task { await withdraw(request) }
-                            }
-                        } else if request.status == "fulfilled", request.mediaItemId != nil {
-                            Button("Report an issue") { reporting = request }.buttonStyle(.discover(.subtle))
-                        }
-                    }
-                    .discoverReveal(index: index)
-                }
-            }
-        }
-        .sheet(item: $reporting) { request in
-            if let id = request.mediaItemId {
-                IssueModal(mediaItemId: id,
-                           title: PreviewCache.shared.get(request.previewKind, request.tmdbId)?.title ?? "TMDB #\(request.tmdbId)",
-                           isSeries: request.kind == .series, seasons: nil)
-            }
-        }
-    }
-
-    private func withdraw(_ request: MediaRequest) async {
-        do {
-            try await model.client?.withdrawRequest(id: request.id)
-            store.requestsVersion += 1
-        } catch {
-            DiscoverToasts.shared.error("Could not withdraw request", error)
         }
     }
 }
