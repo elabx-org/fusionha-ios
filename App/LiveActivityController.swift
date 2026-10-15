@@ -12,21 +12,27 @@ import FusionhaKit
 @MainActor
 enum LiveActivityController {
     private static var lastState: DownloadsActivityAttributes.ContentState?
+    /// The last queue seen, so a change in Account › Live Activity applies at once.
+    private static var lastQueue: [QueueItem] = []
     private static let worker = LiveActivityWorker()
 
-    static func sync(with items: [QueueItem]) {
+    static func sync(with queue: [QueueItem]) {
+        lastQueue = queue
         // Account › Live Activity › Show on Lock Screen.
         guard LiveActivityPrefs.enabled else {
             if lastState != nil { endAll() }
             return
         }
+        // Only the downloads chosen in Account › Live Activity count.
+        let items = queue.filter(LiveActivityPrefs.includes)
         guard let top = items.first else {
             if var finished = lastState {
                 finished.finished = true
                 finished.activeCount = 0
                 finished.overallFraction = 1
                 let state = finished
-                Task { await worker.end(with: state) }
+                let minutes = LiveActivityPrefs.lingerMinutes
+                Task { await worker.end(with: state, keepMinutes: minutes) }
             }
             lastState = nil
             return
@@ -47,6 +53,12 @@ enum LiveActivityController {
         guard state != lastState else { return }
         lastState = state
         Task { await worker.apply(state) }
+    }
+
+    /// Applies a changed choice to the queue already on screen.
+    static func resync() {
+        lastState = nil
+        sync(with: lastQueue)
     }
 
     static func endAll() {
@@ -71,9 +83,10 @@ actor LiveActivityWorker {
         }
     }
 
-    func end(with state: DownloadsActivityAttributes.ContentState) async {
+    func end(with state: DownloadsActivityAttributes.ContentState, keepMinutes: Int) async {
         guard let current else { return }
-        await current.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .after(.now + 15 * 60))
+        let policy: ActivityUIDismissalPolicy = keepMinutes > 0 ? .after(.now + Double(keepMinutes) * 60) : .immediate
+        await current.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: policy)
     }
 
     func endAll() async {
