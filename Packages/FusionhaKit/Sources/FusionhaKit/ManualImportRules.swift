@@ -131,6 +131,14 @@ public enum ManualImportRules {
 
     /// The advisory the server attaches (corroboration, or the competing match).
     public static func advisory(_ row: ManualImportRow) -> String? {
+        // The real cause first: a title that names another episode, then a two-parter.
+        if titleBlocked(row), let tc = row.titleCheck {
+            let there = episodeCode(row)
+            return "File says '\(tc.says ?? "")' — that's \(tc.matchesEpisode?.code ?? "another episode") in your library\(there.map { ", not \($0)" } ?? "")"
+        }
+        if row.recommended == "assign_episodes", let rec = row.recommendedEpisodes, rec.count > 1, !row.committed {
+            return "This file holds \(episodesLabel(rec)) — assign both to replace the two-parter"
+        }
         if row.wouldOrphan != nil { return orphanText(row) }
         if let note = row.corroboration { return note }
         guard let alt = row.match.alternative,

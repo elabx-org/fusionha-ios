@@ -35,7 +35,7 @@ public struct ManualImportFinishPlan: Equatable, Sendable {
         if need > 0 && imports > 0 {
             plan = (.importOnly, "Force import \(imports)", false)
         } else if need > 0 {
-            plan = (.need, "Choose for \(need) more \(need == 1 ? "file" : "files")", true)
+            plan = (.need, need == 1 ? "1 file needs a decision" : "\(need) files need a decision", true)
         } else if imports == 0 && kept > 0 && done == 0 {
             plan = (.keep, "Keep current · remove download", false)
         } else if kept > 0 || (done > 0 && imports == 0) {
@@ -66,7 +66,8 @@ public struct ManualImportHeldStrip: Equatable, Sendable {
     /// Held downgrades Keep all current / Import all would answer.
     public let bulkEligible: Int
 
-    public init?(scan: ManualImportScan) {
+    /// `decide` is the footer's `need`, so "to decide" and the button always agree (fusionha 0.4.199).
+    public init?(scan: ManualImportScan, decide: Int? = nil) {
         guard scan.isRescue || scan.heldReason != nil else { return nil }
         let held = scan.rows.filter { $0.held != nil }
         let single = held.count == 1 ? held.first : (held.isEmpty && scan.rows.count == 1 ? scan.rows.first : nil)
@@ -89,9 +90,12 @@ public struct ManualImportHeldStrip: Equatable, Sendable {
         let downs = held.filter(Self.isDowngrade)
         let kept = held.filter { $0.replaceChoice == "keep_current" }.count
         let importing = held.filter { $0.replaceChoice == "import" || ($0.replaceChoice == nil && !Self.isDowngrade($0)) }.count
-        let ups = held.filter { $0.existingFile?.verdict?.upgrade == true }.count
+        let ups = held.filter {
+            $0.existingFile?.verdict?.upgrade == true && !ManualImportRules.titleBlocked($0) && $0.wouldOrphan == nil
+                && ManualImportRules.isImportable($0)
+        }.count
         let fresh = held.filter { $0.existingFile == nil }.count
-        let open = downs.filter { !$0.committed && $0.replaceChoice == nil }.count
+        let open = decide ?? downs.filter { !$0.committed && $0.replaceChoice == nil }.count
         let replaces = downs.count == 1 ? "1 file would replace a better copy" : "\(downs.count) files would replace better copies"
         line1 = [replaces, ups == 1 ? "1 upgrade" : "\(ups) upgrades", "\(fresh) new"]
         if open > 0 {

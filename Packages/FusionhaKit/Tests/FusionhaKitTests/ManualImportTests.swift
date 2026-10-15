@@ -50,7 +50,7 @@ final class ManualImportTests: XCTestCase {
         // Nothing ready: the button waits for a choice.
         plan = ManualImportFinishPlan(rows: rows, selected: [])
         XCTAssertEqual(plan.kind, .need)
-        XCTAssertEqual(plan.label, "Choose for 3 more files")
+        XCTAssertEqual(plan.label, "3 files need a decision")
         XCTAssertTrue(plan.disabled)
     }
 
@@ -59,6 +59,10 @@ final class ManualImportTests: XCTestCase {
         XCTAssertEqual(strip.line1, ["2 files would replace better copies", "0 upgrades", "1 new"])
         XCTAssertEqual(strip.line2, "2 files measure 2560×1440, not the 2160p their names claim. 2 still to decide; open a row to compare.")
         XCTAssertEqual(strip.bulkEligible, 2)
+        // "To decide" follows the footer's count when it is passed.
+        let plan = ManualImportFinishPlan(rows: try scan().rows, selected: [])
+        let synced = try XCTUnwrap(ManualImportHeldStrip(scan: try scan(), decide: plan.need))
+        XCTAssertEqual(synced.line2, "2 files measure 2560×1440, not the 2160p their names claim. 3 still to decide; open a row to compare.")
     }
 
     func testCompareAndSummary() throws {

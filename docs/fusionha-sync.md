@@ -10,16 +10,34 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `16635380` |
-| fusionha release | **0.4.198** (2026-10-15, "queue action rows") |
+| fusionha commit | `193ed23b` |
+| fusionha release | **0.4.199** (2026-10-15, "Manual Import decision wording") |
 | Checked on | 2026-10-15 |
-| Previous sync | `818b8b7f` / 0.4.196 (2026-10-14) |
+| Previous sync | `16635380` / 0.4.198 (2026-10-15) |
 
 `Packages/FusionhaKit/openapi.json` still reports `info.version` 0.2.0: the
 catch-ups added models and calls by hand. Re-pin it from a tagged fusionha
 release when you next touch the API layer.
 
-## 0.4.197 – 0.4.198 (this sync)
+## 0.4.199 (this sync)
+
+Done:
+- **Manual Import decision wording.** The footer reads "N files need a
+  decision" (was "Choose for N more files"); the held strip's "to decide" is
+  the footer's own count (`ManualImportHeldStrip(scan:decide:)`), its upgrade
+  count leaves out title-blocked, orphaning and unimportable rows; a collapsed
+  row's reason names the real cause first: "File says 'Mafia' — that's S06E06
+  in your library, not S06E05", then "This file holds E04 + E05 — assign both
+  to replace the two-parter", then the orphan sentence.
+- The rest of `16635380..193ed23b` is server-side split tooling (no API change).
+
+Also since 0.4.198, the requests revamp (fusionha phases 1–7, already on the
+server): steps 1–3 of the iOS plan are in (requester list, thread, sheet with
+Me too / Watch / wishlist, Discover demand row; approver Inbox swipe deck,
+Board, History). Still open: issues (step 4, incl. 0.4.197's keep-old flow),
+Threads, Rules, Insights and the request policy panels (step 5).
+
+## 0.4.197 – 0.4.198
 
 Done:
 - **0.4.198 queue sections and action rows.** The queue's card sections are
