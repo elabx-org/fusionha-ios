@@ -72,7 +72,7 @@ public enum TriageFacts {
 
     public static func size(_ t: RequestTriage?) -> Tile {
         let sizes = (t?.versions ?? []).map(\.estimateBytes)
-        guard let t, !sizes.isEmpty, sizes.allSatisfy({ $0 != nil }) else {
+        guard t != nil, !sizes.isEmpty, sizes.allSatisfy({ $0 != nil }) else {
             return Tile(value: "—", sub: t?.metaPending == true ? "Looking up runtime…" : "Runtime unknown", tone: nil, short: "—")
         }
         let value = sizes.map { "~" + DetailText.bytes($0) }.joined(separator: " + ")
@@ -101,7 +101,7 @@ public enum TriageFacts {
                              sub: "needs ~\(DetailText.bytes(disk.neededBytes)) · \(DetailText.bytes(free)) free on \(root)",
                              tone: .warn, usedPct: used, addPct: add)
         }
-        let tib = pow(1024.0, 4)
+        let tib = 1024.0 * 1024 * 1024 * 1024
         let value = after < tib ? DetailText.bytes(after) : String(format: "%.2f TB", after / tib)
         let sub = t.disks.count > 1 ? "on \(root)" : (disk.estimateComplete == false ? "size not counted yet" : nil)
         return FreeAfter(value: value, of: "of \(DetailText.bytes(total))", sub: sub, tone: nil, usedPct: used, addPct: add)
