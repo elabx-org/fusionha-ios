@@ -49,9 +49,13 @@ struct DownloadsActivityAttributes: ActivityAttributes {
             var count: Int
             var reason: String
             var downloadIds: [Int]
+            /// `4K`, `HD`; nil on activities started by older builds.
+            var version: String? = nil
+            var posterUrl: URL? = nil
 
             enum CodingKeys: String, CodingKey {
-                case mediaItemId = "media_item_id", title, count, reason, downloadIds = "download_ids"
+                case mediaItemId = "media_item_id", title, count, reason, downloadIds = "download_ids", version
+                case posterUrl = "poster_url"
             }
         }
 

@@ -104,12 +104,12 @@ enum LiveActivityPosters {
     private static var inFlight: Set<Int> = []
 
     static func ensure(_ state: DownloadsActivityAttributes.ContentState) {
-        for row in state.rows {
-            guard let url = row.posterUrl, !inFlight.contains(row.mediaItemId),
-                  let file = DownloadsActivityAttributes.ContentState.posterFile(mediaItemId: row.mediaItemId),
+        let wanted = state.rows.map { ($0.mediaItemId, $0.posterUrl) } + state.held.map { ($0.mediaItemId, $0.posterUrl) }
+        for (id, posterUrl) in wanted {
+            guard let url = posterUrl, !inFlight.contains(id),
+                  let file = DownloadsActivityAttributes.ContentState.posterFile(mediaItemId: id),
                   !FileManager.default.fileExists(atPath: file.path) else { continue }
-            inFlight.insert(row.mediaItemId)
-            let id = row.mediaItemId
+            inFlight.insert(id)
             Task.detached(priority: .utility) {
                 defer { Task { @MainActor in inFlight.remove(id) } }
                 guard let (data, _) = try? await URLSession.shared.data(from: url),

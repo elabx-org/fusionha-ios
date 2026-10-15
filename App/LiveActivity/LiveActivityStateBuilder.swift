@@ -106,7 +106,9 @@ enum LiveActivityStateBuilder {
             guard let items = byTitle[id], let first = items.first else { return nil }
             let lead = QueueCardText.heldReason(first).lead
             return State.Held(mediaItemId: id, title: first.title, count: items.count,
-                              reason: lead.prefix(1).lowercased() + lead.dropFirst(), downloadIds: items.map(\.id))
+                              reason: lead.prefix(1).lowercased() + lead.dropFirst(), downloadIds: items.map(\.id),
+                              version: QueueCardText.versionLabel(first),
+                              posterUrl: TMDBImage.resized(first.posterUrl, to: "w154"))
         }
     }
 
