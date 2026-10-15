@@ -82,3 +82,18 @@ final class QueueRailTests: XCTestCase {
         XCTAssertEqual(QueueRail.ring(try stages("parsing"))?.total, 6)
     }
 }
+
+final class LibraryDiskCacheTests: XCTestCase {
+    func testRoundTripPerServer() throws {
+        let server = URL(string: "https://fusionha.test:8443")!
+        let other = URL(string: "https://other.test")!
+        LibraryDiskCache.clear()
+        XCTAssertNil(LibraryDiskCache.load(server: server))
+        let json = #"[{"id":1,"title":"Dune","kind":"movie","editions":[]}]"#
+        LibraryDiskCache.save(Data(json.utf8), server: server)
+        XCTAssertEqual(LibraryDiskCache.load(server: server)?.map(\.title), ["Dune"])
+        XCTAssertNil(LibraryDiskCache.load(server: other))
+        LibraryDiskCache.clear()
+        XCTAssertNil(LibraryDiskCache.load(server: server))
+    }
+}

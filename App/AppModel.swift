@@ -331,12 +331,25 @@ final class AppModel {
         }
     }
 
+    /// Draws the last library this phone saw, at once, while the server's
+    /// answer is on its way (a cold launch otherwise waits for the whole fetch).
+    func restoreLibrary() async {
+        guard library.isEmpty, let server = credentials?.serverURL else { return }
+        let cached = await Task.detached(priority: .userInitiated) { LibraryDiskCache.load(server: server) }.value
+        guard library.isEmpty, let cached, !cached.isEmpty else { return }
+        library = cached
+        libraryVersion += 1
+    }
+
     func loadLibrary() async {
         guard let client else { return }
         do {
             let previousCount = library.count
-            library = try await client.library()
+            let fresh = try await client.libraryWithData()
+            library = fresh.items
             libraryVersion += 1
+            let server = client.baseURL, raw = fresh.data
+            Task.detached(priority: .utility) { LibraryDiskCache.save(raw, server: server) }
             // A new title starts a setup: show the pill now, not at the next calm poll.
             if libraryLoaded, library.count > previousCount, !requestScoped {
                 Task { _ = await setupProgress.refresh(client: client) }
@@ -389,6 +402,7 @@ final class AppModel {
         WebSessionStore.clear()
         credentials = nil
         me = nil
+        LibraryDiskCache.clear()
         library = []
         libraryVersion += 1
         libraryLoaded = false
@@ -503,6 +517,7 @@ final class AppModel {
     func resetCacheAndReload() async {
         URLCache.shared.removeAllCachedResponses()
         ImagePipeline.shared.removeAll()
+        LibraryDiskCache.clear()
         libraryLoaded = false
         await loadMe()
         await loadLibrary()
