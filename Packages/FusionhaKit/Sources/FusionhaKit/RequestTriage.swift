@@ -16,15 +16,28 @@ public struct RequestTriage: Decodable, Sendable, Hashable {
             self.trusted = trusted
         }
 
-        // `convertFromSnakeCase` reads `requests_30d` as `requests30d`.
-        enum CodingKeys: String, CodingKey { case requests30d, approved30d, declined30d, trusted }
+        // `convertFromSnakeCase` turns `requests_30d` into `requests30D`
+        // (it capitalises the "30d" part), so both spellings are read.
+        struct Key: CodingKey {
+            let stringValue: String
+            init(_ s: String) { stringValue = s }
+            init?(stringValue: String) { self.stringValue = stringValue }
+            var intValue: Int? { nil }
+            init?(intValue: Int) { nil }
+        }
 
         public init(from decoder: Decoder) throws {
-            let c = try decoder.container(keyedBy: CodingKeys.self)
-            requests30d = try c.decodeIfPresent(Int.self, forKey: .requests30d) ?? 0
-            approved30d = try c.decodeIfPresent(Int.self, forKey: .approved30d) ?? 0
-            declined30d = try c.decodeIfPresent(Int.self, forKey: .declined30d) ?? 0
-            trusted = try c.decodeIfPresent(Bool.self, forKey: .trusted) ?? false
+            let c = try decoder.container(keyedBy: Key.self)
+            func int(_ name: String) throws -> Int {
+                for k in [name + "30D", name + "30d"] {
+                    if let v = try c.decodeIfPresent(Int.self, forKey: Key(k)) { return v }
+                }
+                return 0
+            }
+            requests30d = try int("requests")
+            approved30d = try int("approved")
+            declined30d = try int("declined")
+            trusted = try c.decodeIfPresent(Bool.self, forKey: Key("trusted")) ?? false
         }
     }
 

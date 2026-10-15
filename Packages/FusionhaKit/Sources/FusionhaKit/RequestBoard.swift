@@ -63,7 +63,7 @@ public enum RequestBoard {
     public static let terminalDays = 7
     public static let maxPages = 5
 
-    static func filterItems(search: String?, userId: Int?) -> [URLQueryItem] {
+    public static func filterItems(search: String?, userId: Int?) -> [URLQueryItem] {
         var items: [URLQueryItem] = []
         if let search, !search.isEmpty { items.append(URLQueryItem(name: "q", value: search)) }
         if let userId { items.append(URLQueryItem(name: "user_id", value: String(userId))) }
