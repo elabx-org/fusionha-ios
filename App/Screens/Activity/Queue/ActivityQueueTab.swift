@@ -146,65 +146,29 @@ struct ActivityQueueTab: View {
     @ViewBuilder
     private var sections: some View {
         let items = store.items
-        let working = items.filter { $0.lane == .working }.sorted { ($0.phasePercent ?? -1) > ($1.phasePercent ?? -1) }
-        let retrying = items.filter { $0.lane == .retrying }
-        let split = QueueLogic.split(QueueLogic.group(items.filter { $0.lane == .byte }), telemetry: store.telemetry)
-        let soonest = split.active.first { $0.eta != nil }?.id
+        let routed = Dictionary(grouping: items, by: QueueSection.of)
+        let cards = QueueSection.cardSections.compactMap { key -> (QueueSection, [QueueLogic.Entry])? in
+            let list = routed[key] ?? []
+            return list.isEmpty ? nil : (key, QueueLogic.entries(list, section: key, telemetry: store.telemetry))
+        }
+        let upNext = routed[.upnext] ?? []
+        let soonest = cards.first { $0.0 == .downloading }?.1.first { $0.eta != nil }?.id
         let finished = self.finished
-        let firstSection = !working.isEmpty ? "Working" : !split.active.isEmpty ? "Downloading"
-            : !retrying.isEmpty ? "Retrying" : !split.upNext.isEmpty ? "Up next" : "Just finished"
+        let first = cards.first?.0.label ?? (upNext.isEmpty ? "Just finished" : "Up next")
         Group {
-            if !working.isEmpty {
-                section("Working", working.count, "symlink & checks · live phase", first: firstSection) {
-                    ForEach(Array(working.enumerated()), id: \.element.id) { index, item in
-                        selectable(item) { QueueStateCard(item: item, telemetry: store.telemetry[item.id], actions: actions(for: item)) }
+            ForEach(cards, id: \.0) { key, entries in
+                section(key.label, entries.reduce(0) { $0 + $1.downloadCount }, key.hint ?? "", first: first,
+                        trailing: key == .needs ? reviewAll(items) : nil) {
+                    ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                        card(entry, soonest: soonest == entry.id)
                             .actReveal(index).actRowTransition(reduce)
                     }
                 }
             }
-            if !split.active.isEmpty {
-                section("Downloading", split.active.reduce(0) { $0 + $1.downloadCount }, "finishing soonest", first: firstSection) {
-                    ForEach(Array(split.active.enumerated()), id: \.element.id) { index, entry in
-                        Group {
-                            switch entry {
-                            case .solo(let item, _):
-                                if item.cockpitState == .held {
-                                    selectable(item) { QueueHeldCard(item: item, actions: actions(for: item)) }
-                                } else if item.cockpitState == .stuck {
-                                    selectable(item) { QueueStateCard(item: item, telemetry: nil, actions: actions(for: item)) }
-                                } else {
-                                    selectable(item) {
-                                        QueueStateCard(item: item, telemetry: store.telemetry[item.id], actions: actions(for: item),
-                                                       soonest: soonest == entry.id)
-                                    }
-                                }
-                            case .group(let group, let eta):
-                                QueueGroupCard(group: group, telemetry: store.telemetry, eta: eta, soonest: soonest == entry.id,
-                                               selecting: selecting, selected: $selected,
-                                               actionsFor: { actions(for: $0) },
-                                               removeMany: { ids, blocklist in
-                                                   let chosen = store.items.filter { ids.contains($0.id) }
-                                                   Task { await remove(chosen, deleteData: false, blocklist: blocklist, search: false, single: false) }
-                                               },
-                                               pick: { selecting = true })
-                            }
-                        }
-                        .actReveal(index).actRowTransition(reduce)
-                    }
-                }
-            }
-            if !retrying.isEmpty {
-                section("Retrying", retrying.count, "transient — will retry", first: firstSection) {
-                    ForEach(Array(retrying.enumerated()), id: \.element.id) { index, item in
-                        selectable(item) { QueueStateCard(item: item, telemetry: nil, actions: actions(for: item)) }
-                            .actReveal(index).actRowTransition(reduce)
-                    }
-                }
-            }
-            if let onDeck = split.upNext.first {
-                let rest = Array(split.upNext.dropFirst())
+            if let onDeck = upNext.first {
+                let rest = Array(upNext.dropFirst())
                 let visible = upNextOpen ? rest : Array(rest.prefix(4))
-                section("Up next", split.upNext.count, "next to grab", first: firstSection) {
+                section("Up next", upNext.count, "next to grab", first: first) {
                     selectable(onDeck) { OnDeckCard(item: onDeck, actions: actions(for: onDeck)) }
                         .actReveal(0)
                     ForEach(Array(visible.enumerated()), id: \.element.id) { index, item in
@@ -224,7 +188,7 @@ struct ActivityQueueTab: View {
                 }
             }
             if !finished.rows.isEmpty {
-                section("Just finished", finished.rows.count, "clears to History in ~20s", first: firstSection) {
+                section("Just finished", finished.rows.count, "clears to History in ~20s", first: first) {
                     ForEach(Array(finished.rows.enumerated()), id: \.element.id) { index, entry in
                         JustFinishedRow(entry: entry).actReveal(index).actRowTransition(reduce)
                     }
@@ -238,11 +202,55 @@ struct ActivityQueueTab: View {
         }
     }
 
+    /// One card: a held or other single download, or a group / pair card.
+    @ViewBuilder
+    private func card(_ entry: QueueLogic.Entry, soonest: Bool) -> some View {
+        switch entry {
+        case .solo(let item, _):
+            if item.cockpitState == .held {
+                selectable(item) { QueueHeldCard(item: item, actions: actions(for: item)) }
+            } else {
+                selectable(item) {
+                    QueueStateCard(item: item, telemetry: store.telemetry[item.id], actions: actions(for: item), soonest: soonest)
+                }
+            }
+        case .group(let group, let eta):
+            QueueGroupCard(group: group, telemetry: store.telemetry, eta: eta, soonest: soonest,
+                           selecting: selecting, selected: $selected,
+                           actionsFor: { actions(for: $0) },
+                           removeMany: { ids, blocklist, deleteData in
+                               let chosen = store.items.filter { ids.contains($0.id) }
+                               Task { await remove(chosen, deleteData: deleteData, blocklist: blocklist, search: false, single: false) }
+                           },
+                           pick: { selecting = true })
+        }
+    }
+
+    /// Needs you's "Review all N": an outline capsule, right-aligned (0.4.198).
+    private func reviewAll(_ items: [QueueItem]) -> AnyView? {
+        let held = items.filter { $0.cockpitState == .held }.map(\.id)
+        guard held.count > 1 else { return nil }
+        return AnyView(
+            Button("Review all \(held.count)") { router.manualImport(rescue: held) }
+                .buttonStyle(ActButtonStyle(kind: .subtle))
+                .accessibilityLabel("Review all \(held.count) in Manual Import")
+        )
+    }
+
     /// A section as flat children: its header, then each card (10pt apart; sections 24pt apart).
     @ViewBuilder
     private func section<C: View>(_ title: String, _ count: Int, _ hint: String, first: String,
-                                  @ViewBuilder content: () -> C) -> some View {
-        ActSection(title: title, count: count).padding(.top, title == first ? 0 : 24)
+                                  trailing: AnyView? = nil, @ViewBuilder content: () -> C) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .center, spacing: 8) {
+                ActSection(title: title, count: count)
+                if let trailing { trailing }
+            }
+            if !hint.isEmpty {
+                Text(hint).font(.system(size: 13)).foregroundStyle(Theme.dim)
+            }
+        }
+        .padding(.top, title == first ? 0 : 24)
         Group { content() }.padding(.top, 10)
     }
 

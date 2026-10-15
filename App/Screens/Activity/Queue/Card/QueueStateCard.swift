@@ -35,7 +35,7 @@ struct QueueStateCard: View {
                 .padding(.top, 2)
             }
         }
-        .padding(.horizontal, nested ? 16 : 18)
+        .padding(.horizontal, 16)
         .padding(.vertical, nested ? 14 : 18)
         .actWash(QueueLogic.wash(item), radius: nested ? 12 : 16, base: nested ? Theme.panel.opacity(0.55) : Theme.card,
                  border: nested ? .clear : (soonest ? Theme.grab.opacity(0.45) : Theme.line))

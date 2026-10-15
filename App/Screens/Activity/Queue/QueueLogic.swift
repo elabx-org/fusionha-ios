@@ -175,7 +175,7 @@ enum QueueLogic {
     }
 
     /// `foldVersionPairs` then `foldDownloadGroups`; a lone download stays solo.
-    static func group(_ items: [QueueItem], section: String = "downloading") -> [Group] {
+    static func group(_ items: [QueueItem], section: String = "downloading", pairs: Bool = true) -> [Group] {
         var out: [Group] = []
         // Pairs: one title + episode in distinct versions.
         let pairBuckets = Dictionary(grouping: items, by: pairKey)
@@ -185,7 +185,7 @@ enum QueueLogic {
         for item in items {
             let key = pairKey(item)
             let list = pairBuckets[key] ?? [item]
-            if list.count > 1, Set(list.map(\.editionId)).count == list.count {
+            if pairs, list.count > 1, Set(list.map(\.editionId)).count == list.count {
                 if emitted.insert(key).inserted {
                     slots.append(.pair(Group(mediaItemId: item.mediaItemId, isPair: true, section: section, downloads: list)))
                 }

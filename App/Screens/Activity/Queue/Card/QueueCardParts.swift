@@ -159,8 +159,9 @@ struct QueueSourceLine: View {
     }
 }
 
-/// The card's secondary actions (web `CardActions`): re-grab, remove (red),
-/// and the ⋯ overflow. The state's primary action is a labelled button.
+/// The card's secondary actions (web `CardActions`, 0.4.198): three fixed
+/// round icon slots, re-grab, remove (red), ⋯, so every card's primary button
+/// is the same width. Without a grab record the re-grab slot stays empty.
 struct QueueCardActions: View {
     let item: QueueItem
     let actions: QueueRowActions
@@ -169,9 +170,13 @@ struct QueueCardActions: View {
     var body: some View {
         HStack(spacing: 0) {
             if let regrab = actions.regrab {
-                icon("arrow.clockwise", "Re-grab this release", Theme.mut, regrab)
+                QueueIconSlot(icon: "arrow.clockwise", label: "Re-grab this release", action: regrab)
+            } else {
+                Color.clear.frame(width: QueueIconSlot.width, height: 44).accessibilityHidden(true)
             }
-            icon("trash", "Remove from queue", Theme.danger) { actions.remove(broken || item.cockpitState == .held) }
+            QueueIconSlot(icon: "trash", label: "Remove from queue", tint: Theme.danger) {
+                actions.remove(broken || item.cockpitState == .held)
+            }
             ActMoreMenu {
                 Button("Interactive search", systemImage: "person", action: actions.interactive)
                 if broken {
@@ -181,15 +186,25 @@ struct QueueCardActions: View {
                 }
                 Button("Copy release name", systemImage: "doc.on.doc", action: actions.copy)
             }
+            .frame(width: QueueIconSlot.width, height: 44)
         }
     }
+}
 
-    private func icon(_ name: String, _ label: String, _ tint: Color, _ run: @escaping () -> Void) -> some View {
-        Button(action: run) {
-            Image(systemName: name)
+/// One round icon action in a card's action row: a fixed 40pt slot, 44pt tall.
+struct QueueIconSlot: View {
+    static let width: CGFloat = 40
+    let icon: String
+    let label: String
+    var tint: Color = Theme.mut
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(tint)
-                .frame(width: 40, height: 40)
+                .frame(width: Self.width, height: 44)
                 .contentShape(Rectangle())
         }
         .buttonStyle(PressScaleStyle(scale: 0.9))

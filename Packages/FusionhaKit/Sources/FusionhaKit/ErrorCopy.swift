@@ -71,6 +71,19 @@ public enum ErrorCopy {
         "session_exchange_rate_limited": "Too many sign-ins from this device. Try again in 15 minutes.",
         // Manual Import (fusionha 0.4.193).
         "keep_current_empty_slot": "There's no current file to keep. Import this file or re-match it.",
+        // Issue keep-old replacement (fusionha 0.4.197, requests phase 7).
+        "staged_changed": "The copies changed while you were looking. Refresh and check them again.",
+        "fix_in_progress": "A fix is already running for this. Wait for it to finish.",
+        "fix_not_started": "The fix didn’t start. Nothing was changed.",
+        "fix_swapping": "The new copy is being swapped in right now. Try again in a moment.",
+        "paused": "Automatic fixes are paused for this one.",
+        "autofix_off": "Automatic fixes are turned off.",
+        "use_find_language_release": "A re-grab can’t fix the language. Use Find a release with English audio.",
+        "no_staged_copy": "There’s no new copy waiting on this report.",
+        "staged_stuck": "The new copy is stuck. Discard it instead.",
+        "slot_taken": "This version already has a file again.",
+        "swap_refused": "The new copy couldn’t be swapped in. Both copies are kept.",
+        "swap_restore_refused": "The old copy is kept safely, but it couldn’t be put back. An admin should check the issue.",
     ]
 
     /// Per-surface wording for codes the server reuses (`ISSUE_ERROR_OVERRIDES`).

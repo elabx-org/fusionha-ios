@@ -43,16 +43,18 @@ struct QueueHeldCard: View {
             if !nested {
                 HStack(spacing: 6) {
                     Button(action: actions.manualImport) {
-                        Label("Review in Manual Import", systemImage: "square.and.arrow.down")
+                        // "Review" on a phone; the full words stay for VoiceOver (0.4.198).
+                        Label("Review", systemImage: "square.and.arrow.down")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(ActButtonStyle(kind: .primary, small: false))
+                    .accessibilityLabel("Review in Manual Import")
                     QueueCardActions(item: item, actions: actions)
                 }
                 .padding(.top, 2)
             }
         }
-        .padding(.horizontal, nested ? 16 : 18)
+        .padding(.horizontal, 16)
         .padding(.vertical, nested ? 14 : 18)
         .actWash(QueueLogic.wash(item), radius: nested ? 12 : 16, base: nested ? Theme.panel.opacity(0.55) : Theme.card,
                  border: nested ? .clear : Theme.line)

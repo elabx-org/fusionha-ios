@@ -264,23 +264,7 @@ struct ActivityPageHeader: View {
                     .foregroundStyle(Theme.mut)
                     .lineLimit(1)
                     .truncationMode(.tail)
-                if held > 0 {
-                    // "Resolve all held (N)": one Manual import over every held download.
-                    Button {
-                        router.manualImport(rescue: model.queueHeldIds)
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "square.and.arrow.down").font(.system(size: 13, weight: .semibold))
-                            Text("Resolve all held (\(held))").font(.system(size: 13, weight: .semibold))
-                        }
-                        .foregroundStyle(Theme.miss)
-                        .padding(.horizontal, 14)
-                        .frame(height: 36)
-                        .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(.regular.tint(Theme.miss.opacity(0.14)).interactive(), in: Capsule())
-                }
+                // "Review all N" is Needs you's own outline button now (0.4.198).
                 if chrome.searchable {
                     ActSearch(placeholder: "Search by title…", text: $chrome.searchInput)
                 }

@@ -10,16 +10,37 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `818b8b7f` |
-| fusionha release | **0.4.196** (2026-10-14, "held pack outcomes") |
-| Checked on | 2026-10-14 |
-| Previous sync | `299b0251` / 0.4.195 (2026-10-14) |
+| fusionha commit | `16635380` |
+| fusionha release | **0.4.198** (2026-10-15, "queue action rows") |
+| Checked on | 2026-10-15 |
+| Previous sync | `818b8b7f` / 0.4.196 (2026-10-14) |
 
 `Packages/FusionhaKit/openapi.json` still reports `info.version` 0.2.0: the
 catch-ups added models and calls by hand. Re-pin it from a tagged fusionha
 release when you next touch the API layer.
 
-## 0.4.196 (this sync)
+## 0.4.197 – 0.4.198 (this sync)
+
+Done:
+- **0.4.198 queue sections and action rows.** The queue's card sections are
+  the web's: Needs you (held + stuck) · Importing · In progress (decypharr
+  phase jobs, non-terminal retries) · Downloading (real byte transfers) ·
+  Failed (terminal phase errors), then Up next and Just finished
+  (`QueueSections.swift`, routing as `queueCardGroup`). Every card's action
+  row is the primary capsule filling the row plus three fixed 40pt icon slots
+  (re-grab or an empty slot, remove, ⋯; on groups Remove all, ⋯, the
+  expand chevron), so primaries share a right edge. Phone labels read
+  "Review" / "Review all N"; Needs you's "Review all N" is an outline capsule.
+  Remove all confirms with every download, sizes and the total, and offers
+  delete-files (when any row has a file) and blocklist; the group's ⋯ has
+  Open title and Copy release names.
+- **0.4.197 error copy.** The phase-7 codes have the web's words.
+
+Not yet: 0.4.197's issue keep-old replacement UI (staged compare, Use /
+Discard / Re-grab, reporter fix progress, Guardrails) arrives with the app's
+Requests / Issues revamp.
+
+## 0.4.196
 
 Done:
 - **Held pack outcomes.** `QueueItem.packSummary`, `packMixed`,

@@ -68,6 +68,9 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
     var wash: Color?
     var base: Color = Theme.panel
     var hasTrailing = true
+    /// The expand chevron sits last in the trailing row instead of top-right
+    /// (the queue's equal action rows, fusionha 0.4.198).
+    var chevronInRow = false
     /// Told each time the card opens or closes (to remember it).
     var onToggle: ((Bool) -> Void)? = nil
     @State private var open: Bool
@@ -78,12 +81,13 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
     private let content: BodyV
 
     init(wash: Color? = nil, base: Color = Theme.panel, defaultOpen: Bool = true, hasTrailing: Bool = true,
-         onToggle: ((Bool) -> Void)? = nil,
+         chevronInRow: Bool = false, onToggle: ((Bool) -> Void)? = nil,
          @ViewBuilder poster: () -> PosterV, @ViewBuilder title: () -> TitleV,
          @ViewBuilder trailing: () -> TrailingV, @ViewBuilder content: () -> BodyV) {
         self.wash = wash
         self.base = base
         self.hasTrailing = hasTrailing
+        self.chevronInRow = chevronInRow
         self.onToggle = onToggle
         _open = State(initialValue: defaultOpen)
         self.poster = poster()
@@ -98,28 +102,17 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
                 HStack(alignment: .top, spacing: 11) {
                     poster
                     title.frame(maxWidth: .infinity, alignment: .leading)
-                    Button {
-                        if reduceMotion { open.toggle() } else { withAnimation(.easeOut(duration: 0.2)) { open.toggle() } }
-                        onToggle?(open)
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Theme.dim)
-                            .rotationEffect(.degrees(open ? 90 : 0))
-                            .frame(width: 26, height: 26)
-                            .frame(width: 36, height: 36)
-                            .contentShape(Rectangle())
+                    if !chevronInRow {
+                        chevron
+                            .padding(.top, -6)
+                            .padding(.trailing, -6)
                     }
-                    .buttonStyle(.plain)
-                    .padding(.top, -6)
-                    .padding(.trailing, -6)
-                    .accessibilityLabel(open ? "Collapse" : "Expand")
-                    .accessibilityValue(open ? "Expanded" : "Collapsed")
                 }
                 if hasTrailing {
-                    HStack(spacing: 10) {
+                    HStack(spacing: chevronInRow ? 0 : 10) {
                         Spacer(minLength: 0)
                         trailing
+                        if chevronInRow { chevron }
                     }
                 }
             }
@@ -135,5 +128,22 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
         }
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .actWash(wash, radius: 14, base: base)
+    }
+
+    private var chevron: some View {
+        Button {
+            if reduceMotion { open.toggle() } else { withAnimation(.easeOut(duration: 0.2)) { open.toggle() } }
+            onToggle?(open)
+        } label: {
+            Image(systemName: "chevron.right")
+                .font(.system(size: chevronInRow ? 15 : 12, weight: .semibold))
+                .foregroundStyle(chevronInRow ? Theme.mut : Theme.dim)
+                .rotationEffect(.degrees(open ? 90 : 0))
+                .frame(width: chevronInRow ? 40 : 36, height: chevronInRow ? 44 : 36)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(open ? "Collapse" : "Expand")
+        .accessibilityValue(open ? "Expanded" : "Collapsed")
     }
 }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import FusionhaKit
 
 // MARK: - Group card (several downloads of one title)
@@ -11,7 +12,7 @@ struct QueueGroupCard: View {
     let selecting: Bool
     @Binding var selected: Set<Int>
     let actionsFor: (QueueItem) -> QueueRowActions
-    let removeMany: (_ ids: [Int], _ blocklist: Bool) -> Void
+    let removeMany: (_ ids: [Int], _ blocklist: Bool, _ deleteData: Bool) -> Void
     let pick: () -> Void
     @Environment(AppModel.self) private var model
     @Environment(ActRouter.self) private var router
@@ -24,6 +25,8 @@ struct QueueGroupCard: View {
     @State private var openId: Int?
     /// Collapsed by default; remembered for this run (`QueueGroupMemory`).
     @State private var groupOpen: Bool?
+    /// "Remove all": the confirmation listing every download (0.4.198).
+    @State private var confirmingRemoveAll = false
 
     /// A pair always shows its lanes; a group remembers being opened.
     private var isOpen: Bool { group.isPair || (groupOpen ?? QueueGroupMemory.open.contains(group.id)) }
@@ -40,7 +43,7 @@ struct QueueGroupCard: View {
         let seasons = Dictionary(grouping: downloads) { season($0) }
         let isSeries = downloads.contains { $0.episodeLabel != nil }
         ActGroupCard(wash: QueueGroupSummary(group: group).heldIds.isEmpty ? Theme.grab : Theme.stuck, base: Theme.panel,
-                     defaultOpen: group.isPair || isOpen,
+                     defaultOpen: group.isPair || isOpen, chevronInRow: true,
                      onToggle: { open in groupOpen = open; QueueGroupMemory.set(group.id, open: open) }) {
             ActPoster(url: lead.posterUrl, title: lead.title, size: .md)
                 .onTapGesture { model.open(group.mediaItemId) }
@@ -56,15 +59,23 @@ struct QueueGroupCard: View {
                 }
             }
         } trailing: {
-            HStack(spacing: 14) {
-                // The group's Manual Import, full width (web `groupAction`).
-                if let label = QueueGroupSummary(group: group).reviewLabel {
+            HStack(spacing: 0) {
+                // The group's Manual Import fills the row; the icon slots match a
+                // single card's, so every primary shares a right edge (0.4.198).
+                let summary = QueueGroupSummary(group: group)
+                if !summary.heldIds.isEmpty {
                     Button {
-                        router.manualImport(rescue: QueueGroupSummary(group: group).heldIds)
+                        router.manualImport(rescue: summary.heldIds)
                     } label: {
-                        Label(label, systemImage: "square.and.arrow.down").frame(maxWidth: .infinity)
+                        Label(summary.heldIds.count == downloads.count ? "Review all \(summary.heldIds.count)" : "Review \(summary.heldIds.count)",
+                              systemImage: "square.and.arrow.down")
+                            .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(ActButtonStyle(kind: .primary, small: false))
+                    .accessibilityLabel(summary.reviewLabel ?? "Review in Manual Import")
+                    .padding(.trailing, 6)
+                } else {
+                    Spacer(minLength: 0)
                 }
                 // Size is in the header's count line; only live transfer facts here.
                 if counts.dl > 0 {
@@ -74,12 +85,17 @@ struct QueueGroupCard: View {
                             .animation(reduce ? nil : .easeOut(duration: 0.2), value: shownRate > 0)
                         Text("speed").font(.system(size: 9.5, weight: .bold)).foregroundStyle(Theme.dim)
                     }
+                    .padding(.trailing, 12)
                     VStack(alignment: .trailing, spacing: 1) {
                         Text(ActFmt.etaShort(eta)).font(.system(size: 13, weight: .bold).monospacedDigit()).foregroundStyle(Theme.txt)
                         Text("NEXT DONE").font(.system(size: 9.5, weight: .bold)).foregroundStyle(Theme.dim)
                     }
+                    .padding(.trailing, 6)
                 }
-                removeMenu(downloads: downloads, seasons: seasons, title: lead.title)
+                QueueIconSlot(icon: "trash", label: "Remove all \(downloads.count) downloads", tint: Theme.danger) {
+                    confirmingRemoveAll = true
+                }
+                moreMenu(downloads: downloads, seasons: seasons, lead: lead)
             }
             // Ahead of the card's leading spacer, so the button runs full width.
             .layoutPriority(1)
@@ -97,6 +113,16 @@ struct QueueGroupCard: View {
         .overlay {
             if soonest { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.grab.opacity(0.45)) }
         }
+        .confirmationDialog(removeAllTitle(downloads), isPresented: $confirmingRemoveAll, titleVisibility: .visible) {
+            Button("Remove \(downloads.count) downloads", role: .destructive) { removeMany(downloads.map(\.id), false, false) }
+            if downloads.contains(where: { $0.hasDownloadedFile == true }) {
+                Button("Remove and delete downloaded files", role: .destructive) { removeMany(downloads.map(\.id), false, true) }
+            }
+            Button("Remove and blocklist", role: .destructive) { removeMany(downloads.map(\.id), true, false) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(removeAllMessage(downloads))
+        }
         .task(id: rate) {
             if rate > 0 { shownRate = rate; return }
             try? await Task.sleep(for: .seconds(4))
@@ -104,19 +130,36 @@ struct QueueGroupCard: View {
         }
     }
 
-    /// The group's remove choices behind ⋯ (all, per season, with blocklist, pick).
-    private func removeMenu(downloads: [QueueItem], seasons: [Int?: [QueueItem]], title: String) -> some View {
-        ActMoreMenu(label: "Remove downloads for \(title)") {
-            Button("Remove all (\(downloads.count))", systemImage: "trash") { removeMany(downloads.map(\.id), false) }
+    /// The group's ⋯ (0.4.198): open the title, copy the release names,
+    /// remove one season, or pick downloads.
+    private func moreMenu(downloads: [QueueItem], seasons: [Int?: [QueueItem]], lead: QueueItem) -> some View {
+        ActMoreMenu(label: "More for \(lead.title)") {
+            Button("Open title", systemImage: "rectangle.portrait.on.rectangle.portrait") { model.open(group.mediaItemId) }
+            Button("Copy release names", systemImage: "doc.on.doc") {
+                UIPasteboard.general.string = downloads.compactMap(\.releaseTitle).joined(separator: "\n")
+            }
             if seasons.keys.compactMap({ $0 }).count >= 2 {
+                Divider()
                 ForEach(seasons.keys.compactMap { $0 }.sorted(), id: \.self) { s in
-                    Button("Remove Season \(s) (\(seasons[s]?.count ?? 0))") { removeMany((seasons[s] ?? []).map(\.id), false) }
+                    Button("Remove Season \(s) (\(seasons[s]?.count ?? 0))") { removeMany((seasons[s] ?? []).map(\.id), false, false) }
                 }
             }
-            Button("Remove + blocklist all", systemImage: "nosign", role: .destructive) { removeMany(downloads.map(\.id), true) }
             Divider()
             Button("Pick downloads…", systemImage: "checkmark.circle", action: pick)
         }
+        .frame(width: 40, height: 44)
+    }
+
+    private func removeAllTitle(_ downloads: [QueueItem]) -> String {
+        "Remove all \(downloads.count) downloads of \(downloads[0].title)?"
+    }
+
+    /// Every download with its size, then the total.
+    private func removeAllMessage(_ downloads: [QueueItem]) -> String {
+        let lines = downloads.prefix(12).map { "\($0.episodeLabel ?? QueueCardText.versionLabel($0)) · \(ActFmt.bytes($0.size))" }
+        let more = downloads.count > 12 ? ["+\(downloads.count - 12) more"] : []
+        let total = downloads.reduce(0) { $0 + max(0, $1.size) }
+        return (lines + more + ["Total \(ActFmt.bytes(total))"]).joined(separator: "\n")
     }
 
     private func season(_ item: QueueItem) -> Int? {
