@@ -27,7 +27,7 @@ public enum QueueCardText {
     public static func heldTag(_ item: QueueItem) -> String {
         let d = item.heldDetail
         if d?.kind == "mislabeled_hdr" { return "no HDR in file" }
-        if d?.mislabeled == true {
+        if d?.mislabeled == true || d?.kind == "mislabeled_resolution" {
             return d?.claimedResolution.map { "not really \($0)p" } ?? "smaller than named"
         }
         if d?.kind == "not_an_upgrade" { return "not an upgrade" }
@@ -38,6 +38,15 @@ public enum QueueCardText {
         if low.contains("would orphan other episodes of a multi-episode file") { return "splits an episode pair" }
         if low.contains("(indeterminate)") { return "couldn't check file" }
         if low.contains("not an upgrade") { return "not an upgrade" }
+        // Holds fusionha's reason_code files under "other", by their own text.
+        if low.hasPrefix("not really ") { return "smaller than named" }
+        if low.hasPrefix("release resolution could not be read") { return "unnamed resolution" }
+        if low.contains("numbering review") { return "numbering check" }
+        if low.hasPrefix("sample: runtime") { return "too short" }
+        if low.hasPrefix("another import was writing this slot") { return "slot was busy" }
+        if low.hasPrefix("recording the import failed") { return "import failed" }
+        if low.hasPrefix("the imported file could not be put in place") { return "couldn't place file" }
+        if low.hasPrefix("the current file changed") { return "current file changed" }
         return "needs a look"
     }
 
