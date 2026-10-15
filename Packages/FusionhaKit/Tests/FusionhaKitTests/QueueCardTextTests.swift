@@ -97,3 +97,28 @@ final class LibraryDiskCacheTests: XCTestCase {
         XCTAssertNil(LibraryDiskCache.load(server: server))
     }
 }
+
+final class ResponseDiskCacheTests: XCTestCase {
+    func testOnlyPageLevelGetsAreKept() {
+        XCTAssertTrue(ResponseDiskCache.cacheable(URL(string: "https://f.test/api/v1/queue?page_size=50")!))
+        XCTAssertTrue(ResponseDiskCache.cacheable(URL(string: "https://f.test/base/api/v1/calendar?start=a")!))
+        XCTAssertFalse(ResponseDiskCache.cacheable(URL(string: "https://f.test/api/v1/auth/me")!))
+        XCTAssertFalse(ResponseDiskCache.cacheable(URL(string: "https://f.test/api/v1/tokens")!))
+        XCTAssertFalse(ResponseDiskCache.cacheable(URL(string: "https://f.test/api/v1/discover/search?q=dune")!))
+        XCTAssertFalse(ResponseDiskCache.cacheable(URL(string: "https://f.test/library/3/search")!))
+    }
+
+    func testCachedReadsWhatTheLastAnswerWas() async throws {
+        ResponseDiskCache.clear()
+        let url = URL(string: "https://f.test/api/v1/wanted?page=1&page_size=1")!
+        let json = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+        ResponseDiskCache.write(Data(#"{"ok":true}"#.utf8), for: url, response: json)
+        XCTAssertEqual(ResponseDiskCache.read(url).map { String(decoding: $0, as: UTF8.self) }, #"{"ok":true}"#)
+        let html = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "text/html"])!
+        let other = URL(string: "https://f.test/api/v1/history?page=1")!
+        ResponseDiskCache.write(Data("<html>".utf8), for: other, response: html)
+        XCTAssertNil(ResponseDiskCache.read(other))
+        ResponseDiskCache.clear()
+        XCTAssertNil(ResponseDiskCache.read(url))
+    }
+}

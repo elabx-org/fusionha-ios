@@ -46,6 +46,8 @@ public final class APIClient: @unchecked Sendable {
     private let token: String?
     private let authMethod: AuthMethod
     let session: URLSession
+    /// Answers from `ResponseDiskCache` only, never the network (`cached`).
+    let readsCache: Bool
 
     static let decoder: JSONDecoder = {
         let d = JSONDecoder()
@@ -64,7 +66,19 @@ public final class APIClient: @unchecked Sendable {
         self.token = token
         self.authMethod = method
         self.session = session
+        self.readsCache = false
     }
+
+    private init(cacheReaderFor base: APIClient) {
+        baseURL = base.baseURL
+        token = base.token
+        authMethod = base.authMethod
+        session = base.session
+        readsCache = true
+    }
+
+    /// The same client, answering from this phone's cache only.
+    var cacheReader: APIClient { APIClient(cacheReaderFor: self) }
 
     /// The session token from the cookie `POST /api/v1/auth/login` set, if any.
     public func sessionTokenFromCookie() -> String? {
@@ -291,12 +305,18 @@ public final class APIClient: @unchecked Sendable {
     /// error keeps up to 8 KB of the body: enough for any coded `detail` to stay
     /// valid JSON, so `APIError.code` can read it.
     func data(for req: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        if readsCache {
+            guard req.httpMethod == "GET", let url = req.url, let kept = ResponseDiskCache.read(url),
+                  let ok = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil) else { throw NotCached() }
+            return (kept, ok)
+        }
         let (data, response) = try await session.data(for: req)
         let http = response as? HTTPURLResponse
         let status = http?.statusCode ?? 0
         guard let http, (200..<300).contains(status) else {
             throw APIError.http(status: status, body: String(decoding: data.prefix(8192), as: UTF8.self))
         }
+        if req.httpMethod == "GET", let url = req.url { ResponseDiskCache.write(data, for: url, response: http) }
         return (data, http)
     }
 }

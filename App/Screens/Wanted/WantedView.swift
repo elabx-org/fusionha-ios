@@ -107,6 +107,13 @@ struct WantedView: View {
 
     private func loadTotals() async {
         guard let client = model.client else { return }
+        // The counts this phone last saw, at once; the server's replace them.
+        if totals == nil {
+            totals = await client.cached { try await $0.wantedPage(state: nil, page: 1, pageSize: 1) }
+            if let kept = await client.cached({ try await $0.fourKAvailable(page: 1, pageSize: 1) }) {
+                fourkCount = kept.fourkAvailableCount ?? kept.total
+            }
+        }
         do {
             let page = try await client.wantedPage(state: nil, page: 1, pageSize: 1)
             if reduce { totals = page } else { withAnimation(ActMotion.reveal()) { totals = page } }
@@ -123,17 +130,15 @@ struct WantedView: View {
         let client = model.client
         let q = search
         if tab == .fourk {
-            fourkFeed.fetch = { page, size in
-                guard let client else { return ([], 0) }
-                let r = try await client.fourKAvailable(page: page, pageSize: size, query: q)
+            fourkFeed.source(client) { c, page, size in
+                let r = try await c.fourKAvailable(page: page, pageSize: size, query: q)
                 return (r.items, r.total)
             }
             await fourkFeed.reload(resetting: true)
         } else {
             let state = tab.state
-            feed.fetch = { page, size in
-                guard let client else { return ([], 0) }
-                let r = try await client.wantedPage(state: state, page: page, pageSize: size, query: q)
+            feed.source(client) { c, page, size in
+                let r = try await c.wantedPage(state: state, page: page, pageSize: size, query: q)
                 return (r.items, r.total)
             }
             await feed.reload(resetting: true)

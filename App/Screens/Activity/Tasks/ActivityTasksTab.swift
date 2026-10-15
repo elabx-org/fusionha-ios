@@ -29,9 +29,8 @@ final class TasksStore {
     }
 
     func load(_ client: APIClient?) async {
-        feed.fetch = { page, size in
-            guard let client else { return ([], 0) }
-            let r = try await client.systemRuns(page: page, pageSize: size)
+        feed.source(client) { c, page, size in
+            let r = try await c.systemRuns(page: page, pageSize: size)
             return (r.items, r.total)
         }
         await feed.reload()

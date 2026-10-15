@@ -403,6 +403,7 @@ final class AppModel {
         credentials = nil
         me = nil
         LibraryDiskCache.clear()
+        ResponseDiskCache.clear()
         library = []
         libraryVersion += 1
         libraryLoaded = false
@@ -422,6 +423,16 @@ final class AppModel {
     // MARK: Queue polling (no stream on the server, so poll like the web does)
 
     func pollQueue() async {
+        // The queue as this phone last saw it, at once (badge, Activity, Live Activity
+        // wait for the first poll otherwise).
+        if queue.isEmpty, let kept = await client?.cached({ try await $0.queue() }) {
+            if queue.isEmpty {
+                queue = kept.items
+                queueTotal = kept.total
+                queueHeldIds = kept.items.filter { $0.status.lowercased() == "held" }.map(\.id)
+                queueHeld = queueHeldIds.count
+            }
+        }
         while !Task.isCancelled {
             await refreshQueue()
             let interval: Double = queue.isEmpty ? 6 : 2
@@ -518,6 +529,7 @@ final class AppModel {
         URLCache.shared.removeAllCachedResponses()
         ImagePipeline.shared.removeAll()
         LibraryDiskCache.clear()
+        ResponseDiskCache.clear()
         libraryLoaded = false
         await loadMe()
         await loadLibrary()

@@ -80,11 +80,19 @@ extension CalendarView {
     func load() async {
         guard viewKnown, let client = model.client else { return }
         let (start, end) = bounds
-        if feed.isEmpty { phase = .loading }
+        // ±1 day: entries sit on their LOCAL air day, which can be a day off TMDB's date.
+        let from = CalendarMath.shift(start, days: -1, cal), to = CalendarMath.shift(end, days: 1, cal)
+        if feed.isEmpty {
+            // This range as this phone last saw it, at once; the server's answer replaces it.
+            if let kept = await client.cached({ try await $0.calendar(startISO: from, endISO: to) }), !kept.isEmpty {
+                feed = kept
+                phase = .loaded
+            } else {
+                phase = .loading
+            }
+        }
         do {
-            // ±1 day: entries sit on their LOCAL air day, which can be a day off TMDB's date.
-            feed = try await client.calendar(startISO: CalendarMath.shift(start, days: -1, cal),
-                                             endISO: CalendarMath.shift(end, days: 1, cal))
+            feed = try await client.calendar(startISO: from, endISO: to)
             phase = .loaded
         } catch is CancellationError {
         } catch let error as URLError where error.code == .cancelled {

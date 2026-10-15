@@ -37,11 +37,9 @@ struct ActivityBlocklistTab: View {
         }
         .animation(reduce ? nil : ActMotion.rows, value: RowsKey(category: category, grouped: grouped))
         .task(id: search) {
-            let client = model.client
             let q = search
-            feed.fetch = { page, size in
-                guard let client else { return ([], 0) }
-                let r = try await client.blocklistPage(page: page, pageSize: size, query: q)
+            feed.source(model.client) { c, page, size in
+                let r = try await c.blocklistPage(page: page, pageSize: size, query: q)
                 return (r.items, r.total)
             }
             await feed.reload(resetting: true)

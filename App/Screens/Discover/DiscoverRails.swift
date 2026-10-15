@@ -69,7 +69,14 @@ struct DiscoverRail<Icon: View, Toggle: View>: View {
         }
         .task(id: key) {
             guard let client = model.client else { return }
-            if case .loaded = state {} else { state = .loading }
+            if case .loaded = state {} else {
+                // The rail as this phone last saw it, at once (the web's query cache).
+                if let kept = await client.cached({ try await load($0) }), !kept.isEmpty {
+                    state = .loaded(kept)
+                } else {
+                    state = .loading
+                }
+            }
             do {
                 state = .loaded(try await load(client))
             } catch is CancellationError {

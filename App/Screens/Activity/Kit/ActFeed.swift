@@ -18,6 +18,9 @@ final class ActFeed<Item: Identifiable & Equatable> {
     private var generation = 0
     let pageSize: Int
     @ObservationIgnored var fetch: (_ page: Int, _ pageSize: Int) async throws -> ([Item], Int)
+    /// The first page as this phone last saw it (`APIClient.cached`), drawn
+    /// while the real first page loads.
+    @ObservationIgnored var peek: ((_ pageSize: Int) async -> ([Item], Int)?)?
 
     init(pageSize: Int = 50, fetch: @escaping (_ page: Int, _ pageSize: Int) async throws -> ([Item], Int)) {
         self.pageSize = pageSize
@@ -25,6 +28,19 @@ final class ActFeed<Item: Identifiable & Equatable> {
     }
 
     var hasMore: Bool { items.count < total }
+
+    /// Points the feed at one paged call: live pages from the server, and the
+    /// first page from this phone's cache while it loads.
+    func source(_ client: APIClient?, _ load: @escaping (APIClient, _ page: Int, _ pageSize: Int) async throws -> ([Item], Int)) {
+        fetch = { page, size in
+            guard let client else { return ([], 0) }
+            return try await load(client, page, size)
+        }
+        peek = { size in
+            guard let client else { return nil }
+            return await client.cached { try await load($0, 1, size) }
+        }
+    }
 
     private func setItems(_ new: [Item]) {
         items = new
@@ -36,6 +52,11 @@ final class ActFeed<Item: Identifiable & Equatable> {
         generation += 1
         let gen = generation
         if resetting { loaded = false; setItems([]); total = 0 }
+        if items.isEmpty, let peek, let (page, total) = await peek(pageSize), gen == generation, !page.isEmpty {
+            setItems(page)
+            self.total = total
+            loaded = true
+        }
         do {
             let (page, total) = try await fetch(1, pageSize)
             guard gen == generation else { return }
