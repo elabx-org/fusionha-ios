@@ -188,7 +188,7 @@ private struct AvailRow<Icon: View, Action: View>: View {
                     .frame(height: 18)
                 sub.frame(height: 18)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
             action
         }
         .padding(.vertical, 10)
@@ -320,7 +320,20 @@ private struct FourKRow: View {
     }
 
     /// The found row's CF chips: one line, clipped.
+    /// As many chips as fit on the one line (dropping from the end), never
+    /// wider than the card: fixed-size chips in a plain HStack forced the
+    /// whole sheet wider than the screen.
     private func tagLine(_ tags: [FourKAvailabilityTag]) -> some View {
+        ViewThatFits(in: .horizontal) {
+            ForEach(Array(stride(from: tags.count, through: 1, by: -1)), id: \.self) { n in
+                tagChips(Array(tags.prefix(n)))
+            }
+        }
+        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+        .clipped()
+    }
+
+    private func tagChips(_ tags: [FourKAvailabilityTag]) -> some View {
         HStack(spacing: 5) {
             ForEach(Array(tags.enumerated()), id: \.offset) { _, tag in
                 let color = Self.tagColor(tag.kind)
@@ -334,8 +347,6 @@ private struct FourKRow: View {
                     .background(color.opacity(0.14), in: Capsule())
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .clipped()
     }
 
     /// `FORMAT_TAG_COLOR`.
