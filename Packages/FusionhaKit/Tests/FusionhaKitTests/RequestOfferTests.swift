@@ -42,7 +42,7 @@ final class RequestOfferTests: XCTestCase {
         let body = RequestCreateBody(tmdbId: 1, kind: .movie, editions: [.hd], wishlist: true)
         let json = String(decoding: try APIClient.encoder.encode(body), as: UTF8.self)
         XCTAssertTrue(json.contains("\"wishlist\":true"))
-        XCTAssertTrue(json.contains("\"join\":false"))
+        XCTAssertFalse(json.contains("join"))
     }
 }
 

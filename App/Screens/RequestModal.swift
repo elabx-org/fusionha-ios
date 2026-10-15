@@ -329,7 +329,7 @@ struct RequestModal: View {
             DiscoverToasts.shared.show(.success, RequestOffer.successCopy(result, title: preview?.title ?? pick.title))
             onDone()
             dismiss()
-        } catch let error as APIError where error.code == "quota" && !body.wishlist {
+        } catch let error as APIError where error.code == "quota" && body.wishlist != true {
             blocked = body
         } catch {
             blocked = nil
