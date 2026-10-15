@@ -397,7 +397,7 @@ public enum IssueType: String, CaseIterable, Sendable {
 public struct MediaIssue: Decodable, Sendable, Identifiable, Hashable {
     public let id: Int
     public let mediaItemId: Int
-    public let reporterUserId: Int
+    public let reporterUserId: Int?
     public let issueType: String
     public let scope: String
     public let season: Int?
@@ -408,6 +408,18 @@ public struct MediaIssue: Decodable, Sendable, Identifiable, Hashable {
     public let createdAt: String?
     public let resolvedAt: String?
     public let comment: String?
+    // The issues revamp (fusionha phase 6, `IssueModels.swift`); optional so
+    // an older server still decodes.
+    public let reporter: RequestPerson?
+    public let state: String?
+    public let reopenCount: Int?
+    public let participantsCount: Int?
+    public let thread: RequestThreadSummary?
+    public let reports: [IssueReport]?
+    public let mediaTitle: String?
+    public let mediaYear: Int?
+    public let poster: String?
+    public let deduped: Bool?
 
     public var typeLabel: String { IssueType(rawValue: issueType)?.title ?? issueType.capitalized }
 

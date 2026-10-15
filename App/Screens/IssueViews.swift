@@ -86,7 +86,7 @@ private struct IssueRow: View {
                     Text("·")
                     Text(issue.scopeLabel)
                     Text("·")
-                    Text("Reported by user #\(issue.reporterUserId)")
+                    Text(issue.reporter.map { "Reported by \($0.displayName)" } ?? "Reported by user #\(issue.reporterUserId ?? 0)")
                     if !DiscoverRelativeTime.string(issue.createdAt).isEmpty {
                         Text("·")
                         Text(DiscoverRelativeTime.string(issue.createdAt))
@@ -166,138 +166,6 @@ private struct ResolveDialog: View {
             dismiss()
         } catch {
             DiscoverToasts.shared.error("Could not resolve issue", error)
-        }
-    }
-}
-
-/// "Report an issue" (`IssueModal.tsx`), also usable from item detail.
-struct IssueModal: View {
-    @Environment(AppModel.self) private var model
-    @Environment(\.dismiss) private var dismiss
-    let mediaItemId: Int
-    let title: String
-    let isSeries: Bool
-    /// Season number → episode count, when known; otherwise numeric fields.
-    let seasons: [Int: Int]?
-    /// Reports the outcome (message, failed) to the host's own toast, e.g. the
-    /// item detail sheet; Discover's shared toast otherwise.
-    var onResult: ((String, Bool) -> Void)? = nil
-
-    @State private var type: IssueType = .playback
-    @State private var scope = "item"
-    @State private var season: Int?
-    @State private var episode: Int?
-    @State private var description = ""
-    @State private var sending = false
-
-    private var ready: Bool {
-        switch scope {
-        case "season": return season != nil
-        case "episode": return season != nil && episode != nil
-        default: return true
-        }
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    (Text("Tell us what's wrong with ") + Text(title).bold() + Text(" — an admin will take a look."))
-                        .font(.system(size: 13)).foregroundStyle(Theme.mut)
-                        .listRowBackground(Color.clear)
-                }
-                Section {
-                    Picker("What's wrong?", selection: $type) {
-                        ForEach(IssueType.allCases, id: \.self) { Text($0.title).tag($0) }
-                    }
-                    if isSeries {
-                        Picker("Where?", selection: $scope) {
-                            Text("Whole series").tag("item")
-                            Text("One season").tag("season")
-                            Text("One episode").tag("episode")
-                        }
-                        if scope != "item" {
-                            seasonField
-                            if scope == "episode" { episodeField }
-                        }
-                    }
-                }
-                .listRowBackground(Theme.card)
-                Section("Description · optional") {
-                    TextField("What happened? Any details help.", text: $description, axis: .vertical)
-                        .lineLimit(3...6)
-                }
-                .listRowBackground(Theme.card)
-            }
-            .scrollContentBackground(.hidden)
-            .background(Theme.panel)
-            .navigationTitle("Report an issue")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button { Task { await submit() } } label: {
-                        ToolbarActionLabel(title: sending ? "Reporting…" : "Report issue", systemImage: "flag")
-                    }
-                    .buttonStyle(.glassProminent)
-                    .tint(Theme.danger)
-                    .disabled(sending || !ready)
-                }
-            }
-        }
-        .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.panel)
-    }
-
-    @ViewBuilder
-    private var seasonField: some View {
-        if let seasons, !seasons.isEmpty {
-            Picker("Season", selection: $season) {
-                Text("Select…").tag(Int?.none)
-                ForEach(seasons.keys.sorted(), id: \.self) { n in
-                    Text(n == 0 ? "Specials" : "Season \(n)").tag(Int?.some(n))
-                }
-            }
-        } else {
-            LabeledContent("Season") {
-                TextField("Select…", value: $season, format: .number).keyboardType(.numberPad).multilineTextAlignment(.trailing)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var episodeField: some View {
-        if let seasons, let n = season, let count = seasons[n], count > 0 {
-            Picker("Episode", selection: $episode) {
-                Text("Select…").tag(Int?.none)
-                ForEach(1...count, id: \.self) { e in Text("Episode \(e)").tag(Int?.some(e)) }
-            }
-        } else {
-            LabeledContent("Episode") {
-                TextField("Select…", value: $episode, format: .number).keyboardType(.numberPad).multilineTextAlignment(.trailing)
-            }
-        }
-    }
-
-    private func submit() async {
-        sending = true
-        defer { sending = false }
-        let trimmed = description.trimmingCharacters(in: .whitespacesAndNewlines)
-        let scope = isSeries ? self.scope : "item"
-        do {
-            try await model.client?.reportIssue(IssueCreateBody(
-                mediaItemId: mediaItemId, issueType: type, scope: scope,
-                season: scope == "item" ? nil : season.map { max(0, $0) },
-                episode: scope == "episode" ? episode.map { max(1, $0) } : nil,
-                description: trimmed.isEmpty ? nil : trimmed))
-            if let onResult { onResult("Issue reported on \(title)", false) } else {
-                DiscoverToasts.shared.show(.success, "Issue reported on \(title)")
-            }
-            dismiss()
-        } catch {
-            if let onResult { onResult("Could not report issue", true) } else {
-                DiscoverToasts.shared.error("Could not report issue", error)
-            }
         }
     }
 }

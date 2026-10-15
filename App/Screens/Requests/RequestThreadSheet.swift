@@ -45,7 +45,7 @@ struct RequestThreadSheet: View {
             .safeAreaInset(edge: .bottom) {
                 if canPost {
                     RequestThreadComposer(placeholder: RequestThreadFormat.placeholder(request, isOwner: isOwner, joinedView: joinedView),
-                                          requestId: request.id) { line in append([line]) }
+                                          post: { [id = request.id] client, body in try await client.postRequestMessage(id: id, body: body) }) { line in append([line]) }
                 }
             }
             .background(Theme.bg)
@@ -130,7 +130,8 @@ struct RequestThreadSheet: View {
 /// The message box: posts, then clears unless a newer draft was typed meanwhile.
 struct RequestThreadComposer: View {
     let placeholder: String
-    let requestId: Int
+    /// Posts one line (a request's or an issue's thread).
+    let post: (APIClient, String) async throws -> RequestThreadEvent
     let onSent: (RequestThreadEvent) -> Void
     @Environment(AppModel.self) private var model
     @State private var text = ""
@@ -170,7 +171,7 @@ struct RequestThreadComposer: View {
         sending = true
         defer { sending = false }
         do {
-            let line = try await client.postRequestMessage(id: requestId, body: body)
+            let line = try await post(client, body)
             if text.trimmingCharacters(in: .whitespacesAndNewlines) == body { text = "" }
             onSent(line)
         } catch {

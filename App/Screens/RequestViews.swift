@@ -175,6 +175,6 @@ struct RequestsPanel: View {
     let approver: Bool
 
     var body: some View {
-        if approver { ApproverRequestsView() } else { MyRequestsView() }
+        if approver { ApproverRequestsView() } else { MineView() }
     }
 }

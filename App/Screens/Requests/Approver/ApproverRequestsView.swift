@@ -29,7 +29,7 @@ struct ApproverRequestsView: View {
                 RequestsHistoryView(initialFilter: historyFilter, onOpenThread: { thread = $0 })
                     .id(historyFilter)
             case .mine:
-                MyRequestsView()
+                MineView()
             }
         }
         .sheet(item: $thread) { request in

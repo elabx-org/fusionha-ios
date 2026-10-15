@@ -9,12 +9,18 @@ public struct RequestThreadEvent: Decodable, Sendable, Hashable, Identifiable {
         public let tier: String?
         public let via: String?
         public let rule: String?
+        /// Issue lines: the report a verdict belongs to, and a rescan marker's action.
+        public let reportId: Int?
+        public let action: String?
 
-        public init(tiers: [String]? = nil, tier: String? = nil, via: String? = nil, rule: String? = nil) {
+        public init(tiers: [String]? = nil, tier: String? = nil, via: String? = nil, rule: String? = nil,
+                    reportId: Int? = nil, action: String? = nil) {
             self.tiers = tiers
             self.tier = tier
             self.via = via
             self.rule = rule
+            self.reportId = reportId
+            self.action = action
         }
 
         public init(from decoder: Decoder) throws {
@@ -23,9 +29,11 @@ public struct RequestThreadEvent: Decodable, Sendable, Hashable, Identifiable {
             tier = try? c.decodeIfPresent(String.self, forKey: .tier)
             via = try? c.decodeIfPresent(String.self, forKey: .via)
             rule = try? c.decodeIfPresent(String.self, forKey: .rule)
+            reportId = try? c.decodeIfPresent(Int.self, forKey: .reportId)
+            action = try? c.decodeIfPresent(String.self, forKey: .action)
         }
 
-        enum CodingKeys: String, CodingKey { case tiers, tier, via, rule }
+        enum CodingKeys: String, CodingKey { case tiers, tier, via, rule, reportId, action }
     }
 
     public let id: Int

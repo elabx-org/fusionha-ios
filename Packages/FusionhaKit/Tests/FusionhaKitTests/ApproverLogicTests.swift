@@ -87,3 +87,31 @@ final class ApproverLogicTests: XCTestCase {
         XCTAssertNil(HistoryFilter.approved.query(search: nil).filter)
     }
 }
+
+final class IssueFormatTests: XCTestCase {
+    func testWords() {
+        XCTAssertEqual(IssueFormat.stateLabel("CHECKING"), "Checking")
+        XCTAssertEqual(IssueFormat.stateLabel("NEEDS_ADMIN", reopenCount: 1), "Reopened")
+        XCTAssertEqual(IssueFormat.stateTone("RESOLVED"), .resolved)
+        XCTAssertEqual(IssueFormat.problems(series: false).count, 5)
+        XCTAssertEqual(IssueFormat.disabledSub("rate_limited", choiceId: "request_version"),
+                       "Used this week’s requests · They reset on Monday.")
+        XCTAssertEqual(IssueFormat.disabledSub("no_access"), "Needs UHD·4K access · Ask an admin below instead.")
+        XCTAssertEqual(IssueFormat.disabledSub("no_access", manager: true), "Not allowed on this title")
+        XCTAssertEqual(IssueFormat.defaultVersionId([.init(id: 2, tier: .uhd), .init(id: 3, tier: .hd, edition: "Extended"),
+                                                     .init(id: 4, tier: .hd)]), 4)
+        XCTAssertTrue(IssueFormat.scopeComplete(scope: "season", season: 1, episode: nil))
+        XCTAssertFalse(IssueFormat.scopeComplete(scope: "episode", season: 1, episode: nil))
+    }
+
+    func testPickReportAndDecode() throws {
+        let json = #"{"id":7,"media_item_id":3,"issue_type":"playback","scope":"item","status":"open","state":"OPEN","reopen_count":0,"participants_count":2,"thread":{"unread":1,"last_event_at":"2026-10-15T10:00:00"},"reports":[{"id":11,"problem":"WONT_PLAY","version":{"id":5,"tier":"HD-1080p"},"scope":"item","state":"AWAITING_USER","verdict_summary":{"text":"The file is missing 30%","verified":true},"choices":[{"id":"search_missing","label":"Search for a new copy","permission":"allowed"}],"created_at":"2026-10-15T09:00:00","mine":true,"check_generation":1},{"id":12,"problem":"LANGUAGE","version":{"id":6,"tier":"UHD-2160p"},"scope":"item","state":"OPEN","verdict_summary":{"text":"x"},"choices":[],"created_at":"2026-10-15T09:00:00","mine":true}],"media_title":"Dune","media_year":2021}"#
+        let issue = try APIClient.decoder.decode(MediaIssue.self, from: Data(json.utf8))
+        XCTAssertEqual(issue.reports?.count, 2)
+        XCTAssertEqual(IssueFormat.pickReport(issue.reports ?? [], problem: "WONT_PLAY", versionId: 5)?.id, 11)
+        XCTAssertEqual(IssueFormat.pickReport(issue.reports ?? [])?.id, 12)
+        XCTAssertEqual(issue.reports?.first?.choices.first?.allowed, true)
+        let marker = RequestThreadEvent(id: 1, kind: "SYSTEM", eventType: "rescan", data: .init(action: "rescan"))
+        XCTAssertTrue(IssueFormat.isMarkerLine(marker))
+    }
+}
