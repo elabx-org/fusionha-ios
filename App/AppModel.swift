@@ -83,6 +83,8 @@ final class AppModel {
     /// A deep link's sub-tab (`fusionha://activity/indexers`, `discover/requests`),
     /// taken by the screen when it shows.
     var pendingActivityTab: ActivityTab?
+    /// Held downloads a link asked to open in Manual Import (the Live Activity's Review).
+    var pendingRescueIds: [Int]?
     /// A download a link asked the queue to bring forward (`focus`), and whether
     /// to open "Block release group?" on it (`block=1`). Consumed by the row.
     var pendingQueueFocus: (downloadId: Int, block: Bool)?

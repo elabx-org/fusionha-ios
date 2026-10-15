@@ -2,74 +2,116 @@ import ActivityKit
 import SwiftUI
 import WidgetKit
 
+/// The Downloads Live Activity (approved "Live Activity redesign"): the Lock
+/// Screen and StandBy views, the Dynamic Island, and the Apple Watch Smart
+/// Stack (`.small`). Every state comes from `ContentState.mode`.
 struct DownloadsLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DownloadsActivityAttributes.self) { context in
-            LockScreenView(state: context.state)
-                .padding()
-                .activityBackgroundTint(Color.black.opacity(0.35))
-                .widgetURL(URL(string: "fusionha://activity"))
+            LiveActivityRoot(state: context.state, stale: context.isStale)
+                .activityBackgroundTint(Color.black.opacity(0.55))
+                .activitySystemActionForegroundColor(.white)
+                .widgetURL(LiveActivityLinks.tap(context.state))
         } dynamicIsland: { context in
             let state = context.state
-            let tint = state.stuck ? Theme.stuck : (state.finished ? Theme.done : Theme.grab)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Label("\(state.activeCount)", systemImage: "arrow.down.circle.fill")
-                        .foregroundStyle(tint)
-                        .font(.headline)
+                    LiveActivityIslandLeading(state: state)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Text(state.overallFraction, format: .percent.precision(.fractionLength(0)))
-                        .font(.headline.monospacedDigit())
+                    LiveActivityIslandTrailing(state: state)
+                }
+                DynamicIslandExpandedRegion(.center) {
+                    LiveActivityIslandCenter(state: state)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(state.topTitle).font(.subheadline.weight(.semibold)).lineLimit(1)
-                            Spacer()
-                            Text(state.topTierLabel).font(.caption.monospaced()).foregroundStyle(.secondary)
-                        }
-                        ProgressView(value: state.overallFraction).tint(tint)
-                    }
+                    LiveActivityIslandBottom(state: state)
                 }
             } compactLeading: {
-                Image(systemName: state.finished ? "checkmark.circle.fill" : "arrow.down.circle.fill")
-                    .foregroundStyle(tint)
+                LiveActivityCompactLeading(state: state)
             } compactTrailing: {
-                ProgressView(value: state.overallFraction)
-                    .progressViewStyle(.circular)
-                    .tint(tint)
+                LiveActivityCompactTrailing(state: state)
             } minimal: {
-                ProgressView(value: state.overallFraction)
-                    .progressViewStyle(.circular)
-                    .tint(tint)
+                LiveActivityMinimal(state: state)
             }
-            .widgetURL(URL(string: "fusionha://activity"))
+            .widgetURL(LiveActivityLinks.tap(state))
+            .keylineTint(LiveActivityTone.of(state))
+        }
+        .supplementalActivityFamilies([.small])
+    }
+}
+
+/// Picks the Watch / small layout or the full Lock Screen one.
+private struct LiveActivityRoot: View {
+    let state: DownloadsActivityAttributes.ContentState
+    let stale: Bool
+    @Environment(\.activityFamily) private var family
+
+    var body: some View {
+        switch family {
+        case .small:
+            LiveActivitySmall(state: state)
+                .padding(10)
+        default:
+            LiveActivityLockScreen(state: state, stale: stale)
+                .padding(16)
         }
     }
 }
 
-private struct LockScreenView: View {
-    let state: DownloadsActivityAttributes.ContentState
-
-    var body: some View {
-        let tint = state.stuck ? Theme.stuck : (state.finished ? Theme.done : Theme.grab)
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: state.finished ? "checkmark.circle.fill" : "arrow.down.circle.fill")
-                    .foregroundStyle(tint)
-                Text(state.finished ? "Imported" : "\(state.activeCount) downloading")
-                    .font(.headline)
-                Spacer()
-                Text(state.overallFraction, format: .percent.precision(.fractionLength(0)))
-                    .font(.headline.monospacedDigit())
-            }
-            HStack {
-                Text(state.topTitle).font(.subheadline).lineLimit(1)
-                Spacer()
-                Text(state.topTierLabel).font(.caption.monospaced()).foregroundStyle(.secondary)
-            }
-            ProgressView(value: state.overallFraction).tint(tint)
+/// Where a tap goes, by state.
+enum LiveActivityLinks {
+    static func tap(_ state: DownloadsActivityAttributes.ContentState) -> URL? {
+        switch state.mode {
+        case .imported, .upgraded:
+            if let id = state.event?.mediaItemId { return URL(string: "fusionha://item/\(id)") }
+        case .problem:
+            if let id = state.event?.downloadId { return URL(string: "fusionha://activity?focus=\(id)") }
+        default:
+            break
         }
+        return URL(string: "fusionha://activity")
+    }
+
+    /// Opens the native Manual Import sheet on these held downloads.
+    static func review(_ ids: [Int]) -> URL? {
+        URL(string: "fusionha://activity?rescue=" + ids.map(String.init).joined(separator: ","))
+    }
+}
+
+enum LiveActivityTone {
+    static func of(_ state: DownloadsActivityAttributes.ContentState) -> Color {
+        switch state.mode {
+        case .problem: return Theme.danger
+        case .held: return Theme.miss
+        case .imported, .done: return Theme.done
+        case .upgraded: return Theme.edition
+        case .downloading, .steps: return Theme.grab
+        }
+    }
+
+    /// HD purple, 4K cyan, as everywhere else.
+    static func version(_ label: String) -> Color {
+        label.contains("4K") ? Theme.grab : Theme.edition
+    }
+}
+
+enum LiveActivityFormat {
+    static func rate(_ bps: Double?) -> String? {
+        guard let bps, bps > 0 else { return nil }
+        let mb = bps / 1_000_000
+        return mb >= 10 ? "\(Int(mb.rounded())) MB/s" : String(format: "%.1f MB/s", mb)
+    }
+
+    static func eta(_ seconds: Int?) -> String? {
+        guard let seconds, seconds > 0 else { return nil }
+        if seconds < 60 { return "<1m" }
+        if seconds < 3600 { return "\(seconds / 60)m" }
+        let h = seconds / 3600, m = (seconds % 3600) / 60
+        return m > 0 ? "\(h)h \(m)m" : "\(h)h"
+    }
+
+    static func percent(_ fraction: Double?) -> String? {
+        fraction.map { "\(Int(($0 * 100).rounded()))%" }
     }
 }

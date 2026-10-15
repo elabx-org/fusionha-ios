@@ -189,6 +189,12 @@ struct ActivityView: View {
             chrome.tab = tab
             model.pendingActivityTab = nil
         }
+        .onChange(of: model.pendingRescueIds, initial: true) {
+            guard let ids = model.pendingRescueIds, !ids.isEmpty else { return }
+            model.pendingRescueIds = nil
+            chrome.tab = .queue
+            router.manualImport(rescue: ids)
+        }
         .perfActivityTabHook(Binding(get: { chrome.tab }, set: { chrome.tab = $0 }))
         .onAppear { router.server = model.credentials?.serverURL }
     }
