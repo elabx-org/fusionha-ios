@@ -102,13 +102,19 @@ public struct IssueReport: Decodable, Sendable, Hashable, Identifiable {
     public let reporter: RequestPerson?
     public let fixProgress: IssueFixProgress?
     public let fixBusy: Bool?
+    // Managers only.
+    public let stagedCopy: IssueStagedCopy?
+    public let guardState: String?
+    public let diagnosis: IssueJSON?
+    public let client: IssueClient?
 
     public init(id: Int, problem: String, version: IssueVersionRef = IssueVersionRef(), scope: String? = "item",
                 season: Int? = nil, episode: Int? = nil, state: String, verdictSummary: IssueVerdictSummary,
                 choices: [IssueChoice] = [], resolution: String? = nil, createdAt: String? = nil,
                 resolvedAt: String? = nil, mine: Bool? = false, fileChecks: Bool? = false, situation: String? = nil,
                 checkGeneration: Int? = 0, reporter: RequestPerson? = nil, fixProgress: IssueFixProgress? = nil,
-                fixBusy: Bool? = false) {
+                fixBusy: Bool? = false, stagedCopy: IssueStagedCopy? = nil, guardState: String? = nil,
+                diagnosis: IssueJSON? = nil, client: IssueClient? = nil) {
         self.id = id
         self.problem = problem
         self.version = version
@@ -128,6 +134,10 @@ public struct IssueReport: Decodable, Sendable, Hashable, Identifiable {
         self.reporter = reporter
         self.fixProgress = fixProgress
         self.fixBusy = fixBusy
+        self.stagedCopy = stagedCopy
+        self.guardState = guardState
+        self.diagnosis = diagnosis
+        self.client = client
     }
 }
 

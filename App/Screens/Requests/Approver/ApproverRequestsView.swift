@@ -2,10 +2,10 @@ import SwiftUI
 import FusionhaKit
 
 /// The approver's Requests area (web `ApproverRequests`): Inbox N · Board ·
-/// History, plus Mine (their own requests). Threads, Rules and Insights come
-/// with the issues and settings steps. Any view opens a request's thread here.
+/// History · Threads, plus Mine (their own requests). Rules and Insights come
+/// with the settings step. Any view opens a request's thread here.
 struct ApproverRequestsView: View {
-    enum Lane: Hashable { case inbox, board, history, mine }
+    enum Lane: Hashable { case inbox, board, history, threads, mine }
 
     @Environment(DiscoverStore.self) private var store
     @State private var lane: Lane = .inbox
@@ -18,6 +18,7 @@ struct ApproverRequestsView: View {
                 (Lane.inbox, store.pendingCount > 0 ? "Inbox \(store.pendingCount)" : "Inbox"),
                 (Lane.board, "Board"),
                 (Lane.history, "History"),
+                (Lane.threads, "Threads"),
                 (Lane.mine, "Mine"),
             ], selection: $lane, fullTrack: true)
             switch lane {
@@ -28,6 +29,8 @@ struct ApproverRequestsView: View {
             case .history:
                 RequestsHistoryView(initialFilter: historyFilter, onOpenThread: { thread = $0 })
                     .id(historyFilter)
+            case .threads:
+                ThreadsPanelView()
             case .mine:
                 MineView()
             }

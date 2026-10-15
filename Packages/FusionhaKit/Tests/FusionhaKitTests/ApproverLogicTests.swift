@@ -115,3 +115,59 @@ final class IssueFormatTests: XCTestCase {
         XCTAssertTrue(IssueFormat.isMarkerLine(marker))
     }
 }
+
+final class ThreadLogicTests: XCTestCase {
+    private func report(_ id: Int, _ state: String, problem: String = "WONT_PLAY", reporter: Int? = nil, guardState: String? = nil,
+                        choices: [IssueChoice] = [], staged: IssueStagedCopy? = nil) -> IssueReport {
+        let person = reporter.map { try! APIClient.decoder.decode(RequestPerson.self, from: Data(#"{"id":\#($0),"display_name":"P\#($0)"}"#.utf8)) }
+        return IssueReport(id: id, problem: problem, state: state, verdictSummary: .init(text: "Said \(id)", verified: true),
+                           choices: choices, reporter: person, stagedCopy: staged, guardState: guardState)
+    }
+
+    func testLeadAndBanner() throws {
+        let reports = [report(1, "CHECKING"), report(2, "NEEDS_ADMIN"), report(3, "RESOLVED")]
+        XCTAssertEqual(ThreadBanner.leadReport(reports)?.id, 2)
+        let json = #"{"id":9,"media_item_id":1,"issue_type":"playback","scope":"item","status":"open","state":"OPEN","reports":[]}"#
+        var issue = try APIClient.decoder.decode(MediaIssue.self, from: Data(json.utf8))
+        XCTAssertEqual(ThreadBanner.banner(issue).text, "Resolved")
+        let waiting = #"{"id":9,"media_item_id":1,"issue_type":"playback","scope":"item","status":"open","state":"OPEN","reports":[{"id":4,"problem":"WONT_PLAY","version":{},"scope":"item","state":"AWAITING_USER","verdict_summary":{"text":"x"},"choices":[{"id":"search_missing","label":"Search for a new copy"}],"reporter":{"id":2,"display_name":"Sam"}}]}"#
+        issue = try APIClient.decoder.decode(MediaIssue.self, from: Data(waiting.utf8))
+        let b = ThreadBanner.banner(issue)
+        XCTAssertEqual(b.text, "Waiting on Sam")
+        XCTAssertEqual(b.detail, "A fix is on offer: “Search for a new copy”. They haven’t chosen yet.")
+    }
+
+    func testGuardrailHeldLanguage() throws {
+        let staged = IssueStagedCopy(old: .init(fileId: 1, audioLanguages: ["ja"]), new: .init(fileId: 2, audioLanguages: ["ja", "en"]),
+                                     state: "held", kind: "language")
+        let lead = report(5, "NEEDS_ADMIN", reporter: 3, guardState: "held", staged: staged)
+        let json = #"{"id":9,"media_item_id":1,"issue_type":"playback","scope":"item","status":"open","state":"OPEN"}"#
+        let issue = try APIClient.decoder.decode(MediaIssue.self, from: Data(json.utf8))
+        XCTAssertEqual(ThreadBanner.guardrail(issue, lead)?.text, "A copy with English audio is ready")
+        XCTAssertTrue(StagedFacts.addsAudio(staged.old, staged.new))
+    }
+
+    func testStagedGates() {
+        let use = IssueChoice(id: "use_new_copy", label: "Use")
+        let verifying = IssueStagedCopy(old: nil, new: .init(fileId: 2), state: "verifying", kind: "dead")
+        XCTAssertEqual(StagedFacts.stagedReason(report(1, "NEEDS_ADMIN", choices: [use], staged: verifying), use: true),
+                       "The new copy is still being checked")
+        XCTAssertNil(StagedFacts.stagedReason(report(1, "NEEDS_ADMIN", choices: [use],
+                                                     staged: .init(old: nil, new: .init(fileId: 2), state: "held", kind: "dead")), use: true))
+        XCTAssertEqual(StagedFacts.stagedReason(report(1, "NEEDS_ADMIN"), use: false), "Not available for this report")
+        XCTAssertEqual(StagedFacts.regrabReason(report(1, "FIXING"), IssueChoice(id: "regrab", label: "R")), "A fix is already running")
+    }
+
+    func testAudienceAndEvidence() {
+        let reports = [report(1, "NEEDS_ADMIN", reporter: 7), report(2, "AWAITING_USER", reporter: 8), report(3, "RESOLVED", reporter: 9)]
+        XCTAssertEqual(IssueChipRules.reporters(reports).compactMap(\.id), [9, 8, 7])
+        XCTAssertEqual(IssueChipRules.defaultAudience(reports, openerId: 7, authorId: 8), 7)
+        XCTAssertNil(IssueChipRules.defaultAudience([], openerId: 5, authorId: 5))
+        let diag = JSONValue.object(["verdict": .string("dead"), "missingPct": .number(30), "summary": .string("x"),
+                                     "evidence": .array([.object(["path": .string("/a")])])])
+        let rows = EvidenceRows.rows(diag)
+        XCTAssertTrue(rows.contains { $0.label == "missing_pct" && $0.value == "30" })
+        XCTAssertTrue(rows.contains { $0.label == "path" && $0.value == "/a" })
+        XCTAssertFalse(rows.contains { $0.label == "summary" })
+    }
+}

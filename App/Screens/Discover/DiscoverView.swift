@@ -253,7 +253,7 @@ struct DiscoverView: View {
         case .requests:
             RequestsPanel(approver: canApprove)
         case .issues:
-            IssuesPanel()
+            ThreadsPanelView(only: "issue")
         case .browse:
             if requestorSearching {
                 RequestorSearchResults(term: query.trimmingCharacters(in: .whitespaces), kind: kind,
