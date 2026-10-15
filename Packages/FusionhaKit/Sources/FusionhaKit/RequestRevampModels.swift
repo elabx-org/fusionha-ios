@@ -106,10 +106,12 @@ public struct RequestPage: Sendable {
 extension APIClient {
     /// The requests list (`view` mine/all, `filter` active/available/declined/
     /// all/…, `sort` requested/last_event/title), cursor-paged.
-    public func requestsPage(view: String, filter: String, sort: String = "last_event", limit: Int = 30,
-                             cursor: String? = nil) async throws -> RequestPage {
-        var query = [URLQueryItem(name: "view", value: view), URLQueryItem(name: "filter", value: filter),
-                     URLQueryItem(name: "sort", value: sort), URLQueryItem(name: "limit", value: String(limit))]
+    public func requestsPage(view: String, filter: String?, sort: String = "last_event", limit: Int = 30,
+                             cursor: String? = nil, extra: [URLQueryItem] = []) async throws -> RequestPage {
+        var query = [URLQueryItem(name: "view", value: view), URLQueryItem(name: "sort", value: sort),
+                     URLQueryItem(name: "limit", value: String(limit))]
+        if let filter { query.append(URLQueryItem(name: "filter", value: filter)) }
+        query += extra
         if let cursor { query.append(URLQueryItem(name: "cursor", value: cursor)) }
         let (body, response) = try await self.data(for: request(method: "GET", path: "/api/v1/requests", query: query))
         let items = try Self.decoder.decode([MediaRequest].self, from: body)
@@ -117,8 +119,8 @@ extension APIClient {
         return RequestPage(items: items, nextCursor: next)
     }
 
-    public func requestCounts(view: String) async throws -> RequestCounts {
-        try await get("/api/v1/requests/counts", query: [URLQueryItem(name: "view", value: view)])
+    public func requestCounts(view: String, extra: [URLQueryItem] = []) async throws -> RequestCounts {
+        try await get("/api/v1/requests/counts", query: [URLQueryItem(name: "view", value: view)] + extra)
     }
 
     public func requestQuota() async throws -> RequestQuota {
