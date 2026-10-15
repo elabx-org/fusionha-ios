@@ -52,7 +52,11 @@ final class DiscoverStore {
     /// Bumped to refetch the collections rail after an ignore/add.
     var collectionsVersion = 0
     /// Bumped to refetch request lists after a decision.
-    var requestsVersion = 0
+    var requestsVersion = 0 {
+        didSet { demand.reset() }
+    }
+    /// Per-title demand for a requester's cards (Me too, Watch).
+    let demand = DiscoverDemand()
 
     /// The highest-priority request status per TMDB id (pending > approved > …).
     var statusByTmdb: [Int: String] {

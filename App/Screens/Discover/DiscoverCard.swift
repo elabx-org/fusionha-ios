@@ -16,20 +16,33 @@ struct DiscoverCard: View {
 
     /// Discover rows carry only `in_library`; the id comes from the library list
     /// (the web's `idByTmdb`), or the row itself on search results.
-    private var inLibrary: Bool { result.inLibrary || result.libraryItemId != nil }
+    private var titleInLibrary: Bool { result.inLibrary || result.libraryItemId != nil }
+    /// A requester (no Add) sees per-viewer demand: Me too, Watch, Request HD.
+    private var requestMode: Bool { canRequest && !canAdd }
+    private var demand: RequestTitleDemand? { requestMode ? store.demand.get(result.kind, result.tmdbId) : nil }
+    private var demandView: DiscoverCardDemand {
+        DiscoverCardDemand.view(demand, requestMode: requestMode, titleInLibrary: titleInLibrary)
+    }
+    private var inLibrary: Bool { demandView.inLibrary }
     private var libraryId: Int? { inLibrary ? model.libraryItemId(for: result) : nil }
     private var requestStatus: String? { store.statusByTmdb[result.tmdbId] }
     private var alreadyRequested: Bool { requestStatus == "pending" || requestStatus == "approved" }
 
     var body: some View {
-        Button(action: open) {
-            VStack(alignment: .leading, spacing: 0) {
-                poster
-                meta
+        VStack(alignment: .leading, spacing: 6) {
+            Button(action: open) {
+                VStack(alignment: .leading, spacing: 0) {
+                    poster
+                    meta
+                }
+                .contentShape(Rectangle())
             }
-            .contentShape(Rectangle())
+            .buttonStyle(DiscoverPressStyle())
+            if let demand, let row = demandView.row {
+                DiscoverCardDemandRow(result: result, demand: demand, row: row)
+            }
         }
-        .buttonStyle(DiscoverPressStyle())
+        .onAppear { if requestMode { store.demand.want(model.client, kind: result.kind, id: result.tmdbId) } }
         #if DEBUG
         .task(id: model.libraryLoaded) { screenshotOpen() }
         #endif
@@ -81,7 +94,16 @@ struct DiscoverCard: View {
                 Spacer(minLength: 0)
                 providerException
                 statusMark
-                if !inLibrary, let status = requestStatus, status == "pending" || status == "approved" {
+                if demandView.watching {
+                    Label("Watching", systemImage: "eye")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Theme.grab)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Theme.grab.opacity(0.16), in: Capsule())
+                        .lineLimit(1)
+                        .fixedSize()
+                } else if !inLibrary, !demandView.hideRequested, let status = requestStatus, status == "pending" || status == "approved" {
                     let color = status == "pending" ? Theme.miss : Theme.done
                     Text(status == "pending" ? "Requested" : "Approved")
                         .font(.system(size: 10, weight: .semibold))

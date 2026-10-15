@@ -45,3 +45,26 @@ final class RequestOfferTests: XCTestCase {
         XCTAssertTrue(json.contains("\"join\":false"))
     }
 }
+
+final class DiscoverCardDemandTests: XCTestCase {
+    func testRows() {
+        let meToo = RequestTitleDemand(tmdbId: 1, state: "me_too", asked: 2, joinableTiers: [.hd])
+        XCTAssertEqual(DiscoverCardDemand.view(meToo, requestMode: true, titleInLibrary: false).row, .meToo)
+        XCTAssertNil(DiscoverCardDemand.view(meToo, requestMode: false, titleInLibrary: false).row)
+        let joined = RequestTitleDemand(tmdbId: 1, state: "joined", asked: 3, requestId: 9)
+        XCTAssertTrue(DiscoverCardDemand.view(joined, requestMode: true, titleInLibrary: false).hideRequested)
+        let watch = RequestTitleDemand(tmdbId: 1, state: "watch", watchTiers: [.uhd])
+        XCTAssertEqual(DiscoverCardDemand.view(watch, requestMode: true, titleInLibrary: false).row, .watch)
+        let elsewhere = RequestTitleDemand(tmdbId: 1, state: "request", requestableTiers: [.hd])
+        let view = DiscoverCardDemand.view(elsewhere, requestMode: true, titleInLibrary: true)
+        XCTAssertEqual(view.row, .requestTiers)
+        XCTAssertFalse(view.inLibrary)
+        let watching = RequestTitleDemand(tmdbId: 1, state: "mine", watching: true)
+        XCTAssertTrue(DiscoverCardDemand.view(watching, requestMode: true, titleInLibrary: false).watching)
+    }
+
+    func testRequestTiersLabel() {
+        XCTAssertEqual(DiscoverCardDemand.requestTiersLabel([.hd, .uhd]), "Request HD + 4K")
+        XCTAssertEqual(DiscoverCardDemand.requestTiersLabel([]), "Request")
+    }
+}

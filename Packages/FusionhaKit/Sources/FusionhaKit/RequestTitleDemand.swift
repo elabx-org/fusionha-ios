@@ -146,3 +146,43 @@ struct Lenient<T: Decodable>: Decodable {
     let value: T?
     init(from decoder: Decoder) throws { value = try? T(from: decoder) }
 }
+
+/// What a Discover card shows for the viewer's demand (web
+/// `discover-card-demand.ts`). Every per-viewer rule is the server's; this
+/// only picks the row.
+public struct DiscoverCardDemand: Equatable, Sendable {
+    public enum Row: Equatable, Sendable { case meToo, watch, requestTiers }
+
+    /// The In library mark, for this viewer.
+    public let inLibrary: Bool
+    /// The demand row under the title.
+    public let row: Row?
+    /// The viewer's own row is a Watch row.
+    public let watching: Bool
+    /// Hide the Requested / Approved chip (joined or watching).
+    public let hideRequested: Bool
+
+    public static func view(_ demand: RequestTitleDemand?, requestMode: Bool, titleInLibrary: Bool) -> DiscoverCardDemand {
+        guard requestMode, let demand else {
+            return DiscoverCardDemand(inLibrary: titleInLibrary, row: nil, watching: false, hideRequested: false)
+        }
+        let inLibrary = !demand.libraryTiers.isEmpty
+        let watching = demand.state == "mine" && demand.watching
+        var row: Row?
+        if demand.state == "me_too" || demand.state == "joined" {
+            row = .meToo
+        } else if demand.state == "watch" {
+            row = .watch
+        } else if titleInLibrary && !inLibrary && !demand.requestableTiers.isEmpty {
+            // In the library only in versions this viewer can't hold: "Request HD".
+            row = .requestTiers
+        }
+        return DiscoverCardDemand(inLibrary: inLibrary, row: row, watching: watching,
+                                  hideRequested: demand.state == "joined" || watching)
+    }
+
+    /// "Request HD", "Request 4K", "Request HD + 4K".
+    public static func requestTiersLabel(_ tiers: [QualityTier]) -> String {
+        tiers.isEmpty ? "Request" : "Request " + tiers.map { $0 == .uhd ? "4K" : "HD" }.joined(separator: " + ")
+    }
+}
