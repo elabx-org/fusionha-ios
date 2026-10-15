@@ -138,3 +138,63 @@ public enum QueueRail {
         QueueRailModel(nodes: finishedNodes(item), importState: .active)
     }
 }
+
+extension QueueRail {
+    /// Decypharr's nodes for a phase job, in the plan's order: the current
+    /// stage is "working…" (or the linking count), a skipped stage is off, a
+    /// failed job holds the furthest stage it reached.
+    public static func phaseNodes(_ stages: QueueStages, failed: Bool = false, retrying: Bool = false) -> [QueueRailNode] {
+        let steps = stages.steps ?? []
+        let active = steps.filter(\.runs).map(\.key)
+        let at = stages.current.flatMap { active.firstIndex(of: $0) } ?? -1
+        let finished = stages.current == "complete" && stages.failed != true
+        let linking = stages.linkingDone.flatMap { d in stages.linkingTotal.map { "\(d)/\($0)" } }
+        return steps.map { s in
+            let label = stageLabels[s.key] ?? s.key
+            guard s.runs else { return QueueRailNode(s.key, label, .off, tip: "\(label) is turned off in decypharr") }
+            let i = active.firstIndex(of: s.key) ?? -1
+            var state: QueueRailNode.State = .todo
+            if finished || (at >= 0 && i < at) {
+                state = .done
+            } else if i == at {
+                state = retrying ? .active : (failed || stages.failed == true ? .fail : .active)
+            }
+            var node = QueueRailNode(s.key, state == .fail ? "Failed at \(label.lowercased())" : label, state)
+            if state == .active && retrying { node.count = "retrying…" }
+            if state == .active && s.key == "linking", let linking { node.count = linking }
+            return node
+        }
+    }
+
+    public enum Kind: Sendable, Hashable { case bytes(pct: Int), waiting, other, phase, retrying, failed, stuck }
+
+    /// The rail for one card, by how it renders (web `railFor`).
+    public static func model(_ item: QueueItem, _ kind: Kind) -> QueueRailModel {
+        let grabbed = QueueRailNode("grabbed", "Grabbed", .done)
+        switch kind {
+        case .bytes(let pct):
+            return QueueRailModel(nodes: [grabbed, QueueRailNode("downloading", "Downloading", .active,
+                                                                  count: item.stalled ? "\(pct)% · stalled" : "\(pct)%")],
+                                  importState: .todo)
+        case .waiting:
+            return QueueRailModel(nodes: [grabbed, QueueRailNode("client", "Waiting for the client", .active, count: "checking…")],
+                                  importState: .todo)
+        case .stuck:
+            return QueueRailModel(nodes: [grabbed, QueueRailNode("download", "Download", .fail)], importState: .todo)
+        default:
+            guard kind != .other, let stages = item.stages, !(stages.steps ?? []).isEmpty else {
+                let node = QueueRailNode("download", kind == .failed ? "Failed at download" : "Download",
+                                         kind == .failed ? .fail : .active, count: kind == .retrying ? "retrying…" : nil)
+                return QueueRailModel(nodes: [grabbed, node], importState: .todo)
+            }
+            return QueueRailModel(nodes: phaseNodes(stages, failed: kind == .failed, retrying: kind == .retrying),
+                                  importState: .todo)
+        }
+    }
+
+    /// Finished stages out of those that run (never `phase_percent`).
+    public static func ring(_ stages: QueueStages?) -> (done: Int, total: Int)? {
+        guard let stages, let total = stages.total, total > 0 else { return nil }
+        return (min(stages.completed ?? 0, total), total)
+    }
+}

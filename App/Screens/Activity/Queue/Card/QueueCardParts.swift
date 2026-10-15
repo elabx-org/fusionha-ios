@@ -9,6 +9,8 @@ import FusionhaKit
 struct QueueCardMeta: View {
     let item: QueueItem
     var showTier = true
+    /// A genuine byte transfer is tagged "Full download".
+    var fullDownload = false
 
     var body: some View {
         ActFlow(spacing: 0, lineSpacing: 4) {
@@ -37,6 +39,7 @@ struct QueueCardMeta: View {
             out.append(Part(text: Text(QueueCardText.versionLabel(item)).fontWeight(.bold).foregroundColor(item.tier.color)))
         }
         if item.packRanges != nil || item.hasPackDecisions { out.append(Part(text: Text("Pack"))) }
+        if fullDownload { out.append(Part(text: Text("Full download").foregroundColor(Theme.grab))) }
         if item.size > 0 { out.append(Part(text: Text(ActFmt.bytes(item.size)))) }
         if let files = item.fileCount { out.append(Part(text: Text("\(files) files"))) }
         out.append(Part(text: Text(QueueCardText.grabbedAgo(item.ageSeconds))))

@@ -157,7 +157,7 @@ struct ActivityQueueTab: View {
             if !working.isEmpty {
                 section("Working", working.count, "symlink & checks · live phase", first: firstSection) {
                     ForEach(Array(working.enumerated()), id: \.element.id) { index, item in
-                        selectable(item) { PhaseCard(item: item, lane: .working, actions: actions(for: item)) }
+                        selectable(item) { QueueStateCard(item: item, telemetry: store.telemetry[item.id], actions: actions(for: item)) }
                             .actReveal(index).actRowTransition(reduce)
                     }
                 }
@@ -171,11 +171,11 @@ struct ActivityQueueTab: View {
                                 if item.cockpitState == .held {
                                     selectable(item) { QueueHeldCard(item: item, actions: actions(for: item)) }
                                 } else if item.cockpitState == .stuck {
-                                    selectable(item) { AttentionCard(item: item, actions: actions(for: item)) }
+                                    selectable(item) { QueueStateCard(item: item, telemetry: nil, actions: actions(for: item)) }
                                 } else {
                                     selectable(item) {
-                                        QueueRowCard(item: item, telemetry: store.telemetry[item.id], soonest: soonest == entry.id,
-                                                     actions: actions(for: item))
+                                        QueueStateCard(item: item, telemetry: store.telemetry[item.id], actions: actions(for: item),
+                                                       soonest: soonest == entry.id)
                                     }
                                 }
                             case .group(let group, let eta):
@@ -196,7 +196,7 @@ struct ActivityQueueTab: View {
             if !retrying.isEmpty {
                 section("Retrying", retrying.count, "transient — will retry", first: firstSection) {
                     ForEach(Array(retrying.enumerated()), id: \.element.id) { index, item in
-                        selectable(item) { PhaseCard(item: item, lane: .retrying, actions: actions(for: item)) }
+                        selectable(item) { QueueStateCard(item: item, telemetry: nil, actions: actions(for: item)) }
                             .actReveal(index).actRowTransition(reduce)
                     }
                 }

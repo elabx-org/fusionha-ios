@@ -132,19 +132,16 @@ struct QueueGroupCard: View {
         let state = item.cockpitState
         if state == .held && !selecting {
             // The web's GroupRow: the single card's parts, no poster or title.
-            QueueHeldCard(item: item, actions: actionsFor(item), nested: true)
+            QueueHeldCard(item: item, actions: actionsFor(item), nested: true, pairLane: group.isPair)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
-        } else if state == .stuck && !selecting {
-            AttentionCard(item: item, actions: actionsFor(item), nested: true)
-                .padding(.horizontal, 6)
         } else if selecting {
             compactRow(item)
         } else {
-            // The full single-card data, without the poster and title (0.4.194).
-            QueueRowCard(item: item, telemetry: telemetry[item.id], soonest: false,
-                         actions: actionsFor(item), nested: true)
-                .padding(.horizontal, 6)
+            // The same parts as a single card, without the poster and title.
+            QueueStateCard(item: item, telemetry: telemetry[item.id], actions: actionsFor(item), nested: true, pairLane: group.isPair)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
         }
     }
 

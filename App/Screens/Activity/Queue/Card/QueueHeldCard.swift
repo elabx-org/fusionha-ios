@@ -15,6 +15,8 @@ struct QueueHeldCard: View {
     let item: QueueItem
     let actions: QueueRowActions
     var nested = false
+    /// A lane of a 4K + HD pair: the version leads, not the shared episode.
+    var pairLane = false
     @Environment(AppModel.self) private var model
     @Environment(\.actReduceMotion) private var reduce
     @State private var showWhy = false
@@ -83,7 +85,7 @@ struct QueueHeldCard: View {
 
     private var nestedHead: some View {
         HStack(alignment: .center, spacing: 8) {
-            Text(QueueCardText.subtitle(item) ?? item.releaseTitle ?? item.title)
+            Text(pairLane ? QueueCardText.versionLabel(item) : (QueueCardText.subtitle(item) ?? item.releaseTitle ?? item.title))
                 .font(.system(size: 16, weight: .bold))
                 .foregroundStyle(Theme.txt)
                 .lineLimit(2)

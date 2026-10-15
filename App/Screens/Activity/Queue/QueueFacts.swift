@@ -25,13 +25,20 @@ struct QueueFacts: View {
                 if item.hasPackDecisions {
                     QueuePackDecisionsView(item: item)
                 } else if let ranges = item.packRanges {
-                    pack(ranges)
+                    QueuePackLine(item: item, ranges: ranges)
                 }
             }
         }
     }
 
-    private func pack(_ ranges: QueuePackRanges) -> some View {
+}
+
+/// "Pack · 13 files · ✓ S03E01–E04 · now E05 · then E06–E13".
+struct QueuePackLine: View {
+    let item: QueueItem
+    let ranges: QueuePackRanges
+
+    var body: some View {
         ActFlow(spacing: 0, lineSpacing: 3) {
             if let files = item.fileCount {
                 Text("Pack · \(files) file\(files == 1 ? "" : "s")").foregroundStyle(Theme.txt)

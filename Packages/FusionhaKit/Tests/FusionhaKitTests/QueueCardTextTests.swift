@@ -57,3 +57,28 @@ final class QueueCardTextTests: XCTestCase {
         XCTAssertEqual(facts[1].model.base, .probed)
     }
 }
+
+final class QueueRailTests: XCTestCase {
+    private func stages(_ current: String, failed: Bool = false) throws -> QueueStages {
+        let json = """
+        {"mode":"phase","route":"usenet","current":"\(current)","completed":3,"total":6,"failed":\(failed),
+         "linking_done":4,"linking_total":12,
+         "steps":[{"key":"queued","runs":true},{"key":"parsing","runs":true},{"key":"processed","runs":true},
+                  {"key":"linking","runs":true},{"key":"caching","runs":false},{"key":"validating","runs":true},{"key":"complete","runs":true}]}
+        """
+        return try APIClient.decoder.decode(QueueStages.self, from: Data(json.utf8))
+    }
+
+    func testPhaseNodes() throws {
+        let nodes = QueueRail.phaseNodes(try stages("linking"))
+        XCTAssertEqual(nodes.map(\.state), [.done, .done, .done, .active, .off, .todo, .todo])
+        XCTAssertEqual(nodes[3].count, "4/12")
+    }
+
+    func testFailedHoldsTheFurthestStage() throws {
+        let nodes = QueueRail.phaseNodes(try stages("parsing", failed: true), failed: true)
+        XCTAssertEqual(nodes[1].state, .fail)
+        XCTAssertEqual(nodes[1].label, "Failed at parsing")
+        XCTAssertEqual(QueueRail.ring(try stages("parsing"))?.total, 6)
+    }
+}
