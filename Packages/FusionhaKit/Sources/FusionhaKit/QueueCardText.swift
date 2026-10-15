@@ -21,6 +21,26 @@ public enum QueueCardText {
         return (cap(short), ManualImportHeldStrip.guardLine(d?.currentGroup, tier: item.tier.rawValue, edition: item.edition))
     }
 
+    /// The hold in two or three words, for the Live Activity's one-line rows.
+    /// Classified like fusionha's `held_history.reason_code_for`: the detail's
+    /// kind first, then the reason's known text.
+    public static func heldTag(_ item: QueueItem) -> String {
+        let d = item.heldDetail
+        if d?.kind == "mislabeled_hdr" { return "no HDR in file" }
+        if d?.mislabeled == true {
+            return d?.claimedResolution.map { "not really \($0)p" } ?? "smaller than named"
+        }
+        if d?.kind == "not_an_upgrade" { return "not an upgrade" }
+        let low = (item.heldReason ?? "").lowercased()
+        if low.hasPrefix("corrupt/incomplete") { return "corrupt file" }
+        if low.hasPrefix("the file's resolution belongs to a different tier") { return "wrong tier" }
+        if low.hasPrefix("the correct-tier edition's quality profile does not allow") { return "quality not allowed" }
+        if low.contains("would orphan other episodes of a multi-episode file") { return "splits an episode pair" }
+        if low.contains("(indeterminate)") { return "couldn't check file" }
+        if low.contains("not an upgrade") { return "not an upgrade" }
+        return "needs a look"
+    }
+
     /// Beside the title: the episode label, else the movie's year.
     public static func subtitle(_ item: QueueItem) -> String? {
         item.episodeLabel ?? item.parsed?.year.map(String.init)

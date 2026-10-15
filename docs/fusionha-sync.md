@@ -10,10 +10,10 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `193ed23b` |
-| fusionha release | **0.4.199** (2026-10-15, "Manual Import decision wording") |
+| fusionha commit | `b3c5ab8d` |
+| fusionha release | **0.4.200** (2026-10-15, "file splits", pure moves, API byte-identical: nothing to port) |
 | Checked on | 2026-10-15 |
-| Previous sync | `16635380` / 0.4.198 (2026-10-15) |
+| Previous sync | `193ed23b` / 0.4.199 (2026-10-15) |
 
 `Packages/FusionhaKit/openapi.json` still reports `info.version` 0.2.0: the
 catch-ups added models and calls by hand. Re-pin it from a tagged fusionha

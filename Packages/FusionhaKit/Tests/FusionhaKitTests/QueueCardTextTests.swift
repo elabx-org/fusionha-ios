@@ -28,6 +28,10 @@ final class QueueCardTextTests: XCTestCase {
     func testHeldReasonAndRail() throws {
         let i = try item(#","held_reason":"would orphan other episodes of a multi-episode file""#)
         XCTAssertEqual(QueueCardText.heldReason(i).lead, "Would orphan other episodes of a multi-episode file")
+        XCTAssertEqual(QueueCardText.heldTag(i), "splits an episode pair")
+        XCTAssertEqual(QueueCardText.heldTag(try item(#","held_reason":"corrupt/incomplete: no video stream""#)), "corrupt file")
+        XCTAssertEqual(QueueCardText.heldTag(try item(#","held_reason":"corrupt (indeterminate): probe timed out""#)), "couldn't check file")
+        XCTAssertEqual(QueueCardText.heldTag(try item(#","held_reason":"something new""#)), "needs a look")
         let rail = QueueRail.held(i)
         XCTAssertEqual(rail.nodes.map(\.label), ["Grabbed", "Linked by decypharr"])
         XCTAssertEqual(rail.importNode.label, "Import held")
@@ -38,6 +42,7 @@ final class QueueCardTextTests: XCTestCase {
         let reason = QueueCardText.heldReason(i)
         XCTAssertEqual(reason.lead, "Smaller than its name says")
         XCTAssertEqual(reason.guard, "would replace your HD FUZEER copy")
+        XCTAssertEqual(QueueCardText.heldTag(i), "not really 2160p")
     }
 
     func testFactsFromTheName() throws {
