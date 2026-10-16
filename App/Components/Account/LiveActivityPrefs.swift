@@ -113,6 +113,10 @@ struct LiveActivityPrefsView: View {
         .scrollContentBackground(.hidden)
         .navigationTitle("Live Activity")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: [newGrabs, upgrades, regrabs, hd, uhd, waiting]) { LiveActivityController.resync() }
+        .onChange(of: [newGrabs, upgrades, regrabs, hd, uhd, waiting]) {
+            LiveActivityController.resync()
+            LiveActivityPushTokens.prefsChanged()
+        }
+        .onChange(of: linger) { LiveActivityPushTokens.prefsChanged() }
     }
 }

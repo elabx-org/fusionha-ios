@@ -159,6 +159,8 @@ final class AppModel {
     private(set) var queueTotal = 0
     /// Downloads held for a manual import (the Activity header caption).
     private(set) var queueHeld = 0
+    /// fusionha's own downloads are paused (Activity › Pause, 0.4.205).
+    var queuePaused = false
     /// The held (manual-import-required) downloads on queue page 1, for the
     /// Activity header's "Resolve all held" bulk rescue.
     private(set) var queueHeldIds: [Int] = []
@@ -237,7 +239,10 @@ final class AppModel {
     func registerPushDevice() async {
         guard let client, credentials?.method != .demoCookie,
               ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SERVER"] == nil else { return }
-        await PushRegistration.register(with: client)
+        if let device = await PushRegistration.register(with: client) {
+            UserDefaults.standard.set(device.id, forKey: "apnsDeviceId")
+        }
+        LiveActivityPushTokens.start(client: client)
     }
 
     // MARK: Sign-in
@@ -469,7 +474,8 @@ final class AppModel {
             if queueHeldIds != heldIds { queueHeldIds = heldIds }
             if queueHeld != heldIds.count { queueHeld = heldIds.count }
             if queueError != nil { queueError = nil }
-            LiveActivityController.sync(with: page.items)
+            if queuePaused != (page.paused == true) { queuePaused = page.paused == true }
+            LiveActivityController.sync(with: page.items, paused: page.paused == true)
             let ids = page.items.map(\.id)
             if ids != lastQueueIds {
                 lastQueueIds = ids

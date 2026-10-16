@@ -21,11 +21,13 @@ enum LiveActivityController {
     private static let worker = LiveActivityWorker()
     /// The last queue seen, so a change in Account › Live Activity applies at once.
     private static var lastQueue: [QueueItem] = []
+    private(set) static var lastPaused = false
     /// The download that led the activity last, for the "Imported" moment.
     private static var lastLead: QueueItem?
 
-    static func sync(with queue: [QueueItem]) {
+    static func sync(with queue: [QueueItem], paused: Bool = lastPaused) {
         lastQueue = queue
+        lastPaused = paused
         // Account › Live Activity › Show on Lock Screen.
         guard LiveActivityPrefs.enabled else {
             if lastSettled != nil { endAll() }
@@ -46,7 +48,9 @@ enum LiveActivityController {
         lastLead = counted.first { $0.id == built.rows.first?.downloadId } ?? lastLead ?? counted.first
         LiveActivityPosters.ensure(built)
         // Tiny posters ride in the state itself (see `ContentState.thumbs`).
-        let state = LiveActivityPosters.attach(built)
+        var withPause = built
+        withPause.paused = paused ? true : nil
+        let state = LiveActivityPosters.attach(withPause)
         // Send when something a person would notice changed, and at least
         // every 30 s so the time left and speed stay honest.
         let settled = state.settled
@@ -89,7 +93,11 @@ actor LiveActivityWorker {
         if let current {
             await current.update(content)
         } else {
-            _ = try? Activity.request(attributes: DownloadsActivityAttributes(), content: content, pushType: nil)
+            // With a push token, fusionha can keep it current while the app is
+            // closed (0.4.205); a build without push falls back to local only.
+            if (try? Activity.request(attributes: DownloadsActivityAttributes(), content: content, pushType: .token)) == nil {
+                _ = try? Activity.request(attributes: DownloadsActivityAttributes(), content: content, pushType: nil)
+            }
         }
     }
 

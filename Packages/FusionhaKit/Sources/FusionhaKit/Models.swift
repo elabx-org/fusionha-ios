@@ -139,6 +139,9 @@ public struct QueuePage: Decodable, Sendable {
     public let justFinished: [QueueItem]?
     /// The idle "Pipeline idle · Last import …" line (0.4.189; page 1 only).
     public let pipeline: QueuePipeline?
+    /// fusionha's own downloads are paused (0.4.205).
+    public var paused: Bool? = nil
+    public var pausedAt: String? = nil
 }
 
 public struct QueueItem: Decodable, Sendable, Identifiable, Hashable {

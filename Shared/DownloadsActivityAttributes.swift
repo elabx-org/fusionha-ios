@@ -97,11 +97,13 @@ struct DownloadsActivityAttributes: ActivityAttributes {
         /// Activity can read, so this is how its posters get there. The app
         /// fills it within ActivityKit's 4 KB budget; server pushes omit it.
         var thumbs: [String: Data]? = nil
+        /// fusionha's downloads are paused (0.4.205).
+        var paused: Bool? = nil
 
         enum CodingKeys: String, CodingKey {
             case mode, downloading, needYou = "need_you", bps, etaSeconds = "eta_seconds", rows, held, steps, event
             case updatedAt = "updated_at"
-            case thumbs
+            case thumbs, paused
         }
     }
 }

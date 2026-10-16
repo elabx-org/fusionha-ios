@@ -11,6 +11,8 @@ public struct ApnsStatus: Decodable, Sendable, Hashable {
     public let missing: [String]
     /// A human sentence when push can't be delivered (no key, or turned off).
     public let message: String?
+    /// The server's Live Activity push switch (0.4.205, default on).
+    public var liveActivityEnabled: Bool? = nil
 
     public init(configured: Bool, enabled: Bool, topic: String, environment: String,
                 missing: [String], message: String?) {

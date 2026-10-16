@@ -58,6 +58,17 @@ private struct LiveActivityRoot: View {
             LiveActivityLockScreen(state: state, stale: stale)
                 .padding(16)
                 .background { LiveActivityWash(state: state) }
+                .overlay(alignment: .bottomTrailing) {
+                    // fusionha's downloads are paused (Activity › Pause).
+                    if state.paused == true {
+                        Label("Paused", systemImage: "pause.fill")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(.white.opacity(0.85))
+                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .background(.white.opacity(0.14), in: Capsule())
+                            .padding(10)
+                    }
+                }
         }
     }
 }

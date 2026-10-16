@@ -258,6 +258,7 @@ struct ActivityPageHeader: View {
                     .buttonStyle(.plain)
                     .glassControl()
                     .accessibilityLabel("Manual import")
+                    if model.me?.isAdmin == true { QueuePauseButton() }
                 }
                 Text(caption(held: held))
                     .font(.system(size: 15))
