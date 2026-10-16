@@ -65,6 +65,8 @@ public struct HeldDetail: Decodable, Sendable, Hashable {
     public let keptStagingPaths: [String]?
     public let claimedHdr: [String]?
     public let probedHdr: String?
+    /// A probe-proven mislabel not blocklisted yet: remove + blocklist is Recommended (0.4.202).
+    public let recommendBlocklist: Bool?
 }
 
 public struct HeldResolution: Decodable, Sendable, Hashable {

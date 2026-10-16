@@ -19,8 +19,20 @@ public struct ManualImportScan: Decodable, Sendable, Hashable {
     public let heldDetail: HeldDetail?
     /// Rows whose probe outlived the scan's budget; poll `…/probe` while > 0.
     public let probePending: Int?
+    /// Per held download: its rows, how many are decided, and whether it is
+    /// finished (fusionha 0.4.202). Nil on older servers and folder scans.
+    public let downloads: [ManualImportDownloadState]?
 
     public var isRescue: Bool { downloadId != nil }
+}
+
+/// `scan.downloads[]` / the commit's `downloads[]`.
+public struct ManualImportDownloadState: Decodable, Sendable, Hashable {
+    public let id: Int
+    public let rowsTotal: Int?
+    public let rowsDecided: Int?
+    public let finished: Bool?
+    public let libraryLinked: Bool?
 }
 
 /// One file of a scan.
@@ -246,6 +258,24 @@ public struct ManualImportHeld: Decodable, Sendable, Hashable {
 /// `POST /manualimport/commit`: one result per requested row.
 public struct ManualImportCommitResult: Decodable, Sendable {
     public let results: [ManualImportCommitRow]
+    /// Downloads this commit finished with their `finish_disposition` (0.4.202).
+    public let finishes: [ManualImportCommitFinish]?
+    public let downloads: [ManualImportDownloadState]?
+}
+
+/// One download a commit tried to finish; `error` is `forbidden`, `rows_open`,
+/// `not_held`, `finish_busy` or `finish_failed` (the import itself still stands).
+public struct ManualImportCommitFinish: Decodable, Sendable, Hashable {
+    public let downloadId: Int
+    public let mode: String?
+    public let blocklisted: Bool?
+    public let deletedFiles: Int?
+    public let libraryLinked: Bool?
+    public let error: String?
+
+    public var result: FinishRescueResult? {
+        mode.map { FinishRescueResult(mode: $0, blocklisted: blocklisted, libraryLinked: libraryLinked) }
+    }
 }
 
 public struct ManualImportCommitRow: Decodable, Sendable, Hashable {
@@ -257,13 +287,28 @@ public struct ManualImportCommitRow: Decodable, Sendable, Hashable {
     public let error: String?
     /// Committed, but the file is not in place yet (the publish journal finishes it).
     public let warning: String?
+    /// The file it replaced (e.g. a misfiled one), for the Done receipt.
+    public let replacedFile: String?
+    public let episodeIds: [Int]?
 }
 
 /// `POST /queue/{id}/finish-rescue`: the server decides removed vs finished.
-public struct FinishRescueResult: Decodable, Sendable {
-    /// `removed` (nothing in the library pointed into it) or `finished`.
+public struct FinishRescueResult: Decodable, Sendable, Hashable {
+    /// `removed`, `finished` (the library links into it, nothing deleted) or `left`.
     public let mode: String
     public let blocklisted: Bool?
+    public let libraryLinked: Bool?
+
+    public init(mode: String, blocklisted: Bool?, libraryLinked: Bool?) {
+        self.mode = mode
+        self.blocklisted = blocklisted
+        self.libraryLinked = libraryLinked
+    }
+}
+
+/// How a held download ends once its rows are decided (`finish-rescue`'s `disposition`).
+public enum FinishDisposition: String, Sendable, Hashable, CaseIterable {
+    case remove, removeBlocklist = "remove_blocklist", leave
 }
 
 /// The commit's import modes (`ManualImportCommitRequest.import_mode`).

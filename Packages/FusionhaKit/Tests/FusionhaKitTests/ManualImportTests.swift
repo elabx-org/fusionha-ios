@@ -44,7 +44,7 @@ final class ManualImportTests: XCTestCase {
         let rows = try scan().rows
         // Row 1 is unticked and undecided; 2 and 3 import.
         var plan = ManualImportFinishPlan(rows: rows, selected: [2, 3])
-        XCTAssertEqual(plan.kind, .importOnly)
+        XCTAssertEqual(plan.kind, .importing)
         XCTAssertEqual(plan.label, "Force import 2")
         XCTAssertEqual(plan.need, 1)
         // Nothing ready: the button waits for a choice.
@@ -52,6 +52,50 @@ final class ManualImportTests: XCTestCase {
         XCTAssertEqual(plan.kind, .need)
         XCTAssertEqual(plan.label, "3 files need a decision")
         XCTAssertTrue(plan.disabled)
+    }
+
+    func testDecideTalliesAndPlan() throws {
+        let scan = try scan()
+        let tallies = ManualImportDecide.tallies(scan)
+        XCTAssertEqual(tallies[900]?.total, 2)
+        XCTAssertEqual(tallies[901]?.total, 1)
+        XCTAssertEqual(tallies[900]?.decided, 0)
+        XCTAssertTrue(ManualImportDecide.readyToFinish(tallies).isEmpty)
+        // A finished download's rows leave every count; nothing left: Done.
+        let finished = ManualImportDecide.tallies(scan, finishedHere: [900, 901])
+        let done = ManualImportFinishPlan(rows: scan.rows, selected: [],
+                                          finished: { ManualImportDecide.rowFinished($0, scan, finished) })
+        XCTAssertEqual(done.kind, .done)
+        XCTAssertEqual(done.label, "Done")
+        // Every row decided but a finish pending: Finish download.
+        let keep = ManualImportFinishPlan(rows: [], selected: [], pending: 1)
+        XCTAssertEqual(keep.kind, .keep)
+        XCTAssertEqual(keep.label, "Finish download")
+    }
+
+    func testKeepChoiceAndReceipts() throws {
+        let scan = try scan()
+        let keep = ManualImportDecide.keepChoice(scan.rows[0], scan, linked: false)
+        XCTAssertEqual(keep.verb, "Keep current")
+        XCTAssertEqual(keep.group, "FUZEER")
+        XCTAssertEqual(keep.options.map(\.value), [.remove, .removeBlocklist, .leave])
+        // No probe proof (`recommend_blocklist`): the main half only removes.
+        XCTAssertEqual(keep.preferred, .remove)
+        // Nothing on disk: Skip this file.
+        XCTAssertEqual(ManualImportDecide.keepChoice(scan.rows[1], scan, linked: true).verb, "Skip this file")
+        XCTAssertEqual(ManualImportDecide.keepChoice(scan.rows[1], scan, linked: true).options[0].detail,
+                       "Clears it from the queue only; nothing is deleted.")
+        let removed = FinishRescueResult(mode: "removed", blocklisted: true, libraryLinked: false)
+        XCTAssertEqual(ManualImportDecide.keptReceipt(group: "FUZEER", removed, skipped: false),
+                       .init(title: "Kept your FUZEER copy", detail: "download removed · release blocklisted"))
+        let linked = FinishRescueResult(mode: "finished", blocklisted: false, libraryLinked: true)
+        XCTAssertEqual(ManualImportDecide.finishDetail(linked), "download finished · nothing deleted, your library links into it")
+        XCTAssertEqual(ManualImportDecide.keptReceipt(group: nil, FinishRescueResult(mode: "left", blocklisted: nil, libraryLinked: nil), skipped: true).title,
+                       "Skipped this file")
+        XCTAssertEqual(ManualImportDecide.importedReceipt(scan.rows[0]).title, "Imported as S02E01")
+        XCTAssertEqual(ManualImportDecide.packName(scan.rows), "The Show S02 pack")
+        XCTAssertEqual(ManualImportDecide.defaultDisposition(scan.rows, scan), .remove)
+        XCTAssertEqual(ManualImportDecide.rowAction(scan.rows[1])?.label, "Import this file")
     }
 
     func testHeldStripForAPack() throws {

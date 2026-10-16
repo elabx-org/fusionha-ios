@@ -4,61 +4,6 @@ import Foundation
 // above the rows, and the receipts. Ported from the web's
 // `routes/manual-import/{finish-plan,held-strip,held-banner,finish-receipt,commit-notices}.ts`.
 
-/// What the rescue's primary button does (`finishPlan`).
-public struct ManualImportFinishPlan: Equatable, Sendable {
-    public enum Kind: Sendable { case keep, mixed, need, importOnly }
-    public let kind: Kind
-    /// Rows the commit will import.
-    public let imports: Int
-    /// Rows set to Current (they stay as they are).
-    public let kept: Int
-    /// Rows still waiting for a decision.
-    public let need: Int
-    /// Rows an earlier commit already imported.
-    public let done: Int
-    public let label: String
-    public let disabled: Bool
-
-    /// Whether running it ends the held download(s).
-    public var finishes: Bool { kind == .keep || kind == .mixed }
-
-    public init(rows: [ManualImportRow], selected: Set<Int>) {
-        let open = rows.filter { !$0.committed }
-        let keptRows = open.filter { $0.replaceChoice == "keep_current" }
-        let rest = open.filter { $0.replaceChoice != "keep_current" }
-        let ready = { (r: ManualImportRow) in selected.contains(r.rowId) && ManualImportRules.isImportable(r) }
-        imports = rest.filter(ready).count
-        need = rest.filter { !ready($0) }.count
-        kept = keptRows.count
-        done = rows.count - open.count
-        let plan: (Kind, String, Bool)
-        if need > 0 && imports > 0 {
-            plan = (.importOnly, "Force import \(imports)", false)
-        } else if need > 0 {
-            plan = (.need, need == 1 ? "1 file needs a decision" : "\(need) files need a decision", true)
-        } else if imports == 0 && kept > 0 && done == 0 {
-            plan = (.keep, "Keep current · remove download", false)
-        } else if kept > 0 || (done > 0 && imports == 0) {
-            plan = (.mixed, imports > 0 ? "Import \(imports) · finish download" : "Finish download", false)
-        } else {
-            plan = (.importOnly, "Force import \(imports)", imports == 0)
-        }
-        kind = plan.0
-        label = plan.1
-        disabled = plan.2
-    }
-
-    /// The line under the button.
-    public var hint: String? {
-        switch kind {
-        case .need: return "Pick Current or This file on each held row to continue."
-        case .keep: return "Nothing is imported. Ends the held download."
-        case .mixed where kept > 0: return "\(kept) kept \(kept == 1 ? "file stays" : "files stay") as they are."
-        default: return nil
-        }
-    }
-}
-
 /// The reason strip above a rescue's rows.
 public struct ManualImportHeldStrip: Equatable, Sendable {
     public let line1: [String]

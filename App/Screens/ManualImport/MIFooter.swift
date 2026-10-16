@@ -43,8 +43,10 @@ struct MIHeldStripView: View {
     }
 }
 
-/// The import bar (the web's `StickyBar` with the rescue plan): the import
-/// mode, the primary the plan names, and the blocklist box or kept-files note.
+/// The import bar (the web's `StickyBar` with the rescue plan, 0.4.202): the
+/// import mode, and the primary the plan names: N files need a decision, Force
+/// import N, Finish download (a retry), or Done. Each download finishes on its
+/// own as soon as its rows are decided, so there is no blocklist box here.
 struct MIFooter: View {
     @Environment(ManualImportSession.self) private var session
 
@@ -77,26 +79,15 @@ struct MIFooter: View {
                     .accessibilityLabel("Import mode, \(session.importMode.label)")
                 }
                 Spacer(minLength: 0)
-                ActAsyncButton(label: plan.label, systemImage: plan.kind == .keep ? "internaldrive" : "square.and.arrow.down",
-                               kind: .primary, workingLabel: plan.finishes ? "Working…" : "Importing…",
+                ActAsyncButton(label: plan.label,
+                               systemImage: plan.kind == .keep ? "internaldrive" : plan.kind == .done ? nil : "square.and.arrow.down",
+                               kind: .primary, workingLabel: plan.kind == .keep ? "Working…" : "Importing…",
                                externalWorking: session.working) {
                     await session.runPrimary()
                     return session.notice?.error != true
                 }
                 .disabled(plan.disabled || session.bulkBusy)
                 .opacity(plan.disabled ? 0.5 : 1)
-            }
-            if session.showBlocklist {
-                Toggle(isOn: $session.blocklist) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Blocklist this release").font(.subheadline)
-                        Text("So it is not grabbed again").font(.caption).foregroundStyle(Theme.mut)
-                    }
-                }
-                .tint(Theme.i1)
-            } else if plan.kind == .keep && session.guarded {
-                Label("The guard already blocklisted this release", systemImage: "checkmark.shield")
-                    .font(.footnote).foregroundStyle(Theme.done)
             }
             if let hint = plan.hint {
                 Text(hint).font(.footnote).foregroundStyle(Theme.mut)

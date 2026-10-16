@@ -9,7 +9,11 @@ struct MIRowBody: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            MIRowDecision(row: row)
+            if row.held != nil, !row.committed, !session.isFinished(row), !ManualImportDecide.isDecided(row) {
+                MIHeldDecision(row: row)
+            } else {
+                MIRowDecision(row: row)
+            }
             section("Import as") { MIImportAsFields(row: row) }
             section("Name vs file") { nameVsFile }
             section("File") { fileBlock }
@@ -76,7 +80,7 @@ struct MIRowDecision: View {
     private var current: ManualImportExistingFile? { row.existingFile }
     private var notUpgrade: Bool { current?.verdict.map { $0.upgrade != true } ?? (row.held != nil) }
     private var picker: Bool {
-        !row.committed && current != nil && (notUpgrade || row.held != nil || row.replaceChoice != nil)
+        !session.isFinished(row) && !row.committed && current != nil && (notUpgrade || row.held != nil || row.replaceChoice != nil)
     }
     private var mislabel: Bool { row.measured?.mislabeled == true && row.mismatchChoice == nil && row.held == nil }
     private var titleCheck: ManualImportAlternative? {

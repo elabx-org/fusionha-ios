@@ -117,8 +117,13 @@ struct MIRowView: View {
     }
 
     @ViewBuilder private var notes: some View {
+        // A held row of a rescue shows finding chips and its actions (0.4.202); the sentence moves into them.
+        let rescue = session.tally(for: row) != nil
+        if rescue {
+            MIFindingLine(row: row).padding(.leading, 48).padding(.top, 6)
+        }
         let lines: [(String, Color)] = [
-            ManualImportRules.advisory(row).map { ($0, Theme.miss) },
+            (rescue ? nil : ManualImportRules.advisory(row)).map { ($0, Theme.miss) },
             session.rowErrors[row.rowId].map { ($0, Theme.danger) },
             session.rowWarnings[row.rowId].map { ($0, Theme.miss) },
         ].compactMap { $0 }

@@ -63,6 +63,7 @@ struct ManualImportSheet: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     if let strip = ManualImportHeldStrip(scan: scan, decide: session.plan.need) { MIHeldStripView(strip: strip) }
+                    MIPackProgress()
                     if session.probeStalled {
                         Button("Checking the files stalled. Retry", systemImage: "arrow.clockwise") {
                             session.retryProbes()

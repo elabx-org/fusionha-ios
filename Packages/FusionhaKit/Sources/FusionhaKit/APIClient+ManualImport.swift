@@ -34,17 +34,23 @@ extension APIClient {
 
     /// Imports the rows in place. A batch holding a row the server would refuse
     /// is rejected whole (422 `invalid_rows`); otherwise each row has its result.
-    public func manualImportCommit(scanId: Int, rowIds: [Int],
-                                   mode: ManualImportMode) async throws -> ManualImportCommitResult {
-        try await manualImportCall("POST", "/api/v1/manualimport/commit", [
+    /// `finish`: per held download, how to end it when this commit decides its
+    /// last open row (the server finishes it through the guarded path).
+    public func manualImportCommit(scanId: Int, rowIds: [Int], mode: ManualImportMode,
+                                   finish: [Int: FinishDisposition] = [:]) async throws -> ManualImportCommitResult {
+        var body: [String: SettingsJSON] = [
             "scan_id": .int(scanId), "row_ids": .ints(rowIds), "import_mode": .string(mode.rawValue),
-        ])
+        ]
+        if !finish.isEmpty {
+            body["finish_disposition"] = .object(Dictionary(uniqueKeysWithValues: finish.map { (String($0.key), .string($0.value.rawValue)) }))
+        }
+        return try await manualImportCall("POST", "/api/v1/manualimport/commit", .object(body))
     }
 
-    /// Ends a held download once its rows are decided (`blocklist` only counts
-    /// when the download is removed).
-    public func finishRescue(downloadId: Int, blocklist: Bool) async throws -> FinishRescueResult {
-        try await sendJSON("POST", "/api/v1/queue/\(downloadId)/finish-rescue", ["blocklist": .bool(blocklist)])
+    /// Ends a held download once its rows are decided: remove, remove + blocklist
+    /// (both admin), or leave (only clears the hold).
+    public func finishRescue(downloadId: Int, disposition: FinishDisposition) async throws -> FinishRescueResult {
+        try await sendJSON("POST", "/api/v1/queue/\(downloadId)/finish-rescue", ["disposition": .string(disposition.rawValue)])
     }
 
     /// Scans, probes and commits read and link files on the server, so they get
