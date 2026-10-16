@@ -19,7 +19,24 @@ instead of from scratch.
 catch-ups added models and calls by hand. Re-pin it from a tagged fusionha
 release when you next touch the API layer.
 
-## 0.4.199 (this sync)
+## 0.4.200 (this sync)
+
+Nothing to port: `193ed23b..b3c5ab8d` splits `api/schemas.py` into
+`schemas_*` modules and TasksTab into `routes/tasks/` (pure moves, API
+byte-identical).
+
+Done in the app since 0.4.199:
+- Requests step 4: the reporter side of issues, then the managers' Threads
+  view, issue pane and 0.4.197's keep-old (staged) flow.
+- Held Live Activity: overlapping posters, Review all in the corner, one line
+  per title with a short hold tag. The tags are app-side
+  (`QueueCardText.heldTag`), classified like `services/held_history.py`
+  `reason_code_for` plus the holds it files under `other` (numbering review,
+  sample runtime, busy slot, failed record, stuck publish, current file
+  changed, unreadable resolution). A reworded server reason falls back to
+  "needs a look"; see ask 1 below.
+
+## 0.4.199
 
 Done:
 - **Manual Import decision wording.** The footer reads "N files need a
@@ -152,6 +169,57 @@ Still open from 0.4.187:
 - Per-device sessions (`GET /auth/sessions`, `POST /auth/sessions/revoke-others`,
   …): additive; a candidate for the Account page.
 - Monolith splits start after their requests Phase 7 merges.
+- Live Activity pushes (push-to-start and throttled progress updates) and the
+  pause/resume endpoints the Live Activity's Pause button needs. Until then the
+  activity only updates while the app runs, and shows "updated … ago" when stale.
+
+## Asks for fusionha
+
+What would keep the web and iOS consistent with less hand-porting, most
+valuable first. Each came out of a real catch-up or bug.
+
+1. **Display copy from the server, beside the codes.** The web owns the words
+   (request triage facts, issue states, staged-copy refusals, Manual Import
+   decisions, queue holds) and iOS re-implements each rule in Swift, so every
+   web wording change drifts until the next sync. Responses that carry the
+   label next to the code would keep both clients identical. First case: the
+   queue's held item sends only the raw `held_reason` sentence, while the
+   server already computes a `reason_code` (for history only). Send e.g.
+   `held: {code: "multi_episode_orphan", short: "splits an episode pair",
+   text: "Would orphan other episodes…"}`.
+2. **Publish `openapi.json` with every release.** The pinned spec here still
+   says 0.2.0 and every model since was written by hand; decoding slips like
+   `requests_30d` arriving as zeros came from that. A per-tag spec lets the
+   app generate its API layer and turns a catch-up into a diff.
+3. **A "client impact" note per release:** API changes, copy changes,
+   new or changed screens. 0.4.200's "pure moves, API byte-identical" is the
+   ideal: it told us at once there was nothing to port.
+4. **One convention per thing.**
+   - Paging: requests and issues send `X-Next-Cursor`, `/threads` sends
+     `next_cursor` in the body. Pick one.
+   - Keys: no digit after an underscore (`requests_30d` decodes as
+     `requests30D` under convertFromSnakeCase).
+   - Free-form maps (issue diagnosis evidence) as `[{key, value}]`, so keys
+     survive client key conversion.
+   - Errors: keep `{detail: {code, reason}}` everywhere and publish the code list.
+5. **Live Activity pushes and pause/resume** (see Waiting on fusionha).
+6. **One change feed** (`GET /api/v1/changes?since=` or SSE) instead of each
+   client polling the queue (2 s), threads (15 s) and board (30 s): both
+   clients update together, with less battery, and widgets can follow.
+7. **Golden JSON fixtures** from backend tests (queue item, held item, request
+   with triage, issue with a staged copy) that FusionhaKit tests decode, so
+   the app tests the real shapes, not hand-typed ones.
+8. Smaller:
+   - Web routes as the canonical deep links in push payloads, so a
+     notification opens the same screen in both clients.
+   - Export the colour and status tokens (`status.ts`) as JSON, so HD
+     purple, 4K cyan and the status colours come from one place.
+   - A capabilities list in `/auth/me` (what this user can do, per surface),
+     so both clients gate buttons identically instead of each checking
+     permission names.
+
+The three that matter most are 1, 2 and 3: together they make consistency
+mostly automatic.
 
 ## How to continue
 
