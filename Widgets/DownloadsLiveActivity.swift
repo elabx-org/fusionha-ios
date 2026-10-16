@@ -8,12 +8,14 @@ import WidgetKit
 struct DownloadsLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DownloadsActivityAttributes.self) { context in
+            let _ = LiveActivityThumbs.use(context.state)
             LiveActivityRoot(state: context.state, stale: context.isStale)
                 .activityBackgroundTint(Color.black.opacity(0.55))
                 .activitySystemActionForegroundColor(.white)
                 .widgetURL(LiveActivityLinks.tap(context.state))
         } dynamicIsland: { context in
             let state = context.state
+            LiveActivityThumbs.use(state)
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     LiveActivityIslandLeading(state: state)

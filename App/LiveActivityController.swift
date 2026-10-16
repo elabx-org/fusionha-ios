@@ -33,7 +33,7 @@ enum LiveActivityController {
         }
         // Only the downloads chosen in Account › Live Activity count.
         let counted = queue.filter(LiveActivityPrefs.includes)
-        guard let state = LiveActivityStateBuilder.build(counted) else {
+        guard let built = LiveActivityStateBuilder.build(counted) else {
             if lastSettled != nil {
                 let final = LiveActivityStateBuilder.finished(lastLead)
                 let minutes = LiveActivityPrefs.lingerMinutes
@@ -43,8 +43,10 @@ enum LiveActivityController {
             lastLead = nil
             return
         }
-        lastLead = counted.first { $0.id == state.rows.first?.downloadId } ?? lastLead ?? counted.first
-        LiveActivityPosters.ensure(state)
+        lastLead = counted.first { $0.id == built.rows.first?.downloadId } ?? lastLead ?? counted.first
+        LiveActivityPosters.ensure(built)
+        // Tiny posters ride in the state itself (see `ContentState.thumbs`).
+        let state = LiveActivityPosters.attach(built)
         // Send when something a person would notice changed, and at least
         // every 30 s so the time left and speed stay honest.
         let settled = state.settled
@@ -165,13 +167,56 @@ enum LiveActivityPosters {
         }
     }
 
+    /// Tiny posters for the state itself, by media item id.
+    private static var tiny: [Int: Data] = [:]
+    /// ActivityKit refuses a state over 4 KB; stay well under it.
+    private static let stateBudget = 3_700
+
+    /// The state with as many tiny posters as fit the budget: the event's
+    /// title first, then the held titles, then the downloading rows.
+    static func attach(_ state: DownloadsActivityAttributes.ContentState) -> DownloadsActivityAttributes.ContentState {
+        var out = state
+        out.thumbs = nil
+        var candidates: [Int] = []
+        if let event = state.event { candidates.append(event.mediaItemId) }
+        candidates.append(contentsOf: state.held.map(\.mediaItemId))
+        candidates.append(contentsOf: state.rows.map(\.mediaItemId))
+        var ids: [Int] = []
+        for id in candidates where !ids.contains(id) { ids.append(id) }
+        let encoder = JSONEncoder()
+        var thumbs: [String: Data] = [:]
+        for id in ids.prefix(4) {
+            guard let thumb = tinyThumb(id) else { continue }
+            var trial = out
+            trial.thumbs = thumbs.merging(["\(id)": thumb]) { _, new in new }
+            if let size = try? encoder.encode(trial).count, size <= stateBudget { thumbs = trial.thumbs ?? thumbs }
+        }
+        out.thumbs = thumbs.isEmpty ? nil : thumbs
+        return out
+    }
+
+    /// 40×60 px at 0.45 quality from the saved poster: about 1 KB.
+    private static func tinyThumb(_ id: Int) -> Data? {
+        if let hit = tiny[id] { return hit }
+        guard let data = DownloadsActivityAttributes.ContentState.posterData(mediaItemId: id),
+              let image = UIImage(data: data) else { return nil }
+        let size = CGSize(width: 40, height: 60)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let small = UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+        guard let jpeg = small.jpegData(compressionQuality: 0.45) else { return nil }
+        tiny[id] = jpeg
+        return jpeg
+    }
+
     /// What Account › Live Activity shows: saved count, the last problem, and
     /// for each poster where the app and the Lock Screen found it.
     static func diagnostics(ids: [Int]) -> [String] {
         var out = ["Saved this session: \(saved)" + (lastProblem.map { " · \($0)" } ?? "")]
         let seen = DownloadsActivityAttributes.ContentState.posterSeen()
         for id in ids.prefix(4) {
-            out.append("#\(id) app: \(DownloadsActivityAttributes.ContentState.posterReport(mediaItemId: id))")
+            out.append("#\(id) app: \(DownloadsActivityAttributes.ContentState.posterReport(mediaItemId: id))"
+                       + (tiny[id].map { " · in state \($0.count) B" } ?? ""))
             out.append("#\(id) Lock Screen: \(seen["\(id)"] ?? "not drawn yet")")
         }
         return out

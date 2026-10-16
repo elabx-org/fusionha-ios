@@ -92,10 +92,16 @@ struct DownloadsActivityAttributes: ActivityAttributes {
         var event: Event?
         /// Unix seconds; "updated 3m ago" once the activity is stale.
         var updatedAt: Double
+        /// Tiny JPEG posters by media item id, carried in the state itself: a
+        /// build re-signed without the App Group has no storage the Live
+        /// Activity can read, so this is how its posters get there. The app
+        /// fills it within ActivityKit's 4 KB budget; server pushes omit it.
+        var thumbs: [String: Data]? = nil
 
         enum CodingKeys: String, CodingKey {
             case mode, downloading, needYou = "need_you", bps, etaSeconds = "eta_seconds", rows, held, steps, event
             case updatedAt = "updated_at"
+            case thumbs
         }
     }
 }
@@ -126,6 +132,7 @@ extension DownloadsActivityAttributes.ContentState {
     static func posterData(mediaItemId: Int) -> Data? {
         posterFile(mediaItemId: mediaItemId).flatMap { try? Data(contentsOf: $0) }
             ?? SharedKeychain.read(posterAccount(mediaItemId: mediaItemId))
+            ?? LiveActivityThumbs.current["\(mediaItemId)"]
     }
 
     /// Where a poster can be found from this process, for Account › Live
@@ -151,5 +158,17 @@ extension DownloadsActivityAttributes.ContentState {
 
     static func posterSeen() -> [String: String] {
         (SharedKeychain.read(posterSeenAccount).flatMap { try? JSONDecoder().decode([String: String].self, from: $0) }) ?? [:]
+    }
+}
+
+/// The thumbs of the state being drawn: the Live Activity's root sets them
+/// before its views read a poster (one activity, so one current state).
+enum LiveActivityThumbs {
+    nonisolated(unsafe) static var current: [String: Data] = [:]
+
+    @discardableResult
+    static func use(_ state: DownloadsActivityAttributes.ContentState) -> Bool {
+        if let thumbs = state.thumbs { current.merge(thumbs) { _, new in new } }
+        return true
     }
 }
