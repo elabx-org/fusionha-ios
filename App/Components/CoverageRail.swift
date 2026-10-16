@@ -135,6 +135,8 @@ struct RailRowView: View {
     var size: Double = 0
     var combo = false
     var inline = false
+    /// The calendar's "Soon" for a not-yet-aired slot with no date.
+    var upcomingText: String? = nil
     @Environment(\.railStyle) private var style
 
     var body: some View {
@@ -168,7 +170,7 @@ struct RailRowView: View {
                     if let date = rail.upcomingDate {
                         Text((rail.upcomingEstimated ? "~" : "") + Format.releaseDate(date))
                     } else {
-                        Text("Upcoming")
+                        Text(upcomingText ?? "Upcoming")
                     }
                 }
             case .upgrading:
@@ -187,7 +189,9 @@ struct RailRowView: View {
                 }
             case .owned:
                 switch style {
-                case .fill: Text(rail.fraction ?? Format.bytes(size))
+                case .fill:
+                    // An unknown size (the calendar carries no bytes) shows nothing.
+                    if let text = rail.fraction ?? (size > 0 ? Format.bytes(size) : nil) { Text(text) }
                 case .dot: Circle().fill(color).frame(width: 8, height: 8)
                 case .current:
                     HStack(spacing: 4) {

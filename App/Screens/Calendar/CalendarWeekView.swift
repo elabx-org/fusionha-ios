@@ -21,6 +21,10 @@ struct WeekMobileView: View {
     @Environment(\.calMotionOff) private var motionOff
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selected: String?
+    /// The user scrolled or picked a day: later data loads must not yank the list back.
+    @State private var userMoved = false
+    /// The day group at the top of the list (`scrollPosition`, applied at layout).
+    @State private var position: String?
 
     private var cal: Calendar { CalendarMath.gregorian() }
     private var animated: Bool { !(motionOff || reduceMotion) }
@@ -29,20 +33,23 @@ struct WeekMobileView: View {
 
     var body: some View {
         let byDay = CalendarMath.groupByDay(entries, cal)
-        ScrollViewReader { proxy in
-            VStack(spacing: 0) {
-                header(byDay: byDay, proxy: proxy)
+        VStack(spacing: 0) {
+                header(byDay: byDay)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(Array(days.enumerated()), id: \.element) { index, iso in
                             WeekDayGroup(iso: iso, entries: byDay[iso] ?? [], isToday: iso == todayIso, style: cardStyle)
                                 .calReveal(index, stagger: 0.02)
-                                .id("week-\(iso)")
                         }
                     }
+                    .scrollTargetLayout()
                     .padding(.horizontal, Theme.pageGutter)
                     .padding(.top, 2)
                     .padding(.bottom, 28)
+                }
+                .scrollPosition(id: $position, anchor: .top)
+                .onScrollPhaseChange { _, phase in
+                    if phase == .interacting { userMoved = true }
                 }
                 .onScrollGeometryChange(for: CGFloat.self) { geo in
                     geo.contentOffset.y + geo.contentInsets.top
@@ -53,20 +60,31 @@ struct WeekMobileView: View {
                 }
             }
             .task(id: "\(days.first ?? "")|\(todayTick)") {
-                guard days.contains(todayIso) else { return }
                 selected = nil
-                // Twice: once the groups exist, again after they have laid out
-                // and revealed (one early scroll on a device lands on Sunday).
-                for delay in [80, 400] {
-                    try? await Task.sleep(for: .milliseconds(delay))
-                    if Task.isCancelled { return }
-                    proxy.scrollTo("week-\(todayIso)", anchor: .top)
-                }
+                userMoved = false
+                await land()
             }
-        }
+            // Entries that arrive or change after the first layout re-land on
+            // today until the user scrolls or picks a day.
+            .task(id: entries.count) {
+                guard !userMoved else { return }
+                await land()
+            }
     }
 
-    private func header(byDay: [String: [CalendarEntry]], proxy: ScrollViewProxy) -> some View {
+    /// Puts today's group at the top: now, and again once the groups have
+    /// laid out and revealed (a position set before layout can be dropped).
+    private func land() async {
+        guard days.contains(todayIso) else { return }
+        position = todayIso
+        try? await Task.sleep(for: .milliseconds(350))
+        if Task.isCancelled || userMoved { return }
+        position = nil
+        await Task.yield()
+        position = todayIso
+    }
+
+    private func header(byDay: [String: [CalendarEntry]]) -> some View {
         VStack(spacing: 0) {
             if collapsed {
                 HStack(spacing: 8) {
@@ -87,10 +105,11 @@ struct WeekMobileView: View {
                 ForEach(days, id: \.self) { iso in
                     CalWeekDayChip(iso: iso, entries: byDay[iso] ?? [], isToday: iso == todayIso, on: activeDay == iso) {
                         selected = iso
+                        userMoved = true
                         if animated {
-                            withAnimation(.smooth) { proxy.scrollTo("week-\(iso)", anchor: .top) }
+                            withAnimation(.smooth) { position = iso }
                         } else {
-                            proxy.scrollTo("week-\(iso)", anchor: .top)
+                            position = iso
                         }
                     }
                 }

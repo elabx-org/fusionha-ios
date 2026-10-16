@@ -3,9 +3,10 @@ import FusionhaKit
 
 /// `.ev`: a solid row on the ground. A lit 40×60 poster, title, the sub line
 /// (`S05·E04 · Missing Persons`), and on the right the air time over the edition
-/// chips with their status. Dimmed once aired.
+/// rails (the library's, in its rail style). Dimmed once aired.
 struct AgendaRow: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.railConsolidate) private var consolidate
     let entry: CalendarEntry
     let now: Date
 
@@ -30,7 +31,7 @@ struct AgendaRow: View {
                             .foregroundStyle(Theme.mut)
                             .lineLimit(1)
                     }
-                    CalEditionMarks(entry: entry, now: now)
+                    CalRailStack(units: CalendarRails.entry(entry, now: now, consolidate: consolidate))
                 }
                 .fixedSize()
             }
@@ -81,45 +82,5 @@ private struct AgendaSubLine: View {
         }
         .font(.system(size: 13))
         .lineLimit(1)
-    }
-}
-
-/// The edition chips of `.ev-r .eds`: each lit HD / 4K chip (`TierPill`) paired
-/// with its status mark, coloured by status: ✓ on disk, ↓ grabbing, `wanted`,
-/// `soon` when unaired.
-struct CalEditionMarks: View {
-    let entry: CalendarEntry
-    let now: Date
-
-    var body: some View {
-        HStack(spacing: 6) {
-            ForEach(Array(entry.editions.enumerated()), id: \.offset) { _, edition in
-                let key = entry.statusKey(for: edition, now: now)
-                HStack(spacing: 4) {
-                    TierPill(tier: edition.tier)
-                    mark(key, progress: edition.progress)
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(key.color)
-                        .lineLimit(1)
-                        .fixedSize()
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(edition.tier.chipLabel) \(key.label)\(key == .downloading ? edition.progress.map { ", \($0) percent" } ?? "" : "")")
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func mark(_ key: CalendarStatusKey, progress: Int?) -> some View {
-        switch key {
-        case .downloaded:
-            Image(systemName: "checkmark").font(.system(size: 10, weight: .bold))
-        case .downloading:
-            Text(progress.map { "↓ \(min(max($0, 0), 100))%" } ?? "↓")
-        case .missing:
-            Text("wanted")
-        case .unaired:
-            Text("soon")
-        }
     }
 }

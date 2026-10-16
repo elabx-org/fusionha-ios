@@ -1,22 +1,17 @@
 import SwiftUI
 import FusionhaKit
 
-/// One rail per edition in a wrapping row (HD and 4K side by side).
+/// One rail per version in a wrapping row (HD and 4K side by side), drawn
+/// like the library's rails.
 struct CalRailWrap: View {
     let entry: CalendarEntry
     let now: Date
-    var outlined = true
-    var metaSize: CGFloat = 9
-    var rowGap: CGFloat = 7
-    var columnGap: CGFloat = 14
+    var rowGap: CGFloat = 8
+    var columnGap: CGFloat = 16
+    @Environment(\.railConsolidate) private var consolidate
 
     var body: some View {
-        CalFlow(spacing: columnGap, lineSpacing: rowGap) {
-            ForEach(Array(entry.editions.enumerated()), id: \.offset) { _, edition in
-                CalRail(rail: CalRailModel(entry: entry, edition: edition, now: now),
-                        outlinedTier: outlined, metaSize: metaSize)
-            }
-        }
+        CalRails(units: CalendarRails.entry(entry, now: now, consolidate: consolidate), rowGap: rowGap, columnGap: columnGap)
     }
 }
 

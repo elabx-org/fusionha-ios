@@ -66,7 +66,7 @@ struct WeekEventCard: View {
                 }
                 Text(entry.title).font(.system(size: 17, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
                 WeekCardSub(entry: entry, leadingGlyph: false)
-                CalRailWrap(entry: entry, now: now, outlined: true, metaSize: 11, rowGap: 8, columnGap: 16)
+                CalRailWrap(entry: entry, now: now)
                     .padding(.top, 8)
             }
             .padding(.top, 10)
@@ -92,7 +92,7 @@ struct WeekEventCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            CalRailWrap(entry: entry, now: now, outlined: true, metaSize: 11, rowGap: 8, columnGap: 16)
+            CalRailWrap(entry: entry, now: now)
                 .padding(.top, 10)
         }
         .padding(12)
@@ -101,6 +101,7 @@ struct WeekEventCard: View {
 
 struct SeasonDropCard: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.railConsolidate) private var consolidate
     let group: SeasonGroup
     let style: WeekCardStyle
     let now: Date
@@ -188,10 +189,6 @@ struct SeasonDropCard: View {
     }
 
     private var seasonRails: some View {
-        CalFlow(spacing: 16, lineSpacing: 8) {
-            ForEach(Array(group.tiers.enumerated()), id: \.offset) { _, tier in
-                CalRail(rail: CalRailModel(season: tier), outlinedTier: true, metaSize: 11)
-            }
-        }
+        CalRails(units: CalendarRails.season(group, now: now, consolidate: consolidate))
     }
 }
