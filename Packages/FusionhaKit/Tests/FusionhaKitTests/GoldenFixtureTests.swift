@@ -1,7 +1,7 @@
 import XCTest
 @testable import FusionhaKit
 
-/// fusionha's golden JSON fixtures (`docs/fixtures/`, 0.4.203), copied into
+/// fusionha's golden JSON fixtures (`docs/fixtures/`, 0.4.203–0.4.204), copied into
 /// `Fixtures/golden/`: the server pins these shapes, so the app's decoders are
 /// checked against exactly what it sends. Re-copy them when fusionha updates.
 final class GoldenFixtureTests: XCTestCase {
@@ -44,6 +44,15 @@ final class GoldenFixtureTests: XCTestCase {
     func testIssueWithStagedCopyDecodes() throws {
         let issue = try decode(MediaIssue.self, "issue_with_staged_copy")
         XCTAssertGreaterThan(issue.id, 0)
+    }
+
+    func testManualImportRowUsesTheServersFindingChips() throws {
+        let row = try decode(ManualImportRow.self, "manual_import_row_finding")
+        let chips = ManualImportDecide.findings(row)
+        XCTAssertEqual(chips.map(\.text), ["Really S06E06 · Mafia", "in library"])
+        XCTAssertEqual(chips.first?.icon, .redirect)
+        XCTAssertEqual(chips.first?.sentence, "File says 'Mafia' — that's S06E06 in your library, not S06E05")
+        XCTAssertEqual(chips.last?.tone, .library)
     }
 
     func testHeldCopyRules() {

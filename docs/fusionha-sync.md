@@ -10,10 +10,10 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `5d1ea13b` |
-| fusionha release | **0.4.203** (2026-10-16, client consistency bundle) |
+| fusionha commit | `dcdfea48` |
+| fusionha release | **0.4.205** (2026-10-16, Live Activity pushes + queue pause) |
 | Checked on | 2026-10-16 |
-| Previous sync | `89901fa5` / 0.4.202 (2026-10-16) |
+| Previous sync | `5d1ea13b` / 0.4.203 (2026-10-16) |
 
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
@@ -22,7 +22,32 @@ is the spec.
 catch-ups added models and calls by hand. Re-pin it from a tagged fusionha
 release when you next touch the API layer.
 
-## 0.4.203 (this sync): the client consistency bundle the app asked for
+## 0.4.204–0.4.205 (this sync)
+
+Done:
+- 0.4.204: `ManualImportRow.finding {code, label, text}` and `badges [...]`.
+  The collapsed row's chips use the server's label, `text` is the
+  accessibility label and the opened row's sentence; the glyph follows the
+  code (`really_episode` ↪, `holds_episodes` ⇄, else ⚠). Older servers fall
+  back to the app's own chip rules. Golden fixture `manual_import_row_finding`.
+- 0.4.205: the app requests the Live Activity with `pushType: .token` and
+  registers its push-to-start and per-activity tokens with
+  `POST /api/v1/notifications/apns/live-activity` (prefs from Account ›
+  Live Activity, re-sent when they change); an ended activity's token is
+  deleted. `ApnsStatus.live_activity_enabled` decodes.
+- 0.4.205: `POST /queue/pause` / `/queue/resume` (admins: a pause button in
+  the Activity header, confirm before pausing, the reply's per-client answer
+  as a toast). `GET /queue` `paused` / `paused_at`; the Live Activity shows
+  a Paused capsule.
+
+Open:
+- Server pushes don't carry `thumbs`, so a server-started activity has no
+  posters unless the widget saw them in an app-sent state this session.
+- 0.4.206 changes `steps` to `{labels, done, current, detail}`; the app
+  already reads `current` + `detail`.
+- The owner's server has no APNs key yet (`configured: false`).
+
+## 0.4.203: the client consistency bundle: the client consistency bundle the app asked for
 
 Done:
 - `held: {code, short, text}` on queue and history rows (`HeldDisplay`).

@@ -77,6 +77,12 @@ public enum ManualImportDecide {
     /// "⇄ Holds E04 + E05", "↪ Really S06E06 · Mafia" (+ "in library"), "Shared file", or the match advisory.
     public static func findings(_ row: ManualImportRow) -> [Finding] {
         guard !row.committed else { return [] }
+        // fusionha words the chips itself since 0.4.204; older servers fall back below.
+        if let server = row.finding {
+            let icon: Finding.Icon = server.code == "really_episode" ? .redirect : server.code == "holds_episodes" ? .swap : .warn
+            return [Finding(id: server.code, tone: .finding, icon: icon, text: server.label, sentence: server.text)]
+                + (row.badges ?? []).map { Finding(id: $0.code, tone: .library, icon: nil, text: $0.label, sentence: $0.text) }
+        }
         let sentence = ManualImportRules.advisory(row)
         if ManualImportRules.titleBlocked(row), let check = row.titleCheck {
             let code = check.matchesEpisode?.code ?? "another episode"

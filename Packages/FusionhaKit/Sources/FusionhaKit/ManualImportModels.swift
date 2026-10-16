@@ -83,8 +83,21 @@ public struct ManualImportRow: Decodable, Sendable, Hashable, Identifiable {
     public let episodeOverridden: Bool?
     /// "Dismiss this check": import as numbered despite the title.
     public let episodeTitleDismissed: Bool?
+    /// The server's chip for the collapsed row (0.4.204): its code, short label and sentence.
+    public let finding: ManualImportFinding?
+    /// Quieter chips beside it ("in library").
+    public let badges: [ManualImportFinding]?
 
     public var id: Int { rowId }
+}
+
+/// A finding or badge chip as fusionha words it (`really_episode`,
+/// `holds_episodes`, `shared_file`, `title_not_episode`, `also_matches`,
+/// `name_matches`, `check_match`; badge `in_library`).
+public struct ManualImportFinding: Decodable, Sendable, Hashable {
+    public let code: String
+    public let label: String
+    public let text: String
 }
 
 /// The file name's own episode title against the matched episode(s).

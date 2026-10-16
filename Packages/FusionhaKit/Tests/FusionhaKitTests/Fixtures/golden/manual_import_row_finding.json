@@ -1,0 +1,108 @@
+{
+  "row_id": 2,
+  "source_path": "/downloads/The.Office.S06/The.Office.US.S06E05.Mafia.mkv",
+  "relative_path": "",
+  "filename": "The.Office.US.S06E05.Mafia.1080p.WEB-DL.DD5.1.H.264-NTb.mkv",
+  "size": 1200000000,
+  "source_is_symlink": false,
+  "parsed": {
+    "title": "The Office US",
+    "year": null,
+    "season": 6,
+    "episodes": [
+      5
+    ],
+    "absolute_numbers": [],
+    "quality": null,
+    "edition": null,
+    "release_group": "NTb",
+    "languages": [],
+    "resolution": null,
+    "source": null,
+    "is_remux": false,
+    "streaming_service": null,
+    "video_codec": null,
+    "encoder": null,
+    "dynamic_range": [],
+    "audio_label": null,
+    "is_repack": false,
+    "is_proper": false,
+    "revision": 1,
+    "movie_edition": null
+  },
+  "match": {
+    "item_id": 7,
+    "tmdb_id": 2316,
+    "title": "The Office",
+    "year": 2005,
+    "poster_path": null,
+    "poster_url": null,
+    "is_anime": false,
+    "confidence": "high",
+    "alternative": null
+  },
+  "target": {
+    "kind": "series",
+    "tier": "HD",
+    "edition": null,
+    "version_exists": false,
+    "root_folder_id": null,
+    "quality_profile_id": null,
+    "season": 6,
+    "episode": 5,
+    "episode_id": null,
+    "episode_ids": [],
+    "movie_edition": null,
+    "edition_exists": false
+  },
+  "quality": null,
+  "languages": [],
+  "release_type": "unknown",
+  "would_orphan": "Replacing would leave S06E05 without a file. Add E05 to this file's episodes or keep the current file.",
+  "status": "needs_attention",
+  "status_reason": null,
+  "selected": false,
+  "item_overridden": false,
+  "retargeted": false,
+  "retarget_note": null,
+  "committed": false,
+  "media_file_id": null,
+  "probe": null,
+  "measured": null,
+  "mismatch_choice": null,
+  "quality_overridden": false,
+  "name_vs_file": [],
+  "existing_file": null,
+  "incoming_cf": null,
+  "held": null,
+  "title_check_dismissed": false,
+  "corroboration": null,
+  "replace_choice": null,
+  "title_check": {
+    "status": "names_other",
+    "says": "Mafia",
+    "matches_episode": {
+      "id": 606,
+      "code": "S06E06",
+      "title": "Mafia"
+    },
+    "same_release_exists": false
+  },
+  "runtime_check": null,
+  "recommended": "rematch",
+  "recommended_episodes": [],
+  "episode_overridden": false,
+  "episode_title_dismissed": false,
+  "finding": {
+    "code": "really_episode",
+    "label": "Really S06E06 · Mafia",
+    "text": "File says 'Mafia' — that's S06E06 in your library, not S06E05"
+  },
+  "badges": [
+    {
+      "code": "in_library",
+      "label": "in library",
+      "text": "S06E06 is already an episode in your library"
+    }
+  ]
+}
