@@ -30,6 +30,8 @@ struct SignInView: View {
     @State var living = LivingEngine()
     /// Bumped on a failed sign-in in the Living layout: the form shakes "no".
     @State var nudges = 0
+    /// The native first-run setup for a fresh server.
+    @State var settingUp = false
 
     enum Field { case server, username, password, demoUser, demoPass }
 
@@ -277,11 +279,15 @@ struct SignInView: View {
     var content: some View {
         if let connected {
             if connected.status.needsSetup {
-                hint("This server hasn't been set up yet. Finish the first-run setup in the web app, then come back.")
-                Link("Open the web app", destination: connected.url)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Theme.txt)
+                hint("This server hasn't been set up yet. Create its admin account and connect TMDB here.")
+                Button("Set up this server") { settingUp = true }
+                    .buttonStyle(ActButtonStyle(kind: .primary, small: false))
                     .padding(.top, 10)
+                    .fullScreenCover(isPresented: $settingUp) { SetupWizardView(server: connected.url) }
+                Link("Or open the web app", destination: connected.url)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.mut)
+                    .padding(.top, 8)
             } else {
                 chooser(url: connected.url, status: connected.status)
                     .frame(maxWidth: .infinity)

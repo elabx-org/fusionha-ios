@@ -261,6 +261,19 @@ final class AppModel {
         try await finishSignIn(with: anonymous, beforeEnter: beforeEnter)
     }
 
+    /// First run: create the first admin on a fresh server. Returns the signed-in
+    /// (cookie) client the wizard keeps using until `enterAfterSetup`.
+    func createFirstAdmin(server url: URL, username: String, password: String) async throws -> APIClient {
+        let anonymous = APIClient(baseURL: url, token: nil)
+        try await anonymous.createFirstAdmin(username: username, password: password)
+        return anonymous
+    }
+
+    /// The wizard's last step: mint this device's token and enter the app.
+    func enterAfterSetup(_ session: APIClient) async throws {
+        try await finishSignIn(with: session)
+    }
+
     /// Step 2b: Plex. Mints a PIN whose `authUrl` the user opens in a browser sheet.
     func startPlexSignIn(server url: URL) async throws -> PlexPin {
         try await APIClient(baseURL: url, token: nil).createPlexPin()

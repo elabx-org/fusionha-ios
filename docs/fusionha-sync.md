@@ -10,16 +10,47 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `b3c5ab8d` |
-| fusionha release | **0.4.200** (2026-10-15, "file splits", pure moves, API byte-identical: nothing to port) |
-| Checked on | 2026-10-15 |
-| Previous sync | `193ed23b` / 0.4.199 (2026-10-15) |
+| fusionha commit | `89901fa5` |
+| fusionha release | **0.4.202** (2026-10-16, Manual Import: decide one file at a time) |
+| Checked on | 2026-10-16 |
+| Previous sync | `b3c5ab8d` / 0.4.200 (2026-10-15) |
+
+Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
+is the spec.
 
 `Packages/FusionhaKit/openapi.json` still reports `info.version` 0.2.0: the
 catch-ups added models and calls by hand. Re-pin it from a tagged fusionha
 release when you next touch the API layer.
 
-## 0.4.200 (this sync)
+## 0.4.201 – 0.4.202 (this sync)
+
+Done:
+- **0.4.202 Manual Import, one file at a time**: per-row Import this file /
+  Assign / Re-match / Keep current (remove, remove + blocklist, leave),
+  per-download finish through `finish_disposition` or finish-rescue's
+  `disposition`, Done receipts, pack progress, finding chips, the new footer
+  (`ManualImportFinishPlan`). 0.4.201 was pure moves plus the search "+" fix.
+
+The full catch-up of web-only screens (the user asked to stop porting one
+release at a time) is under way. Native now, where the app used to open the web:
+- Requests: approver chips, Requested-by strip and Message all, Rules (rules,
+  guards, quota, auto-approved), Insights, Guardrails (Settings), the
+  release-group Blocklist.
+- Access: Users, Roles, per-user and per-role request policy, signed-in
+  devices. Activity › Audit on the readable rows (counts, actors, sensitive).
+- Notifications delivery (Immediate / Daily digest / Off) and the digest
+  preview; download-client capabilities; episode numbering reset.
+- Manage files / Manage episodes (edit, bulk set, replace, clean up, move to
+  version, delete, re-scan, import loose files).
+- Manual Import folder scan (path, Browse…, Scan), match to any library
+  title, the selection menu. Tasks › Needs attention (enrichment issues).
+- Queue pack episode list; history lifecycle sheet.
+
+Still web-only: Quality Profiles, Quality Definitions, Custom Formats, TRaSH
+Guides, Naming, Security, Sign-in methods (server), Plex server, Import
+Library (all being ported), plus the setup wizard and docs.
+
+## 0.4.200
 
 Nothing to port: `193ed23b..b3c5ab8d` splits `api/schemas.py` into
 `schemas_*` modules and TasksTab into `routes/tasks/` (pure moves, API
