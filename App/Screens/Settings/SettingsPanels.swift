@@ -37,6 +37,7 @@ func settingsPanel(_ slug: String) -> some View {
     case "plexserver": PlexServerSettingsPanel()
     case "profiles": QualityProfilesSettingsPanel()
     case "qualitydefinitions": QualityDefinitionsSettingsPanel()
+    case "import": ImportLibrarySettingsPanel()
     default: SettingsWebPanel(slug: slug)
     }
 }
