@@ -1,5 +1,6 @@
 import ActivityKit
 import Foundation
+import FusionhaKit
 
 /// One aggregate Live Activity for the whole queue (not one per download),
 /// which keeps us inside Apple's update budget. The content state is what the
@@ -118,7 +119,12 @@ extension DownloadsActivityAttributes.ContentState {
             .appendingPathComponent("poster-\(mediaItemId).jpg")
     }
 
+    /// The shared-keychain copy: a build re-signed without the App Group has
+    /// no shared container, and the keychain is all both processes see.
+    static func posterAccount(mediaItemId: Int) -> String { "la-poster-\(mediaItemId)" }
+
     static func posterData(mediaItemId: Int) -> Data? {
         posterFile(mediaItemId: mediaItemId).flatMap { try? Data(contentsOf: $0) }
+            ?? SharedKeychain.read(posterAccount(mediaItemId: mediaItemId))
     }
 }

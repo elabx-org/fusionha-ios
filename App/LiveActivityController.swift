@@ -97,30 +97,56 @@ actor LiveActivityWorker {
     }
 }
 
-/// Small posters for the activity, written to the App Group (a Live
-/// Activity cannot load images from the network itself).
+/// Small posters for the activity (a Live Activity cannot load images from
+/// the network itself), written to the App Group and to the shared keychain:
+/// a build re-signed without the App Group has no shared container, so the
+/// keychain copy is the one the widget extension finds. Once a poster lands
+/// the activity is re-sent so it shows straight away.
 @MainActor
 enum LiveActivityPosters {
     private static var inFlight: Set<Int> = []
+    /// Keychain copies kept, newest last; older ones are deleted.
+    private static let indexAccount = "la-poster-index"
+    private static let keep = 12
 
     static func ensure(_ state: DownloadsActivityAttributes.ContentState) {
         let wanted = state.rows.map { ($0.mediaItemId, $0.posterUrl) } + state.held.map { ($0.mediaItemId, $0.posterUrl) }
         for (id, posterUrl) in wanted {
             guard let url = posterUrl, !inFlight.contains(id),
-                  let file = DownloadsActivityAttributes.ContentState.posterFile(mediaItemId: id),
-                  !FileManager.default.fileExists(atPath: file.path) else { continue }
+                  DownloadsActivityAttributes.ContentState.posterData(mediaItemId: id) == nil else { continue }
             inFlight.insert(id)
             Task.detached(priority: .utility) {
-                defer { Task { @MainActor in inFlight.remove(id) } }
-                guard let (data, _) = try? await URLSession.shared.data(from: url),
-                      let image = UIImage(data: data) else { return }
-                // About 2x the 40pt poster: small enough for ActivityKit's limits.
-                let size = CGSize(width: 80, height: 120)
-                let small = UIGraphicsImageRenderer(size: size).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
-                guard let jpeg = small.jpegData(compressionQuality: 0.7) else { return }
-                try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try? jpeg.write(to: file, options: .atomic)
+                let jpeg = await Self.thumbnail(url)
+                await MainActor.run {
+                    inFlight.remove(id)
+                    guard let jpeg else { return }
+                    store(jpeg, mediaItemId: id)
+                    LiveActivityController.resync()
+                }
             }
         }
+    }
+
+    /// About 1.5x the 40pt poster at 0.6 quality: a few KB, small enough for a keychain item.
+    nonisolated private static func thumbnail(_ url: URL) async -> Data? {
+        guard let (data, _) = try? await URLSession.shared.data(from: url), let image = UIImage(data: data) else { return nil }
+        let size = CGSize(width: 60, height: 90)
+        let small = UIGraphicsImageRenderer(size: size).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+        return small.jpegData(compressionQuality: 0.6)
+    }
+
+    private static func store(_ jpeg: Data, mediaItemId id: Int) {
+        if let file = DownloadsActivityAttributes.ContentState.posterFile(mediaItemId: id) {
+            try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? jpeg.write(to: file, options: .atomic)
+        }
+        SharedKeychain.write(jpeg, DownloadsActivityAttributes.ContentState.posterAccount(mediaItemId: id))
+        var index = (SharedKeychain.read(indexAccount).flatMap { try? JSONDecoder().decode([Int].self, from: $0) }) ?? []
+        index.removeAll { $0 == id }
+        index.append(id)
+        while index.count > keep {
+            SharedKeychain.delete(DownloadsActivityAttributes.ContentState.posterAccount(mediaItemId: index.removeFirst()))
+        }
+        if let data = try? JSONEncoder().encode(index) { SharedKeychain.write(data, indexAccount) }
     }
 }
