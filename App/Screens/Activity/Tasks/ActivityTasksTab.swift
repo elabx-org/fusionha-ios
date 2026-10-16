@@ -109,6 +109,10 @@ struct ActivityTasksTab: View {
                     if !scheduled.isEmpty { ScheduledCard(tasks: scheduled) }
                 }
             }
+            if let issues = enrich?.issues, !issues.isEmpty {
+                sectionLabel("Needs attention").padding(.top, showSystem ? 22 : 0)
+                EnrichmentAttentionView(issues: issues) { await store.refresh(model.client) }
+            }
             if !searchRuns.isEmpty {
                 sectionLabel("Searching").padding(.top, showSystem ? 22 : 0)
                 VStack(spacing: 9) {

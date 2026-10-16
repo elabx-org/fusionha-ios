@@ -14,6 +14,16 @@ extension APIClient {
                                           ["download_ids": .ints(downloadIds)])
     }
 
+    /// Scans a folder on the server (synchronous: the rows come back whole).
+    public func manualImportScan(path: String) async throws -> ManualImportScan {
+        try await manualImportCall("POST", "/api/v1/manualimport/scan", ["path": .string(path)])
+    }
+
+    /// One directory's subfolders, for the folder picker.
+    public func manualImportBrowse(path: String?) async throws -> ManualImportBrowse {
+        try await get("/api/v1/manualimport/browse", query: path.map { [URLQueryItem(name: "path", value: $0)] } ?? [])
+    }
+
     public func manualImportScan(id: Int) async throws -> ManualImportScan {
         try await get("/api/v1/manualimport/scan/\(id)")
     }
@@ -75,5 +85,29 @@ extension APIError {
               let detail = object["detail"] as? [String: Any],
               let rows = detail["invalid_rows"] as? [Any] else { return nil }
         return rows.count
+    }
+}
+
+/// `GET /manualimport/browse`: a folder, its parent and its subfolders.
+public struct ManualImportBrowse: Decodable, Sendable {
+    public struct Entry: Decodable, Sendable, Hashable, Identifiable {
+        public let name: String
+        public let path: String
+        public var id: String { path }
+    }
+
+    public let path: String
+    public let parent: String?
+    public let entries: [Entry]
+
+    /// `/`, `downloads`, `complete` with the path each one opens.
+    public var crumbs: [Entry] {
+        var out = [Entry(name: "/", path: "/")]
+        var cur = ""
+        for part in path.split(separator: "/") {
+            cur += "/\(part)"
+            out.append(Entry(name: String(part), path: cur))
+        }
+        return out
     }
 }

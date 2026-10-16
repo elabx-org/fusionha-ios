@@ -62,3 +62,20 @@ final class ManagedFilesTests: XCTestCase {
         XCTAssertEqual(ManagedFileVocab.releaseTypeLabel("seasonPack"), "Season Pack")
     }
 }
+
+final class EnrichmentAttentionTests: XCTestCase {
+    func testGroupsLargestFirstWithFixes() throws {
+        let status = try APIClient.decoder.decode(ActivityEnrichmentStatus.self, from: Data("""
+        {"total_files": 10, "enriched_files": 7, "pending_files": 0, "issue_files": 3, "issues": [
+          {"media_file_id": 1, "title": "A", "reason": "unlinked", "path": "/x/a.mkv"},
+          {"media_file_id": 2, "title": "B", "reason": "probe_failed", "season_number": 1, "episode_number": 4},
+          {"media_file_id": 3, "title": "C", "reason": "probe_failed"}]}
+        """.utf8))
+        let groups = EnrichmentGroup.groups(status.issues ?? [])
+        XCTAssertEqual(groups.map(\.reason), ["probe_failed", "unlinked"])
+        XCTAssertEqual(groups[0].fixAll, .retry)
+        XCTAssertEqual(groups[1].fixes, [.forget])
+        XCTAssertEqual(groups[0].issues.first?.code, "S01·E04")
+        XCTAssertEqual(groups[1].issues.first?.fileName, "a.mkv")
+    }
+}

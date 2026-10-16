@@ -4,8 +4,8 @@ import FusionhaKit
 /// Manual Import for held downloads, native (the web's Manual Import modal in
 /// its rescue mode, phone layout): the reason strip, one block per title, a
 /// row per file, and the footer that imports or finishes the download.
-/// The folder-scan entry still opens the web page; this sheet's ⋯ menu also
-/// offers the web version as a fallback.
+/// With no held downloads it is the folder scan (source bar, Browse…, Scan);
+/// the ⋯ menu also offers the web version as a fallback.
 struct ManualImportSheet: View {
     let downloadIds: [Int]
     let onOpenWeb: () -> Void
@@ -59,9 +59,20 @@ struct ManualImportSheet: View {
     }
 
     @ViewBuilder private var content: some View {
-        if let scan = session.scan {
+        if session.folderMode && session.scan == nil {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    MISourceBar()
+                    folderState
+                }
+                .padding(.horizontal, Theme.pageGutter)
+                .padding(.vertical, 12)
+            }
+            .scrollDismissesKeyboard(.immediately)
+        } else if let scan = session.scan {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
+                    if session.folderMode { MISourceBar() }
                     if let strip = ManualImportHeldStrip(scan: scan, decide: session.plan.need) { MIHeldStripView(strip: strip) }
                     MIPackProgress()
                     if session.probeStalled {
@@ -93,6 +104,21 @@ struct ManualImportSheet: View {
                 Text("Reading the files…").font(.subheadline).foregroundStyle(Theme.mut)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    @ViewBuilder private var folderState: some View {
+        if session.scanning {
+            HStack(spacing: 10) {
+                ProgressView().tint(Theme.mut)
+                Text("Scanning the folder…").font(.subheadline).foregroundStyle(Theme.mut)
+            }
+        } else if let error = session.loadError {
+            Text(error).font(.footnote).foregroundStyle(Theme.danger)
+        } else {
+            Text("Pick a folder on the server. fusionha matches each video to a title in your library, and files import in place with no re-download.")
+                .font(.subheadline).foregroundStyle(Theme.mut)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

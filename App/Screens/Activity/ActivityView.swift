@@ -29,8 +29,8 @@ final class ActBulk {
     var config: Config?
 }
 
-/// Opens Manual import: a held-download rescue natively, the folder scan (and
-/// the rescue's "Open on the web" fallback) as the signed-in web page.
+/// Opens Manual import natively (a held-download rescue or the folder scan);
+/// "Open on the web" opens the signed-in web page.
 @MainActor
 @Observable
 final class ActRouter {
@@ -49,9 +49,9 @@ final class ActRouter {
     }
 
     /// A queue rescue (one held download, a season, or every held row) opens
-    /// natively as one scan; with no ids it is the folder scan, still the web's.
+    /// natively as one scan; with no ids it is the native folder scan.
     func manualImport(rescue downloadIds: [Int]) {
-        if downloadIds.isEmpty { openWeb(rescue: []) } else { rescue = ManualImportRequest(downloadIds: downloadIds) }
+        rescue = ManualImportRequest(downloadIds: downloadIds)
     }
 
     /// The web's Manual import (`/activity?rescue=1,2`), opened signed in.

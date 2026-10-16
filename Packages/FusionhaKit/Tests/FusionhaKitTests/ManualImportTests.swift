@@ -128,4 +128,13 @@ final class ManualImportTests: XCTestCase {
         XCTAssertEqual(refused.invalidRowCount, 1)
         XCTAssertEqual(ManualImportCopy.commitError(refused), "1 row can't be imported. Fix or untick it.")
     }
+
+    func testBrowseCrumbs() throws {
+        let b = try APIClient.decoder.decode(ManualImportBrowse.self, from: Data("""
+        {"path": "/downloads/complete", "parent": "/downloads", "entries": [{"name": "tv", "path": "/downloads/complete/tv"}]}
+        """.utf8))
+        XCTAssertEqual(b.crumbs.map(\.name), ["/", "downloads", "complete"])
+        XCTAssertEqual(b.crumbs.last?.path, "/downloads/complete")
+        XCTAssertEqual(b.entries.first?.id, "/downloads/complete/tv")
+    }
 }

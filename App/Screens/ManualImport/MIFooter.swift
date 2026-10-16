@@ -68,6 +68,7 @@ struct MIFooter: View {
                     .font(.footnote).foregroundStyle(Theme.mut)
             }
             HStack(spacing: 10) {
+                MISelectionMenu()
                 if plan.imports > 0 {
                     Menu {
                         Picker("Import mode", selection: $session.importMode) {
@@ -104,5 +105,31 @@ struct MIFooter: View {
 
     private var pendingTicked: Int {
         session.rows.filter { session.selected.contains($0.rowId) && $0.probe?.isPending == true }.count
+    }
+}
+
+/// "N selected" (web `SelectionActionsSheet`): confirm the selected medium
+/// matches at once, select all, all ready, or none.
+struct MISelectionMenu: View {
+    @Environment(ManualImportSession.self) private var session
+
+    var body: some View {
+        let open = session.rows.filter { !$0.committed }
+        let picked = open.filter { session.selected.contains($0.rowId) }
+        let toConfirm = picked.filter(ManualImportRules.confirmEligible)
+        let ready = open.filter(ManualImportRules.isImportable)
+        Menu {
+            if !toConfirm.isEmpty {
+                Button("Confirm \(toConfirm.count) medium match\(toConfirm.count == 1 ? "" : "es")", systemImage: "checkmark.seal") {
+                    Task { for r in toConfirm { await session.patch(r, ["item_id": .optional(r.match.itemId)]) } }
+                }
+            }
+            Button("Select all · \(open.count)") { session.selected = Set(open.map(\.rowId)) }
+            Button("Select all ready · \(ready.count)") { session.selected = Set(ready.map(\.rowId)) }.disabled(ready.isEmpty)
+            Button("Clear selection") { session.selected = [] }.disabled(picked.isEmpty)
+        } label: {
+            GlassMenuLabel(title: "\(picked.count) selected")
+        }
+        .disabled(session.working || session.bulkBusy)
     }
 }

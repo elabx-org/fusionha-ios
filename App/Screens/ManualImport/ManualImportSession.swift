@@ -25,6 +25,8 @@ final class ManualImportSession {
     private(set) var pendingRows: Set<Int> = []
     private(set) var bulkBusy = false
     private(set) var probeStalled = false
+    /// A folder scan in flight.
+    private(set) var scanning = false
     /// An in-sheet notice (errors, partial results).
     var notice: (text: String, error: Bool)?
     /// Set when the sheet should close; carries the receipt for the app toast.
@@ -69,8 +71,11 @@ final class ManualImportSession {
 
     // MARK: Seeding
 
+    /// No held downloads: the folder scan (`POST /manualimport/scan`).
+    var folderMode: Bool { rescueIds.isEmpty }
+
     func start() async {
-        guard scan == nil, let client else { return }
+        guard scan == nil, !folderMode, let client else { return }
         loadError = nil
         do {
             let fresh = try await client.manualImportRescue(downloadIds: rescueIds)
@@ -78,6 +83,26 @@ final class ManualImportSession {
             selected = ManualImportRules.initialSelection(fresh)
         } catch {
             loadError = ErrorCopy.message(for: error, fallback: "Couldn't open these files. Try again.")
+        }
+    }
+
+    /// Scans a folder; a new folder starts the decisions afresh.
+    func scanFolder(_ path: String) async {
+        let path = path.trimmingCharacters(in: .whitespaces)
+        guard let client, !path.isEmpty, !scanning else { return }
+        scanning = true
+        defer { scanning = false }
+        loadError = nil
+        do {
+            let fresh = try await client.manualImportScan(path: path)
+            receipts = [:]
+            rowErrors = [:]
+            rowWarnings = [:]
+            notice = nil
+            scan = fresh
+            selected = ManualImportRules.initialSelection(fresh)
+        } catch {
+            loadError = ErrorCopy.message(for: error, fallback: "Couldn't scan that folder. Check the path and try again.")
         }
     }
 

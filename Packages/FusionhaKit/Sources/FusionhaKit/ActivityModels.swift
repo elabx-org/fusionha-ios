@@ -235,6 +235,8 @@ public struct ActivityEnrichmentStatus: Decodable, Sendable {
     public let pendingFiles: Int?
     public let issueFiles: Int?
     public let subtasks: [EnrichmentSubtask]?
+    /// The files the sweep gave up on (bounded server-side).
+    public let issues: [EnrichmentIssue]?
 }
 
 public struct EnrichmentSubtask: Decodable, Sendable, Hashable {

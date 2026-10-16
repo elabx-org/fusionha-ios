@@ -185,6 +185,12 @@ public enum ManualImportRules {
         isSelectable(row) && !awaitsReplaceChoice(row)
     }
 
+    /// A medium match the user can confirm as is (web `confirmEligible`).
+    public static func confirmEligible(_ row: ManualImportRow) -> Bool {
+        !row.committed && row.status == "needs_attention" && row.match.itemId != nil
+            && row.match.confidence != "high" && row.itemOverridden != true
+    }
+
     /// The server's per-row default, filtered the way the web seeds its ticks.
     public static func initialSelection(_ scan: ManualImportScan) -> Set<Int> {
         Set(scan.rows.filter { $0.selected && isBulkSelectable($0) }.map(\.rowId))

@@ -6,6 +6,7 @@ import FusionhaKit
 struct MIRowBody: View {
     let row: ManualImportRow
     @Environment(ManualImportSession.self) private var session
+    @State private var matching = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -20,6 +21,7 @@ struct MIRowBody: View {
         }
         .padding(.leading, 48)
         .disabled(session.working)
+        .sheet(isPresented: $matching) { MIItemMatchSheet(row: row).environment(session) }
     }
 
     private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
@@ -64,8 +66,14 @@ struct MIRowBody: View {
                     .font(.footnote).foregroundStyle(Theme.danger)
             }
             if let note = row.retargetNote { Text(note).font(.footnote).foregroundStyle(Theme.mut) }
-            Button("Copy path", systemImage: "doc.on.doc") { UIPasteboard.general.string = row.sourcePath }
-                .buttonStyle(ActButtonStyle(kind: .ghost))
+            HStack(spacing: 8) {
+                Button("Copy path", systemImage: "doc.on.doc") { UIPasteboard.general.string = row.sourcePath }
+                    .buttonStyle(ActButtonStyle(kind: .ghost))
+                if !row.committed {
+                    Button(row.match.itemId == nil ? "Match to a title…" : "Match to another title…", systemImage: "magnifyingglass") { matching = true }
+                        .buttonStyle(ActButtonStyle(kind: .ghost))
+                }
+            }
         }
     }
 }
