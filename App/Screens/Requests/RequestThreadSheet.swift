@@ -24,7 +24,8 @@ struct RequestThreadSheet: View {
     }
     private var isOwner: Bool { request.userId != nil && request.userId == model.me?.id }
     private var joinedView: Bool { RequestLifecycle.isJoinedView(request, viewerId: model.me?.id) }
-    private var canPost: Bool { isOwner || joinedView || (model.me?.hasPermission("requests.approve") ?? false) }
+    private var canApprove: Bool { model.me?.hasPermission("requests.approve") ?? false }
+    private var canPost: Bool { isOwner || joinedView || canApprove }
 
     var body: some View {
         NavigationStack {
@@ -32,6 +33,11 @@ struct RequestThreadSheet: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         header
+                        if canApprove && request.status == "pending" && !isOwner {
+                            RequestApproverChips(request: request) {
+                                Task { await refresh() }
+                            }
+                        }
                         sectionLabel("Timeline")
                         RequestStatusTimeline(request: request)
                         sectionLabel("Conversation")
@@ -111,6 +117,13 @@ struct RequestThreadSheet: View {
             await markRead(client)
             try? await Task.sleep(for: .seconds(5))
         }
+    }
+
+    private func refresh() async {
+        guard let client = model.client else { return }
+        if let detail = try? await client.requestDetail(id: request.id) { request = detail }
+        if let fresh = try? await client.requestEvents(id: request.id, afterId: events.last?.id ?? 0) { append(fresh) }
+        onChanged()
     }
 
     private func append(_ lines: [RequestThreadEvent]) {

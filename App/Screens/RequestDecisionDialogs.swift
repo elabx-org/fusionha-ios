@@ -131,10 +131,18 @@ struct RejectDialog: View {
     @Environment(\.dismiss) private var dismiss
     let request: MediaRequest
     let onDone: () -> Void
-    @State private var reason: RequestReason = .other
+    @State private var reason: RequestReason
     @State private var note = ""
-    @State private var defer_ = false
+    @State private var defer_: Bool
     @State private var sending = false
+
+    /// `deferFirst`: opened from "Not available yet" (defer, with that reason).
+    init(request: MediaRequest, deferFirst: Bool = false, onDone: @escaping () -> Void) {
+        self.request = request
+        self.onDone = onDone
+        _reason = State(initialValue: deferFirst ? .notAvailableYet : .other)
+        _defer_ = State(initialValue: deferFirst)
+    }
 
     var body: some View {
         NavigationStack {

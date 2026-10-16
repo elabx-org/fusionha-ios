@@ -97,6 +97,11 @@ enum SettingsNav {
         .init(id: "database", label: "Database", title: "Database",
               subtitle: "The storage backend — SQLite (default) or Postgres — with an in-app migration.",
               icon: "cylinder.split.1x2"),
+        .init(id: "guardrails", label: "Guardrails", title: "Guardrails",
+              subtitle: "The Auto-fix kill switch, its limits, and what is paused.", icon: "shield"),
+        .init(id: "blocklist", label: "Blocklist", title: "Blocklist",
+              subtitle: "Release groups you never want grabbed, for one title or everywhere. Single releases live on Activity → Blocklist.",
+              icon: "nosign"),
         .init(id: "backup", label: "Backup", title: "Backup",
               subtitle: "Scheduled + on-demand database backups — download or delete any snapshot, with automatic retention.",
               icon: "clock.arrow.circlepath"),
@@ -119,7 +124,7 @@ enum SettingsNav {
         .init(id: "media", label: "Media Management", icon: "folder",
               children: ["roots", "naming", "filemanagement", "import"]),
         .init(id: "quality", label: "Quality", icon: "clock",
-              children: ["qualitydefinitions", "formats", "releasefilters", "profiles", "defaultprofiles", "trash"]),
+              children: ["qualitydefinitions", "formats", "releasefilters", "blocklist", "profiles", "defaultprofiles", "trash"]),
         .init(id: "access", label: "Access", icon: "checkmark.shield",
               children: ["access", "roles", "signin", "plexserver", "publicaccess", "apikey"]),
     ]
@@ -127,6 +132,7 @@ enum SettingsNav {
     static let sections: [SettingsSectionInfo] = [
         .init(id: "fetching", label: "Fetching",
               panels: ["clients", "indexers", "connect", "notifications", "instances"]),
+        .init(id: "requests", label: "Requests", panels: ["guardrails"]),
         .init(id: "system", label: "System",
               panels: ["appearance", "system", "database", "backup", "security", "logs", "about", "versions",
                        "experimental", "discover", "maintenance"]),

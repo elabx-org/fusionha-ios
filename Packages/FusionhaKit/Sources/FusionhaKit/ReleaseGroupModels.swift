@@ -8,6 +8,12 @@ public struct ReleaseGroupBlock: Decodable, Sendable, Identifiable, Hashable {
     public let group: String
     public let scope: String
     public let mediaItemId: Int?
+    public let itemTitle: String?
+    /// `mislabeled_resolution` or `manual`.
+    public let reason: String?
+    public let note: String?
+    public let createdBy: String?
+    public let createdAt: String?
 }
 
 public struct ReleaseGroupPrompt: Decodable, Sendable, Hashable {
@@ -58,6 +64,24 @@ extension APIClient {
         return try await send("POST", "/api/v1/release-groups/blocks", body: ReleaseGroupBlockCreate(
             group: group, scope: scope.rawValue, mediaItemId: scope == .item ? mediaItemId : nil,
             reason: "mislabeled_resolution", createCustomFormat: createCustomFormat, source: "prompt"))
+    }
+
+    /// Settings › Quality › Blocklist: every release-group block.
+    public func releaseGroupBlocks() async throws -> [ReleaseGroupBlock] {
+        try await get("/api/v1/release-groups/blocks")
+    }
+
+    /// A manual block from Settings: everywhere, or for one title.
+    public func addReleaseGroupBlock(_ group: String, mediaItemId: Int?, note: String?) async throws -> ReleaseGroupBlock {
+        try await sendJSON("POST", "/api/v1/release-groups/blocks", .object([
+            "group": .string(group), "scope": .string(mediaItemId == nil ? "global" : "item"),
+            "media_item_id": mediaItemId.map { .int($0) } ?? .null, "reason": .string("manual"),
+            "note": note.map { .string($0) } ?? .null, "source": .string("settings"),
+        ]))
+    }
+
+    public func deleteReleaseGroupBlock(id: Int) async throws {
+        try await sendJSON("DELETE", "/api/v1/release-groups/blocks/\(id)")
     }
 
     /// "Only this release" or "Not now" (30 days).

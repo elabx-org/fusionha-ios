@@ -165,7 +165,7 @@ struct MIHeldDecision: View {
                  : "Keep \(choice.group.map { "your \($0) copy" } ?? "your current copy") and skip this file")
                 .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.txt)
             VStack(spacing: 6) {
-                ForEach(choice.options) { option in option(option, on: option.value == sel) }
+                ForEach(choice.options) { o in optionRow(o, on: o.value == sel) }
             }
             if choice.linked {
                 Label("Your library links into this download, so it is only cleared from the queue, never deleted.",
@@ -188,7 +188,7 @@ struct MIHeldDecision: View {
         }
     }
 
-    private func option(_ o: ManualImportDecide.KeepOption, on: Bool) -> some View {
+    private func optionRow(_ o: ManualImportDecide.KeepOption, on: Bool) -> some View {
         Button { picked = o.value } label: {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: on ? "largecircle.fill.circle" : "circle").foregroundStyle(on ? Theme.i1 : Theme.dim)

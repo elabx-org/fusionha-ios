@@ -2,10 +2,9 @@ import SwiftUI
 import FusionhaKit
 
 /// The approver's Requests area (web `ApproverRequests`): Inbox N · Board ·
-/// History · Threads, plus Mine (their own requests). Rules and Insights come
-/// with the settings step. Any view opens a request's thread here.
+/// History · Threads · Rules · Insights, plus Mine (their own requests). Any view opens a request's thread here.
 struct ApproverRequestsView: View {
-    enum Lane: Hashable { case inbox, board, history, threads, mine }
+    enum Lane: Hashable { case inbox, board, history, threads, rules, insights, mine }
 
     @Environment(DiscoverStore.self) private var store
     @State private var lane: Lane = .inbox
@@ -14,13 +13,17 @@ struct ApproverRequestsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            ScrollView(.horizontal, showsIndicators: false) {
             DiscoverSegmented(options: [
                 (Lane.inbox, store.pendingCount > 0 ? "Inbox \(store.pendingCount)" : "Inbox"),
                 (Lane.board, "Board"),
                 (Lane.history, "History"),
                 (Lane.threads, "Threads"),
+                (Lane.rules, "Rules"),
+                (Lane.insights, "Insights"),
                 (Lane.mine, "Mine"),
-            ], selection: $lane, fullTrack: true)
+            ], selection: $lane)
+            }
             switch lane {
             case .inbox:
                 TriageInboxView(onOpenThread: { thread = $0 }, onOpenBoard: { lane = .board }, onOpenHistory: openHistory)
@@ -31,6 +34,10 @@ struct ApproverRequestsView: View {
                     .id(historyFilter)
             case .threads:
                 ThreadsPanelView()
+            case .rules:
+                RequestRulesView()
+            case .insights:
+                RequestInsightsView()
             case .mine:
                 MineView()
             }
