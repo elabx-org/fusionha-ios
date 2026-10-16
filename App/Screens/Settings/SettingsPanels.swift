@@ -38,6 +38,9 @@ func settingsPanel(_ slug: String) -> some View {
     case "profiles": QualityProfilesSettingsPanel()
     case "qualitydefinitions": QualityDefinitionsSettingsPanel()
     case "import": ImportLibrarySettingsPanel()
+    case "naming": NamingSettingsPanel()
+    case "security": SecurityAdminSettingsPanel()
+    case "signin": SignInMethodsSettingsPanel()
     default: SettingsWebPanel(slug: slug)
     }
 }
