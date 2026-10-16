@@ -31,6 +31,8 @@ func settingsPanel(_ slug: String) -> some View {
     case "backup": BackupPanel()
     case "logs": LogsPanel()
     case "guardrails": GuardrailsSettingsPanel()
+    case "access": UsersSettingsPanel()
+    case "roles": RolesSettingsPanel()
     case "blocklist": ReleaseGroupBlocklistPanel()
     default: SettingsWebPanel(slug: slug)
     }

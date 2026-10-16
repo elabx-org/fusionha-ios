@@ -370,6 +370,24 @@ public struct ArrWebhookGroup: Decodable, Sendable, Hashable, Identifiable {
 public struct NotificationPreferenceItem: Decodable, Sendable, Hashable {
     public let eventKind: String
     public let enabled: Bool
+    /// IMMEDIATE · DIGEST · OFF (fusionha phase 3); nil on older servers.
+    public let delivery: String?
+    public let defaultDelivery: String?
+    public let digestAllowed: Bool?
+    public let retired: Bool?
+    /// requester · admin · operational
+    public let audience: String?
+}
+
+/// `GET /notifications/digest/preview`: the pending daily digest as it would be sent, or a sample.
+public struct DigestPreview: Decodable, Sendable {
+    public let pending: Int
+    public let title: String
+    public let body: String
+    public let sample: Bool
+    public let digestTime: String
+    public let nextSendAt: String?
+    public let heldByQuietHours: Bool?
 }
 
 public struct NotificationPreferences: Decodable, Sendable {

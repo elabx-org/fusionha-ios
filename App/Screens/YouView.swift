@@ -8,6 +8,8 @@ struct YouView: View {
     @Environment(AppModel.self) private var model
     @State private var requestCount = 0
     @State private var webPage: URL?
+    @State private var showingMethods = false
+    @State private var showingSessions = false
 
     private var me: Me? { model.me }
 
@@ -26,12 +28,10 @@ struct YouView: View {
                         }
                     }
                     .discoverReveal(index: 1, step: 0.05)
-                    actionRow("Sign-in methods") {
-                        if let server = model.credentials?.serverURL {
-                            webPage = server.appendingPathComponent("account")
-                        }
-                    }
-                    .discoverReveal(index: 2, step: 0.05)
+                    actionRow("Sign-in methods") { showingMethods = true }
+                        .discoverReveal(index: 2, step: 0.05)
+                    actionRow("Signed-in devices") { showingSessions = true }
+                        .discoverReveal(index: 2, step: 0.05)
                     actionRow("Reset cache & reload") { Task { await resetCache() } }
                         .discoverReveal(index: 3, step: 0.05)
                     row {
@@ -49,6 +49,10 @@ struct YouView: View {
         }
         .discoverToastOverlay()
         .sheet(item: $webPage) { FusionhaWebSheet(url: $0) }
+        .sheet(isPresented: $showingMethods) {
+            SignInMethodsSheet().presentationDetents([.large]).presentationBackground(Theme.panel)
+        }
+        .sheet(isPresented: $showingSessions) { AccountSessionsSheet() }
         .task(id: me?.id) {
             requestCount = (try? await model.client?.requests(status: nil).count) ?? 0
         }

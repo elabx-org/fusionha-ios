@@ -128,7 +128,7 @@ struct ActivityView: View {
             case .history: ActivityHistoryTab(search: chrome.search)
             case .blocklist: ActivityBlocklistTab(search: chrome.search)
             case .tasks: ActivityTasksTab()
-            case .audit: ActivityAuditTab()
+            case .audit: ActivityAuditTab(search: chrome.search)
             case .indexers: ActivityIndexersTab()
             }
         }

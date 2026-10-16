@@ -21,7 +21,11 @@ struct DownloadClientsPanel: View {
             if !loaded || error != nil { FetchLoading(error: error) }
             VStack(spacing: 12) {
                 ForEach(Array(clients.enumerated()), id: \.element.id) { index, client in
-                    card(client).fetchReveal(index)
+                    VStack(spacing: 6) {
+                        card(client)
+                        ClientCapabilityRow(clientId: client.id)
+                    }
+                    .fetchReveal(index)
                 }
             }
             .padding(.bottom, 14)

@@ -10,7 +10,6 @@ import FusionhaKit
 /// this app lists them read-only.
 struct NotificationsPanel: View {
     @Environment(AppModel.self) private var model
-    @State private var prefs: [String: Bool] = [:]
     @State private var devices: [PushSubscriptionInfo] = []
     @State private var settings: WebPushSettings?
     @State private var loaded = false
@@ -34,15 +33,6 @@ struct NotificationsPanel: View {
     }
 
     /// The curated push event matrix (mock order) → backend `event_kind`.
-    private static let events: [(key: String, label: String, hint: String, sev: Color, tag: String?)] = [
-        ("grab", "Grabbed", "A release was sent to the download client", Theme.grab, nil),
-        ("import", "Imported", "A file was imported into the library", Theme.done, nil),
-        ("failed", "Download failed", "A grab or import failed", Theme.danger, nil),
-        ("upgrade", "Upgrade found", "A better release replaced an existing file", Theme.grab, nil),
-        ("needs_attention", "Needs attention", "A manual import or a stuck item needs you", Theme.miss, nil),
-        ("request_available", "Request available", "A title someone requested is now downloaded", Theme.anime, "· requestors"),
-        ("request_made", "New request", "A user submitted a new media request", Theme.anime, "· admins"),
-    ]
 
     var body: some View {
         FetchingPage(slug: "notifications", toaster: toaster, confirm: $confirm, refresh: load) {
@@ -90,27 +80,7 @@ struct NotificationsPanel: View {
             }
 
             sec("Events")
-            card {
-                ForEach(Array(Self.events.enumerated()), id: \.element.key) { index, event in
-                    if index > 0 { Divider().overlay(Theme.line) }
-                    HStack(alignment: .center, spacing: 10) {
-                        RoundedRectangle(cornerRadius: 2).fill(event.sev).frame(width: 3, height: 30)
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack(spacing: 4) {
-                                Text(event.label).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
-                                if let tag = event.tag { Text(tag).font(.system(size: 11)).foregroundStyle(Theme.dim) }
-                            }
-                            Text(event.hint).font(.system(size: 12)).foregroundStyle(Theme.mut)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        Spacer(minLength: 8)
-                        Toggle(event.label, isOn: Binding(get: { prefs[event.key] ?? true },
-                                                          set: { togglePref(event.key, $0) }))
-                            .labelsHidden().tint(Theme.indigo)
-                    }
-                    .padding(.vertical, 10)
-                }
-            }
+            NotificationEventsCard()
             .fetchReveal(3)
 
             if isAdmin { adminSection }
@@ -457,13 +427,7 @@ struct NotificationsPanel: View {
 
     private func load() async {
         guard let client = model.client else { return }
-        do {
-            let p = try await client.notificationPreferences()
-            prefs = Dictionary(p.preferences.map { ($0.eventKind, $0.enabled) }, uniquingKeysWith: { _, b in b })
-            error = nil
-        } catch {
-            self.error = error.settingsMessage
-        }
+        error = nil
         devices = (try? await client.pushSubscriptions()) ?? []
         if isAdmin {
             settings = try? await client.webPushSettings()
@@ -481,21 +445,6 @@ struct NotificationsPanel: View {
         apnsDevices = (try? await client.apnsDevices()) ?? []
         authStatus = await PushRegistration.authorizationStatus()
         loaded = true
-    }
-
-    private func togglePref(_ key: String, _ on: Bool) {
-        guard let client = model.client else { return }
-        let before = prefs[key]
-        prefs[key] = on
-        Task {
-            do {
-                let fresh = try await client.setNotificationPreference(event: key, enabled: on)
-                prefs = Dictionary(fresh.preferences.map { ($0.eventKind, $0.enabled) }, uniquingKeysWith: { _, b in b })
-            } catch {
-                prefs[key] = before
-                toaster.error(error)
-            }
-        }
     }
 
     private func update(_ body: [String: SettingsJSON]) {

@@ -10,6 +10,7 @@ struct AccountView: View {
     @Environment(AppModel.self) private var model
     @State private var requestCount: Int?
     @State private var showingMethods = false
+    @State private var showingSessions = false
     @State private var resetting = false
     @State private var signingOut = false
     @State private var toast: CalToast?
@@ -37,6 +38,7 @@ struct AccountView: View {
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Theme.panel)
         }
+        .sheet(isPresented: $showingSessions) { AccountSessionsSheet() }
         .task {
             #if DEBUG
             if ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_ACCOUNT"] == "methods" {
@@ -71,6 +73,9 @@ struct AccountView: View {
             .calReveal(1, stagger: 0.06)
 
             rowButton("Sign-in methods") { showingMethods = true }
+                .calReveal(2, stagger: 0.06)
+
+            rowButton("Signed-in devices") { showingSessions = true }
                 .calReveal(2, stagger: 0.06)
 
             rowButton(resetting ? "Resetting…" : "Reset cache & reload") { Task { await resetCache() } }

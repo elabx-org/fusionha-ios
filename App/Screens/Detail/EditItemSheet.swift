@@ -82,6 +82,10 @@ struct EditItemSheet: View {
                 }
 
                 tagsSection
+
+                if isSeries, let source = detail.episodeNumberingSource {
+                    EditNumberingResetSection(itemId: detail.id, source: source, provider: detail.resolvedMetadataProvider)
+                }
             }
             .scrollContentBackground(.hidden)
             .background(Theme.bg)

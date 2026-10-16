@@ -144,6 +144,20 @@ extension APIClient {
         try await get("/api/v1/audit", query: q([("limit", "\(limit)"), ("before_id", beforeId.map(String.init))]))
     }
 
+    /// The filtered trail, newest first.
+    public func audit(_ filter: AuditFilter, limit: Int = 100, beforeId: Int? = nil) async throws -> [AuditEntry] {
+        try await get("/api/v1/audit", query: filter.items(limit: limit, beforeId: beforeId))
+    }
+
+    /// Chip totals for the same window (every filter but the category).
+    public func auditCounts(_ filter: AuditFilter) async throws -> AuditCounts {
+        var f = filter
+        f.category = nil
+        return try await get("/api/v1/audit/counts", query: f.items(limit: nil, beforeId: nil))
+    }
+
+    public func auditActors() async throws -> [AuditActor] { try await get("/api/v1/audit/actors") }
+
     public func activityIndexerStats(range: String) async throws -> ActivityIndexerStats {
         try await get("/api/v1/indexers/stats", query: [URLQueryItem(name: "range", value: range)])
     }

@@ -105,6 +105,14 @@ extension APIClient {
                            ["preferences": [["event_kind": .string(event), "enabled": .bool(enabled)]]])
     }
 
+    /// Immediate, daily digest or off for one kind.
+    public func setNotificationDelivery(event: String, delivery: String) async throws -> NotificationPreferences {
+        try await sendJSON("PUT", "/api/v1/notifications/preferences",
+                           ["preferences": [["event_kind": .string(event), "delivery": .string(delivery)]]])
+    }
+
+    public func digestPreview() async throws -> DigestPreview { try await get("/api/v1/notifications/digest/preview") }
+
     public func pushSubscriptions() async throws -> [PushSubscriptionInfo] {
         try await get("/api/v1/notifications/webpush/subscriptions")
     }

@@ -42,6 +42,12 @@ extension APIClient {
 
     // MARK: Episode numbering
 
+    /// Clears a numbering override and re-files the tree onto the item's own
+    /// provider (admin; reversible by design).
+    public func resetNumbering(itemId: Int) async throws {
+        try await sendJSON("POST", "/api/v1/library/\(itemId)/numbering/reset")
+    }
+
     /// Dispatches the fix as a background run; poll `commandRun(id:)` for its summary.
     public func applyNumbering(itemId: Int, source: String?, expectedHash: String) async throws -> NumberingApplyDispatch {
         try await send("POST", "/api/v1/library/\(itemId)/numbering/apply",
