@@ -167,13 +167,17 @@ enum LiveActivityPosters {
         }
     }
 
-    /// Tiny posters for the state itself, by media item id.
-    private static var tiny: [Int: Data] = [:]
+    /// Tiny posters for the state itself, by media item id and size.
+    private static var tiny: [String: Data] = [:]
     /// ActivityKit refuses a state over 4 KB; stay well under it.
     private static let stateBudget = 3_700
 
-    /// The state with as many tiny posters as fit the budget: the event's
-    /// title first, then the held titles, then the downloading rows.
+    /// Poster sizes to try, sharpest first: when every title's poster does
+    /// not fit the budget at one size, the next, smaller one is tried.
+    private static let sizes: [(w: CGFloat, h: CGFloat, q: CGFloat)] = [(40, 60, 0.45), (32, 48, 0.35), (24, 36, 0.3)]
+
+    /// The state with tiny posters for every title that fits the budget: the
+    /// event's title first, then the held titles, then the downloading rows.
     static func attach(_ state: DownloadsActivityAttributes.ContentState) -> DownloadsActivityAttributes.ContentState {
         var out = state
         out.thumbs = nil
@@ -183,30 +187,42 @@ enum LiveActivityPosters {
         candidates.append(contentsOf: state.rows.map(\.mediaItemId))
         var ids: [Int] = []
         for id in candidates where !ids.contains(id) { ids.append(id) }
+        ids = Array(ids.prefix(3))
         let encoder = JSONEncoder()
-        var thumbs: [String: Data] = [:]
-        for id in ids.prefix(4) {
-            guard let thumb = tinyThumb(id) else { continue }
-            var trial = out
-            trial.thumbs = thumbs.merging(["\(id)": thumb]) { _, new in new }
-            if let size = try? encoder.encode(trial).count, size <= stateBudget { thumbs = trial.thumbs ?? thumbs }
+        var best: [String: Data] = [:]
+        for size in sizes {
+            var thumbs: [String: Data] = [:]
+            for id in ids {
+                guard let thumb = tinyThumb(id, size) else { continue }
+                var trial = out
+                trial.thumbs = thumbs.merging(["\(id)": thumb]) { _, new in new }
+                if let bytes = try? encoder.encode(trial).count, bytes <= stateBudget { thumbs = trial.thumbs ?? thumbs }
+            }
+            if thumbs.count > best.count { best = thumbs }
+            if best.count == ids.filter({ DownloadsActivityAttributes.ContentState.posterData(mediaItemId: $0) != nil }).count { break }
         }
-        out.thumbs = thumbs.isEmpty ? nil : thumbs
+        out.thumbs = best.isEmpty ? nil : best
         return out
     }
 
-    /// 40×60 px at 0.45 quality from the saved poster: about 1 KB.
-    private static func tinyThumb(_ id: Int) -> Data? {
-        if let hit = tiny[id] { return hit }
+    private static func tinyThumb(_ id: Int, _ size: (w: CGFloat, h: CGFloat, q: CGFloat)) -> Data? {
+        let key = "\(id)-\(Int(size.w))"
+        if let hit = tiny[key] { return hit }
         guard let data = DownloadsActivityAttributes.ContentState.posterData(mediaItemId: id),
               let image = UIImage(data: data) else { return nil }
-        let size = CGSize(width: 40, height: 60)
+        let box = CGSize(width: size.w, height: size.h)
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
-        let small = UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
-        guard let jpeg = small.jpegData(compressionQuality: 0.45) else { return nil }
-        tiny[id] = jpeg
+        let small = UIGraphicsImageRenderer(size: box, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: box)) }
+        guard let jpeg = small.jpegData(compressionQuality: size.q) else { return nil }
+        tiny[key] = jpeg
         return jpeg
+    }
+
+    /// The size a poster went into the state at, for the poster check.
+    private static func inState(_ id: Int) -> String? {
+        let hits = sizes.compactMap { size in tiny["\(id)-\(Int(size.w))"].map { "\(Int(size.w))px \($0.count) B" } }
+        return hits.isEmpty ? nil : hits.joined(separator: " / ")
     }
 
     /// What Account › Live Activity shows: saved count, the last problem, and
@@ -216,8 +232,8 @@ enum LiveActivityPosters {
         let seen = DownloadsActivityAttributes.ContentState.posterSeen()
         for id in ids.prefix(4) {
             out.append("#\(id) app: \(DownloadsActivityAttributes.ContentState.posterReport(mediaItemId: id))"
-                       + (tiny[id].map { " · in state \($0.count) B" } ?? ""))
-            out.append("#\(id) Lock Screen: \(seen["\(id)"] ?? "not drawn yet")")
+                       + (inState(id).map { " · thumbs \($0)" } ?? ""))
+            out.append("#\(id) Lock Screen: \(seen["\(id)"] ?? "no report (it can't write to shared storage on this build)")")
         }
         return out
     }
