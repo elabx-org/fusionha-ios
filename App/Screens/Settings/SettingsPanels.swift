@@ -41,6 +41,8 @@ func settingsPanel(_ slug: String) -> some View {
     case "naming": NamingSettingsPanel()
     case "security": SecurityAdminSettingsPanel()
     case "signin": SignInMethodsSettingsPanel()
+    case "formats": CustomFormatsSettingsPanel()
+    case "trash": TrashGuidesSettingsPanel()
     default: SettingsWebPanel(slug: slug)
     }
 }
