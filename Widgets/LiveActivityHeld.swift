@@ -19,11 +19,10 @@ struct LiveActivityHeldView: View {
                 LiveActivityPosterStack(ids: state.held.prefix(3).map(\.mediaItemId))
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("\(state.needYou)").font(.system(size: 26, weight: .heavy).monospacedDigit())
-                            .foregroundStyle(Theme.miss)
+                        LiveActivityHero(text: "\(state.needYou)", size: 38, color: Theme.miss)
                         Text("need you").font(.system(size: 16, weight: .bold))
                     }
-                    Text("held for Manual Import").font(.system(size: 12, weight: .medium))
+                    Text("held for review").font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.white.opacity(0.55)).lineLimit(1)
                 }
                 .padding(.top, 4)

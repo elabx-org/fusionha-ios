@@ -3,7 +3,10 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// The Lock Screen (and StandBy) view, one layout per state.
+/// The Lock Screen (and StandBy) view, one layout per state, in the redesign's
+/// language (mock "Live Activity, redesigned", 2026-10-16): one hero per state
+/// in the display face, the poster's wash behind (`LiveActivityWash`), and the
+/// HD / 4K chip that fills as it downloads. Every state fits the 160pt height.
 struct LiveActivityLockScreen: View {
     typealias State = DownloadsActivityAttributes.ContentState
     let state: State
@@ -12,8 +15,9 @@ struct LiveActivityLockScreen: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             switch state.mode {
-            case .downloading: downloading
-            case .held: held
+            case .downloading:
+                if state.downloading > 1 && state.rows.count > 1 { several } else { single }
+            case .held: LiveActivityHeldView(state: state)
             case .problem: problem
             case .steps: steps
             case .imported, .upgraded, .done: landed
@@ -21,175 +25,206 @@ struct LiveActivityLockScreen: View {
             if stale {
                 Text("updated \(Date(timeIntervalSince1970: state.updatedAt), style: .relative) ago")
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.white.opacity(0.45))
             }
         }
         .foregroundStyle(.white)
     }
 
-    // MARK: States
+    // MARK: Downloading
 
-    private var downloading: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            header(title: "\(state.downloading) downloading", tone: Theme.grab,
-                   trailing: [LiveActivityFormat.rate(state.bps), LiveActivityFormat.eta(state.etaSeconds).map { "next \($0)" }]
-                       .compactMap { $0 }.joined(separator: "  "))
-            ForEach(state.rows, id: \.downloadId) { LiveActivityRowView(row: $0) }
+    /// One title: the percentage is the hero; the version chip fills.
+    @ViewBuilder
+    private var single: some View {
+        if let row = state.rows.first {
+            HStack(spacing: 13) {
+                LiveActivityPoster(mediaItemId: row.mediaItemId, width: 56)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(row.title).font(.system(size: 15.5, weight: .bold)).lineLimit(1)
+                    if let sub = row.sub { meta(sub) }
+                    HStack(spacing: 8) {
+                        EditionFillChip(label: row.version, color: LiveActivityTone.version(row.version), fraction: row.fraction ?? 0)
+                        if let rate = LiveActivityFormat.rate(state.bps) { meta(rate, size: 12) }
+                    }
+                    .padding(.top, 6)
+                }
+                Spacer(minLength: 4)
+                VStack(alignment: .trailing, spacing: 3) {
+                    if let pct = LiveActivityFormat.percentNumber(row.fraction) {
+                        LiveActivityHero(text: pct, size: 52, color: Theme.grab, unit: "%")
+                    }
+                    if let eta = LiveActivityFormat.eta(state.etaSeconds) { meta("\(eta) left", size: 12) }
+                }
+                .fixedSize()
+            }
             if state.needYou > 0 { needYouLine }
         }
     }
 
-    private var held: some View { LiveActivityHeldView(state: state) }
+    /// Several: total speed is the hero; a row per download, nearest to done.
+    private var several: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                if let rate = LiveActivityFormat.rateParts(state.bps) {
+                    LiveActivityHero(text: rate.number, size: 34, color: Theme.grab)
+                    Text(rate.unit).font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.grab)
+                }
+                Spacer(minLength: 6)
+                meta(severalCaption, size: 12.5).lineLimit(1)
+            }
+            ForEach(state.rows.prefix(2), id: \.downloadId) { LiveActivityRowView(row: $0) }
+        }
+    }
+
+    private var severalCaption: String {
+        var parts = ["\(state.downloading) downloading"]
+        if state.needYou > 0 { parts.append("\(state.needYou) need you") }
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: Steps (symlink jobs)
+
+    private var steps: some View {
+        VStack(alignment: .leading, spacing: 11) {
+            if let steps = state.steps {
+                HStack(spacing: 13) {
+                    if let row = state.rows.first { LiveActivityPoster(mediaItemId: row.mediaItemId, width: 48) }
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(alignment: .firstTextBaseline) {
+                            LiveActivityHero(text: steps.current ?? "Working", size: 32)
+                            Spacer(minLength: 6)
+                            meta("\(min(steps.done + 1, steps.labels.count)) of \(steps.labels.count)")
+                        }
+                        if let row = state.rows.first { titleLine(row.title, sub: row.sub, version: row.version) }
+                    }
+                }
+                LiveActivityStageRail(steps: steps)
+            }
+        }
+    }
+
+    // MARK: Problem
 
     private var problem: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            header(title: state.event?.detail?.hasPrefix("Stalled") == true ? "1 stalled" : "Needs attention", tone: Theme.danger,
-                   trailing: state.downloading > 1
-                       ? (["\(state.downloading - 1) downloading", LiveActivityFormat.rate(state.bps)].compactMap { $0 }.joined(separator: " · "))
-                       : "")
+        VStack(alignment: .leading, spacing: 11) {
             if let event = state.event {
-                HStack(alignment: .top, spacing: 10) {
-                    LiveActivityPoster(mediaItemId: event.mediaItemId)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(event.title).font(.system(size: 15, weight: .bold)).lineLimit(1)
-                        Text(event.version).font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(LiveActivityTone.version(event.version))
-                        if let detail = event.detail {
-                            Text(detail + (event.line2.map { " · \($0)" } ?? ""))
-                                .font(.system(size: 13)).foregroundStyle(Theme.danger).lineLimit(2)
+                let stalled = event.detail?.hasPrefix("Stalled") == true
+                HStack(spacing: 13) {
+                    LiveActivityPoster(mediaItemId: event.mediaItemId, width: 48).saturation(0.6)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(alignment: .firstTextBaseline, spacing: 7) {
+                            LiveActivityHero(text: stalled ? "Stalled" : "Failed", size: 32, color: Theme.danger)
+                            if stalled, let at = event.detail?.replacingOccurrences(of: "Stalled ", with: "") { meta(at) }
                         }
+                        titleLine(event.title, sub: nil, version: event.version)
+                        meta(problemLine(event, stalled: stalled), size: 12).lineLimit(1)
                     }
                     Spacer(minLength: 0)
                 }
-                if let id = event.downloadId {
-                    Button(intent: LiveActivitySearchAgainIntent(downloadId: id)) {
-                        Label("Search again", systemImage: "magnifyingglass")
-                            .font(.system(size: 14, weight: .semibold))
-                            .padding(.horizontal, 14)
-                            .frame(height: 34)
+                HStack(spacing: 8) {
+                    if let id = event.downloadId {
+                        Button(intent: LiveActivitySearchAgainIntent(downloadId: id)) {
+                            Label("Search again", systemImage: "magnifyingglass").capsule(Theme.danger.opacity(0.26))
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
-                    .background(Theme.danger.opacity(0.28), in: Capsule())
+                    if let link = URL(string: "fusionha://activity" + (event.downloadId.map { "?focus=\($0)" } ?? "")) {
+                        Link(destination: link) { Text("Open queue").capsule(Color.white.opacity(0.1)) }
+                    }
                 }
             }
-            if state.needYou > 1 { needYouLine }
         }
     }
 
-    private var steps: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let steps = state.steps {
-                header(title: steps.current ?? "Working", tone: Theme.grab,
-                       trailing: "step \(min(steps.done + 1, steps.labels.count)) of \(steps.labels.count)")
-                if let row = state.rows.first {
-                    HStack(spacing: 10) {
-                        LiveActivityPoster(mediaItemId: row.mediaItemId)
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(row.title).font(.system(size: 15, weight: .bold)).lineLimit(1)
-                            Text([row.sub, row.version].compactMap { $0 }.joined(separator: " · "))
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(LiveActivityTone.version(row.version))
-                        }
-                    }
-                }
-                HStack(spacing: 4) {
-                    ForEach(Array(steps.labels.enumerated()), id: \.offset) { index, label in
-                        Text(label)
-                            .font(.system(size: 11, weight: .semibold))
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 5)
-                            .background(index < steps.done ? Theme.done.opacity(0.3)
-                                        : (index == steps.done ? Theme.grab.opacity(0.35) : Color.white.opacity(0.08)),
-                                        in: Capsule())
-                    }
-                }
-                Text("Linked by decypharr · symlink jobs finish in seconds")
-                    .font(.system(size: 11)).foregroundStyle(.white.opacity(0.55))
-            }
-        }
+    private func problemLine(_ event: State.Event, stalled: Bool) -> String {
+        var parts: [String] = []
+        if !stalled, let detail = event.detail { parts.append(detail) }
+        if let line2 = event.line2 { parts.append(line2) }
+        if state.downloading > 1 { parts.append("\(state.downloading - 1) more downloading") }
+        return parts.joined(separator: " · ")
     }
+
+    // MARK: Landed
 
     private var landed: some View {
         let upgraded = state.mode == .upgraded
-        return VStack(alignment: .leading, spacing: 9) {
-            header(title: upgraded ? "Upgraded" : (state.mode == .done ? "All done" : "Imported"),
-                   tone: upgraded ? Theme.edition : Theme.done, trailing: "",
-                   icon: upgraded ? "arrow.up.circle.fill" : "checkmark.circle.fill")
+        let tone = upgraded ? Theme.edition : Theme.done
+        return HStack(spacing: 13) {
             if let event = state.event {
-                HStack(alignment: .top, spacing: 10) {
-                    LiveActivityPoster(mediaItemId: event.mediaItemId)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(event.title).font(.system(size: 15, weight: .bold)).lineLimit(1)
-                        Text([event.line2, event.version].compactMap { $0 }.joined(separator: " · "))
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(LiveActivityTone.version(event.version))
-                        if let detail = event.detail, !detail.isEmpty {
-                            Text(detail).font(.system(size: 13)).foregroundStyle(.white.opacity(0.7)).lineLimit(1)
-                        }
+                LiveActivityPoster(mediaItemId: event.mediaItemId, width: 56)
+                VStack(alignment: .leading, spacing: 5) {
+                    LiveActivityHero(text: upgraded ? "Upgraded" : (state.mode == .done ? "All done" : "On disk"), size: 32)
+                    HStack(spacing: 6) {
+                        Text(event.title).font(.system(size: 15.5, weight: .bold)).lineLimit(1)
+                        if let ep = event.line2 { meta(ep, size: 12) }
                     }
-                    Spacer(minLength: 0)
+                    HStack(spacing: 8) {
+                        EditionFillChip(label: event.version + " ✓", color: tone, fraction: 1)
+                        if let detail = event.detail, !detail.isEmpty { meta(detail, size: 12).lineLimit(1) }
+                    }
                 }
+                Spacer(minLength: 0)
+            } else {
+                LiveActivityHero(text: "All done", size: 32, color: tone)
+                Spacer(minLength: 0)
             }
         }
     }
 
     // MARK: Parts
 
+    private func titleLine(_ title: String, sub: String?, version: String) -> some View {
+        HStack(spacing: 6) {
+            Text(title).font(.system(size: 14.5, weight: .bold)).lineLimit(1)
+            if let sub { meta(sub, size: 12).lineLimit(1) }
+            EditionFillChip(label: version, color: LiveActivityTone.version(version))
+        }
+    }
+
+    private func meta(_ text: String, size: CGFloat = 13) -> Text {
+        Text(text).font(.system(size: size, weight: .medium).monospacedDigit()).foregroundColor(.white.opacity(0.62))
+    }
+
     private var needYouLine: some View {
         HStack(spacing: 6) {
             Circle().fill(Theme.miss).frame(width: 7, height: 7)
-            Text("\(state.needYou) need you · held for Manual Import")
-                .font(.system(size: 13, weight: .semibold))
+            Text("\(state.needYou) need you · held for review")
+                .font(.system(size: 12.5, weight: .semibold))
                 .foregroundStyle(Theme.miss)
-        }
-    }
-
-    private func header(title: String, tone: Color, trailing: String, icon: String? = nil) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon ?? glyph).font(.system(size: 15, weight: .bold)).foregroundStyle(tone)
-            Text(title).font(.system(size: 17, weight: .bold))
-            Spacer(minLength: 6)
-            Text(trailing).font(.system(size: 13, weight: .semibold).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.7)).lineLimit(1)
-        }
-    }
-
-    private var glyph: String {
-        switch state.mode {
-        case .held: return "pause.circle.fill"
-        case .problem: return "exclamationmark.triangle.fill"
-        case .steps: return "link.circle.fill"
-        default: return "arrow.down.circle.fill"
         }
     }
 }
 
-/// One download: poster, title, version, its own bar and percent.
+private extension View {
+    /// A Live Activity action capsule.
+    func capsule(_ fill: Color) -> some View {
+        font(.system(size: 13.5, weight: .semibold))
+            .lineLimit(1)
+            .padding(.horizontal, 14)
+            .frame(height: 32)
+            .background(fill, in: Capsule())
+    }
+}
+
+/// One download among several: poster, title, episode, its own bar and %.
 struct LiveActivityRowView: View {
     let row: DownloadsActivityAttributes.ContentState.Row
 
     var body: some View {
         HStack(spacing: 10) {
-            LiveActivityPoster(mediaItemId: row.mediaItemId)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
+            LiveActivityPoster(mediaItemId: row.mediaItemId, width: 30)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(row.title).font(.system(size: 14, weight: .bold)).lineLimit(1)
-                    Text(row.version).font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(LiveActivityTone.version(row.version))
-                        .fixedSize()
-                    Spacer(minLength: 4)
-                    if let pct = LiveActivityFormat.percent(row.fraction) {
-                        Text(pct).font(.system(size: 13, weight: .bold).monospacedDigit())
+                    if let sub = row.sub {
+                        Text(sub).font(.system(size: 12)).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
                     }
                 }
-                if let sub = row.sub {
-                    Text(sub).font(.system(size: 12)).foregroundStyle(.white.opacity(0.6)).lineLimit(1)
-                }
-                if let fraction = row.fraction {
-                    ProgressView(value: fraction).tint(LiveActivityTone.version(row.version))
-                }
+                ProgressView(value: row.fraction ?? 0)
+                    .tint(LiveActivityTone.version(row.version))
+            }
+            if let pct = LiveActivityFormat.percentNumber(row.fraction) {
+                LiveActivityHero(text: pct + "%", size: 24).frame(minWidth: 52, alignment: .trailing)
             }
         }
     }
@@ -210,45 +245,9 @@ struct LiveActivityPoster: View {
             }
         }
         .frame(width: width, height: width * 1.5)
-        .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-    }
-}
-
-/// Apple Watch Smart Stack (and other small surfaces): one line of each.
-struct LiveActivitySmall: View {
-    let state: DownloadsActivityAttributes.ContentState
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            switch state.mode {
-            case .problem:
-                Text(state.event?.detail?.hasPrefix("Stalled") == true ? "1 stalled" : "Needs attention").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.danger)
-                if let e = state.event { Text(e.title).font(.system(size: 13, weight: .semibold)).lineLimit(1) }
-                if let id = state.event?.downloadId {
-                    Button(intent: LiveActivitySearchAgainIntent(downloadId: id)) { Text("Search again") }
-                        .font(.system(size: 12, weight: .semibold))
-                }
-            case .held:
-                Text("\(state.needYou) need you").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.miss)
-                if let h = state.held.first { Text(h.title).font(.system(size: 12)).lineLimit(1) }
-            case .imported, .upgraded, .done:
-                Text(state.mode == .upgraded ? "Upgraded" : "Imported").font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(LiveActivityTone.of(state))
-                if let e = state.event { Text(e.title).font(.system(size: 12)).lineLimit(1) }
-            default:
-                if let row = state.rows.first {
-                    HStack(spacing: 4) {
-                        Text(row.title).font(.system(size: 13, weight: .bold)).lineLimit(1)
-                        Text(row.version).font(.system(size: 11, weight: .bold)).foregroundStyle(LiveActivityTone.version(row.version))
-                        Spacer(minLength: 0)
-                        if let eta = LiveActivityFormat.eta(state.etaSeconds) { Text(eta).font(.system(size: 12).monospacedDigit()) }
-                    }
-                    if let f = row.fraction { ProgressView(value: f).tint(LiveActivityTone.version(row.version)) }
-                }
-                Text([state.downloading > 1 ? "+\(state.downloading - 1) downloading" : nil,
-                      state.needYou > 0 ? "\(state.needYou) need you" : nil].compactMap { $0 }.joined(separator: " · "))
-                    .font(.system(size: 11)).foregroundStyle(.secondary)
-            }
-        }
+        .clipShape(RoundedRectangle(cornerRadius: width > 40 ? 7 : 5, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: width > 40 ? 7 : 5, style: .continuous)
+            .strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
+        .shadow(color: .black.opacity(0.45), radius: 4, y: 2)
     }
 }

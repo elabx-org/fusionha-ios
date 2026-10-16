@@ -11,9 +11,23 @@ struct LiveActivityCompactLeading: View {
     let state: LAState
 
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon).foregroundStyle(LiveActivityTone.of(state))
-            if let count { Text("\(count)").font(.system(size: 14, weight: .bold).monospacedDigit()) }
+        if state.mode == .downloading, let row = state.rows.first, let fraction = row.fraction {
+            // The poster in a progress ring (redesign mock, Dynamic Island).
+            ZStack {
+                Circle().stroke(Color.white.opacity(0.18), lineWidth: 2.5)
+                Circle().trim(from: 0, to: fraction)
+                    .stroke(Theme.grab, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                LiveActivityPoster(mediaItemId: row.mediaItemId, width: 17)
+                    .clipShape(Circle())
+                    .frame(width: 17, height: 17)
+            }
+            .frame(width: 24, height: 24)
+        } else {
+            HStack(spacing: 4) {
+                Image(systemName: icon).foregroundStyle(LiveActivityTone.of(state))
+                if let count { Text("\(count)").font(.system(size: 14, weight: .bold).monospacedDigit()) }
+            }
         }
     }
 
@@ -48,7 +62,11 @@ struct LiveActivityCompactTrailing: View {
             case .imported, .upgraded, .done: Text("done").foregroundStyle(Theme.done)
             case .steps: Text(state.steps.map { "\(min($0.done + 1, $0.labels.count))/\($0.labels.count)" } ?? "")
             case .downloading:
-                Text(LiveActivityFormat.eta(state.etaSeconds) ?? LiveActivityFormat.percent(state.rows.first?.fraction) ?? "")
+                if let pct = LiveActivityFormat.percent(state.rows.first?.fraction) {
+                    Text(pct).font(Theme.display(17, relativeTo: .headline)).foregroundStyle(Theme.grab)
+                } else {
+                    Text(LiveActivityFormat.eta(state.etaSeconds) ?? "")
+                }
             }
         }
         .font(.system(size: 13, weight: .semibold).monospacedDigit())
@@ -74,7 +92,7 @@ struct LiveActivityIslandLeading: View {
 
     var body: some View {
         if let id = state.rows.first?.mediaItemId ?? state.event?.mediaItemId ?? state.held.first?.mediaItemId {
-            LiveActivityPoster(mediaItemId: id, width: 36)
+            LiveActivityPoster(mediaItemId: id, width: 40)
         }
     }
 }
@@ -84,11 +102,13 @@ struct LiveActivityIslandTrailing: View {
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 1) {
-            if state.mode == .downloading, let eta = LiveActivityFormat.eta(state.etaSeconds) {
-                Text(eta).font(.system(size: 17, weight: .bold).monospacedDigit())
-                Text("left").font(.system(size: 11)).foregroundStyle(.secondary)
+            if state.mode == .downloading, let pct = LiveActivityFormat.percentNumber(state.rows.first?.fraction) {
+                LiveActivityHero(text: pct, size: 40, color: Theme.grab, unit: "%")
+                if let eta = LiveActivityFormat.eta(state.etaSeconds) {
+                    Text("\(eta) left").font(.system(size: 11)).foregroundStyle(.secondary)
+                }
             } else if state.mode == .held {
-                Text("\(state.needYou)").font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.miss)
+                LiveActivityHero(text: "\(state.needYou)", size: 30, color: Theme.miss)
                 Text("need you").font(.system(size: 11)).foregroundStyle(.secondary)
             }
         }
@@ -117,10 +137,12 @@ struct LiveActivityIslandBottom: View {
         VStack(alignment: .leading, spacing: 6) {
             switch state.mode {
             case .downloading:
-                if let row = state.rows.first, let fraction = row.fraction {
-                    ProgressView(value: fraction).tint(LiveActivityTone.version(row.version))
+                HStack(spacing: 8) {
+                    if let row = state.rows.first {
+                        EditionFillChip(label: row.version, color: LiveActivityTone.version(row.version), fraction: row.fraction ?? 0)
+                    }
+                    Text(line).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
                 }
-                Text(line).font(.system(size: 12)).foregroundStyle(.secondary)
             case .held:
                 if let held = state.held.first {
                     Text("\(held.count > 1 ? "\(held.count) episodes · " : "")\(held.reason)")
@@ -152,10 +174,10 @@ struct LiveActivityIslandBottom: View {
     }
 
     private var line: String {
-        let pct = LiveActivityFormat.percent(state.rows.first?.fraction)
+        let sub = state.rows.first?.sub
         let rate = LiveActivityFormat.rate(state.bps)
         let more = state.downloading > 1 ? "+\(state.downloading - 1) downloading" : nil
         let need = state.needYou > 0 ? "\(state.needYou) need you" : nil
-        return [pct, rate, more, need].compactMap { $0 }.joined(separator: " · ")
+        return [sub, rate, more, need].compactMap { $0 }.joined(separator: " · ")
     }
 }

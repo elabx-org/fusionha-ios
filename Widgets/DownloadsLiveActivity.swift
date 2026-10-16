@@ -55,6 +55,7 @@ private struct LiveActivityRoot: View {
         default:
             LiveActivityLockScreen(state: state, stale: stale)
                 .padding(16)
+                .background { LiveActivityWash(state: state) }
         }
     }
 }
@@ -113,5 +114,16 @@ enum LiveActivityFormat {
 
     static func percent(_ fraction: Double?) -> String? {
         fraction.map { "\(Int(($0 * 100).rounded()))%" }
+    }
+
+    /// "64" for the display-face hero (the % is set smaller beside it).
+    static func percentNumber(_ fraction: Double?) -> String? {
+        fraction.map { "\(Int(($0 * 100).rounded()))" }
+    }
+
+    /// "41.6" + "MB/s" for the several-downloads hero.
+    static func rateParts(_ bps: Double?) -> (number: String, unit: String)? {
+        guard let text = rate(bps), let space = text.lastIndex(of: " ") else { return nil }
+        return (String(text[..<space]), String(text[text.index(after: space)...]))
     }
 }

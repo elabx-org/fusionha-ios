@@ -38,7 +38,8 @@ enum LiveActivityStateBuilder {
             if !nodes.isEmpty {
                 state.mode = .steps
                 state.steps = State.Steps(labels: nodes.map(\.label), done: nodes.filter { $0.state == .done }.count,
-                                          current: nodes.first { $0.state == .active }?.label)
+                                          current: nodes.first { $0.state == .active }?.label,
+                                          detail: stages.linkingDone.flatMap { d in stages.linkingTotal.map { "\(d)/\($0)" } })
             }
         }
         return state

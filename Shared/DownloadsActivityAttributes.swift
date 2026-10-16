@@ -63,6 +63,8 @@ struct DownloadsActivityAttributes: ActivityAttributes {
             var labels: [String]
             var done: Int
             var current: String?
+            /// "12/40" while linking; nil otherwise or from older builds.
+            var detail: String? = nil
         }
 
         struct Event: Codable, Hashable {
