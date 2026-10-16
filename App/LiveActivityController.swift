@@ -25,9 +25,11 @@ enum LiveActivityController {
     /// The download that led the activity last, for the "Imported" moment.
     private static var lastLead: QueueItem?
 
-    static func sync(with queue: [QueueItem], paused: Bool = lastPaused) {
+    /// `paused` nil keeps the last known pause state.
+    static func sync(with queue: [QueueItem], paused: Bool? = nil) {
         lastQueue = queue
-        lastPaused = paused
+        if let paused { lastPaused = paused }
+        let paused = lastPaused
         // Account › Live Activity › Show on Lock Screen.
         guard LiveActivityPrefs.enabled else {
             if lastSettled != nil { endAll() }
