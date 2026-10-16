@@ -61,7 +61,11 @@ struct OmniAddRow: View {
         } else if model.requestScoped {
             iconButton("paperplane", label: "Request", action: primary)
         } else {
-            iconButton("plus", label: "Add", action: primary)
+            // Web #12: "+" opens the Add flow directly; the row opens the preview.
+            iconButton("plus", label: "Add") {
+                close()
+                model.openAdd(result)
+            }
         }
     }
 
