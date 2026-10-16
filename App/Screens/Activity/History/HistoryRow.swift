@@ -32,6 +32,12 @@ struct HistoryRow: View {
                     .tracking(0.6)
                     .textCase(.uppercase)
                     .foregroundStyle(color)
+                // A HELD step names its hold in the server's shared words (0.4.203).
+                if let held = entry.held {
+                    Text(held.stepTitle)
+                        .font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.miss)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 if let source = entry.sourceTitle {
                     Text(source)
                         .font(.system(size: 11, design: .monospaced))

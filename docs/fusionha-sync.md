@@ -10,10 +10,10 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `89901fa5` |
-| fusionha release | **0.4.202** (2026-10-16, Manual Import: decide one file at a time) |
+| fusionha commit | `5d1ea13b` |
+| fusionha release | **0.4.203** (2026-10-16, client consistency bundle) |
 | Checked on | 2026-10-16 |
-| Previous sync | `b3c5ab8d` / 0.4.200 (2026-10-15) |
+| Previous sync | `89901fa5` / 0.4.202 (2026-10-16) |
 
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
@@ -22,7 +22,28 @@ is the spec.
 catch-ups added models and calls by hand. Re-pin it from a tagged fusionha
 release when you next touch the API layer.
 
-## 0.4.201 – 0.4.202 (this sync)
+## 0.4.203 (this sync): the client consistency bundle the app asked for
+
+Done:
+- `held: {code, short, text}` on queue and history rows (`HeldDisplay`).
+  The held card leads with `held.short` (code `other` reads its path-free
+  sentence) and shows `held.text` under it when no detail panel explains
+  it; the Live Activity's tag is `held.short`; a HELD history step reads
+  "Held: …"; the library stats line uses the sentence. The app's own hold
+  table stays only as the fallback for older servers.
+- `requests_last30d` read beside `requests_30d`.
+- fusionha's golden fixtures (`docs/fixtures/`) are copied to
+  `Packages/FusionhaKit/Tests/FusionhaKitTests/Fixtures/golden/` and decoded
+  in `GoldenFixtureTests`; re-copy them when fusionha changes them.
+
+No change needed: `/threads` already paged on the body's `next_cursor`
+(the new `X-Next-Cursor` header carries the same value); `evidence_list` is
+top-level only with JSON-string values, so the manager's Evidence rows keep
+walking `diagnosis` like the web's `evidence-rows.ts`. Not yet used:
+`info.version` and `design/tokens.json` (compare with `Shared/Theme.swift`
+when the redesign migration touches colours).
+
+## 0.4.201 – 0.4.202
 
 Done:
 - **0.4.202 Manual Import, one file at a time**: per-row Import this file /

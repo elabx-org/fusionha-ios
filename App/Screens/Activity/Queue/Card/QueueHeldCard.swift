@@ -99,10 +99,16 @@ struct QueueHeldCard: View {
 
     private var reason: some View {
         let r = QueueCardText.heldReason(item)
-        return (Text(r.lead).fontWeight(.semibold).foregroundColor(Theme.txt)
-                + Text(r.guard.map { " · \($0)" } ?? "").foregroundColor(Theme.mut))
-            .font(.system(size: 15))
-            .fixedSize(horizontal: false, vertical: true)
+        return VStack(alignment: .leading, spacing: 4) {
+            (Text(r.lead).fontWeight(.semibold).foregroundColor(Theme.txt)
+             + Text(r.guard.map { " · \($0)" } ?? "").foregroundColor(Theme.mut))
+                .font(.system(size: 15))
+            // The server's full sentence, when no "Why it's held" panel explains it.
+            if let text = r.text {
+                Text(text).font(.system(size: 13.5)).foregroundStyle(Theme.mut)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var whyToggle: some View {

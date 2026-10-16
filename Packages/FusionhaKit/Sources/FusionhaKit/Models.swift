@@ -168,6 +168,9 @@ public struct QueueItem: Decodable, Sendable, Identifiable, Hashable {
     public let grabTrigger: String?
     public let heldReason: String?
     public let heldDetail: HeldDetail?
+    /// HELD rows (0.4.203+): the server's shared display copy, the same words
+    /// the web card, the history and the app render.
+    public var held: HeldDisplay? = nil
     public let warning: String?
     public let nextStep: String?
     public let hasDownloadedFile: Bool?

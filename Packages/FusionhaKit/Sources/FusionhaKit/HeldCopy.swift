@@ -122,3 +122,28 @@ public enum HeldCopy {
         return ErrorCopy.generic
     }
 }
+
+/// A hold's display copy from the server (`HeldCopyRead`, fusionha 0.4.203):
+/// `code` is `held_history.reason_code_for`'s code, `short` a few words for a
+/// chip or the card's lead, `text` the full sentence with paths reduced to
+/// their file name. One table on the server, so web and app say the same.
+public struct HeldDisplay: Decodable, Sendable, Hashable {
+    public let code: String
+    public let short: String
+    public let text: String
+
+    public init(code: String, short: String, text: String) {
+        self.code = code
+        self.short = short
+        self.text = text
+    }
+
+    /// The sentence as a title fragment: no closing full stop.
+    public var line: String {
+        text.hasSuffix(".") ? String(text.dropLast()) : text
+    }
+
+    /// A HELD history step's title (web `heldStepTitle`): code `other` reads its
+    /// own path-free sentence, every other code the short label.
+    public var stepTitle: String { "Held: \(code == "other" ? line : short)" }
+}

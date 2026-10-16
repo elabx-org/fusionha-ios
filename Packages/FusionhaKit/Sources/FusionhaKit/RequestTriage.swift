@@ -29,7 +29,8 @@ public struct RequestTriage: Decodable, Sendable, Hashable {
         public init(from decoder: Decoder) throws {
             let c = try decoder.container(keyedBy: Key.self)
             func int(_ name: String) throws -> Int {
-                for k in [name + "30D", name + "30d"] {
+                // 0.4.203 adds the digit-free `requests_last30d` alias (→ `requestsLast30d`).
+                for k in [name + "Last30d", name + "30D", name + "30d"] {
                     if let v = try c.decodeIfPresent(Int.self, forKey: Key(k)) { return v }
                 }
                 return 0

@@ -6,25 +6,39 @@ import Foundation
 public enum QueueCardText {
     private static func cap(_ s: String) -> String { s.prefix(1).uppercased() + s.dropFirst() }
 
-    /// The held reason in Manual Import's words ("Smaller than its name
-    /// says"), plus its guard ("would replace your 4K FUZEER copy").
-    public static func heldReason(_ item: QueueItem) -> (lead: String, guard: String?) {
+    /// The held card's reason (web `heldReason`, 0.4.203): `lead` is the
+    /// server's `held.short`, except code `other`, whose own path-free sentence
+    /// says more than "needs a look"; `text` is `held.text` as a line under it
+    /// when there is no detail panel to explain it, unless it repeats the lead.
+    /// Older servers send no copy and keep the Manual Import strip's words.
+    public static func heldReason(_ item: QueueItem) -> (lead: String, guard: String?, text: String?) {
         let d = item.heldDetail
-        let short: String
-        if d?.kind == "mislabeled_hdr" {
-            short = "not an upgrade"
-        } else if d?.mislabeled == true {
-            short = "smaller than its name says"
-        } else {
-            short = item.heldReason ?? "needs a manual import"
-        }
-        return (cap(short), ManualImportHeldStrip.guardLine(d?.currentGroup, tier: item.tier.rawValue, edition: item.edition))
+        let guardLine = ManualImportHeldStrip.guardLine(d?.currentGroup, tier: item.tier.rawValue, edition: item.edition)
+        guard let held = item.held else { return (cap(legacyShort(item)), guardLine, nil) }
+        let lead = cap(held.code == "other" ? held.line : held.short)
+        let text = d == nil && norm(held.text) != norm(lead) ? held.text : nil
+        return (lead, guardLine, text)
     }
 
-    /// The hold in two or three words, for the Live Activity's one-line rows.
-    /// Classified like fusionha's `held_history.reason_code_for`: the detail's
-    /// kind first, then the reason's known text.
+    private static func norm(_ s: String) -> String {
+        var t = s.trimmingCharacters(in: .whitespaces)
+        while let last = t.last, ".!?".contains(last) { t.removeLast() }
+        return t.lowercased()
+    }
+
+    private static func legacyShort(_ item: QueueItem) -> String {
+        let d = item.heldDetail
+        if d?.kind == "mislabeled_hdr" { return "not an upgrade" }
+        if d?.mislabeled == true { return "smaller than its name says" }
+        return item.heldReason ?? "needs a manual import"
+    }
+
+    /// The hold in two or three words, for the Live Activity's one-line rows:
+    /// the server's `held.short` (0.4.203+). Older servers: classified like
+    /// fusionha's `held_history.reason_code_for`, the detail's kind first, then
+    /// the reason's known text.
     public static func heldTag(_ item: QueueItem) -> String {
+        if let short = item.held?.short, !short.isEmpty { return short }
         let d = item.heldDetail
         if d?.kind == "mislabeled_hdr" { return "no HDR in file" }
         if d?.mislabeled == true || d?.kind == "mislabeled_resolution" {

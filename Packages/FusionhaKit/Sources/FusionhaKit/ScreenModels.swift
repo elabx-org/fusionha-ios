@@ -394,6 +394,8 @@ public struct HistoryEntry: Decodable, Sendable, Identifiable, Hashable {
     public let blocklistable: Bool?
     /// The version's cut; nil for Standard (0.4.192).
     public let edition: String?
+    /// HELD rows (0.4.203+): the hold's shared display copy.
+    public var held: HeldDisplay? = nil
 
     public var eventLabel: String {
         eventType.replacingOccurrences(of: "_", with: " ").capitalized

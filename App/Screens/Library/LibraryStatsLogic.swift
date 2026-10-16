@@ -86,7 +86,7 @@ enum StatsSheetLogic {
         let label = q.episodeLabel.map { "\(q.title) · \($0)" } ?? q.title
         let pct: Int? = status == .running ? queuePct(q) : (status == .completed ? 100 : nil)
         let message = status == .attention
-            ? "Manual import required — \(q.heldReason ?? defaultHeldReason)"
+            ? "Manual import required — \(q.held?.line ?? q.heldReason ?? defaultHeldReason)"
             : (q.releaseTitle ?? q.downloadClient)
         return StatsOperation(id: "dl:\(q.id)", label: label, message: message, status: status, progress: pct,
                               timestamp: nil, downloadId: q.id, tier: q.tier, itemId: q.mediaItemId)

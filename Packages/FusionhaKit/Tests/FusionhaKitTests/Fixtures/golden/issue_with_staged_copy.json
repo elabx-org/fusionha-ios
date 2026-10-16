@@ -1,0 +1,151 @@
+{
+  "id": 7,
+  "media_item_id": 12,
+  "reporter_user_id": 2,
+  "issue_type": "playback",
+  "scope": "item",
+  "season": null,
+  "episode": null,
+  "description": null,
+  "status": "open",
+  "resolved": false,
+  "created_at": "2026-10-09T21:20:00",
+  "resolved_by": null,
+  "resolved_at": null,
+  "comment": null,
+  "reporter": {
+    "id": 2,
+    "display_name": "Priya Shah",
+    "avatar": null,
+    "role": "Requestor"
+  },
+  "state": "OPEN",
+  "reopen_count": 0,
+  "participants_count": 1,
+  "thread": {
+    "unread": 1,
+    "last_event_at": "2026-10-09T21:20:00"
+  },
+  "reports": [
+    {
+      "id": 9,
+      "problem": "WONT_PLAY",
+      "version": {
+        "id": 31,
+        "tier": "HD-1080p",
+        "edition": null
+      },
+      "scope": "item",
+      "season": null,
+      "episode": null,
+      "state": "FIXING",
+      "verdict_summary": {
+        "text": "Replacing the file",
+        "missing_pct": null,
+        "code": null,
+        "verified": true
+      },
+      "choices": [],
+      "resolution": null,
+      "created_at": "2026-10-09T21:20:00",
+      "resolved_at": null,
+      "mine": false,
+      "file_checks": true,
+      "situation": "held",
+      "check_generation": 1,
+      "diagnosis": {
+        "evidence": [
+          {
+            "verdict": "dead",
+            "media_file_id": 101,
+            "missing_segments": 412
+          }
+        ],
+        "summary": "Replacing the file"
+      },
+      "client": {
+        "id": 1,
+        "name": "decypharr",
+        "file_checks": true
+      },
+      "reporter": null,
+      "staged_copy": {
+        "old": {
+          "file_id": 101,
+          "release": "Arrival.2016.1080p.WEB-DL-OLD",
+          "quality": "WEBDL-1080p",
+          "size": 4100000000,
+          "video": "H.264 · 1920×1080",
+          "audio_languages": [
+            "English"
+          ],
+          "subtitle_languages": [
+            "English"
+          ],
+          "verdict": "dead",
+          "verdict_summary": "Won't play",
+          "checked_at": "2026-10-09T21:20:00"
+        },
+        "new": {
+          "file_id": 102,
+          "release": "Arrival.2016.1080p.WEB-DL-NEW",
+          "quality": "WEBDL-1080p",
+          "size": 4100000000,
+          "video": "H.264 · 1920×1080",
+          "audio_languages": [
+            "English"
+          ],
+          "subtitle_languages": [
+            "English"
+          ],
+          "verdict": "alive",
+          "verdict_summary": "Plays fine",
+          "checked_at": "2026-10-09T21:20:00"
+        },
+        "state": "held",
+        "kind": "dead",
+        "stuck": null
+      },
+      "fix_progress": {
+        "steps": [
+          {
+            "key": "found",
+            "label": "Found a new copy",
+            "state": "done",
+            "sub": null
+          },
+          {
+            "key": "check",
+            "label": "Checked it plays",
+            "state": "done",
+            "sub": null
+          },
+          {
+            "key": "swap",
+            "label": "Waiting for an admin",
+            "state": "now",
+            "sub": null
+          }
+        ],
+        "keeps_current": true,
+        "confirmer": "an admin"
+      },
+      "fix_busy": false,
+      "guard_state": "held",
+      "evidence_list": [
+        {
+          "key": "evidence",
+          "value": "[{\"media_file_id\":101,\"missing_segments\":412,\"verdict\":\"dead\"}]"
+        },
+        {
+          "key": "summary",
+          "value": "Replacing the file"
+        }
+      ]
+    }
+  ],
+  "media_title": "Arrival",
+  "media_year": 2016,
+  "poster": null,
+  "deduped": false
+}
