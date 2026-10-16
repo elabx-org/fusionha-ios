@@ -35,6 +35,8 @@ func settingsPanel(_ slug: String) -> some View {
     case "roles": RolesSettingsPanel()
     case "blocklist": ReleaseGroupBlocklistPanel()
     case "plexserver": PlexServerSettingsPanel()
+    case "profiles": QualityProfilesSettingsPanel()
+    case "qualitydefinitions": QualityDefinitionsSettingsPanel()
     default: SettingsWebPanel(slug: slug)
     }
 }
