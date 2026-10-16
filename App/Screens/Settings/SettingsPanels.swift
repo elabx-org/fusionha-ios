@@ -34,6 +34,7 @@ func settingsPanel(_ slug: String) -> some View {
     case "access": UsersSettingsPanel()
     case "roles": RolesSettingsPanel()
     case "blocklist": ReleaseGroupBlocklistPanel()
+    case "plexserver": PlexServerSettingsPanel()
     default: SettingsWebPanel(slug: slug)
     }
 }
