@@ -43,7 +43,7 @@ struct LiveActivityLockScreen: View {
                     Text(row.title).font(.system(size: 15.5, weight: .bold)).lineLimit(1)
                     if let sub = row.sub { meta(sub) }
                     HStack(spacing: 8) {
-                        EditionFillChip(label: row.version, color: LiveActivityTone.version(row.version), fraction: row.fraction ?? 0)
+                        EditionFillChip(label: LiveActivityTone.shortVersion(row.version), color: LiveActivityTone.version(row.version), fraction: row.fraction ?? 0)
                         if let rate = LiveActivityFormat.rate(state.bps) { meta(rate, size: 12) }
                     }
                     .padding(.top, 6)
@@ -159,7 +159,7 @@ struct LiveActivityLockScreen: View {
                         if let ep = event.line2 { meta(ep, size: 12) }
                     }
                     HStack(spacing: 8) {
-                        EditionFillChip(label: event.version + " ✓", color: tone, fraction: 1)
+                        EditionFillChip(label: LiveActivityTone.shortVersion(event.version) + " ✓", color: tone, fraction: 1)
                         if let detail = event.detail, !detail.isEmpty { meta(detail, size: 12).lineLimit(1) }
                     }
                 }
@@ -177,7 +177,7 @@ struct LiveActivityLockScreen: View {
         HStack(spacing: 6) {
             Text(title).font(.system(size: 14.5, weight: .bold)).lineLimit(1)
             if let sub { meta(sub, size: 12).lineLimit(1) }
-            EditionFillChip(label: version, color: LiveActivityTone.version(version))
+            EditionFillChip(label: LiveActivityTone.shortVersion(version), color: LiveActivityTone.version(version))
         }
     }
 
@@ -234,6 +234,8 @@ struct LiveActivityRowView: View {
 struct LiveActivityPoster: View {
     let mediaItemId: Int
     var width: CGFloat = 32
+    /// A dark ring that cuts it out from an overlapping poster behind.
+    var ring = false
 
     var body: some View {
         let data = DownloadsActivityAttributes.ContentState.posterData(mediaItemId: mediaItemId)
@@ -241,7 +243,7 @@ struct LiveActivityPoster: View {
         LiveActivityPosterLog.note(mediaItemId, found: image != nil)
         return Group {
             if let image {
-                Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
+                Image(uiImage: image).resizable().interpolation(.high).aspectRatio(contentMode: .fill)
             } else {
                 Rectangle().fill(Color.white.opacity(0.12))
             }
@@ -250,7 +252,10 @@ struct LiveActivityPoster: View {
         .clipShape(RoundedRectangle(cornerRadius: width > 40 ? 7 : 5, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: width > 40 ? 7 : 5, style: .continuous)
             .strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
-        .shadow(color: .black.opacity(0.45), radius: 4, y: 2)
+        .padding(ring ? 1.5 : 0)
+        .background(ring ? Color.black.opacity(0.85) : .clear,
+                    in: RoundedRectangle(cornerRadius: (width > 40 ? 7 : 5) + 1.5, style: .continuous))
+        .shadow(color: .black.opacity(0.4), radius: 3, y: 1)
     }
 }
 

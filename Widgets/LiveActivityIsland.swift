@@ -139,7 +139,7 @@ struct LiveActivityIslandBottom: View {
             case .downloading:
                 HStack(spacing: 8) {
                     if let row = state.rows.first {
-                        EditionFillChip(label: row.version, color: LiveActivityTone.version(row.version), fraction: row.fraction ?? 0)
+                        EditionFillChip(label: LiveActivityTone.shortVersion(row.version), color: LiveActivityTone.version(row.version), fraction: row.fraction ?? 0)
                     }
                     Text(line).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
                 }

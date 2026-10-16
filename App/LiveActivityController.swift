@@ -1,6 +1,8 @@
 import ActivityKit
 import Foundation
+import ImageIO
 import Security
+import UniformTypeIdentifiers
 import UIKit
 import FusionhaKit
 
@@ -184,7 +186,8 @@ enum LiveActivityPosters {
 
     /// Poster sizes to try, sharpest first: when every title's poster does
     /// not fit the budget at one size, the next, smaller one is tried.
-    private static let sizes: [(w: CGFloat, h: CGFloat, q: CGFloat)] = [(40, 60, 0.45), (32, 48, 0.35), (24, 36, 0.3)]
+    /// Larger first: HEIC often fits a sharper poster in the same bytes.
+    private static let sizes: [(w: CGFloat, h: CGFloat, q: CGFloat)] = [(56, 84, 0.5), (48, 72, 0.45), (40, 60, 0.4), (32, 48, 0.35), (24, 36, 0.3)]
 
     /// The state with tiny posters for every title that fits the budget: the
     /// event's title first, then the held titles, then the downloading rows.
@@ -224,9 +227,19 @@ enum LiveActivityPosters {
         let format = UIGraphicsImageRendererFormat()
         format.scale = 1
         let small = UIGraphicsImageRenderer(size: box, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: box)) }
-        guard let jpeg = small.jpegData(compressionQuality: size.q) else { return nil }
-        tiny[key] = jpeg
-        return jpeg
+        // HEIC's header costs more at tiny sizes, so keep whichever is smaller.
+        let candidates = [heic(small, quality: size.q), small.jpegData(compressionQuality: size.q)].compactMap { $0 }
+        guard let encoded = candidates.min(by: { $0.count < $1.count }) else { return nil }
+        tiny[key] = encoded
+        return encoded
+    }
+
+    private static func heic(_ image: UIImage, quality: CGFloat) -> Data? {
+        guard let cg = image.cgImage else { return nil }
+        let out = NSMutableData()
+        guard let dest = CGImageDestinationCreateWithData(out, UTType.heic.identifier as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(dest, cg, [kCGImageDestinationLossyCompressionQuality: quality] as CFDictionary)
+        return CGImageDestinationFinalize(dest) ? out as Data : nil
     }
 
     /// The size a poster went into the state at, for the poster check.

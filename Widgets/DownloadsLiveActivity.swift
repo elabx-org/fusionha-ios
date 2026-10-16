@@ -108,6 +108,11 @@ enum LiveActivityTone {
     static func version(_ label: String) -> Color {
         label.contains("4K") ? Theme.grab : Theme.edition
     }
+
+    /// The version without the default edition: "Standard · HD" → "HD".
+    static func shortVersion(_ label: String) -> String {
+        label.replacingOccurrences(of: "Standard · ", with: "").trimmingCharacters(in: .whitespaces)
+    }
 }
 
 enum LiveActivityFormat {
