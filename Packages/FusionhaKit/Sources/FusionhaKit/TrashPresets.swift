@@ -63,9 +63,13 @@ public struct PresetManifest: Sendable, Hashable {
 
     /// The four largest scores by magnitude (the card's "Top scoring").
     public var topScores: [(key: String, score: Int)] {
-        formatScores.map { (key: $0.key, score: $0.value) }
-            .sorted { abs($0.score) == abs($1.score) ? $0.key < $1.key : abs($0.score) > abs($1.score) }
-            .prefix(4).map { $0 }
+        let pairs: [(key: String, score: Int)] = formatScores.map { (key: $0.key, score: $0.value) }
+        let sorted = pairs.sorted { (a: (key: String, score: Int), b: (key: String, score: Int)) -> Bool in
+            let ma = abs(a.score), mb = abs(b.score)
+            if ma != mb { return ma > mb }
+            return a.key < b.key
+        }
+        return Array(sorted.prefix(4))
     }
 }
 
