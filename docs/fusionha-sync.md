@@ -46,9 +46,13 @@ release at a time) is under way. Native now, where the app used to open the web:
   title, the selection menu. Tasks › Needs attention (enrichment issues).
 - Queue pack episode list; history lifecycle sheet.
 
-Still web-only: Quality Profiles, Quality Definitions, Custom Formats, TRaSH
-Guides, Naming, Security, Sign-in methods (server), Plex server, Import
-Library (all being ported), plus the setup wizard and docs.
+- Settings: Quality Profiles and Definitions, Custom Formats and TRaSH
+  Guides, Naming, Security, Sign-in methods (server), Plex server and Import
+  Library are native; every Settings panel is now native. A first-run setup
+  wizard replaces "finish setup in the web app".
+
+Still web-only: docs, the Postgres migration wizard and the arr-webhook
+editor (Settings › Database / Connect).
 
 ## 0.4.200
 
