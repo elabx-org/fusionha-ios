@@ -106,6 +106,8 @@ final class DetailStore {
     var showingAliases = false
     var showingIssue = false
     var showingNumbering = false
+    /// Manage files / Manage episodes, on the page scope or one version.
+    var manageFiles: ManageFilesTarget?
     var checkingNumbering = false
 
     init(itemId: Int) {

@@ -26,6 +26,12 @@ struct DetailActionSheets: ViewModifier {
                         .environment(store)
                 }
             }
+            .sheet(item: $store.manageFiles) { target in
+                if let detail = store.detail {
+                    ManageFilesSheet(detail: detail, target: target)
+                        .environment(store)
+                }
+            }
             .sheet(isPresented: $store.showingIssue) {
                 if let detail = store.detail {
                     IssueModal(mediaItemId: detail.id, title: detail.title, isSeries: detail.isSeries,

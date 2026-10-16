@@ -50,8 +50,7 @@ struct ItemActionsRail: View {
         switch action {
         case .refresh: Task { await store.refresh(metadataOnly: true) }
         case .previewRename: store.openRename()
-        // ManageExistingFilesDialog / ManageEpisodesDialog are not ported yet.
-        case .manageFiles, .manageEpisodes: openWeb()
+        case .manageFiles, .manageEpisodes: store.manageFiles = ManageFilesTarget(versionIds: store.detail?.scopeEditionIds(store.scope))
         case .reportIssue: store.showingIssue = true
         case .checkNumbering: Task { await store.checkNumbering() }
         case .editionAliases: store.showingAliases = true

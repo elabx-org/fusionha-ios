@@ -125,6 +125,9 @@ struct QueueStateBody: View {
             } else if let ranges = item.packRanges {
                 QueuePackLine(item: item, ranges: ranges)
             }
+            if item.hasPackDecisions || item.packRanges != nil {
+                QueuePackEpisodesList(downloadId: item.id, fileCount: item.fileCount)
+            }
         }
     }
 

@@ -28,7 +28,7 @@ struct DetailVersionDetail: View {
                                       onRescan: { Task { await store.refresh(metadataOnly: false) } },
                                       onSearch: { Task { await store.search(label: "\(detail.title) — \(name)", editionId: edition.id) } },
                                       onReplace: { Task { await store.replaceDead(edition) } },
-                                      onManage: openWeb)
+                                      onManage: { store.manageFiles = ManageFilesTarget(versionIds: [edition.id]) })
             }
             if detail.isSeries, let summary {
                 seasons(summary, name: name)

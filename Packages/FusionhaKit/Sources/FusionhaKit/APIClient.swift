@@ -193,6 +193,14 @@ public final class APIClient: @unchecked Sendable {
         return try await get("/api/v1/history", query: items)
     }
 
+    /// One title's lifecycle: every event for the item, narrowed to an episode and version.
+    public func historyLifecycle(itemId: Int, episodeId: Int?, versionId: Int?, pageSize: Int = 200) async throws -> HistoryPage {
+        var items = [URLQueryItem(name: "item_id", value: "\(itemId)"), URLQueryItem(name: "page_size", value: "\(pageSize)")]
+        if let episodeId { items.append(URLQueryItem(name: "episode_id", value: "\(episodeId)")) }
+        if let versionId { items.append(URLQueryItem(name: "version_id", value: "\(versionId)")) }
+        return try await get("/api/v1/history", query: items)
+    }
+
     public func blocklist(query: String? = nil, pageSize: Int = 50) async throws -> BlocklistPage {
         var items = [URLQueryItem(name: "page_size", value: "\(pageSize)")]
         if let query, !query.isEmpty { items.append(URLQueryItem(name: "q", value: query)) }

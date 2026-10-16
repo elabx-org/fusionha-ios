@@ -12,6 +12,7 @@ struct HistoryStoryRow: View {
     @State private var regrabConflict = false
     @State private var regrabbing = false
     @State private var blocking = false
+    @State private var lifecycle = false
 
     var body: some View {
         let _ = PerfCount.hit("HistoryStoryRow.body")
@@ -44,6 +45,7 @@ struct HistoryStoryRow: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { if let id = story.mediaItemId { model.open(id) } }
+        .sheet(isPresented: $lifecycle) { HistoryLifecycleSheet(story: story) }
         .sheet(isPresented: $blocklistDialog) {
             BlocklistReleaseDialog(release: story.releaseTitle ?? story.title) { search, deleteFile in
                 blocklistDialog = false
@@ -142,6 +144,9 @@ struct HistoryStoryRow: View {
         let hasGrab = story.events.contains { $0.eventType == "GRABBED" }
         return HStack(spacing: 2) {
             Text(ActFmt.relative(story.time)).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.dim).padding(.trailing, 6)
+            if story.mediaItemId != nil {
+                ActIconButton(systemImage: "point.topleft.down.to.point.bottomright.curvepath", label: "Lifecycle") { lifecycle = true }
+            }
             if hasGrab {
                 ActIconButton(systemImage: "arrow.clockwise", label: "Re-grab this release", busy: regrabbing) {
                     Task { await regrab(override: false) }
