@@ -44,6 +44,8 @@ final class GoldenFixtureTests: XCTestCase {
     func testIssueWithStagedCopyDecodes() throws {
         let issue = try decode(MediaIssue.self, "issue_with_staged_copy")
         XCTAssertGreaterThan(issue.id, 0)
+        let list = (issue.reports ?? []).compactMap(\.evidenceList).first
+        XCTAssertEqual(EvidenceRows.rows(list: list).map(\.label), ["evidence"])
     }
 
     func testManualImportRowUsesTheServersFindingChips() throws {

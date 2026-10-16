@@ -106,6 +106,8 @@ public struct IssueReport: Decodable, Sendable, Hashable, Identifiable {
     public let stagedCopy: IssueStagedCopy?
     public let guardState: String?
     public let diagnosis: IssueJSON?
+    /// The diagnosis flattened to `{key, value}` rows (0.4.203).
+    public var evidenceList: [IssueEvidenceItem]? = nil
     public let client: IssueClient?
 
     public init(id: Int, problem: String, version: IssueVersionRef = IssueVersionRef(), scope: String? = "item",
@@ -139,6 +141,12 @@ public struct IssueReport: Decodable, Sendable, Hashable, Identifiable {
         self.diagnosis = diagnosis
         self.client = client
     }
+}
+
+/// One manager Evidence row as the server words it.
+public struct IssueEvidenceItem: Decodable, Sendable, Hashable {
+    public let key: String
+    public let value: String
 }
 
 /// `POST /api/v1/issues` (fusionha phase 6: a problem and a version).

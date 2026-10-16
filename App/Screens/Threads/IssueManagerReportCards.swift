@@ -97,7 +97,9 @@ struct IssueManagerReportCards: View {
 
     @ViewBuilder
     private func evidence(_ r: IssueReport) -> some View {
-        let rows = EvidenceRows.rows(r.diagnosis?.value)
+        // The app's own wording from the diagnosis; the server's flat list otherwise.
+        let walked = EvidenceRows.rows(r.diagnosis?.value)
+        let rows = walked.isEmpty ? EvidenceRows.rows(list: r.evidenceList) : walked
         if !rows.isEmpty || r.client != nil {
             DisclosureGroup("Evidence") {
                 VStack(alignment: .leading, spacing: 4) {

@@ -381,6 +381,11 @@ public enum EvidenceRows {
         return out
     }
 
+    /// The server's flat `evidence_list` (0.4.203), for a report without a diagnosis the app can walk.
+    public static func rows(list: [IssueEvidenceItem]?) -> [(label: String, value: String)] {
+        (list ?? []).filter { !skip.contains($0.key) }.map { (label: $0.key, value: $0.value) }
+    }
+
     static func walk(_ value: JSONValue, _ label: String, _ depth: Int, _ out: inout [(String, String)]) {
         if isScalar(value) { out.append((label, scalar(value))); return }
         if let list = value.array {
