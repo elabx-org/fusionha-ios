@@ -236,9 +236,11 @@ struct LiveActivityPoster: View {
     var width: CGFloat = 32
 
     var body: some View {
-        Group {
-            if let data = DownloadsActivityAttributes.ContentState.posterData(mediaItemId: mediaItemId),
-               let image = UIImage(data: data) {
+        let data = DownloadsActivityAttributes.ContentState.posterData(mediaItemId: mediaItemId)
+        let image = data.flatMap { UIImage(data: $0) }
+        LiveActivityPosterLog.note(mediaItemId, found: image != nil)
+        return Group {
+            if let image {
                 Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
             } else {
                 Rectangle().fill(Color.white.opacity(0.12))
@@ -249,5 +251,17 @@ struct LiveActivityPoster: View {
         .overlay(RoundedRectangle(cornerRadius: width > 40 ? 7 : 5, style: .continuous)
             .strokeBorder(.white.opacity(0.14), lineWidth: 0.5))
         .shadow(color: .black.opacity(0.45), radius: 4, y: 2)
+    }
+}
+
+/// Records once per poster per process what the Lock Screen found, for the
+/// app's diagnostics (a blank tile otherwise tells nobody why).
+enum LiveActivityPosterLog {
+    nonisolated(unsafe) private static var noted: [Int: Bool] = [:]
+
+    static func note(_ id: Int, found: Bool) {
+        guard noted[id] != found else { return }
+        noted[id] = found
+        DownloadsActivityAttributes.ContentState.recordPosterSeen(mediaItemId: id, found: found)
     }
 }

@@ -81,6 +81,19 @@ public enum SharedKeychain {
         return SecItemAdd(add as CFDictionary, nil)
     }
 
+    /// Each keychain group's status for `account` (0 = found, -25300 = not
+    /// there, -34018 = this signature lacks the group), for diagnostics.
+    public static func report(_ account: String) -> String {
+        let parts = groups.map { group -> String in
+            var q = query(account, group: group)
+            q[kSecMatchLimit as String] = kSecMatchLimitOne
+            let status = SecItemCopyMatching(q as CFDictionary, nil)
+            return "\(group.map { $0.hasPrefix("group.") ? "app" : ($0.hasSuffix("*") ? "team*" : "team") } ?? "own") \(status)"
+        }
+        let local = UserDefaults.standard.data(forKey: localKey(account)) != nil ? " · local" : ""
+        return parts.joined(separator: ", ") + local
+    }
+
     public static func delete(_ account: String) {
         for group in groups { SecItemDelete(query(account, group: group) as CFDictionary) }
         UserDefaults.standard.removeObject(forKey: localKey(account))

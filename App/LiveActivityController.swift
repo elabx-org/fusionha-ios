@@ -1,5 +1,6 @@
 import ActivityKit
 import Foundation
+import Security
 import UIKit
 import FusionhaKit
 
@@ -51,6 +52,12 @@ enum LiveActivityController {
         lastSettled = settled
         lastSent = Date()
         Task { await worker.apply(state) }
+    }
+
+    /// The titles on the queue the activity last saw, for poster diagnostics.
+    static var itemIds: [Int] {
+        var seen = Set<Int>()
+        return lastQueue.map(\.mediaItemId).filter { seen.insert($0).inserted }
     }
 
     /// Applies a changed choice to the queue already on screen.
@@ -108,6 +115,9 @@ enum LiveActivityPosters {
     /// Keychain copies kept, newest last; older ones are deleted.
     private static let indexAccount = "la-poster-index"
     private static let keep = 12
+    /// The last fetch or save problem, for Account › Live Activity.
+    private(set) static var lastProblem: String?
+    private(set) static var saved = 0
 
     static func ensure(_ state: DownloadsActivityAttributes.ContentState) {
         let wanted = state.rows.map { ($0.mediaItemId, $0.posterUrl) } + state.held.map { ($0.mediaItemId, $0.posterUrl) }
@@ -116,23 +126,55 @@ enum LiveActivityPosters {
                   DownloadsActivityAttributes.ContentState.posterData(mediaItemId: id) == nil else { continue }
             inFlight.insert(id)
             Task.detached(priority: .utility) {
-                let jpeg = await Self.thumbnail(url)
+                let result = await Self.thumbnail(url)
                 await MainActor.run {
                     inFlight.remove(id)
-                    guard let jpeg else { return }
-                    store(jpeg, mediaItemId: id)
-                    LiveActivityController.resync()
+                    switch result {
+                    case .success(let jpeg):
+                        store(jpeg, mediaItemId: id)
+                        LiveActivityController.resync()
+                    case .failure(let error):
+                        lastProblem = "Poster \(id): \(error.localizedDescription)"
+                    }
                 }
             }
         }
     }
 
-    /// About 1.5x the 40pt poster at 0.6 quality: a few KB, small enough for a keychain item.
-    nonisolated private static func thumbnail(_ url: URL) async -> Data? {
-        guard let (data, _) = try? await URLSession.shared.data(from: url), let image = UIImage(data: data) else { return nil }
-        let size = CGSize(width: 60, height: 90)
-        let small = UIGraphicsImageRenderer(size: size).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
-        return small.jpegData(compressionQuality: 0.6)
+    struct ThumbnailError: LocalizedError {
+        let errorDescription: String?
+    }
+
+    /// 120×180 px (2x the 60pt tile, fixed so the device scale can't triple
+    /// it) at 0.6 quality: a few KB, small enough for a keychain item.
+    nonisolated private static func thumbnail(_ url: URL) async -> Result<Data, Error> {
+        do {
+            let (data, response) = try await URLSession.shared.data(from: url)
+            if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+                return .failure(ThumbnailError(errorDescription: "HTTP \(http.statusCode) from \(url.host ?? "?")"))
+            }
+            guard let image = UIImage(data: data) else { return .failure(ThumbnailError(errorDescription: "not an image")) }
+            let size = CGSize(width: 60, height: 90)
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 2
+            let small = UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+            guard let jpeg = small.jpegData(compressionQuality: 0.6) else { return .failure(ThumbnailError(errorDescription: "JPEG failed")) }
+            return .success(jpeg)
+        } catch {
+            return .failure(error)
+        }
+    }
+
+    /// What Account › Live Activity shows: saved count, the last problem, and
+    /// for each poster where the app and the Lock Screen found it.
+    static func diagnostics(ids: [Int]) -> [String] {
+        var out = ["Saved this session: \(saved)" + (lastProblem.map { " · \($0)" } ?? "")]
+        let seen = DownloadsActivityAttributes.ContentState.posterSeen()
+        for id in ids.prefix(4) {
+            out.append("#\(id) app: \(DownloadsActivityAttributes.ContentState.posterReport(mediaItemId: id))")
+            out.append("#\(id) Lock Screen: \(seen["\(id)"] ?? "not drawn yet")")
+        }
+        return out
     }
 
     private static func store(_ jpeg: Data, mediaItemId id: Int) {
@@ -140,7 +182,8 @@ enum LiveActivityPosters {
             try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             try? jpeg.write(to: file, options: .atomic)
         }
-        SharedKeychain.write(jpeg, DownloadsActivityAttributes.ContentState.posterAccount(mediaItemId: id))
+        let status = SharedKeychain.write(jpeg, DownloadsActivityAttributes.ContentState.posterAccount(mediaItemId: id))
+        if status == errSecSuccess { saved += 1 } else { lastProblem = "Poster \(id): keychain \(status)" }
         var index = (SharedKeychain.read(indexAccount).flatMap { try? JSONDecoder().decode([Int].self, from: $0) }) ?? []
         index.removeAll { $0 == id }
         index.append(id)

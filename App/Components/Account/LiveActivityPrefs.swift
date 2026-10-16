@@ -95,6 +95,18 @@ struct LiveActivityPrefsView: View {
                     Text("Held or stuck downloads keep the Live Activity open until you deal with them. Turn this off to show only downloads that are moving.")
                 }
                 .listRowBackground(AccountStyle.cell)
+
+                Section {
+                    ForEach(LiveActivityPosters.diagnostics(ids: LiveActivityController.itemIds), id: \.self) { line in
+                        Text(line).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(Theme.mut)
+                            .textSelection(.enabled)
+                    }
+                } header: {
+                    Text("Poster check")
+                } footer: {
+                    Text("Where each poster was saved and what the Lock Screen found. A screenshot of this helps if posters stay blank.")
+                }
+                .listRowBackground(AccountStyle.cell)
             }
         }
         .tint(Theme.done)

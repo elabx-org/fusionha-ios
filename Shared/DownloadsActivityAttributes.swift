@@ -127,4 +127,29 @@ extension DownloadsActivityAttributes.ContentState {
         posterFile(mediaItemId: mediaItemId).flatMap { try? Data(contentsOf: $0) }
             ?? SharedKeychain.read(posterAccount(mediaItemId: mediaItemId))
     }
+
+    /// Where a poster can be found from this process, for Account › Live
+    /// Activity's diagnostics: the App Group file, then each keychain group.
+    static func posterReport(mediaItemId: Int) -> String {
+        let file = posterFile(mediaItemId: mediaItemId)
+        let fileState = file == nil ? "no App Group" : (FileManager.default.fileExists(atPath: file!.path) ? "file ok" : "no file")
+        return "\(fileState) · keychain \(SharedKeychain.report(posterAccount(mediaItemId: mediaItemId)))"
+    }
+
+    /// The Lock Screen side writes what it found here (once per poster per
+    /// process), so the app can show why a tile stayed blank.
+    static let posterSeenAccount = "la-poster-seen"
+
+    static func recordPosterSeen(mediaItemId: Int, found: Bool) {
+        var seen = (SharedKeychain.read(posterSeenAccount).flatMap { try? JSONDecoder().decode([String: String].self, from: $0) }) ?? [:]
+        let line = (found ? "shown · " : "missing · ") + posterReport(mediaItemId: mediaItemId)
+        guard seen["\(mediaItemId)"] != line else { return }
+        seen["\(mediaItemId)"] = line
+        if seen.count > 12 { seen = Dictionary(uniqueKeysWithValues: seen.sorted { $0.key > $1.key }.prefix(12).map { ($0.key, $0.value) }) }
+        if let data = try? JSONEncoder().encode(seen) { SharedKeychain.write(data, posterSeenAccount) }
+    }
+
+    static func posterSeen() -> [String: String] {
+        (SharedKeychain.read(posterSeenAccount).flatMap { try? JSONDecoder().decode([String: String].self, from: $0) }) ?? [:]
+    }
 }
