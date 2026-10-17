@@ -182,13 +182,15 @@ enum LiveActivityPosters {
     /// ActivityKit refuses a state over 4 KB; stay well under it.
     private static let stateBudget = 3_700
 
-    /// Poster sizes to try, sharpest first: when every title's poster does
-    /// not fit the budget at one size, the next, smaller one is tried.
-    /// Larger first, so a lone poster is as sharp as the budget allows.
-    private static let sizes: [(w: CGFloat, h: CGFloat, q: CGFloat)] = [(56, 84, 0.5), (48, 72, 0.45), (40, 60, 0.4), (32, 48, 0.35), (24, 36, 0.3)]
+    /// Sizes for the front poster, sharpest first, and for the ones behind
+    /// it (mostly covered, so the budget goes to the poster people see).
+    private static let leadSizes: [(w: CGFloat, h: CGFloat, q: CGFloat)] = [(72, 108, 0.6), (64, 96, 0.55), (56, 84, 0.5), (48, 72, 0.45), (40, 60, 0.4), (32, 48, 0.35)]
+    private static let backSizes: [(w: CGFloat, h: CGFloat, q: CGFloat)] = [(28, 42, 0.35), (20, 30, 0.3)]
+    private static var sizes: [(w: CGFloat, h: CGFloat, q: CGFloat)] { leadSizes + backSizes }
 
-    /// The state with tiny posters for every title that fits the budget: the
-    /// event's title first, then the held titles, then the downloading rows.
+    /// The state with tiny posters within the budget: the front title (the
+    /// event's, else the first held, else the first download) as sharp as
+    /// fits, the next two small.
     static func attach(_ state: DownloadsActivityAttributes.ContentState) -> DownloadsActivityAttributes.ContentState {
         var out = state
         out.thumbs = nil
@@ -197,20 +199,30 @@ enum LiveActivityPosters {
         candidates.append(contentsOf: state.held.map(\.mediaItemId))
         candidates.append(contentsOf: state.rows.map(\.mediaItemId))
         var ids: [Int] = []
-        for id in candidates where !ids.contains(id) { ids.append(id) }
+        for id in candidates where !ids.contains(id) && DownloadsActivityAttributes.ContentState.posterData(mediaItemId: id) != nil {
+            ids.append(id)
+        }
         ids = Array(ids.prefix(3))
+        guard let lead = ids.first else { return out }
         let encoder = JSONEncoder()
+        func fits(_ thumbs: [String: Data]) -> Bool {
+            var trial = out
+            trial.thumbs = thumbs
+            return (try? encoder.encode(trial).count).map { $0 <= stateBudget } ?? false
+        }
         var best: [String: Data] = [:]
-        for size in sizes {
-            var thumbs: [String: Data] = [:]
-            for id in ids {
-                guard let thumb = tinyThumb(id, size) else { continue }
-                var trial = out
-                trial.thumbs = thumbs.merging(["\(id)": thumb]) { _, new in new }
-                if let bytes = try? encoder.encode(trial).count, bytes <= stateBudget { thumbs = trial.thumbs ?? thumbs }
+        for size in leadSizes {
+            guard let front = tinyThumb(lead, size), fits(["\(lead)": front]) else { continue }
+            var thumbs = ["\(lead)": front]
+            for id in ids.dropFirst() {
+                for back in backSizes {
+                    guard let thumb = tinyThumb(id, back) else { continue }
+                    let next = thumbs.merging(["\(id)": thumb]) { _, new in new }
+                    if fits(next) { thumbs = next; break }
+                }
             }
             if thumbs.count > best.count { best = thumbs }
-            if best.count == ids.filter({ DownloadsActivityAttributes.ContentState.posterData(mediaItemId: $0) != nil }).count { break }
+            if best.count == ids.count { break }
         }
         out.thumbs = best.isEmpty ? nil : best
         return out
