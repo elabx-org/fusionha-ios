@@ -49,10 +49,10 @@ final class GoldenSourceFixtureTests: XCTestCase {
         XCTAssertEqual(lb.first?.owner, "example_critic")
         let lbSubs = RequestSourceFilter.subs(lb, provider: .letterboxd)
         XCTAssertEqual(lbSubs.map(RequestSourceFilter.subLabel), ["Diary", "List · Best of 2026"])
-        let list = RequestSourceFilter(provider: .letterboxd, sub: .init(lbSubs[1]))
+        let list = RequestSourceFilter(provider: .letterboxd, sub: RequestSourceFilter.Sub(lbSubs[1]))
         XCTAssertEqual(list.query.map(\.name), ["source", "source_id"])
         XCTAssertEqual(list.query.map(\.value), ["LETTERBOXD_LIST", "3"])
-        let diary = RequestSourceFilter(provider: .letterboxd, sub: .init(lbSubs[0]))
+        let diary = RequestSourceFilter(provider: .letterboxd, sub: RequestSourceFilter.Sub(lbSubs[0]))
         XCTAssertEqual(diary.query.map(\.value), ["LETTERBOXD_RSS"])
     }
 
