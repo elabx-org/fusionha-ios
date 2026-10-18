@@ -66,7 +66,7 @@ struct AddTile: View {
 
     private var footer: some View {
         HStack(spacing: 6) {
-            Image(systemName: result.kind == .movie && !result.isAnime ? "film" : (result.isAnime ? "film.stack" : "tv"))
+            Image(systemName: result.kind == .movie && !result.isAnime ? "film" : (result.isAnime ? "paintbrush.pointed" : "tv"))
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(result.isAnime ? Theme.anime : Theme.mut)
                 .accessibilityHidden(true)

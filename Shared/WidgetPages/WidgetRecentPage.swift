@@ -10,7 +10,7 @@ struct WidgetRecentPage: View {
 
     var body: some View {
         if rows.isEmpty {
-            WidgetStatusMessage(icon: "film.stack", text: "Nothing imported yet", tint: Theme.done)
+            WidgetStatusMessage(icon: "tray", text: "Nothing imported yet", tint: Theme.done)
         } else {
             // The rows share the height left under the header, so posters
             // stay as large as the widget allows on every phone without overflowing.

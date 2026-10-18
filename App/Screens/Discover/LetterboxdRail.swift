@@ -18,7 +18,7 @@ struct LetterboxdRail: View {
     var body: some View {
         if let base, base.visible, !base.items.isEmpty {
             RailSection(title: "From your Letterboxd", count: count) {
-                Image(systemName: "film.stack").font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.done)
+                Image(systemName: "film.stack").font(.system(size: 14, weight: .medium)).foregroundStyle(Theme.mut)
             } toggle: {
                 if base.sources.count > 1 {
                     DiscoverSegmented(options: chips(base), selection: $sourceId)

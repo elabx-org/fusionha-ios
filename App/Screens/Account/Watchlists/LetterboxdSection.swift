@@ -63,7 +63,7 @@ struct LetterboxdSection: View {
                 sub = "Checks paused until the profile can be read"
             }
         }
-        return WatchlistCardHead(icon: "film.stack", tint: Theme.done, title: "Letterboxd", sub: sub,
+        return WatchlistCardHead(icon: "film.stack", tint: Theme.mut, title: "Letterboxd", sub: sub,
                                  pill: pill.0, pillColor: pill.1)
     }
 
