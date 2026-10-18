@@ -101,6 +101,8 @@ struct RequestConversation: View {
     let events: [RequestThreadEvent]
     let loaded: Bool
     let joinedView: Bool
+    /// The request's projected source: names the list on a `created` line.
+    var source: RequestSource? = nil
 
     var body: some View {
         if events.isEmpty {
@@ -154,7 +156,7 @@ struct RequestConversation: View {
     }
 
     private func systemPill(_ e: RequestThreadEvent) -> some View {
-        Text(RequestThreadFormat.systemLine(e))
+        Text(RequestThreadFormat.systemLine(e, source: source))
             .font(.system(size: 12, weight: .medium))
             .foregroundStyle(Theme.mut)
             .multilineTextAlignment(.center)

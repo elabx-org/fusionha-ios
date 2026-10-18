@@ -12,15 +12,21 @@ public struct RequestThreadEvent: Decodable, Sendable, Hashable, Identifiable {
         /// Issue lines: the report a verdict belongs to, and a rescan marker's action.
         public let reportId: Int?
         public let action: String?
+        /// `created` lines: the automatic source kind (absent for a manual
+        /// request) and `again` on a "Request again" (0.4.209).
+        public let source: String?
+        public let again: Bool?
 
         public init(tiers: [String]? = nil, tier: String? = nil, via: String? = nil, rule: String? = nil,
-                    reportId: Int? = nil, action: String? = nil) {
+                    reportId: Int? = nil, action: String? = nil, source: String? = nil, again: Bool? = nil) {
             self.tiers = tiers
             self.tier = tier
             self.via = via
             self.rule = rule
             self.reportId = reportId
             self.action = action
+            self.source = source
+            self.again = again
         }
 
         public init(from decoder: Decoder) throws {
@@ -31,9 +37,11 @@ public struct RequestThreadEvent: Decodable, Sendable, Hashable, Identifiable {
             rule = try? c.decodeIfPresent(String.self, forKey: .rule)
             reportId = try? c.decodeIfPresent(Int.self, forKey: .reportId)
             action = try? c.decodeIfPresent(String.self, forKey: .action)
+            source = try? c.decodeIfPresent(String.self, forKey: .source)
+            again = try? c.decodeIfPresent(Bool.self, forKey: .again)
         }
 
-        enum CodingKeys: String, CodingKey { case tiers, tier, via, rule, reportId, action }
+        enum CodingKeys: String, CodingKey { case tiers, tier, via, rule, reportId, action, source, again }
     }
 
     public let id: Int
@@ -76,11 +84,12 @@ public enum RequestThreadFormat {
         return QualityTier(rawValue: raw)?.chipLabel ?? tierNames[raw] ?? raw
     }
 
-    /// One line for a SYSTEM event.
-    public static func systemLine(_ e: RequestThreadEvent) -> String {
+    /// One line for a SYSTEM event. `source` is the request's projected
+    /// source: its list label and Letterboxd owner name the `created` line.
+    public static func systemLine(_ e: RequestThreadEvent, source: RequestSource? = nil) -> String {
         let who = e.actor?.displayName
         switch e.eventType {
-        case "created": return "\(who ?? "Someone") requested \(names(e.data))".trimmed
+        case "created": return createdLine(e, who: who, label: source?.label, owner: source?.owner)
         case "version_added": return "\(who ?? "Someone") added \(names(e.data))".trimmed
         case "joined":
             let tiers = names(e.data)
@@ -117,7 +126,7 @@ public enum RequestThreadFormat {
     }
 }
 
-private extension String {
+extension String {
     var trimmed: String { trimmingCharacters(in: .whitespaces) }
 }
 

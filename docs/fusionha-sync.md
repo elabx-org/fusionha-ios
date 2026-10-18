@@ -36,7 +36,6 @@ ported and green, and nothing is half done. Still to do:
   card progress line and an Activity › Tasks card), then requests phase 10b
   (MDBList, Trakt, other people's Plex lists, admin import lists). Port each
   one when its shapes are posted.
-- The open items under the two 0.4.209–0.4.214 sections below.
 - Live Activity posters: the 4 KB state budget limits sharpness on
   Feather builds without the App Group (see the Live Activity notes in
   `docs/ui-plan.md` and `LiveActivityPosters` in
@@ -89,11 +88,15 @@ Done:
   `plex_watchlist_summary`, `letterboxd_admin`, `letterboxd_summary`,
   `letterboxd_stats`, `flaresolverr_test_ok` (`GoldenSourceFixtureTests`).
 
-Open:
-- The Users list has no per-row watchlist / Letterboxd chips or the
-  "Watchlist" filter yet (the state shows on the account sheet).
-- Thread lines for automatic `created` events (`letterboxdCreatedLine`) and
-  the auto-approved strip's "From the Plex list · …" phrase.
+- Users list: per-row Plex watchlist and Letterboxd chips (dot, label,
+  "N requested · …") and the Show filter All · Plex · Watchlist · Letterboxd
+  (`UsersShowFilter`). The chips are display only; the row opens the account
+  sheet, whose Automatic requests section opens the status.
+- Thread `created` lines for automatic and re-requested rows (`data.source`,
+  `data.again`; `RequestCreatedLine.swift`) and the auto-approved strip's
+  source mark with its `stripPhrase` read aloud.
+
+Open: nothing from 0.4.209–0.4.214.
 
 ## 0.4.204–0.4.205 (this sync)
 

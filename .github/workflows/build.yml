@@ -31,7 +31,8 @@ concurrency:
 jobs:
   # Decides which heavy jobs run. Screenshots, iPhone Duo and perf are opt-in:
   # a PR label (`screenshots`, `perf`), a manual run's checkboxes, or a push to
-  # main that changes something on screen. Feature-branch pushes never run them.
+  # main whose head commit message says `[screenshots]` / `[perf]` and that
+  # changes something on screen. Feature-branch pushes never run them.
   plan:
     name: Plan
     runs-on: ubuntu-latest
@@ -52,6 +53,7 @@ jobs:
           IN_SHOTS: ${{ inputs.screenshots }}
           IN_PERF: ${{ inputs.perf }}
           IN_ONLY: ${{ inputs.shots_only }}
+          MSG: ${{ github.event.head_commit.message }}
         run: |
           shots=false; duo=false; perf=false
           has() { echo "$LABELS" | grep -q "\"$1\""; }
@@ -68,7 +70,10 @@ jobs:
                 if [ -z "$BEFORE" ] || [ "$BEFORE" = 0000000000000000000000000000000000000000 ]; then ui=1
                 elif ! git fetch -q --depth=1 origin "$BEFORE"; then ui=1
                 else ui=$(git diff --name-only "$BEFORE" HEAD | grep -cE '^(App|Widgets|Shared|NotificationService)/|^project\.yml$|^scripts/(mock_server\.py|.*shot.*)' || true); fi
-                if [ "${ui:-0}" -gt 0 ]; then shots=true; perf=true; fi
+                if [ "${ui:-0}" -gt 0 ]; then
+                  case "$MSG" in *"[screenshots]"*) shots=true ;; esac
+                  case "$MSG" in *"[perf]"*) perf=true ;; esac
+                fi
               fi ;;
           esac
           echo "screenshots=$shots duo=$duo perf=$perf" | tee -a "$GITHUB_STEP_SUMMARY"

@@ -42,7 +42,7 @@ struct RequestThreadSheet: View {
                         sectionLabel("Timeline")
                         RequestStatusTimeline(request: request)
                         sectionLabel("Conversation")
-                        RequestConversation(events: events, loaded: loaded, joinedView: joinedView)
+                        RequestConversation(events: events, loaded: loaded, joinedView: joinedView, source: request.source)
                         Color.clear.frame(height: 1).id("end")
                     }
                     .padding(16)
