@@ -88,23 +88,20 @@ struct SwipeDeckView: View {
         return 0
     }
 
-    private func dragGesture(_ request: MediaRequest, canApprove: Bool) -> some Gesture {
-        DragGesture(minimumDistance: 12)
-            .onChanged { value in
-                guard flying == nil else { return }
-                let crossed = abs(drag?.dx ?? 0) > Self.threshold
-                drag = (request.id, value.translation.width)
-                if crossed != (abs(value.translation.width) > Self.threshold),
-                   value.translation.width < 0 || canApprove { feedback += 1 }
+    /// Sideways only: a vertical drag on the card scrolls the page instead.
+    private func dragGesture(_ request: MediaRequest, canApprove: Bool) -> HorizontalPanGesture {
+        HorizontalPanGesture { dx in
+            guard flying == nil else { return }
+            let crossed = abs(drag?.dx ?? 0) > Self.threshold
+            drag = (request.id, dx)
+            if crossed != (abs(dx) > Self.threshold), dx < 0 || canApprove { feedback += 1 }
+        } onEnded: { dx in
+            if abs(dx) > Self.threshold {
+                fly(request, right: dx > 0, canApprove: canApprove)
+            } else {
+                withAnimation(.spring(duration: 0.3)) { drag = nil }
             }
-            .onEnded { value in
-                let dx = value.translation.width
-                if abs(dx) > Self.threshold {
-                    fly(request, right: dx > 0, canApprove: canApprove)
-                } else {
-                    withAnimation(.spring(duration: 0.3)) { drag = nil }
-                }
-            }
+        }
     }
 
     private func buttons(_ top: MediaRequest) -> some View {

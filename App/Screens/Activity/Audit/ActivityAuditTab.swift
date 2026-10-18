@@ -165,7 +165,7 @@ struct AuditRow: View {
                     lead
                     VStack(alignment: .leading, spacing: 3) {
                         if let t = entry.titleTarget {
-                            (Text(t.title).fontWeight(.bold) + Text(t.year.map { " \($0)" } ?? "").foregroundColor(Theme.mut))
+                            (Text(t.title).fontWeight(.bold) + Text(verbatim: t.year.map { " \($0)" } ?? "").foregroundColor(Theme.mut))
                                 .font(.system(size: 14.5)).foregroundStyle(Theme.txt).lineLimit(1)
                             line(entry.verb ?? "")
                         } else {

@@ -63,7 +63,7 @@ struct IssueModal: View {
         HStack(spacing: 12) {
             ActPoster(url: poster, title: title, size: .sm)
             VStack(alignment: .leading, spacing: 4) {
-                (Text(title).fontWeight(.bold) + Text(year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+                (Text(title).fontWeight(.bold) + Text(verbatim: year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
                     .font(.system(size: 16)).foregroundStyle(Theme.txt)
                 HStack(spacing: 4) {
                     ForEach(Array(Set(versions.compactMap(\.tier))).sorted { $0.rawValue < $1.rawValue }, id: \.self) { ActTierChip(tier: $0) }

@@ -73,7 +73,7 @@ struct RequestThreadSheet: View {
         HStack(alignment: .top, spacing: 12) {
             ActPoster(url: request.poster, title: title, size: .md)
             VStack(alignment: .leading, spacing: 6) {
-                (Text(title).fontWeight(.bold) + Text(request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+                (Text(title).fontWeight(.bold) + Text(verbatim: request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
                     .font(.system(size: 18))
                     .foregroundStyle(Theme.txt)
                 HStack(spacing: 6) {

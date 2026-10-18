@@ -127,7 +127,7 @@ struct PlexWatchlistStatusView: View {
             Section("Latest items") {
                 ForEach(Array(rows.enumerated()), id: \.offset) { _, r in
                     HStack(spacing: 8) {
-                        (Text(r.title ?? "Unknown title") + Text(r.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+                        (Text(r.title ?? "Unknown title") + Text(verbatim: r.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
                             .font(.subheadline).lineLimit(1)
                         Spacer(minLength: 4)
                         SourceStatePill(label: SourceAdminCopy.outcomeLabel(r.outcome), tone: SourceAdminCopy.outcomeTone(r.outcome))

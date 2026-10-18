@@ -109,7 +109,7 @@ struct RequestHistoryRow: View {
             ActPoster(url: request.poster, title: title, size: .sm)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(alignment: .firstTextBaseline) {
-                    (Text(title).fontWeight(.semibold) + Text(request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+                    (Text(title).fontWeight(.semibold) + Text(verbatim: request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
                         .font(.system(size: 14)).foregroundStyle(Theme.txt).lineLimit(1)
                     Spacer(minLength: 4)
                     Text(pill.label)

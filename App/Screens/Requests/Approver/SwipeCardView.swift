@@ -19,7 +19,7 @@ struct SwipeCardView: View {
         VStack(alignment: .leading, spacing: 0) {
             art
             VStack(alignment: .leading, spacing: 10) {
-                (Text(title).fontWeight(.bold) + Text(request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+                (Text(title).fontWeight(.bold) + Text(verbatim: request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
                     .font(.system(size: 19))
                     .foregroundStyle(Theme.txt)
                     .lineLimit(2)

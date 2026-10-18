@@ -44,7 +44,7 @@ struct DecisionCardView: View {
                     .foregroundStyle(Theme.mut)
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Theme.panel2, in: Capsule())
-                (Text(title).fontWeight(.bold) + Text(request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+                (Text(title).fontWeight(.bold) + Text(verbatim: request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
                     .font(.system(size: 18))
                     .foregroundStyle(Theme.txt)
                 Text("\(TriageFacts.kindText(request, isAnime: triage?.isAnime)) · \(RequestLifecycle.sourceText(request.source))")

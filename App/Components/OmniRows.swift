@@ -101,7 +101,7 @@ struct OmniRow<Sub: View, Action: View>: View {
                 HStack(spacing: 7) {
                     Circle().fill(dot).frame(width: 7, height: 7)
                     (Text(title).foregroundStyle(Theme.txt)
-                        + Text(year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
+                        + Text(verbatim: year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
                         .font(.system(size: 14, weight: .semibold))
                         .lineLimit(1)
                 }

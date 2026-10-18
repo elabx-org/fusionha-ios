@@ -21,7 +21,7 @@ struct BoardCardView: View {
             HStack(alignment: .top, spacing: 10) {
                 ActPoster(url: request.poster, title: title, size: .sm)
                 VStack(alignment: .leading, spacing: 4) {
-                    (Text(title).fontWeight(.semibold) + Text(request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+                    (Text(title).fontWeight(.semibold) + Text(verbatim: request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
                         .font(.system(size: 14.5)).foregroundStyle(Theme.txt).lineLimit(2)
                     HStack(spacing: 5) {
                         ForEach(request.tiers, id: \.self) { ActTierChip(tier: $0) }

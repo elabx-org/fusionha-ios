@@ -134,7 +134,7 @@ struct AddListRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 let shown = TitleYear.display(result.title, result.year)
                 (Text(shown.title).foregroundStyle(Theme.txt)
-                    + Text(shown.year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
+                    + Text(verbatim: shown.year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
                     .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)
                 Text("\(kindName(result)) · via TMDB").font(.system(size: 12)).foregroundStyle(Theme.mut)
@@ -174,7 +174,7 @@ struct TvdbRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 let shown = TitleYear.display(result.title, result.year)
                 (Text(shown.title).foregroundStyle(Theme.txt)
-                    + Text(shown.year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
+                    + Text(verbatim: shown.year.map { "  " + String($0) } ?? "").foregroundStyle(Theme.mut).font(.system(size: 13)))
                     .font(.system(size: 14, weight: .semibold))
                     .lineLimit(1)
                 Text("Series · via TVDB").font(.system(size: 12)).foregroundStyle(Theme.mut)
