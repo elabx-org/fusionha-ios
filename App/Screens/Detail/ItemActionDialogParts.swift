@@ -3,7 +3,7 @@ import SwiftUI
 // Shared pieces of the item action sheets (rename, edition aliases, numbering):
 // the web dialogs' icon header, muted note and dashed empty box.
 
-/// The DialogHeader: a tinted icon tile, the title and a one-line subtitle.
+/// The DialogHeader: a bare icon (`tint` is kept for callers, unused), the title and a one-line subtitle.
 struct DialogHeading: View {
     let symbol: String
     let title: String
@@ -14,9 +14,8 @@ struct DialogHeading: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: symbol)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(tint)
+                .foregroundStyle(Theme.txt)
                 .frame(width: 34, height: 34)
-                .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9))
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.system(size: 18, weight: .bold))

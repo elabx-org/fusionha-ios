@@ -210,7 +210,7 @@ private struct DownloadClientForm: View {
             SettingsSection("Categories — one per media type") {
                 categoryRow("Movies", "film", $catMovie)
                 categoryRow("Series", "tv", $catSeries)
-                categoryRow("Anime", "sparkles", $catAnime)
+                categoryRow("Anime", "film.stack", $catAnime)
             }
             if type == .sab {
                 SettingsSection("Priorities") {

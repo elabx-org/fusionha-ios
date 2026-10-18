@@ -162,9 +162,9 @@ struct RequestThreadComposer: View {
             Button { Task { await send() } } label: {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Theme.onPrimary)
+                    .foregroundStyle(Theme.onAccent)
                     .frame(width: 36, height: 36)
-                    .background(Theme.fusion, in: Circle())
+                    .background(Theme.primary, in: Circle())
             }
             .buttonStyle(.plain)
             .disabled(sending || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

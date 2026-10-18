@@ -262,7 +262,6 @@ private struct AddSeasonRow: View {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(Theme.i2.opacity(0.08))
                     .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.i2.opacity(0.35)))
-                    .shadow(color: Theme.i2.opacity(0.35), radius: 13, y: 10)
             }
         }
         .scaleEffect(sliding != nil && motion ? 1.03 : 1)

@@ -38,7 +38,7 @@ struct ActAsyncButton: View {
                 if let badge {
                     Text(badge).font(.caption2.weight(.bold))
                         .padding(.horizontal, 5).padding(.vertical, 1)
-                        .background((kind == .primary ? Theme.onPrimary : Theme.txt).opacity(0.18), in: Capsule())
+                        .background((kind == .primary ? Theme.onAccent : Theme.txt).opacity(0.18), in: Capsule())
                 }
             }
         }
@@ -57,7 +57,7 @@ struct ActAsyncButton: View {
         case .failed: Image(systemName: "xmark").fontWeight(.bold)
         case .idle, .working:
             if working && fraction == nil {
-                ProgressView().controlSize(.small).tint(kind == .primary ? Theme.onPrimary : Theme.txt)
+                ProgressView().controlSize(.small).tint(kind == .primary ? Theme.onAccent : Theme.txt)
             } else if let systemImage {
                 Image(systemName: systemImage)
             }

@@ -14,7 +14,7 @@ struct AddDetailsCard: View {
     private static let seriesTypes: [(value: String, label: String, note: String, icon: String)] = [
         ("standard", "Standard", "Season and episode numbers", "list.number"),
         ("daily", "Daily", "Dated episodes (talk shows, news)", "calendar"),
-        ("anime", "Anime", "Absolute numbering, anime profiles", "sparkles"),
+        ("anime", "Anime", "Absolute numbering, anime profiles", "film.stack"),
     ]
     private static let providerNames = AddProviderValue.names
     private static let providers = ["auto", "tmdb", "tvdb", "tvmaze", "hybrid"]

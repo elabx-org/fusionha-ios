@@ -76,13 +76,10 @@ struct BulkActionBar: View {
         .padding(.top, 11)
         .padding(.bottom, 11)
         .background {
-            Rectangle()
-                .fill(Color(red: 18 / 255, green: 20 / 255, blue: 27 / 255).opacity(0.94))
-                .background(.ultraThinMaterial)
+            Color.clear
+                .glassEffect(.regular, in: .rect(cornerRadius: 24))
                 .ignoresSafeArea(edges: .bottom)
-                .shadow(color: .black.opacity(0.6), radius: 12, y: -8)
         }
-        .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
         .task { profiles = (try? await model.client?.qualityProfiles()) ?? [] }
         .sheet(isPresented: $showingRoot) {
             ChangeRootSheet()
@@ -192,9 +189,9 @@ private struct ChangeRootSheet: View {
             } label: {
                 Text("Apply")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Theme.onPrimary)
+                    .foregroundStyle(Theme.onAccent)
                     .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(Theme.fusion, in: Capsule())
+                    .background(Theme.primary, in: Capsule())
             }
             .buttonStyle(PressScaleStyle())
             .disabled(rootId == nil)

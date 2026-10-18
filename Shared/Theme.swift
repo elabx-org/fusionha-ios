@@ -50,7 +50,10 @@ enum Theme {
     /// accent and its lighter (or, in Daylight, deeper) partner for links.
     static var i1: Color { indigo }
     static var i2: Color { Color(hex: palette.i2) }
-    /// The primary action's fill. Text on it is `onPrimary`.
+    /// The primary action's solid fill (`i1`); text on it is `onAccent`.
+    static var primary: Color { i1 }
+    /// The brand gradient: the logo, sign-in and person avatars only.
+    /// Text on it is `onPrimary`.
     static var fusion: LinearGradient { palette.primaryGradient }
 
     static var done: Color { Color(hex: palette.done) }

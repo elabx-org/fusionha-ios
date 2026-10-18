@@ -153,10 +153,13 @@ struct WantedView: View {
     // MARK: Head
 
     private var header: some View {
-        ActFlow(spacing: 12, lineSpacing: 8) {
-            Text("Wanted")
-                .pageTitle()
-            summary
+        HStack(alignment: .top, spacing: 8) {
+            ActFlow(spacing: 12, lineSpacing: 8) {
+                Text("Wanted")
+                    .pageTitle()
+                summary
+            }
+            AddTitleButton()
         }
         .padding(.bottom, 4)
     }

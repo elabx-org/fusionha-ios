@@ -147,12 +147,12 @@ private struct ShellPresentations: ViewModifier {
     }
 }
 
-/// Wraps a tab's content: the page background, a fade behind the status bar
-/// and, where the web shows it, the gradient + button. The logo and avatar
-/// sit in each page's own title row (`ShellTitleRow`).
+/// Wraps a tab's content: the page background and a fade behind the status
+/// bar. The logo and avatar sit in each page's own title row (`ShellTitleRow`);
+/// where the web shows its mobile "+" it is `AddTitleButton` in that row.
 struct Screen<Content: View>: View {
     @Environment(AppModel.self) private var model
-    @Environment(\.motionEnabled) private var motion
+    /// Kept for source compatibility: pages that add place `AddTitleButton`.
     var showsAdd = false
     /// Kept for source compatibility: Library filters in place through the
     /// top-bar pill, every other tab opens the omni search.
@@ -160,49 +160,27 @@ struct Screen<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        let hidden = model.chromeHidden
-        ZStack(alignment: .bottomTrailing) {
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            if showsFab {
-                AddButton { model.showingAdd = true }
-                    .padding(.trailing, 16)
-                    .padding(.bottom, 12)
-                    .offset(y: hidden ? 140 : 0)
-                    .opacity(hidden ? 0 : 1)
-                    .allowsHitTesting(!hidden)
-                    .transition(.scale.combined(with: .opacity))
+        content
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .overlay(alignment: .top) { StatusBarFade() }
+            .overlay(alignment: .top) {
+                if !model.requestScoped { SetupProgressPill(barHeight: 0) }
             }
-        }
-        .overlay(alignment: .top) { StatusBarFade() }
-        .overlay(alignment: .top) {
-            if !model.requestScoped { SetupProgressPill(barHeight: 0) }
-        }
-        .webBackground()
-        .animation(motion ? .timingCurve(0.2, 0.7, 0.2, 1, duration: 0.32) : nil, value: hidden)
-        .animation(.smooth(duration: 0.2), value: showsFab)
-    }
-
-    private var showsFab: Bool {
-        showsAdd && !model.requestScoped && model.me?.can("add") != false && !model.selectMode
+            .webBackground()
     }
 }
 
-/// The web's mobile `Fab`: a 56pt gradient orb with a 22pt plus, pressing to .92.
-struct AddButton: View {
-    let action: () -> Void
+/// The glass "+" in the title row of Library, Discover and Wanted (DIRECTION
+/// decision 1; it replaced the floating gradient orb). Opens the Add sheet.
+/// Hidden for request-scoped sessions, without the add capability, and while
+/// selecting.
+struct AddTitleButton: View {
+    @Environment(AppModel.self) private var model
 
     var body: some View {
-        Button(action: action) {
-            Image(systemName: "plus")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(Theme.onPrimary)
-                .frame(width: 56, height: 56)
-                .background(Theme.fusion, in: Circle())
-                .shadow(color: .black.opacity(0.5), radius: 12, y: 8)
+        if !model.requestScoped && model.me?.can("add") != false && !model.selectMode {
+            GlassIconButton(systemName: "plus", label: "Add") { model.showingAdd = true }
         }
-        .buttonStyle(PressScaleStyle(scale: 0.92))
-        .accessibilityLabel("Add title")
     }
 }
 

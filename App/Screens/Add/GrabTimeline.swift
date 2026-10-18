@@ -29,8 +29,7 @@ struct GrabTimeline: View {
                             .frame(height: 6)
                             .offset(y: 16)
                         Capsule()
-                            .fill(LinearGradient(colors: [Theme.i1, Theme.i2], startPoint: .leading, endPoint: .trailing))
-                            .shadow(color: Theme.i2.opacity(0.35), radius: 7)
+                            .fill(Theme.i1)
                             .frame(width: max(0, width * (1 - selected.pos / 100)), height: 6)
                             .offset(x: width * selected.pos / 100, y: 16)
                         if let today = timeline.today {
@@ -110,7 +109,6 @@ struct GrabTimeline: View {
                     .background {
                         if chosen {
                             Circle().fill(Theme.i2.opacity(0.18)).padding(-5)
-                                .shadow(color: Theme.i2.opacity(0.5), radius: 9)
                         }
                     }
                     .scaleEffect(chosen ? 1.25 : after ? 0.7 : 1)

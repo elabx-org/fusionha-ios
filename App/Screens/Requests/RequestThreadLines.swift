@@ -126,10 +126,10 @@ struct RequestConversation: View {
             VStack(alignment: e.isMine ? .trailing : .leading, spacing: 4) {
                 Text(e.body ?? "")
                     .font(.system(size: 15))
-                    .foregroundStyle(e.isMine ? Theme.onPrimary : Theme.txt)
+                    .foregroundStyle(e.isMine ? Theme.onAccent : Theme.txt)
                     .padding(.horizontal, 13)
                     .padding(.vertical, 9)
-                    .background(e.isMine ? AnyShapeStyle(Theme.fusion) : AnyShapeStyle(Theme.panel2),
+                    .background(e.isMine ? AnyShapeStyle(Theme.primary) : AnyShapeStyle(Theme.panel2),
                                 in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .textSelection(.enabled)
                 Text("\(RequestThreadFormat.messageMeta(e, joinedView: joinedView)) · \(ActFmt.relative(e.createdAt))")
@@ -146,7 +146,7 @@ struct RequestConversation: View {
         if let actor, actor.id != nil {
             Text(String(actor.displayName.prefix(1)).uppercased())
                 .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Theme.onPrimary)
+                .foregroundStyle(Theme.onAccent)
                 .frame(width: 26, height: 26)
                 .background(Theme.i1, in: Circle())
                 .accessibilityHidden(true)

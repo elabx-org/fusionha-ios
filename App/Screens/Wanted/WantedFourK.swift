@@ -191,10 +191,10 @@ struct WantedFourKCard: View {
                     Image(systemName: "plus").font(.system(size: 13, weight: .bold))
                     Text("Add").font(.system(size: 11, weight: .bold))
                 }
-                .foregroundStyle(Theme.onPrimary)
+                .foregroundStyle(Theme.onAccent)
                 .padding(.horizontal, 12)
                 .frame(minWidth: 40, minHeight: 40)
-                .background(Theme.fusion, in: Capsule())
+                .background(Theme.primary, in: Capsule())
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

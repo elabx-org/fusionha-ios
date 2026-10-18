@@ -31,8 +31,9 @@ func kindName(_ result: MediaSearchResult) -> String {
     result.isAnime ? "Anime" : (result.kind == .movie ? "Movie" : "Series")
 }
 
-/// A grid tile: 2:3 art, glass kind chip, "In library" badge or the + / eye
-/// buttons, then title and "YYYY · Kind".
+/// A grid tile: clean 2:3 art, then title and "YYYY · Kind", then a footer
+/// with the kind glyph and "In library" or the eye / + buttons. Nothing sits
+/// on the poster.
 struct AddTile: View {
     let result: MediaSearchResult
     let pick: () -> Void
@@ -44,57 +45,12 @@ struct AddTile: View {
         var parts: [String] = []
         if let year = result.year { parts.append(String(year)) }
         parts.append(kindName(result))
-        if result.inLibrary { parts.append("In library") }
         return parts.joined(separator: " · ")
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             poster
-                .overlay(alignment: .topLeading) {
-                    Image(systemName: result.kind == .movie && !result.isAnime ? "film" : "tv")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(result.isAnime ? Theme.anime : Theme.txt)
-                        .frame(width: 27, height: 27)
-                        .glassEffect(.regular, in: Circle())
-                        .padding(6)
-                }
-                .overlay(alignment: .topTrailing) {
-                    if result.inLibrary {
-                        Text("In library")
-                            .font(.system(size: 9.5, weight: .bold))
-                            .foregroundStyle(Theme.done)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 3)
-                            .background(.black.opacity(0.6), in: Capsule())
-                            .overlay(Capsule().strokeBorder(Theme.done.opacity(0.45)))
-                            .padding(6)
-                    }
-                }
-                .overlay(alignment: .bottomTrailing) {
-                    if !result.inLibrary {
-                        HStack(spacing: 5) {
-                            Button(action: preview) {
-                                Image(systemName: "eye")
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundStyle(Theme.txt)
-                                    .frame(width: 30, height: 30)
-                                    .glassEffect(.regular.interactive(), in: Circle())
-                            }
-                            .accessibilityLabel("Preview")
-                            Button(action: pick) {
-                                Image(systemName: "plus")
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundStyle(Theme.onPrimary)
-                                    .frame(width: 30, height: 30)
-                                    .background(Theme.fusion, in: Circle())
-                            }
-                            .accessibilityLabel("Add \(result.title)")
-                        }
-                        .buttonStyle(PressScaleStyle(scale: 0.9))
-                        .padding(6)
-                    }
-                }
             VStack(alignment: .leading, spacing: 2) {
                 Text(TitleYear.display(result.title, nil).title)
                     .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
@@ -102,9 +58,50 @@ struct AddTile: View {
                     .font(.system(size: 11)).foregroundStyle(Theme.mut).lineLimit(1)
             }
             .padding(.horizontal, 2)
+            footer
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: pick)
+    }
+
+    private var footer: some View {
+        HStack(spacing: 6) {
+            Image(systemName: result.kind == .movie && !result.isAnime ? "film" : (result.isAnime ? "film.stack" : "tv"))
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(result.isAnime ? Theme.anime : Theme.mut)
+                .accessibilityHidden(true)
+            if result.inLibrary {
+                Text("In library")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Theme.done)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+            if !result.inLibrary { actions }
+        }
+        .padding(.horizontal, 2)
+    }
+
+    private var actions: some View {
+        HStack(spacing: 6) {
+            Button(action: preview) {
+                Image(systemName: "eye")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Theme.txt)
+                    .frame(width: 30, height: 30)
+                    .glassEffect(.regular.interactive(), in: Circle())
+            }
+            .accessibilityLabel("Preview")
+            Button(action: pick) {
+                Image(systemName: "plus")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Theme.onAccent)
+                    .frame(width: 30, height: 30)
+                    .background(Theme.primary, in: Circle())
+            }
+            .accessibilityLabel("Add \(result.title)")
+        }
+        .buttonStyle(PressScaleStyle(scale: 0.9))
     }
 
     @ViewBuilder
@@ -146,10 +143,10 @@ struct AddListRow: View {
                 } else {
                     Text("Add")
                         .font(.system(size: 12.5, weight: .bold))
-                        .foregroundStyle(Theme.onPrimary)
+                        .foregroundStyle(Theme.onAccent)
                         .padding(.horizontal, 14)
                         .frame(height: 30)
-                        .background(Theme.fusion, in: Capsule())
+                        .background(Theme.primary, in: Capsule())
                 }
             }
             .buttonStyle(PressScaleStyle())

@@ -50,8 +50,7 @@ private struct StatsOperationRow: View {
     }
 
     private var icon: some View {
-        let tint: Color = op.status == .completed ? Theme.done : op.status == .failed ? Theme.danger : Theme.grab
-        return ZStack {
+        ZStack {
             switch op.status {
             case .running:
                 if motion {
@@ -67,15 +66,14 @@ private struct StatsOperationRow: View {
                 Image(systemName: "xmark").font(.system(size: 12, weight: .bold))
             }
         }
-        .foregroundStyle(tint)
+        .foregroundStyle(Theme.mut)
         .frame(width: 30, height: 30)
-        .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
     }
 
     private var bar: some View {
         GeometryReader { geo in
             Capsule()
-                .fill(LinearGradient(colors: [Theme.i1, Theme.i2], startPoint: .leading, endPoint: .trailing))
+                .fill(Theme.i1)
                 .frame(width: geo.size.width * CGFloat(op.progress ?? 35) / 100)
         }
         .frame(height: 4)
@@ -234,9 +232,8 @@ private struct AttentionIcon: View {
     var body: some View {
         Image(systemName: symbol)
             .font(.system(size: 15, weight: .medium))
-            .foregroundStyle(tint)
+            .foregroundStyle(Theme.mut)
             .frame(width: 34, height: 34)
-            .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .accessibilityHidden(true)
     }
 }

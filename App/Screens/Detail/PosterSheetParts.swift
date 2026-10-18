@@ -89,10 +89,10 @@ struct SheetPrimaryButton: View {
                 Image(systemName: icon).font(.system(size: 18, weight: .semibold))
                 Text(label).font(.system(size: 17, weight: .semibold))
             }
-            .foregroundStyle(Theme.onPrimary)
+            .foregroundStyle(Theme.onAccent)
             .frame(maxWidth: .infinity)
             .frame(height: 54)
-            .background(Theme.fusion, in: Capsule())
+            .background(Theme.primary, in: Capsule())
             .overlay(Capsule().strokeBorder(.white.opacity(0.7), lineWidth: 1)
                 .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .center)))
             .contentShape(Capsule())

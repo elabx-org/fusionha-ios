@@ -43,9 +43,9 @@ struct RequestConfigurator: View {
             } label: {
                 Text(sending ? "Requesting…" : "Request")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Theme.onPrimary)
+                    .foregroundStyle(Theme.onAccent)
                     .frame(maxWidth: .infinity, minHeight: 44)
-                    .background(Theme.fusion, in: Capsule())
+                    .background(Theme.primary, in: Capsule())
             }
             .buttonStyle(PressScaleStyle())
             .disabled(sending)

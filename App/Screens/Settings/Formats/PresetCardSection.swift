@@ -74,7 +74,7 @@ struct PresetCardSection: View {
     private var kindSymbol: String {
         switch preset.mediaKind {
         case "series": return "tv"
-        case "anime": return "sparkles.tv"
+        case "anime": return "film.stack"
         default: return "film"
         }
     }

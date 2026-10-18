@@ -140,7 +140,7 @@ struct MetadataSettingsPanel: View {
 
 // MARK: Hybrid precedence
 
-/// "✦ Hybrid — per-field source precedence": tap a source to promote it.
+/// "Hybrid — per-field source precedence": tap a source to promote it.
 private struct HybridPrecedenceRows: View {
     @Environment(SettingsStore.self) private var store
     @Environment(\.settingsMotionOff) private var motionOff
@@ -166,7 +166,7 @@ private struct HybridPrecedenceRows: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text("✦ Hybrid — per-field source precedence")
+                Text("Hybrid — per-field source precedence")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Theme.txt)
                 Spacer()

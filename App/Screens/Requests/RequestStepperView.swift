@@ -52,7 +52,7 @@ struct RequestStepperView: View {
             }
             HStack(alignment: .top, spacing: 0) {
                 ForEach(0..<RequestLifecycle.steps.count, id: \.self) { i in
-                    Text(RequestLifecycle.stopLabel(i, entry: entry, auto: auto) + (i == 1 && auto ? " ⚡" : ""))
+                    Text(RequestLifecycle.stopLabel(i, entry: entry, auto: auto))
                         .font(.system(size: 10.5, weight: i == stop ? .bold : .medium))
                         .foregroundStyle(i <= stop || done ? Theme.txt : Theme.dim)
                         .lineLimit(1)
