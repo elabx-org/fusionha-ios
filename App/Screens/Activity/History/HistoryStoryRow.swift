@@ -210,7 +210,7 @@ struct HistoryStoryRow: View {
                     Text(release).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(Theme.dim)
                 }
                 if let reason = story.failReason {
-                    Text("\(story.title) — \(reason)").font(.system(size: 12.5)).foregroundStyle(Theme.mut)
+                    Text("\(story.title) · \(reason)").font(.system(size: 12.5)).foregroundStyle(Theme.mut)
                     Text("RAW REASON").font(.system(size: 11, weight: .bold)).tracking(0.6).foregroundStyle(Theme.dim)
                     Text(reason).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.mut)
                         .padding(8).frame(maxWidth: .infinity, alignment: .leading)

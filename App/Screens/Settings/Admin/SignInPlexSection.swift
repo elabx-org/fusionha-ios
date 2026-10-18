@@ -126,7 +126,7 @@ struct PlexSSOConfigSheet: View {
             .pickerStyle(.segmented)
             if store.string("plex_provisioning_mode") == "import" {
                 FieldLabel(label: "Import shared users now",
-                           description: "Pre-create Requestor accounts for everyone with access — runs every 60 min automatically.")
+                           description: "Pre-create Requestor accounts for everyone with access. Runs every 60 min automatically.")
                 Button(importing ? "Importing…" : "Import now", systemImage: "square.and.arrow.down") { Task { await runImport() } }
                     .disabled(importing)
             }

@@ -91,7 +91,7 @@ struct PresetDeploySheet: View {
                 TextField("Profile name", text: $name).accessibilityLabel("Profile name")
             }
         } header: {
-            Text(readOnly ? "Profile" : "Profile — edit anything before deploying").textCase(nil)
+            Text(readOnly ? "Profile" : "Profile: edit anything before deploying").textCase(nil)
         } footer: {
             Text("from \(sourceName ?? preset.name) · \(preset.mediaKind)")
         }

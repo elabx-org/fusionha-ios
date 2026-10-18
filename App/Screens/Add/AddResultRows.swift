@@ -12,7 +12,7 @@ struct MetadataKeyNotice: View {
             Image(systemName: "key")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(Theme.miss)
-            (Text("\(feature) needs a \(provider == "tvdb" ? "TVDB" : "TMDB") key (free) — ")
+            (Text("\(feature) needs a \(provider == "tvdb" ? "TVDB" : "TMDB") key (free): ")
              + Text("add one in Settings › Metadata").fontWeight(.semibold).foregroundColor(Theme.txt)
              + Text("."))
                 .font(.system(size: 13))

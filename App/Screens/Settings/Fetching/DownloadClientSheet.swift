@@ -274,7 +274,7 @@ private struct DownloadClientForm: View {
         Picker(selection: value) {
             ForEach(sabPriorities, id: \.0) { Text($0.1).tag($0.0) }
         } label: {
-            FieldLabel(label: label, description: hint.map { "— \($0)" })
+            FieldLabel(label: label, description: hint)
         }
         .pickerStyle(.menu)
         .tint(Theme.mut)

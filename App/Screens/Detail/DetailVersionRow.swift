@@ -74,7 +74,7 @@ struct DetailVersionRow: View {
                     .accessibilityValue(open ? "Expanded" : "Collapsed")
                     sizeText(summary?.bytes ?? 0)
                     if canSearch {
-                        SearchActionButton(label: "\(detail.title) — \(name)", editionId: edition.id,
+                        SearchActionButton(label: "\(detail.title) · \(name)", editionId: edition.id,
                                            accessibility: "Search \(name)", size: 36, glyph: 15, bordered: true)
                     }
                 }

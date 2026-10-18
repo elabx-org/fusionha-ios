@@ -26,7 +26,7 @@ struct DetailVersionDetail: View {
             if let kind = edition.attentionKind {
                 DetailAttentionBanner(kind: kind, message: edition.attentionMessage ?? "", readOnly: readOnly,
                                       onRescan: { Task { await store.refresh(metadataOnly: false) } },
-                                      onSearch: { Task { await store.search(label: "\(detail.title) — \(name)", editionId: edition.id) } },
+                                      onSearch: { Task { await store.search(label: "\(detail.title) · \(name)", editionId: edition.id) } },
                                       onReplace: { Task { await store.replaceDead(edition) } },
                                       onManage: { store.manageFiles = ManageFilesTarget(versionIds: [edition.id]) })
             }
@@ -50,7 +50,7 @@ struct DetailVersionDetail: View {
         HStack(spacing: 8) {
             if canSearch {
                 HStack(spacing: 0) {
-                    SearchActionButton(label: "\(detail.title) — \(name)", editionId: edition.id,
+                    SearchActionButton(label: "\(detail.title) · \(name)", editionId: edition.id,
                                        accessibility: "Search \(name)", glyph: 15, title: "Search", framed: false)
                     Rectangle().fill(Theme.line).frame(width: 1, height: 22)
                     SearchModeMenu(detail: detail, edition: edition, width: 40, height: 44)
@@ -185,7 +185,7 @@ struct DetailVersionDetail: View {
                         .foregroundStyle(Theme.mut)
                     Spacer(minLength: 0)
                     if canSearch && !off {
-                        SearchActionButton(label: "\(detail.title) — \(name) · S\(selected.seasonNumber)",
+                        SearchActionButton(label: "\(detail.title) · \(name) · S\(selected.seasonNumber)",
                                            editionId: edition.id, season: selected.seasonNumber,
                                            accessibility: "Search \(name) — S\(selected.seasonNumber)",
                                            size: 44, glyph: 14)
@@ -235,7 +235,7 @@ struct DetailVersionDetail: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(off ? "Season \(season.seasonNumber) — not monitored, \(frac) held"
-                            : "Season \(season.seasonNumber) — \(frac)")
+                            : "Season \(season.seasonNumber) · \(frac)")
         .accessibilityAddTraits(pressed ? .isSelected : [])
     }
 

@@ -117,7 +117,7 @@ struct DetailMonitorBookmark: View {
         .buttonStyle(DetailPressStyle())
         .disabled(!(model.me?.can("edit") ?? true))
         .sensoryFeedback(.selection, trigger: on)
-        .accessibilityLabel(on ? "Monitored — tap to stop monitoring \(edition.label)" : "Not monitored — tap to monitor \(edition.label)")
+        .accessibilityLabel(on ? "Monitored. Tap to stop monitoring \(edition.label)" : "Not monitored. Tap to monitor \(edition.label)")
     }
 }
 

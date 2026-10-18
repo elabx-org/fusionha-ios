@@ -128,7 +128,7 @@ struct ActivityBlocklistTab: View {
             if recoverable > 0 {
                 HStack(spacing: 10) {
                     (Text("\(recoverable) dead-NZB").bold().foregroundColor(Theme.txt)
-                     + Text(" may have recovered — retry to re-check the source"))
+                     + Text(" may have recovered. Retry to re-check the source"))
                         .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
                     Spacer(minLength: 0)
                     ActAsyncButton(label: "Retry recoverable", kind: .amber, externalWorking: busy) {
@@ -272,7 +272,7 @@ struct ActivityBlocklistTab: View {
                 }
             }
             if entries.count == 1 {
-                toaster.show(search ? "Un-blocklisted — searching for a replacement" : "Removed from the blocklist", tone: .success)
+                toaster.show(search ? "Un-blocklisted, searching for a replacement" : "Removed from the blocklist", tone: .success)
             } else {
                 toaster.show("Removed \(ActFmt.plural(entries.count, "release")) from the blocklist", tone: .success)
             }

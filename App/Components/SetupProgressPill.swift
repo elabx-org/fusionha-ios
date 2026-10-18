@@ -183,7 +183,7 @@ struct SetupProgressPill: View {
             }
             .frame(width: ring, height: ring)
             .accessibilityElement()
-            .accessibilityLabel("\(fullTitle) — \(Int((primary.progressFraction * 100).rounded()))% complete")
+            .accessibilityLabel("\(fullTitle), \(Int((primary.progressFraction * 100).rounded()))% complete")
 
             Button {
                 progress.expanded.toggle()
@@ -205,7 +205,7 @@ struct SetupProgressPill: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("\(fullTitle) — \(open ? "collapse" : "expand") details")
+            .accessibilityLabel("\(fullTitle), \(open ? "collapse" : "expand") details")
 
             let counts = (primary.doneCount, primary.steps.count)
             Text("\(counts.0)/\(counts.1)")

@@ -149,7 +149,7 @@ struct PipelineHero: View {
                     .font(.system(size: 11)).foregroundStyle(Theme.dim)
                     .lineLimit(1)
             } else {
-                Text(hasPhaseWork ? "symlink jobs finish in seconds — no time ETA" : "waiting for a free download slot")
+                Text(hasPhaseWork ? "symlink jobs finish in seconds, so no time ETA" : "waiting for a free download slot")
                     .font(.system(size: 11)).italic().foregroundStyle(Theme.dim)
             }
         }

@@ -73,7 +73,7 @@ struct InteractiveSearchSheet: View {
                         }
                         if !scanning && !failed && rows.isEmpty {
                             if integrationsOff {
-                                Text("Real integrations are disabled — enable them in Settings to search indexers.")
+                                Text("Real integrations are disabled. Enable them in Settings to search indexers.")
                                     .font(.system(size: 13))
                                     .foregroundStyle(Theme.txt)
                                     .lineSpacing(3)

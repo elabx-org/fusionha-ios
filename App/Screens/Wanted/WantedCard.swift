@@ -89,7 +89,7 @@ struct WantedCardView: View {
         .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.line))
         .fixedSize()
-        .accessibilityLabel("\(edition.tier.chipLabel) — \(WantedLogic.stateLabel(edition.state))")
+        .accessibilityLabel("\(edition.tier.chipLabel) · \(WantedLogic.stateLabel(edition.state))")
     }
 
     private var detailRow: some View {
@@ -127,7 +127,7 @@ struct WantedCardView: View {
             if item.kind == .series {
                 Button { Task { await startGradual(label: "\(item.title) (missing only)", missingOnly: true) } } label: {
                     Text("Search missing only")
-                    Text("One at a time (~\(interval)s apart) in the background — just this title’s missing episodes.")
+                    Text("One at a time (~\(interval)s apart) in the background. Just this title’s missing episodes.")
                 }
                 Button { Task { await startGradual(label: item.title, missingOnly: false) } } label: {
                     Text("Search each episode")
@@ -136,7 +136,7 @@ struct WantedCardView: View {
             } else {
                 Button { run(label: "\(item.title) (missing only)", key: "title", missingOnly: true) } label: {
                     Text("Search missing only")
-                    Text("Just this title’s gaps — no upgrade re-checks.")
+                    Text("Just this title’s gaps. No upgrade re-checks.")
                 }
             }
         } label: {

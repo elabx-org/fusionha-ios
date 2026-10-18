@@ -147,7 +147,7 @@ private struct NamingFormatField: View {
 private struct NamingSeriesEditionNote: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Series editions always get their own **show folder**: `Show (Year) {edition-Black & White}/` — the folder Plex reads (**Plex Pass**; Jellyfin too).")
+            Text("Series editions always get their own **show folder**: `Show (Year) {edition-Black & White}/`, the folder Plex reads (**Plex Pass**; Jellyfin too).")
             Text("The token never goes in season folders or episode filenames; the Standard edition keeps its plain folder. Each edition tracks watch state **independently**; on clients without edition support they show as separate items, so give each its own **poster**. Existing editions in an older layout move only when you run **Rename files** on the title.")
         }
         .font(.system(size: 12.5))

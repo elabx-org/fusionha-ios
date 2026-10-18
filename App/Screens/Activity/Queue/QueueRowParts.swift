@@ -27,7 +27,7 @@ struct QueueMetaLine: View {
             }
             if showStatus && item.stalled {
                 sep
-                part { Text("no status from client — will fail soon").fontWeight(.semibold).foregroundStyle(Theme.miss) }
+                part { Text("no status from client, will fail soon").fontWeight(.semibold).foregroundStyle(Theme.miss) }
             } else if showStatus, let warning = item.warning {
                 sep
                 part { Text(warning).foregroundStyle(Theme.grab) }

@@ -71,8 +71,8 @@ struct SeasonsTab: View {
                     HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
                         Text(detail.episodeNumberingSource == "tvmaze"
-                             ? "Episode numbering may be off vs TVmaze — Review"
-                             : "TheTVDB renumbered this show — Review")
+                             ? "Episode numbering may be off vs TVmaze. Review"
+                             : "TheTVDB renumbered this show. Review")
                         Spacer(minLength: 0)
                     }
                     .font(.system(size: 13, weight: .semibold))

@@ -218,7 +218,7 @@ struct ConnectionsPanel: View {
         let mine = token.id == model.credentials?.tokenId
         confirm = FetchConfirm(
             title: "Revoke the “\(token.name)” token?",
-            message: mine ? "This app signs in with this token — revoking it signs this app out."
+            message: mine ? "This app signs in with this token. Revoking it signs this app out."
                 : "Anything using it will stop authenticating immediately.",
             action: "Revoke") {
             Task {

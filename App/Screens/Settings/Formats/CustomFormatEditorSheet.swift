@@ -53,7 +53,7 @@ struct CustomFormatEditorSheet: View {
             Form {
                 header
                 Section {
-                    Text("Matches when **every block** below is satisfied (AND). Within a block, **any one** condition matching is enough (OR) — a ★ **required** condition must always match. This mirrors Sonarr/Radarr exactly, but shows it.")
+                    Text("Matches when **every block** below is satisfied (AND). Within a block, **any one** condition matching is enough (OR). A ★ **required** condition must always match. This mirrors Sonarr/Radarr exactly, but shows it.")
                         .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
                 }
                 .listRowBackground(Theme.card)

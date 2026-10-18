@@ -214,7 +214,7 @@ struct SearchCFWarning: View {
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.miss)
                 .padding(.top, 1)
-            Text("Every release scored +0 — this version’s quality profile has no custom-format scores, so custom formats can’t rank or reject releases. Add scores in Custom Formats.")
+            Text("Every release scored +0. This version’s quality profile has no custom-format scores, so custom formats can’t rank or reject releases. Add scores in Custom Formats.")
                 .font(.system(size: 12.5))
                 .foregroundStyle(Theme.txt)
                 .lineSpacing(3)

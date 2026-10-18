@@ -167,8 +167,8 @@ struct DetailEpisodeTicks: View {
 
     private func accessibility(_ episode: Episode, kind: TickKind, now: Date) -> String {
         let st = statusText(episode, kind: kind, now: now)
-        if let versionLabel { return "\(code(episode)) · \(versionLabel) — \(st)" }
-        return "\(code(episode)) \(episode.title ?? "Episode \(episode.episodeNumber)") — \(st)"
+        if let versionLabel { return "\(code(episode)) · \(versionLabel) · \(st)" }
+        return "\(code(episode)) \(episode.title ?? "Episode \(episode.episodeNumber)") · \(st)"
     }
 
     private func tooltip(_ episode: Episode, kind: TickKind, now: Date) -> some View {
