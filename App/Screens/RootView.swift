@@ -103,6 +103,7 @@ private struct ShellPresentations: ViewModifier {
                 .presentationBackground(Theme.panel)
         }
         .sheet(isPresented: $model.showingAccount) { AccountSheet().presentationBackground(Theme.bg) }
+        .sheet(isPresented: $model.showingWatchlists) { WatchlistsSheet() }
         .sheet(item: $model.deleteTarget) { target in
             DeleteTitleDialog(target: target)
                 .presentationDetents([.height(320)])

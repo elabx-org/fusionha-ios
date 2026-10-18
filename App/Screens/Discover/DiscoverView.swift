@@ -266,6 +266,7 @@ struct DiscoverView: View {
 
     @ViewBuilder
     private var rails: some View {
+        LetterboxdRail(canAdd: canAdd, canRequest: canRequest)
         TrendingRail(kind: kind, canAdd: canAdd, canRequest: canRequest)
         TrailerRail(kind: kind, canAdd: canAdd)
             .id("trailers")

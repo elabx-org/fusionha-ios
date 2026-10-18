@@ -10,6 +10,7 @@ struct YouView: View {
     @State private var webPage: URL?
     @State private var showingMethods = false
     @State private var showingSessions = false
+    @State private var showingWatchlists = false
 
     private var me: Me? { model.me }
 
@@ -32,6 +33,8 @@ struct YouView: View {
                         .discoverReveal(index: 2, step: 0.05)
                     actionRow("Signed-in devices") { showingSessions = true }
                         .discoverReveal(index: 2, step: 0.05)
+                    actionRow("Watchlists & lists") { showingWatchlists = true }
+                        .discoverReveal(index: 2, step: 0.05)
                     actionRow("Reset cache & reload") { Task { await resetCache() } }
                         .discoverReveal(index: 3, step: 0.05)
                     row {
@@ -53,6 +56,7 @@ struct YouView: View {
             SignInMethodsSheet().presentationDetents([.large]).presentationBackground(Theme.panel)
         }
         .sheet(isPresented: $showingSessions) { AccountSessionsSheet() }
+        .sheet(isPresented: $showingWatchlists) { WatchlistsSheet() }
         .task(id: me?.id) {
             requestCount = (try? await model.client?.requests(status: nil).count) ?? 0
         }

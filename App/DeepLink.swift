@@ -4,8 +4,9 @@ import FusionhaKit
 /// `fusionha://` deep links from the widgets, the Live Activity and notifications:
 /// `activity`, `calendar`, `library`, `wanted`, `discover` switch tabs (with an
 /// optional sub-tab: `activity/indexers`, `discover/requests`), and `item/{id}`
-/// opens that title's detail sheet. `activity/queue?focus={id}&block=1` (from a
-/// held-fake push) also opens "Block release group?" on that download.
+/// opens that title's detail sheet; `account#watchlist` opens Watchlists & lists.
+/// `activity/queue?focus={id}&block=1` (from a held-fake push) also opens
+/// "Block release group?" on that download.
 ///
 /// A link is received at the app's root (`FusionhaApp`), which exists from the
 /// first frame of a cold launch, and kept in `pendingLink` until the shell is on
@@ -57,6 +58,13 @@ extension AppModel {
         case "item":
             guard let id = itemId(in: url), !requestScoped else { return }
             presentedItem = ItemRef(id: id)
+        case "account":
+            // `account#watchlist` (the web's `/account#watchlist`) or `account/watchlist`.
+            if url.fragment == "watchlist" || path.first == "watchlist" {
+                showingWatchlists = true
+            } else {
+                showingAccount = true
+            }
         default: break
         }
     }
@@ -72,6 +80,7 @@ extension AppModel {
         var closed = avatarCoverOpen
         if showingAdd { showingAdd = false; closed = true }
         if showingAccount { showingAccount = false; closed = true }
+        if showingWatchlists { showingWatchlists = false; closed = true }
         if deleteTarget != nil { deleteTarget = nil; closed = true }
         if let open = presentedItem, open.id != itemId { presentedItem = nil; closed = true }
         linkCloseTick += 1
