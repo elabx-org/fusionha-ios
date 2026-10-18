@@ -22,6 +22,7 @@ struct LibraryHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ShellTitleRow("Library") {
+                AddTitleButton()
                 GlassIconButton(systemName: "chart.bar.xaxis", label: "Library stats",
                                 dot: needsAttention ? Theme.miss : nil) { showingStats = true }
             }
