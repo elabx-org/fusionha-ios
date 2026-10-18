@@ -48,7 +48,7 @@ struct WatchlistCardHead: View {
 }
 
 /// Three numbers in a row: "Requested from Plex · Last checked · Next check".
-struct WatchlistStats: View {
+struct WatchlistStatsRow: View {
     let items: [(value: String, label: String)]
 
     var body: some View {

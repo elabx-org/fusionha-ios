@@ -40,7 +40,7 @@ struct LetterboxdDiarySection: View {
 
     @ViewBuilder
     private func onRows(_ diary: LetterboxdDiary, user: String) -> some View {
-        WatchlistStats(items: [
+        WatchlistStatsRow(items: [
             (value: "\(diary.requestedCount)", label: "Requested from diary"),
             (value: WatchlistTime.lastRun(diary.lastCheckedAt), label: "Last checked"),
             (value: WatchlistTime.until(diary.nextCheckAt), label: "Next check"),

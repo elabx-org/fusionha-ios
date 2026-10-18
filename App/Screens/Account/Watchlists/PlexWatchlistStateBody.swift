@@ -29,7 +29,7 @@ struct PlexWatchlistStateBody: View {
             signInButton("Sign in with Plex again")
         case .error:
             WatchlistAttention(lead: "Couldn’t check your watchlist. fusionha will retry.", rest: errorRest)
-            WatchlistStats(items: [
+            WatchlistStatsRow(items: [
                 (value: "\(read.requestedCount)", label: "Requested from watchlist"),
                 (value: WatchlistTime.lastRun(read.lastSuccessAt), label: "Last good check"),
                 (value: WatchlistTime.until(read.nextCheckAt), label: "Next try"),
@@ -75,7 +75,7 @@ struct PlexWatchlistActive: View {
         if checking {
             Label("Reading your watchlist from Plex…", systemImage: "hourglass").font(.footnote).foregroundStyle(Theme.mut)
         } else {
-            WatchlistStats(items: [
+            WatchlistStatsRow(items: [
                 (value: "\(read.requestedTotal)", label: "Requested from Plex"),
                 (value: WatchlistTime.lastRun(read.lastCheckedAt), label: "Last checked"),
                 (value: WatchlistTime.until(read.nextCheckAt), label: "Next check"),
