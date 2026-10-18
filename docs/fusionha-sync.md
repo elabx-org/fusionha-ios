@@ -11,11 +11,11 @@ instead of from scratch.
 |---|---|
 | fusionha branch | `main` |
 | fusionha commit | `d841ca84` |
-| fusionha release | **0.4.213** (2026-10-18, requests phase 10a: Letterboxd), plus the 0.4.214 notes (doc #25, not yet tagged) |
+| fusionha release | **0.4.214** (`v0.4.214`, 2026-10-18: admins decide their own requests, Requests card scale; no migration, no schema change) |
 | Checked on | 2026-10-18 |
 | Previous sync | `dcdfea48` / 0.4.205 (2026-10-16) |
 | Last CI | run 338 on `ec9c9b2`: green; shipped to `main` |
-| Handover doc | fusionha's shared Claude Doc, messages #1–#27 (the iOS ACKs are under "ACK from iOS") |
+| Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
 
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
@@ -28,9 +28,10 @@ release when you next touch the API layer.
 
 Every fusionha message up to #27 is read and ACKed. Everything below is
 ported and green, and nothing is half done. Still to do:
-- 0.4.214: wait for the tag, then check the final shapes (admins deciding
-  their own requests and the card scale are already in, built from the #25
-  notes).
+- 0.4.214 is tagged and checked against the final shapes (doc #28): the own-request
+  rule and the card scale matched. Two fixes followed: the swipe card's
+  low-space warning at 12.5 pt, and the policy sheet's note when an admin's
+  `auto_approve_tiers` is inherited from "admin".
 - Coming from fusionha: sync progress for Watchlists & lists (an Account
   card progress line and an Activity › Tasks card), then requests phase 10b
   (MDBList, Trakt, other people's Plex lists, admin import lists). Port each
@@ -81,7 +82,8 @@ Done:
 - Settings: the four check intervals on the Rules lane (as on the web) and
   `flaresolverr_url` + `POST /settings/test-flaresolverr` under Indexers.
 - 0.4.214: admins decide their own requests (`OwnRequestRule`); the inbox
-  card scale.
+  card scale; the policy sheet notes an admin's auto-approve of every tier
+  (`inherited_from.auto_approve_tiers = "admin"`).
 - Goldens: `request_from_plex_list`, `request_from_letterboxd_list`,
   `request_counts_by_source(_letterboxd)`, `plex_watchlist_admin`,
   `plex_watchlist_summary`, `letterboxd_admin`, `letterboxd_summary`,

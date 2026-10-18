@@ -36,7 +36,7 @@ struct SwipeCardView: View {
                 }
                 if let warning {
                     Text("\(warning) Swipe right again to approve anyway.")
-                        .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.txt)
+                        .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt)
                         .padding(8).frame(maxWidth: .infinity, alignment: .leading)
                         .actWash(Theme.miss, radius: 10, base: Theme.panel2)
                 }

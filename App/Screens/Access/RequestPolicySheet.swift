@@ -119,7 +119,9 @@ struct RequestPolicySheet: View {
     private func effectiveTiers(_ p: RequestPolicy) -> String {
         let tiers = p.effective?.allowedTiers
         let what = tiers.map { $0.isEmpty ? "any version" : $0.map(\.chipLabel).joined(separator: " and ") } ?? "any version"
+        // 0.4.214: an admin's own requests auto-approve every tier (inherited_from "admin").
         return "Today: \(what)" + (p.source("allowed_tiers").map { " · \($0)" } ?? "")
+            + (p.inheritedLayer("auto_approve_tiers") == "admin" ? " · Admin: every version approved automatically" : "")
     }
 
     // MARK: Load and save
