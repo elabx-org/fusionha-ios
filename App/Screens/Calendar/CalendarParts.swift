@@ -107,7 +107,7 @@ struct CalButtonStyle: ButtonStyle {
         switch variant {
         case .subtle: shape.fill(Theme.panel)
         case .ghost, .danger: shape.fill(Color.clear)
-        case .primary: shape.fill(Theme.fusion)
+        case .primary: shape.fill(Theme.primary)
         }
     }
 }

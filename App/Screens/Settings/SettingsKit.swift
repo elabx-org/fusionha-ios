@@ -589,7 +589,7 @@ struct WebButtonStyle: ButtonStyle {
             .contentShape(Capsule())
             .opacity(enabled ? (configuration.isPressed ? 0.75 : 1) : 0.5)
         switch variant {
-        case .primary: label.background(Theme.fusion, in: Capsule())
+        case .primary: label.background(Theme.primary, in: Capsule())
         case .ghost: label
         case .subtle, .danger: label.glassEffect(.regular.interactive(), in: Capsule())
         }
@@ -600,7 +600,7 @@ struct WebButtonStyle: ButtonStyle {
         case .subtle: return Theme.txt
         case .ghost: return Theme.mut
         case .danger: return Theme.danger
-        case .primary: return Theme.onPrimary
+        case .primary: return Theme.onAccent
         }
     }
 }

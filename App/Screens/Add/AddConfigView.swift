@@ -292,12 +292,12 @@ struct AddConfigView: View {
                 Button { Task { await add() } } label: {
                     ZStack(alignment: .leading) {
                         GeometryReader { geo in
-                            Rectangle().fill(Theme.onPrimary.opacity(0.18))
+                            Rectangle().fill(Theme.onAccent.opacity(0.18))
                                 .frame(width: geo.size.width * (phase == .done ? 1 : phase == .progress ? 0.9 : 0))
                         }
                         Text(done ? "✓ Added" : busy ? "Adding…" : "Add \(flow.isSeries ? "series" : "movie")")
                             .font(.system(size: 14.5, weight: .bold))
-                            .foregroundStyle(Theme.onPrimary)
+                            .foregroundStyle(Theme.onAccent)
                             .frame(maxWidth: .infinity)
                             .contentTransition(.opacity)
                     }
@@ -307,7 +307,7 @@ struct AddConfigView: View {
                             Theme.done
                         } else {
                             // The palette's primary, like every other main button.
-                            Theme.fusion
+                            Theme.primary
                         }
                     }
                     .clipShape(Capsule())

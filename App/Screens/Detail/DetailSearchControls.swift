@@ -268,7 +268,7 @@ struct AutoSearchFlashStrip: View {
                 .background(Theme.panel2)
                 .overlay(alignment: .bottomLeading) {
                     GeometryReader { geo in
-                        Theme.fusion
+                        Theme.primary
                             .frame(width: geo.size.width * sweep, height: 2)
                             .frame(maxHeight: .infinity, alignment: .bottom)
                     }

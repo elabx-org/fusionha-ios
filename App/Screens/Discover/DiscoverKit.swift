@@ -196,7 +196,7 @@ struct DiscoverButtonStyle: ButtonStyle {
             .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.5)
             .contentShape(Capsule())
         switch kind {
-        case .primary: label.background(Theme.fusion, in: Capsule())
+        case .primary: label.background(Theme.primary, in: Capsule())
         case .ghost: label
         case .subtle, .danger: label.glassEffect(.regular.interactive(), in: Capsule())
         }
@@ -204,7 +204,7 @@ struct DiscoverButtonStyle: ButtonStyle {
 
     private var foreground: Color {
         switch kind {
-        case .primary: return Theme.onPrimary
+        case .primary: return Theme.onAccent
         case .danger: return Theme.danger
         case .subtle, .ghost: return Theme.txt
         }

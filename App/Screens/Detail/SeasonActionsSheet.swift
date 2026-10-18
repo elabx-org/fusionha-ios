@@ -81,9 +81,8 @@ struct SeasonActionsSheet: View {
             HStack(spacing: 12) {
                 Image(systemName: icon)
                     .font(.system(size: 15))
-                    .foregroundStyle(Theme.txt)
+                    .foregroundStyle(Theme.mut)
                     .frame(width: 34, height: 34)
-                    .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 9))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
                     if let sub { Text(sub).font(.system(size: 12)).foregroundStyle(Theme.mut) }

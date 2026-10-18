@@ -199,9 +199,9 @@ struct IssueAudiencePicker: View {
     private func chip(_ text: String, on: Bool, isDefault: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(text).font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(on ? Theme.onPrimary : Theme.txt)
+                .foregroundStyle(on ? Theme.onAccent : Theme.txt)
                 .padding(.horizontal, 10).frame(height: 28)
-                .background(on ? AnyShapeStyle(Theme.fusion) : AnyShapeStyle(Theme.panel2), in: Capsule())
+                .background(on ? AnyShapeStyle(Theme.primary) : AnyShapeStyle(Theme.panel2), in: Capsule())
                 .overlay(Capsule().strokeBorder(isDefault ? Theme.mut : .clear, style: StrokeStyle(lineWidth: 1, dash: [3, 3])))
         }
         .buttonStyle(.plain)

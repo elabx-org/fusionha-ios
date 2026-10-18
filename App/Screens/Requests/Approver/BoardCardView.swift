@@ -138,7 +138,7 @@ struct BoardRequesters: View {
                     HStack(spacing: -6) {
                         ForEach(Array(people.prefix(3).enumerated()), id: \.offset) { _, p in
                             Text(String(p.displayName.prefix(1)).uppercased())
-                                .font(.system(size: 9, weight: .bold)).foregroundStyle(Theme.onPrimary)
+                                .font(.system(size: 9, weight: .bold)).foregroundStyle(Theme.onAccent)
                                 .frame(width: 18, height: 18)
                                 .background(Theme.i1, in: Circle())
                                 .overlay(Circle().strokeBorder(Theme.card, lineWidth: 1.5))

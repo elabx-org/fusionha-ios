@@ -34,7 +34,7 @@ struct ActButtonStyle: ButtonStyle {
             .background(alignment: .leading) { fillBar }
         Group {
             switch kind {
-            case .primary: label.background(Theme.fusion, in: Capsule())
+            case .primary: label.background(Theme.primary, in: Capsule())
             case .amber: label.background(Theme.miss, in: Capsule())
             case .ghost: label
             case .subtle, .danger, .warn: label.glassEffect(.regular.interactive(), in: Capsule())
@@ -64,7 +64,7 @@ struct ActButtonStyle: ButtonStyle {
 
     private var foreground: Color {
         switch kind {
-        case .primary: return Theme.onPrimary
+        case .primary: return Theme.onAccent
         case .subtle: return Theme.txt
         case .ghost: return Theme.mut
         case .danger: return Theme.danger
@@ -232,11 +232,11 @@ struct ActCheckbox: View {
     let checked: Bool
     var body: some View {
         RoundedRectangle(cornerRadius: 5, style: .continuous)
-            .fill(checked ? AnyShapeStyle(Theme.fusion) : AnyShapeStyle(Color.clear))
+            .fill(checked ? AnyShapeStyle(Theme.primary) : AnyShapeStyle(Color.clear))
             .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
                 .strokeBorder(checked ? Color.clear : Theme.mut, lineWidth: 1.5))
             .overlay {
-                if checked { Image(systemName: "checkmark").font(.system(size: 10, weight: .heavy)).foregroundStyle(Theme.onPrimary) }
+                if checked { Image(systemName: "checkmark").font(.system(size: 10, weight: .heavy)).foregroundStyle(Theme.onAccent) }
             }
             .frame(width: 18, height: 18)
             .accessibilityLabel(checked ? "Selected" : "Not selected")

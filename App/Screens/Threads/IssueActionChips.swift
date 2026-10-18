@@ -92,9 +92,9 @@ struct IssueActionChips: View {
         Button { Task { await action() } } label: {
             Label(label, systemImage: symbol)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(primary ? Theme.onPrimary : (danger ? Theme.danger : Theme.txt))
+                .foregroundStyle(primary ? Theme.onAccent : (danger ? Theme.danger : Theme.txt))
                 .padding(.horizontal, 12).frame(height: 36)
-                .background(primary ? AnyShapeStyle(Theme.fusion) : AnyShapeStyle(Theme.panel2), in: Capsule())
+                .background(primary ? AnyShapeStyle(Theme.primary) : AnyShapeStyle(Theme.panel2), in: Capsule())
         }
         .buttonStyle(.plain)
         .disabled(off != nil || working)

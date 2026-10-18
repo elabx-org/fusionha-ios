@@ -221,7 +221,7 @@ private struct BackendCard: View {
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Theme.bg)
                 .padding(.horizontal, 9).padding(.vertical, 3)
-                .background(Theme.fusion, in: Capsule())
+                .background(Theme.primary, in: Capsule())
         case .retained:
             Text("Retained")
                 .font(.system(size: 11, weight: .semibold))

@@ -362,7 +362,6 @@ private struct LoginPreview: View {
             Circle()
                 .fill(Theme.fusion)
                 .frame(width: dot, height: dot)
-                .shadow(color: Theme.i2.opacity(0.5), radius: 8, y: 6)
         }
         if showWordmark {
             Text("FUSIONHA")
@@ -493,9 +492,9 @@ private struct BackgroundTile: View {
                 if selected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 9, weight: .black))
-                        .foregroundStyle(Color(hex: 0x06121A))
+                        .foregroundStyle(Theme.onAccent)
                         .frame(width: 20, height: 20)
-                        .background(Theme.fusion, in: Circle())
+                        .background(Theme.primary, in: Circle())
                         .padding(8)
                 }
             }

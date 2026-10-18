@@ -30,7 +30,6 @@ struct LibraryStatsSheet: View {
                 HStack(spacing: 8) {
                     Circle().fill(model.libraryError == nil ? Theme.done : Theme.danger)
                         .frame(width: 8, height: 8)
-                        .shadow(color: (model.libraryError == nil ? Theme.done : Theme.danger).opacity(0.8), radius: 3)
                     Text(model.libraryError == nil ? "All systems connected" : "Backend offline")
                         .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.mut)
                 }

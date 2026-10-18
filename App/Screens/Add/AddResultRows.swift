@@ -85,9 +85,9 @@ struct AddTile: View {
                             Button(action: pick) {
                                 Image(systemName: "plus")
                                     .font(.system(size: 14, weight: .bold))
-                                    .foregroundStyle(Theme.onPrimary)
+                                    .foregroundStyle(Theme.onAccent)
                                     .frame(width: 30, height: 30)
-                                    .background(Theme.fusion, in: Circle())
+                                    .background(Theme.primary, in: Circle())
                             }
                             .accessibilityLabel("Add \(result.title)")
                         }
@@ -146,10 +146,10 @@ struct AddListRow: View {
                 } else {
                     Text("Add")
                         .font(.system(size: 12.5, weight: .bold))
-                        .foregroundStyle(Theme.onPrimary)
+                        .foregroundStyle(Theme.onAccent)
                         .padding(.horizontal, 14)
                         .frame(height: 30)
-                        .background(Theme.fusion, in: Capsule())
+                        .background(Theme.primary, in: Capsule())
                 }
             }
             .buttonStyle(PressScaleStyle())

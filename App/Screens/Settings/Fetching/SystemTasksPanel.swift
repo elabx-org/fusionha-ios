@@ -336,7 +336,7 @@ private struct ShimmerTrack: View {
                 if motionOff {
                     Capsule().fill(Theme.grab.opacity(0.55))
                 } else {
-                    Capsule().fill(Theme.fusion)
+                    Capsule().fill(Theme.primary)
                         .frame(width: geo.size.width * 0.45)
                         .offset(x: geo.size.width * 0.45 * (phase ? 1.6 : -0.6))
                         .animation(.easeInOut(duration: 1.1).repeatForever(autoreverses: false), value: phase)

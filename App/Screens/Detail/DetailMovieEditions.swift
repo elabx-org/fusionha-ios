@@ -48,14 +48,14 @@ struct MovieEditionsTab: View {
                             }
                         } label: {
                             HStack(spacing: 6) {
-                                if searchingAll { DetailSpinner(size: 13, color: Theme.onPrimary) } else { Image(systemName: "magnifyingglass") }
+                                if searchingAll { DetailSpinner(size: 13, color: Theme.onAccent) } else { Image(systemName: "magnifyingglass") }
                                 Text("Search all monitored")
                             }
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Theme.onPrimary)
+                            .foregroundStyle(Theme.onAccent)
                             .padding(.horizontal, 14)
                             .frame(height: 36)
-                            .background(Theme.fusion, in: Capsule())
+                            .background(Theme.primary, in: Capsule())
                             .overlay(Capsule().strokeBorder(.white.opacity(0.7), lineWidth: 1)
                                 .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .center)))
                         }

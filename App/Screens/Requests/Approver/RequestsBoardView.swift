@@ -71,9 +71,9 @@ struct RequestsBoardView: View {
         let on = board.userId == id
         return Button { board.userId = on && id != nil ? nil : id } label: {
             Text(name).font(.system(size: 12.5, weight: .semibold))
-                .foregroundStyle(on ? Theme.onPrimary : Theme.txt)
+                .foregroundStyle(on ? Theme.onAccent : Theme.txt)
                 .padding(.horizontal, 11).frame(height: 30)
-                .background(on ? AnyShapeStyle(Theme.fusion) : AnyShapeStyle(Theme.panel2), in: Capsule())
+                .background(on ? AnyShapeStyle(Theme.primary) : AnyShapeStyle(Theme.panel2), in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(on ? .isSelected : [])
