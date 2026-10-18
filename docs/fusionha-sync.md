@@ -10,10 +10,12 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `dcdfea48` |
-| fusionha release | **0.4.205** (2026-10-16, Live Activity pushes + queue pause) |
-| Checked on | 2026-10-16 |
-| Previous sync | `5d1ea13b` / 0.4.203 (2026-10-16) |
+| fusionha commit | `d841ca84` |
+| fusionha release | **0.4.213** (2026-10-18, requests phase 10a: Letterboxd), plus the 0.4.214 notes (doc #25, not yet tagged) |
+| Checked on | 2026-10-18 |
+| Previous sync | `dcdfea48` / 0.4.205 (2026-10-16) |
+| Last CI | run 338 on `ec9c9b2`: green; shipped to `main` |
+| Handover doc | fusionha's shared Claude Doc, messages #1–#27 (the iOS ACKs are under "ACK from iOS") |
 
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
@@ -21,6 +23,35 @@ is the spec.
 `Packages/FusionhaKit/openapi.json` still reports `info.version` 0.2.0: the
 catch-ups added models and calls by hand. Re-pin it from a tagged fusionha
 release when you next touch the API layer.
+
+## Where the cloud session stopped (2026-10-18)
+
+Every fusionha message up to #27 is read and ACKed. Everything below is
+ported and green, and nothing is half done. Still to do:
+- 0.4.214: wait for the tag, then check the final shapes (admins deciding
+  their own requests and the card scale are already in, built from the #25
+  notes).
+- Coming from fusionha: sync progress for Watchlists & lists (an Account
+  card progress line and an Activity › Tasks card), then requests phase 10b
+  (MDBList, Trakt, other people's Plex lists, admin import lists). Port each
+  one when its shapes are posted.
+- The open items under the two 0.4.209–0.4.214 sections below.
+- Live Activity posters: the 4 KB state budget limits sharpness on
+  Feather builds without the App Group (see the Live Activity notes in
+  `docs/ui-plan.md` and `LiveActivityPosters` in
+  `App/LiveActivityController.swift`).
+- The redesign migration of the remaining screens (task "Migrate every
+  screen to the redesign").
+
+## 0.4.209–0.4.213: Account › Watchlists & lists (the user's own side)
+
+Done: `/me/plex-watchlist` (+ sources, sync), `/me/letterboxd`,
+`/me/request-sources` (+ preview, sync), the CSV/ZIP import (202 then
+poll `GET …/preview/{token}`, commit) and `/me/suggestions`.
+`App/Screens/Account/Watchlists/` has every read-model state, and
+`fusionha://account#watchlist` opens it. Discover gets the "From your
+Letterboxd" rail (`LetterboxdRail.swift`). Goldens are in
+`WatchlistSourcesTests`.
 
 ## 0.4.209–0.4.214: automatic request sources (requests, approver, admin)
 
