@@ -56,7 +56,7 @@ struct ManageFileRowView: View {
     private func tag(_ text: String, _ symbol: String, _ color: Color) -> some View {
         Label(text, systemImage: symbol)
             .labelStyle(.titleAndIcon)
-            .font(.system(size: 10.5, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(color)
             .lineLimit(1)
     }

@@ -88,7 +88,7 @@ struct MICompareGrid: View {
                     Text(r.current).foregroundStyle(Theme.txt)
                     HStack(spacing: 3) {
                         if r.tone != .same {
-                            Image(systemName: r.tone == .up ? "arrow.up" : "arrow.down").font(.system(size: 10, weight: .bold))
+                            Image(systemName: r.tone == .up ? "arrow.up" : "arrow.down").font(.system(size: 11, weight: .bold))
                         }
                         Text(r.incoming)
                     }

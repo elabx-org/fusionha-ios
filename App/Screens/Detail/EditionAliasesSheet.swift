@@ -30,7 +30,7 @@ struct EditionAliasesSheet: View {
                 Section {
                     DialogHeading(symbol: "tag", title: "Edition aliases",
                                   subtitle: "Teach \(detail.title) to recognise a title-specific release term as one of its tracked versions.")
-                    (Text("Some releases name a cut with a term unique to this title (for example a foreign retitle of a director’s cut). An alias here lets those releases match the right edition — ")
+                    (Text("Some releases name a cut with a term unique to this title (for example a foreign retitle of a director’s cut). An alias here lets those releases match the right edition: ")
                         + Text("only on this title").bold() + Text(", never any other."))
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.mut)
@@ -73,7 +73,7 @@ struct EditionAliasesSheet: View {
                     Text(alias.edition).foregroundStyle(Theme.edition)
                     if alias.guarded == true {
                         Text("guarded")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundStyle(Theme.miss)
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .overlay(Capsule().strokeBorder(Theme.miss.opacity(0.5)))

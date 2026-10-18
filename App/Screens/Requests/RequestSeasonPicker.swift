@@ -53,7 +53,7 @@ struct RequestSeasonPicker: View {
                         Text(label).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
                         Spacer(minLength: 0)
                         Text("\(season.episodeCount) eps").font(.system(size: 11)).foregroundStyle(Theme.dim)
-                        Image(systemName: "chevron.right").font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.mut)
+                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
                             .rotationEffect(.degrees(open ? 90 : 0))
                     }
                     .padding(.trailing, 13)

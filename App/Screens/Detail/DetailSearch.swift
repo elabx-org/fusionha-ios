@@ -73,7 +73,7 @@ struct InteractiveSearchSheet: View {
                         }
                         if !scanning && !failed && rows.isEmpty {
                             if integrationsOff {
-                                Text("Real integrations are disabled — enable them in Settings to search indexers.")
+                                Text("Real integrations are disabled. Enable them in Settings to search indexers.")
                                     .font(.system(size: 13))
                                     .foregroundStyle(Theme.txt)
                                     .lineSpacing(3)
@@ -170,7 +170,7 @@ struct InteractiveSearchSheet: View {
                             Text(ed.label)
                             if searchedAt[ed.id] != nil {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 10, weight: .heavy))
+                                    .font(.system(size: 11, weight: .heavy))
                                     .foregroundStyle(active ? DetailTokens.badgeText : Theme.done)
                             }
                         }
@@ -198,6 +198,9 @@ struct InteractiveSearchSheet: View {
                     .foregroundStyle(Theme.mut)
                     .detailSpinIf(inFlight.contains(editionId) && results[editionId] != nil)
                     .frame(width: 22, height: 22)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, -11).padding(.vertical, -11)
             }
             .buttonStyle(.glass)
             .buttonBorderShape(.circle)
@@ -222,7 +225,7 @@ struct InteractiveSearchSheet: View {
                             .opacity(0.85)
                     }
                 }
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(at != nil ? Theme.done : Theme.mut)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)

@@ -221,7 +221,7 @@ struct KindGlyph: View {
 struct AnimeChip: View {
     var body: some View {
         Text("Anime")
-            .font(.system(size: 10, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(Theme.anime)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)

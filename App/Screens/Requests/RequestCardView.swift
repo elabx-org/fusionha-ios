@@ -255,7 +255,7 @@ struct RequestPersonChip: View {
     var body: some View {
         HStack(spacing: 5) {
             Text(String(name.prefix(1)).uppercased())
-                .font(.system(size: 9, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Theme.onPrimary)
                 .frame(width: 18, height: 18)
                 .background(Theme.fusion, in: Circle())

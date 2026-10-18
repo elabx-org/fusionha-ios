@@ -156,7 +156,7 @@ private struct TimelineRow: View {
                     Text(style.label).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
                     if let trigger = triggerLabel(entry.grabTrigger) {
                         Label(trigger, systemImage: triggerIcon(entry.grabTrigger))
-                            .font(.system(size: 10.5, weight: .semibold))
+                            .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(Theme.mut)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 1)
@@ -165,7 +165,7 @@ private struct TimelineRow: View {
                     if detail.editions.count > 1, let eid = entry.editionId,
                        let edition = detail.editions.first(where: { $0.id == eid }) {
                         Text(edition.label)
-                            .font(.system(size: 10.5, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(Theme.edition)
                             .padding(.horizontal, 7)
                             .padding(.vertical, 1)
@@ -196,7 +196,7 @@ private struct TimelineRow: View {
                 Text(DetailText.relative(entry.createdAt)).font(.system(size: 12)).foregroundStyle(Theme.mut)
                 if let date = DetailText.instant(entry.createdAt) {
                     Text(date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits)))
-                        .font(.system(size: 10.5, design: .monospaced))
+                        .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(Theme.dim)
                 }
             }
@@ -236,13 +236,13 @@ private struct HistoryLifecycle: View {
                                     let style = eventStyle(entry.eventType)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(style.label).font(.system(size: 11.5, weight: .bold)).foregroundStyle(style.color)
-                                        Text(DetailText.relative(entry.createdAt)).font(.system(size: 10.5)).foregroundStyle(Theme.dim)
+                                        Text(DetailText.relative(entry.createdAt)).font(.system(size: 11)).foregroundStyle(Theme.dim)
                                     }
                                     .padding(.horizontal, 9)
                                     .padding(.vertical, 6)
                                     .background(style.color.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
                                     if entry.id != lane.last?.id {
-                                        Image(systemName: "chevron.right").font(.system(size: 9)).foregroundStyle(Theme.dim)
+                                        Image(systemName: "chevron.right").font(.system(size: 11)).foregroundStyle(Theme.dim)
                                     }
                                 }
                             }
@@ -276,7 +276,7 @@ private struct HistoryInsights: View {
         let failures = entries.filter { $0.eventType.contains("FAILED") }.count
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("NET CF SCORE GAINED").font(.system(size: 10, weight: .bold)).tracking(0.6).foregroundStyle(Theme.dim)
+                Text("NET CF SCORE GAINED").font(.system(size: 11, weight: .bold)).tracking(0.6).foregroundStyle(Theme.dim)
                 Text("\(net >= 0 ? "+" : "")\(net)")
                     .font(.system(size: 30, weight: .heavy, design: .monospaced))
                     .foregroundStyle(net > 0 ? Theme.done : Theme.txt)
@@ -299,7 +299,7 @@ private struct HistoryInsights: View {
     private func stat(_ label: String, _ value: Int, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("\(value)").font(.system(size: 20, weight: .heavy, design: .monospaced)).foregroundStyle(color)
-            Text(label.uppercased()).font(.system(size: 10, weight: .bold)).tracking(0.5).foregroundStyle(Theme.dim)
+            Text(label.uppercased()).font(.system(size: 11, weight: .bold)).tracking(0.5).foregroundStyle(Theme.dim)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -384,7 +384,7 @@ private struct RunRow: View {
                         .lineLimit(2)
                     if let trigger = triggerLabel(run.trigger) {
                         Text(trigger)
-                            .font(.system(size: 10.5, weight: .semibold))
+                            .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(Theme.mut)
                             .padding(.horizontal, 6).padding(.vertical, 1)
                             .overlay(Capsule().strokeBorder(Theme.line))

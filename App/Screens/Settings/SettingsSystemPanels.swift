@@ -153,7 +153,7 @@ struct ExperimentalSettingsPanel: View {
                     Toggle(isOn: store.boolBinding("experimental_search_improvements")) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("EXPERIMENTAL")
-                                .font(.system(size: 9, weight: .heavy))
+                                .font(.system(size: 11, weight: .heavy))
                                 .tracking(0.5)
                                 .foregroundStyle(Theme.miss)
                                 .padding(.horizontal, 6)
@@ -211,10 +211,10 @@ struct AboutSettingsPanel: View {
         ("TVmaze", "tvmaze.com", "https://www.tvmaze.com",
          "Episode air dates & times.", "Data licensed under CC BY-SA."),
         ("Sonarr", "sonarr.tv", "https://sonarr.tv",
-         "fusionha is deeply inspired by Sonarr — its series management, quality profiles and upgrade semantics shaped this app, and fusionha emulates the Sonarr v3 API.",
+         "fusionha is deeply inspired by Sonarr. Its series management, quality profiles and upgrade semantics shaped this app, and fusionha emulates the Sonarr v3 API.",
          "Open source (GPL-3.0) — not affiliated."),
         ("Radarr", "radarr.video", "https://radarr.video",
-         "fusionha is deeply inspired by Radarr — its movie management and custom-format engine are the blueprint fusionha follows, and fusionha emulates the Radarr v3 API.",
+         "fusionha is deeply inspired by Radarr. Its movie management and custom-format engine are the blueprint fusionha follows, and fusionha emulates the Radarr v3 API.",
          "Open source (GPL-3.0) — not affiliated."),
         ("TRaSH Guides", "trash-guides.info", "https://trash-guides.info",
          "Custom formats, quality profiles and size definitions imported from the community guides.", "CC BY-SA 4.0."),
@@ -302,7 +302,7 @@ struct AboutSettingsPanel: View {
                         Circle().fill(Theme.done).frame(width: 6, height: 6)
                         Text("Up to date")
                     }
-                    .font(.system(size: 10.5, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.done)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 3)
@@ -311,9 +311,9 @@ struct AboutSettingsPanel: View {
                     Button { copyInfo() } label: {
                         HStack(spacing: 4) {
                             Text(copied ? "copied" : "copy info")
-                            if copied { Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)) }
+                            if copied { Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)) }
                         }
-                        .font(.system(size: 10.5, design: .monospaced))
+                        .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(Theme.dim)
                         .padding(.horizontal, 9)
                         .padding(.vertical, 3)
@@ -350,7 +350,7 @@ struct AboutSettingsPanel: View {
                 let cell = cells[i]
                 VStack(alignment: .leading, spacing: 3) {
                     Text(cell.0.uppercased())
-                        .font(.system(size: 9.5, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .tracking(0.57)
                         .foregroundStyle(Theme.dim)
                     Text(cell.1)
@@ -472,7 +472,7 @@ struct MaintenanceSettingsPanel: View {
         await store.load()
         await model.loadMe()
         await model.loadLibrary()
-        withAnimation(.easeOut(duration: 0.2)) { done = full ? "Full reset done — reloaded." : "Cache cleared — reloaded." }
+        withAnimation(.easeOut(duration: 0.2)) { done = full ? "Full reset done, reloaded." : "Cache cleared, reloaded." }
     }
 }
 
@@ -544,7 +544,7 @@ struct DiscoverSettingsPanel: View {
             }
         } header: {
             HStack(alignment: .firstTextBaseline) {
-                Text(title).font(.system(size: 12.5, weight: .bold)).textCase(.uppercase).foregroundStyle(Theme.mut)
+                Text(title).font(.system(size: 12.5, weight: .bold)).textCase(nil).foregroundStyle(Theme.mut)
                 Spacer()
                 Text(sub).font(.system(size: 11.5)).textCase(nil).foregroundStyle(Theme.dim)
             }
@@ -578,7 +578,7 @@ struct DiscoverSettingsPanel: View {
             try await client.json("DELETE", "/api/v1/discover/ignores/\(row.id)")
             SettingsMotion.perform(motionOff) { rows?.removeAll { $0.id == row.id } }
         } catch {
-            store.saveError = "Couldn’t restore \(row["name"]?.string ?? "it") — \(error.localizedDescription)"
+            store.saveError = "Couldn’t restore \(row["name"]?.string ?? "it"): \(error.localizedDescription)"
         }
     }
 }

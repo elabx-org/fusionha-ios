@@ -55,6 +55,9 @@ struct SeasonsTab: View {
                             .rotationEffect(.degrees(allOpen ? 90 : 0))
                             .foregroundStyle(Theme.mut)
                             .frame(width: 36, height: 36)
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                            .padding(.horizontal, -4).padding(.vertical, -4)
                     }
                     .buttonStyle(DetailPressStyle())
                     .accessibilityLabel(allOpen ? "Collapse all seasons" : "Expand all seasons")
@@ -68,8 +71,8 @@ struct SeasonsTab: View {
                     HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
                         Text(detail.episodeNumberingSource == "tvmaze"
-                             ? "Episode numbering may be off vs TVmaze — Review"
-                             : "TheTVDB renumbered this show — Review")
+                             ? "Episode numbering may be off vs TVmaze. Review"
+                             : "TheTVDB renumbered this show. Review")
                         Spacer(minLength: 0)
                     }
                     .font(.system(size: 13, weight: .semibold))
@@ -202,6 +205,9 @@ struct SeasonCard: View {
                             .foregroundStyle(Theme.txt)
                             .frame(width: 40, height: 40)
                             .contentShape(Circle())
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
+                            .padding(.horizontal, -2).padding(.vertical, -2)
                     }
                     .buttonStyle(DetailPressStyle())
                     .glassEffect(.regular.interactive(), in: .circle)

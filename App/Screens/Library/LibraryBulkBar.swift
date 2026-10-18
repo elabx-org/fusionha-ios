@@ -139,7 +139,7 @@ struct BulkActionBar: View {
         HStack(spacing: 6) {
             Image(systemName: symbol).font(.system(size: 12, weight: .semibold))
             Text(title).font(.system(size: 12.5, weight: .semibold))
-            if menu { Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold)).foregroundStyle(Theme.mut) }
+            if menu { Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut) }
         }
         .foregroundStyle(danger ? Theme.danger : Theme.txt)
         .padding(.horizontal, 11)

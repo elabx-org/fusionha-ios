@@ -241,7 +241,7 @@ struct EditItemSheet: View {
                         } label: {
                             HStack(spacing: 4) {
                                 Text(tag.label)
-                                Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
+                                Image(systemName: "xmark").font(.system(size: 11, weight: .bold))
                             }
                             .font(.system(size: 12.5, weight: .semibold))
                             .foregroundStyle(Theme.txt)

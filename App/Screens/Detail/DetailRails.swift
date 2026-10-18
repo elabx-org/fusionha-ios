@@ -147,7 +147,7 @@ struct DetailRailStack: View {
                                     .multilineTextAlignment(.center)
                                 if let character = person.character {
                                     Text(character)
-                                        .font(.system(size: 10.5))
+                                        .font(.system(size: 11))
                                         .foregroundStyle(Theme.mut)
                                         .lineLimit(2)
                                         .multilineTextAlignment(.center)

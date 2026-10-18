@@ -51,6 +51,9 @@ struct WantedGradualStrip: View {
                     .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Theme.danger.opacity(0.3)))
                     .frame(width: 40, height: 40)
                     .contentShape(Rectangle())
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, -2).padding(.vertical, -2)
             }
             .buttonStyle(.plain)
             .disabled(stopping)

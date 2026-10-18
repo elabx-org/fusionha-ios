@@ -118,8 +118,9 @@ struct CollectionRingBadge: View {
                 Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.done)
             } else {
                 Text(verbatim: "\(owned)/\(total)")
-                    .font(.system(size: 9, weight: .bold).monospacedDigit())
+                    .font(.system(size: 11, weight: .bold).monospacedDigit())
                     .foregroundStyle(Theme.txt)
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
         }
         .padding(1.75)

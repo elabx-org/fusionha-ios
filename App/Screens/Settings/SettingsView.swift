@@ -205,7 +205,7 @@ struct SettingsView: View {
         Button { toggle(section.id) } label: {
             HStack(spacing: 0) {
                 Text(section.label.uppercased())
-                    .font(.system(size: 9.5, weight: .heavy))
+                    .font(.system(size: 11, weight: .heavy))
                     .tracking(0.57)
                     .foregroundStyle(Theme.dim)
                 Spacer(minLength: 0)

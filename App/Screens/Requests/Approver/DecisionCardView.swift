@@ -53,7 +53,7 @@ struct DecisionCardView: View {
                     RequestPersonChip(name: name, prefix: "Requested by")
                     if let badge = TriageFacts.trackBadge(triage, role: request.requester?.role) {
                         Text(badge.label)
-                            .font(.system(size: 10.5, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(badge.trusted ? Theme.done : Theme.mut)
                             .padding(.horizontal, 7).padding(.vertical, 2)
                             .background((badge.trusted ? Theme.done : Theme.mut).opacity(0.14), in: Capsule())

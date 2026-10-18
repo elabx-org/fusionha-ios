@@ -103,7 +103,7 @@ extension AddTitleSheet {
             if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Theme.mut)
                         .frame(width: 24, height: 24)
                         .background(Theme.txt.opacity(0.1), in: Circle())
@@ -148,7 +148,7 @@ extension AddTitleSheet {
                 .panel(Theme.panel2, radius: 8)
             }
             HStack(spacing: 5) {
-                Text("VIA").font(.system(size: 10, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
+                Text("VIA").font(.system(size: 11, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
                 ProviderMark(provider: source == .tvdb ? "tvdb" : "tmdb", size: 10)
             }
             .padding(.horizontal, 8)
@@ -167,6 +167,9 @@ extension AddTitleSheet {
                 .foregroundStyle(gridView == grid ? Theme.txt : Theme.mut)
                 .frame(width: 26, height: 22)
                 .background(gridView == grid ? Theme.card : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+                .padding(.horizontal, -9).padding(.vertical, -11)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(grid ? "Grid view" : "List view")

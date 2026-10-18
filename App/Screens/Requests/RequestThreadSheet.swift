@@ -165,6 +165,9 @@ struct RequestThreadComposer: View {
                     .foregroundStyle(Theme.onAccent)
                     .frame(width: 36, height: 36)
                     .background(Theme.primary, in: Circle())
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, -4).padding(.vertical, -4)
             }
             .buttonStyle(.plain)
             .disabled(sending || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)

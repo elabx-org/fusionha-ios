@@ -31,7 +31,7 @@ struct ApproveDialog: View {
                             .background(Theme.grab.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                         VStack(alignment: .leading, spacing: 3) {
                             Text("Approve request").font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
-                            Text("Enable the editions to add — the requested tier is locked on.")
+                            Text("Enable the editions to add. The requested tier is locked on.")
                                 .font(.system(size: 13)).foregroundStyle(Theme.mut)
                         }
                     }

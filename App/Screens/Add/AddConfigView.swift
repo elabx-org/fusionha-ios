@@ -424,9 +424,9 @@ private struct LinkLabelStyle: LabelStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: 4) {
-            if leading { configuration.icon.font(.system(size: 10, weight: .bold)) }
+            if leading { configuration.icon.font(.system(size: 11, weight: .bold)) }
             configuration.title
-            if !leading { configuration.icon.font(.system(size: 10, weight: .bold)) }
+            if !leading { configuration.icon.font(.system(size: 11, weight: .bold)) }
         }
         .frame(minHeight: 44)
         .contentShape(Rectangle())

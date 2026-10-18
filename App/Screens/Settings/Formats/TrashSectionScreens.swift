@@ -62,7 +62,7 @@ struct TrashConflictsScreen: View {
 
     private func specLine(_ label: String, _ text: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(label).font(.system(size: 10.5, weight: .heavy)).foregroundStyle(Theme.dim)
+            Text(label).font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.dim)
             MonoText(text, color: color)
         }
     }

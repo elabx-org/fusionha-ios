@@ -123,7 +123,7 @@ struct SearchModeMenu: View {
 
     var body: some View {
         let name = detail.versionName(edition)
-        let scope = "\(detail.title) — \(name)"
+        let scope = "\(detail.title) · \(name)"
         let interval = store.seasonInterval
         Menu {
             Button {

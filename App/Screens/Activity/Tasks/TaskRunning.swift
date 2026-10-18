@@ -60,7 +60,7 @@ struct SearchRunCard: View {
                 ActFlow(spacing: 9, lineSpacing: 4) {
                     Text(run.name).font(.system(size: 14.5, weight: .heavy)).foregroundStyle(Theme.txt)
                     Text(stuck ? "⏸ STALLED?" : "● RUNNING")
-                        .font(.system(size: 9.5, weight: .heavy))
+                        .font(.system(size: 11, weight: .heavy))
                         .tracking(0.4)
                         .foregroundStyle(tone)
                         .padding(.horizontal, 8)
@@ -176,7 +176,7 @@ struct SearchRunCard: View {
                                 let uhd = TasksLogic.isUhd(group.tier)
                                 let color = uhd ? QualityTier.uhd.color : QualityTier.hd.color
                                 Text(uhd ? "UHD·4K" : "HD·1080p")
-                                    .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                                    .font(.system(size: 11, weight: .heavy, design: .monospaced))
                                     .foregroundStyle(color)
                                     .padding(.horizontal, 5).padding(.vertical, 1)
                                     .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(color.opacity(0.4)))

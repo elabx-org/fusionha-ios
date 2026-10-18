@@ -175,7 +175,7 @@ struct MediaVersionsSettingsPanel: View {
                     }
                     .onMove(perform: move)
                 } footer: {
-                    Text("An edition composes with the tier — e.g. {Director's Cut · 4K} and {Theatrical · 1080p} are separate versions on one title. Aliases are the spellings the parser folds to this canonical name. Drag ≡ to reorder.")
+                    Text("An edition composes with the tier, e.g. {Director's Cut · 4K} and {Theatrical · 1080p} are separate versions on one title. Aliases are the spellings the parser folds to this canonical name. Drag ≡ to reorder.")
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.mut)
                 }
@@ -243,7 +243,7 @@ struct MediaVersionsSettingsPanel: View {
 
     private func badge(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 9.5, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(Theme.mut)
             .padding(.horizontal, 6)
             .padding(.vertical, 1)

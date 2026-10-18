@@ -73,7 +73,7 @@ struct NotificationsPanel: View {
                     }
                 }
                 .fetchReveal(2)
-                Text("Browsers you enabled push on. Manage them from the web app on that device — a device you remove or that expires disappears here automatically.")
+                Text("Browsers you enabled push on. Manage them from the web app on that device. A device you remove or that expires disappears here automatically.")
                     .font(.system(size: 11.5)).foregroundStyle(Theme.dim)
                     .padding(.top, 8)
                     .fixedSize(horizontal: false, vertical: true)
@@ -395,7 +395,7 @@ struct NotificationsPanel: View {
     private func sec(_ title: String) -> some View {
         HStack(spacing: 10) {
             Text(title.uppercased())
-                .font(.system(size: 10.5, weight: .heavy))
+                .font(.system(size: 11, weight: .heavy))
                 .tracking(0.6)
                 .foregroundStyle(Theme.dim)
                 .fixedSize()
@@ -437,7 +437,7 @@ struct NotificationsPanel: View {
             apnsStatus = try await client.apnsStatus()
         } catch APIError.http(404, _) {
             apnsStatus = ApnsStatus(configured: false, enabled: false, topic: "", environment: "", missing: [],
-                                    message: "This fusionha server doesn't support native iOS push yet — update it.")
+                                    message: "This fusionha server doesn't support native iOS push yet. Update it.")
         } catch {
             apnsStatus = ApnsStatus(configured: false, enabled: false, topic: "", environment: "", missing: [],
                                     message: "Couldn't check the server's push setup (\(error.settingsMessage)).")
@@ -464,7 +464,7 @@ struct NotificationsPanel: View {
                 let failure = r.devices?.first { !$0.ok }?.detail
                 let message = r.sent == 0
                     ? "This device isn't registered yet."
-                    : r.delivered > 0 ? "Sent — check your notifications" : (failure ?? "Not delivered")
+                    : r.delivered > 0 ? "Sent. Check your notifications" : (failure ?? "Not delivered")
                 testResult = ConnectionTestResult(ok: r.delivered > 0, message: message)
                 toaster.show(message, tone: r.delivered > 0 ? .success : .error)
             } catch {

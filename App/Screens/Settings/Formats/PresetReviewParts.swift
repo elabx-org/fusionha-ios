@@ -11,7 +11,7 @@ struct PresetLadderSection: View {
         Section {
             if let group = ladder.cutoffGroup {
                 LabeledContent("Upgrade Until (cutoff)") { Text("\(group.name) · group").foregroundStyle(Theme.i2) }
-                Text("the whole group is the ceiling — \(group.qualities.map { DetailText.quality($0) }.joined(separator: " · ")) all meet it")
+                Text("the whole group is the ceiling: \(group.qualities.map { DetailText.quality($0) }.joined(separator: " · ")) all meet it")
                     .font(.system(size: 12)).foregroundStyle(Theme.mut)
             } else {
                 LabeledContent("Upgrade Until (cutoff)") { Text(DetailText.quality(ladder.cutoff)).foregroundStyle(Theme.i2) }
@@ -60,7 +60,7 @@ struct PresetLadderSection: View {
     }
 
     private var cutMark: some View {
-        Text("UPGRADE UNTIL").font(.system(size: 9.5, weight: .heavy)).foregroundStyle(Theme.i2)
+        Text("UPGRADE UNTIL").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.i2)
     }
 }
 
@@ -87,7 +87,7 @@ struct PresetTargetSection: View {
                 .pickerStyle(.segmented)
                 let uses = target.inUse ?? 0
                 Text(replaceChoice
-                     ? "Rebuilds “\(target.name)” — \(uses) item\(uses == 1 ? "" : "s") use it and keep pointing at it."
+                     ? "Rebuilds “\(target.name)”: \(uses) item\(uses == 1 ? "" : "s") use it and keep pointing at it."
                      : "Leaves “\(target.name)” untouched and creates a second profile.")
                     .font(.system(size: 12)).foregroundStyle(Theme.mut)
                 if replaceChoice {

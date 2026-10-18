@@ -60,7 +60,7 @@ final class SettingsStore {
                 if !fresh.isEmpty { values.merge(fresh) { _, new in new } }
             } catch {
                 for (k, v) in before { values[k] = v }
-                saveError = "Couldn’t save — \(error.localizedDescription)"
+                saveError = "Couldn’t save: \(error.localizedDescription)"
             }
         }
     }

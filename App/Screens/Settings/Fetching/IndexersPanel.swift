@@ -55,7 +55,7 @@ struct IndexersPanel: View {
 
             if !loaded || error != nil { FetchLoading(error: error) }
             if loaded, indexers.isEmpty, error == nil {
-                FetchEmpty(text: "No indexers yet — add a Newznab or Torznab indexer, or let Prowlarr sync them in.")
+                FetchEmpty(text: "No indexers yet. Add a Newznab or Torznab indexer, or let Prowlarr sync them in.")
             }
             VStack(spacing: 12) {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, metric in

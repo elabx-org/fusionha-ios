@@ -99,6 +99,9 @@ struct PreviewHero: View {
                 .background(.ultraThinMaterial, in: Circle())
                 .overlay(Circle().strokeBorder(Theme.line))
                 .contentShape(Circle())
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+                .padding(.horizontal, -3).padding(.vertical, -3)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
@@ -159,14 +162,14 @@ struct PreviewHero: View {
             }
         case .cert(let cert):
             Text(cert)
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .padding(.horizontal, 6).padding(.vertical, 2)
                 .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.line))
         }
     }
 }
 
-/// The hero status chip: clock icon + mono uppercase status, toned by meaning.
+/// The hero status chip: clock icon + mono status, toned by meaning.
 struct StatusToneChip: View {
     let status: String
 
@@ -185,7 +188,7 @@ struct StatusToneChip: View {
         let t = tone
         HStack(spacing: 5) {
             Image(systemName: "clock").font(.system(size: 11, weight: .semibold))
-            Text(status.uppercased()).font(.system(size: 10, weight: .heavy, design: .monospaced)).tracking(0.4)
+            Text(status).font(.system(size: 11, weight: .heavy, design: .monospaced))
         }
         .foregroundStyle(t.fg)
         .padding(.horizontal, 10).padding(.vertical, 6)

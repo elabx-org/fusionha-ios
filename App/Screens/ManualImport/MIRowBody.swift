@@ -27,7 +27,7 @@ struct MIRowBody: View {
     private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
-                .font(.system(size: 10.5, weight: .heavy))
+                .font(.system(size: 11, weight: .heavy))
                 .tracking(0.6)
                 .foregroundStyle(Theme.dim)
             content()

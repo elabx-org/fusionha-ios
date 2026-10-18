@@ -65,7 +65,7 @@ struct QueueStageRailView: View {
                 switch node.state {
                 case .done:
                     Circle().fill(Theme.done.opacity(0.22))
-                    Image(systemName: "checkmark").font(.system(size: 10, weight: .heavy)).foregroundStyle(Theme.done)
+                    Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.done)
                 case .fail:
                     Circle().fill(Theme.danger.opacity(0.22))
                     Image(systemName: "xmark").font(.system(size: 9, weight: .heavy)).foregroundStyle(Theme.danger)

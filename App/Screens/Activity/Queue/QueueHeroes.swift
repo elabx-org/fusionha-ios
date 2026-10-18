@@ -135,7 +135,7 @@ struct PipelineHero: View {
                             }
                             if active {
                                 Text(QueueLogic.heroStages[i]).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.txt)
-                                Text("\(dist[i])").font(.system(size: 10, weight: .bold).monospacedDigit()).foregroundStyle(Theme.bg)
+                                Text("\(dist[i])").font(.system(size: 11, weight: .bold).monospacedDigit()).foregroundStyle(Theme.bg)
                                     .padding(.horizontal, 5).background(Theme.grab, in: Capsule())
                             }
                         }
@@ -149,7 +149,7 @@ struct PipelineHero: View {
                     .font(.system(size: 11)).foregroundStyle(Theme.dim)
                     .lineLimit(1)
             } else {
-                Text(hasPhaseWork ? "symlink jobs finish in seconds — no time ETA" : "waiting for a free download slot")
+                Text(hasPhaseWork ? "symlink jobs finish in seconds, so no time ETA" : "waiting for a free download slot")
                     .font(.system(size: 11)).italic().foregroundStyle(Theme.dim)
             }
         }

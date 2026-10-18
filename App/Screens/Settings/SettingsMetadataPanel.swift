@@ -191,7 +191,7 @@ private struct HybridPrecedenceRows: View {
                             HStack(spacing: 5) {
                                 ProviderMark(provider: source, size: 14)
                                 if index == 0 {
-                                    Text("PRIMARY").font(.system(size: 8.5, weight: .heavy)).foregroundStyle(Theme.i2)
+                                    Text("PRIMARY").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.i2)
                                 }
                             }
                             .font(.system(size: 12, weight: .semibold))

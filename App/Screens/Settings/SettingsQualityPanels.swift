@@ -107,7 +107,7 @@ struct DefaultProfilesSettingsPanel: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt)
                 Text(tag)
-                    .font(.system(size: 9, weight: .heavy))
+                    .font(.system(size: 11, weight: .heavy))
                     .foregroundStyle(tagColor)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
@@ -264,7 +264,6 @@ struct ReleaseFiltersSettingsPanel: View {
                 Circle().fill(color).frame(width: 7, height: 7)
                 Text(required ? "Required terms" : "Rejected terms")
                     .font(.system(size: 12.5, weight: .bold))
-                    .textCase(.uppercase)
                     .foregroundStyle(Theme.mut)
                 Spacer()
                 Text(required ? "release must match at least one" : "release must not match any")
@@ -287,7 +286,7 @@ struct ReleaseFiltersSettingsPanel: View {
                 .lineLimit(1)
             if isRegex(term) {
                 Text("regex")
-                    .font(.system(size: 9.5, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.edition)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
@@ -326,7 +325,6 @@ struct ReleaseFiltersSettingsPanel: View {
                 Circle().fill(Theme.i2).frame(width: 7, height: 7)
                 Text("Test a release title")
                     .font(.system(size: 12.5, weight: .bold))
-                    .textCase(.uppercase)
                     .foregroundStyle(Theme.mut)
             }
         }

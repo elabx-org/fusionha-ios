@@ -95,7 +95,7 @@ struct QualityLadderMoveButtons: View {
 struct QualityLadderCutoffMark: View {
     var body: some View {
         Text("UPGRADE UNTIL")
-            .font(.system(size: 9, weight: .heavy))
+            .font(.system(size: 11, weight: .heavy))
             .foregroundStyle(Theme.done)
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(Theme.done.opacity(0.14), in: Capsule())

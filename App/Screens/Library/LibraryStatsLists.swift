@@ -142,7 +142,7 @@ struct StatsAttentionList: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 HStack(spacing: 9) {
                                     Text(ix.name).font(.system(size: 11.5, weight: .heavy)).foregroundStyle(Theme.txt)
-                                    Text(ix.retryHint()).font(.system(size: 10, weight: .heavy).monospacedDigit())
+                                    Text(ix.retryHint()).font(.system(size: 11, weight: .heavy).monospacedDigit())
                                         .foregroundStyle(tint)
                                 }
                                 if let reason = ix.reason {
@@ -217,7 +217,7 @@ struct StatsAttentionList: View {
 
     private func chip(_ text: String, color: Color, fill: Color = .clear) -> some View {
         Text(text)
-            .font(.system(size: 9, weight: .heavy))
+            .font(.system(size: 11, weight: .heavy))
             .foregroundStyle(color)
             .padding(.horizontal, 6)
             .padding(.vertical, 1.5)

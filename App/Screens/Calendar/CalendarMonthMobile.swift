@@ -30,7 +30,7 @@ struct MonthMobileView: View {
             LazyVGrid(columns: columns, spacing: 3) {
                 ForEach(CalendarMath.weekdayHeaders(firstDay: firstDay), id: \.self) { day in
                     Text(String(day.prefix(1)))
-                        .font(.system(size: 10, weight: .heavy))
+                        .font(.system(size: 11, weight: .heavy))
                         .tracking(0.6)
                         .foregroundStyle(Theme.mut)
                         .padding(.bottom, 6)
@@ -86,7 +86,7 @@ private struct MonthMobileCell: View {
                 }
                 .frame(height: 6)
                 Text(entries.isEmpty ? " " : "\(entries.count)")
-                    .font(.system(size: 9.5, weight: .bold).monospacedDigit())
+                    .font(.system(size: 11, weight: .bold).monospacedDigit())
                     .foregroundStyle(Theme.dim)
             }
             .frame(maxWidth: .infinity, minHeight: 56)

@@ -238,7 +238,7 @@ struct RoleBadge: View {
             Circle().fill(tint).frame(width: 6, height: 6)
             Text(me.accountRoleName ?? "No role")
         }
-        .font(.system(size: 10.5, weight: .bold))
+        .font(.system(size: 11, weight: .bold))
         .foregroundStyle(tint)
         .padding(.horizontal, 9)
         .padding(.vertical, 3)

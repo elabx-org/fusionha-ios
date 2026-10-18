@@ -33,7 +33,7 @@ struct CfSourceBadge: View {
     var body: some View {
         if let tint {
             Text(source)
-                .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                .font(.system(size: 11, weight: .heavy, design: .monospaced))
                 .foregroundStyle(tint)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 1.5)
@@ -59,7 +59,7 @@ struct CfKindTag: View {
     var body: some View {
         if let tag = CFLibrary.kindTag(kind) {
             Text(tag)
-                .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                .font(.system(size: 11, weight: .heavy, design: .monospaced))
                 .foregroundStyle(color)
                 .padding(.horizontal, 5)
                 .padding(.vertical, 1.5)
@@ -87,7 +87,7 @@ struct CfScoreChip: View {
     var body: some View {
         HStack(spacing: 4) {
             Text(name).lineLimit(1)
-            Text(CFLibrary.score(score)).font(.system(size: 10.5, weight: .bold).monospacedDigit())
+            Text(CFLibrary.score(score)).font(.system(size: 11, weight: .bold).monospacedDigit())
         }
         .font(.system(size: 11, weight: .semibold))
         .foregroundStyle(score < 0 ? Theme.danger : Theme.done)

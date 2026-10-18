@@ -52,7 +52,7 @@ struct ImportResumeCard: View {
     private func tally(_ n: Int, _ label: String, _ color: Color) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(LibraryImportRules.grouped(n)).font(.system(size: 17, weight: .heavy).monospacedDigit()).foregroundStyle(color)
-            Text(label).font(.system(size: 10.5, weight: .semibold)).foregroundStyle(Theme.mut).lineLimit(1).minimumScaleFactor(0.8)
+            Text(label).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut).lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

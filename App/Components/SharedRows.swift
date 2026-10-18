@@ -14,7 +14,7 @@ struct TierComboLabel: View {
             if hasHD && has4K { Text("·").foregroundStyle(Theme.mut) }
             if has4K { Text("4K").foregroundStyle(Theme.grab) }
         }
-        .font(.system(size: 10, weight: .bold))
+        .font(.system(size: 11, weight: .bold))
         .padding(.horizontal, 7)
         .padding(.vertical, 2)
         .background(Theme.panel2, in: Capsule())

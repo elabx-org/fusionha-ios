@@ -116,7 +116,7 @@ struct QualityDefinitionsSettingsPanel: View {
                 Text(saveError).font(.footnote).foregroundStyle(Theme.danger)
             }
         } footer: {
-            Text("Min / preferred / max are **MB per runtime-minute**. The decision engine rejects a release outside **[min, max]** and uses **preferred** to break ties. Dragging max to the end of the axis means **∞** — no upper bound.")
+            Text("Min / preferred / max are **MB per runtime-minute**. The decision engine rejects a release outside **[min, max]** and uses **preferred** to break ties. Dragging max to the end of the axis means **∞**, no upper bound.")
                 .font(.system(size: 13)).foregroundStyle(Theme.dim)
         }
         .listRowBackground(Theme.card)

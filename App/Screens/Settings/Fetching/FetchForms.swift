@@ -24,7 +24,7 @@ struct FetchTestResultLine: View {
                         .foregroundStyle(Theme.done)
                     if let version = result.version {
                         Text("\(clientLabel ?? "Client") \(version)")
-                            .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundStyle(Theme.done)
                             .padding(.horizontal, 6).padding(.vertical, 1)
                             .background(Theme.done.opacity(0.14), in: RoundedRectangle(cornerRadius: 5))

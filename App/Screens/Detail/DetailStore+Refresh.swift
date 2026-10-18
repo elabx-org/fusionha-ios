@@ -61,7 +61,7 @@ extension DetailStore {
         }
         let unresolved = (summary.flagged ?? 0) + (summary.dangling ?? 0)
         if unresolved > 0 {
-            clauses.append("\(unresolved) \(unresolved == 1 ? "file" : "files") couldn't be resolved on the last scan — none removed yet (confirming over the safety window).")
+            clauses.append("\(unresolved) \(unresolved == 1 ? "file" : "files") couldn't be resolved on the last scan. None removed yet (confirming over the safety window).")
             variant = .warning
         }
         var changes: [String] = []

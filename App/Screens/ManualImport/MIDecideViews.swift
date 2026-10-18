@@ -50,7 +50,7 @@ struct MIFindingChip: View {
         HStack(spacing: 4) {
             if let icon = finding.icon {
                 Image(systemName: icon == .swap ? "arrow.left.arrow.right" : icon == .redirect ? "arrow.turn.down.right" : "exclamationmark.triangle")
-                    .font(.system(size: 10.5, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
             }
             Text(finding.text).lineLimit(1)
         }
@@ -196,7 +196,7 @@ struct MIHeldDecision: View {
                     HStack(spacing: 6) {
                         Text(o.label).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
                         if o.recommended {
-                            Text("Recommended").font(.system(size: 10.5, weight: .bold)).foregroundStyle(Theme.done)
+                            Text("Recommended").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.done)
                         }
                     }
                     Text(o.detail).font(.system(size: 12)).foregroundStyle(Theme.mut).fixedSize(horizontal: false, vertical: true)

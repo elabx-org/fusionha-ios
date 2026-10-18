@@ -30,7 +30,7 @@ struct DownloadClientsPanel: View {
             }
             .padding(.bottom, 14)
             if loaded, clients.isEmpty, error == nil {
-                FetchEmpty(text: "No download clients yet — add SABnzbd or qBittorrent to start grabbing.")
+                FetchEmpty(text: "No download clients yet. Add SABnzbd or qBittorrent to start grabbing.")
                     .padding(.bottom, 14)
             }
             Button("+ Add client") { adding = true }.buttonStyle(.web())

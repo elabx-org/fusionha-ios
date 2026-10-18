@@ -232,6 +232,9 @@ struct DiscoverIconButton: View {
                 .foregroundStyle(tint == Theme.mut ? Theme.txt : tint)
                 .frame(width: 32, height: 32)
                 .contentShape(Circle())
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+                .padding(.horizontal, -6).padding(.vertical, -6)
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive(), in: Circle())

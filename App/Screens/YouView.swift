@@ -142,7 +142,7 @@ struct YouView: View {
                 .padding(.top, 4)
             HStack(spacing: 5) {
                 Circle().fill(fg).frame(width: 6, height: 6)
-                Text(roleLabel).font(.system(size: 10.5, weight: .bold))
+                Text(roleLabel).font(.system(size: 11, weight: .bold))
             }
             .foregroundStyle(fg)
             .padding(.horizontal, 9).padding(.vertical, 3)

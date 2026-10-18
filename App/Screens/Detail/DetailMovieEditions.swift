@@ -110,11 +110,14 @@ struct DetailMonitorBookmark: View {
                 .foregroundStyle(on ? Theme.txt : Theme.dim)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: 26, height: 26)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+                .padding(.horizontal, -9).padding(.vertical, -9)
         }
         .buttonStyle(DetailPressStyle())
         .disabled(!(model.me?.can("edit") ?? true))
         .sensoryFeedback(.selection, trigger: on)
-        .accessibilityLabel(on ? "Monitored — tap to stop monitoring \(edition.label)" : "Not monitored — tap to monitor \(edition.label)")
+        .accessibilityLabel(on ? "Monitored. Tap to stop monitoring \(edition.label)" : "Not monitored. Tap to monitor \(edition.label)")
     }
 }
 

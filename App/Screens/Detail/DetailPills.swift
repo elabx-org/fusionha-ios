@@ -96,10 +96,10 @@ struct DetailStatePill: View {
             case .part(let text): Text("◐ " + text)
             case .want: Text("○ Wanted")
             case .soon:
-                Image(systemName: "clock").font(.system(size: 10, weight: .semibold)).detailPulse(low: 0.4, high: 1, period: 2)
+                Image(systemName: "clock").font(.system(size: 11, weight: .semibold)).detailPulse(low: 0.4, high: 1, period: 2)
                 Text("Upcoming")
             case .upgrading:
-                Image(systemName: "arrow.up").font(.system(size: 10, weight: .bold))
+                Image(systemName: "arrow.up").font(.system(size: 11, weight: .bold))
                 Text("Upgrading")
             }
         }
@@ -122,7 +122,7 @@ struct DetailQualityChip: View {
     var body: some View {
         let color = DetailTokens.tier(tier)
         Text(DetailText.quality(quality))
-            .font(.system(size: 10, weight: .bold, design: .monospaced))
+            .font(.system(size: 11, weight: .bold, design: .monospaced))
             .foregroundStyle(color)
             .lineLimit(1)
             .padding(.horizontal, 8)
@@ -136,7 +136,7 @@ struct DetailVersionTag: View {
     let text: String
     var body: some View {
         Text(text)
-            .font(.system(size: 10, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(Theme.mut)
             .lineLimit(1)
             .padding(.horizontal, 7)

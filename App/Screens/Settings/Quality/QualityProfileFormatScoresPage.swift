@@ -65,7 +65,7 @@ struct QualityProfileFormatScoreRow: View {
                         .buttonStyle(.borderless)
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(Theme.i2)
-                        .accessibilityLabel("Overridden score for \(format.name) — tap to hand it back")
+                        .accessibilityLabel("Overridden score for \(format.name). Tap to hand it back")
                         .accessibilityHint("Your score — syncs leave it alone.")
                 }
             }

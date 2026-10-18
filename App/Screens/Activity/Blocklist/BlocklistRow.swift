@@ -31,22 +31,22 @@ struct BlocklistRowView: View {
                             Text(ep).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut).lineLimit(1)
                         }
                         HStack(spacing: 4) {
-                            Image(systemName: cat.icon).font(.system(size: 9, weight: .bold))
+                            Image(systemName: cat.icon).font(.system(size: 11, weight: .bold))
                             Text(cat.label)
                         }
-                        .font(.system(size: 10.5, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(cat.color)
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(cat.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
                         if dupes > 1 {
-                            Text("×\(dupes)").font(.system(size: 10.5, weight: .bold, design: .monospaced)).foregroundStyle(Theme.mut)
+                            Text("×\(dupes)").font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(Theme.mut)
                         }
                     }
                     if showReasons, let reason = entry.reason {
                         Text(reason).font(.system(size: 11)).foregroundStyle(Theme.mut)
                     } else {
                         Text(entry.sourceTitle ?? entry.title)
-                            .font(.system(size: 10.5, design: .monospaced))
+                            .font(.system(size: 11, design: .monospaced))
                             .foregroundStyle(Theme.mut)
                             .lineLimit(1)
                             .truncationMode(.middle)
@@ -56,7 +56,7 @@ struct BlocklistRowView: View {
                         if let size = entry.size { ActMonoChip(text: ActFmt.bytes(size)) }
                         let meta = [entry.indexer, ActFmt.protocolLabel(entry.protocol)].compactMap { $0 }.joined(separator: " · ")
                         if !meta.isEmpty {
-                            Text(meta).font(.system(size: 10, design: .monospaced)).foregroundStyle(Theme.dim)
+                            Text(meta).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim)
                         }
                     }
                 }
@@ -98,7 +98,7 @@ struct BlocklistRowView: View {
         VStack(alignment: .leading, spacing: 6) {
             if let reason = entry.reason {
                 Text(reason).font(.system(size: 12)).foregroundStyle(Theme.txt)
-                Text(reason).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.mut)
+                Text(reason).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.mut)
                     .padding(6).frame(maxWidth: .infinity, alignment: .leading)
                     .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 6))
             }
@@ -111,7 +111,7 @@ struct BlocklistRowView: View {
             }
             if let guid = entry.guid {
                 HStack(spacing: 6) {
-                    Text(guid).font(.system(size: 10, design: .monospaced)).foregroundStyle(Theme.dim).lineLimit(1).truncationMode(.middle)
+                    Text(guid).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim).lineLimit(1).truncationMode(.middle)
                     Button {
                         UIPasteboard.general.string = guid
                         toaster.show("GUID copied")

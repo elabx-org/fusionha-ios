@@ -29,8 +29,7 @@ struct HistoryRow: View {
                 }
                 Text(entry.eventLabel)
                     .font(.system(size: 11, weight: .bold))
-                    .tracking(0.6)
-                    .textCase(.uppercase)
+                    .textCase(nil)
                     .foregroundStyle(color)
                 // A HELD step names its hold in the server's shared words (0.4.203).
                 if let held = entry.held {
@@ -48,7 +47,7 @@ struct HistoryRow: View {
                     HStack(spacing: 5) {
                         ForEach(chips, id: \.self) { chip in
                             Text(chip.label)
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(Theme.mut)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)

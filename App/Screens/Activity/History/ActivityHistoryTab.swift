@@ -193,11 +193,11 @@ struct ActivityHistoryTab: View {
                 }
                 ActFlow(spacing: 6, lineSpacing: 3) {
                     if let src = entry.sourceTitle {
-                        Text(src).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.mut).lineLimit(1).truncationMode(.middle)
+                        Text(src).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.mut).lineLimit(1).truncationMode(.middle)
                     }
                     if let q = entry.quality { ActQualityChip(quality: q) }
-                    if let size = entry.size { Text(ActFmt.bytes(size)).font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.dim) }
-                    if let cf = entry.cfScore { Text("CF \(cf)").font(.system(size: 10.5, weight: .bold, design: .monospaced)).foregroundStyle(Theme.done) }
+                    if let size = entry.size { Text(ActFmt.bytes(size)).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim) }
+                    if let cf = entry.cfScore { Text("CF \(cf)").font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(Theme.done) }
                 }
             }
             .padding(.horizontal, 16)

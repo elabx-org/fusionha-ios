@@ -24,14 +24,14 @@ struct EpisodeStatusChip: View {
                     .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.edition.opacity(0.65), lineWidth: 1.5))
                 Text("↑").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.edition)
                 if let target = episode.download(for: edition.id)?.releaseQuality {
-                    Text(DetailText.quality(target)).font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(Theme.edition)
+                    Text(DetailText.quality(target)).font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(Theme.edition)
                 }
             }
         case .downloading:
             DownloadPill(download: episode.download(for: edition.id))
         case .stuck:
             Text("⚠ STUCK")
-                .font(.system(size: 10, weight: .heavy))
+                .font(.system(size: 11, weight: .heavy))
                 .foregroundStyle(Theme.stuck)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)
@@ -39,7 +39,7 @@ struct EpisodeStatusChip: View {
                 .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.stuck.opacity(0.55), lineWidth: 1.5))
         case .missing:
             Text("missing")
-                .font(.system(size: 10.5, weight: .bold))
+                .font(.system(size: 11.5, weight: .bold))
                 .foregroundStyle(Theme.danger.mix(0.85, Theme.pole))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2)
@@ -47,7 +47,7 @@ struct EpisodeStatusChip: View {
                     .strokeBorder(Theme.danger.opacity(0.55), style: StrokeStyle(lineWidth: 1.5, dash: [3, 2])))
         case .soon:
             HStack(spacing: 3) {
-                Image(systemName: "clock").font(.system(size: 10))
+                Image(systemName: "clock").font(.system(size: 11))
                 Text("soon")
             }
             .font(.system(size: 11, weight: .semibold))
@@ -57,11 +57,11 @@ struct EpisodeStatusChip: View {
 
     private func marker(_ text: String, _ color: Color) -> some View {
         Text(text)
-            .font(.system(size: 8, weight: .heavy))
+            .font(.system(size: 11, weight: .heavy))
             .foregroundStyle(Theme.bg)
-            .frame(width: 11, height: 11)
+            .frame(width: 15, height: 15)
             .background(color, in: Circle())
-            .offset(x: 4, y: -4)
+            .offset(x: 6, y: -6)
     }
 }
 
@@ -77,9 +77,9 @@ struct DownloadPill: View {
             HStack(spacing: 5) {
                 DetailSpinner(size: 10, color: Theme.grab, period: 0.9)
                 Text("DOWNLOADING")
-                Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold))
+                Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
             }
-            .font(.system(size: 10, weight: .heavy))
+            .font(.system(size: 11, weight: .heavy))
             .tracking(0.4)
             .foregroundStyle(Theme.grab.mix(0.88, Theme.pole))
             .padding(.horizontal, 7)

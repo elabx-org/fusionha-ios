@@ -104,6 +104,9 @@ struct TrailerCard: View {
                             .frame(width: 30, height: 30)
                             .background(Theme.scrim.opacity(0.6),
                                         in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                                        .frame(minWidth: 44, minHeight: 44)
+                                        .contentShape(Rectangle())
+                                        .padding(.horizontal, -7).padding(.vertical, -7)
                     }
                     .buttonStyle(.plain)
                     .padding(8)

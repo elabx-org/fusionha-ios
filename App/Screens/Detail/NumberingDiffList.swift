@@ -33,12 +33,12 @@ struct NumberingDiffList: View {
         let unparseable = preview.unparseable ?? []
         let phantoms = preview.removedPhantoms ?? []
         if !relinked.isEmpty {
-            FileList(heading: "\(relinked.count) \(relinked.count == 1 ? "file" : "files") will be re-linked to the corrected numbering — no re-download, no bytes moved.",
+            FileList(heading: "\(relinked.count) \(relinked.count == 1 ? "file" : "files") will be re-linked to the corrected numbering. No re-download, no bytes moved.",
                      lines: relinked.map(\.path), tint: Theme.mut)
         }
         if !unparseable.isEmpty {
             FileList(heading: "\(unparseable.count) \(unparseable.count == 1 ? "file" : "files") couldn't be matched to a corrected slot — flagged for manual assignment, never guessed or dropped:",
-                     lines: unparseable.map { "\($0.path) — \($0.reason ?? "")" }, tint: Theme.miss)
+                     lines: unparseable.map { "\($0.path): \($0.reason ?? "")" }, tint: Theme.miss)
         }
         if !phantoms.isEmpty {
             Text("\(phantoms.count) phantom \(phantoms.count == 1 ? "episode" : "episodes") with no files will be removed.")
@@ -62,7 +62,7 @@ private struct NumberingRowView: View {
     var body: some View {
         HStack(spacing: 8) {
             Text(NumberingCopy.kindLabel(row.kind))
-                .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                .font(.system(size: 11, weight: .heavy, design: .monospaced))
                 .foregroundStyle(tint)
                 .padding(.horizontal, 7).padding(.vertical, 3)
                 .background(tint.opacity(0.14), in: Capsule())

@@ -176,10 +176,10 @@ struct ActMonoChip: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            if let icon { Image(systemName: icon).font(.system(size: 9)) }
+            if let icon { Image(systemName: icon).font(.system(size: 11)) }
             Text(text)
         }
-        .font(.system(size: 10.5, design: .monospaced))
+        .font(.system(size: 11, design: .monospaced))
         .foregroundStyle(color)
         .padding(.horizontal, 7)
         .padding(.vertical, 1)
@@ -197,7 +197,7 @@ struct ActProvenance: View {
     var body: some View {
         if let meta = Self.meta(trigger) {
             HStack(spacing: 4) {
-                Image(systemName: meta.icon).font(.system(size: 10))
+                Image(systemName: meta.icon).font(.system(size: 11))
                 Text(meta.label)
             }
             .font(.system(size: 11.5, weight: .medium))
@@ -236,7 +236,7 @@ struct ActCheckbox: View {
             .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
                 .strokeBorder(checked ? Color.clear : Theme.mut, lineWidth: 1.5))
             .overlay {
-                if checked { Image(systemName: "checkmark").font(.system(size: 10, weight: .heavy)).foregroundStyle(Theme.onAccent) }
+                if checked { Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.onAccent) }
             }
             .frame(width: 18, height: 18)
             .accessibilityLabel(checked ? "Selected" : "Not selected")

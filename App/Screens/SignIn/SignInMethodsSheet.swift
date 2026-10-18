@@ -124,7 +124,7 @@ struct SignInMethodsSheet: View {
                     Text(credential.providerLabel).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
                     if credential.isPrimary {
                         Text("primary")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(Theme.done)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 1)
@@ -202,7 +202,7 @@ struct SignInMethodsSheet: View {
                     HStack(spacing: 6) {
                         Text(me.plexUsername ?? "Plex").font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
                         Text("Linked")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(Theme.done)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 1)

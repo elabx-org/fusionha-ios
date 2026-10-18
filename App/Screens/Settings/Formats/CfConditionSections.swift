@@ -46,7 +46,7 @@ struct CfConditionSections: View {
                 .font(.system(size: 13))
         } header: {
             HStack(spacing: 6) {
-                if !first { Text("AND").font(.system(size: 10, weight: .heavy)).foregroundStyle(Theme.i2) }
+                if !first { Text("AND").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.i2) }
                 Text(CFSpecVocab.icon(block.type)).foregroundStyle(Theme.dim)
                 Text(label).textCase(nil)
                 if block.indices.count > 1 {

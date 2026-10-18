@@ -30,7 +30,7 @@ struct RequestRowTierChip: View {
 
     var body: some View {
         Text(tier.chipLabel)
-            .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+            .font(.system(size: 11, weight: .semibold, design: .monospaced))
             .foregroundStyle(tier.color)
             .padding(.horizontal, 6)
             .frame(height: 19)

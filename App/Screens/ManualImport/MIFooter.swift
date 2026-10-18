@@ -73,7 +73,7 @@ struct MIFooter: View {
                     Menu {
                         Picker("Import mode", selection: $session.importMode) {
                             ForEach(ManualImportMode.allCases) { mode in
-                                Text("\(mode.label) — \(mode.hint)").tag(mode)
+                                Text("\(mode.label) · \(mode.hint)").tag(mode)
                             }
                         }
                     } label: { GlassMenuLabel(title: session.importMode.label) }

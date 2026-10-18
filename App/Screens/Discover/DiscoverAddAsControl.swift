@@ -26,7 +26,7 @@ struct DiscoverAddAsControl: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(Theme.txt)
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Theme.mut)
                 }
                 .padding(.horizontal, 2)

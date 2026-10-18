@@ -125,6 +125,9 @@ struct ActivityQueueTab: View {
                 .frame(width: 30, height: 30)
                 .overlay { if let border { RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(border) } }
                 .contentShape(Rectangle())
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+                .padding(.horizontal, -7).padding(.vertical, -7)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)

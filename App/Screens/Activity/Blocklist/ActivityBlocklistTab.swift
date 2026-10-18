@@ -110,7 +110,7 @@ struct ActivityBlocklistTab: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(feed.total)").font(.system(size: 24, weight: .heavy)).foregroundStyle(Theme.txt)
                         .contentTransition(.numericText(value: Double(feed.total)))
-                    Text("BLOCKLISTED · NEVER RE-GRABBED").font(.system(size: 10.5, weight: .semibold)).tracking(0.5).foregroundStyle(Theme.dim)
+                    Text("BLOCKLISTED · NEVER RE-GRABBED").font(.system(size: 11, weight: .semibold)).tracking(0.5).foregroundStyle(Theme.dim)
                 }
                 ForEach([BlocklistCategory.recoverable, .manual, .permanent], id: \.self) { cat in
                     HStack(spacing: 8) {
@@ -128,7 +128,7 @@ struct ActivityBlocklistTab: View {
             if recoverable > 0 {
                 HStack(spacing: 10) {
                     (Text("\(recoverable) dead-NZB").bold().foregroundColor(Theme.txt)
-                     + Text(" may have recovered — retry to re-check the source"))
+                     + Text(" may have recovered. Retry to re-check the source"))
                         .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
                     Spacer(minLength: 0)
                     ActAsyncButton(label: "Retry recoverable", kind: .amber, externalWorking: busy) {
@@ -272,7 +272,7 @@ struct ActivityBlocklistTab: View {
                 }
             }
             if entries.count == 1 {
-                toaster.show(search ? "Un-blocklisted — searching for a replacement" : "Removed from the blocklist", tone: .success)
+                toaster.show(search ? "Un-blocklisted, searching for a replacement" : "Removed from the blocklist", tone: .success)
             } else {
                 toaster.show("Removed \(ActFmt.plural(entries.count, "release")) from the blocklist", tone: .success)
             }

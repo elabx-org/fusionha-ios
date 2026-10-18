@@ -96,7 +96,7 @@ struct DiscoverCard: View {
                 statusMark
                 if demandView.watching {
                     Label("Watching", systemImage: "eye")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Theme.grab)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
@@ -106,7 +106,7 @@ struct DiscoverCard: View {
                 } else if !inLibrary, !demandView.hideRequested, let status = requestStatus, status == "pending" || status == "approved" {
                     let color = status == "pending" ? Theme.miss : Theme.done
                     Text(status == "pending" ? "Requested" : "Approved")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(color)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)

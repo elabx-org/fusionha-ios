@@ -102,6 +102,9 @@ struct ReleaseFilterBar: View {
                         .rotationEffect(.degrees(filters.ascending ? 180 : 0))
                         .animation(reduce ? nil : .easeInOut(duration: 0.2), value: filters.ascending)
                         .frame(width: 24, height: 24)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
+                        .padding(.horizontal, -10).padding(.vertical, -10)
                 }
                 .buttonStyle(.glass)
                 .buttonBorderShape(.circle)

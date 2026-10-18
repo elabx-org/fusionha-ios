@@ -135,7 +135,7 @@ struct ConnectPanel: View {
                 if let url = webhook.url { MonoText(url).lineLimit(1).truncationMode(.middle) }
                 FetchFlow(spacing: 4, lineSpacing: 4) {
                     ForEach(chips.filter { $0.0 == true }, id: \.1) { _, label in
-                        FetchChip(text: label, size: 9.5)
+                        FetchChip(text: label, size: 11)
                     }
                 }
             }

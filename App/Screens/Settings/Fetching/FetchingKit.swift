@@ -217,7 +217,7 @@ struct FetchPill: View {
         case .accent: (Theme.i2, Theme.i2.opacity(0.14))
         }
         Text(text)
-            .font(.system(size: 10.5, weight: .heavy))
+            .font(.system(size: 11, weight: .heavy))
             .foregroundStyle(fg)
             .padding(.horizontal, 9)
             .padding(.vertical, 2)
@@ -233,7 +233,7 @@ struct FetchChip: View {
     var color: Color = Theme.mut
     var border: Color = Theme.line
     var mono = false
-    var size: CGFloat = 10
+    var size: CGFloat = 11
 
     var body: some View {
         Text(text)
@@ -253,7 +253,7 @@ struct FetchTierChip: View {
 
     var body: some View {
         Text(tier.pill)
-            .font(.system(size: 9, weight: .heavy, design: .monospaced))
+            .font(.system(size: 11, weight: .heavy, design: .monospaced))
             .foregroundStyle(tier.color)
             .padding(.horizontal, 5)
             .padding(.vertical, 2)

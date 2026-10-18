@@ -130,7 +130,7 @@ extension CalendarView {
             ForEach(MovieReleaseType.allCases, id: \.self) { type in
                 HStack(spacing: 5) {
                     Image(systemName: type.symbol)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(type.color)
                         .frame(width: 14, height: 14)
                     Text(type.label)
