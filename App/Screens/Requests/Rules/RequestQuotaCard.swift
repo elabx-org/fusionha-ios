@@ -101,12 +101,17 @@ struct RequestAutoApprovedStrip: View {
                         ActPoster(url: r.poster, title: r.title ?? "", size: .sm)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(r.title ?? "Request").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                            Text([RequestSourceWords.stripPhrase(r.source), r.requester?.displayName, RequestItemStrip.approvedText(r.approvedBy)]
+                            // Who, from where, why: "kids-tv · Plex list · Kids · Kids list rule".
+                            Text([r.requester?.displayName,
+                                  RequestSourceWords.isAutomatic(r.source?.kind) ? RequestSourceWords.phrase(r.source, mine: false) : nil,
+                                  r.approvedBy?.rule]
                                 .compactMap { $0 }.joined(separator: " · "))
-                                .font(.caption).foregroundStyle(Theme.mut).lineLimit(1)
+                                .font(.system(size: 13)).foregroundStyle(Theme.mut)
+                                .lineLimit(2).truncationMode(.middle)
                         }
                         Spacer(minLength: 0)
-                        ForEach(r.tiers, id: \.self) { ActTierChip(tier: $0) }
+                        // Stacked, so two chips don't squeeze the reason off the line.
+                        VStack(alignment: .trailing, spacing: 4) { ForEach(r.tiers, id: \.self) { ActTierChip(tier: $0) } }
                     }
                     .contentShape(Rectangle())
                 }

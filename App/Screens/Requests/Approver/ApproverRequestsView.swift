@@ -13,6 +13,9 @@ struct ApproverRequestsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // The selected lane always scrolls into view (Rules and Insights
+            // sit past the edge on a phone).
+            ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
             DiscoverSegmented(options: [
                 (Lane.inbox, store.pendingCount > 0 ? "Inbox \(store.pendingCount)" : "Inbox"),
@@ -23,6 +26,9 @@ struct ApproverRequestsView: View {
                 (Lane.insights, "Insights"),
                 (Lane.mine, "Mine"),
             ], selection: $lane)
+            }
+            .onChange(of: lane) { _, now in withAnimation(.snappy) { proxy.scrollTo(now, anchor: .center) } }
+            .onAppear { proxy.scrollTo(lane, anchor: .center) }
             }
             switch lane {
             case .inbox:

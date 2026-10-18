@@ -20,3 +20,4 @@ Widgets/*.entitlements
 NotificationService/*.entitlements
 NotificationService/Info.plist
 __pycache__/
+.claude/worktrees/

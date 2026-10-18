@@ -56,7 +56,7 @@ struct UserSourceChips: View {
 
     private func pill(_ word: String, _ state: String, _ tone: SourceAdminCopy.Tone, _ symbol: String) -> some View {
         let quiet = tone == .dim
-        return (Text(Image(systemName: symbol)).foregroundColor(quiet ? Theme.mut : tone.color) + Text(" ")
+        return (Text(Image(systemName: symbol)).font(.system(size: 12, weight: .semibold)).foregroundColor(quiet ? Theme.mut : tone.color) + Text(" ")
                 + Text(word).fontWeight(.semibold).foregroundColor(Theme.txt)
                 + Text(" · \(state)").foregroundColor(quiet ? Theme.mut : tone.color))
             .font(.system(size: 12))

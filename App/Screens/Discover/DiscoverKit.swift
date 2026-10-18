@@ -115,6 +115,7 @@ struct DiscoverSegmented<Value: Hashable>: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(selected ? .isSelected : [])
+                .id(value)
             }
             if fullTrack { Spacer(minLength: 0) }
         }
