@@ -24,6 +24,9 @@ struct FusionhaApp: App {
                 }
             }
             .environment(model)
+            // A native app shows no scroll bars: every page, list and sheet
+            // below inherits it (the Library keeps its own A–Z scrubber).
+            .scrollIndicators(.hidden)
             // At the root, so a link that cold-launches the app is never
             // missed; RootView applies it once signed in and on screen.
             .onOpenURL { model.receiveDeepLink($0) }

@@ -49,6 +49,7 @@ struct SwipeCardView: View {
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay { washes }
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .shadow(color: .black.opacity(0.25), radius: 14, y: 8)
     }
 
@@ -61,6 +62,9 @@ struct SwipeCardView: View {
                 .blur(radius: 24)
                 .opacity(0.55)
                 .clipped()
+                // The fill overflows its frame; clipped() hides it but not its
+                // hit area, which reached over the lane tabs above the card.
+                .allowsHitTesting(false)
                 .accessibilityHidden(true)
             HStack(alignment: .bottom, spacing: 12) {
                 ActPoster(url: request.poster, title: title, size: .md)
