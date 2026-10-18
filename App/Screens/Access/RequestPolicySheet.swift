@@ -3,7 +3,8 @@ import FusionhaKit
 
 /// A person's or a role's request policy (web `RequestPolicyDialog`): which
 /// versions they may request, what is approved automatically, the weekly
-/// quota and auto-approval cap, and the self-service fixes on their issue
+/// quota and auto-approval cap, the automatic-request grants (Plex
+/// watchlist, Letterboxd & linked lists), and the self-service fixes on their issue
 /// reports. Every field can inherit (from the role, Plex access or the
 /// default); each change saves on its own (a partial PUT of that field).
 struct RequestPolicySheet: View {
@@ -27,6 +28,7 @@ struct RequestPolicySheet: View {
                 if let p = policy {
                     tiersSection(p)
                     limitsSection(p)
+                    PolicyAutomaticSection(policy: p, isUser: isUser) { fields in save(fields) }
                     selfServiceSection(p)
                     if let members = p.members {
                         Section {

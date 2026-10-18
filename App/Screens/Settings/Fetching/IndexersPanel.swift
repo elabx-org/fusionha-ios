@@ -4,7 +4,8 @@ import FusionhaKit
 /// Settings → Indexers (`IndexersPanel.tsx`): the range-driven fleet overview,
 /// then every indexer as a performance card (enable switch, Test, edit, delete,
 /// capability chips, share / yield / success / activity) with sort + protocol
-/// filters, Test all, and the rich add/edit sheet with the validate-on-save gate.
+/// filters, Test all, the rich add/edit sheet with the validate-on-save gate,
+/// and the Cloudflare solver (FlareSolverr) for Letterboxd.
 struct IndexersPanel: View {
     @Environment(AppModel.self) private var model
     @State private var indexers: [SearchIndexerInfo] = []
@@ -67,6 +68,7 @@ struct IndexersPanel: View {
                         .fetchReveal(index)
                 }
             }
+            FlareSolverrCard().padding(.top, 22)
         }
         .task { await load() }
         .task(id: range) { await loadStats() }

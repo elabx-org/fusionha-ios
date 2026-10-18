@@ -69,7 +69,8 @@ struct UsersSettingsPanel: View {
     }
 }
 
-/// One account: rename, role, enable / disable, sessions, request policy, delete.
+/// One account: rename, role, enable / disable, sessions, request policy, its
+/// automatic request sources (Plex watchlist, Letterboxd), delete.
 private struct UserEditorSheet: View {
     let user: UserAccount
     let roles: [RoleDetail]
@@ -114,6 +115,7 @@ private struct UserEditorSheet: View {
                     Button("Signed-in devices" + ((user.activeSessionCount ?? 0) > 0 ? " · \(user.activeSessionCount ?? 0)" : ""),
                            systemImage: "iphone.and.arrow.forward") { sessions = true }
                 }
+                UserSourcesSection(user: user)
                 if !isSelf {
                     Section {
                         Button("Delete user", systemImage: "trash", role: .destructive) { confirmDelete = true }

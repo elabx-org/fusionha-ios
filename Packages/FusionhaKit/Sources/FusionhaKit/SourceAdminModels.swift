@@ -175,7 +175,7 @@ extension APIClient {
     }
 
     /// Pauses (token cleared) or resumes a person's watchlist.
-    public func setPlexWatchlistPaused(userId: Int, _ paused: Bool) async throws -> PlexWatchlistAdmin {
+    public func setPlexWatchlistPaused(userId: Int, _ paused: Bool) async throws {
         try await sendJSON("PATCH", "/api/v1/users/\(userId)/plex-watchlist", .object(["paused": .bool(paused)]))
     }
 

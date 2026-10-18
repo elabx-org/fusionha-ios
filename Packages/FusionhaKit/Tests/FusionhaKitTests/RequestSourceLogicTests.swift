@@ -71,6 +71,17 @@ final class RequestSourceLogicTests: XCTestCase {
         XCTAssertEqual(p.maxLinkedLists, 7)
     }
 
+    func testSourceChecksWords() {
+        XCTAssertEqual(SourceChecksCopy.humanInterval(10), "every 10 minutes")
+        XCTAssertEqual(SourceChecksCopy.humanInterval(60), "every hour")
+        XCTAssertEqual(SourceChecksCopy.humanInterval(360), "every 6 hours")
+        XCTAssertEqual(SourceChecksCopy.humanInterval(1440), "once a day")
+        XCTAssertEqual(SourceChecksCopy.presetLabel(360), "6 h")
+        XCTAssertEqual(SourceChecksCopy.estimateLine(people: 4, minutes: 10),
+                       "With 4 people opted in, each is read every 10 minutes: about 0.40 plex.tv lookups a minute in total.")
+        XCTAssertEqual(SourceChecksCopy.hoursWord(1), "1 hour")
+    }
+
     func testAdminsDecideTheirOwnRequests() {
         let mine = request(userId: 7)
         XCTAssertTrue(OwnRequestRule.isOwn(mine, viewerId: 7))
