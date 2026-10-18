@@ -1,0 +1,22 @@
+{
+  "username": null,
+  "status": "not_connected",
+  "profile_error": null,
+  "reason": "not_granted",
+  "diary": null,
+  "also_uhd_allowed": true,
+  "watchlist_follow": {
+    "enabled": false,
+    "status": null,
+    "requested_count": 0,
+    "last_checked_at": null,
+    "last_error": null,
+    "source_id": null,
+    "truncated": false,
+    "item_count": null
+  },
+  "can_link_lists": false,
+  "max_linked_lists": 5,
+  "linked_count": 0,
+  "sync_available_at": null
+}

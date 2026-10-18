@@ -1,0 +1,55 @@
+{
+  "items": [
+    {
+      "tmdb_id": 666277,
+      "kind": "movie",
+      "title": "Past Lives",
+      "year": 2018,
+      "poster": "https://image.tmdb.org/t/p/w500/past-lives.jpg",
+      "source_id": 2,
+      "source_label": "My watchlist",
+      "owner": null,
+      "asked_count": 0,
+      "stale": false
+    },
+    {
+      "tmdb_id": 491584,
+      "kind": "movie",
+      "title": "Burning",
+      "year": 2019,
+      "poster": "https://image.tmdb.org/t/p/w500/burning.jpg",
+      "source_id": 3,
+      "source_label": "Best of 2026 · @example_critic",
+      "owner": "example_critic",
+      "asked_count": 0,
+      "stale": false
+    },
+    {
+      "tmdb_id": 1398,
+      "kind": "movie",
+      "title": "Stalker",
+      "year": 2020,
+      "poster": "https://image.tmdb.org/t/p/w500/stalker.jpg",
+      "source_id": 3,
+      "source_label": "Best of 2026 · @example_critic",
+      "owner": "example_critic",
+      "asked_count": 0,
+      "stale": false
+    }
+  ],
+  "sources": [
+    {
+      "source_id": 2,
+      "label": "My watchlist",
+      "owner": null,
+      "count": 1
+    },
+    {
+      "source_id": 3,
+      "label": "Best of 2026 · @example_critic",
+      "owner": "example_critic",
+      "count": 2
+    }
+  ],
+  "visible": true
+}

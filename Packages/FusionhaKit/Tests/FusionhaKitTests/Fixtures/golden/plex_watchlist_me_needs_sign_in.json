@@ -1,0 +1,27 @@
+{
+  "eligible": true,
+  "granted": true,
+  "reason": "needs_sign_in",
+  "enabled": true,
+  "status": "NEEDS_SIGN_IN",
+  "last_checked_at": null,
+  "last_success_at": null,
+  "next_check_at": null,
+  "last_error": null,
+  "options": {
+    "also_uhd": false
+  },
+  "also_uhd_allowed": true,
+  "item_count": null,
+  "requested_count": 0,
+  "seen_count": 0,
+  "baseline_count": 0,
+  "waiting_count": 0,
+  "requested_total": 0,
+  "sync_available_at": null,
+  "first_check": null,
+  "lists": {
+    "state": "unknown",
+    "sources": []
+  }
+}

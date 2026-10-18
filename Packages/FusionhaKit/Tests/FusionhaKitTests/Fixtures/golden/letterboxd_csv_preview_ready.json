@@ -1,0 +1,170 @@
+{
+  "status": "READY",
+  "total": 12,
+  "done": 12,
+  "counts": {
+    "matched": 9,
+    "low_confidence": 2,
+    "unmatched": 1,
+    "already_have": 0
+  },
+  "rows": [
+    {
+      "key": "boxd:aaa1",
+      "name": "Parasite",
+      "year": 2019,
+      "date": "2024-01-02",
+      "tmdb_id": 496243,
+      "matched_title": "Parasite",
+      "matched_year": 2019,
+      "confidence": "HIGH",
+      "poster": "/poster.jpg"
+    },
+    {
+      "key": "boxd:aaa2",
+      "name": "Burning",
+      "year": 2018,
+      "date": "2024-01-05",
+      "tmdb_id": 491584,
+      "matched_title": "Burning",
+      "matched_year": 2018,
+      "confidence": "HIGH",
+      "poster": "/poster.jpg"
+    },
+    {
+      "key": "boxd:aaa3",
+      "name": "Stalker",
+      "year": 1979,
+      "date": "2024-02-11",
+      "tmdb_id": 1398,
+      "matched_title": "Stalker",
+      "matched_year": 1979,
+      "confidence": "HIGH",
+      "poster": "/poster.jpg"
+    },
+    {
+      "key": "boxd:aaa4",
+      "name": "Close",
+      "year": 2022,
+      "date": "2024-02-20",
+      "tmdb_id": 814340,
+      "matched_title": "Close",
+      "matched_year": 2022,
+      "confidence": "HIGH",
+      "poster": "/poster.jpg"
+    },
+    {
+      "key": "boxd:aaa5",
+      "name": "Pig",
+      "year": 2021,
+      "date": "2024-03-01",
+      "tmdb_id": 615457,
+      "matched_title": "Pig",
+      "matched_year": 2021,
+      "confidence": "HIGH",
+      "poster": "/poster.jpg"
+    },
+    {
+      "key": "boxd:aaa6",
+      "name": "Yi Yi",
+      "year": 2000,
+      "date": "2024-03-15",
+      "tmdb_id": 25538,
+      "matched_title": "Yi Yi",
+      "matched_year": 2000,
+      "confidence": "HIGH",
+      "poster": "/poster.jpg"
+    },
+    {
+      "key": "boxd:aaa7",
+      "name": "Dogtooth",
+      "year": 2009,
+      "date": "2024-04-02",
+      "tmdb_id": 38810,
+      "matched_title": "Dogtooth",
+      "matched_year": 2009,
+      "confidence": "HIGH",
+      "poster": "/poster.jpg"
+    },
+    {
+      "key": "boxd:aaa8",
+      "name": "Possession",
+      "year": 1981,
+      "date": "2024-04-20",
+      "tmdb_id": 21484,
+      "matched_title": "Possession",
+      "matched_year": 1982,
+      "confidence": "LOW",
+      "poster": "/poster.jpg"
+    },
+    {
+      "key": "boxd:aaa9",
+      "name": "Petite Maman",
+      "year": 2021,
+      "date": "2024-05-03",
+      "tmdb_id": 747188,
+      "matched_title": "Petite maman.",
+      "matched_year": 2021,
+      "confidence": "LOW",
+      "poster": "/poster.jpg"
+    },
+    {
+      "key": "boxd:aab1",
+      "name": "An Unfindable Example Film",
+      "year": 2099,
+      "date": "2024-05-19",
+      "tmdb_id": null,
+      "matched_title": null,
+      "matched_year": null,
+      "confidence": "NONE",
+      "poster": null
+    },
+    {
+      "key": "boxd:aab2",
+      "name": "Past Lives",
+      "year": 2023,
+      "date": "2024-06-07",
+      "tmdb_id": 666277,
+      "matched_title": "Past Lives",
+      "matched_year": 2023,
+      "confidence": "HIGH",
+      "poster": "/poster.jpg"
+    },
+    {
+      "key": "boxd:aab3",
+      "name": "Aftersun",
+      "year": 2022,
+      "date": "2024-06-30",
+      "tmdb_id": 965150,
+      "matched_title": "Aftersun",
+      "matched_year": 2022,
+      "confidence": "HIGH",
+      "poster": "/poster.jpg"
+    }
+  ],
+  "low_confidence": [
+    {
+      "key": "boxd:aaa8",
+      "name": "Possession",
+      "year": 1981,
+      "date": "2024-04-20",
+      "tmdb_id": 21484,
+      "matched_title": "Possession",
+      "matched_year": 1982,
+      "confidence": "LOW",
+      "poster": "/poster.jpg"
+    },
+    {
+      "key": "boxd:aaa9",
+      "name": "Petite Maman",
+      "year": 2021,
+      "date": "2024-05-03",
+      "tmdb_id": 747188,
+      "matched_title": "Petite maman.",
+      "matched_year": 2021,
+      "confidence": "LOW",
+      "poster": "/poster.jpg"
+    }
+  ],
+  "error": null
+}

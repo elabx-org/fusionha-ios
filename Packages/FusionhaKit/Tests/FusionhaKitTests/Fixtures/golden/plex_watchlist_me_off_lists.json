@@ -1,0 +1,64 @@
+{
+  "eligible": true,
+  "granted": true,
+  "reason": null,
+  "enabled": false,
+  "status": "PENDING",
+  "last_checked_at": null,
+  "last_success_at": null,
+  "next_check_at": null,
+  "last_error": null,
+  "options": {
+    "also_uhd": false
+  },
+  "also_uhd_allowed": true,
+  "item_count": null,
+  "requested_count": 0,
+  "seen_count": 0,
+  "baseline_count": 0,
+  "waiting_count": 0,
+  "requested_total": 0,
+  "sync_available_at": null,
+  "first_check": null,
+  "lists": {
+    "state": "ok",
+    "sources": [
+      {
+        "list_id": "list-a",
+        "name": "Kids movies",
+        "visibility": "FRIENDS",
+        "item_count": 18,
+        "enabled": false,
+        "baseline": "NEW",
+        "last_checked_at": null,
+        "requested_count": 0,
+        "deleted": false,
+        "error": null
+      },
+      {
+        "list_id": "list-b",
+        "name": "Rewatch someday",
+        "visibility": "PRIVATE",
+        "item_count": 7,
+        "enabled": false,
+        "baseline": "NEW",
+        "last_checked_at": null,
+        "requested_count": 0,
+        "deleted": false,
+        "error": null
+      },
+      {
+        "list_id": "list-c",
+        "name": "Sci-fi to try",
+        "visibility": "PLEX_USERS",
+        "item_count": 12,
+        "enabled": false,
+        "baseline": "NEW",
+        "last_checked_at": null,
+        "requested_count": 0,
+        "deleted": false,
+        "error": null
+      }
+    ]
+  }
+}

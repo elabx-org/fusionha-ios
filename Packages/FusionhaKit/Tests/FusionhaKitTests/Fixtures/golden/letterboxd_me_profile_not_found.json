@@ -1,0 +1,30 @@
+{
+  "username": "example_friend",
+  "status": "ERROR",
+  "profile_error": "profile_not_found",
+  "reason": null,
+  "diary": {
+    "enabled": true,
+    "request_rewatches": false,
+    "also_uhd": false,
+    "requested_count": 0,
+    "last_checked_at": "2026-10-05T21:20:00",
+    "next_check_at": null,
+    "baseline": "new"
+  },
+  "also_uhd_allowed": true,
+  "watchlist_follow": {
+    "enabled": false,
+    "status": null,
+    "requested_count": 0,
+    "last_checked_at": null,
+    "last_error": null,
+    "source_id": null,
+    "truncated": false,
+    "item_count": null
+  },
+  "can_link_lists": true,
+  "max_linked_lists": 5,
+  "linked_count": 0,
+  "sync_available_at": null
+}

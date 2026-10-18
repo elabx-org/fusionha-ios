@@ -1,0 +1,30 @@
+{
+  "username": "example_member",
+  "status": "OK",
+  "profile_error": null,
+  "reason": null,
+  "diary": {
+    "enabled": true,
+    "request_rewatches": false,
+    "also_uhd": false,
+    "requested_count": 7,
+    "last_checked_at": "2026-10-09T20:42:00",
+    "next_check_at": "2026-10-10T02:20:00",
+    "baseline": "new"
+  },
+  "also_uhd_allowed": true,
+  "watchlist_follow": {
+    "enabled": true,
+    "status": "DEGRADED",
+    "requested_count": 0,
+    "last_checked_at": "2026-10-09T20:40:00",
+    "last_error": "Only the first 560 films are followed",
+    "source_id": 2,
+    "truncated": true,
+    "item_count": 605
+  },
+  "can_link_lists": true,
+  "max_linked_lists": 5,
+  "linked_count": 4,
+  "sync_available_at": null
+}
