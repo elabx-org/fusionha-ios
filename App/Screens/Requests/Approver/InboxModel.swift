@@ -31,6 +31,8 @@ final class InboxModel {
     /// The low-space approve that has been warned once ("Approve anyway").
     var armedId: Int?
     var selected: Set<Int> = []
+    /// Admins decide their own requests too (fusionha 0.4.214).
+    var viewerIsAdmin = false
 
     @ObservationIgnored private var undoTask: Task<Void, Never>?
     @ObservationIgnored private var client: APIClient?
@@ -90,14 +92,19 @@ final class InboxModel {
 
     // MARK: Deciding
 
-    func isOwn(_ r: MediaRequest, viewerId: Int?) -> Bool { viewerId != nil && r.userId == viewerId }
+    func isOwn(_ r: MediaRequest, viewerId: Int?) -> Bool { OwnRequestRule.isOwn(r, viewerId: viewerId) }
+
+    /// The viewer can't decide this one: their own request, unless they're an admin.
+    func isLocked(_ r: MediaRequest, viewerId: Int?) -> Bool {
+        OwnRequestRule.locked(r, viewerId: viewerId, viewerIsAdmin: viewerIsAdmin)
+    }
 
     /// Approve waits for the row's triage; a low-space approve warns once first.
     /// Returns true when the decision was scheduled.
     @discardableResult
     func approve(_ r: MediaRequest, viewerId: Int?) -> Bool {
         let t = triage[r.id]
-        guard !isOwn(r, viewerId: viewerId), TriageFacts.loaded(t), !TriageFacts.setupMissing(t) else { return false }
+        guard !isLocked(r, viewerId: viewerId), TriageFacts.loaded(t), !TriageFacts.setupMissing(t) else { return false }
         if TriageFacts.lowSpaceMessage(t) != nil && armedId != r.id {
             armedId = r.id
             return false
@@ -108,7 +115,7 @@ final class InboxModel {
 
     @discardableResult
     func decline(_ r: MediaRequest, viewerId: Int?) -> Bool {
-        guard !isOwn(r, viewerId: viewerId) else { return false }
+        guard !isLocked(r, viewerId: viewerId) else { return false }
         schedule(InboxDecision(kind: .decline, ids: [r.id], title: title(r), tiers: [], reason: .notAvailableYet))
         return true
     }

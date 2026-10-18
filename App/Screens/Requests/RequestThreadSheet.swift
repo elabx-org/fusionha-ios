@@ -33,7 +33,8 @@ struct RequestThreadSheet: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         header
-                        if canApprove && request.status == "pending" && !isOwner {
+                        if canApprove && request.status == "pending"
+                            && !OwnRequestRule.locked(request, viewerId: model.me?.id, viewerIsAdmin: model.me?.isAdmin == true) {
                             RequestApproverChips(request: request) {
                                 Task { await refresh() }
                             }
@@ -82,9 +83,7 @@ struct RequestThreadSheet: View {
                             .font(.system(size: 11.5, weight: .semibold))
                             .foregroundStyle(Theme.i2)
                     } else {
-                        Text(RequestLifecycle.sourceText(request.source))
-                            .font(.system(size: 12))
-                            .foregroundStyle(Theme.mut)
+                        RequestSourceBadge(source: request.source, mine: isOwner)
                     }
                 }
                 if !joinedView, let demand = request.demand, demand.count > 1 {

@@ -2,7 +2,8 @@ import SwiftUI
 import FusionhaKit
 
 /// "Select several" (web `TriageInboxList` stacked + `BulkBar`): every waiting
-/// request as a row with a checkbox (own requests show, but can't be picked);
+/// request as a row with a checkbox (own requests show, but can't be picked
+/// unless the viewer is an admin);
 /// a tap opens its card; the bulk bar declines with one reason or approves
 /// with each title's usual setup.
 struct InboxListView: View {
@@ -31,41 +32,57 @@ struct InboxListView: View {
         }
     }
 
+    /// One row at the 0.4.214 card scale: a 22 pt checkbox in a 44 pt tap
+    /// area, the 44 pt 2:3 poster, title 14 / meta 12.5 / time 11.5 pt, the
+    /// requester's 20 pt avatar and the source's 22 pt mark.
     private func row(_ r: MediaRequest) -> some View {
         let own = inbox.isOwn(r, viewerId: viewerId)
+        let locked = inbox.isLocked(r, viewerId: viewerId)
         let on = inbox.selected.contains(r.id)
         let title = r.title ?? "TMDB #\(r.tmdbId)"
-        return HStack(spacing: 10) {
+        return HStack(spacing: 12) {
             Button {
-                if on { inbox.selected.remove(r.id) } else if !own { inbox.selected.insert(r.id) }
+                if on { inbox.selected.remove(r.id) } else if !locked { inbox.selected.insert(r.id) }
             } label: {
-                WebCheckSquare(checked: on).frame(width: 40, height: 44).contentShape(Rectangle())
+                WebCheckSquare(checked: on, size: 22).frame(width: 44, height: 44).contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(own)
+            .disabled(locked)
             .accessibilityLabel("Select \(title)")
             .accessibilityAddTraits(on ? .isSelected : [])
             Button { onOpen(r) } label: {
-                HStack(spacing: 10) {
-                    ActPoster(url: r.poster, title: title, size: .sm)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(title).font(.system(size: 14.5, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                        HStack(spacing: 5) {
-                            ForEach(r.tiers, id: \.self) { ActTierChip(tier: $0) }
-                            Text("· \(TriageFacts.firstName(TriageFacts.requesterName(r)))\(own ? " (you)" : "") · \(TriageFacts.compactAge(r.requestedAt))")
-                                .lineLimit(1)
-                        }
-                        .font(.system(size: 12)).foregroundStyle(Theme.mut)
-                    }
+                HStack(spacing: 12) {
+                    RequestRowPoster(url: r.poster, title: title)
+                    rowText(r, title: title, own: own)
                     Spacer(minLength: 0)
+                    RequestSourceMark(kind: r.source?.kind)
                     Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.dim)
                 }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
-        .padding(.vertical, 6).padding(.trailing, 12)
+        // 16 pt to the visible checkbox: its 44 pt tap area overhangs by 11.
+        .padding(.vertical, 14).padding(.leading, 5).padding(.trailing, 16)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private func rowText(_ r: MediaRequest, title: String, own: Bool) -> some View {
+        let name = TriageFacts.requesterName(r)
+        return VStack(alignment: .leading, spacing: 5) {
+            Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
+            HStack(spacing: 5) {
+                ForEach(r.tiers, id: \.self) { RequestRowTierChip(tier: $0) }
+                Text(RequestLifecycle.kindLabel(r)).font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineLimit(1)
+            }
+            HStack(spacing: 6) {
+                RequestAvatar(name: name)
+                Text("\(TriageFacts.firstName(name))\(own ? " (you)" : "")")
+                    .font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineLimit(1)
+                Text("· \(TriageFacts.compactAge(r.requestedAt))")
+                    .font(.system(size: 11.5)).foregroundStyle(Theme.dim).lineLimit(1)
+            }
+        }
     }
 }
 

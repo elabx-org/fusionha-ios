@@ -40,7 +40,7 @@ struct DecisionCardView: View {
             ActPoster(url: request.poster, title: title, size: .md)
             VStack(alignment: .leading, spacing: 6) {
                 Text("Pending" + (age.isEmpty ? "" : " · \(age) ago"))
-                    .font(.system(size: 10.5, weight: .bold))
+                    .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(Theme.mut)
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Theme.panel2, in: Capsule())

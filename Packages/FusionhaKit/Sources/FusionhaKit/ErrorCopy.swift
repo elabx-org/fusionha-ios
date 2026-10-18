@@ -20,6 +20,8 @@ public enum ErrorCopy {
         "not_joinable": "There’s no open request to join any more.",
         "not_a_joiner": "You’re no longer part of this request.",
         "withdrawn": "This request was withdrawn.",
+        // "Request again" (again_of, fusionha 0.4.209).
+        "not_withdrawn": "This request is already active again.",
         "not_rejectable": "This request has already been decided.",
         "not_withdrawable": "This request can’t be withdrawn any more.",
         "own_request": "You can’t decide your own request.",

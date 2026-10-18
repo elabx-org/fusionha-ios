@@ -27,7 +27,7 @@ struct TriageTileView<Extra: View>: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
             if let sub, !sub.isEmpty {
-                Text(sub).font(.system(size: compact ? 11 : 12)).foregroundStyle(Theme.mut).lineLimit(3)
+                Text(sub).font(.system(size: compact ? 11 : 12.5)).foregroundStyle(Theme.mut).lineLimit(3)
             }
             extra()
         }
@@ -57,7 +57,7 @@ struct ApproveSetupRow: View {
         VStack(alignment: .leading, spacing: 6) {
             if !compact {
                 HStack {
-                    Text("On approve · your usual setup").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
+                    Text("On approve · your usual setup").font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.mut)
                     Spacer()
                     Button("Adjust", action: onAdjust).font(.system(size: 12.5, weight: .semibold)).disabled(own)
                 }
@@ -72,7 +72,7 @@ struct ApproveSetupRow: View {
                             Text("No Add default for this version yet").foregroundColor(Theme.miss)
                         }
                     }
-                    .font(.system(size: 12))
+                    .font(.system(size: compact ? 12 : 12.5))
                     .foregroundStyle(Theme.mut)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -83,7 +83,7 @@ struct ApproveSetupRow: View {
                 }
             }
             if triage == nil {
-                Text("Loading your usual setup…").font(.system(size: 12)).foregroundStyle(Theme.dim)
+                Text("Loading your usual setup…").font(.system(size: compact ? 12 : 12.5)).foregroundStyle(Theme.dim)
             }
         }
         .padding(compact ? 0 : 12)

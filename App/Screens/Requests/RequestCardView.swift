@@ -111,7 +111,10 @@ struct RequestCardView: View {
                         RequestPersonChip(name: by.displayName ?? "An admin", prefix: "Approved by")
                     }
                 }
-                Text(RequestLifecycle.sourceText(request.source)).font(.system(size: 12)).foregroundStyle(Theme.mut)
+                RequestSourceBadge(source: request.source, mine: request.userId != nil && request.userId == model.me?.id)
+                if request.source?.requestedAgain == true {
+                    Text("Requested again by you").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.i2)
+                }
             }
         }
     }
@@ -140,6 +143,10 @@ struct RequestCardView: View {
                     Text("“\(note)”").font(.system(size: 13).italic()).foregroundStyle(Theme.mut)
                 }
             }
+        } else if request.status == "withdrawn" && RequestSourceWords.isAutomatic(request.source?.kind) {
+            (Text("Withdrawn.").fontWeight(.semibold).foregroundColor(Theme.txt)
+             + Text(" It stays on \(RequestSourceWords.withdrawnWhere(request.source)) but won’t be requested again on its own."))
+                .font(.system(size: 13)).foregroundStyle(Theme.mut)
         } else if request.status == "withdrawn" {
             Text("Withdrawn").font(.system(size: 13)).foregroundStyle(Theme.mut)
         } else if let lead {
@@ -168,8 +175,12 @@ struct RequestCardView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("\(declined ? "Reply" : "Open conversation") · \(title)\(unread > 0 ? " · \(unread) unread" : "")")
             if RequestLifecycle.canWithdraw(request, lead: lead, viewerId: model.me?.id) {
-                QueueIconSlot(icon: "trash", label: request.watch == true ? "Stop watching" : "Withdraw request", tint: Theme.danger) {
-                    Task { await run { try await $0.withdrawRequest(id: request.id) } }
+                QueueIconSlot(icon: "trash", label: request.watch == true ? "Stop watching" : RequestSourceWords.withdrawLabel(request.source),
+                              tint: Theme.danger) {
+                    Task {
+                        let ok = await run { try await $0.withdrawRequest(id: request.id) }
+                        if ok, request.watch != true { model.toast(RequestSourceWords.withdrawnToast(request.source)) }
+                    }
                 }
                 .disabled(working)
             }
@@ -178,6 +189,14 @@ struct RequestCardView: View {
                     Task { await run { try await $0.leaveRequest(id: request.id) } }
                 }
                 .disabled(working)
+            }
+            if RequestSourceWords.canRequestAgain(request, viewerId: model.me?.id) {
+                Button { Task { await requestAgain() } } label: {
+                    Label("Request again", systemImage: "plus")
+                }
+                .buttonStyle(ActButtonStyle(kind: .subtle))
+                .disabled(working)
+                .accessibilityHint("Request this again even though it’s still there")
             }
             Spacer(minLength: 0)
             if request.status == "fulfilled", let plexURL, let url = URL(string: plexURL) {
@@ -199,15 +218,31 @@ struct RequestCardView: View {
         }
     }
 
-    private func run(_ call: @escaping (APIClient) async throws -> Void) async {
+    private func requestAgain() async {
         guard let client = model.client else { return }
+        working = true
+        defer { working = false }
+        do {
+            let row = try await client.requestAgain(request)
+            model.toast(RequestSourceWords.againToast(status: row?.status))
+            onChanged()
+        } catch {
+            model.toast(ErrorCopy.message(for: error), title: "Could not request it again", variant: .error)
+        }
+    }
+
+    @discardableResult
+    private func run(_ call: @escaping (APIClient) async throws -> Void) async -> Bool {
+        guard let client = model.client else { return false }
         working = true
         defer { working = false }
         do {
             try await call(client)
             onChanged()
+            return true
         } catch {
             model.toast(ErrorCopy.message(for: error), variant: .error)
+            return false
         }
     }
 }
