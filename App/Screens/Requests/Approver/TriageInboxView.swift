@@ -23,10 +23,12 @@ struct TriageInboxView: View {
         content
             .task {
                 inbox.bind(model.client) { message, title, variant in model.toast(message, title: title, variant: variant) }
+                inbox.viewerIsAdmin = model.me?.isAdmin == true
                 await inbox.poll()
             }
             .onDisappear { inbox.flush() }
             .onChange(of: store.requestsVersion) { Task { await inbox.refresh() } }
+            .onChange(of: model.me?.isAdmin) { inbox.viewerIsAdmin = model.me?.isAdmin == true }
             .overlay(alignment: .bottom) {
                 if let decision = inbox.pending {
                     InboxUndoToast(decision: decision, onUndo: inbox.undo, onReason: inbox.setReason)
@@ -71,7 +73,7 @@ struct TriageInboxView: View {
         NavigationStack {
             ScrollView {
                 DecisionCardView(
-                    request: request, triage: inbox.triage[request.id], own: inbox.isOwn(request, viewerId: viewerId),
+                    request: request, triage: inbox.triage[request.id], own: inbox.isLocked(request, viewerId: viewerId),
                     armed: inbox.armedId == request.id,
                     onApprove: { if inbox.approve(request, viewerId: viewerId) { details = nil } },
                     onDecline: { if inbox.decline(request, viewerId: viewerId) { details = nil } },

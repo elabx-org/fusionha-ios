@@ -1,0 +1,31 @@
+{
+  "inbox": 16,
+  "waiting": 2,
+  "active": 18,
+  "available": 0,
+  "declined": 0,
+  "all": 18,
+  "by_source": [
+    {
+      "kind": "PLEX_LIST",
+      "label": "Kids movies",
+      "owner": null,
+      "source_id": 2,
+      "count": 3
+    },
+    {
+      "kind": "PLEX_LIST",
+      "label": "Sci-fi to try",
+      "owner": null,
+      "source_id": 4,
+      "count": 1
+    },
+    {
+      "kind": "PLEX_WATCHLIST",
+      "label": null,
+      "owner": null,
+      "source_id": 1,
+      "count": 14
+    }
+  ]
+}

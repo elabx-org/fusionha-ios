@@ -64,11 +64,14 @@ struct SwipeCardView: View {
                 .accessibilityHidden(true)
             HStack(alignment: .bottom, spacing: 12) {
                 ActPoster(url: request.poster, title: title, size: .md)
-                (Text(TriageFacts.firstName(TriageFacts.requesterName(request))).fontWeight(.bold) + Text(extra > 0 ? " + \(extra)" : ""))
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(Theme.txt)
-                    .padding(.horizontal, 9).padding(.vertical, 4)
-                    .background(.ultraThinMaterial, in: Capsule())
+                HStack(spacing: 6) {
+                    RequestAvatar(name: TriageFacts.requesterName(request), size: 24, fontSize: 10.5)
+                    (Text(TriageFacts.firstName(TriageFacts.requesterName(request))).fontWeight(.bold) + Text(extra > 0 ? " + \(extra)" : ""))
+                        .font(.system(size: 12.5))
+                        .foregroundStyle(Theme.txt)
+                }
+                .padding(.leading, 3).padding(.trailing, 10).padding(.vertical, 3)
+                .background(.ultraThinMaterial, in: Capsule())
             }
             .padding(14)
         }

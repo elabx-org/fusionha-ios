@@ -22,6 +22,46 @@ is the spec.
 catch-ups added models and calls by hand. Re-pin it from a tagged fusionha
 release when you next touch the API layer.
 
+## 0.4.209–0.4.214: automatic request sources (requests, approver, admin)
+
+Checked against release 0.4.213 (`docs/API.md` phase 9 and 10a) plus the
+0.4.214 notes. The user's own Account › Watchlists & lists, `/me/*` and the
+Discover suggestions are a separate change.
+
+Done:
+- `source.owner` / `source_id` / `requested_again`, `PLEX_LIST` and
+  `LETTERBOXD_WATCHLIST` (`RequestSourceWords`: the web's `sourcePhrase`,
+  `source-words.ts`); badges on cards, the thread header, the deck and the
+  decision card. "Request again" (`again_of`) on the owner's withdrawn
+  automatic request; the withdraw label and toast name the source.
+- `/requests/counts` `by_source[]` and the From source filter on My
+  requests (`RequestSourceFilter`: `source=plex|letterboxd|<kinds>`,
+  `source_id`, `source_label`).
+- Request policy `auto_request_plex_watchlist`, `can_link_lists`,
+  `max_linked_lists`; `inherited_from` `admin` → "Admin: always on" (unknown
+  layers still decode).
+- `WATCHLIST_APPROVE` "Watchlists & lists" with `params.sources[]`; a
+  `plex_source`-only rule reads as its Plex classes (`RuleSource.of`).
+- Admin: `/users/{id}/plex-watchlist` (+ `PATCH {paused}`),
+  `/users/plex-watchlist/summary`, `/users/{id}/request-sources`,
+  `/users/letterboxd/summary`, `/requests/watchlist-stats`,
+  `/requests/letterboxd-stats`. `outcomes` keys are looked up letters-only
+  because the snake-case decoder camel-cases dictionary keys.
+- Settings: the four check intervals on the Rules lane (as on the web) and
+  `flaresolverr_url` + `POST /settings/test-flaresolverr` under Indexers.
+- 0.4.214: admins decide their own requests (`OwnRequestRule`); the inbox
+  card scale.
+- Goldens: `request_from_plex_list`, `request_from_letterboxd_list`,
+  `request_counts_by_source(_letterboxd)`, `plex_watchlist_admin`,
+  `plex_watchlist_summary`, `letterboxd_admin`, `letterboxd_summary`,
+  `letterboxd_stats`, `flaresolverr_test_ok` (`GoldenSourceFixtureTests`).
+
+Open:
+- The Users list has no per-row watchlist / Letterboxd chips or the
+  "Watchlist" filter yet (the state shows on the account sheet).
+- Thread lines for automatic `created` events (`letterboxdCreatedLine`) and
+  the auto-approved strip's "From the Plex list · …" phrase.
+
 ## 0.4.204–0.4.205 (this sync)
 
 Done:

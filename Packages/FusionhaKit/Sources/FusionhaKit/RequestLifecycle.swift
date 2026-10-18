@@ -144,12 +144,9 @@ public enum RequestLifecycle {
         }
     }
 
-    public static func sourceText(_ source: RequestSource?) -> String {
-        guard let source, source.kind != "MANUAL" else { return "Requested in fusionha" }
-        let labels = ["PLEX_WATCHLIST": "Plex watchlist", "LIST_FEED": "List", "LETTERBOXD_LIST": "Letterboxd list",
-                      "LETTERBOXD_RSS": "Letterboxd diary", "LETTERBOXD_CSV": "Letterboxd watchlist"]
-        let base = labels[source.kind] ?? source.kind
-        return source.label.map { "\(base) · \($0)" } ?? base
+    /// Where a request came from; `mine` reads "From your Plex watchlist".
+    public static func sourceText(_ source: RequestSource?, mine: Bool = false) -> String {
+        RequestSourceWords.phrase(source, mine: mine)
     }
 
     /// "Auto-approved · rule: Under 20 GB".

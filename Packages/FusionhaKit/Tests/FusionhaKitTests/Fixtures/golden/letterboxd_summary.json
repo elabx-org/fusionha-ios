@@ -1,0 +1,67 @@
+[
+  {
+    "user_id": 1,
+    "username": null,
+    "state": "not_connected",
+    "diary_enabled": false,
+    "last_checked_at": null,
+    "requested_count": 0,
+    "linked_count": 0,
+    "max_linked_lists": 5,
+    "blocked_count": 0,
+    "degraded_count": 0,
+    "consecutive_failures": 0
+  },
+  {
+    "user_id": 2,
+    "username": "example_member",
+    "state": "attention",
+    "diary_enabled": true,
+    "last_checked_at": "2026-10-09T20:42:00",
+    "requested_count": 11,
+    "linked_count": 4,
+    "max_linked_lists": 5,
+    "blocked_count": 1,
+    "degraded_count": 1,
+    "consecutive_failures": 0
+  },
+  {
+    "user_id": 3,
+    "username": null,
+    "state": "not_connected",
+    "diary_enabled": false,
+    "last_checked_at": null,
+    "requested_count": 0,
+    "linked_count": 0,
+    "max_linked_lists": 5,
+    "blocked_count": 0,
+    "degraded_count": 0,
+    "consecutive_failures": 0
+  },
+  {
+    "user_id": 4,
+    "username": null,
+    "state": "not_connected",
+    "diary_enabled": false,
+    "last_checked_at": null,
+    "requested_count": 0,
+    "linked_count": 0,
+    "max_linked_lists": 5,
+    "blocked_count": 0,
+    "degraded_count": 0,
+    "consecutive_failures": 0
+  },
+  {
+    "user_id": 5,
+    "username": "example_friend",
+    "state": "cant_read",
+    "diary_enabled": true,
+    "last_checked_at": "2026-10-05T21:20:00",
+    "requested_count": 0,
+    "linked_count": 0,
+    "max_linked_lists": 5,
+    "blocked_count": 0,
+    "degraded_count": 0,
+    "consecutive_failures": 6
+  }
+]

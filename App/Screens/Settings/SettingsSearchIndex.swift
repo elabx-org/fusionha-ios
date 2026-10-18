@@ -148,6 +148,7 @@ let settingsFieldIndex: [SettingsField] = [
     SettingsField(panel: "indexers", label: "Enable Automatic Search", keywords: ["auto search", "automatic", "grab", "rss search"]),
     SettingsField(panel: "indexers", label: "Enable Interactive Search", keywords: ["interactive", "manual search", "on-demand", "user search"]),
     SettingsField(panel: "indexers", label: "Enable RSS", keywords: ["automatic", "feed", "monitoring", "rss sync"]),
+    SettingsField(panel: "indexers", label: "FlareSolverr address", keywords: ["cloudflare", "cloudflare solver", "challenge", "flaresolverr", "flaresolverr_url", "letterboxd", "solver"]),
     SettingsField(panel: "indexers", label: "Indexers", keywords: ["newznab", "prowlarr", "search source", "torrent", "torznab", "trackers", "usenet"]),
     SettingsField(panel: "indexers", label: "Min query interval (s)", keywords: ["cooldown", "query cap", "rate limit", "seconds", "throttle"]),
     SettingsField(panel: "indexers", label: "Minimum age (min)", keywords: ["delay", "hold release", "propagation", "retention", "usenet age"]),

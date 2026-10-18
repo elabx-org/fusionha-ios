@@ -2,7 +2,8 @@ import SwiftUI
 import FusionhaKit
 
 /// Add or edit one rule (web `RuleEditor`): the kind, then for approve rules
-/// the version and the audience, the rating floor for a rating rule, or the
+/// the version and the audience, the rating floor for a rating rule, the
+/// sources of a "Watchlists & lists" rule (fusionha 0.4.213), or the
 /// free-space floor for a guard (guards apply to every version and everyone).
 struct RuleEditorSheet: View {
     let target: RuleEditTarget
@@ -48,6 +49,9 @@ struct RuleEditorSheet: View {
                         ForEach(roles) { Text($0.name).tag(Int?.some($0.id)) }
                     }
                 }
+                if draft.kind == .watchlistApprove {
+                    RuleSourcesSection(draft: $draft, roleName: roles.first(where: { $0.id == draft.roleId })?.name)
+                }
                 if draft.kind == .approveRating {
                     Stepper(value: $draft.minRating, in: 1...10, step: 0.5) {
                         LabeledContent("TMDB rating at least", value: String(format: "%.1f", draft.minRating))
@@ -74,7 +78,7 @@ struct RuleEditorSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "Saving…" : "Save rule") { Task { await save() } }.disabled(saving)
+                    Button(saving ? "Saving…" : "Save rule") { Task { await save() } }.disabled(saving || !draft.isValid)
                 }
             }
         }

@@ -42,6 +42,7 @@ struct RequestRulesView: View {
                 ForEach(guards) { row($0, first: true, last: true) }
             }
             RequestQuotaCard(canManage: canManage)
+            SourceChecksCard()
             RequestAutoApprovedStrip()
         }
         .task { await load() }
@@ -81,6 +82,10 @@ struct RequestRulesView: View {
                         Text(rule.firedLine).foregroundStyle(Theme.mut)
                     }
                     .font(.system(size: 12))
+                    if rule.kind == .watchlistApprove {
+                        Label("Sources: \(RuleSource.words(RuleSource.of(rule.params)))", systemImage: "list.bullet")
+                            .font(.system(size: 12)).foregroundStyle(Theme.mut)
+                    }
                 }
                 Spacer(minLength: 0)
                 Toggle("Enable rule: \(rule.label)", isOn: Binding(get: { rule.enabled }, set: { on in Task { await setEnabled(rule, on) } }))

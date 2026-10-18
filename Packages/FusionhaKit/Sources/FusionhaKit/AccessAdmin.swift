@@ -64,6 +64,12 @@ public struct EffectiveRequestPolicy: Decodable, Sendable, Hashable {
     public let ssSearchMissing: Bool?
     public let ssPlexRescan: Bool?
     public let ssRequestVersion: Bool?
+    /// 0.4.209: Plex watchlist & lists may create requests.
+    public let autoRequestPlexWatchlist: Bool?
+    /// 0.4.213: every automatic Letterboxd source, and how many lists or
+    /// watchlists may be linked (1–20).
+    public let canLinkLists: Bool?
+    public let maxLinkedLists: Int?
 }
 
 /// A user's or a role's request policy: the stored overrides (nil = inherit)
@@ -84,21 +90,42 @@ public struct RequestPolicy: Decodable, Sendable, Hashable {
     public let ssPlexRescan: Bool?
     public let ssRequestVersion: Bool?
     public let requestQualityMode: String?
+    public let autoRequestPlexWatchlist: Bool?
+    public let canLinkLists: Bool?
+    public let maxLinkedLists: Int?
     public let effective: EffectiveRequestPolicy?
     public let inheritedFrom: [String: String]?
     public let allowedTiersSource: String?
 
-    /// "Inherited from role" / "Set here" for one field.
-    public func source(_ field: String) -> String? {
+    /// The raw `inherited_from` layer for one field: user · role · plex ·
+    /// default · admin (0.4.212), or anything newer as sent.
+    public func inheritedLayer(_ field: String) -> String? {
         // `inherited_from` keys are camel-cased by the decoder.
         let key = field.split(separator: "_").enumerated().map { $0 == 0 ? String($1) : $1.prefix(1).uppercased() + $1.dropFirst() }.joined()
-        guard let raw = inheritedFrom?[key] ?? inheritedFrom?[field] else { return nil }
+        return inheritedFrom?[key] ?? inheritedFrom?[field]
+    }
+
+    /// "Inherited from role" / "Set here" for one field.
+    public func source(_ field: String) -> String? {
+        guard let raw = inheritedLayer(field) else { return nil }
         switch raw {
         case "user": return "Set for this person"
         case "role": return "From their role"
         case "plex": return "From Plex access"
         case "default": return "Default"
+        case "admin": return "Admin: always allowed"
         default: return raw.capitalized
+        }
+    }
+
+    /// An inherited on/off grant (web `inheritedFlagLine`): "Admin: always on",
+    /// "Role Trusted: on", "Default: off".
+    public func flagLine(_ field: String, on: Bool) -> String {
+        let word = on ? "on" : "off"
+        switch inheritedLayer(field) {
+        case "admin": return "Admin: always \(word)"
+        case "role": return "Role \(roleName ?? "default"): \(word)"
+        default: return "Default: \(word)"
         }
     }
 }

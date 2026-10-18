@@ -5,7 +5,8 @@ import FusionhaKit
 /// right to approve or left to decline; past the threshold it flies off and
 /// the decision waits out the Undo. Approve waits for the card's triage; a
 /// low-space card springs back with the warning and the second swipe confirms.
-/// The viewer's own requests are left out of the deck (the list shows them).
+/// The viewer's own requests are left out of the deck (the list shows them),
+/// except for an admin, who decides their own (fusionha 0.4.214).
 struct SwipeDeckView: View {
     let inbox: InboxModel
     let viewerId: Int?
@@ -23,7 +24,7 @@ struct SwipeDeckView: View {
     static let threshold: CGFloat = 110
 
     private var deck: [MediaRequest] {
-        inbox.queue.filter { !inbox.isOwn($0, viewerId: viewerId) }
+        inbox.queue.filter { !inbox.isLocked($0, viewerId: viewerId) }
     }
 
     var body: some View {

@@ -2,7 +2,8 @@ import SwiftUI
 import FusionhaKit
 
 /// The requester's list (web R1 "My requests"): the quota meter, an Active ·
-/// Available · All filter with counts, the live request cards (newest
+/// Available · All filter with counts, the "From source" filter (Plex and
+/// Letterboxd, fusionha 0.4.209 / 0.4.213), the live request cards (newest
 /// activity first, cursor-paged) and Load more. Polls every 15 s while open
 /// and shows the last list from this phone's cache straight away.
 struct MyRequestsView: View {
@@ -41,6 +42,9 @@ struct MyRequestsView: View {
     @State private var items: [MediaRequest] = []
     @State private var cursor: String?
     @State private var counts: RequestCounts?
+    @State private var source: RequestSourceFilter?
+    /// The unfiltered `by_source` buckets the source chips count from.
+    @State private var bySource: [RequestSourceCount] = []
     @State private var quota: RequestQuota?
     @State private var plexLinks: [Int: String] = [:]
     @State private var loaded = false
@@ -54,9 +58,10 @@ struct MyRequestsView: View {
             DiscoverSegmented(options: Filter.allCases.map { f -> (Filter, String) in
                 (f, f.count(counts).map { $0 > 0 ? "\(f.title) \($0)" : f.title } ?? f.title)
             }, selection: $filter, fullTrack: true)
+            RequestSourceFilterBar(bySource: bySource, value: $source)
             content
         }
-        .task(id: "\(filter.rawValue)-\(store.requestsVersion)") { await poll() }
+        .task(id: "\(filter.rawValue)-\(store.requestsVersion)-\(sourceKey)") { await poll() }
         .sheet(item: $thread) { request in
             RequestThreadSheet(request: request) { Task { await refresh() } }
         }
@@ -69,7 +74,7 @@ struct MyRequestsView: View {
         } else if failed && items.isEmpty {
             DiscoverEmptyState(message: "Could not load your requests.")
         } else if items.isEmpty {
-            DiscoverEmptyState(message: filter.empty)
+            DiscoverEmptyState(message: source != nil ? "Nothing from this source matches this filter." : filter.empty)
         } else {
             LazyVStack(spacing: 12) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, request in
@@ -90,17 +95,22 @@ struct MyRequestsView: View {
 
     // MARK: Loading
 
+    private var sourceQuery: [URLQueryItem] { source?.query ?? [] }
+    private var sourceKey: String { sourceQuery.map { "\($0.name)=\($0.value ?? "")" }.joined(separator: "&") }
+
     private func poll() async {
         guard let client = model.client else { return }
         items = []
         cursor = nil
         loaded = false
-        if let page = await client.cached({ try await $0.requestsPage(view: "mine", filter: filter.rawValue) }) {
+        let extra = sourceQuery
+        if let page = await client.cached({ try await $0.requestsPage(view: "mine", filter: filter.rawValue, extra: extra) }) {
             items = page.items
             cursor = page.nextCursor
             loaded = true
         }
-        counts = await client.cached { try await $0.requestCounts(view: "mine") } ?? counts
+        counts = await client.cached { try await $0.requestCounts(view: "mine", extra: extra) } ?? counts
+        if extra.isEmpty { bySource = counts?.bySource ?? bySource }
         quota = await client.cached { try await $0.requestQuota() } ?? quota
         while !Task.isCancelled {
             await refresh()
@@ -112,8 +122,10 @@ struct MyRequestsView: View {
     private func refresh() async {
         guard let client = model.client else { return }
         do {
-            async let pageCall = client.requestsPage(view: "mine", filter: filter.rawValue)
-            async let countsCall = try? client.requestCounts(view: "mine")
+            let extra = sourceQuery
+            async let pageCall = client.requestsPage(view: "mine", filter: filter.rawValue, extra: extra)
+            async let countsCall = try? client.requestCounts(view: "mine", extra: extra)
+            async let allCall = try? client.requestCounts(view: "mine")
             async let quotaCall = try? client.requestQuota()
             let page = try await pageCall
             let firstIds = Set(page.items.map(\.id))
@@ -121,6 +133,7 @@ struct MyRequestsView: View {
             items = page.items + beyond
             if beyond.isEmpty { cursor = page.nextCursor }
             counts = await countsCall ?? counts
+            if let all = await allCall { bySource = all.bySource ?? [] }
             quota = await quotaCall
             failed = false
         } catch is CancellationError {
@@ -137,7 +150,7 @@ struct MyRequestsView: View {
         loadingMore = true
         defer { loadingMore = false }
         do {
-            let page = try await client.requestsPage(view: "mine", filter: filter.rawValue, cursor: next)
+            let page = try await client.requestsPage(view: "mine", filter: filter.rawValue, cursor: next, extra: sourceQuery)
             let known = Set(items.map(\.id))
             items += page.items.filter { !known.contains($0.id) }
             cursor = page.nextCursor
