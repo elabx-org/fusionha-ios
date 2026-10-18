@@ -74,6 +74,6 @@ extension Theme {
     /// The deep end of a role avatar's gradient: the tint, darkened (flat in
     /// Monochrome, which has no hue to shade).
     static func avatarDeep(_ tint: Color) -> Color {
-        isMono ? tint : tint.mix(0.7, .black)
+        isMono ? tint : tint.mix(with: .black, by: 0.3)
     }
 }
