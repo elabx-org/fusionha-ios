@@ -24,7 +24,7 @@ struct InboxZeroView: View {
                     .frame(width: 52, height: 52)
                     .background((ownOnly ? Theme.mut : Theme.done).opacity(0.15), in: Circle())
                     .symbolEffect(.bounce, value: ownOnly)
-                Text(ownOnly ? "Only your own requests are waiting" : "Inbox zero 🎉")
+                Text(ownOnly ? "Only your own requests are waiting" : "Inbox zero")
                     .font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
                 if ownOnly { Button("Show list", action: onShowList).font(.system(size: 14, weight: .semibold)) }
             }

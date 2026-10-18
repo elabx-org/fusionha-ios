@@ -59,7 +59,7 @@ struct SecurityKeySections: View {
 
     private var banner: Banner? {
         if status.firstRun {
-            return Banner(symbol: "sparkles", title: "fusionha created an encryption key.",
+            return Banner(symbol: "key", title: "fusionha created an encryption key.",
                           sub: "Download the recovery key now and keep it somewhere other than this server. Without it, a backup restored on a new machine can’t read your secrets.")
         }
         if store.rotationFinished {

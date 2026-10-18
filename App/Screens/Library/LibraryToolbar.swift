@@ -74,7 +74,7 @@ struct LibraryToolbar: View {
         switch k {
         case .movie: return "film"
         case .series, .anime: return "tv"
-        case .animation: return "sparkles"
+        case .animation: return "film.stack"
         }
     }
 
