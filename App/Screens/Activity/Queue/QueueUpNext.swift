@@ -106,7 +106,7 @@ struct JustFinishedRow: View {
                     if let epLabel { Text(epLabel).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(Theme.mut) }
                     ActTierChip(tier: item.tier, edition: item.edition, multipleEditions: item.hasMultipleEditions == true)
                     Text(failed ? "✕ FAILED" : "✓ \(entry.count > 1 ? "\(entry.count) " : "")IMPORTED")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(failed ? Theme.danger : Theme.done)
                         .padding(.horizontal, 7).padding(.vertical, 1)
                         .background((failed ? Theme.danger : Theme.done).opacity(0.12), in: Capsule())

@@ -60,9 +60,9 @@ struct PublicAccessPanel: View {
                 FetchFlow(spacing: 6) {
                     Text("Demo visitor").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
                     DemoBadge(text: "Viewer", color: Theme.mut, background: Theme.panel2, dot: true)
-                    DemoBadge(text: "PUBLIC", color: Theme.indigo, background: Theme.indigo.opacity(0.15), size: 10)
+                    DemoBadge(text: "PUBLIC", color: Theme.indigo, background: Theme.indigo.opacity(0.15), size: 11)
                     if data.demoInstanceEnv == true {
-                        DemoBadge(text: "DEDICATED", color: Theme.i2, background: Theme.i2.opacity(0.15), size: 10)
+                        DemoBadge(text: "DEDICATED", color: Theme.i2, background: Theme.i2.opacity(0.15), size: 11)
                     }
                     DemoBadge(text: on ? "Live" : "Off", color: on ? Theme.done : Theme.dim,
                               background: (on ? Theme.done : Theme.dim).opacity(0.14), dot: true)
@@ -125,15 +125,15 @@ private struct DemoBadge: View {
     let color: Color
     let background: Color
     var dot = false
-    var size: CGFloat = 10.5
+    var size: CGFloat = 11
 
     var body: some View {
         HStack(spacing: 5) {
             if dot { Circle().fill(color).frame(width: 6, height: 6) }
-            Text(text).font(.system(size: size, weight: .bold)).tracking(size == 10 ? 0.3 : 0)
+            Text(text).font(.system(size: size, weight: .bold)).tracking(size == 11 ? 0.3 : 0)
         }
         .foregroundStyle(color)
-        .padding(.horizontal, size == 10 ? 8 : 9)
+        .padding(.horizontal, size == 11 ? 8 : 9)
         .padding(.vertical, 2.5)
         .background(background, in: Capsule())
         .fixedSize()

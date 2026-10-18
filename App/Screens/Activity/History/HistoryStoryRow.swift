@@ -38,7 +38,7 @@ struct HistoryStoryRow: View {
             Circle()
                 .fill(Theme.bg)
                 .overlay(Circle().fill(story.type.color.opacity(0.24)))
-                .overlay(Image(systemName: story.type.icon).font(.system(size: 10, weight: .bold)).foregroundStyle(story.type.color))
+                .overlay(Image(systemName: story.type.icon).font(.system(size: 11, weight: .bold)).foregroundStyle(story.type.color))
                 .overlay(Circle().strokeBorder(Theme.bg, lineWidth: 2))
                 .frame(width: 22, height: 22)
                 .offset(x: -26, y: 14)
@@ -160,7 +160,7 @@ struct HistoryStoryRow: View {
                     }
                     .padding(.trailing, -10)
                     Button { blocklistDialog = true } label: {
-                        Image(systemName: "chevron.down").font(.system(size: 9, weight: .bold)).foregroundStyle(Theme.dim)
+                        Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.dim)
                             .frame(width: 18, height: 40).contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -211,7 +211,7 @@ struct HistoryStoryRow: View {
                 }
                 if let reason = story.failReason {
                     Text("\(story.title) — \(reason)").font(.system(size: 12.5)).foregroundStyle(Theme.mut)
-                    Text("RAW REASON").font(.system(size: 10, weight: .bold)).tracking(0.6).foregroundStyle(Theme.dim)
+                    Text("RAW REASON").font(.system(size: 11, weight: .bold)).tracking(0.6).foregroundStyle(Theme.dim)
                     Text(reason).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.mut)
                         .padding(8).frame(maxWidth: .infinity, alignment: .leading)
                         .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 8))

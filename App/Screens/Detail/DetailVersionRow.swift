@@ -28,7 +28,7 @@ struct DetailEditionTag: View {
     var body: some View {
         let std = edition.isEmpty
         Text(versionLabel(edition))
-            .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+            .font(.system(size: 11, weight: .semibold, design: .monospaced))
             .foregroundStyle(std ? Theme.dim : Theme.anime)
             .lineLimit(1)
             .truncationMode(.tail)
@@ -223,8 +223,8 @@ struct DetailFileHealthBadge: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: "circle.dashed").font(.system(size: 10, weight: .bold))
-            if !compact { Text(label).font(.system(size: 10.5, weight: .semibold)).lineLimit(1) }
+            Image(systemName: "circle.dashed").font(.system(size: 11, weight: .bold))
+            if !compact { Text(label).font(.system(size: 11, weight: .semibold)).lineLimit(1) }
         }
         .foregroundStyle(Theme.miss)
         .padding(.horizontal, compact ? 4 : 7)

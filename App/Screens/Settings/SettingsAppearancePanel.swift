@@ -476,7 +476,7 @@ private struct BackgroundTile: View {
                         .foregroundStyle(Theme.txt)
                     Spacer(minLength: 4)
                     Text(mode.animated ? "Animated" : "Static")
-                        .font(.system(size: 10, design: .monospaced))
+                        .font(.system(size: 11, design: .monospaced))
                         .tracking(0.4)
                         .textCase(.uppercase)
                         .foregroundStyle(mode.animated ? Theme.i2 : Theme.dim)
@@ -492,7 +492,7 @@ private struct BackgroundTile: View {
             .overlay(alignment: .topTrailing) {
                 if selected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 9, weight: .black))
+                        .font(.system(size: 11, weight: .black))
                         .foregroundStyle(Color(hex: 0x06121A))
                         .frame(width: 20, height: 20)
                         .background(Theme.fusion, in: Circle())

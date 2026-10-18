@@ -76,7 +76,7 @@ struct RequestStatusTimeline: View {
         case .done(let color):
             ZStack {
                 Circle().fill(color)
-                Image(systemName: "checkmark").font(.system(size: 10, weight: .heavy)).foregroundStyle(Theme.bg)
+                Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.bg)
             }
         case .current(let color):
             ZStack {
@@ -88,7 +88,7 @@ struct RequestStatusTimeline: View {
         case .declined:
             ZStack {
                 Circle().fill(Theme.danger.opacity(0.18))
-                Image(systemName: "xmark").font(.system(size: 9, weight: .heavy)).foregroundStyle(Theme.danger)
+                Image(systemName: "xmark").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.danger)
             }
         }
     }

@@ -124,7 +124,7 @@ struct DetailMetaCell: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(key.uppercased())
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
                 .tracking(0.6)
                 .foregroundStyle(Theme.dim)
             HStack(spacing: 5) {

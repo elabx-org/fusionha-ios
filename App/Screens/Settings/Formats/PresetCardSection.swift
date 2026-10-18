@@ -24,7 +24,7 @@ struct PresetCardSection: View {
             }
             if !preset.manifest.topScores.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Top scoring").font(.system(size: 10.5, weight: .heavy)).foregroundStyle(Theme.dim)
+                    Text("Top scoring").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.dim)
                     FetchFlow(spacing: 5, lineSpacing: 5) {
                         let top = preset.manifest.topScores
                         ForEach(top.indices, id: \.self) { i in
@@ -91,7 +91,7 @@ struct PresetCardSection: View {
         VStack(spacing: 2) {
             Text(value).font(.system(size: 13, weight: .bold).monospacedDigit()).foregroundStyle(tint)
                 .lineLimit(1).minimumScaleFactor(0.7)
-            Text(label).font(.system(size: 10.5)).foregroundStyle(Theme.dim)
+            Text(label).font(.system(size: 11)).foregroundStyle(Theme.dim)
         }
         .frame(maxWidth: .infinity)
     }

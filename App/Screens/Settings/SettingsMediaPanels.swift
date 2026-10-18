@@ -243,7 +243,7 @@ struct MediaVersionsSettingsPanel: View {
 
     private func badge(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 9.5, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(Theme.mut)
             .padding(.horizontal, 6)
             .padding(.vertical, 1)

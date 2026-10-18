@@ -83,7 +83,7 @@ struct WeekEventCard: View {
                     if let time = style == .compact ? entry.airStart() : entry.airTime() {
                         Text(time)
                             .font(style == .compact
-                                  ? .system(size: 10, weight: .semibold, design: .monospaced)
+                                  ? .system(size: 11, weight: .semibold, design: .monospaced)
                                   : .system(size: 13, weight: .medium).monospacedDigit())
                             .foregroundStyle(weekTimeColor(style, entry))
                     }
@@ -131,7 +131,7 @@ struct SeasonDropCard: View {
 
     private var dropTag: some View {
         Text("◈ SEASON DROP")
-            .font(.system(size: 9, weight: .heavy))
+            .font(.system(size: 11, weight: .heavy))
             .tracking(0.6)
             .foregroundStyle(Theme.i2)
     }

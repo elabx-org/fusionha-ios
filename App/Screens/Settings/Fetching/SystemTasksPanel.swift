@@ -273,9 +273,9 @@ private struct OutcomeGlyph: View {
         if result == "completed" || result == "failed" {
             let failed = result == "failed"
             Image(systemName: failed ? "exclamationmark" : "checkmark")
-                .font(.system(size: 8, weight: .black))
+                .font(.system(size: 11, weight: .black))
                 .foregroundStyle(failed ? Theme.danger : Theme.done)
-                .frame(width: 15, height: 15)
+                .frame(width: 17, height: 17)
                 .background((failed ? Theme.danger : Theme.done).opacity(0.16), in: Circle())
                 .scaleEffect(shown || motionOff ? 1 : 0.6)
                 .opacity(shown || motionOff ? 1 : 0)

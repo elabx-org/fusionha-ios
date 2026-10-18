@@ -103,7 +103,7 @@ struct AddDetailsCard: View {
                     Text(label).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
                     if let tag {
                         Text(tag.uppercased())
-                            .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .tracking(0.5)
                             .foregroundStyle(Theme.anime)
                             .padding(.horizontal, 5)
@@ -297,7 +297,7 @@ private struct AddFolderRow: View {
             ForEach(flow.onTiers, id: \.self) { tier in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(tier.pill)
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundStyle(tier.color)
                     path(tier)
                         .font(.system(size: 12, design: .monospaced))

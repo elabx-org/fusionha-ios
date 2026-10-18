@@ -110,7 +110,7 @@ struct WantedKindPill: View {
         let tint: Color = kind == "movie" ? Theme.indigo : (kind == "series" ? Theme.cyan : Theme.anime)
         let text: Color = kind == "anime" ? Theme.anime : tint.mix(with: Theme.txt, by: kind == "movie" ? 0.4 : 0.38)
         Text(kind.uppercased())
-            .font(.system(size: 9.5, weight: .heavy))
+            .font(.system(size: 11, weight: .heavy))
             .tracking(0.5)
             .foregroundStyle(text)
             .padding(.horizontal, 8)

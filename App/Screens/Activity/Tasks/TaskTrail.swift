@@ -89,7 +89,7 @@ struct RunTrail: View {
     }
 
     private func trailLabel(_ text: String) -> some View {
-        Text(text.uppercased()).font(.system(size: 10, weight: .heavy)).tracking(0.5).foregroundStyle(Theme.dim)
+        Text(text.uppercased()).font(.system(size: 11, weight: .heavy)).tracking(0.5).foregroundStyle(Theme.dim)
     }
 
     @ViewBuilder
@@ -224,7 +224,7 @@ struct CandidateLine: View {
                 if let size = c.size { Text(ActFmt.bytes(size)).foregroundStyle(Theme.dim).fixedSize() }
                 if row.count > 1 || row.indexers > 1 {
                     Text("×\(row.count)\(row.indexers > 1 ? " · \(row.indexers) indexers" : "")")
-                        .font(.system(size: 10.5))
+                        .font(.system(size: 11))
                         .foregroundStyle(Theme.mut)
                         .padding(.horizontal, 7).padding(.vertical, 1)
                         .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 6))

@@ -224,7 +224,7 @@ struct ActivityIndexersTab: View {
             HStack(spacing: 4) {
                 Text(e.name).foregroundStyle(Theme.txt).lineLimit(1)
                 if caret {
-                    Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.dim)
+                    Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.dim)
                         .rotationEffect(.degrees(othersOpen ? 90 : 0))
                 }
             }
@@ -261,7 +261,7 @@ struct ActivityIndexersTab: View {
 
     private func cardHeading(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.system(size: 10.5, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .tracking(0.95)
             .foregroundStyle(Theme.dim)
             .padding(.bottom, 12)

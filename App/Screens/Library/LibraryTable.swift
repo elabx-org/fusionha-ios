@@ -15,7 +15,7 @@ struct LibraryTableHeader: View {
             Text("Size").frame(width: tableSizeWidth, alignment: .trailing)
             Color.clear.frame(width: tableMonitorWidth)
         }
-        .font(.system(size: 10.5, weight: .bold))
+        .font(.system(size: 11, weight: .bold))
         .tracking(0.7)
         .textCase(.uppercase)
         .foregroundStyle(Theme.mut)

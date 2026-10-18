@@ -103,12 +103,12 @@ struct DiscoverCardDemandRow: View {
     private func chip(icon: String?, text: String, tint: Color, chevron: Bool) -> some View {
         HStack(spacing: 5) {
             if let icon {
-                Image(systemName: icon).font(.system(size: 10, weight: .bold))
+                Image(systemName: icon).font(.system(size: 11, weight: .bold))
             } else {
                 RequestAnonStack(count: demand.asked, size: 16)
             }
             Text(text).lineLimit(1)
-            if chevron { Image(systemName: "chevron.down").font(.system(size: 8, weight: .bold)) }
+            if chevron { Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold)) }
         }
         .font(.system(size: 11.5, weight: .semibold))
         .foregroundStyle(tint)

@@ -141,7 +141,7 @@ private struct RootStatTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(key.uppercased())
-                .font(.system(size: 10.5, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .tracking(0.5)
                 .foregroundStyle(Theme.mut)
             Text(value)
@@ -152,7 +152,7 @@ private struct RootStatTile: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             Text(sub)
-                .font(.system(size: 10.5, design: .monospaced))
+                .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(Theme.mut)
                 .padding(.top, 2)
                 .lineLimit(1)
@@ -209,7 +209,7 @@ private struct RootFolderCard: View {
                         FetchChip(text: kindLabel)
                         ForEach(folder.defaultFor ?? [], id: \.self) { slot in
                             Text("Default · \(Self.kindLabel[slot.profileKind] ?? slot.profileKind) · \(slot.tier.pill)".uppercased())
-                                .font(.system(size: 9.5, weight: .heavy))
+                                .font(.system(size: 11, weight: .heavy))
                                 .tracking(0.2)
                                 .foregroundStyle(Theme.done)
                                 .padding(.horizontal, 8).padding(.vertical, 2)
@@ -229,7 +229,7 @@ private struct RootFolderCard: View {
                                 .foregroundStyle(folder.online ? Theme.mut : Theme.stuck)
                         }
                         Text(folder.importMode.label)
-                            .font(.system(size: 10.5, weight: .semibold))
+                            .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(Theme.mut)
                             .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -293,7 +293,7 @@ private struct RootFolderCard: View {
                     Spacer()
                 }
             }
-            .font(.system(size: 10, design: .monospaced))
+            .font(.system(size: 11, design: .monospaced))
             .foregroundStyle(Theme.dim)
             .padding(.top, 6)
         }

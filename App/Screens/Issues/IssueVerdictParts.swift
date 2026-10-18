@@ -129,7 +129,7 @@ struct IssueFixProgressView: View {
             ZStack {
                 Circle().fill(tint.opacity(step.state == "todo" ? 0.12 : 0.2))
                 Image(systemName: step.state == "done" ? "checkmark" : (step.state == "fail" ? "xmark" : "circle.fill"))
-                    .font(.system(size: step.state == "done" || step.state == "fail" ? 10 : 6, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(tint)
             }
             .frame(width: 20, height: 20)

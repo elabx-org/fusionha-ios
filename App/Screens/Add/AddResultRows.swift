@@ -62,7 +62,7 @@ struct AddTile: View {
                 .overlay(alignment: .topTrailing) {
                     if result.inLibrary {
                         Text("In library")
-                            .font(.system(size: 9.5, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(Theme.done)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 3)

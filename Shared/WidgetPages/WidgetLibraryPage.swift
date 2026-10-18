@@ -92,7 +92,7 @@ struct WidgetTag: View {
 
     var body: some View {
         Text(text.uppercased())
-            .font(.system(size: 10, weight: .heavy, design: .rounded))
+            .font(.system(size: 11, weight: .heavy, design: .rounded))
             .tracking(0.4)
             .foregroundStyle(color)
             .padding(.horizontal, 5)

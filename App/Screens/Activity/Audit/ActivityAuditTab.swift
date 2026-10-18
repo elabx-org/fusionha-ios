@@ -181,7 +181,7 @@ struct AuditRow: View {
                             if let kind = AuditFilter.categories.first(where: { $0.key == entry.category })?.label {
                                 Text(kind).font(.system(size: 11, weight: .bold)).foregroundStyle(tone)
                             }
-                            if entry.sensitive == true { Image(systemName: "lock.fill").font(.system(size: 10)).foregroundStyle(Theme.miss) }
+                            if entry.sensitive == true { Image(systemName: "lock.fill").font(.system(size: 11)).foregroundStyle(Theme.miss) }
                             Spacer(minLength: 0)
                             Text(ActFmt.relative(entry.at)).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.dim)
                         }

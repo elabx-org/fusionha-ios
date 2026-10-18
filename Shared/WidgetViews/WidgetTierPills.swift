@@ -14,7 +14,7 @@ struct WidgetTierPill: View {
                 Circle().fill(status.color).frame(width: 6, height: 6)
             }
             Text(tier.pill)
-                .font(.system(size: 10, weight: .heavy, design: .rounded))
+                .font(.system(size: 11, weight: .heavy, design: .rounded))
                 .foregroundStyle(tier.color)
         }
         .padding(.horizontal, 5)

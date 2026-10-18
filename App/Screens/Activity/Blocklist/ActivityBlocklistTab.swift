@@ -110,7 +110,7 @@ struct ActivityBlocklistTab: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(feed.total)").font(.system(size: 24, weight: .heavy)).foregroundStyle(Theme.txt)
                         .contentTransition(.numericText(value: Double(feed.total)))
-                    Text("BLOCKLISTED · NEVER RE-GRABBED").font(.system(size: 10.5, weight: .semibold)).tracking(0.5).foregroundStyle(Theme.dim)
+                    Text("BLOCKLISTED · NEVER RE-GRABBED").font(.system(size: 11, weight: .semibold)).tracking(0.5).foregroundStyle(Theme.dim)
                 }
                 ForEach([BlocklistCategory.recoverable, .manual, .permanent], id: \.self) { cat in
                     HStack(spacing: 8) {

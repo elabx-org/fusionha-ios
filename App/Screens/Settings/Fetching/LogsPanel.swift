@@ -305,7 +305,7 @@ private struct LogRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             if hasTrace {
                 Text("▶")
-                    .font(.system(size: 9))
+                    .font(.system(size: 11))
                     .foregroundStyle(Theme.dim)
                     .rotationEffect(.degrees(open ? 90 : 0))
             }

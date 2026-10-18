@@ -230,7 +230,7 @@ struct ActOverview: View {
 
     private func label10(_ text: String) -> some View {
         Text(text.uppercased())
-            .font(.system(size: 10, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .tracking(0.9)
             .foregroundStyle(Theme.dim)
             .lineLimit(1)

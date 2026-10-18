@@ -85,7 +85,7 @@ struct QueueCapabilityChip: View {
     var body: some View {
         Button { showing = true } label: {
             HStack(spacing: 5) {
-                Image(systemName: glyph).font(.system(size: 10, weight: .semibold)).foregroundStyle(tint)
+                Image(systemName: glyph).font(.system(size: 11, weight: .semibold)).foregroundStyle(tint)
                 segments
             }
             .font(.system(size: 12.5, weight: .medium, design: .monospaced))

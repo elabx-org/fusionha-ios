@@ -81,7 +81,7 @@ struct LiveActivityStageRail: View {
                 Spacer(minLength: 4)
                 Text(steps.labels.last ?? "")
             }
-            .font(.system(size: 10.5, weight: .semibold))
+            .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(.white.opacity(0.5))
             .lineLimit(1)
         }

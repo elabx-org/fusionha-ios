@@ -170,7 +170,7 @@ struct InteractiveSearchSheet: View {
                             Text(ed.label)
                             if searchedAt[ed.id] != nil {
                                 Image(systemName: "checkmark")
-                                    .font(.system(size: 10, weight: .heavy))
+                                    .font(.system(size: 11, weight: .heavy))
                                     .foregroundStyle(active ? DetailTokens.badgeText : Theme.done)
                             }
                         }
@@ -222,7 +222,7 @@ struct InteractiveSearchSheet: View {
                             .opacity(0.85)
                     }
                 }
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(at != nil ? Theme.done : Theme.mut)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)

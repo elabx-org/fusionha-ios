@@ -131,7 +131,7 @@ private struct QueueMixedChip: View {
     var body: some View {
         Button { showing = true } label: {
             Text(fact.text)
-                .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .foregroundStyle(Theme.miss)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)

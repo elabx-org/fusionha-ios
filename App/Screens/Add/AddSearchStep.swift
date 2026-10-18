@@ -103,7 +103,7 @@ extension AddTitleSheet {
             if !query.isEmpty {
                 Button { query = "" } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Theme.mut)
                         .frame(width: 24, height: 24)
                         .background(Theme.txt.opacity(0.1), in: Circle())
@@ -148,7 +148,7 @@ extension AddTitleSheet {
                 .panel(Theme.panel2, radius: 8)
             }
             HStack(spacing: 5) {
-                Text("VIA").font(.system(size: 10, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
+                Text("VIA").font(.system(size: 11, weight: .bold)).tracking(1).foregroundStyle(Theme.mut)
                 ProviderMark(provider: source == .tvdb ? "tvdb" : "tmdb", size: 10)
             }
             .padding(.horizontal, 8)

@@ -135,7 +135,7 @@ struct PipelineHero: View {
                             }
                             if active {
                                 Text(QueueLogic.heroStages[i]).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.txt)
-                                Text("\(dist[i])").font(.system(size: 10, weight: .bold).monospacedDigit()).foregroundStyle(Theme.bg)
+                                Text("\(dist[i])").font(.system(size: 11, weight: .bold).monospacedDigit()).foregroundStyle(Theme.bg)
                                     .padding(.horizontal, 5).background(Theme.grab, in: Capsule())
                             }
                         }

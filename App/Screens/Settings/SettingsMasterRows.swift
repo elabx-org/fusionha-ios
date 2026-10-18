@@ -45,7 +45,7 @@ struct SettingsMasterRow: View {
 private struct ActionTag: View {
     var body: some View {
         Text("ACTION")
-            .font(.system(size: 8.5, weight: .heavy))
+            .font(.system(size: 11, weight: .heavy))
             .tracking(0.34)
             .foregroundStyle(Theme.i2)
             .padding(.horizontal, 5)
@@ -121,7 +121,7 @@ struct SettingsSearchResults: View {
         var text = AttributedString(hit.crumb)
         if let keyword = hit.matchedKeyword {
             var match = AttributedString(" · matches “\(keyword)”")
-            match.font = .system(size: 10.5, design: .monospaced)
+            match.font = .system(size: 11, design: .monospaced)
             match.foregroundColor = Theme.i2
             text += match
         }

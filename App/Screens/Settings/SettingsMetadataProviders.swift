@@ -84,7 +84,7 @@ struct ProviderCard: View {
                     provider.logo
                         .padding(.bottom, 6)
                     Text(provider.role.uppercased())
-                        .font(.system(size: 9.5, weight: .heavy))
+                        .font(.system(size: 11, weight: .heavy))
                         .tracking(0.5)
                         .foregroundStyle(Theme.dim)
                     Text(provider.name)

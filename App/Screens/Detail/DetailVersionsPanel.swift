@@ -147,7 +147,7 @@ struct DetailVersionsPanel: View {
                     store.scope = .all
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Theme.mut)
                         .frame(width: 20, height: 20)
                         .background(Theme.txt.opacity(0.08), in: Circle())

@@ -62,7 +62,7 @@ private struct NumberingRowView: View {
     var body: some View {
         HStack(spacing: 8) {
             Text(NumberingCopy.kindLabel(row.kind))
-                .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                .font(.system(size: 11, weight: .heavy, design: .monospaced))
                 .foregroundStyle(tint)
                 .padding(.horizontal, 7).padding(.vertical, 3)
                 .background(tint.opacity(0.14), in: Capsule())

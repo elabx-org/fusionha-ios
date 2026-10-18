@@ -46,7 +46,7 @@ private struct AddTierCard: View {
                     .foregroundStyle(tier.color)
                 if tier == .hd {
                     Text("DEFAULT")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .tracking(0.6)
                         .foregroundStyle(Theme.done)
                         .padding(.horizontal, 6)
@@ -338,7 +338,7 @@ private struct FourKRow: View {
             ForEach(Array(tags.enumerated()), id: \.offset) { _, tag in
                 let color = Self.tagColor(tag.kind)
                 Text(tag.label)
-                    .font(.system(size: 10, weight: .semibold, design: tag.kind == "group" ? .monospaced : .default))
+                    .font(.system(size: 11, weight: .semibold, design: tag.kind == "group" ? .monospaced : .default))
                     .foregroundStyle(color)
                     .lineLimit(1)
                     .fixedSize()

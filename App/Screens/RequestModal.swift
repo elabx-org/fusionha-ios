@@ -92,7 +92,7 @@ struct RequestModal: View {
         let kindColor = pick.kind == .movie ? Theme.kindMovie : Theme.kindSeries
         return VStack(spacing: 12) {
             Text(pick.kind == .movie ? "MOVIE · REQUEST" : "SERIES · REQUEST")
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
                 .tracking(0.5)
                 .foregroundStyle(kindColor)
                 .padding(.horizontal, 9).padding(.vertical, 3)

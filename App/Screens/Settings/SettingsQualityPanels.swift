@@ -107,7 +107,7 @@ struct DefaultProfilesSettingsPanel: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt)
                 Text(tag)
-                    .font(.system(size: 9, weight: .heavy))
+                    .font(.system(size: 11, weight: .heavy))
                     .foregroundStyle(tagColor)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
@@ -287,7 +287,7 @@ struct ReleaseFiltersSettingsPanel: View {
                 .lineLimit(1)
             if isRegex(term) {
                 Text("regex")
-                    .font(.system(size: 9.5, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.edition)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)

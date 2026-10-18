@@ -107,7 +107,7 @@ struct DownloadClientSheet: View {
                     Text(description).font(.system(size: 12)).foregroundStyle(Theme.mut)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(proto)
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .foregroundStyle(tint)
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(tint.opacity(0.4)))

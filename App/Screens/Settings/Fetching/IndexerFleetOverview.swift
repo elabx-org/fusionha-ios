@@ -242,7 +242,7 @@ struct IndexerFleetOverview: View {
 
     private var newBadge: some View {
         Text("NEW")
-            .font(.system(size: 8.5, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(Theme.done)
             .padding(.horizontal, 5)
             .overlay(Capsule().strokeBorder(Theme.done.opacity(0.32)))
@@ -256,7 +256,7 @@ struct IndexerFleetOverview: View {
                 if entry.isNew { newBadge }
                 if caret {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Theme.dim)
                         .rotationEffect(.degrees(othersOpen ? 90 : 0))
                 }
@@ -389,7 +389,7 @@ struct IndexerFleetOverview: View {
     private func effRow(_ tag: String, good: Bool, _ name: String?, _ value: String) -> some View {
         HStack(spacing: 8) {
             Text(tag)
-                .font(.system(size: 9.5, weight: .heavy))
+                .font(.system(size: 11, weight: .heavy))
                 .foregroundStyle(good ? Theme.done : Theme.miss)
                 .padding(.horizontal, 6).padding(.vertical, 1)
                 .background((good ? Theme.done : Theme.miss).opacity(0.14), in: Capsule())
@@ -513,7 +513,7 @@ struct IndexerExclusiveCard: View {
                             (Text(FetchFormat.grouped(row.n)).bold() + Text(" exclusive"))
                                 .font(.system(size: 11.5)).foregroundStyle(Theme.mut)
                             if let early = row.m.stat?.exclusive?.early, early > 0 {
-                                Text("▲\(early) early").font(.system(size: 10.5, weight: .bold)).foregroundStyle(Theme.done)
+                                Text("▲\(early) early").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.done)
                             }
                         }
                         FetchBar(fraction: Double(row.n) / maxN, color: Theme.edition, height: 6, delay: Double(i) * 0.07)

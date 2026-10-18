@@ -80,7 +80,7 @@ struct WantedCardView: View {
         HStack(spacing: 6) {
             Circle().fill(WantedLogic.stateColor(edition.state)).frame(width: 6, height: 6)
             Text(edition.tier.chipLabel)
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .tracking(0.2)
                 .foregroundStyle(edition.tier.color)
         }

@@ -60,7 +60,7 @@ struct PresetLadderSection: View {
     }
 
     private var cutMark: some View {
-        Text("UPGRADE UNTIL").font(.system(size: 9.5, weight: .heavy)).foregroundStyle(Theme.i2)
+        Text("UPGRADE UNTIL").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.i2)
     }
 }
 

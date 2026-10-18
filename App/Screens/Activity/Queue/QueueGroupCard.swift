@@ -83,12 +83,12 @@ struct QueueGroupCard: View {
                         Text(ActFmt.rate(shownRate)).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Theme.grab)
                             .contentTransition(.opacity)
                             .animation(reduce ? nil : .easeOut(duration: 0.2), value: shownRate > 0)
-                        Text("speed").font(.system(size: 9.5, weight: .bold)).foregroundStyle(Theme.dim)
+                        Text("speed").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.dim)
                     }
                     .padding(.trailing, 12)
                     VStack(alignment: .trailing, spacing: 1) {
                         Text(ActFmt.etaShort(eta)).font(.system(size: 13, weight: .bold).monospacedDigit()).foregroundStyle(Theme.txt)
-                        Text("NEXT DONE").font(.system(size: 9.5, weight: .bold)).foregroundStyle(Theme.dim)
+                        Text("NEXT DONE").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.dim)
                     }
                     .padding(.trailing, 6)
                 }

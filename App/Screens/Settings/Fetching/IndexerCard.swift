@@ -63,7 +63,7 @@ struct IndexerCard: View {
                     Text(indexer.displayName).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
                     if indexer.source == "prowlarr" {
                         Text("P")
-                            .font(.system(size: 10, weight: .heavy))
+                            .font(.system(size: 11, weight: .heavy))
                             .foregroundStyle(.white)
                             .frame(width: 16, height: 16)
                             .background(Color(hex: 0xE66001), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
@@ -71,13 +71,13 @@ struct IndexerCard: View {
                     }
                     let tint = indexer.isTorrent ? Theme.grab : Theme.indigo
                     Text(indexer.isTorrent ? "TORRENT" : "USENET")
-                        .font(.system(size: 9, weight: .heavy, design: .monospaced))
+                        .font(.system(size: 11, weight: .heavy, design: .monospaced))
                         .foregroundStyle(tint)
                         .padding(.horizontal, 5).padding(.vertical, 1.5)
                         .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
                         .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(tint.opacity(0.4)))
-                    Text("· pri \(indexer.priority)").font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.dim)
-                    if metric.isNew { FetchChip(text: "NEW", color: Theme.done, border: Theme.done.opacity(0.32), size: 8.5) }
+                    Text("· pri \(indexer.priority)").font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim)
+                    if metric.isNew { FetchChip(text: "NEW", color: Theme.done, border: Theme.done.opacity(0.32), size: 11) }
                     if testing {
                         ProgressView().controlSize(.mini)
                     } else if let result {
@@ -89,7 +89,7 @@ struct IndexerCard: View {
                 ForEach(capChips, id: \.0) { key, label in
                     let on = capOn(key)
                     Text(label)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(on ? Theme.txt : Theme.mut)
                         .padding(.horizontal, 8).padding(.vertical, 2)
                         .background(on ? Theme.panel2 : .clear, in: Capsule())
@@ -98,7 +98,7 @@ struct IndexerCard: View {
                 let scope = indexer.effectiveKindScope
                 if scope != "all" {
                     Text(kindScopeLabel(scope) + (indexer.kindScopeOverride?.isEmpty == false ? " (manual)" : ""))
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Theme.txt)
                         .padding(.horizontal, 8).padding(.vertical, 2)
                         .background(Theme.panel2, in: Capsule())
@@ -111,7 +111,7 @@ struct IndexerCard: View {
             HStack(spacing: 4) {
                 if metric.state == "backoff" {
                     Text("backoff")
-                        .font(.system(size: 10.5, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Theme.miss)
                         .padding(.horizontal, 9).padding(.vertical, 2)
                         .background(Theme.miss.opacity(0.12), in: Capsule())
@@ -147,7 +147,7 @@ struct IndexerCard: View {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(FetchFormat.grouped(metric.grabsRange)).metricValue()
                         if metric.grabs24h > 0 {
-                            Text("▲\(metric.grabs24h)").font(.system(size: 10.5, weight: .bold)).foregroundStyle(Theme.done)
+                            Text("▲\(metric.grabs24h)").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.done)
                         }
                     }
                     Text(metric.grabs24h > 0 ? "\(metric.grabs24h) in 24h" : "none in 24h").metricSub()
@@ -162,7 +162,7 @@ struct IndexerCard: View {
             }
             GridRow(alignment: .bottom) {
                 cell("Yield") {
-                    (Text("\(Int(metric.yieldValue.rounded()))") + Text("/100 q").font(.system(size: 10)).foregroundColor(Theme.mut))
+                    (Text("\(Int(metric.yieldValue.rounded()))") + Text("/100 q").font(.system(size: 11)).foregroundColor(Theme.mut))
                         .metricValue()
                     FetchBar(fraction: metric.yieldValue / maxYield, color: lowYield ? Theme.miss : Theme.done,
                              height: 5, delay: delay + 0.18)
@@ -183,7 +183,7 @@ struct IndexerCard: View {
     private func cell<C: View>(_ key: String, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(key.uppercased())
-                .font(.system(size: 10, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
                 .tracking(0.8)
                 .foregroundStyle(Theme.dim)
                 .lineLimit(1)
@@ -210,14 +210,14 @@ struct IndexerCard: View {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(FetchFormat.grouped(excl)).font(.system(size: 15, weight: .heavy).monospacedDigit()).foregroundStyle(Theme.edition)
                     Text("\(early.map { $0 > 0 ? "\($0) early · " : "" } ?? "")only this indexer had it")
-                        .font(.system(size: 10.5)).foregroundStyle(Theme.mut)
+                        .font(.system(size: 11)).foregroundStyle(Theme.mut)
                 }
             }
         }
     }
 
     private func mixKey(_ text: String) -> some View {
-        Text(text.uppercased()).font(.system(size: 9.5, weight: .bold)).tracking(0.8).foregroundStyle(Theme.dim)
+        Text(text.uppercased()).font(.system(size: 11, weight: .bold)).tracking(0.8).foregroundStyle(Theme.dim)
     }
 
     private func mixGroup(_ key: String, parts: [(Double, Color)], legend: [(String, Color)]) -> some View {
@@ -229,7 +229,7 @@ struct IndexerCard: View {
                 ForEach(legend, id: \.0) { text, color in
                     HStack(spacing: 4) {
                         RoundedRectangle(cornerRadius: 2).fill(color).frame(width: 7, height: 7)
-                        Text(text).font(.system(size: 10.5)).foregroundStyle(Theme.mut)
+                        Text(text).font(.system(size: 11)).foregroundStyle(Theme.mut)
                     }
                 }
             }
@@ -265,6 +265,6 @@ private extension Text {
         self.font(.system(size: 17, weight: .heavy).monospacedDigit()).foregroundStyle(color).lineLimit(1).minimumScaleFactor(0.7)
     }
     func metricSub() -> some View {
-        self.font(.system(size: 10.5)).foregroundStyle(Theme.mut).lineLimit(1)
+        self.font(.system(size: 11)).foregroundStyle(Theme.mut).lineLimit(1)
     }
 }

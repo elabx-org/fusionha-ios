@@ -277,7 +277,7 @@ private struct InstanceCard: View {
                             Circle().fill(instance.enabled ? Theme.done : Theme.dim).frame(width: 6, height: 6)
                             Text(instance.enabled ? "Enabled" : "Disabled")
                         }
-                        .font(.system(size: 10.5, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(instance.enabled ? Theme.done : Theme.mut)
                         .padding(.horizontal, 8).padding(.vertical, 2)
                         .background((instance.enabled ? Theme.done : Theme.dim).opacity(0.12), in: Capsule())
@@ -336,7 +336,7 @@ private struct InstanceCard: View {
                                 .font(.system(size: 12, design: .monospaced))
                                 .lineLimit(1).truncationMode(.middle)
                             Spacer(minLength: 2)
-                            Image(systemName: "chevron.up.chevron.down").font(.system(size: 9, weight: .bold))
+                            Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .bold))
                         }
                         .foregroundStyle(Theme.txt)
                         .padding(.horizontal, 10)
@@ -389,7 +389,7 @@ private struct InstanceCard: View {
 
     private func field<C: View>(_ label: String, @ViewBuilder content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text(label.uppercased()).font(.system(size: 9.5, weight: .heavy)).tracking(0.6).foregroundStyle(Theme.dim)
+            Text(label.uppercased()).font(.system(size: 11, weight: .heavy)).tracking(0.6).foregroundStyle(Theme.dim)
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)

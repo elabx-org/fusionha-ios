@@ -159,14 +159,14 @@ struct RailRowView: View {
     private func meta(color: Color) -> some View {
         if rail.attention {
             Image(systemName: rail.deadLinkOnly ? "link" : "exclamationmark.triangle")
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
         } else {
             switch rail.state {
             case .upcoming:
                 HStack(spacing: 4) {
                     Image(systemName: rail.upcomingStage == "digital" ? "tv"
                           : rail.upcomingStage == "physical" ? "opticaldisc" : "clock")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                     if let date = rail.upcomingDate {
                         Text((rail.upcomingEstimated ? "~" : "") + Format.releaseDate(date))
                     } else {
@@ -176,11 +176,11 @@ struct RailRowView: View {
             case .upgrading:
                 HStack(spacing: 4) {
                     if let f = rail.fraction { Text(f) }
-                    Image(systemName: "arrow.up").font(.system(size: 10, weight: .bold))
+                    Image(systemName: "arrow.up").font(.system(size: 11, weight: .bold))
                 }
             case .downloading:
                 HStack(spacing: 4) {
-                    Image(systemName: "arrow.down.to.line").font(.system(size: 10, weight: .bold))
+                    Image(systemName: "arrow.down.to.line").font(.system(size: 11, weight: .bold))
                     if style == .current {
                         if let f = rail.fraction { Text(f) }
                     } else {
@@ -196,7 +196,7 @@ struct RailRowView: View {
                 case .current:
                     HStack(spacing: 4) {
                         if let f = rail.fraction { Text(f) }
-                        Image(systemName: "checkmark").font(.system(size: 10, weight: .heavy))
+                        Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy))
                     }
                 }
             case .partial, .wanted:

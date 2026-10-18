@@ -86,7 +86,7 @@ struct LibraryToolbar: View {
             .overlay(alignment: .topTrailing) {
                 if filterBadge > 0 {
                     Text("\(filterBadge)")
-                        .font(.system(size: 10.5, weight: .heavy))
+                        .font(.system(size: 11, weight: .heavy))
                         .foregroundStyle(Theme.onPrimary)
                         .frame(minWidth: 17, minHeight: 17)
                         .background(Theme.fusion, in: Capsule())

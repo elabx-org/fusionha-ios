@@ -113,7 +113,7 @@ struct RequestHistoryRow: View {
                         .font(.system(size: 14)).foregroundStyle(Theme.txt).lineLimit(1)
                     Spacer(minLength: 4)
                     Text(pill.label)
-                        .font(.system(size: 10.5, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(pill.tone.color)
                         .padding(.horizontal, 7).padding(.vertical, 2)
                         .background(pill.tone.color.opacity(0.15), in: Capsule())

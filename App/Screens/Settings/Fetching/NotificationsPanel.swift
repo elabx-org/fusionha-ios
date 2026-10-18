@@ -395,7 +395,7 @@ struct NotificationsPanel: View {
     private func sec(_ title: String) -> some View {
         HStack(spacing: 10) {
             Text(title.uppercased())
-                .font(.system(size: 10.5, weight: .heavy))
+                .font(.system(size: 11, weight: .heavy))
                 .tracking(0.6)
                 .foregroundStyle(Theme.dim)
                 .fixedSize()

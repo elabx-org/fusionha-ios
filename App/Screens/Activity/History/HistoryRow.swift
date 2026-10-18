@@ -48,7 +48,7 @@ struct HistoryRow: View {
                     HStack(spacing: 5) {
                         ForEach(chips, id: \.self) { chip in
                             Text(chip.label)
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(Theme.mut)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)

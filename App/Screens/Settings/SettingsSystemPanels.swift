@@ -153,7 +153,7 @@ struct ExperimentalSettingsPanel: View {
                     Toggle(isOn: store.boolBinding("experimental_search_improvements")) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text("EXPERIMENTAL")
-                                .font(.system(size: 9, weight: .heavy))
+                                .font(.system(size: 11, weight: .heavy))
                                 .tracking(0.5)
                                 .foregroundStyle(Theme.miss)
                                 .padding(.horizontal, 6)
@@ -302,7 +302,7 @@ struct AboutSettingsPanel: View {
                         Circle().fill(Theme.done).frame(width: 6, height: 6)
                         Text("Up to date")
                     }
-                    .font(.system(size: 10.5, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Theme.done)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 3)
@@ -311,9 +311,9 @@ struct AboutSettingsPanel: View {
                     Button { copyInfo() } label: {
                         HStack(spacing: 4) {
                             Text(copied ? "copied" : "copy info")
-                            if copied { Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)) }
+                            if copied { Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)) }
                         }
-                        .font(.system(size: 10.5, design: .monospaced))
+                        .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(Theme.dim)
                         .padding(.horizontal, 9)
                         .padding(.vertical, 3)
@@ -350,7 +350,7 @@ struct AboutSettingsPanel: View {
                 let cell = cells[i]
                 VStack(alignment: .leading, spacing: 3) {
                     Text(cell.0.uppercased())
-                        .font(.system(size: 9.5, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .tracking(0.57)
                         .foregroundStyle(Theme.dim)
                     Text(cell.1)

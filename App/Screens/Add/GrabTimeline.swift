@@ -35,7 +35,7 @@ struct GrabTimeline: View {
                             .offset(x: width * selected.pos / 100, y: 16)
                         if let today = timeline.today {
                             Text("TODAY")
-                                .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                                .font(.system(size: 11, weight: .heavy, design: .monospaced))
                                 .tracking(0.76)
                                 .foregroundStyle(Theme.bg)
                                 .padding(.horizontal, 7)

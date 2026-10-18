@@ -11,7 +11,7 @@ struct QueueMetaLine: View {
         ActFlow(spacing: 0, lineSpacing: 3) {
             part {
                 HStack(spacing: 3) {
-                    Image(systemName: "internaldrive").font(.system(size: 9))
+                    Image(systemName: "internaldrive").font(.system(size: 11))
                     Text(ActFmt.bytes(item.size))
                 }
             }
@@ -62,7 +62,7 @@ struct QueueHead: View {
             ActTierChip(tier: item.tier, edition: item.edition, multipleEditions: item.hasMultipleEditions == true)
             if let chip {
                 Text(chip.0)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(chip.1)
                     .padding(.horizontal, 7)
                     .padding(.vertical, 1)
@@ -80,7 +80,7 @@ struct ReleaseLine: View {
     var body: some View {
         if let text {
             Text(text)
-                .font(.system(size: 10.5, design: .monospaced))
+                .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(Theme.dim)
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -136,7 +136,8 @@ struct PosterRing: View {
                         .stroke(Theme.grab, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                         .animation(reduce ? nil : ActMotion.fill, value: pct)
-                    Text("\(pct)").font(.system(size: 8, weight: .bold).monospacedDigit()).foregroundStyle(Theme.txt)
+                    Text("\(pct)").font(.system(size: 11, weight: .bold).monospacedDigit()).foregroundStyle(Theme.txt)
+                        .lineLimit(1).minimumScaleFactor(0.8)
                 }
                 .frame(width: 24, height: 24)
                 .offset(x: 8, y: -8)

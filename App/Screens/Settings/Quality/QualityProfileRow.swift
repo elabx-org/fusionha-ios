@@ -71,7 +71,7 @@ struct QualityProfileRow: View {
             ForEach(QualityProfileRungs.derive(allowed: profile.allowedQualities, cutoff: profile.cutoff)) { rung in
                 VStack(spacing: 1) {
                     Text(rung.tier).font(.caption2.weight(.bold))
-                    Text(rung.resolution).font(.system(size: 9).monospacedDigit())
+                    Text(rung.resolution).font(.system(size: 11).monospacedDigit())
                 }
                 .foregroundStyle(rung.allowed ? Theme.txt : Theme.dim)
                 .frame(maxWidth: .infinity)

@@ -26,7 +26,7 @@ struct AgentKindChip: View {
     let meta: AgentKindMeta
     var body: some View {
         Text(meta.label)
-            .font(.system(size: 10, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(meta.color)
             .padding(.horizontal, 7).padding(.vertical, 1.5)
             .background(meta.color.opacity(0.14), in: Capsule())

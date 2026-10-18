@@ -89,7 +89,7 @@ struct IssueManagerReportCards: View {
             default: return ("Open", Theme.miss)
             }
         }()
-        return Text(label).font(.system(size: 10.5, weight: .bold)).foregroundStyle(color)
+        return Text(label).font(.system(size: 11, weight: .bold)).foregroundStyle(color)
             .padding(.horizontal, 7).padding(.vertical, 3)
             .background(color.opacity(0.15), in: Capsule())
             .lineLimit(1)
@@ -136,7 +136,7 @@ struct StagedCompareView: View {
                     Text(StagedFacts.headline(staged.state)).font(.system(size: 13.5, weight: .bold)).foregroundStyle(Theme.txt)
                     Spacer()
                     if staged.old?.verdict != nil && staged.new.verdict != nil {
-                        Label("both checked by decypharr", systemImage: "checkmark.shield").font(.system(size: 10.5, weight: .semibold)).foregroundStyle(Theme.done)
+                        Label("both checked by decypharr", systemImage: "checkmark.shield").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.done)
                     }
                 }
                 Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 6) {
@@ -231,7 +231,7 @@ struct IssueHistoryStrips: View {
                     }
                     Spacer(minLength: 4)
                     Label(g.trigger == "autofix" ? "Auto-fix" : "Self-service", systemImage: g.trigger == "autofix" ? "bolt.fill" : "person.fill")
-                        .font(.system(size: 10.5, weight: .semibold)).foregroundStyle(Theme.grab)
+                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.grab)
                 }
                 .padding(10)
                 .background(Theme.card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))

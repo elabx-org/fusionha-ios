@@ -152,7 +152,7 @@ struct BackupPanel: View {
         return VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
                 Text(record.kind)
-                    .font(.system(size: 10.5, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(manual ? Theme.indigo : Theme.mut)
                     .padding(.horizontal, 7).padding(.vertical, 2)
                     .background((manual ? Theme.indigo : Theme.mut).opacity(manual ? 0.16 : 0.15), in: Capsule())
@@ -163,7 +163,7 @@ struct BackupPanel: View {
                     .truncationMode(.middle)
                 if record.keyIncluded == true {
                     Label("Contains key", systemImage: "key.fill")
-                        .font(.system(size: 10.5, weight: .semibold))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(Theme.miss)
                         .labelStyle(.titleAndIcon)
                         .fixedSize()

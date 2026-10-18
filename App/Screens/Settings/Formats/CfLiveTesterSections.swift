@@ -34,7 +34,7 @@ struct CfLiveTesterSections: View {
             HStack {
                 Text("Live Test").textCase(nil)
                 Spacer()
-                Text("REAL-TIME").font(.system(size: 10, weight: .heavy)).foregroundStyle(Theme.done)
+                Text("REAL-TIME").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.done)
             }
             .font(.system(size: 15, weight: .semibold))
             .foregroundStyle(Theme.mut)

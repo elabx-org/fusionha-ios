@@ -54,7 +54,7 @@ struct SearchFilterMenu<Content: View>: View {
                 if let prefix { Text(prefix).foregroundStyle(Theme.mut) }
                 Text(label).foregroundStyle(Theme.txt)
                 Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Theme.mut)
             }
             .font(.system(size: 14, weight: .medium))
@@ -260,10 +260,10 @@ struct ReleaseCard: View {
                     if let autoTarget { AutoTargetHint(info: autoTarget) }
                     if blocklisted {
                         HStack(spacing: 4) {
-                            Image(systemName: "nosign").font(.system(size: 10, weight: .semibold))
+                            Image(systemName: "nosign").font(.system(size: 11, weight: .semibold))
                             Text("BLOCKLISTED").tracking(0.3)
                         }
-                        .font(.system(size: 9.5, weight: .bold))
+                        .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Theme.txt)
                     }
                 }
@@ -272,7 +272,7 @@ struct ReleaseCard: View {
                 SearchQualityChip(quality: release.quality)
                 ForEach(release.flags ?? [], id: \.self) { flag in
                     Text(flag.uppercased())
-                        .font(.system(size: 10.5))
+                        .font(.system(size: 11))
                         .tracking(0.3)
                         .foregroundStyle(Theme.grab)
                         .padding(.horizontal, 7)
@@ -315,7 +315,7 @@ struct ReleaseCard: View {
 
     private func reasonLine(_ icon: String, _ text: String, color: Color) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 5) {
-            Image(systemName: icon).font(.system(size: 10.5, weight: .semibold))
+            Image(systemName: icon).font(.system(size: 11, weight: .semibold))
             Text(text).fixedSize(horizontal: false, vertical: true)
         }
         .font(.system(size: 11.5))
@@ -330,7 +330,7 @@ struct SearchQualityChip: View {
         let tone = ReleaseSearch.tone(quality)
         let color = tone.map(DetailTokens.tier) ?? Theme.mut
         Text(DetailText.quality(quality))
-            .font(.system(size: 10, weight: .bold, design: .monospaced))
+            .font(.system(size: 11, weight: .bold, design: .monospaced))
             .foregroundStyle(color)
             .lineLimit(1)
             .padding(.horizontal, 8)
@@ -346,7 +346,7 @@ struct AutoTargetHint: View {
     var body: some View {
         let color = info.targetLabel == nil ? Theme.mut : DetailTokens.tier(info.tier)
         Text(info.targetLabel.map { "→ \($0)" } ?? "no \(info.tier.tierShort) version")
-            .font(.system(size: 10.5, weight: .bold))
+            .font(.system(size: 11, weight: .bold))
             .foregroundStyle(color)
             .lineLimit(1)
             .padding(.horizontal, 7)

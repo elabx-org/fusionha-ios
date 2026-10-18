@@ -63,7 +63,7 @@ private struct HeldLine: View {
             Text(line.title).font(.system(size: 14, weight: .semibold)).lineLimit(1).layoutPriority(1)
             if let version = line.version.map(LiveActivityTone.shortVersion), !version.isEmpty {
                 Text(version)
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .foregroundStyle(LiveActivityTone.version(version))
                     .padding(.horizontal, 5).padding(.vertical, 1.5)
                     .background(LiveActivityTone.version(version).opacity(0.18), in: RoundedRectangle(cornerRadius: 4, style: .continuous))

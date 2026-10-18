@@ -123,7 +123,7 @@ private struct RenameRowCard: View {
     private func line(_ tag: String, _ path: String, tint: Color, pathColor: Color) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(tag.uppercased())
-                .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                .font(.system(size: 11, weight: .heavy, design: .monospaced))
                 .tracking(0.6)
                 .foregroundStyle(tint)
             Text(path)

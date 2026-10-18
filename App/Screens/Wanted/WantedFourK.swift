@@ -20,7 +20,7 @@ private struct FourKProvenance: View {
     let labels: [String]
     var body: some View {
         Text("via \(labels.joined(separator: " + "))")
-            .font(.system(size: 10.5, weight: .semibold))
+            .font(.system(size: 11, weight: .semibold))
             .foregroundStyle(QualityTier.uhd.color.mix(with: Theme.mut, by: 0.25))
             .padding(.horizontal, 7)
             .padding(.vertical, 2)
@@ -43,7 +43,7 @@ private struct FourKRail: View {
         let rc = tier == .hd ? Theme.done : Theme.grab
         HStack(spacing: 7) {
             Text(tier.pill)
-                .font(.system(size: 9.5, weight: .heavy, design: .monospaced))
+                .font(.system(size: 11, weight: .heavy, design: .monospaced))
                 .tracking(0.3)
                 .foregroundStyle(tier.color)
                 .frame(minWidth: 24)
@@ -61,7 +61,7 @@ private struct FourKRail: View {
                 Image(systemName: tier == .hd ? "checkmark" : "circle.fill").font(.system(size: 8, weight: .heavy))
                 Text(meta)
             }
-            .font(.system(size: 10, design: .monospaced))
+            .font(.system(size: 11, design: .monospaced))
             .foregroundStyle(rc)
             .lineLimit(1)
             .fixedSize()
@@ -168,7 +168,7 @@ struct WantedFourKCard: View {
             }
         }()
         return Text(tag.label)
-            .font(.system(size: 10.5, weight: .semibold, design: tag.kind == "group" ? .monospaced : .default))
+            .font(.system(size: 11, weight: .semibold, design: tag.kind == "group" ? .monospaced : .default))
             .foregroundStyle(color)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)

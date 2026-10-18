@@ -65,7 +65,7 @@ struct MonthGridView: View {
             }
             if items.count > 2 {
                 Text("+\(items.count - 2) more")
-                    .font(.system(size: 9.5, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Theme.mut)
                     .padding(.leading, 4)
                     .lineLimit(1)
@@ -108,12 +108,12 @@ private struct MonthPill: View {
         HStack(spacing: 5) {
             RoundedRectangle(cornerRadius: 2).fill(entry.accent).frame(width: 3, height: 14)
             Text(entry.title)
-                .font(.system(size: 10, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .lineLimit(1)
                 .frame(minWidth: 0, alignment: .leading)
                 .layoutPriority(-1)
             Text(entry.label)
-                .font(.system(size: 10, weight: .medium).monospacedDigit())
+                .font(.system(size: 11, weight: .medium).monospacedDigit())
                 .foregroundStyle(Theme.mut)
                 .lineLimit(1)
                 .fixedSize()

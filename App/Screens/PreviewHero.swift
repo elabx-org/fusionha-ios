@@ -159,7 +159,7 @@ struct PreviewHero: View {
             }
         case .cert(let cert):
             Text(cert)
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .padding(.horizontal, 6).padding(.vertical, 2)
                 .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.line))
         }
@@ -185,7 +185,7 @@ struct StatusToneChip: View {
         let t = tone
         HStack(spacing: 5) {
             Image(systemName: "clock").font(.system(size: 11, weight: .semibold))
-            Text(status.uppercased()).font(.system(size: 10, weight: .heavy, design: .monospaced)).tracking(0.4)
+            Text(status.uppercased()).font(.system(size: 11, weight: .heavy, design: .monospaced)).tracking(0.4)
         }
         .foregroundStyle(t.fg)
         .padding(.horizontal, 10).padding(.vertical, 6)

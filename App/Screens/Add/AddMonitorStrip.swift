@@ -233,7 +233,7 @@ private struct AddSeasonRow: View {
                     HStack(spacing: 8) {
                         if bars.count > 1 {
                             Text(bar.label)
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .font(.system(size: 11, weight: .bold, design: .monospaced))
                                 .foregroundStyle(bar.tier.color)
                         }
                         SeasonTicks(count: n, lit: lit, color: bar.tier.color, active: sliding != nil && bi == 0)

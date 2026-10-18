@@ -73,7 +73,7 @@ struct EditionAliasesSheet: View {
                     Text(alias.edition).foregroundStyle(Theme.edition)
                     if alias.guarded == true {
                         Text("guarded")
-                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
                             .foregroundStyle(Theme.miss)
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .overlay(Capsule().strokeBorder(Theme.miss.opacity(0.5)))

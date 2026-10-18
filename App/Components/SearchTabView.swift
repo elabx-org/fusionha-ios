@@ -283,10 +283,10 @@ struct SearchTabView: View {
     private func groupLabel(_ text: String, count: Int) -> some View {
         HStack(spacing: 8) {
             Text(text.uppercased())
-                .font(.system(size: 10.5, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
                 .tracking(1)
                 .foregroundStyle(Theme.dim)
-            Text("\(count)").font(.system(size: 10.5, weight: .bold, design: .monospaced)).foregroundStyle(Theme.dim)
+            Text("\(count)").font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(Theme.dim)
         }
         .padding(.top, 12)
         .padding(.horizontal, 16)

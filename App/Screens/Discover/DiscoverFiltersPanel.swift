@@ -112,7 +112,7 @@ struct DiscoverFiltersPanel: View {
                 HStack(spacing: 6) {
                     Text(value).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                     Spacer(minLength: 0)
-                    Image(systemName: "chevron.down").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.mut)
+                    Image(systemName: "chevron.down").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut)
                 }
                 .foregroundStyle(Theme.txt)
                 .padding(.horizontal, 11)
