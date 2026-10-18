@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>fusionha review 2026-10-18</title>
+<link rel="stylesheet" href="file:///config/workspace/gh/fusionha-ios/.claude/skills/app-designer-pro/assets/device.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+@font-face { font-family: "Mona"; src: url("file:///config/workspace/gh/fusionha-ios/Shared/Fonts/MonaSansVF.ttf"); font-stretch: 75% 125%; font-weight: 200 900; }
+/* Eclipse, the owner's palette (Shared/AppPalette.swift) */
+:root {
+  --bg:#09080B; --panel:#131116; --panel2:#1B181F; --line:rgba(255,240,245,.08);
+  --txt:#F4F0F6; --mut:#ABA3B0; --dim:#726B78; --i1:#FF5C7A; --i2:#FF9DB4;
+  --done:#4ADE9A; --grab:#38D6E8; --miss:#FFB347; --stuck:#FF9050; --danger:#FF6B6B;
+  --edition:#B794FF; --plex:#E5A00D; --ui: var(--sf), "Inter", system-ui, sans-serif;
+}
+.screen { background: var(--bg); color: var(--txt); font-family: var(--ui); }
+.body { position:absolute; inset: var(--safe-top) 0 0 0; padding: 0 16px; overflow:hidden; }
+.display { font-family:"Mona"; font-stretch:75%; font-weight:850; letter-spacing:-0.8px; line-height:.95; }
+.navrow { display:flex; align-items:center; justify-content:space-between; height:44px; }
+.navbtn { width:44px; height:44px; border-radius:22px; display:grid; place-items:center; color:var(--txt); font-size:17px; }
+h1.pt { font-size:36px; margin:6px 4px 4px; }
+.sub { color:var(--mut); font-size:15px; margin:0 4px 18px; }
+.group { background:var(--panel); border-radius:26px; overflow:hidden; margin-bottom:22px; }
+.ghead { color:var(--mut); font-size:13px; margin:0 20px 7px; }
+.row { display:flex; align-items:flex-start; gap:12px; padding:11px 16px; border-bottom:.5px solid var(--line); }
+.row:last-child { border-bottom:0; }
+.btnrow { color:var(--i1); font-size:17px; display:flex; gap:10px; align-items:center; padding:12px 16px; }
+.seg { display:flex; background:rgba(255,255,255,.06); border-radius:100px; padding:3px; margin-bottom:22px; }
+.seg span { flex:1; text-align:center; font-size:13px; font-weight:500; padding:7px 0; color:var(--txt); border-radius:100px; }
+.seg span.on { background:rgba(255,255,255,.16); font-weight:600; }
+.pic { width:26px; font-size:22px; color:var(--i2); text-align:center; margin-top:1px; }
+.name { font-size:15px; font-weight:600; display:flex; gap:6px; align-items:baseline; }
+.tag { font-size:11px; font-weight:700; }
+.meta { font-size:12px; color:var(--mut); margin-top:2px; }
+.chips { margin-top:5px; display:flex; flex-direction:column; gap:3px; }
+.chip { display:flex; gap:5px; align-items:center; font-size:11.5px; font-weight:600; white-space:nowrap; }
+.chip .g { font-size:9px; font-weight:700; width:12px; text-align:center; }
+.chip .dot { width:6px; height:6px; border-radius:3px; }
+.chip .h { font-size:11px; font-weight:400; color:var(--dim); }
+.chev { margin-left:auto; color:var(--dim); font-size:13px; align-self:center; }
+.card { background:var(--panel); border-radius:11px; padding:14px; }
+.eyebrow { font-size:11px; font-weight:700; letter-spacing:.8px; color:var(--dim); margin-bottom:10px; }
+.ar { display:flex; gap:10px; align-items:center; margin-bottom:10px; }
+.post { width:32px; height:48px; border-radius:6px; flex:none; }
+.ed { font: 600 11px "JetBrains Mono", monospace; color:var(--edition); border:1px solid rgba(183,148,255,.45); background:rgba(183,148,255,.12); border-radius:6px; padding:1px 6px; }
+.ed.uhd { color:var(--grab); border-color:rgba(56,214,232,.45); background:rgba(56,214,232,.12); }
+.tabbar { position:absolute; left:16px; right:16px; bottom:30px; height:62px; border-radius:31px; display:flex; justify-content:space-around; align-items:center; font-size:11px; color:var(--mut); }
+.tabbar b { color:var(--i1); font-weight:600; }
+/* posters: drawn stand-ins for TMDB art */
+.p1 { background: linear-gradient(160deg,#3a2a24,#120c0b); } .p2 { background: linear-gradient(160deg,#1f3442,#0b1218); }
+.p3 { background: linear-gradient(160deg,#41324f,#130f19); } .p4 { background: linear-gradient(160deg,#4a3b1d,#15110a); }
+/* deck */
+.lanes { display:flex; gap:4px; padding:3px; border-radius:100px; font-size:15px; margin:12px 0 14px; white-space:nowrap; overflow:hidden; }
+.lanes span { padding:8px 13px; border-radius:100px; color:var(--mut); }
+.lanes span.on { background:rgba(255,255,255,.14); color:var(--txt); font-weight:600; }
+.dk { background:var(--panel); border-radius:22px; overflow:hidden; box-shadow:0 8px 28px rgba(0,0,0,.25); }
+.dk .art { height:150px; background: linear-gradient(180deg,#4b3c38,#1d1719); display:flex; align-items:flex-end; gap:12px; padding:14px; }
+.dk .art .post { width:52px; height:78px; }
+.pill { background:rgba(255,255,255,.12); border-radius:100px; padding:3px 10px 3px 3px; display:flex; gap:6px; align-items:center; font-size:12.5px; }
+.av { width:24px; height:24px; border-radius:12px; background:linear-gradient(150deg,#FF7A8F,#C2408F); display:grid; place-items:center; font-size:10.5px; font-weight:700; }
+.tiles { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:10px 0; }
+.tile { border:1px solid var(--line); border-radius:12px; padding:8px 10px; background:rgba(255,255,255,.02); }
+.tile i { font-style:normal; display:block; font-size:9.5px; font-weight:700; letter-spacing:.6px; color:var(--dim); }
+.tile b { font-size:13px; }
+.circles { display:flex; justify-content:center; gap:22px; margin-top:14px; align-items:center; }
+.circ { border-radius:50%; display:grid; place-items:center; font-weight:700; }
+
+/* palettes: revised dim (4.6:1) */
+.screen.pal-eclipse { --bg:#09080B; --panel:#131116; --panel2:#1B181F; --line:rgba(255,240,245,.08); --txt:#F4F0F6; --mut:#ABA3B0; --dim:#88828D; --i1:#FF5C7A; --i2:#FF9DB4; --done:#4ADE9A; --grab:#38D6E8; --miss:#FFB347; --stuck:#FF9050; --danger:#FF6B6B; --av:linear-gradient(150deg,#FF7A8F,#C2408F); }
+.screen.pal-aurora { --bg:#0C0D11; --panel:#14161D; --panel2:#181B23; --line:rgba(255,255,255,.08); --txt:#E9EAF0; --mut:#9AA0AD; --dim:#7F8592; --i1:#6366F1; --i2:#22D3EE; --done:#34D399; --grab:#22D3EE; --miss:#F59E0B; --stuck:#FB923C; --danger:#F87171; --av:linear-gradient(150deg,#6366F1,#22D3EE); }
+.screen.pal-daylight { --bg:#F5F6F8; --panel:#FFFFFF; --panel2:#F0F1F4; --line:rgba(15,17,21,.10); --txt:#14161D; --mut:#55606F; --dim:#656D79; --i1:#4F46E5; --i2:#4338CA; --done:#047857; --grab:#0E7490; --miss:#B45309; --stuck:#C2410C; --danger:#B91C1C; --av:linear-gradient(150deg,#4F46E5,#0E7490); }
+.screen.pal-mono { --bg:#0A0A0A; --panel:#141414; --panel2:#1C1C1C; --line:rgba(255,255,255,.10); --txt:#F2F2F2; --mut:#A6A6A6; --dim:#858585; --i1:#D9D9D9; --i2:#FFFFFF; --done:#F2F2F2; --grab:#F2F2F2; --miss:#BDBDBD; --stuck:#CFCFCF; --danger:#F2F2F2; --av:linear-gradient(150deg,#555,#222); }
+.ua { width:34px; height:34px; border-radius:17px; background:var(--av); color:#fff; display:grid; place-items:center; font-size:13px; font-weight:700; flex:none; box-shadow: inset 0 0 0 1px var(--line); }
+.ua.off { opacity:.45; }
+.uname { font-size:16px; font-weight:600; display:flex; gap:6px; align-items:center; }
+.utag { font-size:11px; font-weight:700; padding:0 6px; border-radius:100px; border:1px solid currentColor; line-height:16px; }
+.umeta { font-size:13px; color:var(--mut); margin-top:2px; }
+.pills { display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.sp { font-size:12px; padding:4px 9px; border-radius:100px; white-space:nowrap; }
+.sp b { color:var(--txt); font-weight:600; }
+.urow { display:flex; gap:12px; align-items:flex-start; padding:12px 16px; border-bottom:.5px solid var(--line); }
+.urow:last-child { border-bottom:0; }
+.urow .chev { align-self:center; }
+
+.navrow .plus { width:44px; height:44px; border-radius:22px; display:grid; place-items:center; font-size:22px; font-weight:300; }
+.sym { font-size:11px; margin-right:3px; }
+</style>
+</head>
+<body>
+
+<!-- 1. Settings › Access › Users, as built (UsersSettingsPanel + UserSourceChips) -->
+<section class="screen" data-name="users-asbuilt" data-kind="settings" data-theme="dark" data-time="21:40" data-palette="identity">
+  <div class="body" data-scrolls>
+    <div class="navrow"><span class="navbtn glass">‹</span></div>
+    <h1 class="display pt">Users</h1>
+    <p class="sub">Accounts, roles and sign-in.</p>
+    <div class="group"><div class="btnrow">＋ Add user</div></div>
+    <div class="seg glass" data-system><span class="on">All</span><span>Plex</span><span>Watchlist</span><span>Letterboxd</span></div>
+    <p class="ghead">6 accounts</p>
+    <div class="group">
+      <div class="row"><span class="pic">◉</span><div><div class="name">eafx</div><div class="meta">Admin · 2 active sessions</div>
+        <div class="chips">
+          <div class="chip"><span class="g" style="color:var(--plex)">≡</span><span class="dot" style="background:var(--done)"></span>Healthy · 3 sources<span class="h">14 requested · checked 6 min ago</span></div>
+          <div class="chip"><span class="g" style="color:var(--done)">▣</span><span class="dot" style="background:var(--done)"></span>Healthy · diary<span class="h">9 requested · 3 sources</span></div>
+        </div></div><span class="chev">›</span></div>
+      <div class="row"><span class="pic">○</span><div><div class="name">priya <span class="tag" style="color:var(--miss)">Plex</span></div><div class="meta">Trusted · 1 active session</div>
+        <div class="chips">
+          <div class="chip"><span class="g" style="color:var(--plex)">≡</span><span class="dot" style="background:var(--stuck)"></span>Sign-in expired</div>
+          <div class="chip" style="color:var(--mut)"><span class="g" style="color:var(--done)">▣</span><span class="dot" style="background:var(--dim)"></span>Not connected</div>
+        </div></div><span class="chev">›</span></div>
+      <div class="row"><span class="pic">○</span><div><div class="name">sam.k <span class="tag" style="color:var(--miss)">Plex</span></div><div class="meta">Requestor</div>
+        <div class="chips">
+          <div class="chip"><span class="g" style="color:var(--plex)">≡</span><span class="dot" style="background:var(--grab)"></span>Checking<span class="h">2 requested · checked 1 h ago</span></div>
+          <div class="chip"><span class="g" style="color:var(--done)">▣</span><span class="dot" style="background:var(--stuck)"></span>Needs attention · 1 blocked</div>
+        </div></div><span class="chev">›</span></div>
+      <div class="row"><span class="pic">○</span><div><div class="name">kids-tv <span class="tag" style="color:var(--miss)">Plex</span></div><div class="meta">Requestor</div>
+        <div class="chips">
+          <div class="chip" style="color:var(--mut)"><span class="g" style="color:var(--plex)">≡</span><span class="dot" style="background:var(--dim)"></span>Allowed · off</div>
+          <div class="chip" style="color:var(--mut)"><span class="g" style="color:var(--done)">▣</span><span class="dot" style="background:var(--dim)"></span>Not allowed</div>
+        </div></div><span class="chev">›</span></div>
+      <div class="row"><span class="pic">○</span><div><div class="name">guest <span class="tag" style="color:var(--danger)">Disabled</span></div><div class="meta">No role</div>
+        <div class="chips">
+          <div class="chip" style="color:var(--mut)"><span class="g" style="color:var(--plex)">≡</span><span class="dot" style="background:var(--dim)"></span>Plex users only</div>
+          <div class="chip" style="color:var(--mut)"><span class="g" style="color:var(--done)">▣</span><span class="dot" style="background:var(--dim)"></span>Not allowed</div>
+        </div></div><span class="chev">›</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Requests › Rules, the Recently auto-approved card, as built -->
+<section class="screen" data-name="autoapproved-asbuilt" data-kind="list" data-theme="dark" data-time="21:40" data-palette="identity">
+  <div class="body" data-scrolls>
+    <h1 class="display pt" style="font-size:56px;margin-top:18px">Discover</h1>
+    <div class="lanes glass" data-system><span>Inbox 9</span><span>Board</span><span>History</span><span>Threads</span><span class="on">Rules</span><span>Insights</span></div>
+    <div class="card">
+      <div class="eyebrow">RECENTLY AUTO-APPROVED</div>
+      <div class="ar"><div class="post p1"></div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center"><span style="color:var(--plex);font-size:11px;font-weight:700">≡</span><b style="font-size:14px">Paddington in Peru</b></div><div class="meta">kids-tv · Auto-approved · Kids list rule</div></div><span class="ed">HD·1080p</span></div>
+      <div class="ar"><div class="post p2"></div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center"><span style="color:var(--done);font-size:11px;font-weight:700">▣</span><b style="font-size:14px">The Brutalist</b></div><div class="meta">eafx · Auto-approved · Admin</div></div><span class="ed">HD·1080p</span><span class="ed uhd">UHD·4K</span></div>
+      <div class="ar"><div class="post p3"></div><div style="flex:1;min-width:0"><b style="font-size:14px">Severance</b><div class="meta">priya · Auto-approved · Trusted series</div></div><span class="ed uhd">UHD·4K</span></div>
+      <div class="ar" style="margin-bottom:0"><div class="post p4"></div><div style="flex:1;min-width:0"><div style="display:flex;gap:5px;align-items:center"><span style="color:var(--plex);font-size:11px;font-weight:700">≡</span><b style="font-size:14px">Wallace &amp; Gromit</b></div><div class="meta">kids-tv · Auto-approved · Kids list rule</div></div><span class="ed">HD·1080p</span></div>
+    </div>
+  </div>
+  <div class="tabbar glass" data-float><span>Library</span><b>Discover</b><span>Calendar</span><span>Activity</span><span>Search</span></div>
+</section>
+
+<!-- 3. Requests › Inbox deck, as built (after today's fixes: no scroll bar) -->
+<section class="screen" data-name="deck-asbuilt" data-kind="core" data-theme="dark" data-time="21:26" data-palette="identity">
+  <div class="body" data-scrolls>
+    <div class="lanes glass" data-system style="margin-top:8px"><span class="on">Inbox 9</span><span>Board</span><span>History</span><span>Threads</span><span>Rules</span><span>Insights</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span style="font-size:13.5px;color:var(--mut)"><b style="color:var(--txt)">9</b> waiting · oldest 5 h</span><span class="navbtn" style="color:var(--i1)">☰</span></div>
+    <div class="dk">
+      <div class="art"><div class="post p3"></div><div class="pill"><span class="av">E</span><b>eafx</b></div></div>
+      <div style="padding:14px">
+        <div style="font-size:19px"><b>The Social Reckoning</b> <span style="color:var(--mut)">(2026)</span></div>
+        <div style="font-size:12.5px;color:var(--mut);margin-top:8px;display:flex;gap:6px;align-items:center"><span class="ed">HD·1080p</span>· Movie · Letterboxd watchlist</div>
+        <div class="tiles">
+          <div class="tile"><i>SIZE</i><b>~10.5 GB</b></div><div class="tile"><i>FREE AFTER</i><b>431 GB</b></div>
+          <div class="tile"><i>4K RELEASE</i><b>Not checked</b></div><div class="tile"><i>RELEASE</i><b>Est. 18 Nov</b></div>
+        </div>
+        <div style="font-size:12px;color:var(--mut);display:flex;gap:6px;align-items:center"><span class="ed">HD·1080p</span>/mnt/plex/movies · …0p-Movies · monitored<span style="margin-left:auto;color:var(--i1);font-weight:600">Adjust</span></div>
+      </div>
+    </div>
+    <div class="circles">
+      <span class="circ glass" style="width:58px;height:58px;color:var(--danger);font-size:22px">✕</span>
+      <span class="circ glass" style="width:44px;height:44px;color:var(--mut);font-size:17px">i</span>
+      <span class="circ glass" style="width:58px;height:58px;color:var(--done);font-size:22px">✓</span>
+    </div>
+    <p style="text-align:center;font-size:12px;color:var(--dim);margin-top:12px">Swipe right to approve · left to decline</p>
+  </div>
+  <div class="tabbar glass" data-float><span>Library</span><b>Discover</b><span>Calendar</span><span>Activity</span><span>Search</span></div>
+</section>
+
+
+
+<section class="screen pal-eclipse" data-name="users-eclipse" data-kind="settings" data-theme="dark" data-time="21:40" data-palette="identity">
+  <div class="body" data-scrolls>
+    <div class="navrow"><span class="navbtn glass">‹</span><span class="plus glass" style="color:var(--txt)">+</span></div>
+    <h1 class="display pt">Users</h1>
+    <p class="sub">Accounts, roles and sign-in.</p>
+    <div class="seg glass" data-system><span class="on">All</span><span>Plex</span><span>Watchlist</span><span>Letterboxd</span></div>
+    <p class="ghead">5 accounts</p>
+    <div class="group"><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(138 70% 55%), hsl(178 75% 45%));color:#fff">EA</span><div style="flex:1;min-width:0"><div class="uname"><span>eafx</span> </div><div class="umeta">Admin · 2 sessions · 23 auto-requested</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--done) 13%, transparent)"><span class="sym" style="color:var(--done)">✓</span><b>Watchlist</b><span style="color:var(--done)"> · Healthy · 3 sources</span></span><span class="sp" style="background:color-mix(in srgb, var(--done) 13%, transparent)"><span class="sym" style="color:var(--done)">✓</span><b>Letterboxd</b><span style="color:var(--done)"> · Healthy · diary</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(190 70% 55%), hsl(230 75% 45%));color:#fff">PR</span><div style="flex:1;min-width:0"><div class="uname"><span>priya</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Trusted · 1 session</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--stuck) 13%, transparent)"><span class="sym" style="color:var(--stuck)">▲</span><b>Watchlist</b><span style="color:var(--stuck)"> · Sign-in expired</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(243 70% 55%), hsl(283 75% 45%));color:#fff">SK</span><div style="flex:1;min-width:0"><div class="uname"><span>sam.k</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Requestor · 2 auto-requested</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--grab) 13%, transparent)"><span class="sym" style="color:var(--grab)">↻</span><b>Watchlist</b><span style="color:var(--grab)"> · Checking</span></span><span class="sp" style="background:color-mix(in srgb, var(--stuck) 13%, transparent)"><span class="sym" style="color:var(--stuck)">▲</span><b>Letterboxd</b><span style="color:var(--stuck)"> · Needs attention · 1 blocked</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(158 70% 55%), hsl(198 75% 45%));color:#fff">KT</span><div style="flex:1;min-width:0"><div class="uname"><span>kids-tv</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Requestor</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--mut) 13%, transparent)"><span class="sym" style="color:var(--mut)">−</span><b>Watchlist</b><span style="color:var(--mut)"> · Allowed · off</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua off" style="background:linear-gradient(135deg, hsl(210 70% 55%), hsl(250 75% 45%));color:#fff">GU</span><div style="flex:1;min-width:0"><div class="uname"><span style="color:var(--dim)">guest</span> <span class="utag" style="color:var(--danger)">Disabled</span></div><div class="umeta">No role</div></div><span class="chev">›</span></div></div>
+  </div>
+</section>
+<section class="screen pal-aurora" data-name="users-aurora" data-kind="settings" data-theme="dark" data-time="21:40" data-palette="identity">
+  <div class="body" data-scrolls>
+    <div class="navrow"><span class="navbtn glass">‹</span><span class="plus glass" style="color:var(--txt)">+</span></div>
+    <h1 class="display pt">Users</h1>
+    <p class="sub">Accounts, roles and sign-in.</p>
+    <div class="seg glass" data-system><span class="on">All</span><span>Plex</span><span>Watchlist</span><span>Letterboxd</span></div>
+    <p class="ghead">5 accounts</p>
+    <div class="group"><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(138 70% 55%), hsl(178 75% 45%));color:#fff">EA</span><div style="flex:1;min-width:0"><div class="uname"><span>eafx</span> </div><div class="umeta">Admin · 2 sessions · 23 auto-requested</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--done) 13%, transparent)"><span class="sym" style="color:var(--done)">✓</span><b>Watchlist</b><span style="color:var(--done)"> · Healthy · 3 sources</span></span><span class="sp" style="background:color-mix(in srgb, var(--done) 13%, transparent)"><span class="sym" style="color:var(--done)">✓</span><b>Letterboxd</b><span style="color:var(--done)"> · Healthy · diary</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(190 70% 55%), hsl(230 75% 45%));color:#fff">PR</span><div style="flex:1;min-width:0"><div class="uname"><span>priya</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Trusted · 1 session</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--stuck) 13%, transparent)"><span class="sym" style="color:var(--stuck)">▲</span><b>Watchlist</b><span style="color:var(--stuck)"> · Sign-in expired</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(243 70% 55%), hsl(283 75% 45%));color:#fff">SK</span><div style="flex:1;min-width:0"><div class="uname"><span>sam.k</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Requestor · 2 auto-requested</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--grab) 13%, transparent)"><span class="sym" style="color:var(--grab)">↻</span><b>Watchlist</b><span style="color:var(--grab)"> · Checking</span></span><span class="sp" style="background:color-mix(in srgb, var(--stuck) 13%, transparent)"><span class="sym" style="color:var(--stuck)">▲</span><b>Letterboxd</b><span style="color:var(--stuck)"> · Needs attention · 1 blocked</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(158 70% 55%), hsl(198 75% 45%));color:#fff">KT</span><div style="flex:1;min-width:0"><div class="uname"><span>kids-tv</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Requestor</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--mut) 13%, transparent)"><span class="sym" style="color:var(--mut)">−</span><b>Watchlist</b><span style="color:var(--mut)"> · Allowed · off</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua off" style="background:linear-gradient(135deg, hsl(210 70% 55%), hsl(250 75% 45%));color:#fff">GU</span><div style="flex:1;min-width:0"><div class="uname"><span style="color:var(--dim)">guest</span> <span class="utag" style="color:var(--danger)">Disabled</span></div><div class="umeta">No role</div></div><span class="chev">›</span></div></div>
+  </div>
+</section>
+<section class="screen pal-daylight" data-name="users-daylight" data-kind="settings" data-time="21:40" data-palette="identity">
+  <div class="body" data-scrolls>
+    <div class="navrow"><span class="navbtn glass">‹</span><span class="plus glass" style="color:var(--txt)">+</span></div>
+    <h1 class="display pt">Users</h1>
+    <p class="sub">Accounts, roles and sign-in.</p>
+    <div class="seg glass" data-system><span class="on">All</span><span>Plex</span><span>Watchlist</span><span>Letterboxd</span></div>
+    <p class="ghead">5 accounts</p>
+    <div class="group"><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(138 70% 55%), hsl(178 75% 45%));color:#fff">EA</span><div style="flex:1;min-width:0"><div class="uname"><span>eafx</span> </div><div class="umeta">Admin · 2 sessions · 23 auto-requested</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--done) 13%, transparent)"><span class="sym" style="color:var(--done)">✓</span><b>Watchlist</b><span style="color:var(--done)"> · Healthy · 3 sources</span></span><span class="sp" style="background:color-mix(in srgb, var(--done) 13%, transparent)"><span class="sym" style="color:var(--done)">✓</span><b>Letterboxd</b><span style="color:var(--done)"> · Healthy · diary</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(190 70% 55%), hsl(230 75% 45%));color:#fff">PR</span><div style="flex:1;min-width:0"><div class="uname"><span>priya</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Trusted · 1 session</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--stuck) 13%, transparent)"><span class="sym" style="color:var(--stuck)">▲</span><b>Watchlist</b><span style="color:var(--stuck)"> · Sign-in expired</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(243 70% 55%), hsl(283 75% 45%));color:#fff">SK</span><div style="flex:1;min-width:0"><div class="uname"><span>sam.k</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Requestor · 2 auto-requested</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--grab) 13%, transparent)"><span class="sym" style="color:var(--grab)">↻</span><b>Watchlist</b><span style="color:var(--grab)"> · Checking</span></span><span class="sp" style="background:color-mix(in srgb, var(--stuck) 13%, transparent)"><span class="sym" style="color:var(--stuck)">▲</span><b>Letterboxd</b><span style="color:var(--stuck)"> · Needs attention · 1 blocked</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:linear-gradient(135deg, hsl(158 70% 55%), hsl(198 75% 45%));color:#fff">KT</span><div style="flex:1;min-width:0"><div class="uname"><span>kids-tv</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Requestor</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--mut) 13%, transparent)"><span class="sym" style="color:var(--mut)">−</span><b>Watchlist</b><span style="color:var(--mut)"> · Allowed · off</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua off" style="background:linear-gradient(135deg, hsl(210 70% 55%), hsl(250 75% 45%));color:#fff">GU</span><div style="flex:1;min-width:0"><div class="uname"><span style="color:var(--dim)">guest</span> <span class="utag" style="color:var(--danger)">Disabled</span></div><div class="umeta">No role</div></div><span class="chev">›</span></div></div>
+  </div>
+</section>
+<section class="screen pal-mono" data-name="users-mono" data-kind="settings" data-theme="dark" data-time="21:40" data-palette="identity">
+  <div class="body" data-scrolls>
+    <div class="navrow"><span class="navbtn glass">‹</span><span class="plus glass" style="color:var(--txt)">+</span></div>
+    <h1 class="display pt">Users</h1>
+    <p class="sub">Accounts, roles and sign-in.</p>
+    <div class="seg glass" data-system><span class="on">All</span><span>Plex</span><span>Watchlist</span><span>Letterboxd</span></div>
+    <p class="ghead">5 accounts</p>
+    <div class="group"><div class="urow"><span class="ua" style="background:#1C1C1C;color:#F2F2F2">EA</span><div style="flex:1;min-width:0"><div class="uname"><span>eafx</span> </div><div class="umeta">Admin · 2 sessions · 23 auto-requested</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--done) 13%, transparent)"><span class="sym" style="color:var(--done)">✓</span><b>Watchlist</b><span style="color:var(--done)"> · Healthy · 3 sources</span></span><span class="sp" style="background:color-mix(in srgb, var(--done) 13%, transparent)"><span class="sym" style="color:var(--done)">✓</span><b>Letterboxd</b><span style="color:var(--done)"> · Healthy · diary</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:#1C1C1C;color:#F2F2F2">PR</span><div style="flex:1;min-width:0"><div class="uname"><span>priya</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Trusted · 1 session</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--stuck) 13%, transparent)"><span class="sym" style="color:var(--stuck)">▲</span><b>Watchlist</b><span style="color:var(--stuck)"> · Sign-in expired</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:#1C1C1C;color:#F2F2F2">SK</span><div style="flex:1;min-width:0"><div class="uname"><span>sam.k</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Requestor · 2 auto-requested</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--grab) 13%, transparent)"><span class="sym" style="color:var(--grab)">↻</span><b>Watchlist</b><span style="color:var(--grab)"> · Checking</span></span><span class="sp" style="background:color-mix(in srgb, var(--stuck) 13%, transparent)"><span class="sym" style="color:var(--stuck)">▲</span><b>Letterboxd</b><span style="color:var(--stuck)"> · Needs attention · 1 blocked</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua" style="background:#1C1C1C;color:#F2F2F2">KT</span><div style="flex:1;min-width:0"><div class="uname"><span>kids-tv</span> <span class="utag" style="color:var(--mut)">Plex</span></div><div class="umeta">Requestor</div><div class=pills><span class="sp" style="background:color-mix(in srgb, var(--mut) 13%, transparent)"><span class="sym" style="color:var(--mut)">−</span><b>Watchlist</b><span style="color:var(--mut)"> · Allowed · off</span></span></div></div><span class="chev">›</span></div><div class="urow"><span class="ua off" style="background:#1C1C1C;color:#F2F2F2">GU</span><div style="flex:1;min-width:0"><div class="uname"><span style="color:var(--dim)">guest</span> <span class="utag" style="color:var(--danger)">Disabled</span></div><div class="umeta">No role</div></div><span class="chev">›</span></div></div>
+  </div>
+</section>
+<section class="screen pal-eclipse" data-name="autoapproved-r2" data-kind="list" data-theme="dark" data-time="21:40" data-palette="identity">
+  <div class="body" data-scrolls>
+    <h1 class="display pt" style="font-size:56px;margin-top:18px">Discover</h1>
+    <div class="lanes glass" data-system data-scrolls><span>Inbox 9</span><span>Board</span><span>History</span><span>Threads</span><span class="on">Rules</span><span>Insights</span></div>
+    <div class="card">
+      <div class="eyebrow" style="color:var(--mut)">RECENTLY AUTO-APPROVED</div>
+      <div class="ar"><div class="post p1"></div><div style="flex:1;min-width:0"><b style="font-size:14px">Paddington in Peru</b><div class="meta">From the Plex list · Kids · kids-tv · Kids list rule</div></div><span class="ed">HD·1080p</span></div>
+      <div class="ar"><div class="post p2"></div><div style="flex:1;min-width:0"><b style="font-size:14px">The Brutalist</b><div class="meta">From a Letterboxd diary · eafx · Admin</div></div><span class="ed">HD·1080p</span></div>
+      <div class="ar"><div class="post p3"></div><div style="flex:1;min-width:0"><b style="font-size:14px">Severance</b><div class="meta">priya · Trusted series</div></div><span class="ed uhd">UHD·4K</span></div>
+      <div class="ar" style="margin-bottom:0"><div class="post p4"></div><div style="flex:1;min-width:0"><b style="font-size:14px">Wallace &amp; Gromit</b><div class="meta">From the Plex list · Kids · kids-tv · Kids list rule</div></div><span class="ed">HD·1080p</span></div>
+    </div>
+  </div>
+  <div class="tabbar glass" data-float><span>Library</span><b>Discover</b><span>Calendar</span><span>Activity</span><span>Search</span></div>
+</section>
+<script src="file:///config/workspace/gh/fusionha-ios/.claude/skills/app-designer-pro/assets/device.js"></script>
+</body>
+</html>

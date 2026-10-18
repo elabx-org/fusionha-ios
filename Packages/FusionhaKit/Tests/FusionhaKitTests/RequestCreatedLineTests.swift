@@ -97,3 +97,14 @@ final class UsersShowFilterTests: XCTestCase {
         XCTAssertEqual(SourceAdminCopy.letterboxdHint(lb("healthy", requested: 1, linked: 1)), "1 requested · 1 source")
     }
 }
+
+/// Avatar letters and hue (web `access-shared.tsx`).
+final class PersonInitialsTests: XCTestCase {
+    func testInitialsAndHue() {
+        XCTAssertEqual(PersonInitials.of("sam.k"), "SK")
+        XCTAssertEqual(PersonInitials.of("guest"), "GU")
+        XCTAssertEqual(PersonInitials.hue(nil), 220)
+        XCTAssertEqual(PersonInitials.hue(1), 138)
+        XCTAssertEqual(PersonInitials.hue(3), 53)
+    }
+}

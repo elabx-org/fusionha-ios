@@ -69,7 +69,7 @@ struct SwipeCardView: View {
             HStack(alignment: .bottom, spacing: 12) {
                 ActPoster(url: request.poster, title: title, size: .md)
                 HStack(spacing: 6) {
-                    RequestAvatar(name: TriageFacts.requesterName(request), size: 24, fontSize: 10.5)
+                    RequestAvatar(name: TriageFacts.requesterName(request), size: 24, fontSize: 11)
                     (Text(TriageFacts.firstName(TriageFacts.requesterName(request))).fontWeight(.bold) + Text(extra > 0 ? " + \(extra)" : ""))
                         .font(.system(size: 12.5))
                         .foregroundStyle(Theme.txt)

@@ -1,0 +1,181 @@
+{
+  "surfaces": [
+    {
+      "name": "users-eclipse",
+      "type": "screen",
+      "fails": [
+        "Text touching text (under 3pt apart): \"Watchlist\" / \"· Healthy · 3 sources\"; \"Letterboxd\" / \"· Healthy · diary\"; \"Watchlist\" / \"· Sign-in expired\"; \"Watchlist\" / \"· Checking\""
+      ],
+      "warns": [
+        "7 distinct left edges in the left third. Align to fewer verticals."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "settings",
+        "fonts": {
+          "SF Pro": 40,
+          "Mona": 1
+        },
+        "sizes": [
+          36,
+          17,
+          16,
+          15,
+          13,
+          12,
+          11
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700",
+          "850"
+        ],
+        "leftEdges": 7,
+        "words": 62,
+        "headline": "36px, 1 words, 1 line(s)",
+        "accentHues": [
+          0,
+          144,
+          24,
+          192
+        ],
+        "identity": 4,
+        "cards": 1
+      }
+    },
+    {
+      "name": "users-aurora",
+      "type": "screen",
+      "fails": [
+        "Contrast below WCAG on solid ground: 4.04:1 17px \"＋ Add user\"",
+        "Text touching text (under 3pt apart): \"Watchlist\" / \"· Healthy · 3 sources\"; \"Letterboxd\" / \"· Healthy · diary\"; \"Watchlist\" / \"· Sign-in expired\"; \"Watchlist\" / \"· Checking\""
+      ],
+      "warns": [
+        "7 distinct left edges in the left third. Align to fewer verticals."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "settings",
+        "fonts": {
+          "SF Pro": 40,
+          "Mona": 1
+        },
+        "sizes": [
+          36,
+          17,
+          16,
+          15,
+          13,
+          12,
+          11
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700",
+          "850"
+        ],
+        "leftEdges": 7,
+        "words": 62,
+        "headline": "36px, 1 words, 1 line(s)",
+        "accentHues": [
+          240,
+          168,
+          24,
+          192,
+          0
+        ],
+        "identity": 5,
+        "cards": 1
+      }
+    },
+    {
+      "name": "users-daylight",
+      "type": "screen",
+      "fails": [
+        "Text touching text (under 3pt apart): \"Watchlist\" / \"· Healthy · 3 sources\"; \"Letterboxd\" / \"· Healthy · diary\"; \"Watchlist\" / \"· Sign-in expired\"; \"Watchlist\" / \"· Checking\""
+      ],
+      "warns": [
+        "7 distinct left edges in the left third. Align to fewer verticals."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "settings",
+        "fonts": {
+          "SF Pro": 40,
+          "Mona": 1
+        },
+        "sizes": [
+          36,
+          17,
+          16,
+          15,
+          13,
+          12,
+          11
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700",
+          "850"
+        ],
+        "leftEdges": 7,
+        "words": 62,
+        "headline": "36px, 1 words, 1 line(s)",
+        "accentHues": [
+          240,
+          168,
+          24,
+          192,
+          0
+        ],
+        "identity": 5,
+        "cards": 1
+      }
+    },
+    {
+      "name": "users-mono",
+      "type": "screen",
+      "fails": [
+        "Text touching text (under 3pt apart): \"Watchlist\" / \"· Healthy · 3 sources\"; \"Letterboxd\" / \"· Healthy · diary\"; \"Watchlist\" / \"· Sign-in expired\"; \"Watchlist\" / \"· Checking\""
+      ],
+      "warns": [
+        "7 distinct left edges in the left third. Align to fewer verticals."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "settings",
+        "fonts": {
+          "SF Pro": 40,
+          "Mona": 1
+        },
+        "sizes": [
+          36,
+          17,
+          16,
+          15,
+          13,
+          12,
+          11
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700",
+          "850"
+        ],
+        "leftEdges": 7,
+        "words": 62,
+        "headline": "36px, 1 words, 1 line(s)",
+        "accentHues": [],
+        "cards": 1
+      }
+    }
+  ],
+  "exports": [
+    "FAIL  page error: request failed: file:///System/Library/Fonts/SFNS.ttf",
+    "warn  identity palette on users-eclipse, users-aurora, users-daylight: check every hue belongs to one thing, the same thing on every screen, with neutral chrome (color.md §9)."
+  ]
+}

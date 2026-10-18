@@ -1,0 +1,151 @@
+{
+  "surfaces": [
+    {
+      "name": "users-asbuilt",
+      "type": "screen",
+      "fails": [
+        "Text below 11pt (the floor on both platforms): 9px \"≡\"; 9px \"▣\"; 9px \"≡\"; 9px \"▣\"",
+        "Contrast below WCAG on solid ground: 3.65:1 11px \"14 requested · checked 6 min ago\"; 3.65:1 11px \"9 requested · 3 sources\"; 3.65:1 13px \"›\"; 3.65:1 13px \"›\"; 3.65:1 11px \"2 requested · checked 1 h ago\"",
+        "Text clipped: \"14 requested · checked 6 min a\" cut by its container"
+      ],
+      "warns": [
+        "9 distinct text sizes. A type scale has 5 to 7 steps: 36, 22, 17, 15, 13, 12, 11.5, 11, 9",
+        "9 distinct left edges in the left third. Align to fewer verticals."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "settings",
+        "fonts": {
+          "SF Pro": 51,
+          "Mona": 1
+        },
+        "sizes": [
+          36,
+          22,
+          17,
+          15,
+          13,
+          12,
+          11.5,
+          11,
+          9
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700",
+          "850"
+        ],
+        "leftEdges": 9,
+        "words": 73,
+        "headline": "36px, 1 words, 1 line(s)",
+        "accentHues": [
+          0,
+          336,
+          48,
+          144,
+          24,
+          192
+        ],
+        "identity": 6,
+        "cards": 1
+      }
+    },
+    {
+      "name": "autoapproved-asbuilt",
+      "type": "screen",
+      "fails": [
+        "Contrast below WCAG on solid ground: 3.65:1 11px \"RECENTLY AUTO-APPROVED\"",
+        "Text clipped: \"Rules\" cut by its container"
+      ],
+      "warns": [
+        "Empty words: \"insights\". Replace each with the fact it stands for."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "list",
+        "fonts": {
+          "Mona": 1,
+          "SF Pro": 17,
+          "JetBrains Mono": 5
+        },
+        "sizes": [
+          56,
+          14,
+          12,
+          11
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700",
+          "850"
+        ],
+        "leftEdges": 5,
+        "words": 45,
+        "headline": "56px, 1 words, 1 line(s)",
+        "accentHues": [
+          48,
+          264,
+          144,
+          192,
+          0
+        ],
+        "identity": 5,
+        "cards": 2
+      }
+    },
+    {
+      "name": "deck-asbuilt",
+      "type": "screen",
+      "fails": [
+        "Text below 11pt (the floor on both platforms): 10.5px \"E\"; 9.5px \"SIZE\"; 9.5px \"FREE AFTER\"; 9.5px \"4K RELEASE\"",
+        "Contrast below WCAG on solid ground: 3.51:1 9.5px \"SIZE\"; 3.51:1 9.5px \"FREE AFTER\"; 3.51:1 9.5px \"4K RELEASE\"; 3.51:1 9.5px \"RELEASE\"; 3.89:1 12px \"Swipe right to approve · left to decline\"",
+        "Text clipped: \"Rules\" cut by its container"
+      ],
+      "warns": [
+        "10 distinct text sizes. A type scale has 5 to 7 steps: 22, 19, 17, 13.5, 13, 12.5, 12, 11, 10.5, 9.5",
+        "Largest text is 22px. No element owns the screen. (Mark data-dense if this is deliberate.)",
+        "Empty words: \"insights\". Replace each with the fact it stands for."
+      ],
+      "facts": {
+        "os": "ios",
+        "kind": "core",
+        "fonts": {
+          "SF Pro": 27,
+          "JetBrains Mono": 2
+        },
+        "sizes": [
+          22,
+          19,
+          17,
+          13.5,
+          13,
+          12.5,
+          12,
+          11,
+          10.5,
+          9.5
+        ],
+        "weights": [
+          "400",
+          "600",
+          "700"
+        ],
+        "leftEdges": 5,
+        "words": 55,
+        "headline": "22px, 0 words, 1 line(s)",
+        "accentHues": [
+          0,
+          264,
+          144
+        ],
+        "cards": 2
+      }
+    }
+  ],
+  "exports": [
+    "FAIL  page error: request failed: file:///System/Library/Fonts/SFNS.ttf",
+    "warn  identity palette on users-asbuilt, autoapproved-asbuilt: check every hue belongs to one thing, the same thing on every screen, with neutral chrome (color.md §9)."
+  ]
+}

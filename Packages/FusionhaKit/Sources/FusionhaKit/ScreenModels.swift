@@ -115,11 +115,7 @@ public struct Me: Decodable, Sendable {
     public let plexLinked: Bool?
     public let credentials: [UserCredential]?
 
-    public var initials: String {
-        let parts = username.split(whereSeparator: { $0 == " " || $0 == "." || $0 == "_" || $0 == "-" })
-        let letters = parts.count >= 2 ? parts.prefix(2).compactMap(\.first) : Array(username.prefix(2))
-        return String(letters).uppercased()
-    }
+    public var initials: String { PersonInitials.of(username) }
 
     public var roleLabel: String {
         isAdmin ? "Administrator" : (roleName ?? "User")
@@ -597,4 +593,21 @@ public struct MediaPreview: Decodable, Sendable, Hashable {
     public let libraryItemId: Int?
     public let posterUrl: String?
     public let overview: String?
+}
+
+/// An avatar's letters (web `initials` in `access-shared.tsx`): the first
+/// letters of two name parts ("sam.k" → "SK"), else the first two letters.
+public enum PersonInitials {
+    public static func of(_ name: String) -> String {
+        let parts = name.split(whereSeparator: { $0 == " " || $0 == "." || $0 == "_" || $0 == "-" })
+        let letters = parts.count >= 2 ? parts.prefix(2).compactMap(\.first) : Array(name.prefix(2))
+        return String(letters).uppercased()
+    }
+
+    /// The web's per-person avatar hue (`hueForId`): golden-angle spacing so
+    /// neighbouring ids differ; 220 for a missing id.
+    public static func hue(_ id: Int?) -> Double {
+        guard let id else { return 220 }
+        return (Double(id) * 137.508).truncatingRemainder(dividingBy: 360).rounded()
+    }
 }

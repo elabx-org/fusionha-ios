@@ -40,11 +40,12 @@ struct RequestRowTierChip: View {
     }
 }
 
-/// A requester's initials avatar (20 pt with 9 pt initials on the row, 24 pt on the deck's pill).
+/// A requester's initials avatar (22 pt on the row, 24 pt on the deck's pill;
+/// initials at the 11 pt floor, a step over the web's 9 px).
 struct RequestAvatar: View {
     let name: String
-    var size: CGFloat = 20
-    var fontSize: CGFloat = 9
+    var size: CGFloat = 22
+    var fontSize: CGFloat = 11
 
     var body: some View {
         Text(String(name.prefix(1)).uppercased())

@@ -18,7 +18,7 @@ struct TriageTileView<Extra: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: compact ? 2 : 4) {
             Text(label.uppercased())
-                .font(.system(size: compact ? 9.5 : 10, weight: .bold))
+                .font(.system(size: 11, weight: .bold))
                 .tracking(0.6)
                 .foregroundStyle(Theme.dim)
             value

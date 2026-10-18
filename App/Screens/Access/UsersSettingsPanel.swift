@@ -20,9 +20,6 @@ struct UsersSettingsPanel: View {
 
     var body: some View {
         SettingsForm(slug: "access") {
-            Section {
-                Button("Add user", systemImage: "person.badge.plus") { adding = true }
-            }
             if let error {
                 SettingsLoadingRow(error: error)
             } else if let users {
@@ -44,32 +41,49 @@ struct UsersSettingsPanel: View {
                 SettingsLoadingRow()
             }
         }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Add user", systemImage: "plus") { adding = true }
+            }
+        }
         .task { await load() }
         .refreshable { await load() }
         .sheet(item: $editing) { u in UserEditorSheet(user: u, roles: roles) { await load() } }
         .sheet(isPresented: $adding) { NewUserSheet(roles: roles) { await load() } }
     }
 
+    /// The person's avatar, name and tags, "Admin · 2 active sessions · 23
+    /// auto-requested", then one pill per automatic source.
     private func row(_ u: UserAccount) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: u.isAdmin ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
-                .font(.system(size: 22)).foregroundStyle(u.isActive == false ? Theme.dim : Theme.i2)
+        let sessions = u.activeSessionCount ?? 0
+        let meta = [u.isAdmin ? "Admin" : (u.roleName ?? "No role"),
+                    sessions > 0 ? "\(sessions) \(sessions == 1 ? "session" : "sessions")" : nil,
+                    UserSourceChips.requestedLine(plex: plex[u.id], letterboxd: letterboxd[u.id])]
+        return HStack(alignment: .top, spacing: 12) {
+            PersonAvatar(userId: u.id, name: u.displayName, hasThumb: u.thumb != nil)
+                .opacity(u.isActive == false ? 0.45 : 1)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(u.displayName).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.txt)
-                    if u.authProvider == "plex" { Text("Plex").font(.caption2.weight(.bold)).foregroundStyle(Theme.miss) }
-                    if u.isActive == false { Text("Disabled").font(.caption2.weight(.bold)).foregroundStyle(Theme.danger) }
+                    Text(u.displayName).font(.system(size: 16, weight: .semibold)).foregroundStyle(u.isActive == false ? Theme.dim : Theme.txt)
+                    if u.authProvider == "plex" { tag("Plex", Theme.mut) }
+                    if u.isActive == false { tag("Disabled", Theme.danger) }
                 }
-                Text([u.isAdmin ? "Admin" : (u.roleName ?? "No role"),
-                      (u.activeSessionCount ?? 0) > 0 ? "\(u.activeSessionCount ?? 0) active \((u.activeSessionCount ?? 0) == 1 ? "session" : "sessions")" : nil]
-                    .compactMap { $0 }.joined(separator: " · "))
-                    .font(.caption).foregroundStyle(Theme.mut)
+                Text(meta.compactMap { $0 }.joined(separator: " · ")).font(.system(size: 13)).foregroundStyle(Theme.mut)
                 UserSourceChips(plex: plex[u.id], letterboxd: letterboxd[u.id])
             }
             Spacer(minLength: 0)
-            Image(systemName: "chevron.right").font(.caption.weight(.semibold)).foregroundStyle(Theme.dim)
+            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.dim)
+                .frame(maxHeight: .infinity)
         }
+        .padding(.vertical, 2)
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+    }
+
+    private func tag(_ word: String, _ color: Color) -> some View {
+        Text(word).font(.system(size: 11, weight: .bold)).foregroundStyle(color)
+            .padding(.horizontal, 6).padding(.vertical, 1)
+            .overlay(Capsule().strokeBorder(color.opacity(0.5), lineWidth: 1))
     }
 
     private func load() async {

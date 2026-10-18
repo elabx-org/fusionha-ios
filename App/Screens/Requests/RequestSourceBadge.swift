@@ -18,8 +18,9 @@ struct RequestSourceGlyph: View {
     }
 
     static func style(_ kind: String) -> (symbol: String, tint: Color)? {
-        if RequestSourceWords.plexKinds.contains(kind) { return ("list.bullet", Color(hex: 0xE5A00D)) }
-        if RequestSourceWords.letterboxdKinds.contains(kind) { return ("film", Theme.done) }
+        // Neutral: amber and green belong to wanted and done (identity palette).
+        if RequestSourceWords.plexKinds.contains(kind) { return ("list.bullet", Theme.mut) }
+        if RequestSourceWords.letterboxdKinds.contains(kind) { return ("film", Theme.mut) }
         return nil
     }
 }
@@ -45,7 +46,7 @@ struct RequestSourceBadge: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            RequestSourceGlyph(kind: source?.kind, size: 10)
+            RequestSourceGlyph(kind: source?.kind, size: 11)
             Text(RequestLifecycle.sourceText(source, mine: mine))
         }
         .font(.system(size: 12))

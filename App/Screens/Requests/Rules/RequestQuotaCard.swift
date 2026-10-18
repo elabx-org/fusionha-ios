@@ -100,15 +100,9 @@ struct RequestAutoApprovedStrip: View {
                     HStack(spacing: 10) {
                         ActPoster(url: r.poster, title: r.title ?? "", size: .sm)
                         VStack(alignment: .leading, spacing: 2) {
-                            // The web's icon badge: the source mark, its phrase read aloud.
-                            let phrase = RequestSourceWords.stripPhrase(r.source)
-                            HStack(spacing: 5) {
-                                if phrase != nil { RequestSourceGlyph(kind: r.source?.kind, size: 11) }
-                                Text(r.title ?? "Request").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                            }
-                            .accessibilityElement(children: .ignore)
-                            .accessibilityLabel([phrase, r.title ?? "Request"].compactMap { $0 }.joined(separator: ", "))
-                            Text([r.requester?.displayName, RequestItemStrip.approvedText(r.approvedBy)].compactMap { $0 }.joined(separator: " · "))
+                            Text(r.title ?? "Request").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
+                            Text([RequestSourceWords.stripPhrase(r.source), r.requester?.displayName, RequestItemStrip.approvedText(r.approvedBy)]
+                                .compactMap { $0 }.joined(separator: " · "))
                                 .font(.caption).foregroundStyle(Theme.mut).lineLimit(1)
                         }
                         Spacer(minLength: 0)
