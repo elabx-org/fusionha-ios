@@ -22,9 +22,24 @@ public struct RequestApprovedBy: Decodable, Sendable, Hashable {
 }
 
 public struct RequestSource: Decodable, Sendable, Hashable {
-    /// MANUAL, PLEX_WATCHLIST, LIST_FEED, LETTERBOXD_LIST / _RSS / _CSV, …
+    /// MANUAL, PLEX_WATCHLIST, PLEX_LIST, LIST_FEED, LETTERBOXD_LIST / _RSS /
+    /// _WATCHLIST / _CSV, …
     public let kind: String
+    /// A list's name; only the owner and approvers get it (a joiner sees null).
     public let label: String?
+    /// The Letterboxd username of a list or watchlist (0.4.213).
+    public let owner: String?
+    public let sourceId: Int?
+    /// A "Request again" of a withdrawn automatic request (0.4.209).
+    public let requestedAgain: Bool?
+
+    public init(kind: String, label: String? = nil, owner: String? = nil, sourceId: Int? = nil, requestedAgain: Bool? = nil) {
+        self.kind = kind
+        self.label = label
+        self.owner = owner
+        self.sourceId = sourceId
+        self.requestedAgain = requestedAgain
+    }
 }
 
 public struct RequestLifecycleEntry: Decodable, Sendable, Hashable {
@@ -85,6 +100,9 @@ public struct RequestCounts: Decodable, Sendable, Hashable {
     public let available: Int
     public let declined: Int
     public let all: Int
+    /// One bucket per automatic source over the caller's scope (MANUAL left
+    /// out); nil from a server before 0.4.209.
+    public let bySource: [RequestSourceCount]?
 }
 
 /// `GET /api/v1/requests/quota`: nil `limit` means unlimited.

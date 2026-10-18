@@ -1,0 +1,70 @@
+{
+  "id": 8,
+  "user_id": 2,
+  "tmdb_id": 2008,
+  "kind": "movie",
+  "media_item_id": null,
+  "tier": "HD-1080p",
+  "tiers": [
+    "HD-1080p"
+  ],
+  "seasons": [],
+  "episodes": [],
+  "request_quality_mode": "choose",
+  "status": "pending",
+  "reason": null,
+  "note": null,
+  "decided_by": null,
+  "requested_at": "2026-10-08T21:20:00",
+  "decided_at": null,
+  "quota_exceeded": false,
+  "joined": false,
+  "joined_request_id": null,
+  "title": "Title 2008",
+  "year": 2024,
+  "poster": null,
+  "requester": {
+    "id": 2,
+    "display_name": "member",
+    "avatar": null,
+    "role": "Viewer"
+  },
+  "approved_by": null,
+  "declined_by": null,
+  "source": {
+    "kind": "LETTERBOXD_LIST",
+    "label": "Best of 2026",
+    "owner": "example_critic",
+    "source_id": 3,
+    "requested_again": false
+  },
+  "lifecycle": [
+    {
+      "tier": "HD-1080p",
+      "edition": null,
+      "step": "requested",
+      "progress_pct": null,
+      "next_retry_at": null,
+      "available_from": null,
+      "needs_manual_import": false,
+      "importing": false
+    }
+  ],
+  "decision_note": null,
+  "available_at": null,
+  "thread": {
+    "unread": 0,
+    "last_event_at": "2026-10-08T21:20:00"
+  },
+  "demand": {
+    "count": 1,
+    "joined_by_me": false
+  },
+  "quota_state": null,
+  "watch": false,
+  "joiners": [],
+  "held": null,
+  "editions": [
+    "HD-1080p"
+  ]
+}

@@ -1,0 +1,205 @@
+{
+  "eligible": true,
+  "granted": true,
+  "reason": null,
+  "enabled": true,
+  "status": "OK",
+  "last_checked_at": "2026-10-09T21:16:00",
+  "last_success_at": "2026-10-09T21:16:00",
+  "next_check_at": "2026-10-09T21:26:00",
+  "last_error": null,
+  "options": {
+    "also_uhd": false
+  },
+  "also_uhd_allowed": true,
+  "item_count": 41,
+  "requested_count": 12,
+  "seen_count": 41,
+  "baseline_count": 23,
+  "waiting_count": 2,
+  "requested_total": 16,
+  "sync_available_at": null,
+  "first_check": {
+    "baseline": "NEW",
+    "baseline_count": 23,
+    "requested_count": 12,
+    "remaining": 0
+  },
+  "lists": {
+    "state": "ok",
+    "sources": [
+      {
+        "list_id": "list-a",
+        "name": "Kids movies",
+        "visibility": "FRIENDS",
+        "item_count": 18,
+        "enabled": true,
+        "baseline": "NEW",
+        "last_checked_at": "2026-10-09T21:16:00",
+        "requested_count": 3,
+        "deleted": false,
+        "error": null
+      },
+      {
+        "list_id": "list-b",
+        "name": "Rewatch someday",
+        "visibility": "PRIVATE",
+        "item_count": 7,
+        "enabled": false,
+        "baseline": "NEW",
+        "last_checked_at": null,
+        "requested_count": 0,
+        "deleted": false,
+        "error": null
+      },
+      {
+        "list_id": "list-c",
+        "name": "Sci-fi to try",
+        "visibility": "PLEX_USERS",
+        "item_count": 12,
+        "enabled": true,
+        "baseline": "NEW",
+        "last_checked_at": "2026-10-09T21:16:00",
+        "requested_count": 1,
+        "deleted": false,
+        "error": null
+      }
+    ]
+  },
+  "paused": false,
+  "consecutive_failures": 0,
+  "plex_token_set": true,
+  "outcomes": {
+    "BASELINE": 23,
+    "REQUESTED": 14,
+    "JOINED": 2,
+    "WAITING": 2,
+    "OWNED": 2,
+    "SKIPPED_POLICY": 1,
+    "UNMATCHED": 1,
+    "WITHDRAWN": 0,
+    "DECLINED": 0
+  },
+  "recent": [
+    {
+      "title": "Title wl0",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:20:00",
+      "source": null
+    },
+    {
+      "title": "Title wl1",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:19:00",
+      "source": null
+    },
+    {
+      "title": "Title wl2",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:18:00",
+      "source": null
+    },
+    {
+      "title": "Title wl3",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:17:00",
+      "source": null
+    },
+    {
+      "title": "Title wl4",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:16:00",
+      "source": null
+    },
+    {
+      "title": "Title wl5",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:15:00",
+      "source": null
+    },
+    {
+      "title": "Title wl6",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:14:00",
+      "source": null
+    },
+    {
+      "title": "Title wl7",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:13:00",
+      "source": null
+    },
+    {
+      "title": "Title wl8",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:12:00",
+      "source": null
+    },
+    {
+      "title": "Title wl9",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:11:00",
+      "source": null
+    }
+  ],
+  "sources": [
+    {
+      "kind": "PLEX_WATCHLIST",
+      "list_id": null,
+      "name": "Plex watchlist",
+      "visibility": null,
+      "enabled": true,
+      "last_checked_at": "2026-10-09T21:16:00",
+      "requested_count": 12,
+      "error_count": 0,
+      "last_error": null,
+      "truncated": false
+    },
+    {
+      "kind": "PLEX_LIST",
+      "list_id": "list-a",
+      "name": "Kids movies",
+      "visibility": "FRIENDS",
+      "enabled": true,
+      "last_checked_at": "2026-10-09T21:16:00",
+      "requested_count": 3,
+      "error_count": 0,
+      "last_error": null,
+      "truncated": false
+    },
+    {
+      "kind": "PLEX_LIST",
+      "list_id": "list-b",
+      "name": "Rewatch someday",
+      "visibility": "PRIVATE",
+      "enabled": false,
+      "last_checked_at": null,
+      "requested_count": 0,
+      "error_count": 0,
+      "last_error": null,
+      "truncated": false
+    },
+    {
+      "kind": "PLEX_LIST",
+      "list_id": "list-c",
+      "name": "Sci-fi to try",
+      "visibility": "PLEX_USERS",
+      "enabled": true,
+      "last_checked_at": "2026-10-09T21:16:00",
+      "requested_count": 1,
+      "error_count": 0,
+      "last_error": null,
+      "truncated": true
+    }
+  ]
+}

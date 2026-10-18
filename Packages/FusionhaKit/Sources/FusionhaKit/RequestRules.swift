@@ -13,18 +13,29 @@ public struct RequestRule: Decodable, Sendable, Hashable, Identifiable {
             switch self {
             case .approveTier: return "Approve a version"
             case .approveRating: return "Approve by TMDB rating"
-            case .watchlistApprove: return "Plex watchlist"
+            case .watchlistApprove: return "Watchlists & lists"
             case .guardFreeSpace: return "Hold when space is low"
             }
         }
         public var isGuard: Bool { self == .guardFreeSpace }
-        /// The kinds the editor offers (the watchlist kind comes with phase 9).
-        public static let editable: [Kind] = [.approveTier, .approveRating, .guardFreeSpace]
+        /// The kinds the editor offers (the watchlist kind since 0.4.209).
+        public static let editable: [Kind] = [.approveTier, .approveRating, .watchlistApprove, .guardFreeSpace]
     }
 
     public struct Params: Decodable, Sendable, Hashable {
         public let minRating: Double?
         public let minFreeGb: Double?
+        /// `WATCHLIST_APPROVE` (0.4.213): the source classes it approves; `[]` = all.
+        public let sources: [String]?
+        /// The 0.4.209 shape (`watchlist` / `lists` / `both`), still read.
+        public let plexSource: String?
+
+        public init(minRating: Double? = nil, minFreeGb: Double? = nil, sources: [String]? = nil, plexSource: String? = nil) {
+            self.minRating = minRating
+            self.minFreeGb = minFreeGb
+            self.sources = sources
+            self.plexSource = plexSource
+        }
     }
 
     public let id: Int
@@ -58,7 +69,7 @@ public struct RequestRule: Decodable, Sendable, Hashable, Identifiable {
         roleId = try c.decodeIfPresent(Int.self, forKey: .roleId)
         roleName = try c.decodeIfPresent(String.self, forKey: .roleName)
         tier = try c.decodeIfPresent(QualityTier.self, forKey: .tier)
-        params = try c.decodeIfPresent(Params.self, forKey: .params) ?? Params(minRating: nil, minFreeGb: nil)
+        params = try c.decodeIfPresent(Params.self, forKey: .params) ?? Params()
         label = try c.decode(String.self, forKey: .label)
         // `fired_7d` arrives as `fired7D` under convertFromSnakeCase.
         fired7D = try c.decodeIfPresent(Int.self, forKey: .fired7D) ?? c.decodeIfPresent(Int.self, forKey: .fired7d)
@@ -78,25 +89,33 @@ public struct RequestRuleDraft: Equatable, Sendable {
     public var roleId: Int?
     public var minRating: Double
     public var minFreeGb: Double
+    /// `WATCHLIST_APPROVE` only; the editor refuses an empty set.
+    public var sources: [RuleSource]
 
     public init(kind: RequestRule.Kind = .approveTier, tier: QualityTier? = .hd, roleId: Int? = nil,
-                minRating: Double = 7, minFreeGb: Double = 500) {
+                minRating: Double = 7, minFreeGb: Double = 500, sources: [RuleSource] = RuleSource.allCases) {
         self.kind = kind
         self.tier = tier
         self.roleId = roleId
         self.minRating = minRating
         self.minFreeGb = minFreeGb
+        self.sources = sources
     }
 
     public init(_ rule: RequestRule) {
+        let sources = rule.kind == .watchlistApprove ? RuleSource.of(rule.params) : RuleSource.allCases
         self.init(kind: rule.kind, tier: rule.tier, roleId: rule.roleId,
-                  minRating: rule.params.minRating ?? 7, minFreeGb: rule.params.minFreeGb ?? 500)
+                  minRating: rule.params.minRating ?? 7, minFreeGb: rule.params.minFreeGb ?? 500, sources: sources)
     }
+
+    /// Save is refused for a watchlist rule with no source ticked.
+    public var isValid: Bool { kind != .watchlistApprove || !sources.isEmpty }
 
     private var params: SettingsJSON {
         switch kind {
         case .approveRating: return .object(["min_rating": .double(minRating)])
         case .guardFreeSpace: return .object(["min_free_gb": .double(minFreeGb)])
+        case .watchlistApprove: return .object(["sources": .array(sources.map { .string($0.rawValue) })])
         default: return .object([:])
         }
     }
@@ -117,7 +136,7 @@ public struct RequestRuleDraft: Equatable, Sendable {
         var out: [String: SettingsJSON] = [:]
         if !kind.isGuard, tier != before.tier { out["tier"] = tier.map { .string($0.rawValue) } ?? .null }
         if !kind.isGuard, roleId != before.roleId { out["role_id"] = Self.optional(roleId) }
-        if minRating != before.minRating || minFreeGb != before.minFreeGb { out["params"] = params }
+        if minRating != before.minRating || minFreeGb != before.minFreeGb || sources != before.sources { out["params"] = params }
         return .object(out)
     }
 }
@@ -240,73 +259,4 @@ extension APIClient {
     }
 
     public func roleSummaries() async throws -> [RoleSummary] { try await get("/api/v1/roles") }
-}
-
-// MARK: - Guardrails (Settings › Requests, phase 7 A9)
-
-/// `GET /audit/autofix-stats` (admin): automatic fixes inside the window and the paused slots.
-public struct AutofixStats: Decodable, Sendable {
-    public struct Paused: Decodable, Sendable, Identifiable {
-        public let reportId: Int
-        public let issueId: Int
-        public let title: String?
-        public let season: Int?
-        public let episode: Int?
-        public let pausedAt: String?
-        public let tier: QualityTier?
-        public let edition: String?
-        public let failures: Int
-        public let windowDays: Int
-        public var id: Int { reportId }
-
-        /// "Andor · S02E04 · UHD·4K".
-        public var line: String {
-            var parts = [title ?? "Unknown title"]
-            if let season, let episode { parts.append(String(format: "S%02dE%02d", season, episode)) }
-            if let tier { parts.append(VersionLabel.text(tier: tier, edition: edition, multipleEditions: false) ?? tier.word) }
-            return parts.joined(separator: " · ")
-        }
-
-        public var failuresLine: String {
-            "\(failures) failed \(failures == 1 ? "fix" : "fixes") in \(windowDays) \(windowDays == 1 ? "day" : "days") · current copy kept"
-        }
-    }
-
-    public let days: Int
-    public let attempts: Int
-    public let fixed: Int
-    public let failed: Int
-    public let waiting: Int
-    public let successRate: Double?
-    public let paused: [Paused]
-}
-
-/// The four Auto-fix limits, bounds mirroring the server's validation.
-public struct GuardrailLimit: Sendable, Identifiable {
-    public let key: String
-    public let title: String
-    public let sub: String
-    public let range: ClosedRange<Int>
-    public let fallback: Int
-    public let unit: (Int) -> String
-    public var id: String { key }
-
-    public static let all: [GuardrailLimit] = [
-        .init(key: "autofix_max_failures", title: "Failed fixes before pausing",
-              sub: "Per episode or movie version, inside the window below. Reopens count too.", range: 1...10, fallback: 2, unit: { "\($0)" }),
-        .init(key: "autofix_failure_window_days", title: "Pause window",
-              sub: "How far back a failed fix still counts towards a pause.", range: 1...90, fallback: 7, unit: days),
-        .init(key: "issue_reopen_window_days", title: "Reopen automatically for",
-              sub: "A resolved report reopens if the same file is found dead again.", range: 1...365, fallback: 30, unit: days),
-        .init(key: "selfservice_replace_daily_limit", title: "Language replacements per person",
-              sub: "Each day. Searches and Plex rescans have their own limit.", range: 0...50, fallback: 3, unit: { $0 == 0 ? "Off" : "\($0) / day" }),
-    ]
-
-    private static func days(_ n: Int) -> String { "\(n) \(n == 1 ? "day" : "days")" }
-}
-
-extension APIClient {
-    public func autofixStats(days: Int = 30) async throws -> AutofixStats {
-        try await get("/api/v1/audit/autofix-stats", query: [URLQueryItem(name: "days", value: String(days))])
-    }
 }

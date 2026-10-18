@@ -1,0 +1,24 @@
+{
+  "inbox": 11,
+  "waiting": 0,
+  "active": 11,
+  "available": 0,
+  "declined": 0,
+  "all": 11,
+  "by_source": [
+    {
+      "kind": "LETTERBOXD_LIST",
+      "label": "Best of 2026",
+      "owner": "example_critic",
+      "source_id": 3,
+      "count": 4
+    },
+    {
+      "kind": "LETTERBOXD_RSS",
+      "label": null,
+      "owner": null,
+      "source_id": 1,
+      "count": 7
+    }
+  ]
+}

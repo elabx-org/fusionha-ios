@@ -1,0 +1,254 @@
+{
+  "me": {
+    "username": "example_member",
+    "status": "OK",
+    "profile_error": null,
+    "reason": null,
+    "diary": {
+      "enabled": true,
+      "request_rewatches": false,
+      "also_uhd": false,
+      "requested_count": 7,
+      "last_checked_at": "2026-10-09T20:42:00",
+      "next_check_at": "2026-10-10T02:20:00",
+      "baseline": "new"
+    },
+    "also_uhd_allowed": true,
+    "watchlist_follow": {
+      "enabled": true,
+      "status": "DEGRADED",
+      "requested_count": 0,
+      "last_checked_at": "2026-10-09T20:40:00",
+      "last_error": "Only the first 560 films are followed",
+      "source_id": 2,
+      "truncated": true,
+      "item_count": 605
+    },
+    "can_link_lists": true,
+    "max_linked_lists": 5,
+    "linked_count": 4,
+    "sync_available_at": null
+  },
+  "sources": [
+    {
+      "id": 1,
+      "kind": "LETTERBOXD_RSS",
+      "label": null,
+      "url": "https://letterboxd.com/example_member/rss/",
+      "owner": "example_member",
+      "is_self": false,
+      "enabled": true,
+      "status": "OK",
+      "last_checked_at": "2026-10-09T20:42:00",
+      "next_check_at": "2026-10-10T02:20:00",
+      "retry_at": null,
+      "last_error": null,
+      "via_flaresolverr": false,
+      "requested_count": 7,
+      "item_count": 50,
+      "baseline": "new",
+      "truncated": false,
+      "options": {
+        "request_rewatches": false,
+        "also_uhd": false
+      },
+      "consecutive_failures": 0
+    },
+    {
+      "id": 2,
+      "kind": "LETTERBOXD_WATCHLIST",
+      "label": null,
+      "url": "https://letterboxd.com/example_member/watchlist/",
+      "owner": "example_member",
+      "is_self": true,
+      "enabled": true,
+      "status": "DEGRADED",
+      "last_checked_at": "2026-10-09T20:40:00",
+      "next_check_at": "2026-10-10T08:20:00",
+      "retry_at": null,
+      "last_error": "Only the first 560 films are followed",
+      "via_flaresolverr": false,
+      "requested_count": 0,
+      "item_count": 605,
+      "baseline": "new",
+      "truncated": true,
+      "options": {
+        "request_rewatches": false,
+        "also_uhd": false
+      },
+      "consecutive_failures": 0
+    },
+    {
+      "id": 3,
+      "kind": "LETTERBOXD_LIST",
+      "label": "Best of 2026",
+      "url": "https://letterboxd.com/example_critic/list/best-of-2026/",
+      "owner": "example_critic",
+      "is_self": false,
+      "enabled": true,
+      "status": "OK",
+      "last_checked_at": "2026-10-09T19:20:00",
+      "next_check_at": "2026-10-10T07:20:00",
+      "retry_at": null,
+      "last_error": null,
+      "via_flaresolverr": false,
+      "requested_count": 4,
+      "item_count": 159,
+      "baseline": "new",
+      "truncated": false,
+      "options": {
+        "request_rewatches": false,
+        "also_uhd": false
+      },
+      "consecutive_failures": 0
+    },
+    {
+      "id": 4,
+      "kind": "LETTERBOXD_LIST",
+      "label": "Slow cinema",
+      "url": "https://letterboxd.com/example_friend/list/slow-cinema/",
+      "owner": "example_friend",
+      "is_self": false,
+      "enabled": true,
+      "status": "BLOCKED",
+      "last_checked_at": "2026-10-09T06:20:00",
+      "next_check_at": "2026-10-10T03:20:00",
+      "retry_at": "2026-10-10T03:20:00",
+      "last_error": "Letterboxd is blocking automatic reads right now",
+      "via_flaresolverr": false,
+      "requested_count": 0,
+      "item_count": null,
+      "baseline": "new",
+      "truncated": false,
+      "options": {
+        "request_rewatches": false,
+        "also_uhd": false
+      },
+      "consecutive_failures": 0
+    },
+    {
+      "id": 5,
+      "kind": "LETTERBOXD_WATCHLIST",
+      "label": null,
+      "url": "https://letterboxd.com/example_friend/watchlist/",
+      "owner": "example_friend",
+      "is_self": false,
+      "enabled": true,
+      "status": "PRIVATE",
+      "last_checked_at": "2026-10-09T18:00:00",
+      "next_check_at": null,
+      "retry_at": null,
+      "last_error": "This watchlist isn’t public",
+      "via_flaresolverr": false,
+      "requested_count": 0,
+      "item_count": null,
+      "baseline": "new",
+      "truncated": false,
+      "options": {
+        "request_rewatches": false,
+        "also_uhd": false
+      },
+      "consecutive_failures": 0
+    },
+    {
+      "id": 6,
+      "kind": "LETTERBOXD_WATCHLIST",
+      "label": null,
+      "url": "https://letterboxd.com/letterboxd/watchlist/",
+      "owner": "letterboxd",
+      "is_self": false,
+      "enabled": true,
+      "status": "PENDING",
+      "last_checked_at": null,
+      "next_check_at": "2026-10-09T21:20:00",
+      "retry_at": null,
+      "last_error": null,
+      "via_flaresolverr": false,
+      "requested_count": 0,
+      "item_count": null,
+      "baseline": "new",
+      "truncated": false,
+      "options": {
+        "request_rewatches": false,
+        "also_uhd": false
+      },
+      "consecutive_failures": 0
+    }
+  ],
+  "consecutive_failures": 0,
+  "outcomes": {
+    "BASELINE": 3,
+    "REQUESTED": 11,
+    "JOINED": 0,
+    "WAITING": 0,
+    "OWNED": 0,
+    "SKIPPED_POLICY": 0,
+    "UNMATCHED": 0,
+    "WITHDRAWN": 0,
+    "DECLINED": 0,
+    "WISHLISTED": 0
+  },
+  "recent": [
+    {
+      "title": "tmdb:movie:2001",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:20:00"
+    },
+    {
+      "title": "tmdb:movie:2002",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:19:00"
+    },
+    {
+      "title": "tmdb:movie:2003",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:18:00"
+    },
+    {
+      "title": "tmdb:movie:2004",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:17:00"
+    },
+    {
+      "title": "tmdb:movie:2005",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:16:00"
+    },
+    {
+      "title": "tmdb:movie:2006",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:15:00"
+    },
+    {
+      "title": "tmdb:movie:2007",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:14:00"
+    },
+    {
+      "title": "film-0",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:10:00"
+    },
+    {
+      "title": "film-1",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:09:00"
+    },
+    {
+      "title": "film-2",
+      "year": 2024,
+      "outcome": "REQUESTED",
+      "first_seen_at": "2026-10-09T21:08:00"
+    }
+  ],
+  "flaresolverr_configured": false
+}
