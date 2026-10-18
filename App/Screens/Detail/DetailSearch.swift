@@ -198,6 +198,9 @@ struct InteractiveSearchSheet: View {
                     .foregroundStyle(Theme.mut)
                     .detailSpinIf(inFlight.contains(editionId) && results[editionId] != nil)
                     .frame(width: 22, height: 22)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, -11).padding(.vertical, -11)
             }
             .buttonStyle(.glass)
             .buttonBorderShape(.circle)

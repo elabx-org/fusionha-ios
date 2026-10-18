@@ -110,6 +110,9 @@ struct DetailMonitorBookmark: View {
                 .foregroundStyle(on ? Theme.txt : Theme.dim)
                 .contentTransition(.symbolEffect(.replace))
                 .frame(width: 26, height: 26)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+                .padding(.horizontal, -9).padding(.vertical, -9)
         }
         .buttonStyle(DetailPressStyle())
         .disabled(!(model.me?.can("edit") ?? true))

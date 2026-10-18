@@ -167,6 +167,9 @@ extension AddTitleSheet {
                 .foregroundStyle(gridView == grid ? Theme.txt : Theme.mut)
                 .frame(width: 26, height: 22)
                 .background(gridView == grid ? Theme.card : .clear, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+                .padding(.horizontal, -9).padding(.vertical, -11)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(grid ? "Grid view" : "List view")

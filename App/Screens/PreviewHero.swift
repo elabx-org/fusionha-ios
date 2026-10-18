@@ -99,6 +99,9 @@ struct PreviewHero: View {
                 .background(.ultraThinMaterial, in: Circle())
                 .overlay(Circle().strokeBorder(Theme.line))
                 .contentShape(Circle())
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+                .padding(.horizontal, -3).padding(.vertical, -3)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
