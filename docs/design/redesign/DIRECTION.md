@@ -206,3 +206,20 @@ The person who runs the server, telling a housemate what's on.
 - **Activity:** 41.6 MB/s · 4 in queue · 3.2 GB left. Andor S02E10 4K (62%, 28.4 MB/s, 3 min), Severance S02E01 HD (18%, 9.1 MB/s, 6 min), Dune: Part Two 4K remux (held: "Not enough free space on /media/4k"), Up next: Silo S02E04 4K.
 - **Calendar:** week of 13 Oct. Today (Mon 13): Slow Horses S5E4 at 03:00 (on disk HD), Silo S2E9 at 08:00 (HD grabbing, 4K wanted). Wed 15: The Bear S4E2. Thu 16: Frieren S2E2 (simulcast). Fri 17: Severance S2E3.
 - **Poster sheet (long-press Andor):** Automatic search, Interactive search, Monitor (on), Refresh metadata, Edit…, Delete….
+
+## Skill audit (2026-10-18)
+
+The whole app was audited against the skill and fixed. The review is in
+`docs/design/review-2026-10-18/`. Owner decisions:
+
+- **Decision 1 is now built:** the gradient ＋ orb is gone. Library, Discover and Wanted have a glass ＋ in their title row.
+- **Decision 2 is now built:** primary buttons, bubbles and bars use the palette's solid accent (`Theme.primary`). The brand gradient stays in the logo, sign-in and person avatars.
+- **Every palette supports the design,** including Daylight (light) and Monochrome:
+  - `dim` passes 4.6:1 on every surface.
+  - Text on fills is picked by measured contrast (`onTint`, `onDanger`).
+  - Kind colours, shadows, scrims and shimmers come from tokens.
+  - Widgets follow the chosen palette.
+- **Text floor 11pt** everywhere text is read. Dynamic Type mapping comes screen by screen during the redesign migration.
+- **Source glyphs and provider marks are neutral.** Amber and green belong to wanted and done.
+- **No emoji, sparkles or glows.** Anime's glyph is `paintbrush.pointed`.
+- **No glass or badges on poster art.**
