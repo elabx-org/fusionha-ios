@@ -29,8 +29,7 @@ struct HistoryRow: View {
                 }
                 Text(entry.eventLabel)
                     .font(.system(size: 11, weight: .bold))
-                    .tracking(0.6)
-                    .textCase(.uppercase)
+                    .textCase(nil)
                     .foregroundStyle(color)
                 // A HELD step names its hold in the server's shared words (0.4.203).
                 if let held = entry.held {

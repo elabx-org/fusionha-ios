@@ -88,7 +88,7 @@ struct QueueGroupCard: View {
                     .padding(.trailing, 12)
                     VStack(alignment: .trailing, spacing: 1) {
                         Text(ActFmt.etaShort(eta)).font(.system(size: 13, weight: .bold).monospacedDigit()).foregroundStyle(Theme.txt)
-                        Text("NEXT DONE").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.dim)
+                        Text("Next done").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.dim)
                     }
                     .padding(.trailing, 6)
                 }

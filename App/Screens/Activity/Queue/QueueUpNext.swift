@@ -105,7 +105,7 @@ struct JustFinishedRow: View {
                     Text(item.title).font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
                     if let epLabel { Text(epLabel).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(Theme.mut) }
                     ActTierChip(tier: item.tier, edition: item.edition, multipleEditions: item.hasMultipleEditions == true)
-                    Text(failed ? "✕ FAILED" : "✓ \(entry.count > 1 ? "\(entry.count) " : "")IMPORTED")
+                    Text(failed ? "Failed" : "Imported\(entry.count > 1 ? " ×\(entry.count)" : "")")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(failed ? Theme.danger : Theme.done)
                         .padding(.horizontal, 7).padding(.vertical, 1)

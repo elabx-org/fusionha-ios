@@ -264,7 +264,6 @@ struct ReleaseFiltersSettingsPanel: View {
                 Circle().fill(color).frame(width: 7, height: 7)
                 Text(required ? "Required terms" : "Rejected terms")
                     .font(.system(size: 12.5, weight: .bold))
-                    .textCase(.uppercase)
                     .foregroundStyle(Theme.mut)
                 Spacer()
                 Text(required ? "release must match at least one" : "release must not match any")
@@ -326,7 +325,6 @@ struct ReleaseFiltersSettingsPanel: View {
                 Circle().fill(Theme.i2).frame(width: 7, height: 7)
                 Text("Test a release title")
                     .font(.system(size: 12.5, weight: .bold))
-                    .textCase(.uppercase)
                     .foregroundStyle(Theme.mut)
             }
         }

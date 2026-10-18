@@ -219,7 +219,6 @@ private struct RecommendedSetupSection: View {
                 HStack {
                     Text("Recommended setup order")
                         .font(.system(size: 12.5, weight: .bold))
-                        .textCase(.uppercase)
                         .foregroundStyle(Theme.mut)
                     Spacer()
                     Button("Dismiss") {

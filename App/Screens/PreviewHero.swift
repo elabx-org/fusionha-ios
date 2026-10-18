@@ -169,7 +169,7 @@ struct PreviewHero: View {
     }
 }
 
-/// The hero status chip: clock icon + mono uppercase status, toned by meaning.
+/// The hero status chip: clock icon + mono status, toned by meaning.
 struct StatusToneChip: View {
     let status: String
 
@@ -188,7 +188,7 @@ struct StatusToneChip: View {
         let t = tone
         HStack(spacing: 5) {
             Image(systemName: "clock").font(.system(size: 11, weight: .semibold))
-            Text(status.uppercased()).font(.system(size: 11, weight: .heavy, design: .monospaced)).tracking(0.4)
+            Text(status).font(.system(size: 11, weight: .heavy, design: .monospaced))
         }
         .foregroundStyle(t.fg)
         .padding(.horizontal, 10).padding(.vertical, 6)

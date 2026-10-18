@@ -544,7 +544,7 @@ struct DiscoverSettingsPanel: View {
             }
         } header: {
             HStack(alignment: .firstTextBaseline) {
-                Text(title).font(.system(size: 12.5, weight: .bold)).textCase(.uppercase).foregroundStyle(Theme.mut)
+                Text(title).font(.system(size: 12.5, weight: .bold)).textCase(nil).foregroundStyle(Theme.mut)
                 Spacer()
                 Text(sub).font(.system(size: 11.5)).textCase(nil).foregroundStyle(Theme.dim)
             }
