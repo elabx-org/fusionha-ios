@@ -21,7 +21,7 @@ struct WidgetRetryLine<Intent: AppIntent>: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.08), in: Capsule())
+                    .background(Theme.txt.opacity(0.08), in: Capsule())
                     .contentShape(Capsule())
             }
             .buttonStyle(.plain)

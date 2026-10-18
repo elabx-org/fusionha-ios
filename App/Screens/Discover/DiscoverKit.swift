@@ -63,7 +63,7 @@ struct DiscoverShimmer: View {
             .overlay {
                 if !DiscoverMotion.reduced(osReduceMotion) {
                     GeometryReader { geo in
-                        LinearGradient(colors: [.clear, .white.opacity(0.09), .clear],
+                        LinearGradient(colors: [.clear, Theme.shimmer.opacity(0.09), .clear],
                                        startPoint: .leading, endPoint: .trailing)
                             .frame(width: geo.size.width)
                             .offset(x: phase * geo.size.width)

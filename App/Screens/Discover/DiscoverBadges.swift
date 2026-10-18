@@ -22,7 +22,7 @@ struct PosterStatusBadge: View {
             }
         }
         .frame(width: 27, height: 27)
-        .background(Color(red: 10 / 255, green: 12 / 255, blue: 18 / 255).opacity(0.5), in: Circle())
+        .background(Theme.scrim.opacity(0.5), in: Circle())
         .background(.ultraThinMaterial, in: Circle())
         .overlay(Circle().strokeBorder(.white.opacity(0.16)))
         .shadow(color: .black.opacity(0.75), radius: 7, y: 4)

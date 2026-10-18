@@ -12,6 +12,5 @@ struct WidgetSignInPrompt: View {
             WidgetStatusMessage(icon: "person.crop.circle.badge.exclamationmark", text: "Sign in to fusionha",
                                 detail: report.isEmpty ? "Open the app once to share your sign-in." : report)
         }
-        .environment(\.colorScheme, .dark)
     }
 }

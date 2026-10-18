@@ -38,6 +38,9 @@ struct PosterImage: View {
                 placeholder
             }
         }
+        // The aspect-filled image reports a size larger than its frame, and
+        // `.clipped()` doesn't clip hit testing: art never takes taps itself.
+        .allowsHitTesting(false)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { box = $0 }
         .task(id: request) { await load(request) }
     }

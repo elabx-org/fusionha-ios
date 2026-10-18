@@ -57,7 +57,7 @@ private struct ShimmerModifier: ViewModifier {
             if motion {
                 GeometryReader { geo in
                     RepeatForever(animation: .easeInOut(duration: 1.4).repeatForever(autoreverses: false)) { on in
-                        LinearGradient(colors: [.clear, .white.opacity(0.09), .clear], startPoint: .leading, endPoint: .trailing)
+                        LinearGradient(colors: [.clear, Theme.shimmer.opacity(0.09), .clear], startPoint: .leading, endPoint: .trailing)
                             .frame(width: geo.size.width)
                             .offset(x: (on ? 1 : -1) * geo.size.width)
                     }

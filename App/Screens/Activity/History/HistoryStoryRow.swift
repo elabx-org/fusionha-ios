@@ -132,8 +132,8 @@ struct HistoryStoryRow: View {
     private func chipColor(_ chip: HistoryChip) -> Color {
         switch chip.kind {
         case "group": return Theme.txt
-        case "range": return Color(hex: 0xFACC15)
-        case "audio": return chip.label.lowercased().contains("atmos") || chip.label.lowercased().contains("dts-x") ? Color(hex: 0xF0ABFC) : Theme.mut
+        case "range": return Theme.onair
+        case "audio": return chip.label.lowercased().contains("atmos") || chip.label.lowercased().contains("dts-x") ? Theme.edition : Theme.mut
         default: return Theme.mut
         }
     }

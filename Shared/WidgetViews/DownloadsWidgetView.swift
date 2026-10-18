@@ -26,7 +26,6 @@ struct DownloadsWidgetView: View {
                 WidgetDownloadingSmall(entry: entry)
             }
         }
-        .environment(\.colorScheme, .dark)
     }
 }
 

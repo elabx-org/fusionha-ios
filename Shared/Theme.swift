@@ -34,9 +34,7 @@ enum Theme {
     /// Text on an `ink` (text-coloured) fill: the ground colour.
     static var onInk: Color { bg }
 
-    static let kindMovie = Color(hex: 0x38BDF8)
-    static let kindSeries = Color(hex: 0xA855F7)
-    static let kindAnime = Color(hex: 0xF472B6)
+    // kindMovie / kindSeries / kindAnime: ThemeContrast.swift (palette-aware).
 
     static let radiusSm: CGFloat = 9
     static let radius: CGFloat = 11

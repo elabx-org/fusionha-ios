@@ -12,7 +12,7 @@ struct WidgetRing<Center: View>: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.12), lineWidth: lineWidth)
+                .stroke(Theme.txt.opacity(0.12), lineWidth: lineWidth)
             Circle()
                 .trim(from: 0, to: CGFloat(max(0.001, min(fraction, 1))))
                 .stroke(tint, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
@@ -38,7 +38,7 @@ struct WidgetBar: View {
                 .widgetAccentable()
         }
         .frame(height: height)
-        .background(Color.white.opacity(0.12), in: Capsule())
+        .background(Theme.txt.opacity(0.12), in: Capsule())
         .accessibilityElement()
         .accessibilityValue("\(Int((fraction * 100).rounded())) percent")
     }

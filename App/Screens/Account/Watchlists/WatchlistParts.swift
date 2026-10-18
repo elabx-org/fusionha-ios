@@ -33,7 +33,7 @@ struct WatchlistCardHead: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Theme.isMono ? Theme.bg : .white)
+                .foregroundStyle(Theme.isMono ? Theme.bg : Theme.onTint(tint))
                 .frame(width: 30, height: 30)
                 .background(Theme.isMono ? Theme.mut : tint, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {

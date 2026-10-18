@@ -23,7 +23,6 @@ struct UpNextWidgetView: View {
                 }
             }
         }
-        .environment(\.colorScheme, .dark)
     }
 
     @ViewBuilder

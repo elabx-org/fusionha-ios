@@ -40,7 +40,7 @@ struct WidgetKindBar: View {
             }
         }
         .frame(height: 8)
-        .background(Color.white.opacity(0.06))
+        .background(Theme.txt.opacity(0.06))
         .clipShape(Capsule())
         .widgetAccentable()
     }

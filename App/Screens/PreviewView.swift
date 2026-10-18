@@ -278,7 +278,7 @@ struct PreviewPage: View {
                                     .font(.system(size: 24))
                                     .foregroundStyle(.white)
                                     .frame(width: 66, height: 66)
-                                    .background(Color(red: 15 / 255, green: 15 / 255, blue: 20 / 255).opacity(0.62), in: Circle())
+                                    .background(Theme.scrim.opacity(0.62), in: Circle())
                                     .overlay(Circle().strokeBorder(.white.opacity(0.85), lineWidth: 2))
                             }
                             .contentShape(Rectangle())
@@ -346,7 +346,7 @@ private struct CastCard: View {
         VStack(spacing: 6) {
             ZStack {
                 LinearGradient(colors: [Theme.i1, Theme.i2], startPoint: .topLeading, endPoint: .bottomTrailing)
-                Text(initials).font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
+                Text(initials).font(.system(size: 22, weight: .bold)).foregroundStyle(Theme.onTint(Theme.i1))
                 if let url = member.profileUrl.flatMap({ TMDBImage.resized($0, to: "h632") }) {
                     DiscoverArt(url: url)
                 }

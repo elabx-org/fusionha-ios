@@ -20,7 +20,7 @@ struct AccountRow: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Theme.isMono ? Theme.bg : .white)
+                .foregroundStyle(Theme.isMono ? Theme.bg : Theme.onTint(tint))
                 .frame(width: 28, height: 28)
                 .background(Theme.isMono ? Theme.mut : tint, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             Text(title).foregroundStyle(Theme.txt)

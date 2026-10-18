@@ -85,16 +85,25 @@ struct YouView: View {
     private var avatarFill: AnyShapeStyle {
         switch role {
         case "admin":
-            return AnyShapeStyle(LinearGradient(colors: [Theme.indigo.opacity(0.7), Theme.indigo],
+            return AnyShapeStyle(LinearGradient(colors: [Theme.avatarDeep(Theme.indigo), Theme.indigo],
                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
         case "manager":
-            return AnyShapeStyle(LinearGradient(colors: [Theme.cyan, Color(hex: 0x1894A7)],
+            return AnyShapeStyle(LinearGradient(colors: [Theme.cyan, Theme.avatarDeep(Theme.cyan)],
                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
         case "requestor", "requester":
-            return AnyShapeStyle(LinearGradient(colors: [Theme.miss, Color(hex: 0xAC6F08)],
+            return AnyShapeStyle(LinearGradient(colors: [Theme.miss, Theme.avatarDeep(Theme.miss)],
                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
         default:
             return AnyShapeStyle(Theme.panel2)
+        }
+    }
+
+    /// The role's base tint, for the initials' contrast.
+    private var avatarTint: Color {
+        switch role {
+        case "admin": return Theme.indigo
+        case "manager": return Theme.cyan
+        default: return Theme.miss
         }
     }
 
@@ -120,7 +129,7 @@ struct YouView: View {
         return VStack(spacing: 8) {
             ZStack {
                 Circle().fill(avatarFill)
-                Text(initials).font(.system(size: 24, weight: .bold)).foregroundStyle(plain ? Theme.mut : .white)
+                Text(initials).font(.system(size: 24, weight: .bold)).foregroundStyle(plain ? Theme.mut : Theme.onTint(avatarTint))
                 if me?.thumb != nil, let me, let server = model.credentials?.serverURL {
                     DiscoverArt(url: server.appendingPathComponent("api/v1/users/\(me.id)/avatar"))
                         .clipShape(Circle())

@@ -44,7 +44,7 @@ struct ActShimmer: View {
         if !reduce {
             GeometryReader { geo in
                 RepeatForever(animation: .easeInOut(duration: duration).repeatForever(autoreverses: false)) { on in
-                    LinearGradient(colors: [.white.opacity(0), .white.opacity(0.28), .white.opacity(0)],
+                    LinearGradient(colors: [Theme.sweep.opacity(0), Theme.sweep.opacity(0.28), Theme.sweep.opacity(0)],
                                    startPoint: .leading, endPoint: .trailing)
                         .frame(width: geo.size.width)
                         .offset(x: geo.size.width * (on ? 1 : -1))
