@@ -102,7 +102,7 @@ struct GrabTimeline: View {
         return Button { onChange(stop.key) } label: {
             VStack(spacing: 4) {
                 Circle()
-                    .fill(chosen ? Color.white : after ? Theme.i2 : Theme.panel2)
+                    .fill(chosen ? Theme.txt : after ? Theme.i2 : Theme.panel2)
                     .overlay(Circle().strokeBorder(chosen ? Theme.i2 : after ? Theme.i2 : Theme.txt.opacity(0.22),
                                                    lineWidth: chosen ? 5 : 2))
                     .frame(width: 20, height: 20)

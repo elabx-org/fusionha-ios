@@ -309,8 +309,8 @@ struct SetupProgressPill: View {
 struct SetupRing: View {
     @Environment(\.motionEnabled) private var motion
     let fraction: Double
-    var track: Color = .black.opacity(0.55)
-    var hole: Color = Color(red: 10 / 255, green: 12 / 255, blue: 18 / 255).opacity(0.85)
+    var track: Color = Theme.ringTrack
+    var hole: Color = Theme.ringHole
     var inset: CGFloat = 2.5
 
     var body: some View {
@@ -351,7 +351,7 @@ private struct DoneBadge: View {
                 .font(.system(size: geo.size.width * 0.36, weight: .bold))
                 .foregroundStyle(Theme.done)
                 .frame(width: geo.size.width, height: geo.size.height)
-                .background(Color(red: 10 / 255, green: 12 / 255, blue: 18 / 255).opacity(0.5), in: Circle())
+                .background(Theme.bg.opacity(0.5), in: Circle())
                 .background(.ultraThinMaterial, in: Circle())
                 .overlay(Circle().strokeBorder(Theme.txt.opacity(0.16)))
         }
@@ -370,7 +370,7 @@ private struct StepIcon: View {
                 .font(.system(size: status == .failed ? 7.5 : 9, weight: .bold))
                 .foregroundStyle(status == .failed ? Theme.danger : Theme.done)
                 .frame(width: 18, height: 18)
-                .background(Color(red: 10 / 255, green: 12 / 255, blue: 18 / 255).opacity(0.5), in: Circle())
+                .background(Theme.bg.opacity(0.5), in: Circle())
                 .overlay(Circle().strokeBorder(Theme.txt.opacity(0.16)))
         case .running:
             Circle()

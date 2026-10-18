@@ -29,6 +29,9 @@ struct DiscoverArt: View {
                 }
             }
         .clipped()
+        // The filled image overflows its frame and `.clipped()` doesn't clip
+        // hit testing: art never takes taps itself.
+        .allowsHitTesting(false)
         .task(id: request) { await load(request) }
     }
 

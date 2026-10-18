@@ -168,7 +168,7 @@ struct DetailStripes: View {
                     path.addLine(to: CGPoint(x: x + size.height + 6, y: 0))
                     path.addLine(to: CGPoint(x: x + 6, y: size.height))
                     path.closeSubpath()
-                    context.fill(path, with: .color(.white.opacity(0.28)))
+                    context.fill(path, with: .color(Theme.sweep.opacity(0.28)))
                     x += 18
                 }
             }

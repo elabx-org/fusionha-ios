@@ -207,13 +207,13 @@ struct AccountAvatar: View {
     private var fill: AnyShapeStyle {
         switch me.roleTone {
         case .admin:
-            return AnyShapeStyle(LinearGradient(colors: [Color(hex: 0x494BAE), Theme.indigo],
+            return AnyShapeStyle(LinearGradient(colors: [Theme.avatarDeep(Theme.indigo), Theme.indigo],
                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
         case .manager:
-            return AnyShapeStyle(LinearGradient(colors: [Theme.cyan, Color(hex: 0x18949F)],
+            return AnyShapeStyle(LinearGradient(colors: [Theme.cyan, Theme.avatarDeep(Theme.cyan)],
                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
         case .requestor:
-            return AnyShapeStyle(LinearGradient(colors: [Theme.miss, Color(hex: 0xAC6F08)],
+            return AnyShapeStyle(LinearGradient(colors: [Theme.miss, Theme.avatarDeep(Theme.miss)],
                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
         case .other:
             return AnyShapeStyle(Theme.panel2)

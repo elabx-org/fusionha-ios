@@ -19,7 +19,6 @@ struct RecentWidgetView: View {
                 padded.padding(margins)
             }
         }
-        .environment(\.colorScheme, .dark)
     }
 
     @ViewBuilder

@@ -10,7 +10,8 @@ import FusionhaKit
 enum DetailTokens {
     /// `--line2` (undefined in the web CSS; its intended value).
     static var line2: Color { Theme.txt.opacity(0.14) }
-    static let star = Color(hex: 0xF5C518)
+    /// IMDb yellow; a deeper amber on Daylight's white.
+    static var star: Color { Theme.isLight ? Color(hex: 0xA16207) : Color(hex: 0xF5C518) }
     /// Text on the gradient quality badge.
     static var badgeText: Color { Theme.bg }
 

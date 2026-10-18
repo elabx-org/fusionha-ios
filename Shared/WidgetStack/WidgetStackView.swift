@@ -23,7 +23,6 @@ struct WidgetStackView: View {
                 }
             }
         }
-        .environment(\.colorScheme, .dark)
     }
 
     private var header: some View {

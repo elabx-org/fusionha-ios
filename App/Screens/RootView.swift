@@ -229,7 +229,7 @@ struct DeleteTitleDialog: View {
                 } label: {
                     Text(deleting ? "Deleting…" : "Delete")
                         .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Theme.onDanger)
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .background(Theme.danger, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
                 }

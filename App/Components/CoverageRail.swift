@@ -271,7 +271,7 @@ private struct Sweep: View {
     let width: CGFloat
     var body: some View {
         RepeatForever(animation: .timingCurve(0.2, 0.6, 0.35, 1, duration: 1.5).repeatForever(autoreverses: false)) { on in
-            LinearGradient(colors: [.clear, .white.opacity(0.55), .clear], startPoint: .leading, endPoint: .trailing)
+            LinearGradient(colors: [.clear, Theme.sweep.opacity(0.55), .clear], startPoint: .leading, endPoint: .trailing)
                 .frame(width: width * 0.38)
                 .offset(x: -width * 0.4 + (on ? width * 1.4 : 0))
         }

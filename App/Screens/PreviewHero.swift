@@ -95,7 +95,7 @@ struct PreviewHero: View {
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.white)
                 .frame(width: 38, height: 38)
-                .background(Color(hex: 0x0C0D11).opacity(0.5), in: Circle())
+                .background(Theme.scrim.opacity(0.5), in: Circle())
                 .background(.ultraThinMaterial, in: Circle())
                 .overlay(Circle().strokeBorder(Theme.line))
                 .contentShape(Circle())
@@ -154,7 +154,7 @@ struct PreviewHero: View {
             Text(text)
         case .rating(let vote):
             HStack(spacing: 4) {
-                Image(systemName: "star.fill").font(.system(size: 12)).foregroundStyle(Color(hex: 0xF5C518))
+                Image(systemName: "star.fill").font(.system(size: 12)).foregroundStyle(DetailTokens.star)
                 Text(String(format: "%.1f", vote))
             }
         case .cert(let cert):
@@ -173,10 +173,10 @@ struct StatusToneChip: View {
     private var tone: (bg: Color, fg: Color, border: Color) {
         let s = status.lowercased()
         if ["released", "available", "ended"].contains(where: { s.contains($0) }) {
-            return (Color(hex: 0x143C32), Color(hex: 0x7CDCBC), Color(hex: 0x7CDCBC).opacity(0.3))
+            return (Theme.done.opacity(0.16), Theme.done, Theme.done.opacity(0.3))
         }
         if ["continuing", "returning", "airing", "on air", "production", "planned", "upcoming"].contains(where: { s.contains($0) }) {
-            return (Color(hex: 0x443716), Color(hex: 0xF4D076), Color(hex: 0xF4D076).opacity(0.3))
+            return (Theme.onair.opacity(0.16), Theme.onair, Theme.onair.opacity(0.3))
         }
         return (Theme.panel2, Theme.mut, Theme.line)
     }

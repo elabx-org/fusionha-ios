@@ -75,7 +75,7 @@ struct TrailerCard: View {
                 Color.clear
                     .aspectRatio(16 / 9, contentMode: .fit)
                     .overlay { DiscoverArt(url: art) }
-                    .overlay { Color(red: 6 / 255, green: 7 / 255, blue: 10 / 255).opacity(0.28) }
+                    .overlay { Theme.scrim.opacity(0.28) }
                     .overlay {
                         Image(systemName: "play.fill")
                             .font(.system(size: 20))
@@ -85,6 +85,7 @@ struct TrailerCard: View {
                             .scaleEffect(0.86)
                     }
                     .background(Theme.card)
+                    .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
                     .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Theme.line))
                     .shadow(color: .black.opacity(0.55), radius: 12, y: 12)
@@ -101,7 +102,7 @@ struct TrailerCard: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
                             .frame(width: 30, height: 30)
-                            .background(Color(red: 6 / 255, green: 7 / 255, blue: 10 / 255).opacity(0.6),
+                            .background(Theme.scrim.opacity(0.6),
                                         in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                     }
                     .buttonStyle(.plain)

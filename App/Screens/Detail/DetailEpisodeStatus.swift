@@ -40,7 +40,7 @@ struct EpisodeStatusChip: View {
         case .missing:
             Text("missing")
                 .font(.system(size: 10.5, weight: .bold))
-                .foregroundStyle(Theme.danger.mix(0.85, .white))
+                .foregroundStyle(Theme.danger.mix(0.85, Theme.pole))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 2)
                 .overlay(RoundedRectangle(cornerRadius: 6)
@@ -81,7 +81,7 @@ struct DownloadPill: View {
             }
             .font(.system(size: 10, weight: .heavy))
             .tracking(0.4)
-            .foregroundStyle(Theme.grab.mix(0.88, .white))
+            .foregroundStyle(Theme.grab.mix(0.88, Theme.pole))
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
             .background(Theme.grab.opacity(0.16), in: RoundedRectangle(cornerRadius: 6))

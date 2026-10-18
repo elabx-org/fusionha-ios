@@ -19,7 +19,7 @@ struct WidgetStatTile: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background {
-            WidgetFill(color: Color.white.opacity(0.06), accentedOpacity: 0.08)
+            WidgetFill(color: Theme.txt.opacity(0.06), accentedOpacity: 0.08)
                 .clipShape(RoundedRectangle(cornerRadius: WidgetStyle.tileRadius, style: .continuous))
         }
     }

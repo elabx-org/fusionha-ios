@@ -25,7 +25,7 @@ struct WidgetPageDots: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
-            .background(Color.white.opacity(0.1), in: Capsule())
+            .background(Theme.txt.opacity(0.1), in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)

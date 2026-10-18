@@ -124,7 +124,7 @@ struct CollectionRingBadge: View {
         }
         .padding(1.75)
         .frame(width: 33, height: 33)
-        .background(Color(red: 14 / 255, green: 16 / 255, blue: 22 / 255).opacity(0.92), in: Circle())
+        .background(Theme.scrim.opacity(0.92), in: Circle())
         .overlay(Circle().strokeBorder(.white.opacity(0.16)))
         .shadow(color: .black.opacity(0.75), radius: 7, y: 4)
         .accessibilityLabel("\(owned) of \(total) owned")

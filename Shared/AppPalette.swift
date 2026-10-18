@@ -207,8 +207,6 @@ final class PaletteStore {
     private(set) var active: AppPalette
     /// The sign-in screen is drawn over a dark backdrop, so it keeps the dark palette.
     private(set) var signInShowing = false
-    /// Widgets stay dark (their art and glass are designed for it); they use the dark palette.
-    private let isWidget = Bundle.main.bundleIdentifier?.hasSuffix(".widgets") == true
 
     private init() {
         // Locals first: an @Observable class can't read its own properties
@@ -229,8 +227,8 @@ final class PaletteStore {
         darkPalette = dark
         lightPalette = light
         appearance = mode
-        let widget = Bundle.main.bundleIdentifier?.hasSuffix(".widgets") == true
-        active = mode == .light && !widget ? light : dark
+        // The widgets (own process) follow it too; `systemScheme` settles Automatic.
+        active = mode == .light ? light : dark
     }
 
     /// The colour scheme to force (nil follows the system).
@@ -257,15 +255,16 @@ final class PaletteStore {
             darkPalette = palette
             Self.defaults.set(palette.rawValue, forKey: Self.paletteKey)
             if appearance == .light { select(appearance: .dark) }
-            WidgetCenter.shared.reloadAllTimelines()
         }
         apply()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     func select(appearance next: AppAppearance) {
         appearance = next
         Self.defaults.set(next.rawValue, forKey: Self.appearanceKey)
         apply()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     func select(wash: PosterWash) {
@@ -301,7 +300,7 @@ final class PaletteStore {
     }
 
     private func resolve() -> AppPalette {
-        if isWidget || signInShowing { return darkPalette }
+        if signInShowing { return darkPalette }
         switch appearance {
         case .dark: return darkPalette
         case .light: return lightPalette
