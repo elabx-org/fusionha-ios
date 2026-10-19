@@ -50,7 +50,7 @@ struct AddEditionSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    Picker("Tier", selection: $tier) {
+                    Picker("Tier", selection: tierChoice) {
                         ForEach(QualityTier.ordered, id: \.self) { Text($0.chipLabel).tag($0) }
                     }
                     Picker("Edition", selection: $editionChoice) {
@@ -134,14 +134,36 @@ struct AddEditionSheet: View {
                     .disabled(!canSubmit)
                 }
             }
-            .onChange(of: tier) { _, next in
-                reseed(next)
-                fourK = nil
-            }
         }
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.bg)
         .task { await seed() }
+        // Survives a fold / unfold (data safety): `seeded` keeps seed() from overwriting it.
+        .retainsDraft("add.seeded", $seeded)
+        .retainsDraft("add.tier", $tier)
+        .retainsDraft("add.editionChoice", $editionChoice)
+        .retainsDraft("add.customEdition", $customEdition)
+        .retainsDraft("add.presets", $presets)
+        .retainsDraft("add.rootFolderId", $rootFolderId)
+        .retainsDraft("add.folderName", $folderName)
+        .retainsDraft("add.profileId", $profileId)
+        .retainsDraft("add.monitor", $monitor)
+        .retainsDraft("add.minimumAvailability", $minimumAvailability)
+        .retainsDraft("add.monitored", $monitored)
+        .retainsDraft("add.searchNow", $searchNow)
+        .retainsDraft("add.defaults", $defaults)
+        .retainsDraft("add.fourK", $fourK)
+    }
+
+    /// The tier picker: picking a tier re-seeds its folder and profile (a
+    /// restored draft sets `tier` directly and keeps the user's choices).
+    private var tierChoice: Binding<QualityTier> {
+        Binding(get: { tier }, set: { next in
+            guard next != tier else { return }
+            tier = next
+            reseed(next)
+            fourK = nil
+        })
     }
 
     private var fourKPanel: some View {

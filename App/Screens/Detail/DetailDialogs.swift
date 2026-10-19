@@ -157,5 +157,6 @@ struct DeleteItemSheet: View {
         .padding(20)
         .presentationBackground(Theme.bg)
         .presentationDragIndicator(.visible)
+        .retainsDraft("delete.deleteFiles", $deleteFiles)
     }
 }

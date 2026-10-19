@@ -1,52 +1,21 @@
 import SwiftUI
 import UIKit
-import WidgetKit
 import FusionhaKit
 
 // MARK: - User menu
 
-/// The avatar and its account sheet (UserMenu.tsx's items plus This iPhone).
-/// The amber dot shows when something needs attention. The sheet is a short
-/// glass sheet; Settings, Account and Widgets open once it has closed.
+/// The avatar button (UserMenu.tsx's trigger). The amber dot shows when
+/// something needs attention. It only sets `AppModel.avatar.showingSheet`: the
+/// account sheet and what it opens (Settings, Account, Widgets) are presented
+/// once from the shell (`AvatarPresentations`), so the button can move into a
+/// system toolbar or its overflow without losing them.
 struct AvatarMenu: View {
     @Environment(AppModel.self) private var model
-    @State private var showingSheet = false
-    @State private var pending: AccountHubSheet.Destination?
-    @State private var showingSettings = SettingsScreenshot.openAtLaunch
-    @State private var settingsPanel = SettingsScreenshot.panel
-    @State private var showingWidgets = WidgetDiagnosticsView.openAtLaunch
-    /// Keychain + App Group probes are synchronous IPC; this view's body runs
-    /// on every screen, so they are read once, off the main thread.
-    @State private var diagnostics = ""
 
     var body: some View {
-        Button { showingSheet = true } label: { label }
+        Button { model.avatar.showingSheet = true } label: { label }
             .buttonStyle(.plain)
             .accessibilityLabel(model.attentionCount > 0 ? "Account, \(model.attentionCount) need attention" : "Account")
-            .task(id: model.credentials?.serverURL) {
-                diagnostics = await Task.detached(priority: .utility) { CredentialStore.diagnostics() }.value
-            }
-            .sheet(isPresented: $showingSheet, onDismiss: openPending) {
-                AccountHubSheet(diagnostics: diagnostics) { pending = $0 }
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-            }
-            .fullScreenCover(isPresented: $showingSettings) {
-                SettingsView(client: model.client, initialPanel: settingsPanel)
-            }
-            .sheet(isPresented: $showingWidgets) {
-                WidgetDiagnosticsView()
-                    .presentationDragIndicator(.visible)
-                    .presentationBackground(Theme.bg)
-            }
-            // A deep link closes these so its sheet can show (DeepLink.swift).
-            .onChange(of: showingSheet || showingSettings || showingWidgets) { _, open in model.avatarCoverOpen = open }
-            .onChange(of: model.linkCloseTick) {
-                pending = nil
-                showingSheet = false
-                showingSettings = false
-                showingWidgets = false
-            }
     }
 
     private var label: some View {
@@ -64,20 +33,6 @@ struct AvatarMenu: View {
             .padding(6)
             .contentShape(Circle())
             .padding(-6)
-    }
-
-    private func openPending() {
-        guard let destination = pending else { return }
-        pending = nil
-        switch destination {
-        case .settings(let panel):
-            settingsPanel = panel
-            showingSettings = true
-        case .account:
-            model.showingAccount = true
-        case .widgets:
-            showingWidgets = true
-        }
     }
 }
 

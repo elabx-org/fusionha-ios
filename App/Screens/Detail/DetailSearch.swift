@@ -136,6 +136,17 @@ struct InteractiveSearchSheet: View {
         }
         // Filters reset per edition (not on the first scoping from 0).
         .onChange(of: editionId) { old, _ in if old != 0 { filters = ReleaseFilters() } }
+        // A fold / unfold keeps the results, the filters and what was grabbed.
+        .retainsDraft("search.started", $started)
+        .retainsDraft("search.editionId", $editionId)
+        .retainsDraft("search.results", $results)
+        .retainsDraft("search.failures", $failures)
+        .retainsDraft("search.searchedAt", $searchedAt)
+        .retainsDraft("search.scopeStatus", $scopeStatus)
+        .retainsDraft("search.cooldown", $cooldown)
+        .retainsDraft("search.filters", $filters)
+        .retainsDraft("search.grabbed", $grabbed)
+        .retainsDraft("search.triggers", $triggers)
     }
 
     // MARK: Header
@@ -260,7 +271,11 @@ struct InteractiveSearchSheet: View {
     // MARK: Loading
 
     private func start() async {
-        guard !started else { return }
+        guard !started else {
+            // Restored after a fold / unfold: finish the searches that were in flight.
+            for id in searchedAt.keys where results[id] == nil && failures[id] == nil { Task { await load(id) } }
+            return
+        }
         started = true
         let first = target.editionIds.first ?? editions.first?.id ?? 0
         editionId = first
@@ -308,7 +323,7 @@ struct InteractiveSearchSheet: View {
             return
         } catch {
             if (error as? URLError)?.code == .cancelled { return }
-            failures[id] = Self.describe(error)
+            failures[id] = ReleaseSearchErrorText.describe(error)
         }
     }
 
@@ -323,25 +338,6 @@ struct InteractiveSearchSheet: View {
     private func loadCooldown() async {
         guard let client = store.client else { return }
         cooldown = (try? await client.unavailableIndexers())?.items ?? []
-    }
-
-    /// A short, readable cause under the failure banner.
-    private static func describe(_ error: Error) -> String {
-        if let url = error as? URLError {
-            return url.code == .timedOut ? "The indexers took too long to answer." : url.localizedDescription
-        }
-        if case APIError.http(let status, _) = error {
-            return detail(error) ?? "The server answered HTTP \(status)."
-        }
-        if error is DecodingError { return "The server's answer couldn't be read." }
-        return error.localizedDescription
-    }
-
-    /// The backend's `detail` message on an HTTP error, if it sent one.
-    private static func detail(_ error: Error) -> String? {
-        guard case APIError.http(_, let body) = error,
-              let json = try? JSONSerialization.jsonObject(with: Data(body.utf8)) as? [String: Any] else { return nil }
-        return json["detail"] as? String
     }
 
     // MARK: Grab
@@ -364,7 +360,7 @@ struct InteractiveSearchSheet: View {
             toast = SearchToast(text: override ? "Grabbed anyway — removed from blocklist" : "Sent to download client")
             await store.reload()
         } catch {
-            let message = Self.detail(error)
+            let message = ReleaseSearchErrorText.detail(error)
             let inFlightAlready = message?.range(of: "already (downloading|grabbed)", options: [.regularExpression, .caseInsensitive]) != nil
             if !inFlightAlready {
                 grabbed.remove(guid)

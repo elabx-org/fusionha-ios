@@ -95,23 +95,40 @@ final class DetailStore {
     /// The panel's per-version summaries, rebuilt once per load (never in `body`).
     private(set) var versionSummaries: [Int: VersionSummary] = [:]
 
-    // Sheets
-    var interactive: InteractiveTarget?
-    var showingEdit = false
-    var addPreset: AddEditionPreset?
-    var showingDelete = false
+    // Sheets. They live here, not on the view, so a fold / unfold that moves
+    // the title between the sheet and the column re-presents them
+    // (`DetailChildSheets`). Opening one afresh clears its draft.
+    var interactive: InteractiveTarget? { didSet { opened("search", oldValue?.id, interactive?.id) } }
+    var showingEdit = false { didSet { opened("edit", oldValue, showingEdit) } }
+    var addPreset: AddEditionPreset? { didSet { opened("add", oldValue?.id, addPreset?.id) } }
+    var showingDelete = false { didSet { opened("delete", oldValue, showingDelete) } }
     var seasonSheet: SeasonRef?
     /// The item actions rail's dialogs (see DetailStore+ItemActions.swift).
-    var renameScope: RenameScope?
-    var showingAliases = false
-    var showingIssue = false
-    var showingNumbering = false
+    var renameScope: RenameScope? { didSet { opened("rename", oldValue?.id, renameScope?.id) } }
+    var showingAliases = false { didSet { opened("aliases", oldValue, showingAliases) } }
+    var showingIssue = false { didSet { opened("issue", oldValue, showingIssue) } }
+    var showingNumbering = false { didSet { opened("numbering", oldValue, showingNumbering) } }
     /// Manage files / Manage episodes, on the page scope or one version.
-    var manageFiles: ManageFilesTarget?
+    var manageFiles: ManageFilesTarget? { didSet { opened("manage", oldValue?.id, manageFiles?.id) } }
     var checkingNumbering = false
+
+    /// What the child sheets had typed when their host went away (`retainsDraft`).
+    @ObservationIgnored var drafts = DraftBag()
+    /// The page's scroll offset, restored by the next host.
+    @ObservationIgnored var scrollY: CGFloat = 0
+    /// Whether a host has shown this store yet: a later host is a fold / unfold.
+    @ObservationIgnored var hosted = false
 
     init(itemId: Int) {
         self.itemId = itemId
+    }
+
+    private func opened<ID: Equatable>(_ sheet: String, _ old: ID?, _ new: ID?) {
+        if DraftBag.isFreshOpen(from: old, to: new) { drafts.clear(sheet: sheet) }
+    }
+
+    private func opened(_ sheet: String, _ old: Bool, _ new: Bool) {
+        if new && !old { drafts.clear(sheet: sheet) }
     }
 
     // MARK: Derived
@@ -302,47 +319,5 @@ final class DetailStore {
         guard let client, let job = gradual else { return }
         gradual?.stopping = true
         try? await client.cancelGradualSearch(itemId: itemId, season: job.season)
-    }
-
-    // MARK: Monitoring
-
-    func setSeasonMonitored(_ number: Int, _ on: Bool) async {
-        guard let client else { return }
-        let name = number == 0 ? "Specials" : "Season \(number)"
-        seasonMonitorOverride[number] = on
-        do {
-            try await client.setSeasonMonitored(itemId: itemId, season: number, monitored: on)
-            show(on ? "Monitoring \(name)" : "Stopped monitoring \(name)", variant: .success)
-            await reload()
-        } catch {
-            seasonMonitorOverride[number] = nil
-            show("Couldn't update \(name)", variant: .error)
-        }
-    }
-
-    func setEditionMonitored(_ edition: DetailEdition, _ on: Bool) async {
-        guard let client else { return }
-        editionMonitorOverride[edition.id] = on
-        do {
-            try await client.updateEdition(itemId: itemId, editionId: edition.id, EditionUpdate(monitored: on))
-            await reload()
-        } catch {
-            editionMonitorOverride[edition.id] = nil
-            show("Couldn't update \(edition.label)", variant: .error)
-        }
-    }
-
-    /// Per-episode monitor toggle (`PATCH /api/v1/library/{id}/episodes/{eid}`).
-    func setEpisodeMonitored(_ episode: Episode, seasonNumber: Int, _ on: Bool) async {
-        guard let client else { return }
-        let code = EpisodeCode.episode(season: seasonNumber, episode: episode.episodeNumber)
-        episodeMonitorOverride[episode.id] = on
-        do {
-            try await client.setEpisodeMonitored(itemId: itemId, episodeId: episode.id, monitored: on)
-            await reload()
-        } catch {
-            episodeMonitorOverride[episode.id] = nil
-            show("Couldn't update \(code)", variant: .error)
-        }
     }
 }

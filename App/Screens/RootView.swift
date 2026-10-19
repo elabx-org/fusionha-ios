@@ -38,7 +38,16 @@ struct RootView: View {
             }
         }
         .background(Theme.bg)
-        .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { fold = $0 }
+        // Measured without the keyboard: typing in inner landscape must not
+        // drop the height under the split rule and fold the title into a sheet.
+        .background {
+            Color.clear
+                .ignoresSafeArea(.keyboard)
+                .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { newFold in
+                    model.updateDetailHost(splitsWithTitle: ShellSplit(fold: newFold, hasItem: true).shown)
+                    fold = newFold
+                }
+        }
         .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: split)
         .overlay(alignment: .bottom) {
             ToastHost()
@@ -48,7 +57,7 @@ struct RootView: View {
         .environment(\.railStyle, model.railStyle)
         .environment(\.railConsolidate, model.railConsolidate)
         .sheet(item: sheetItem, onDismiss: { DetailSheetPresence.dismissed() }) { ref in
-            ItemDetailView(itemId: ref.id)
+            ItemDetailView(store: model.detailStore(for: ref.id))
                 .onAppear {
                     DetailSheetPresence.shown()
                     DeepLinkProbe.log("detail \(ref.id) shown")
@@ -66,19 +75,19 @@ struct RootView: View {
         let selection = Binding(get: { model.tab }, set: { model.tab = $0 })
         return TabView(selection: selection) {
             if model.requestScoped {
-                Tab("Discover", image: "nav-discover", value: AppTab.discover) { DiscoverView() }
-                Tab("My requests", image: "nav-requests", value: AppTab.requests) { RequestsView() }
-                Tab("You", image: "nav-you", value: AppTab.you) { YouView() }
-                Tab(value: AppTab.search, role: .search) { SearchTabView() }
+                Tab("Discover", image: "nav-discover", value: AppTab.discover) { TabRoot { DiscoverView() } }
+                Tab("My requests", image: "nav-requests", value: AppTab.requests) { TabRoot { RequestsView() } }
+                Tab("You", image: "nav-you", value: AppTab.you) { TabRoot { YouView() } }
+                Tab(value: AppTab.search, role: .search) { TabRoot { SearchTabView() } }
             } else {
-                Tab("Library", image: "nav-library", value: AppTab.library) { LibraryView() }
-                Tab("Discover", image: "nav-discover", value: AppTab.discover) { DiscoverView() }
+                Tab("Library", image: "nav-library", value: AppTab.library) { TabRoot { LibraryView() } }
+                Tab("Discover", image: "nav-discover", value: AppTab.discover) { TabRoot { DiscoverView() } }
                     // `needs_you`, capped at 99+ like the web's badge.
                     .badge(BadgeCount.text(model.requestsBadge).map { Text(verbatim: $0) })
-                Tab("Calendar", image: "nav-calendar", value: AppTab.calendar) { CalendarView() }
-                Tab("Activity", image: "nav-activity", value: AppTab.activity) { ActivityView() }
+                Tab("Calendar", image: "nav-calendar", value: AppTab.calendar) { TabRoot { CalendarView() } }
+                Tab("Activity", image: "nav-activity", value: AppTab.activity) { TabRoot { ActivityView() } }
                     .badge(BadgeCount.text(model.queueTotal).map { Text(verbatim: $0) })
-                Tab(value: AppTab.search, role: .search) { SearchTabView() }
+                Tab(value: AppTab.search, role: .search) { TabRoot { SearchTabView() } }
             }
         }
         .tint(Theme.indigo)
@@ -105,6 +114,7 @@ private struct ShellPresentations: ViewModifier {
         }
         .sheet(isPresented: $model.showingAccount) { AccountSheet().presentationBackground(Theme.bg) }
         .sheet(isPresented: $model.showingWatchlists) { WatchlistsSheet() }
+        .modifier(AvatarPresentations(avatar: model.avatar, model: model))
         .sheet(item: $model.deleteTarget) { target in
             DeleteTitleDialog(target: target)
                 .presentationDetents([.height(320)])
