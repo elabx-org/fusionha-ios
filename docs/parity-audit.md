@@ -526,7 +526,7 @@ D1 notes (build pending):
   symbol with fixed words, progress shown by `.disabled`. Close / Done-only sheets opt out of vertical bars
   (`closeOnlyBars()`, iOS 27.1).
 - **Settings:** the cover and every pushed panel use `.inlineLarge`; the panel heading is now the subtitle only.
-- **Duo folded landscape (open, owner decision):** iOS collapses Add + Account into "•••" above the
+- **Duo folded landscape (owner, 2026-10-19: keep tabs):** iOS collapses Add + Account into "•••" above the
   tab bar even with `visibilityPriority` and a 28pt Account item (run 39331548937,
   `duo-folded-landscape-library.png`). The only lever is `toolbarVerticalCompressionBehavior(.prefersToolbarItems)`,
-  which keeps the items at the cost of the tab bar. HIG keeps the tab bar on tab roots, so the default is unchanged.
+  which keeps the items at the cost of the tab bar. Owner chose to keep the tab bar; Add + Account stay under "•••" there.
