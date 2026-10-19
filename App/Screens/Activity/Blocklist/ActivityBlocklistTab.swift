@@ -91,7 +91,7 @@ struct ActivityBlocklistTab: View {
         } else {
             let last = rows.count - 1
             ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
-                row(entry, nested: false, dupes: 1).actReveal(index)
+                row(entry, nested: false, copies: [entry]).actReveal(index)
                     .padding(.bottom, index == last ? 0 : 10)
                     .actRowTransition(reduce)
             }
@@ -201,12 +201,12 @@ struct ActivityBlocklistTab: View {
         let lead = group.entries[0]
         let newest = group.entries.compactMap { ActFmt.date($0.createdAt) }.max()
         // Collapse exact duplicates (same release) into one row with ×N.
-        var seen: [String: Int] = [:]
+        var copies: [String: [BlocklistEntry]] = [:]
         var unique: [BlocklistEntry] = []
         for e in group.entries {
             let k = e.sourceTitle ?? e.title
-            if seen[k] == nil { unique.append(e) }
-            seen[k, default: 0] += 1
+            if copies[k] == nil { unique.append(e) }
+            copies[k, default: []].append(e)
         }
         return ActGroupCard(wash: nil, base: Theme.panel) {
             ActPoster(url: lead.posterUrl, title: lead.itemTitle ?? lead.title, size: .md)
@@ -229,20 +229,23 @@ struct ActivityBlocklistTab: View {
             VStack(spacing: 0) {
                 ForEach(Array(unique.enumerated()), id: \.element.id) { index, entry in
                     if index > 0 { Rectangle().fill(Theme.line).frame(height: 1) }
-                    row(entry, nested: true, dupes: seen[entry.sourceTitle ?? entry.title] ?? 1)
+                    row(entry, nested: true, copies: copies[entry.sourceTitle ?? entry.title] ?? [entry])
                 }
             }
         }
     }
 
     @ViewBuilder
-    private func row(_ entry: BlocklistEntry, nested: Bool, dupes: Int) -> some View {
-        let content = BlocklistRowView(entry: entry, nested: nested, dupes: dupes, showReasons: showReasons,
+    /// A collapsed ×N row acts on every copy: unblock and select remove them
+    /// all, or the release stays blocked (web `BlocklistTab` removeAll / setMany).
+    private func row(_ entry: BlocklistEntry, nested: Bool, copies: [BlocklistEntry]) -> some View {
+        let ids = Set(copies.map(\.id))
+        let content = BlocklistRowView(entry: entry, nested: nested, dupes: copies.count, showReasons: showReasons,
                                        selecting: selecting, checked: selected.contains(entry.id),
-                                       unblock: { search in Task { await unblock([entry], search: search) } })
+                                       unblock: { search in Task { await unblock(copies, search: search) } })
         if selecting {
             content.contentShape(Rectangle()).onTapGesture {
-                if selected.contains(entry.id) { selected.remove(entry.id) } else { selected.insert(entry.id) }
+                if selected.contains(entry.id) { selected.subtract(ids) } else { selected.formUnion(ids) }
             }
         } else {
             content

@@ -58,6 +58,7 @@ struct BulkRemoveDialog: View {
             ActOption(label: "Also blocklist these releases", hint: "Off by default — it permanently disqualifies the releases.",
                       isOn: $blocklist)
         }
-        .onAppear { blocklist = defaultBlocklist; deleteFiles = fileCount > 0 }
+        // Pre-ticked only when every row has a file on disk (web BulkRemoveDialog).
+        .onAppear { blocklist = defaultBlocklist; deleteFiles = fileCount > 0 && fileCount >= count }
     }
 }

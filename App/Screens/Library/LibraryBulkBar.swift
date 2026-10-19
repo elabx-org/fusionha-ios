@@ -152,7 +152,8 @@ struct BulkActionBar: View {
 private struct ChangeRootSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
-    @State private var tier = "all"
+    /// HD·1080p by default: "Every version" collapses the tiers onto one root.
+    @State private var tier = "HD-1080p"
     @State private var roots: [RootFolder] = []
     @State private var rootId: Int?
     @State private var disposition: RootFileDisposition = .move
@@ -163,6 +164,9 @@ private struct ChangeRootSheet: View {
             field("Which versions to move") {
                 SegmentedPills(options: [("HD-1080p", "HD·1080p"), ("UHD-2160p", "UHD·4K"), ("all", "Every version")],
                                selection: $tier, fill: true)
+                if tier == "all" {
+                    warning("This collapses HD·1080p, UHD·4K and every edition onto one root, so the tier separation is lost. Prefer scoping to one tier.", Theme.miss)
+                }
             }
             field("New root folder") {
                 Picker("New root folder", selection: $rootId) {
@@ -176,6 +180,11 @@ private struct ChangeRootSheet: View {
             }
             field("Existing files") {
                 SegmentedPills(options: RootFileDisposition.allCases.map { ($0, $0.label) }, selection: $disposition, fill: true)
+                if disposition == .delete {
+                    warning("The existing files are permanently deleted.", Theme.danger)
+                } else if disposition == .leave {
+                    warning("Files stay in the old folder. Those versions show as Missing until moved or re-imported.", Theme.miss)
+                }
             }
             Spacer(minLength: 0)
             Button {
@@ -199,6 +208,16 @@ private struct ChangeRootSheet: View {
         }
         .padding(20)
         .task { roots = (try? await model.client?.rootFolders()) ?? [] }
+    }
+
+    private func warning(_ text: String, _ tone: Color) -> some View {
+        Text(text)
+            .font(.system(size: 12.5, weight: .semibold))
+            .foregroundStyle(Theme.txt)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .actWash(tone, radius: 10, base: Theme.panel2)
     }
 
     private func field<C: View>(_ label: String, @ViewBuilder _ content: () -> C) -> some View {

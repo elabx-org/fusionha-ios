@@ -256,3 +256,55 @@ These get fixed with B3/B6.
 - **S5:** the Indexers table, Custom formats columns and Quality side-by-side trigger at 760/820/1100, which the Duo detail column may never reach. Build them for iPad only, or record them as deviations?
 - **S6:** Setup, Users, Roles, Rules, Release filters, File management and Naming have no wide web layout. A centred single column with a max width when unfolded?
 - **S7:** Users: should the pulse replace the Show picker? Manage access as a section, or a pushed screen?
+
+## Rulings (fusionha #56, 2026-10-19)
+
+All of these come from web parity plus the owner's rules. Only the Duo outer-display header question is still with the owner.
+
+**General**
+- **G1:** glyph-only marks (dots, ✓, ✕/⏸, chevrons) are exempt from the 11 pt floor. Text must be at least 11 pt.
+- **G2:** the sweep and the indeterminate band become solid or translucent `i1` (the web did the same in 0.4.218).
+- **G3, A3, A5:** iOS goes solid and wash-only now: coverage, combo and download rails are solid segments, and running Tasks use a wash. The web follows in its next release.
+- **G4:** brand marks turn grey under Monochrome.
+- **G5:** use the web's Mono pattern set from 0.4.221 (files to follow), owned by `actWash`.
+
+**Discover and Requests**
+- **R1:** no text on art. Library art badges (the 4K flag and others) follow the web and are shown.
+- **R2:** a persistent ＋ on touch layouts.
+- **R3:** form sheet.
+- **R4:** decide by the real pane width against 720.
+- **R5:** the reason sheet; the 5 s window pauses while it is open.
+- **R6:** the web's source options.
+- **R7:** form sheets on Duo; Rules opens the Settings split.
+- **R8:** auto-select the first item when wide; the phone shows the list.
+- **R9:** the web's column pick.
+
+**Activity**
+- **A1:** phone column.
+- **A2:** the web's queue-card pane, with the web's empty copy.
+- **A6:** mirror what the web ships today.
+- **A7:** drop the highlight and keep the ETA sort.
+- **A8:** the lock screen always uses dark tokens.
+- **A9:** the web's model (on/off plus the admin delivery card).
+
+**Library, Detail and Calendar**
+- **Follow the web:**
+  - L1
+  - L5
+  - L6: one panel with hairlines; the ring becomes a wash.
+  - L7
+  - L8: the episode dialog as a sheet.
+  - L9
+  - L10: port the tab.
+  - L12: one menu; iCal shown as the web does.
+  - L15
+  - L16
+- **L11:** the iOS card styles stay as a recorded extra, but the default is the web's phone cards.
+- **L17:** switch on the pane's own width.
+
+**Account and Settings**
+- **S1, S4, S7:** follow the web.
+- **S2:** split at 720 of available width, with compact labels.
+- **S3:** keep the glass tab bar (a recorded deviation) and add the status cluster.
+- **S5:** build at the web's thresholds and record a deviation wherever the Duo never reaches them.
+- **S6:** a centred single column with a max width when unfolded.

@@ -351,6 +351,14 @@ struct ActivityQueueTab: View {
             toaster.show(blocklist ? "Blocklisted & removed \(ActFmt.plural(n, "download"))"
                                    : "Removed \(ActFmt.plural(n, "download")) from the queue", tone: .success)
         }
+        // The server only searches with a blocklist; without one, search the
+        // version here, as the web's card does (`use-search-again`).
+        if firstError == nil, search, !blocklist {
+            for item in items {
+                await ActActions.search(client, toaster, itemId: item.mediaItemId, editionId: item.editionId,
+                                        message: "Searching again for \(item.title)")
+            }
+        }
         await store.refresh(client)
         await model.refreshQueue()
     }
