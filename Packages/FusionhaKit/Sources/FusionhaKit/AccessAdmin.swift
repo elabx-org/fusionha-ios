@@ -16,6 +16,9 @@ public struct UserAccount: Decodable, Sendable, Hashable, Identifiable {
     public let plexUsername: String?
     public let thumb: String?
     public let authProvider: String?
+    /// `UserRead.plex_linked` / `credentials`: the person's sign-in methods.
+    public let plexLinked: Bool?
+    public let credentials: [UserCredential]?
 
     /// Plex accounts show their Plex name (the stored username is a disambiguated key).
     public var displayName: String { authProvider == "plex" ? (plexUsername ?? username) : username }
