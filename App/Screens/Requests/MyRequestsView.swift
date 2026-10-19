@@ -42,6 +42,7 @@ struct MyRequestsView: View {
     var origins: Set<RequestOrigin>? = nil
     @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
+    @Environment(RequestsNav.self) private var nav: RequestsNav?
     @State private var filter: Filter = .active
     @State private var items: [MediaRequest] = []
     @State private var cursor: String?
@@ -67,6 +68,7 @@ struct MyRequestsView: View {
             }
             content
         }
+        .onChange(of: counts) { nav?.mineCounts = counts }
         .task(id: "\(current.rawValue)-\(store.requestsVersion)-\(sourceKey)") { await poll() }
         .sheet(item: $thread) { request in
             RequestThreadSheet(request: request) { Task { await refresh() } }

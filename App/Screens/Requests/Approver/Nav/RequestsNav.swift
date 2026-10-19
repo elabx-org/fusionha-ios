@@ -66,6 +66,8 @@ final class RequestsNav {
     var rulesOpen = false
     /// Inbox: the deck or the "Select several" list.
     var selecting = false
+    /// My requests' counts, for the Mine summary line.
+    var mineCounts: RequestCounts?
     /// Threads offers Type only to someone who manages requests and issues.
     var threadTypes = true
     /// Requesters seen in the loaded rows, for the filter sheet.

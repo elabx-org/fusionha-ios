@@ -71,7 +71,14 @@ struct ApproverRequestsView: View {
         case .insights:
             plain { RequestInsightsView() }
         case .mine:
-            plain { MineView(filter: nav.filter[.mine]) }
+            VStack(alignment: .leading, spacing: 14) {
+                RequestsViewHeader {
+                    if let c = nav.mineCounts, !nav.filter[.mine].mineIssues {
+                        requestsCount(c.active, "active") + Text(" · ") + requestsCount(c.available, "available")
+                    }
+                }
+                MineView(filter: nav.filter[.mine])
+            }
         }
     }
 

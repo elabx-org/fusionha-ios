@@ -175,9 +175,9 @@ struct RequestsPanel: View {
     let approver: Bool
     var issues = false
 
-    /// Approvers and issue managers get the Requests menu (Proposal 2);
-    /// everyone else keeps My requests.
+    /// Approvers and issue managers get the Requests menu (Proposal 2); a
+    /// requester gets the same header row over My requests, with no menu.
     var body: some View {
-        if approver || issues { ApproverRequestsView(canApprove: approver, canIssues: issues) } else { MineView() }
+        ApproverRequestsView(canApprove: approver, canIssues: issues)
     }
 }
