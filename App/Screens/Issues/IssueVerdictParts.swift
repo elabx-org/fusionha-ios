@@ -7,6 +7,7 @@ extension IssueFormat.Tone {
         case .working: return Theme.grab
         case .resolved: return Theme.done
         case .attention: return Theme.miss
+        case .accent: return Theme.primary
         case .neutral: return Theme.mut
         }
     }

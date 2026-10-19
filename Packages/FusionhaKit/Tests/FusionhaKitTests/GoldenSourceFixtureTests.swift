@@ -56,6 +56,18 @@ final class GoldenSourceFixtureTests: XCTestCase {
         XCTAssertEqual(diary.query.map(\.value), ["LETTERBOXD_RSS"])
     }
 
+    /// 0.4.220: one needs-you number for the Requests badge.
+    func testRequestCountsNeedsYou() throws {
+        let counts = try decode(RequestCounts.self, "request_counts_needs_you")
+        let n = try XCTUnwrap(counts.needsYou)
+        XCTAssertEqual(n.total, 5)
+        XCTAssertEqual(n.requests, 3)
+        XCTAssertEqual(n.issues, 2)
+        XCTAssertEqual(n.openIssues, 4)
+        XCTAssertEqual(n.total, n.requests + n.issues)
+        XCTAssertEqual(RequestsNeedYou.line(pending: n.requests, issues: n.issues), RequestsNeedYou.line(pending: 3, issues: 2))
+    }
+
     func testPlexWatchlistAdmin() throws {
         let read = try decode(PlexWatchlistAdmin.self, "plex_watchlist_admin")
         XCTAssertEqual(read.plexTokenSet, true)

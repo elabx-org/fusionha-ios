@@ -112,16 +112,17 @@ struct IssueCardRow: View {
     }
 }
 
-/// Checking / Fixing / Open / Reopened / Resolved as a tinted chip.
+/// Checking / Fixing / Needs an admin / Open / Reopened / Resolved as a tinted chip.
 struct IssueStateChip: View {
     let state: String
     var reopenCount = 0
 
     var body: some View {
-        let tone = IssueFormat.stateTone(state, reopenCount: reopenCount).color
+        let look = IssueFormat.stateTone(state, reopenCount: reopenCount)
+        let tone = look.color
         Text(IssueFormat.stateLabel(state, reopenCount: reopenCount))
             .font(.system(size: 11, weight: .bold))
-            .foregroundStyle(tone)
+            .foregroundStyle(look == .accent ? Theme.accentText : tone)
             .padding(.horizontal, 8).padding(.vertical, 3)
             .background(tone.opacity(0.15), in: Capsule())
             .fixedSize()

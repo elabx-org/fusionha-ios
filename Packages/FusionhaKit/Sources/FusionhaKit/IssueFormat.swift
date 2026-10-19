@@ -30,15 +30,18 @@ public enum IssueFormat {
         if reopenCount > 0 { return "Reopened" }
         if state == "CHECKING" { return "Checking" }
         if state == "FIXING" { return "Fixing" }
+        if state == "NEEDS_ADMIN" { return "Needs an admin" }
         return "Open"
     }
 
-    /// working = cyan, resolved = green, anything waiting on a person = amber.
-    public enum Tone: Sendable, Hashable { case working, resolved, attention, neutral }
+    /// working = cyan, resolved = green, anything waiting on a person = amber,
+    /// "Needs an admin" = the accent (it is the badge's issues part, 0.4.220).
+    public enum Tone: Sendable, Hashable { case working, resolved, attention, accent, neutral }
 
     public static func stateTone(_ state: String, reopenCount: Int = 0) -> Tone {
         if state == "RESOLVED" { return .resolved }
         if reopenCount > 0 { return .attention }
+        if state == "NEEDS_ADMIN" { return .accent }
         if isWorking(state) { return .working }
         return .attention
     }

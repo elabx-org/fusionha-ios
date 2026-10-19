@@ -93,6 +93,10 @@ final class IssueFormatTests: XCTestCase {
         XCTAssertEqual(IssueFormat.stateLabel("CHECKING"), "Checking")
         XCTAssertEqual(IssueFormat.stateLabel("NEEDS_ADMIN", reopenCount: 1), "Reopened")
         XCTAssertEqual(IssueFormat.stateTone("RESOLVED"), .resolved)
+        XCTAssertEqual(IssueFormat.stateLabel("NEEDS_ADMIN"), "Needs an admin")
+        XCTAssertEqual(IssueFormat.stateTone("NEEDS_ADMIN"), .accent)
+        XCTAssertEqual(IssueFormat.stateTone("NEEDS_ADMIN", reopenCount: 1), .attention)
+        XCTAssertEqual(IssueFormat.stateLabel("AWAITING_USER"), "Open")
         XCTAssertEqual(IssueFormat.problems(series: false).count, 5)
         XCTAssertEqual(IssueFormat.disabledSub("rate_limited", choiceId: "request_version"),
                        "Used this week’s requests · They reset on Monday.")

@@ -1,0 +1,15 @@
+{
+  "inbox": 3,
+  "waiting": 1,
+  "active": 5,
+  "available": 0,
+  "declined": 0,
+  "all": 5,
+  "by_source": [],
+  "needs_you": {
+    "total": 5,
+    "requests": 3,
+    "issues": 2,
+    "open_issues": 4
+  }
+}

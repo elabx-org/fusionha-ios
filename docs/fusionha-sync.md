@@ -10,10 +10,10 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `82724c7b` |
-| fusionha release | **0.4.217** (`v0.4.217`, 2026-10-19: the web Requests navigation Final; additive `LifecycleEntryRead.quality`) |
+| fusionha commit | `4152c68a` |
+| fusionha release | **0.4.220** (`v0.4.220`, 2026-10-19: Requests Proposal 2; `needs_you` on `/requests/counts`; "Needs an admin") |
 | Checked on | 2026-10-19 |
-| Previous sync | `8fc2eb71` / 0.4.215 (2026-10-19) |
+| Previous sync | `82724c7b` / 0.4.217 (2026-10-19) |
 | Last CI | build-362 on `2006eed`: green |
 | Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
 
@@ -41,6 +41,22 @@ ported and green, and nothing is half done. Still to do:
   `App/LiveActivityController.swift`).
 - The redesign migration of the remaining screens (task "Migrate every
   screen to the redesign").
+
+## 0.4.218–0.4.220: no gradients, the deck stack, Proposal 2
+
+- **0.4.218** no gradient on any control (owner rule). iOS already matched:
+  solid `Theme.primary` + `Theme.onAccent`; the sync bar moved off `Theme.fusion`.
+- **0.4.219** the phone Inbox deck as a stack. iOS did it first (`DeckEdges`,
+  build-365); the web follows the same mock.
+- **0.4.220** Proposal 2: Browse | Requests under the title, Issues as a
+  Requests view (gated on `issues.manage`, old Issues links redirect), Inbox
+  Cards | List (build-367). `GET /requests/counts` gains `needs_you {total,
+  requests, issues, open_issues}`: the badge reads it, counting by hand on older
+  servers (build-369); golden test on `request_counts_needs_you.json`.
+  `NEEDS_ADMIN` reads "Needs an admin" on the accent (`IssueFormat.stateTone`
+  `.accent`, chip text in `Theme.accentText`); reopened stays amber "Reopened".
+- Next: 0.4.221 ships `design/palettes.json` (iOS palettes on the web); iOS pins a
+  copy and asserts `PaletteTokens` match it.
 
 ## 0.4.216–0.4.217 and the Requests navigation Final
 
