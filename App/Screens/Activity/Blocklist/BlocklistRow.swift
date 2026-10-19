@@ -165,9 +165,7 @@ struct BlocklistWash: ViewModifier {
         if nested && Theme.isMono {
             content.background(MonoWash(token: tone.mono, color: tone.color, radius: 0))
         } else if nested {
-            content.background(
-                LinearGradient(stops: [.init(color: tone.color.opacity(0.10), location: 0), .init(color: tone.color.opacity(0), location: 0.42)],
-                               startPoint: .leading, endPoint: .trailing))
+            content.background(tone.color.opacity(0.06))
         } else {
             content.actWash(tone)
         }
