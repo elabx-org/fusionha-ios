@@ -457,7 +457,37 @@ overflow shows the label). Tick a row with its build number.
 | Row | Item | Done |
 |---|---|---|
 | F1 | Users: search field (web parity) | ☐ |
-| F2 | SI1: OIDC sign-in and the living-media poses | ☐ |
+| F2 | SI1: OIDC sign-in and the living-media poses, plus the server step as onboarding (owner, 2026-10-19; see F2 spec) | ☐ |
 | F3 | Episode sheet's Search tab: park its `InteractiveSearchModel` across fold/unfold (DC3: no lost state) | ☐ |
 | F4 | Activity, Calendar and sign-in toasts on `model.toast`, so Q-DC9 hinge placement applies everywhere | ☐ |
 | F5 | Split oversized files to ~300–400 lines: `AppModel` (665), `ScreenModels` (619), `DiscoverModels` (530), `DetailLogic` (481), `CalendarModels` (456), `EditItemSheet` (335) | ☐ |
+
+#### F2 spec: first run as onboarding (owner, 2026-10-19)
+
+The server address step is the app's first screen, so the onboarding rules apply to it
+(app-designer-pro `paywall.md` §1, HIG `onboarding.md`/`launching.md`/`privacy.md`). The
+web has no server step; iOS owns it.
+
+- **Same stage as sign-in.** The server step uses the current login animation, not a bare
+  card. Before any server is known, use the cached `login_layout`/`login_background` from
+  the last server. On a first install, use the Living logo over the default backdrop
+  (aurora). Once connected, cross-fade into the server's chosen layout.
+- **The Living mark acts out the step:**
+  - typing the address: pins tick (`pinOffsets`)
+  - connecting: the "arrivals" move
+  - reached: the server is shown with its name and version, the step's first result
+  - unreachable: jam + shake "no"
+  Reduce Motion / `animations_enabled` are respected as now.
+- **Budget:** a 3–7 word headline, one support line, one field, one button. "Continue"
+  becomes "Connect".
+- **Forgiving input:**
+  - a bare host or IP gets the scheme and default port filled in
+  - paste is detected
+  - errors say what failed and what to try (unreachable, not fusionha, TLS, timeout)
+- **Local network permission in context:** before the first connect to a private
+  address, one line says why, so the system prompt isn't a surprise. If it's denied,
+  show a fix-it row that opens Settings.
+- **Progress:** Server → Sign in (→ Setup on a fresh server) shown when there are 3 steps;
+  Back always works; "Change server" stays.
+- **No carousel, no feature slides.** Duo: the stage spans; on the inner display the
+  card stays off the hinge (DC17).
