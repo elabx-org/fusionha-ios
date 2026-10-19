@@ -28,7 +28,10 @@ enum Theme {
     /// Text on the primary (`fusion`).
     static var onPrimary: Color { Color(hex: palette.onPrimary) }
     /// Text and ticks on a fill of the accent (`indigo` / `i1`).
-    static var onAccent: Color { Color(hex: palette.onAccent) }
+    /// Black or white, whichever has the higher contrast on `i1` (owner
+    /// decision 2026-10-19, same rule as the web): white only where it
+    /// reads better (Daylight); Aurora, Graphite and Eclipse get black.
+    static var onAccent: Color { onFill(hex: palette.i1) }
     /// The house light: the selected chip and today's date are filled with it.
     static var ink: Color { txt }
     /// Text on an `ink` (text-coloured) fill: the ground colour.
