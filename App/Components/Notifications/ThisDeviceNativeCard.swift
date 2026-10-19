@@ -73,6 +73,13 @@ struct ThisDeviceNativeCard: View {
                 Button { test() } label: { Label("Send test", systemImage: "bolt.fill") }
                     .buttonStyle(.web(.primary))
                     .disabled(push.testing)
+                Button("Disable") { disable() }
+                    .buttonStyle(.web(.ghost))
+                    .disabled(push.disabling)
+            case .disabledHere:
+                Button { register() } label: { Label("Enable on this device", systemImage: "bell.badge") }
+                    .buttonStyle(.web(.primary))
+                    .disabled(push.registering)
             case .loading, .serverOff, .noEntitlement:
                 EmptyView()
             }
@@ -96,6 +103,13 @@ struct ThisDeviceNativeCard: View {
         }
     }
 
+    private func disable() {
+        Task {
+            let ok = await push.disable(model.client)
+            notify(ok ? "Notifications turned off on this device" : "Couldn't turn off notifications here. Try again.", ok)
+        }
+    }
+
     private func register() {
         Task {
             let ok = await push.register(model.client)
@@ -104,6 +118,7 @@ struct ThisDeviceNativeCard: View {
     }
 
     private func meta(_ state: NativePushStatus) -> String {
+        if case .disabledHere = state { return "Not enabled here" }
         guard case .enabled(let d) = state else { return "This app" }
         return "This app · \(d.environment) · active \(FetchFormat.ago(d.lastSuccessAt ?? d.lastSeenAt ?? d.createdAt))"
     }
@@ -124,6 +139,7 @@ struct ThisDeviceNativeCard: View {
         case .notAsked: FetchPill(text: "● Off", tone: .off)
         case .noEntitlement: FetchPill(text: "● Unavailable", tone: .err)
         case .registering: FetchPill(text: "● Not registered", tone: .off)
+        case .disabledHere: FetchPill(text: "● Off", tone: .off)
         }
     }
 
@@ -143,7 +159,7 @@ struct ThisDeviceNativeCard: View {
         case .enabled(let d):
             if let error = d.lastError, (d.failureCount ?? 0) > 0 { return ("Last delivery failed: \(error)", true) }
             return nil
-        case .loading, .registering: return nil
+        case .loading, .registering, .disabledHere: return nil
         }
     }
 }

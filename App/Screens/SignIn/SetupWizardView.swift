@@ -64,13 +64,39 @@ struct SetupWizardView: View {
         }
     }
 
-    private func nav(back: Int? = nil, skip: (() -> Void)? = nil, primary: String, enabled: Bool = true, action: @escaping () -> Void) -> some View {
-        HStack(spacing: 10) {
-            if let back { Button("Back") { error = nil; step = back }.buttonStyle(ActButtonStyle(kind: .ghost, small: false)) }
-            Spacer(minLength: 0)
-            if let skip { Button("Skip", action: skip).buttonStyle(ActButtonStyle(kind: .subtle, small: false)) }
-            Button(primary, action: action).buttonStyle(ActButtonStyle(kind: .primary, small: false)).disabled(!enabled)
+    private func nav(back: Int? = nil, skip: (() -> Void)? = nil, link: (title: String, panel: String)? = nil,
+                     primary: String, enabled: Bool = true, action: @escaping () -> Void) -> some View {
+        // The web's single nav row; on a narrow phone the settings link drops
+        // to its own row under it instead of squeezing the buttons.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 10) {
+                navRow(back: back, skip: skip, primary: primary, enabled: enabled, action: action, link: link)
+            }
+            VStack(alignment: .trailing, spacing: 10) {
+                HStack(spacing: 10) {
+                    navRow(back: back, skip: skip, primary: primary, enabled: enabled, action: action, link: nil)
+                }
+                if let link { linkButton(link) }
+            }
         }
+    }
+
+    @ViewBuilder
+    private func navRow(back: Int?, skip: (() -> Void)?, primary: String, enabled: Bool,
+                        action: @escaping () -> Void, link: (title: String, panel: String)?) -> some View {
+        if let back { Button("Back") { error = nil; step = back }.buttonStyle(ActButtonStyle(kind: .ghost, small: false)) }
+        Spacer(minLength: 0)
+        if let skip { Button("Skip", action: skip).buttonStyle(ActButtonStyle(kind: .subtle, small: false)) }
+        if let link { linkButton(link) }
+        Button(primary, action: action).buttonStyle(ActButtonStyle(kind: .primary, small: false)).disabled(!enabled)
+    }
+
+    /// Signs in, then opens a Settings panel (web `Link to="/settings/…"`).
+    private func linkButton(_ link: (title: String, panel: String)) -> some View {
+        Button(link.title) { Task { await enter(openingSettings: link.panel) } }
+            .buttonStyle(ActButtonStyle(kind: .subtle, small: false))
+            .disabled(session == nil)
+            .fixedSize()
     }
 
     // MARK: Steps
@@ -110,7 +136,7 @@ struct SetupWizardView: View {
 
     private var roots: some View {
         VStack(alignment: .leading, spacing: 18) {
-            head("Add root folders", "Separate roots per tier: HD and 4K live apart, so both versions of a title can be tracked at once. Add them in Settings › Root Folders once you’re in.")
+            head("Add root folders", "Separate roots per tier: HD and 4K live apart, so both versions of a title can be tracked at once. Manage root folders signs you in and opens them, or add them in Settings › Root Folders later.")
             ActFlow(spacing: 8, lineSpacing: 8) {
                 ForEach(SetupTierPaths.all, id: \.self) { path in
                     Text(path)
@@ -120,14 +146,18 @@ struct SetupWizardView: View {
                         .background((path.hasSuffix("-4k") ? Theme.i2 : Theme.i1).opacity(0.14), in: .capsule)
                 }
             }
-            nav(primary: "Continue") { step = 4 }
+            if let error { Text(error).font(.footnote).foregroundStyle(Theme.danger) }
+            nav(back: 2, link: ("Manage root folders", "roots"), primary: "Continue") { step = 4 }
         }
     }
 
     private var importStep: some View {
         VStack(alignment: .leading, spacing: 18) {
             head("Import existing library", "Already have a collection? Settings › Import Library points fusionha at a root and matches your folders to TMDB. Override any match before importing.")
-            nav(skip: { step = 5 }, primary: "Continue") { step = 5 }
+            if let error { Text(error).font(.footnote).foregroundStyle(Theme.danger) }
+            nav(back: 3, skip: { step = 5 }, primary: "Scan a root now", enabled: session != nil) {
+                Task { await enter(openingSettings: "import") }
+            }
         }
     }
 
@@ -177,12 +207,18 @@ struct SetupWizardView: View {
         }
     }
 
-    private func enter() async {
+    /// Signs in and, for the roots and import links (web `/settings/roots`,
+    /// `/settings/import`), opens that Settings panel once the app is up.
+    private func enter(openingSettings panel: String? = nil) async {
         guard let session else { return }
         working = true
         defer { working = false }
         do {
             try await model.enterAfterSetup(session)
+            if let panel {
+                model.avatar.settingsPanel = panel
+                model.avatar.showingSettings = true
+            }
         } catch {
             self.error = ErrorCopy.message(for: error, fallback: "Couldn’t sign in. Close this and sign in with your new admin.")
         }
