@@ -94,7 +94,7 @@ struct JustFinishedRow: View {
         let epLabel = entry.count > 1 ? entry.season.map { String(format: "S%02d", $0) } : item.episodeLabel
         let root = item.step
         let note: String = failed
-            ? (item.terminalReason ?? "Import failed")
+            ? failureNote(item)
             : entry.count > 1
                 ? "\(entry.count) \(entry.season != nil ? "episodes" : "files") imported\(root.map { " into \($0)" } ?? "")"
                 : "Imported\(root.map { " into \($0)" } ?? " into your library") · added to your library"
@@ -146,5 +146,12 @@ struct JustFinishedRow: View {
         .actWash(StatusTone(failed ? .danger : .done))
         .contentShape(Rectangle())
         .onTapGesture { model.open(item.mediaItemId) }
+    }
+
+    /// The web's humanized note: "Failed at <stage> — <detail>" or the plain detail.
+    private func failureNote(_ item: QueueItem) -> String {
+        let f = FailureCopy.format(item.terminalReason, context: .import)
+        guard let stage = item.stages?.current else { return f.detail }
+        return "Failed at \(QueueRail.stageLabel(stage).lowercased()) — \(f.detail)"
     }
 }

@@ -43,7 +43,7 @@ struct BlocklistRowView: View {
                         }
                     }
                     if showReasons, let reason = entry.reason {
-                        Text(reason).font(.system(size: 11)).foregroundStyle(Theme.mut)
+                        Text(FailureCopy.format(reason, context: .blocklist).detail).font(.system(size: 11)).foregroundStyle(Theme.mut)
                     } else {
                         Text(entry.sourceTitle ?? entry.title)
                             .font(.system(size: 11, design: .monospaced))
@@ -97,8 +97,9 @@ struct BlocklistRowView: View {
     private var details: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let reason = entry.reason {
-                Text(reason).font(.system(size: 12)).foregroundStyle(Theme.txt)
-                Text(reason).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.mut)
+                let fail = FailureCopy.format(reason, context: .blocklist)
+                Text(fail.detail).font(.system(size: 12)).foregroundStyle(Theme.txt)
+                Text(fail.raw).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.mut)
                     .padding(6).frame(maxWidth: .infinity, alignment: .leading)
                     .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 6))
             }

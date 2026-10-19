@@ -104,9 +104,10 @@ struct HistoryStoryRow: View {
             }
         }
         if story.type == .failed {
-            let reason = story.failReason ?? story.actionEntry.data?.text("reason")
-            if let reason {
-                Text(reason).font(.system(size: 12.5)).foregroundStyle(Theme.danger)
+            if let reason = story.failReason ?? story.actionEntry.data?.text("reason") {
+                let fail = FailureCopy.format(reason, context: .download)
+                Text("\(fail.title) — \(fail.detail)").font(.system(size: 12.5)).foregroundStyle(Theme.danger)
+                    .lineLimit(2)
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     .background(Theme.danger.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
             }
@@ -210,9 +211,11 @@ struct HistoryStoryRow: View {
                     Text(release).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(Theme.dim)
                 }
                 if let reason = story.failReason {
-                    Text("\(story.title) · \(reason)").font(.system(size: 12.5)).foregroundStyle(Theme.mut)
+                    let fail = FailureCopy.format(reason, context: .download)
+                    Text("\(fail.title) — \(fail.detail)\(fail.sub.map { " \($0)" } ?? "")")
+                        .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
                     Text("RAW REASON").font(.system(size: 11, weight: .bold)).tracking(0.6).foregroundStyle(Theme.dim)
-                    Text(reason).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.mut)
+                    Text(fail.raw).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.mut)
                         .padding(8).frame(maxWidth: .infinity, alignment: .leading)
                         .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 8))
                 }
