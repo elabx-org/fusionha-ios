@@ -1,12 +1,12 @@
 import SwiftUI
 import FusionhaKit
 
-/// Settings › Access › Users (web `UsersPanel`): every account with its role,
-/// sign-in source, live sessions and whether it is disabled; add an account;
-/// tap one to rename, change its role, disable it, sign it out, open its
-/// request policy or delete it. Each row carries its Plex watchlist and
-/// Letterboxd chips, and "Show" filters by source (fusionha 0.4.209 /
-/// 0.4.213). Needs Manage users.
+/// Settings › Access › Users (web `UsersPanel` + `UsersList`): the duplicates
+/// banner, the pulse (tinted count chips that filter), the UHD·4K banner and
+/// legend, then everyone grouped by role (Administrators, each role,
+/// Disabled). Each row carries its UHD·4K chip and its Plex watchlist and
+/// Letterboxd chips; "Show" filters by source. Tap a person to edit them.
+/// Needs Manage users; merging and disconnecting a provider need full admin.
 struct UsersSettingsPanel: View {
     @Environment(AppModel.self) private var model
     @State private var users: [UserAccount]?
@@ -15,26 +15,28 @@ struct UsersSettingsPanel: View {
     @State private var editing: UserAccount?
     @State private var adding = false
     @State private var show: UsersShowFilter = .all
+    @State private var pulse: UsersRoster.PulseKey?
+    @State private var collapsed: Set<String> = []
     @State private var plex: [Int: PlexWatchlistSummaryRow] = [:]
     @State private var letterboxd: [Int: LetterboxdSummaryRow] = [:]
+    @State private var uhd: [Int: UserTierAccess] = [:]
+    @State private var uhdBanner: UsersUHD.Banner?
+    @State private var duplicates: [DuplicateGroup] = []
+    @State private var merging: DuplicateGroup?
+    @State private var disconnecting = false
+
+    private var canAdminSystem: Bool { model.me?.has("system.admin") == true }
 
     var body: some View {
         SettingsForm(slug: "access") {
             if let error {
                 SettingsLoadingRow(error: error)
             } else if let users {
-                let visible = users.filter { show.passes($0, plex: plex[$0.id], letterboxd: letterboxd[$0.id]) }
-                Section {
-                    Picker("Show", selection: $show) {
-                        ForEach(UsersShowFilter.allCases, id: \.self) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets())
-                }
-                Section("\(visible.count) \(visible.count == 1 ? "account" : "accounts")") {
-                    ForEach(visible) { u in
-                        Button { editing = u } label: { row(u) }.buttonStyle(.plain)
+                header(users)
+                list(users)
+                if canAdminSystem {
+                    Section {
+                        Button("Disconnect a sign-in provider…", systemImage: "person.badge.minus") { disconnecting = true }
                     }
                 }
             } else {
@@ -48,42 +50,68 @@ struct UsersSettingsPanel: View {
         }
         .task { await load() }
         .refreshable { await load() }
+        .onChange(of: show) { if show != .all { pulse = nil } }
+        .onChange(of: pulse) { if pulse != nil { show = .all } }
         .sheet(item: $editing) { u in UserEditorSheet(user: u, roles: roles) { await load() } }
         .sheet(isPresented: $adding) { NewUserSheet(roles: roles) { await load() } }
+        .sheet(item: $merging) { g in MergeUsersSheet(group: g) { await load() } }
+        .sheet(isPresented: $disconnecting) { DisconnectProviderSheet { await load() } }
     }
 
-    /// The person's avatar, name and tags, "Admin · 2 active sessions · 23
-    /// auto-requested", then one pill per automatic source.
-    private func row(_ u: UserAccount) -> some View {
-        let sessions = u.activeSessionCount ?? 0
-        let meta = [u.isAdmin ? "Admin" : (u.roleName ?? "No role"),
-                    sessions > 0 ? "\(sessions) \(sessions == 1 ? "session" : "sessions")" : nil,
-                    UserSourceChips.requestedLine(plex: plex[u.id], letterboxd: letterboxd[u.id])]
-        return HStack(alignment: .top, spacing: 12) {
-            PersonAvatar(userId: u.id, name: u.displayName, hasThumb: u.thumb != nil)
-                .opacity(u.isActive == false ? 0.45 : 1)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(u.displayName).font(.system(size: 16, weight: .semibold)).foregroundStyle(u.isActive == false ? Theme.dim : Theme.txt)
-                    if u.authProvider == "plex" { tag("Plex", Theme.mut) }
-                    if u.isActive == false { tag("Disabled", Theme.danger) }
-                }
-                Text(meta.compactMap { $0 }.joined(separator: " · ")).font(.system(size: 13)).foregroundStyle(Theme.mut)
-                UserSourceChips(plex: plex[u.id], letterboxd: letterboxd[u.id])
+    @ViewBuilder private func header(_ users: [UserAccount]) -> some View {
+        if !duplicates.isEmpty {
+            Section {
+                UsersDuplicatesBanner(groups: duplicates, canMerge: canAdminSystem) { merging = duplicates.first }
             }
-            Spacer(minLength: 0)
-            Image(systemName: "chevron.right").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.dim)
-                .frame(maxHeight: .infinity)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
         }
-        .padding(.vertical, 2)
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
+        Section {
+            UsersPulseView(users: users, selection: $pulse)
+        }
+        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+        if let uhdBanner {
+            Section { UsersUhdBanner(state: uhdBanner) }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+        }
+        Section {
+            Picker("Show", selection: $show) {
+                ForEach(UsersShowFilter.allCases, id: \.self) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets())
+        } footer: {
+            if !uhd.isEmpty { UsersUhdLegend().padding(.top, 6) }
+        }
     }
 
-    private func tag(_ word: String, _ color: Color) -> some View {
-        Text(word).font(.system(size: 11, weight: .bold)).foregroundStyle(color)
-            .padding(.horizontal, 6).padding(.vertical, 1)
-            .overlay(Capsule().strokeBorder(color.opacity(0.5), lineWidth: 1))
+    @ViewBuilder private func list(_ users: [UserAccount]) -> some View {
+        let visible = users.filter {
+            show.passes($0, plex: plex[$0.id], letterboxd: letterboxd[$0.id]) && (pulse?.passes($0) ?? true)
+        }
+        if visible.isEmpty {
+            Section { Text("No users match this filter.").foregroundStyle(Theme.mut) }
+        }
+        ForEach(UsersRoster.groups(visible)) { group in
+            let isCollapsed = collapsed.contains(group.id)
+            Section {
+                if !isCollapsed {
+                    ForEach(group.users) { u in
+                        Button { editing = u } label: {
+                            UsersListRow(user: u, plex: plex[u.id], letterboxd: letterboxd[u.id], uhd: uhd[u.id])
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            } header: {
+                UsersGroupHeader(group: group, collapsed: isCollapsed) {
+                    if isCollapsed { collapsed.remove(group.id) } else { collapsed.insert(group.id) }
+                }
+            }
+        }
     }
 
     private func load() async {
@@ -94,8 +122,14 @@ struct UsersSettingsPanel: View {
             error = nil
             async let plexRows = try? client.plexWatchlistSummary()
             async let lbRows = try? client.letterboxdSummary()
+            async let tierRows = try? client.plexTierAccess()
+            async let preview = try? client.plexAccessPreview()
+            async let dupes = try? client.userDuplicates()
             plex = Dictionary((await plexRows ?? []).map { ($0.userId, $0) }, uniquingKeysWith: { a, _ in a })
             letterboxd = Dictionary((await lbRows ?? []).map { ($0.userId, $0) }, uniquingKeysWith: { a, _ in a })
+            uhd = Dictionary((await tierRows ?? []).map { ($0.userId, $0) }, uniquingKeysWith: { a, _ in a })
+            uhdBanner = UsersUHD.banner(await preview)
+            duplicates = (await dupes ?? []).filter { $0.members.count >= 2 }
         } catch {
             self.error = ErrorCopy.message(for: error, fallback: "Couldn’t load the users. Managing users needs Manage users.")
         }
