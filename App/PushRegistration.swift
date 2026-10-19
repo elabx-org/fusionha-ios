@@ -45,11 +45,19 @@ enum PushRegistration {
     /// Sends this device's token to the server (an upsert; also a liveness ping).
     @discardableResult
     static func register(with client: APIClient) async -> ApnsDevice? {
-        guard let token = deviceToken else { return nil }
+        guard let token = deviceToken, !disabledHere else { return nil }
         let name = await MainActor.run { UIDevice.current.name }
         let body = ApnsDeviceRegistration(deviceToken: token, environment: environment,
                                           deviceName: name, appVersion: appVersion)
         return try? await client.registerApnsDevice(body)
+    }
+
+    /// Settings › Notifications › This device › Disable (web `ThisDevice`):
+    /// while set, launches and token refreshes don't re-register this install.
+    /// Enabling or registering again clears it.
+    static var disabledHere: Bool {
+        get { UserDefaults.standard.bool(forKey: "apnsDisabledHere") }
+        set { UserDefaults.standard.set(newValue, forKey: "apnsDisabledHere") }
     }
 
     /// Removes this device from the server, before the credentials are dropped.

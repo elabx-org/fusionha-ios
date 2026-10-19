@@ -411,6 +411,8 @@ public struct WebPushSettings: Decodable, Sendable, Hashable {
     public let quietHoursEnabled: Bool?
     public let quietHoursStart: String?
     public let quietHoursEnd: String?
+    /// The daily digest's send time, `HH:MM` server time (fusionha A10); nil on older servers.
+    public let digestTime: String?
 }
 
 public struct PushTestResult: Decodable, Sendable {

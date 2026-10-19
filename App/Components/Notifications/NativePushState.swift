@@ -9,6 +9,8 @@ import FusionhaKit
 enum NativePushStatus {
     case loading, serverNotConfigured(String), serverOff(String), denied, notAsked
     case noEntitlement(String), registering, enabled(ApnsDevice)
+    /// Disabled here from This device (web `off`): not re-registered until enabled.
+    case disabledHere
 }
 
 /// This install's native push (APNs) state plus this user's other iOS devices
@@ -22,6 +24,7 @@ final class NativePushState {
     private(set) var authStatus: UNAuthorizationStatus?
     private(set) var testing = false
     private(set) var registering = false
+    private(set) var disabling = false
     private(set) var testResult: ConnectionTestResult?
 
     private var deviceToken: String? { PushRegistration.deviceToken }
@@ -47,6 +50,7 @@ final class NativePushState {
         default: break
         }
         if let device = thisDevice { return .enabled(device) }
+        if PushRegistration.disabledHere { return .disabledHere }
         if deviceToken == nil, let error = PushRegistration.registrationError { return .noEntitlement(error) }
         return .registering
     }
@@ -90,6 +94,7 @@ final class NativePushState {
 
     /// Asks iOS for permission, then for a token (AppModel registers it).
     func enable() async {
+        PushRegistration.disabledHere = false
         let granted = (try? await UNUserNotificationCenter.current()
             .requestAuthorization(options: [.alert, .badge, .sound])) ?? false
         if granted { UIApplication.shared.registerForRemoteNotifications() }
@@ -100,6 +105,7 @@ final class NativePushState {
     func register(_ client: APIClient?) async -> Bool {
         guard let client else { return false }
         registering = true
+        PushRegistration.disabledHere = false
         var ok = true
         if PushRegistration.deviceToken == nil {
             UIApplication.shared.registerForRemoteNotifications()
@@ -109,6 +115,22 @@ final class NativePushState {
         registering = false
         await load(client)
         return ok
+    }
+
+    /// This device › Disable: stop pushes here and keep it off across launches.
+    func disable(_ client: APIClient?) async -> Bool {
+        guard let client, let device = thisDevice else { return false }
+        disabling = true
+        defer { disabling = false }
+        do {
+            try await client.deleteApnsDevice(id: device.id)
+        } catch {
+            return false
+        }
+        PushRegistration.disabledHere = true
+        testResult = nil
+        await load(client)
+        return true
     }
 
     func remove(_ device: ApnsDevice, client: APIClient?) async throws {
