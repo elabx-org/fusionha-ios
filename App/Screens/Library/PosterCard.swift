@@ -19,7 +19,7 @@ struct PosterCard: View {
     private var selecting: Bool { model.selectMode }
     private var selected: Bool { model.selection.contains(item.id) }
 
-    /// Attention tints the poster's hairline; the rail says what is wrong.
+    /// Attention glows softly around the poster; the rail says what is wrong.
     private var attentionColor: Color? {
         guard item.hasAttention == true else { return nil }
         let flagged = item.editions.filter { $0.attention == true }
@@ -97,7 +97,7 @@ struct PosterCard: View {
 
     private var ringColor: Color {
         if selecting && selected { return Theme.txt }
-        return attentionColor?.opacity(0.7) ?? Theme.txt.opacity(0.07)
+        return Theme.txt.opacity(0.07)
     }
 
     private var art: some View {
@@ -107,6 +107,8 @@ struct PosterCard: View {
             .colorMultiply(monitored ? .white : Color(white: 0.82))
             .opacity(monitored ? 1 : 0.82)
             .shelfPoster(ring: ringColor, ringWidth: selecting && selected ? 2 : 0.5)
+            // Attention as a soft glow, never a coloured ring (web 0.4.222).
+            .shadow(color: (attentionColor ?? .clear).opacity(0.55), radius: 7)
             .overlay(alignment: .topLeading) {
                 if selecting { checkbox.padding(8) }
             }
