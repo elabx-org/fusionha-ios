@@ -91,7 +91,7 @@ struct ActivityTasksTab: View {
             model.pendingTaskFocus = nil
             focusRunId = id
         }
-        .animation(reduce ? nil : ActMotion.rows, value: feed.items.filter { $0.status == "running" }.map(\.id))
+        .animation(reduce ? nil : ActMotion.rows, value: store.feed.items.filter { $0.status == "running" }.map(\.id))
         .task {
             store.isAdmin = model.me?.hasPermission("system.admin") == true
             await store.load(model.client)
