@@ -7,12 +7,17 @@ private let tableEditionsWidth: CGFloat = 128
 private let tableSizeWidth: CGFloat = 52
 private let tableMonitorWidth: CGFloat = 36
 
+/// The table head: Title and Size sort the rows (`SortHeader`); a second tap
+/// flips the direction.
 struct LibraryTableHeader: View {
+    let sort: CompactSort
+    let onSort: (CompactSortColumn) -> Void
+
     var body: some View {
         HStack(spacing: 8) {
-            Text("Title ▾").frame(maxWidth: .infinity, alignment: .leading)
+            sortButton("Title", .title).frame(maxWidth: .infinity, alignment: .leading)
             Text("Versions · coverage").lineLimit(1).frame(width: tableEditionsWidth, alignment: .leading)
-            Text("Size").frame(width: tableSizeWidth, alignment: .trailing)
+            sortButton("Size", .size).frame(width: tableSizeWidth, alignment: .trailing)
             Color.clear.frame(width: tableMonitorWidth)
         }
         .font(.system(size: 11, weight: .bold))
@@ -23,6 +28,23 @@ struct LibraryTableHeader: View {
         .padding(.vertical, 11)
         .background(Theme.panel, in: UnevenRoundedRectangle(topLeadingRadius: 14, topTrailingRadius: 14, style: .continuous))
         .overlay(TableBorder(top: true, bottom: false))
+    }
+
+    private func sortButton(_ label: String, _ column: CompactSortColumn) -> some View {
+        let active = sort.column == column
+        return Button { onSort(column) } label: {
+            HStack(spacing: 3) {
+                Text(label)
+                Text(active && sort.ascending ? "▴" : "▾")
+                    .foregroundStyle(active ? Theme.accentText : Theme.dim)
+            }
+            .foregroundStyle(active ? Theme.txt : Theme.mut)
+            .fixedSize()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Sort by \(label)")
+        .accessibilityValue(active ? (sort.ascending ? "Ascending" : "Descending") : "")
     }
 }
 

@@ -3,7 +3,7 @@ import FusionhaKit
 
 // MARK: - Filters (routes/library-filters.ts)
 
-enum LibraryTier: Hashable {
+enum LibraryTier: String, Hashable {
     case all, hd, uhd
 
     func matches(_ item: MediaItem) -> Bool {

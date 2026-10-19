@@ -3,10 +3,10 @@ import FusionhaKit
 
 // MARK: - Poster card (PosterCard.tsx)
 
-/// A poster as a lit object on the shelf: nothing on the art. Title, then
-/// year · kind with the Monitor bookmark trailing, then one rail per version
-/// (its chip, bar, count and status mark carry 4K, downloads, upgrades and
-/// attention). In select mode a checkbox sits on the art and a tap toggles.
+/// A poster as a lit object on the shelf, with the web's art badges (4K flag,
+/// Monitor bookmark, attention and download state; ruling R1, no text but the
+/// 4K flag). Below: the title, year · kind, then one rail per version. In
+/// select mode a checkbox takes the bookmark's corner and a tap toggles.
 struct PosterCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
@@ -42,8 +42,9 @@ struct PosterCard: View {
                 .scaleEffect(pressing ? 0.95 : 1)
                 .animation(motion ? .easeOut(duration: 0.18) : nil, value: pressing)
             VStack(alignment: .leading, spacing: 2) {
+                // Phone rhythm (PosterCard.module.css ≤540): 14.5 medium / 12.5.
                 Text(item.title)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(size: 14.5, weight: .medium))
                     .foregroundStyle(monitored ? Theme.txt : Theme.mut)
                     .lineLimit(1)
                 HStack(spacing: 4) {
@@ -57,16 +58,12 @@ struct PosterCard: View {
                     } else {
                         KindGlyph(kind: item.kind)
                     }
-                    Spacer(minLength: 2)
-                    Image(systemName: monitored ? "bookmark.fill" : "bookmark")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(monitored ? Theme.txt : Theme.dim)
-                        .accessibilityLabel(monitored ? "Monitored" : "Unmonitored")
+                    Spacer(minLength: 0)
                 }
-                .font(.system(size: 13))
+                .font(.system(size: 12.5))
                 .foregroundStyle(Theme.dim)
-                CoverageRails(item: item, spacing: 5)
-                    .padding(.top, 8)
+                CoverageRails(item: item, spacing: 4)
+                    .padding(.top, 6)
             }
             .padding(.top, 8)
             .padding(.horizontal, 1)
@@ -109,6 +106,7 @@ struct PosterCard: View {
             .shelfPoster(ring: ringColor, ringWidth: selecting && selected ? 2 : 0.5)
             // Attention as a soft glow, never a coloured ring (web 0.4.222).
             .shadow(color: (attentionColor ?? .clear).opacity(0.55), radius: 7)
+            .overlay { PosterArtBadges(badges: PosterBadges(item), showsMonitor: !selecting) }
             .overlay(alignment: .topLeading) {
                 if selecting { checkbox.padding(8) }
             }

@@ -93,7 +93,6 @@ struct BulkActionBar: View {
                 model.bulk(nil, "Couldn't delete the selection") { client, ids in
                     try await client.bulkDelete(BulkDeleteRequest(itemIds: ids, deleteFiles: false))
                 }
-                model.selection = []
             }
         } message: {
             Text("This removes the selected titles and all their versions from your library. Files stay on disk.")
@@ -109,6 +108,7 @@ struct BulkActionBar: View {
                     BulkMinimumAvailabilityRequest(itemIds: ids, minimumAvailability: option))
                 let n = result.affected ?? ids.count
                 model.toast("Set minimum availability on \(n) \(n == 1 ? "movie" : "movies")")
+                model.exitSelectMode()
                 await model.loadLibrary()
             } catch {
                 model.toast("Couldn't set minimum availability", variant: .error)
