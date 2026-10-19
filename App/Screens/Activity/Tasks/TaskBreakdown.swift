@@ -15,7 +15,7 @@ struct CandidateBreakdownView: View {
     @State private var testFailed = false
 
     /// A chart ramp (violet + slate), never a status colour; negatives use danger.
-    static let hues: [Color] = [Theme.i1, Theme.i2, Theme.i1.opacity(0.62), Theme.i2.opacity(0.6), Theme.dim]
+    static var hues: [Color] { [Theme.i1, Theme.i2, Theme.i1.opacity(0.62), Theme.i2.opacity(0.6), Theme.dim] }
 
     private var stored: [CFTestMatch] { candidate.matched ?? [] }
     private var matched: [CFTestMatch] { stored.isEmpty ? (fallback?.matched ?? []) : stored }
