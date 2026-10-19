@@ -10,7 +10,8 @@ struct MonthMobileView: View {
     let entries: [CalendarEntry]
     let todayIso: String
     let firstDay: Int
-    let cardStyle: WeekCardStyle
+    /// nil = the web's phone cards (default); else one of the iOS card styles.
+    let cards: WeekCardStyle?
     var todayTick = 0
 
     @Environment(\.calMotionOff) private var motionOff
@@ -47,7 +48,19 @@ struct MonthMobileView: View {
                 }
             }
             .sensoryFeedback(.selection, trigger: selected)
-            WeekDayGroup(iso: selected, entries: byDay[selected] ?? [], isToday: selected == todayIso, style: cardStyle)
+            Text("‹ swipe for months ›")
+                .font(.system(size: 11))
+                .foregroundStyle(Theme.dim)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 4)
+                .accessibilityHidden(true)
+            Group {
+                if let cards {
+                    WeekDayGroup(iso: selected, entries: byDay[selected] ?? [], isToday: selected == todayIso, style: cards)
+                } else {
+                    PhoneDayBlock(iso: selected, entries: byDay[selected] ?? [], todayIso: todayIso)
+                }
+            }
                 .id(selected)
                 .transition(motionOff || reduceMotion ? .identity : .opacity.combined(with: .offset(y: 4)))
         }

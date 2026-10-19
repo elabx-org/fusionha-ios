@@ -418,11 +418,12 @@ public enum CalendarMath {
         return out.mapValues(sortDay)
     }
 
-    /// `groupWeekDay`: season drops (≥ 3 same-day episodes of one series) and singles.
-    public static func groupWeekDay(_ entries: [CalendarEntry]) -> (seasons: [SeasonGroup], singles: [CalendarEntry]) {
+    /// `groupWeekDay`: season drops (≥ `min` same-day episodes of one series) and
+    /// singles. Week cards drop at 3; the phone's same-show runs fold at 2.
+    public static func groupWeekDay(_ entries: [CalendarEntry], min: Int = 3) -> (seasons: [SeasonGroup], singles: [CalendarEntry]) {
         var counts: [Int: Int] = [:]
         for e in entries where e.type == "episode" { counts[e.itemId, default: 0] += 1 }
-        let seasonIds = Set(counts.filter { $0.value >= 3 }.keys)
+        let seasonIds = Set(counts.filter { $0.value >= min }.keys)
         var singles: [CalendarEntry] = []
         var grouped: [Int: [CalendarEntry]] = [:]
         var order: [Int] = []
