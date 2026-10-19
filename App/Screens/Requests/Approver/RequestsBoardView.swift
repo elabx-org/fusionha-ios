@@ -44,21 +44,15 @@ struct RequestsBoardView: View {
             await inbox.poll()
         }
         .onDisappear { inbox.flush() }
-        .onChange(of: board.columns) {
-            nav.remember(board.columns.values.flatMap { $0 })
-            nav.resultCount = RequestBoard.Column.allCases.reduce(0) { $0 + board.count($1) }
+        .onChange(of: board.columns) { nav.remember(board.columns.values.flatMap { $0 }) }
+        .onChange(of: "\(board.loaded)-\(board.count(.pending))-\(rows(.pending).count)-\(board.hasMore(.pending))", initial: true) {
+            // The web counts the Pending stage ("Show 9 requests").
+            nav.resultLabel = board.loaded
+                ? RequestsResultLabel.text(board.count(.pending), loaded: rows(.pending).count, more: board.hasMore(.pending),
+                                           noun: ("request", "requests"))
+                : nil
         }
-        .overlay(alignment: .bottom) {
-            if let decision = inbox.pending {
-                InboxUndoToast(decision: decision, onUndo: inbox.undo, onReason: inbox.setReason)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .padding(.bottom, 8)
-            }
-        }
-        .animation(.snappy, value: inbox.pending)
-        .sheet(item: $declining) { r in
-            RejectDialog(request: r) { Task { await refresh() } }
-        }
+        .inboxUndoHost(inbox, viewerId: model.me?.id, declining: $declining)
     }
 
     // MARK: Summary

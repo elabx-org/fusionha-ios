@@ -251,16 +251,7 @@ struct SettingsForm<Content: View>: View {
             Form {
                 Section {
                 } header: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(info?.title ?? slug)
-                            .pageTitle(36)
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.7)
-                        Text(info?.subtitle ?? "")
-                            .font(.system(size: 15))
-                            .foregroundStyle(Theme.mut)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                    SettingsPanelHeading(slug: slug)
                     .textCase(nil)
                     .padding(.horizontal, -4)
                     .settingsReveal()

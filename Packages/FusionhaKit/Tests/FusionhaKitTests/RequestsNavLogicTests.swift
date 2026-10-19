@@ -114,7 +114,8 @@ final class RequestsNavLogicTests: XCTestCase {
         XCTAssertEqual(IssueCounts.of(items), IssueCounts(open: 2, needYou: 1))
         XCTAssertEqual(RequestsNeedYou.line(pending: 9, issues: 2), "11 need you · 9 pending requests · 2 issues")
         XCTAssertEqual(RequestsNeedYou.line(pending: nil, issues: 2), "2 issues need you")
-        XCTAssertEqual(RequestsNeedYou.line(pending: 1, issues: nil), "1 pending request")
+        XCTAssertEqual(RequestsNeedYou.line(pending: 1, issues: nil), "1 request needs you")
+        XCTAssertEqual(RequestsNeedYou.line(pending: 0, issues: 0), "0 need you · 0 pending requests · 0 issues")
         XCTAssertNil(RequestsNeedYou.line(pending: nil, issues: nil))
     }
 

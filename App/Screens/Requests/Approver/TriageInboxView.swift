@@ -24,32 +24,30 @@ struct TriageInboxView: View {
             .task {
                 inbox.bind(model.client) { message, title, variant in model.toast(message, title: title, variant: variant) }
                 inbox.viewerIsAdmin = model.me?.isAdmin == true
-                inbox.filterItems = nav.filter.query(.inbox)
+                inbox.filterItems = nav.filter.listQuery(.inbox)
                 await inbox.poll()
             }
-            .onChange(of: nav.filter.query(.inbox)) { _, items in
+            .task(id: nav.filter.listQuery(.inbox)) {
+                let items = nav.filter.listQuery(.inbox)
+                guard items != inbox.filterItems else { return }
+                // A settled keystroke, not every one (web: 300 ms).
+                try? await Task.sleep(for: .milliseconds(300))
+                guard !Task.isCancelled else { return }
                 inbox.filterItems = items
-                Task { await inbox.refresh() }
+                await inbox.refresh()
             }
             .onChange(of: inbox.items) { nav.remember(inbox.items) }
-            .onChange(of: inbox.queue.count, initial: true) { nav.resultCount = inbox.queue.count }
+            .onChange(of: "\(inbox.total ?? -1)-\(inbox.queue.count)-\(inbox.more)", initial: true) {
+                nav.resultLabel = RequestsResultLabel.text(inbox.total, loaded: inbox.queue.count, more: inbox.more,
+                                                           noun: ("request", "requests"))
+            }
             .onDisappear { inbox.flush() }
             .onChange(of: store.requestsVersion) { Task { await inbox.refresh() } }
             .onChange(of: model.me?.isAdmin) { inbox.viewerIsAdmin = model.me?.isAdmin == true }
-            .overlay(alignment: .bottom) {
-                if let decision = inbox.pending {
-                    InboxUndoToast(decision: decision, onUndo: inbox.undo, onReason: inbox.setReason)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .padding(.bottom, 8)
-                }
-            }
-            .animation(.snappy, value: inbox.pending)
+            .inboxUndoHost(inbox, viewerId: viewerId, declining: $noting)
             .sheet(item: $details) { request in detailsSheet(request) }
             .sheet(item: $adjusting) { request in
                 ApproveDialog(request: request) { Task { await inbox.refresh() } }
-            }
-            .sheet(item: $noting) { request in
-                RejectDialog(request: request) { Task { await inbox.refresh() } }
             }
     }
 

@@ -1,9 +1,11 @@
 import SwiftUI
 import FusionhaKit
 
-/// The approver's History (Final mock): rows grouped by the day they were
-/// decided, the status as a coloured word, the time on the right. Status,
-/// search and source live in the filter sheet. Refreshes every 15 s.
+/// The approver's History (web `RequestsHistory`, phone): rows grouped by
+/// the day they were decided, the status as a coloured word, the time on the
+/// right. Search, status, requester and source live in the filter sheet.
+/// "N decided this month" and the sheet's button come from the server's
+/// counts. Refreshes every 15 s.
 struct RequestsHistoryView: View {
     let onOpenThread: (MediaRequest) -> Void
     @Environment(AppModel.self) private var model
@@ -13,20 +15,21 @@ struct RequestsHistoryView: View {
     @State private var loaded = false
     @State private var failed = false
     @State private var loadingMore = false
+    /// The server's counts under the filters, and the same over this month.
+    @State private var counts: RequestCounts?
+    @State private var month: RequestCounts?
 
     private var values: RequestsFilter.Values { nav.filter[.history] }
 
-    /// Loaded rows decided this calendar month (newest first, so the first
-    /// page covers the month unless it is a very busy one).
-    private var thisMonth: Int {
-        items.filter { RequestHistoryDays.instant($0).map { Calendar.current.isDate($0, equalTo: Date(), toGranularity: .month) } ?? false }.count
-    }
+    /// "N decided this month" from the server; the loaded rows until it answers.
+    private var decided: Int { RequestHistoryCount.count(month, status: .all) ?? items.count }
     private var key: String { "\(values.status.rawValue)|\(values.search)|\(nav.filter.query(.history))" }
+    private var labelKey: String { "\(items.count)-\(cursor != nil)-\(RequestHistoryCount.count(counts, status: values.status) ?? -1)" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             RequestsViewHeader {
-                if loaded { requestsCount(thisMonth, "decided this month") }
+                if loaded { requestsCount(decided, "decided this month") }
             }
             content
         }
@@ -40,9 +43,10 @@ struct RequestsHistoryView: View {
                 try? await Task.sleep(for: .seconds(15))
             }
         }
-        .onChange(of: items) {
-            nav.remember(items)
-            nav.resultCount = items.count
+        .onChange(of: items) { nav.remember(items) }
+        .onChange(of: labelKey, initial: true) {
+            nav.resultLabel = RequestsResultLabel.text(RequestHistoryCount.count(counts, status: values.status), loaded: items.count,
+                                                       more: cursor != nil, noun: ("decision", "decisions"))
         }
     }
 
@@ -99,6 +103,10 @@ struct RequestsHistoryView: View {
 
     private func load() async {
         guard let client = model.client else { return }
+        let filters = nav.filter.listQuery(.history)
+        let since = URLQueryItem(name: "since_days", value: String(RequestHistoryCount.monthWindow()))
+        async let countsCall = try? client.requestCounts(view: "all", extra: filters)
+        async let monthCall = try? client.requestCounts(view: "all", extra: filters + [since])
         let q = values.status.query(search: values.search.trimmingCharacters(in: .whitespaces))
         do {
             let page = try await client.requestsPage(view: "all", filter: q.filter, sort: "requested", limit: 30,
@@ -112,6 +120,8 @@ struct RequestsHistoryView: View {
         } catch {
             failed = true
         }
+        counts = await countsCall ?? counts
+        month = await monthCall ?? month
         loaded = true
     }
 
@@ -128,20 +138,22 @@ struct RequestsHistoryView: View {
     }
 }
 
-/// A decided request's status as one coloured word: approvals in the accent
-/// (the word says which), Available green, Declined red (Final mock).
+/// A decided request's status as one coloured word (web `history-status.ts`):
+/// approvals in the accent text colour, Available green, Declined red,
+/// deferred amber, and an approved row's searching / downloading / unreleased
+/// step in that step's colour.
 struct HistoryWord {
     let text: String
     let color: Color
 
     init(_ r: MediaRequest) {
-        let pill = RequestBoard.historyPill(r)
-        text = pill.label == "Approved" && r.approvedBy?.kind == "auto" ? "Auto-approved" : pill.label
-        switch r.status {
-        case "fulfilled": color = Theme.done
-        case "rejected", "deferred": color = Theme.danger
-        case "approved": color = pill.tone == .grab ? Theme.grab : Theme.accentText
-        default: color = pill.tone.color
+        let word = RequestHistoryStatus.word(r)
+        text = word.label
+        switch word.tone {
+        case .accent: color = Theme.accentText
+        case .done: color = Theme.done
+        case .danger: color = Theme.danger
+        case .step(let tone), .quiet(let tone): color = tone.color
         }
     }
 }

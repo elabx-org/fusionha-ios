@@ -32,23 +32,23 @@ enum RequestsPane: String, CaseIterable, Hashable, Identifiable {
         }
     }
 
-    /// The filter sections this view offers; none hides the Filter button.
-    var filters: Set<RequestsFilter.Section> {
+    /// The filter groups this view offers, in the web's order (`filter-groups.ts`).
+    var filters: [RequestsFilter.Section] {
         switch self {
-        case .inbox: return [.requester, .source, .display]
+        case .inbox: return [.search, .requester, .source, .display]
         case .board: return [.search, .requester, .source, .density]
-        case .history: return [.search, .status, .source]
-        case .issues: return [.issueState]
+        case .history: return [.search, .status, .requester, .source]
         case .threads: return [.threadType, .issueState]
-        case .mine: return [.mineType, .mineStatus, .source]
-        case .insights: return []
+        case .issues: return [.problem, .issueState]
+        case .insights: return [.range]
+        case .mine: return [.mineShow, .mineSource, .mineKind]
         }
     }
 }
 
 /// What the header, the drawer and the filter sheet share: the current view,
-/// its filters, the people seen (for Requester), and the live result count
-/// the open view reports for "Show N requests".
+/// its filters, the people seen (for Requester), and the label the open view
+/// gives the sheet's button ("Show 9 requests").
 @MainActor
 @Observable
 final class RequestsNav {
@@ -66,19 +66,24 @@ final class RequestsNav {
     var rulesOpen = false
     /// Inbox: the deck or the "Select several" list.
     var selecting = false
-    /// My requests' counts, for the Mine summary line.
+    /// My requests' unfiltered counts, for the Mine subtitle and the drawer.
     var mineCounts: RequestCounts?
+    /// Open threads with something unread, for the Threads subtitle and the drawer.
+    var unreadThreads = 0
+    var unreadMore = false
+    /// Open threads loaded ("M open").
+    var openThreads = 0
     /// Threads offers Type only to someone who manages requests and issues.
     var threadTypes = true
     /// Requesters seen in the loaded rows, for the filter sheet.
     var people: [RequestPerson] = []
-    /// The open view's row count under the current filters.
-    var resultCount: Int?
+    /// The open view's "Show 9 requests"; nil reads "Done" (web `resultLabel`).
+    var resultLabel: String?
 
     func open(_ pane: RequestsPane) {
         self.pane = pane
         selecting = false
-        resultCount = nil
+        resultLabel = nil
         menuOpen = false
     }
 
@@ -93,7 +98,10 @@ final class RequestsNav {
 /// The filters one view applies, kept per view so switching views doesn't
 /// carry a History status into the Board.
 struct RequestsFilter: Equatable {
-    enum Section: Hashable { case search, requester, source, density, status, display, issueState, threadType, mineType, mineStatus }
+    enum Section: Hashable {
+        case search, requester, source, density, status, display, issueState, threadType, problem, range
+        case mineShow, mineSource, mineKind
+    }
 
     struct Values: Equatable {
         var search = ""
@@ -105,10 +113,16 @@ struct RequestsFilter: Equatable {
         var issueState = "open"
         /// Threads: all · request · issue (only when the viewer manages both).
         var threadType = "all"
+        /// Issues: all, or one problem (`WONT_PLAY` …).
+        var problem = "all"
+        /// Insights: 4 · 12 · 26 weeks.
+        var weeks = InsightsRange.standard
         /// Mine: my requests or my issues.
         var mineIssues = false
-        /// Mine › Requests: Active · Available · All.
+        /// Mine › Show: Active · Available · All.
         var mineStatus: MyRequestsView.Filter = .active
+        /// Mine › Source: Any (nil), All automatic, Plex or Letterboxd, or one list.
+        var mineSource: RequestSourceFilter?
     }
 
     private var byPane: [RequestsPane: Values] = [:]
@@ -118,7 +132,7 @@ struct RequestsFilter: Equatable {
         set { byPane[pane] = newValue }
     }
 
-    /// The number on the Filter button: set filters, not density.
+    /// The number on the Filter button: set filters, not density or display.
     func activeCount(_ pane: RequestsPane) -> Int {
         let v = self[pane]
         var n = v.origins.count
@@ -126,8 +140,11 @@ struct RequestsFilter: Equatable {
         if v.status != .all { n += 1 }
         if v.issueState != "open" { n += 1 }
         if v.threadType != "all" { n += 1 }
+        if v.problem != "all" { n += 1 }
+        if v.weeks != InsightsRange.standard { n += 1 }
         if v.mineIssues { n += 1 }
         if v.mineStatus != .active { n += 1 }
+        if v.mineSource != nil { n += 1 }
         if !v.search.trimmingCharacters(in: .whitespaces).isEmpty { n += 1 }
         return n
     }
@@ -144,5 +161,11 @@ struct RequestsFilter: Equatable {
         var items: [URLQueryItem] = []
         if let id = v.requesterId { items.append(URLQueryItem(name: "user_id", value: String(id))) }
         return items + RequestOrigin.query(v.origins)
+    }
+
+    /// `query` plus the search (`q`): the web's `listParams`.
+    func listQuery(_ pane: RequestsPane) -> [URLQueryItem] {
+        let q = self[pane].search.trimmingCharacters(in: .whitespaces)
+        return (q.isEmpty ? [] : [URLQueryItem(name: "q", value: q)]) + query(pane)
     }
 }

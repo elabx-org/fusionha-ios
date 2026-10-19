@@ -6,7 +6,8 @@ import FusionhaKit
 /// current one), then Rules, which lives in Settings › Requests.
 struct RequestsViewMenuSheet: View {
     @Environment(RequestsNav.self) private var nav
-    let counts: [RequestsPane: Int]
+    /// The plain figure beside a row ("4", "4+"), only when above zero.
+    let counts: [RequestsPane: String]
     let panes: [RequestsPane]
     /// Issues: how many of the open ones need an admin ("2 need you").
     var needYou: Int?
@@ -64,13 +65,13 @@ struct RequestsViewMenuSheet: View {
                 Image(systemName: pane.icon).font(.system(size: 17)).foregroundStyle(Theme.mut).frame(width: 24)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(pane.title).font(.system(size: 16)).foregroundStyle(Theme.txt)
-                    if pane == .issues, let needYou, needYou > 0 {
-                        Text("\(needYou) need you").font(.system(size: 12)).foregroundStyle(Theme.mut)
+                    if pane == .issues, let needYou {
+                        Text(verbatim: "\(needYou) need you").font(.system(size: 12)).foregroundStyle(Theme.mut)
                     }
                 }
                 Spacer()
-                if let n = counts[pane], n > 0 {
-                    Text(verbatim: "\(n)").font(.system(size: 14).monospacedDigit()).foregroundStyle(Theme.mut)
+                if let n = counts[pane] {
+                    Text(verbatim: n).font(.system(size: 14).monospacedDigit()).foregroundStyle(Theme.mut)
                 }
                 Image(systemName: "checkmark")
                     .font(.system(size: 14, weight: .bold))

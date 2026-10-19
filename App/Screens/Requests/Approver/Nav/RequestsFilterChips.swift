@@ -12,26 +12,40 @@ struct RequestsFilterChips: View {
         let remove: (inout RequestsFilter.Values) -> Void
     }
 
+    /// The web's `chipsFor`, in its order for each view.
     private var chips: [Chip] {
         let v = nav.filter[nav.pane]
         var out: [Chip] = []
-        let q = v.search.trimmingCharacters(in: .whitespaces)
-        if !q.isEmpty { out.append(Chip(id: "q", label: "“\(q)”") { $0.search = "" }) }
-        if let id = v.requesterId {
-            let name = nav.people.first { $0.id == id }?.displayName ?? "Requester"
-            out.append(Chip(id: "u", label: name) { $0.requesterId = nil })
-        }
-        if v.status != .all { out.append(Chip(id: "s", label: v.status.title) { $0.status = .all }) }
-        if v.issueState != "open" {
-            out.append(Chip(id: "i", label: v.issueState == "resolved" ? "Resolved" : "All states") { $0.issueState = "open" })
-        }
-        if v.threadType != "all" {
-            out.append(Chip(id: "t", label: v.threadType == "issue" ? "Issues" : "Requests") { $0.threadType = "all" })
-        }
-        if v.mineIssues { out.append(Chip(id: "m", label: "My issues") { $0.mineIssues = false }) }
-        if v.mineStatus != .active { out.append(Chip(id: "ms", label: v.mineStatus.title) { $0.mineStatus = .active }) }
-        for o in RequestOrigin.allCases where v.origins.contains(o) {
-            out.append(Chip(id: "o-\(o.rawValue)", label: o.title) { $0.origins.remove(o) })
+        switch nav.pane {
+        case .mine:
+            if v.mineStatus != .active { out.append(Chip(id: "ms", label: v.mineStatus.title) { $0.mineStatus = .active }) }
+            if let source = v.mineSource { out.append(Chip(id: "src", label: source.chipLabel) { $0.mineSource = nil }) }
+            if v.mineIssues { out.append(Chip(id: "m", label: "Issues") { $0.mineIssues = false }) }
+        case .threads, .issues:
+            if nav.pane == .threads && v.threadType != "all" {
+                out.append(Chip(id: "t", label: v.threadType == "issue" ? "Issues" : "Requests") { $0.threadType = "all" })
+            }
+            if nav.pane == .issues && v.problem != "all" {
+                out.append(Chip(id: "p", label: IssueProblemFilter.label(v.problem)) { $0.problem = "all" })
+            }
+            if v.issueState != "open" {
+                out.append(Chip(id: "i", label: v.issueState == "resolved" ? "Resolved" : "All states") { $0.issueState = "open" })
+            }
+        case .insights:
+            if v.weeks != InsightsRange.standard {
+                out.append(Chip(id: "r", label: InsightsRange.label(v.weeks)) { $0.weeks = InsightsRange.standard })
+            }
+        case .inbox, .board, .history:
+            let q = v.search.trimmingCharacters(in: .whitespaces)
+            if !q.isEmpty { out.append(Chip(id: "q", label: "“\(q)”") { $0.search = "" }) }
+            if let id = v.requesterId {
+                let name = nav.people.first { $0.id == id }?.displayName ?? "User \(id)"
+                out.append(Chip(id: "u", label: name) { $0.requesterId = nil })
+            }
+            for o in RequestOrigin.allCases where v.origins.contains(o) {
+                out.append(Chip(id: "o-\(o.rawValue)", label: o.title) { $0.origins.remove(o) })
+            }
+            if nav.pane == .history && v.status != .all { out.append(Chip(id: "s", label: v.status.title) { $0.status = .all }) }
         }
         return out
     }

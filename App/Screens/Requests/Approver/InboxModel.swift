@@ -28,15 +28,23 @@ final class InboxModel {
     private(set) var failed = false
     private(set) var pending: InboxDecision?
     private(set) var sending: Set<Int> = []
+    /// The server's waiting total under the filters (`counts.inbox`), for "Show 9 requests".
+    private(set) var total: Int?
+    /// The Undo window is held while the reason sheet is open (ruling R5).
+    private(set) var paused = false
     /// The low-space approve that has been warned once ("Approve anyway").
     var armedId: Int?
     var selected: Set<Int> = []
     /// Admins decide their own requests too (fusionha 0.4.214).
     var viewerIsAdmin = false
-    /// The filter sheet's requester and source (`user_id`, `source`).
+    /// The filter sheet's search, requester and source (`q`, `user_id`, `source`).
     var filterItems: [URLQueryItem] = []
+    /// More waiting rows than the first page holds.
+    private(set) var more = false
 
     @ObservationIgnored private var undoTask: Task<Void, Never>?
+    @ObservationIgnored private var deadline = Date()
+    @ObservationIgnored private var remaining = InboxModel.undoSeconds
     @ObservationIgnored private var client: APIClient?
     @ObservationIgnored private var onToast: ((String, String?, ToastVariant) -> Void)?
 
@@ -66,6 +74,7 @@ final class InboxModel {
             let page = try await client.requestsPage(view: "all", filter: nil, sort: "requested", limit: 50,
                                                      extra: [URLQueryItem(name: "status", value: "pending")] + filterItems)
             items = page.items
+            more = page.nextCursor != nil
             failed = false
         } catch is CancellationError {
             return
@@ -73,6 +82,7 @@ final class InboxModel {
             failed = true
         }
         loaded = true
+        total = (try? await client.requestCounts(view: "all", extra: filterItems))?.inbox ?? total
         await loadTriage()
     }
 
@@ -116,9 +126,9 @@ final class InboxModel {
     }
 
     @discardableResult
-    func decline(_ r: MediaRequest, viewerId: Int?) -> Bool {
+    func decline(_ r: MediaRequest, viewerId: Int?, reason: RequestReason = .notAvailableYet) -> Bool {
         guard !isLocked(r, viewerId: viewerId) else { return false }
-        schedule(InboxDecision(kind: .decline, ids: [r.id], title: title(r), tiers: [], reason: .notAvailableYet))
+        schedule(InboxDecision(kind: .decline, ids: [r.id], title: title(r), tiers: [], reason: reason))
         return true
     }
 
@@ -140,12 +150,29 @@ final class InboxModel {
 
     func undo() {
         undoTask?.cancel()
+        paused = false
         pending = nil
+    }
+
+    /// Holds the Undo window (the reason sheet is open): nothing sends until `resume`.
+    func pause() {
+        guard pending != nil, !paused else { return }
+        paused = true
+        undoTask?.cancel()
+        remaining = max(1, deadline.timeIntervalSinceNow)
+    }
+
+    /// Restarts the held window for the time it had left.
+    func resume() {
+        guard paused else { return }
+        paused = false
+        if pending != nil { startTimer(remaining) }
     }
 
     /// Sends the held decision now (a new decision, or leaving the inbox).
     func flush() {
         undoTask?.cancel()
+        paused = false
         guard let decision = pending else { return }
         pending = nil
         sending.formUnion(decision.ids)
@@ -156,8 +183,14 @@ final class InboxModel {
         flush()
         armedId = nil
         pending = decision
+        startTimer(Self.undoSeconds)
+    }
+
+    private func startTimer(_ seconds: TimeInterval) {
+        undoTask?.cancel()
+        deadline = Date().addingTimeInterval(seconds)
         undoTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(Self.undoSeconds))
+            try? await Task.sleep(for: .seconds(seconds))
             guard !Task.isCancelled else { return }
             self?.flush()
         }

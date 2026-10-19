@@ -41,6 +41,9 @@ struct IssueModal: View {
                                 .font(.system(size: 13)).foregroundStyle(Theme.mut)
                         }
                         IssueCheckFlowView(issueId: filed.issueId, reportId: filed.reportId, isSeries: isSeries)
+                        // The web's filed footer line.
+                        Text("We’ll message you when something changes.")
+                            .font(.system(size: 12)).foregroundStyle(Theme.dim)
                     } else {
                         form
                     }
@@ -84,14 +87,7 @@ struct IssueModal: View {
             }
             if versions.count > 1 {
                 section("Which version?", hint: versions.count == 2 ? "You can see both" : "You can see \(versions.count)") {
-                    Picker("Which version?", selection: Binding(get: { versionId ?? -1 }, set: { versionId = $0; picked = true })) {
-                        ForEach(versions, id: \.id) { v in
-                            if let id = v.id, let tier = v.tier {
-                                Text(IssueFormat.versionText(tier: tier, edition: v.edition)).tag(id)
-                            }
-                        }
-                    }
-                    .pickerStyle(.segmented)
+                    IssueVersionPicker(versions: versions, value: versionId) { versionId = $0; picked = true }
                     if needVersion && versionId == nil {
                         Text("Pick the version you mean.").font(.system(size: 12)).foregroundStyle(Theme.danger)
                     }

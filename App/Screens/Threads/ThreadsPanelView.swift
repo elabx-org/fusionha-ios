@@ -12,8 +12,10 @@ struct ThreadsPanelView: View {
     var state: String? = nil
     /// Set with `state` by the approver's Threads view: all · request · issue.
     var type: String? = nil
-    /// The loaded rows, for the parent's count.
-    var onItems: (([ThreadItem]) -> Void)? = nil
+    /// A client-side narrowing of the loaded rows (Issues' problem type).
+    var match: ((ThreadItem) -> Bool)? = nil
+    /// The rows shown and whether more pages exist, for the parent's count.
+    var onItems: (([ThreadItem], Bool) -> Void)? = nil
     @Environment(AppModel.self) private var model
     @State private var kind = "all"
     @State private var mode = "open"
@@ -51,7 +53,7 @@ struct ThreadsPanelView: View {
             }
             content
         }
-        .onChange(of: items) { onItems?(items) }
+        .onChange(of: shown.map(\.id) + [cursor ?? ""], initial: true) { onItems?(shown, cursor != nil) }
         .task(id: "\(effective ?? "all")-\(currentMode)") {
             items = []
             cursor = nil
@@ -83,11 +85,11 @@ struct ThreadsPanelView: View {
             DiscoverEmptyState(message: "Loading threads…")
         } else if failed && items.isEmpty {
             DiscoverEmptyState(message: "Could not load threads.")
-        } else if items.isEmpty {
+        } else if shown.isEmpty {
             DiscoverEmptyState(message: "Nothing here. Switch the filter to see the rest.")
         } else {
             LazyVStack(spacing: 8) {
-                ForEach(items) { item in
+                ForEach(shown) { item in
                     Button { open = item } label: { ThreadRowView(item: item) }.buttonStyle(.plain)
                 }
                 if cursor != nil {
@@ -96,6 +98,8 @@ struct ThreadsPanelView: View {
             }
         }
     }
+
+    private var shown: [ThreadItem] { match.map { items.filter($0) } ?? items }
 
     private var currentMode: String { state ?? mode }
     private var stateParam: String? { currentMode == "open" ? "OPEN" : (currentMode == "resolved" ? "RESOLVED" : nil) }

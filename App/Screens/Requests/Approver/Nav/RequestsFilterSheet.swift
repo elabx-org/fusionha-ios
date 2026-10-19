@@ -1,115 +1,28 @@
 import SwiftUI
 import FusionhaKit
 
-/// The filter sheet (Final mock): Reset and a close button in the bar, the
-/// view's sections, and one button that counts the result and closes. Every
-/// choice applies as it is tapped.
+/// The filter sheet (web `FilterSheet`): Reset and a close button in the bar,
+/// the view's groups in the web's order, and one accent button that reads the
+/// live result ("Show 9 requests", "Done" when the view has no figure) and
+/// closes. Every choice applies as it is tapped.
 struct RequestsFilterSheet: View {
     @Environment(RequestsNav.self) private var nav
     @Environment(\.dismiss) private var dismiss
 
-    private var sections: Set<RequestsFilter.Section> { nav.pane.filters }
-
     var body: some View {
-        @Bindable var nav = nav
         let pane = nav.pane
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    if sections.contains(.search) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "magnifyingglass").foregroundStyle(Theme.dim)
-                            TextField("Title or person", text: $nav.filter[pane].search)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .submitLabel(.done)
-                        }
-                        .font(.system(size: 16))
-                        .padding(.horizontal, 12)
-                        .frame(height: 40)
-                        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    }
-                    if sections.contains(.status) {
-                        group("Status") {
-                            ForEach(HistoryFilter.allCases, id: \.self) { s in
-                                option(s.title, on: nav.filter[pane].status == s) { nav.filter[pane].status = s }
-                            }
-                        }
-                    }
-                    if sections.contains(.mineType) {
-                        group("Type") {
-                            option("Requests", on: !nav.filter[pane].mineIssues) { nav.filter[pane].mineIssues = false }
-                            option("Issues", on: nav.filter[pane].mineIssues) {
-                                // Status and sources are request filters: drop them.
-                                nav.filter[pane] = RequestsFilter.Values(mineIssues: true)
-                            }
-                        }
-                    }
-                    if sections.contains(.mineStatus) && !nav.filter[pane].mineIssues {
-                        group("Status") {
-                            ForEach(MyRequestsView.Filter.allCases, id: \.self) { f in
-                                option(f.title, on: nav.filter[pane].mineStatus == f) { nav.filter[pane].mineStatus = f }
-                            }
-                        }
-                    }
-                    if sections.contains(.threadType) && nav.threadTypes {
-                        group("Type") {
-                            ForEach([("all", "All"), ("request", "Requests"), ("issue", "Issues")], id: \.0) { t in
-                                option(t.1, on: nav.filter[pane].threadType == t.0) { nav.filter[pane].threadType = t.0 }
-                            }
-                        }
-                    }
-                    if sections.contains(.issueState) {
-                        group("State") {
-                            ForEach([("open", "Open"), ("resolved", "Resolved"), ("all", "All")], id: \.0) { s in
-                                option(s.1, on: nav.filter[pane].issueState == s.0) { nav.filter[pane].issueState = s.0 }
-                            }
-                        }
-                    }
-                    if sections.contains(.requester) {
-                        group("Requester") {
-                            option("Anyone", on: nav.filter[pane].requesterId == nil) { nav.filter[pane].requesterId = nil }
-                            ForEach(nav.people, id: \.id) { p in
-                                option(p.displayName, on: nav.filter[pane].requesterId == p.id) { nav.filter[pane].requesterId = p.id }
-                            }
-                        }
-                    }
-                    if sections.contains(.source) && !(pane == .mine && nav.filter[pane].mineIssues) {
-                        group("Source") {
-                            ForEach(RequestOrigin.allCases, id: \.self) { o in
-                                option(o.title, on: nav.filter[pane].origins.contains(o)) {
-                                    if nav.filter[pane].origins.contains(o) { nav.filter[pane].origins.remove(o) } else { nav.filter[pane].origins.insert(o) }
-                                }
-                            }
-                        }
-                    }
-                    if sections.contains(.display) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            label("Display")
-                            Picker("Display", selection: $nav.inboxList) {
-                                Text("Cards").tag(false)
-                                Text("List").tag(true)
-                            }
-                            .pickerStyle(.segmented)
-                            Text("Remembered on this device.").font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.leading, 4)
-                        }
-                    }
-                    if sections.contains(.density) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            label("Card density")
-                            Picker("Card density", selection: $nav.filter[pane].compact) {
-                                Text("Comfortable").tag(false)
-                                Text("Compact").tag(true)
-                            }
-                            .pickerStyle(.segmented)
-                        }
+                    ForEach(pane.filters, id: \.self) { section in
+                        RequestsFilterGroup(section: section)
                     }
                 }
                 .padding(16)
             }
             .safeAreaInset(edge: .bottom) {
                 Button { dismiss() } label: {
-                    Text(resultLabel)
+                    Text(nav.resultLabel ?? RequestsResultLabel.fallback)
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(Theme.onAccent)
                         .frame(maxWidth: .infinity, minHeight: 52)
@@ -138,40 +51,53 @@ struct RequestsFilterSheet: View {
         .presentationBackground(Theme.panel)
         .sensoryFeedback(.selection, trigger: nav.filter)
     }
+}
 
-    /// "Show 9 requests" once the view has counted, else "Show results".
-    private var resultLabel: String {
-        guard let n = nav.resultCount else { return "Show results" }
-        let noun = nav.pane == .history ? (n == 1 ? "decision" : "decisions")
-            : nav.pane == .issues ? (n == 1 ? "issue" : "issues")
-            : nav.pane == .threads ? (n == 1 ? "thread" : "threads") : (n == 1 ? "request" : "requests")
-        return "Show \(n) \(noun)"
-    }
+/// A group's small heading ("Requester").
+struct RequestsFilterLabel: View {
+    let text: String
 
-    private func label(_ text: String) -> some View {
+    var body: some View {
         Text(text).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.mut).padding(.leading, 4)
     }
+}
 
-    private func group<Content: View>(_ title: String, @ViewBuilder _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            label(title)
-            ActFlow(spacing: 8, lineSpacing: 0) { content() }
-        }
-    }
+/// One filter pill: an accent-ghost fill when on, with an optional count.
+struct RequestsFilterOption: View {
+    let title: String
+    var count: Int? = nil
+    let on: Bool
+    let action: () -> Void
 
-    private func option(_ title: String, on: Bool, _ action: @escaping () -> Void) -> some View {
+    var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Theme.txt)
-                .padding(.horizontal, 14)
-                .frame(minHeight: 36)
-                .background(on ? Theme.primary.opacity(0.22) : Theme.panel2, in: Capsule())
-                .overlay(Capsule().strokeBorder(on ? Theme.primary.opacity(0.7) : Theme.line, lineWidth: on ? 1.5 : 1))
-                .padding(.vertical, 4)
-                .contentShape(Rectangle())
+            HStack(spacing: 5) {
+                Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
+                if let count {
+                    Text(verbatim: "\(count)").font(.system(size: 13).monospacedDigit()).foregroundStyle(Theme.mut)
+                }
+            }
+            .padding(.horizontal, 14)
+            .frame(minHeight: 36)
+            .background(on ? Theme.primary.opacity(0.22) : Theme.panel2, in: Capsule())
+            .overlay(Capsule().strokeBorder(on ? Theme.primary.opacity(0.7) : Theme.line, lineWidth: on ? 1.5 : 1))
+            .padding(.vertical, 4)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(on ? .isSelected : [])
+    }
+}
+
+/// A labelled row of pills.
+struct RequestsFilterPills<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            RequestsFilterLabel(text: title)
+            ActFlow(spacing: 8, lineSpacing: 0) { content() }
+        }
     }
 }

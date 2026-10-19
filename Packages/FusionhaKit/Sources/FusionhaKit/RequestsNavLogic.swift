@@ -164,16 +164,21 @@ public struct IssueCounts: Sendable, Equatable {
     }
 }
 
-/// The drawer's breakdown line: "11 need you · 9 pending requests · 2 issues".
+/// The drawer's breakdown line (web `breakdownLine`): "11 need you · 9
+/// pending requests · 2 issues", or one kind's "2 issues need you" /
+/// "9 requests need you". Shown at zero too; nil only with neither kind.
 public enum RequestsNeedYou {
     public static func line(pending: Int?, issues: Int?) -> String? {
-        let parts = [pending.map { "\($0) pending \($0 == 1 ? "request" : "requests")" },
-                     issues.map { "\($0) \($0 == 1 ? "issue" : "issues")" }].compactMap { $0 }
-        let total = (pending ?? 0) + (issues ?? 0)
-        guard !parts.isEmpty else { return nil }
-        if parts.count == 1 {
-            return pending != nil ? parts[0] : "\(total) \(total == 1 ? "issue needs" : "issues need") you"
+        func plural(_ n: Int, _ one: String, _ many: String) -> String { "\(n) \(n == 1 ? one : many)" }
+        switch (pending, issues) {
+        case let (p?, i?):
+            return "\(p + i) need you · \(plural(p, "pending request", "pending requests")) · \(plural(i, "issue", "issues"))"
+        case let (nil, i?):
+            return "\(i) \(i == 1 ? "issue needs" : "issues need") you"
+        case let (p?, nil):
+            return "\(p) \(p == 1 ? "request needs" : "requests need") you"
+        case (nil, nil):
+            return nil
         }
-        return "\(total) need you · " + parts.joined(separator: " · ")
     }
 }

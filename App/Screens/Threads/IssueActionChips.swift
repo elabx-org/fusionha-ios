@@ -89,17 +89,19 @@ struct IssueActionChips: View {
 
     private func chip(_ label: String, _ symbol: String, primary: Bool = false, danger: Bool = false, off: String? = nil,
                       action: @escaping () async -> Void) -> some View {
-        Button { Task { await action() } } label: {
-            Label(label, systemImage: symbol)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(primary ? Theme.onAccent : (danger ? Theme.danger : Theme.txt))
-                .padding(.horizontal, 12).frame(height: 36)
-                .background(primary ? AnyShapeStyle(Theme.primary) : AnyShapeStyle(Theme.panel2), in: Capsule())
+        // An off chip takes no action, but a tap says why (web `GatedTip`).
+        GatedTip(reason: off) {
+            Button { Task { await action() } } label: {
+                Label(label, systemImage: symbol)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(primary ? Theme.onAccent : (danger ? Theme.danger : Theme.txt))
+                    .padding(.horizontal, 12).frame(height: 36)
+                    .background(primary ? AnyShapeStyle(Theme.primary) : AnyShapeStyle(Theme.panel2), in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .disabled(working)
+            .opacity(off != nil ? 0.5 : 1)
         }
-        .buttonStyle(.plain)
-        .disabled(off != nil || working)
-        .opacity(off != nil ? 0.5 : 1)
-        .accessibilityHint(off ?? "")
     }
 
     private func act(_ report: IssueReport?, _ action: String) async {

@@ -43,15 +43,7 @@ struct RequestCardView: View {
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(e.needsManualImport ? Theme.stuck : Theme.mut)
                     }
-                    if !joined, let demand = request.demand, demand.count > 1 {
-                        HStack(spacing: 6) {
-                            Image(systemName: "person.2.fill").font(.system(size: 11)).foregroundStyle(Theme.mut)
-                            (Text("Also requested by \(demand.count - 1) \(demand.count == 2 ? "other" : "others")").fontWeight(.semibold)
-                             + Text(" · everyone is notified when it’s available").foregroundColor(Theme.mut))
-                                .font(.system(size: 12.5))
-                                .foregroundStyle(Theme.txt)
-                        }
-                    }
+                    if !joined { RequestDemandLine(demand: request.demand) }
                 }
                 Spacer(minLength: 0)
             }
@@ -91,11 +83,7 @@ struct RequestCardView: View {
         ActFlow(spacing: 8, lineSpacing: 4) {
             if joined {
                 RequestPersonChip(name: request.requester?.displayName ?? "Another requester", prefix: nil)
-                Label("Joined · \(request.demand?.count ?? 1) asked", systemImage: "checkmark")
-                    .font(.system(size: 11.5, weight: .semibold))
-                    .foregroundStyle(Theme.i2)
-                    .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(Theme.i2.opacity(0.14), in: Capsule())
+                RequestJoinedPill(request: request)
             } else if request.watch == true {
                 Label("Watching", systemImage: "eye").font(.system(size: 11.5, weight: .semibold)).foregroundStyle(Theme.grab)
                 Text("Admin is already searching · no approval needed").font(.system(size: 12)).foregroundStyle(Theme.mut)
