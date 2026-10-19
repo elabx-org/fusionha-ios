@@ -431,7 +431,7 @@ Owner's pick (Q-DC1): **(b)**. The page title moves into the system bar with
 `.navigationTitle` + `.toolbarTitleDisplayMode(.inlineLarge)`, giving one row on a normal
 iPhone and a vertical side bar on the Duo outer display. `ShellTitleRow` and the custom
 Anton title are retired. The title uses the system font, and the avatar becomes a
-`ToolbarItem` named "Account" with a `.badge` (Q-DC2 default: symbol).
+`ToolbarItem` titled "Account" (VoiceOver and the vertical bar) showing the Plex photo, with initials when there is none, plus the dot badge (Q-DC2, ruled in #60). If 27.1 cannot render the photo at bar size, raise it with fusionha; never fall back silently.
 
 | Screen | Header actions today | Toolbar placement (priority) | Stays in content | Done |
 |---|---|---|---|---|
