@@ -456,10 +456,10 @@ overflow shows the label). Tick a row with its build number.
 
 | Row | Item | Done |
 |---|---|---|
-| F1 | Users: search field (web parity) | ✅ (build pending) |
+| F1 | Users: search field (web parity) | ✅ build 455 |
 | F2 | SI1: OIDC sign-in and the living-media poses, plus the server step as onboarding (owner, 2026-10-19; see F2 spec) | ☐ |
-| F3 | Episode sheet's Search tab: park its `InteractiveSearchModel` across fold/unfold (DC3: no lost state) | ✅ (build pending) |
-| F4 | Activity, Calendar and sign-in toasts on `model.toast`, so Q-DC9 hinge placement applies everywhere | ✅ (build pending): Activity + Wanted through `ActToaster.shell`, Calendar direct; sign-in already used it; sheets keep `CalToast` (now `Components/SheetToast.swift`) |
+| F3 | Episode sheet's Search tab: park its `InteractiveSearchModel` across fold/unfold (DC3: no lost state) | ✅ build 455 |
+| F4 | Activity, Calendar and sign-in toasts on `model.toast`, so Q-DC9 hinge placement applies everywhere | ✅ build 455: Activity + Wanted through `ActToaster.shell`, Calendar direct; sign-in already used it; sheets keep `CalToast` (now `Components/SheetToast.swift`) |
 | F5 | Split oversized files to ~300–400 lines: `AppModel` (665), `ScreenModels` (619), `DiscoverModels` (530), `DetailLogic` (481), `CalendarModels` (456), `EditItemSheet` (335) | ☐ |
 
 #### F2 spec: first run as onboarding (owner, 2026-10-19)
@@ -530,3 +530,5 @@ D1 notes (build 450):
   tab bar even with `visibilityPriority` and a 28pt Account item (run 39331548937,
   `duo-folded-landscape-library.png`). The only lever is `toolbarVerticalCompressionBehavior(.prefersToolbarItems)`,
   which keeps the items at the cost of the tab bar. Owner chose to keep the tab bar; Add + Account stay under "•••" there.
+
+- **Duo inner display (simulator report, run 39331548937):** a second integrated screen of 2007×2853 px @3x, i.e. **669×951 pt** (vs the 626×890 estimate). To confirm on a device before D2 layouts use it.
