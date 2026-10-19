@@ -84,7 +84,7 @@ struct SearchTabView: View {
                 .font(.system(size: 16, weight: .medium))
                 .foregroundStyle(Theme.mut)
             TextField("", text: $model.searchQuery,
-                      prompt: Text(model.requestScoped ? "Find something to request" : "Your library or something new")
+                      prompt: Text(model.requestScoped ? "Find something to request…" : "Search your library or add something new…")
                         .foregroundStyle(Theme.mut))
                 .font(.system(size: 16))
                 .foregroundStyle(Theme.txt)
@@ -182,7 +182,7 @@ struct SearchTabView: View {
                                 year: item.year) {
                             TierComboLabel(tiers: item.editions.map(\.tier))
                         } action: {
-                            openLabel
+                            OmniIconButton(symbol: "arrow.up.right", label: "Open") { model.open(item.id) }
                         }
                     }
                     .buttonStyle(OmniRowStyle())
@@ -263,29 +263,29 @@ struct SearchTabView: View {
         } else if remote.isEmpty {
             note("Nothing to add for “\(trimmed)”.")
         } else {
-            groupLabel("Available to add · via TMDB", count: remote.count)
+            groupLabel("Available to add",
+                       credit: "· via \(OmniActions.providerShortLabel(model.settings?.metadataProvider))",
+                       count: remote.count)
             ForEach(remote) { result in
                 OmniAddRow(result: result, close: {}, request: { requestPick = $0 })
             }
         }
     }
 
-    private var openLabel: some View {
-        Text("Open ↗")
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(Theme.mut)
-    }
-
     private func note(_ text: String) -> some View {
         Text(text).font(.system(size: 13)).foregroundStyle(Theme.mut).padding(16)
     }
 
-    private func groupLabel(_ text: String, count: Int) -> some View {
+    private func groupLabel(_ text: String, credit: String? = nil, count: Int) -> some View {
         HStack(spacing: 8) {
             Text(text.uppercased())
                 .font(.system(size: 11, weight: .bold))
                 .tracking(1)
                 .foregroundStyle(Theme.dim)
+            if let credit {
+                // The web keeps the provider credit in its own case.
+                Text(credit).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.mut)
+            }
             Text("\(count)").font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(Theme.dim)
         }
         .padding(.top, 12)
