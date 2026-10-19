@@ -107,7 +107,13 @@ final class DetailStore {
     var renameScope: RenameScope?
     var showingAliases = false
     var showingIssue = false
-    var showingNumbering = false
+    var showingNumbering = false {
+        didSet { if !showingNumbering { numberingSource = nil } }
+    }
+    /// The compare source the numbering sheet previews (an Edit pin), nil = the default.
+    var numberingSource: String?
+    /// The reviewed metadata-source switch, to this provider.
+    var switchTarget: MetadataSwitchTarget?
     /// Manage files / Manage episodes, on the page scope or one version.
     var manageFiles: ManageFilesTarget?
     var checkingNumbering = false

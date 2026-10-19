@@ -121,8 +121,10 @@ extension APIClient {
         try await call("POST", "/api/v1/library/\(itemId)/check-4k")
     }
 
-    public func numberingPreview(itemId: Int) async throws -> NumberingPreview {
-        try await call("GET", "/api/v1/library/\(itemId)/numbering/preview")
+    /// `source`: the compare source to preview against (`tvmaze` / `tvdb`); nil = the title's default.
+    public func numberingPreview(itemId: Int, source: String? = nil) async throws -> NumberingPreview {
+        try await call("GET", "/api/v1/library/\(itemId)/numbering/preview",
+                       query: source.map { [URLQueryItem(name: "source", value: $0)] } ?? [])
     }
 
     // MARK: Refresh

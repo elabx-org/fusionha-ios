@@ -32,6 +32,12 @@ struct DetailActionSheets: ViewModifier {
                         .environment(store)
                 }
             }
+            .sheet(item: $store.switchTarget) { target in
+                if let detail = store.detail {
+                    MetadataSwitchSheet(detail: detail, target: target.provider)
+                        .environment(store)
+                }
+            }
             .sheet(item: $store.episodeSheet) { target in
                 EpisodeDetailSheet(target: target)
                     .environment(store)
