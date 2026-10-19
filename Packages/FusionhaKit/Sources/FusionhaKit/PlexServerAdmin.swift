@@ -180,10 +180,16 @@ public struct UserTierAccess: Decodable, Sendable, Hashable, Identifiable {
     public let isAdmin: Bool
     public let uhdWhenActive: Bool
     public let sourceWhenActive: String
+    /// The chip's reason (`detail`), whether the last sync missed this row
+    /// (`stale`) and when the row was refreshed (`fetched_at`).
+    public let detail: String?
+    public let stale: Bool
+    public let fetchedAt: String?
     public var id: Int { userId }
 
     enum CodingKeys: String, CodingKey {
         case userId, uhd, source, isManaged, frozen, isOwner, isHome, isAdmin, uhdWhenActive, sourceWhenActive
+        case detail, stale, fetchedAt
     }
 
     public init(from decoder: Decoder) throws {
@@ -198,6 +204,9 @@ public struct UserTierAccess: Decodable, Sendable, Hashable, Identifiable {
         isAdmin = try c.decodeIfPresent(Bool.self, forKey: .isAdmin) ?? false
         uhdWhenActive = try c.decodeIfPresent(Bool.self, forKey: .uhdWhenActive) ?? true
         sourceWhenActive = try c.decodeIfPresent(String.self, forKey: .sourceWhenActive) ?? "default"
+        detail = try c.decodeIfPresent(String.self, forKey: .detail)
+        stale = try c.decodeIfPresent(Bool.self, forKey: .stale) ?? false
+        fetchedAt = try c.decodeIfPresent(String.self, forKey: .fetchedAt)
     }
 }
 

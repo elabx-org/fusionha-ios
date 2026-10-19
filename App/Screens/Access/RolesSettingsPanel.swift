@@ -27,7 +27,13 @@ struct RolesSettingsPanel: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     HStack(spacing: 6) {
                                         Text(r.name).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.txt)
-                                        if r.isBuiltin { Text("Built in").font(.caption2.weight(.bold)).foregroundStyle(Theme.mut) }
+                                        if r.isBuiltin {
+                                            Text("Built-in")
+                                                .font(.system(size: 11, weight: .bold))
+                                                .foregroundStyle(Theme.mut)
+                                                .padding(.horizontal, 7).padding(.vertical, 2)
+                                                .background(Theme.panel2, in: Capsule())
+                                        }
                                     }
                                     Text(r.permissions.isEmpty ? "No admin permissions"
                                          : r.permissions.map { AccessLabels.label($0, AccessLabels.permissions) }.joined(separator: " · "))
