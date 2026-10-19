@@ -3,7 +3,7 @@ import FusionhaKit
 
 // Small pieces shared by the Calendar views and the Account / sign-in screens:
 // the colour mappings and the web's `sm` buttons. The edition rail, glyphs,
-// empty state, toast and motion live in their own files beside this one.
+// empty state and motion live in their own files beside this one.
 
 // MARK: Colours
 

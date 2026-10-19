@@ -65,10 +65,31 @@ struct EpisodeDetailSheet: View {
         }
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.panel)
-        .onAppear { tab = target.tab }
+        .onAppear(perform: restore)
+        .onDisappear(perform: park)
         .onChange(of: tab, initial: true) { _, new in
             if new == .search && search == nil, let detail, let episode { search = makeSearch(detail, episode) }
         }
+    }
+
+    // MARK: Fold / unfold (DC3)
+
+    /// A fold / unfold re-hosts this sheet: park the open tab and the Search
+    /// tab's model under the episode target, and pick them up on the new host.
+    /// `opened("episode")` clears them when a different episode opens.
+    private func park() {
+        store.drafts.save(target.id, for: "episode.target")
+        store.drafts.save(tab, for: "episode.tab")
+        if let search { store.drafts.save(search, for: "episode.search") }
+    }
+
+    private func restore() {
+        guard store.drafts.value("episode.target", as: UUID.self) == target.id else {
+            tab = target.tab
+            return
+        }
+        search = store.drafts.value("episode.search", as: InteractiveSearchModel.self)
+        tab = store.drafts.value("episode.tab", as: EpisodeSheetTab.self) ?? target.tab
     }
 
     private func heading(_ detail: ItemDetail, _ episode: Episode) -> some View {

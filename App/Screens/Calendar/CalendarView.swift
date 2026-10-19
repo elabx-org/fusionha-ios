@@ -24,7 +24,6 @@ struct CalendarView: View {
     @State var feed: [CalendarEntry] = []
     @State var phase: LoadPhase = .loading
     @State var collapsed = false
-    @State var toast: CalToast?
     @State var copyingFeed = false
     /// Bumped to bring the view back to today (Today, the tab, a re-tap).
     @State var todayTick = 0
@@ -109,7 +108,6 @@ struct CalendarView: View {
         }
         .shellPage(title)
         .toolbar { barItems }
-        .calToast($toast)
         .environment(\.calMotionOff, settings?.animationsEnabled == false)
         .task { await loadSettings() }
         .onChange(of: model.calendarTodayTick) { goToday() }

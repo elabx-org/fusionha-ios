@@ -14,13 +14,33 @@ final class ActToaster {
         static func == (a: Toast, b: Toast) -> Bool { a.id == b.id }
     }
 
-    enum Tone { case info, success, warning, error }
+    enum Tone {
+        case info, success, warning, error
+
+        var variant: ToastVariant {
+            switch self {
+            case .info: return .info
+            case .success: return .success
+            case .warning: return .warning
+            case .error: return .error
+            }
+        }
+    }
 
     private(set) var current: Toast?
     private var undo: (() -> Void)?
     private var dismissTask: Task<Void, Never>?
+    /// The shell's toasts (`AppModel.toast`). Set on a page under the shell, so
+    /// its toasts get the shell's placement (above the tab bar, off the hinge);
+    /// sheets leave it nil and draw their own `ActToastOverlay`.
+    @ObservationIgnored weak var shell: AppModel?
 
     func show(_ text: String, tone: Tone = .info, undoLabel: String? = nil, undo: (() -> Void)? = nil) {
+        if let shell {
+            let action = undo.map { run in ToastAction(label: undoLabel ?? "Undo", handler: run) }
+            shell.toast(text, variant: tone.variant, duration: undo == nil ? 3.5 : 6, action: action)
+            return
+        }
         current = Toast(text: text, tone: tone, undoLabel: undo == nil ? nil : (undoLabel ?? "Undo"))
         self.undo = undo
         dismissTask?.cancel()

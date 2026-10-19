@@ -24,6 +24,7 @@ struct UsersSettingsPanel: View {
     @State private var duplicates: [DuplicateGroup] = []
     @State private var merging: DuplicateGroup?
     @State private var disconnecting = false
+    @State private var query = ""
 
     private var canAdminSystem: Bool { model.me?.has("system.admin") == true }
 
@@ -48,6 +49,7 @@ struct UsersSettingsPanel: View {
                 Button("Add user", systemImage: "plus") { adding = true }
             }
         }
+        .searchable(text: $query, prompt: "Search users, roles, sign-in methods…")
         .task { await load() }
         .refreshable { await load() }
         .onChange(of: show) { if show != .all { pulse = nil } }
@@ -91,9 +93,10 @@ struct UsersSettingsPanel: View {
     @ViewBuilder private func list(_ users: [UserAccount]) -> some View {
         let visible = users.filter {
             show.passes($0, plex: plex[$0.id], letterboxd: letterboxd[$0.id]) && (pulse?.passes($0) ?? true)
+                && UsersRoster.matches($0, query: query)
         }
         if visible.isEmpty {
-            Section { Text("No users match this filter.").foregroundStyle(Theme.mut) }
+            Section { Text(query.isEmpty ? "No users match this filter." : "No users match “\(query.trimmingCharacters(in: .whitespaces))”.").foregroundStyle(Theme.mut) }
         }
         ForEach(UsersRoster.groups(visible)) { group in
             let isCollapsed = collapsed.contains(group.id)

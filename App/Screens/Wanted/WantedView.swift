@@ -56,7 +56,8 @@ struct WantedView: View {
                     .toolbar { AddTitleToolbarItem(model: model) }
             }
         }
-        .overlay { ActToastOverlay(toaster: toaster).padding(.bottom, 70) }
+        // Toasts go to the shell's host (its placement keeps them off the hinge).
+        .onAppear { toaster.shell = model }
         .environment(\.actReduceMotion, reduce)
         .environment(toaster)
         .task { await loadTotals() }

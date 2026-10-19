@@ -135,7 +135,8 @@ struct ActivityView: View {
             case .indexers: ActivityIndexersTab()
             }
         }
-        .overlay { ActToastOverlay(toaster: toaster).padding(.bottom, 70) }
+        // Toasts go to the shell's host (its placement keeps them off the hinge).
+        .onAppear { toaster.shell = model }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let config = bulk.config {
                 ActBulkBar(count: config.count, hint: config.hint, onSelectAll: config.onSelectAll) {

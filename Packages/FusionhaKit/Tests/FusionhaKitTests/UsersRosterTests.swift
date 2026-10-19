@@ -20,6 +20,18 @@ final class UsersRosterTests: XCTestCase {
         """)
     }
 
+    // MARK: Search (UsersList matches)
+
+    func testSearchMatchesNameRoleAndProvider() throws {
+        let all = try users()
+        func ids(_ q: String) -> [Int] { all.filter { UsersRoster.matches($0, query: q) }.map(\.id) }
+        XCTAssertEqual(ids(""), [1, 2, 3, 4, 5, 6])
+        XCTAssertEqual(ids("  ANA "), [2, 3]) // "ana", and "Manager"
+        XCTAssertEqual(ids("requestor"), [2, 4])
+        XCTAssertEqual(ids("plex"), [5])
+        XCTAssertEqual(ids("zzz"), [])
+    }
+
     // MARK: UHD·4K (users-uhd.ts)
 
     func testBanner() {

@@ -43,7 +43,7 @@ extension CalendarView {
                 try await model.client?.setWeekCardStyle(style)
             } catch {
                 settings = previous
-                toast = CalToast(message: "The week card style could not be saved.", isError: true)
+                model.toast("The week card style could not be saved.", variant: .error)
             }
         }
     }
@@ -62,10 +62,10 @@ extension CalendarView {
                 if let webcal = parts.url { _ = await UIApplication.shared.open(webcal) }
             } else {
                 UIPasteboard.general.string = url.absoluteString
-                toast = CalToast(message: "iCal feed URL copied — paste it into your calendar app.")
+                model.toast("iCal feed URL copied — paste it into your calendar app.")
             }
         } catch {
-            toast = CalToast(message: "The iCal feed URL could not be copied.", isError: true)
+            model.toast("The iCal feed URL could not be copied.", variant: .error)
         }
     }
 

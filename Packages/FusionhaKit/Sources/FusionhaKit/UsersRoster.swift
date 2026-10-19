@@ -9,6 +9,16 @@ public enum UsersRoster {
         (u.credentials ?? []).contains { $0.provider == "plex" } || u.authProvider == "plex"
     }
 
+    /// The search field (web `UsersList` `matches`): the shown name, the stored
+    /// username, the Plex name, the role and the sign-in providers, case-insensitive.
+    public static func matches(_ u: UserAccount, query: String) -> Bool {
+        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !q.isEmpty else { return true }
+        let hay = [u.displayName, u.username, u.plexUsername ?? "", u.roleName ?? ""]
+            + (u.credentials ?? []).map(\.provider)
+        return hay.joined(separator: " ").lowercased().contains(q)
+    }
+
     /// A pulse tile; tapping one filters the list (tap again to clear).
     public enum PulseKey: String, CaseIterable, Sendable, Hashable {
         case total, admin, requestor, plex, disabled
