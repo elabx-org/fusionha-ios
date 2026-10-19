@@ -79,18 +79,12 @@ struct RequestThreadSheet: View {
                 HStack(spacing: 6) {
                     ForEach(request.tiers, id: \.self) { ActTierChip(tier: $0) }
                     if joinedView {
-                        Text("Joined · \(request.demand?.count ?? 1) asked")
-                            .font(.system(size: 11.5, weight: .semibold))
-                            .foregroundStyle(Theme.i2)
+                        RequestJoinedPill(request: request)
                     } else {
                         RequestSourceBadge(source: request.source, mine: isOwner)
                     }
                 }
-                if !joinedView, let demand = request.demand, demand.count > 1 {
-                    Text("Also requested by \(demand.count - 1) \(demand.count == 2 ? "other" : "others")")
-                        .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(Theme.mut)
-                }
+                if !joinedView { RequestDemandLine(demand: request.demand) }
             }
             Spacer(minLength: 0)
         }

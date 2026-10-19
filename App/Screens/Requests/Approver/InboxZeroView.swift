@@ -83,7 +83,8 @@ struct InboxZeroView: View {
 struct InboxUndoToast: View {
     let decision: InboxDecision
     let onUndo: () -> Void
-    let onReason: (RequestReason) -> Void
+    /// Opens the reason sheet; the host holds the window while it is open.
+    let onChangeReason: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -93,14 +94,12 @@ struct InboxUndoToast: View {
             message.font(.system(size: 13.5)).foregroundStyle(Theme.txt).lineLimit(2)
             Spacer(minLength: 4)
             if decision.kind == .decline {
-                Menu {
-                    ForEach(RequestReason.allCases, id: \.self) { reason in
-                        Button(reason.title) { onReason(reason) }
-                    }
-                } label: {
+                Button(action: onChangeReason) {
                     Text("Change reason")
                         .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(Theme.accentText)
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel("Change reason, now \(decision.reason.title)")
             }
             Button("Undo", action: onUndo).font(.system(size: 14, weight: .bold))

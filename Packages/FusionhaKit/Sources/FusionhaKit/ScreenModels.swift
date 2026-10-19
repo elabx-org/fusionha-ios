@@ -528,6 +528,10 @@ public struct MediaRequestCreate: Encodable, Sendable {
 public struct RootFolder: Decodable, Sendable, Identifiable, Hashable {
     public let id: Int
     public let path: String
+    /// Bytes free; nil when unreported.
+    public var freeSpace: Int64? = nil
+    /// False when fusionha can't reach the folder.
+    public var accessible: Bool? = nil
 }
 
 public struct QualityProfile: Decodable, Sendable, Identifiable, Hashable {

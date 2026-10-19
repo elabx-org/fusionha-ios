@@ -1,11 +1,11 @@
 import SwiftUI
 import FusionhaKit
 
-/// The requester's list (web R1 "My requests"): the quota meter, an Active ·
-/// Available · All filter with counts, the "From source" filter (Plex and
-/// Letterboxd, fusionha 0.4.209 / 0.4.213), the live request cards (newest
-/// activity first, cursor-paged) and Load more. Polls every 15 s while open
-/// and shows the last list from this phone's cache straight away.
+/// The viewer's own requests (web `MyRequestsList`): the quota meter, the
+/// source note while a source is picked, the live request cards (newest
+/// activity first, cursor-paged) and Load more. Show and Source come from the
+/// filter sheet. Polls every 15 s while open and shows the last list from this
+/// phone's cache straight away; reports its counts and result label to the nav.
 struct MyRequestsView: View {
     enum Filter: String, CaseIterable, Hashable {
         case active, available, all
@@ -20,7 +20,7 @@ struct MyRequestsView: View {
 
         var empty: String {
             switch self {
-            case .active: return "Nothing on its way right now."
+            case .active: return "Nothing in flight right now."
             case .available: return "Nothing available yet."
             case .all: return "You haven't requested anything yet."
             }
@@ -36,20 +36,14 @@ struct MyRequestsView: View {
         }
     }
 
-    /// Set inside the approver's Requests (Mine view): the status and sources
-    /// come from the filter sheet, so the in-page rails are hidden.
-    var fixedFilter: Filter? = nil
-    var origins: Set<RequestOrigin>? = nil
+    let show: Filter
+    let source: RequestSourceFilter?
     @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
-    @Environment(RequestsNav.self) private var nav: RequestsNav?
-    @State private var filter: Filter = .active
+    @Environment(RequestsNav.self) private var nav
     @State private var items: [MediaRequest] = []
     @State private var cursor: String?
     @State private var counts: RequestCounts?
-    @State private var source: RequestSourceFilter?
-    /// The unfiltered `by_source` buckets the source chips count from.
-    @State private var bySource: [RequestSourceCount] = []
     @State private var quota: RequestQuota?
     @State private var plexLinks: [Int: String] = [:]
     @State private var loaded = false
@@ -60,16 +54,14 @@ struct MyRequestsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if let quota { RequestQuotaMeter(quota: quota) }
-            if fixedFilter == nil {
-                DiscoverSegmented(options: Filter.allCases.map { f -> (Filter, String) in
-                    (f, f.count(counts).map { $0 > 0 ? "\(f.title) \($0)" : f.title } ?? f.title)
-                }, selection: $filter, fullTrack: true)
-                RequestSourceFilterBar(bySource: bySource, value: $source)
-            }
+            if source != nil { RequestSourceNote() }
             content
         }
-        .onChange(of: counts) { nav?.mineCounts = counts }
-        .task(id: "\(current.rawValue)-\(store.requestsVersion)-\(sourceKey)") { await poll() }
+        .onChange(of: "\(show.count(counts) ?? -1)-\(items.count)-\(cursor != nil)", initial: true) {
+            nav.resultLabel = RequestsResultLabel.text(show.count(counts), loaded: items.count, more: cursor != nil,
+                                                       noun: ("request", "requests"))
+        }
+        .task(id: "\(show.rawValue)-\(store.requestsVersion)-\(sourceKey)") { await poll() }
         .sheet(item: $thread) { request in
             RequestThreadSheet(request: request) { Task { await refresh() } }
         }
@@ -82,7 +74,7 @@ struct MyRequestsView: View {
         } else if failed && items.isEmpty {
             DiscoverEmptyState(message: "Could not load your requests.")
         } else if items.isEmpty {
-            DiscoverEmptyState(message: !sourceQuery.isEmpty ? "Nothing from this source matches this filter." : current.empty)
+            DiscoverEmptyState(message: source != nil ? "Nothing from this source matches this filter." : show.empty)
         } else {
             LazyVStack(spacing: 12) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, request in
@@ -103,8 +95,7 @@ struct MyRequestsView: View {
 
     // MARK: Loading
 
-    private var current: Filter { fixedFilter ?? filter }
-    private var sourceQuery: [URLQueryItem] { origins.map(RequestOrigin.query) ?? source?.query ?? [] }
+    private var sourceQuery: [URLQueryItem] { source?.query ?? [] }
     private var sourceKey: String { sourceQuery.map { "\($0.name)=\($0.value ?? "")" }.joined(separator: "&") }
 
     private func poll() async {
@@ -113,13 +104,12 @@ struct MyRequestsView: View {
         cursor = nil
         loaded = false
         let extra = sourceQuery
-        if let page = await client.cached({ try await $0.requestsPage(view: "mine", filter: current.rawValue, extra: extra) }) {
+        if let page = await client.cached({ try await $0.requestsPage(view: "mine", filter: show.rawValue, extra: extra) }) {
             items = page.items
             cursor = page.nextCursor
             loaded = true
         }
         counts = await client.cached { try await $0.requestCounts(view: "mine", extra: extra) } ?? counts
-        if extra.isEmpty { bySource = counts?.bySource ?? bySource }
         quota = await client.cached { try await $0.requestQuota() } ?? quota
         while !Task.isCancelled {
             await refresh()
@@ -127,12 +117,13 @@ struct MyRequestsView: View {
         }
     }
 
-    /// Re-reads the first page (keeping any pages already loaded beyond it), the counts and the quota.
+    /// Re-reads the first page (keeping any pages already loaded beyond it),
+    /// the counts (filtered for the button, unfiltered for the subtitle) and the quota.
     private func refresh() async {
         guard let client = model.client else { return }
         do {
             let extra = sourceQuery
-            async let pageCall = client.requestsPage(view: "mine", filter: current.rawValue, extra: extra)
+            async let pageCall = client.requestsPage(view: "mine", filter: show.rawValue, extra: extra)
             async let countsCall = try? client.requestCounts(view: "mine", extra: extra)
             async let allCall = try? client.requestCounts(view: "mine")
             async let quotaCall = try? client.requestQuota()
@@ -142,7 +133,7 @@ struct MyRequestsView: View {
             items = page.items + beyond
             if beyond.isEmpty { cursor = page.nextCursor }
             counts = await countsCall ?? counts
-            if let all = await allCall { bySource = all.bySource ?? [] }
+            if let all = await allCall { nav.mineCounts = all }
             quota = await quotaCall
             failed = false
         } catch is CancellationError {
@@ -159,7 +150,7 @@ struct MyRequestsView: View {
         loadingMore = true
         defer { loadingMore = false }
         do {
-            let page = try await client.requestsPage(view: "mine", filter: current.rawValue, cursor: next, extra: sourceQuery)
+            let page = try await client.requestsPage(view: "mine", filter: show.rawValue, cursor: next, extra: sourceQuery)
             let known = Set(items.map(\.id))
             items += page.items.filter { !known.contains($0.id) }
             cursor = page.nextCursor
@@ -173,46 +164,5 @@ struct MyRequestsView: View {
         let ids = items.filter { $0.status == "fulfilled" && plexLinks[$0.id] == nil }.map(\.id)
         guard !ids.isEmpty, let links = try? await client.requestPlexLinks(ids: ids) else { return }
         plexLinks.merge(links) { _, new in new }
-    }
-}
-
-/// "N of M requests left this week" with a pip per request, when the
-/// requester has a limit (web `QuotaMeter`).
-struct RequestQuotaMeter: View {
-    let quota: RequestQuota
-
-    var body: some View {
-        if let limit = quota.limit, limit > 0 {
-            let left = max(0, limit - quota.used)
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline) {
-                    (Text("\(left)").fontWeight(.bold).foregroundColor(Theme.txt)
-                     + Text(" of \(limit) requests left this week").foregroundColor(Theme.mut))
-                        .font(.system(size: 14))
-                    Spacer(minLength: 8)
-                }
-                HStack(spacing: 4) {
-                    ForEach(0..<limit, id: \.self) { i in
-                        Capsule()
-                            .fill(i < quota.used ? (left == 0 ? Theme.miss : Theme.i1) : Theme.line)
-                            .frame(height: 5)
-                    }
-                }
-                Text(footnote)
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.mut)
-            }
-            .padding(14)
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .accessibilityElement(children: .combine)
-        }
-    }
-
-    private var footnote: String {
-        var parts: [String] = []
-        if let day = RequestLifecycle.resetWeekday(quota.resetsAt) { parts.append("Resets \(day)") }
-        parts.append("auto-requests count too")
-        if quota.waiting > 0 { parts.append("\(quota.waiting) waiting") }
-        return parts.joined(separator: " · ")
     }
 }

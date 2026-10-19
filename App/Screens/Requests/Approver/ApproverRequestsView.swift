@@ -28,6 +28,7 @@ struct ApproverRequestsView: View {
             .environment(nav)
             .onAppear(perform: setUp)
             .onChange(of: store.requestsPane) { openPending() }
+            .task(id: nav.panes) { await pollMenuCounts() }
             .animation(.snappy, value: nav.filter)
             .sheet(isPresented: $nav.menuOpen) {
                 RequestsViewMenuSheet(counts: menuCounts, panes: nav.panes,
@@ -64,29 +65,16 @@ struct ApproverRequestsView: View {
         case .history:
             RequestsHistoryView(onOpenThread: { thread = $0 })
         case .threads:
-            plain { ThreadsPanelView(state: nav.filter[.threads].issueState,
-                                     type: nav.threadTypes ? nav.filter[.threads].threadType : nil) }
+            RequestsThreadsView()
         case .issues:
             RequestsIssuesView()
         case .insights:
-            plain { RequestInsightsView() }
-        case .mine:
             VStack(alignment: .leading, spacing: 14) {
-                RequestsViewHeader {
-                    if let c = nav.mineCounts, !nav.filter[.mine].mineIssues {
-                        requestsCount(c.active, "active") + Text(" · ") + requestsCount(c.available, "available")
-                    }
-                }
-                MineView(filter: nav.filter[.mine])
+                RequestsViewHeader { Text(InsightsRange.label(nav.filter[.insights].weeks)) }
+                RequestInsightsView(weeks: nav.filter[.insights].weeks)
             }
-        }
-    }
-
-    /// Views with no filters of their own: the header, then the view.
-    private func plain<V: View>(@ViewBuilder _ view: () -> V) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            RequestsViewHeader()
-            view()
+        case .mine:
+            MineView()
         }
     }
 
@@ -109,8 +97,30 @@ struct ApproverRequestsView: View {
         if nav.panes.contains(pane) { nav.open(pane) }
     }
 
-    private var menuCounts: [RequestsPane: Int] {
-        [.inbox: store.pendingCount, .issues: store.issueCounts.open]
+    /// The drawer's figures (web `useMenuCounts`): Inbox waiting, Threads
+    /// unread open threads ("4+"), Issues open, Mine my open requests.
+    private var menuCounts: [RequestsPane: String] {
+        var out: [RequestsPane: String] = [:]
+        if store.pendingCount > 0 { out[.inbox] = String(store.pendingCount) }
+        if let label = ThreadUnread.label(nav.unreadThreads, more: nav.unreadMore) { out[.threads] = label }
+        if store.issueCounts.open > 0 { out[.issues] = String(store.issueCounts.open) }
+        if let mine = MineHeader.openCount(nav.mineCounts), mine > 0 { out[.mine] = String(mine) }
+        return out
+    }
+
+    /// Unread open threads and my counts, every 30 s while Requests is open.
+    private func pollMenuCounts() async {
+        while !Task.isCancelled {
+            if let client = model.client {
+                if nav.panes.contains(.threads), let page = try? await client.adminThreads(state: "OPEN") {
+                    nav.unreadThreads = ThreadUnread.count(page.items)
+                    nav.unreadMore = page.nextCursor != nil
+                    nav.openThreads = page.items.count
+                }
+                if let mine = try? await client.requestCounts(view: "mine") { nav.mineCounts = mine }
+            }
+            try? await Task.sleep(for: .seconds(30))
+        }
     }
 
     private func openHistory(_ filter: HistoryFilter) {

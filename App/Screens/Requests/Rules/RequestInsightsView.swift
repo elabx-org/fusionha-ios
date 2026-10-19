@@ -7,6 +7,8 @@ import FusionhaKit
 /// automatically), requests decided per day by outcome, then top requesters,
 /// most wanted and decline reasons over the last 30 days.
 struct RequestInsightsView: View {
+    /// The Range from the filter sheet (4 · 12 · 26 weeks); the header row says which.
+    var weeks = InsightsRange.standard
     @Environment(AppModel.self) private var model
     @State private var data: RequestInsights?
     @State private var failed = false
@@ -19,12 +21,10 @@ struct RequestInsightsView: View {
     }
 
     /// "last 12 weeks" from the server, else what this view asks for.
-    private var window: String { data?.windowLabel ?? "last 12 weeks" }
+    private var window: String { data?.windowLabel ?? "last \(weeks) weeks" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            // The header row names the view; this says which window the cards cover (0.4.216).
-            Text(window.capitalizedFirst).font(.system(size: 13)).foregroundStyle(Theme.mut)
             if let data {
                 tiles(data)
                 card("Requests decided per day") { OutcomeChart(days: data.perDay) }
@@ -45,9 +45,10 @@ struct RequestInsightsView: View {
                     .font(.subheadline).foregroundStyle(Theme.mut)
             }
         }
-        .task {
+        .task(id: weeks) {
             guard let client = model.client else { return }
-            do { data = try await client.requestInsights(weeks: 12) } catch { failed = true }
+            failed = false
+            do { data = try await client.requestInsights(weeks: weeks) } catch { failed = true }
         }
     }
 

@@ -86,12 +86,24 @@ struct IssuePaneSheet: View {
         }
     }
 
+    /// "Linked request #1234 · HD · asked by Sam · Pending" (web `LinkedRequestHint`).
     private func linkedHint(_ r: MediaRequest) -> some View {
-        HStack(spacing: 8) {
+        let wash = RequestLifecycle.wash(status: r.status, lifecycle: r.lifecycle ?? [])
+        let tint = wash == .none ? Theme.dim : wash.color
+        return HStack(alignment: .top, spacing: 8) {
             Image(systemName: "tray").foregroundStyle(Theme.mut)
-            Text("Linked request ").font(.system(size: 12.5)) + Text("#\(r.id)").bold().font(.system(size: 12.5))
-            ForEach(r.tiers, id: \.self) { ActTierChip(tier: $0) }
-            if let who = r.requester?.displayName { Text("· asked by \(who)").font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineLimit(1) }
+            ActFlow(spacing: 6, lineSpacing: 4) {
+                Text("Linked request ").font(.system(size: 12.5)) + Text(verbatim: "#\(r.id)").bold().font(.system(size: 12.5))
+                ForEach(r.tiers, id: \.self) { ActTierChip(tier: $0) }
+                if let who = r.requester?.displayName {
+                    (Text("· asked by ").foregroundColor(Theme.mut) + Text(who).bold()).font(.system(size: 12.5)).lineLimit(1)
+                }
+                Text(RequestBoard.statusLabel(r.status))
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(tint)
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .background(tint.opacity(0.14), in: Capsule())
+            }
         }
         .foregroundStyle(Theme.txt)
         .padding(10).frame(maxWidth: .infinity, alignment: .leading)
@@ -122,6 +134,11 @@ struct IssuePaneSheet: View {
                 case .default_: return try await client.postIssueMessage(id: id, body: body)
                 }
             }) { line in append([line]) }
+            Text("Only the people you pick see this. Reporters never see each other.")
+                .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 4)
         }
     }
 
