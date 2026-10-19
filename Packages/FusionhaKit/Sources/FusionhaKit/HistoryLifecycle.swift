@@ -18,7 +18,7 @@ public struct HeldEventData: Equatable, Sendable {
         if case .object(let r)? = data.value("probed_resolution"), let w = r.number("w"), let h = r.number("h") {
             resolution = HeldResolution(w: Int(w), h: Int(h))
         }
-        let blocklisted: Bool = if case .bool(true)? = data.value("release_blocklisted") { true } else { false }
+        let blocklisted = data.value("release_blocklisted") == .bool(true)
         return HeldEventData(reasonCode: reasonCode, reason: data.text("reason") ?? "",
                              claimedQuality: string(data, "claimed_quality"), probedQuality: string(data, "probed_quality"),
                              probedResolution: resolution, releaseGroup: string(data, "release_group"),
