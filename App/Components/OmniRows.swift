@@ -4,9 +4,10 @@ import FusionhaKit
 
 // The omni search's rows: owned titles, the TMDB add lane, and their press style.
 
-/// A TMDB result in the omni add lane: ★ rating, then Add (preview) /
-/// Request / Open ↗. The whole row does what its button does; a requester's
-/// Request opens the request modal (tiers, seasons, note), as on the web.
+/// A TMDB result in the omni add lane: ★ rating, then Open (owned) or Add and
+/// Request, each gated on its own capability (web `rowActions`; L15: a user
+/// with both sees two buttons). The row body opens the title, else the
+/// preview (add), else the request modal (tiers, seasons, note), as on the web.
 struct OmniAddRow: View {
     @Environment(AppModel.self) private var model
     let result: MediaSearchResult
@@ -30,7 +31,11 @@ struct OmniAddRow: View {
                     .foregroundStyle(Theme.miss)
             }
         } action: {
-            action
+            HStack(spacing: 2) {
+                ForEach(actions, id: \.self) { action in
+                    button(for: action)
+                }
+            }
         }
     }
 
@@ -39,43 +44,64 @@ struct OmniAddRow: View {
         return model.libraryItemId(for: result)
     }
 
+    private var canAdd: Bool { model.me?.hasCapability("add") == true }
+    private var canRequest: Bool { model.me?.hasCapability("request") == true }
+
+    private var actions: [OmniActions.Action] {
+        OmniActions.addRowActions(openable: openable != nil, canAdd: canAdd, canRequest: canRequest)
+    }
+
     private func primary() {
-        if let id = openable {
-            close()
-            model.open(id)
-        } else if model.requestScoped {
-            request(result)
-        } else {
+        switch OmniActions.addRowPrimary(openable: openable != nil, canAdd: canAdd, canRequest: canRequest) {
+        case .open:
+            if let id = openable {
+                close()
+                model.open(id)
+            }
+        case .preview:
             close()
             model.openPreview(result)
+        case .request:
+            request(result)
+        case .none:
+            break
         }
     }
 
     @ViewBuilder
-    private var action: some View {
-        if openable != nil {
-            Button(action: primary) {
-                Text("Open ↗").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
-            }
-            .buttonStyle(.plain)
-        } else if model.requestScoped {
-            iconButton("paperplane", label: "Request", action: primary)
-        } else {
+    private func button(for action: OmniActions.Action) -> some View {
+        switch action {
+        case .open:
+            OmniIconButton(symbol: "arrow.up.right", label: "Open", action: primary)
+        case .add:
             // Web #12: "+" opens the Add flow directly; the row opens the preview.
-            iconButton("plus", label: "Add") {
+            OmniIconButton(symbol: "plus", label: "Add") {
                 close()
                 model.openAdd(result)
             }
+        case .request:
+            OmniIconButton(symbol: "paperplane", label: "Request") { request(result) }
         }
     }
+}
 
-    private func iconButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+/// The omni rows' trailing action (web `IconButton` md): one round 30 pt
+/// button for Open, Add and Request, where the glyph is the only difference.
+/// The hit area is 44 pt.
+struct OmniIconButton: View {
+    let symbol: String
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(Theme.onAccent)
+                .foregroundStyle(Theme.txt)
                 .frame(width: 30, height: 30)
-                .background(Theme.primary, in: Circle())
+                .background(Theme.panel2, in: Circle())
+                .frame(width: 40, height: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(PressScaleStyle(scale: 0.92))
         .accessibilityLabel(label)
@@ -110,7 +136,8 @@ struct OmniRow<Sub: View, Action: View>: View {
             Spacer(minLength: 8)
             action
         }
-        .padding(.horizontal, 14)
+        .padding(.leading, 14)
+        .padding(.trailing, 8)
         .padding(.vertical, 10)
         .contentShape(Rectangle())
     }
