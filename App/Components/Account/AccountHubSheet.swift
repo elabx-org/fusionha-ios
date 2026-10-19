@@ -41,7 +41,11 @@ struct AccountHubSheet: View {
                                    value: liveActivity ? "On" : "Off")
                     }
                     NavigationLink {
-                        NotificationsPrefsView { close(then: .settings("notifications")) }
+                        if model.requestScoped {
+                            RequesterNotificationsPage()
+                        } else {
+                            NotificationsPrefsView { close(then: .settings("notifications")) }
+                        }
                     } label: {
                         AccountRow(icon: "bell.fill", tint: Theme.danger, title: "Notifications")
                     }

@@ -3,7 +3,8 @@ import FusionhaKit
 
 /// Requester "You" tab (`routes/Account.tsx`): a centred profile block (role
 /// avatar, name, role badge), then rows for requests made, sign-in methods,
-/// reset cache, and Sign out.
+/// reset cache, the requester's notifications (web `RequesterNotifications`),
+/// and Sign out.
 struct YouView: View {
     @Environment(AppModel.self) private var model
     @State private var requestCount = 0
@@ -37,6 +38,12 @@ struct YouView: View {
                         .discoverReveal(index: 2, step: 0.05)
                     actionRow("Reset cache & reload") { Task { await resetCache() } }
                         .discoverReveal(index: 3, step: 0.05)
+                    if model.requestScoped {
+                        RequesterNotificationsSection { message, ok in
+                            DiscoverToasts.shared.show(ok ? .success : .error, message)
+                        }
+                        .discoverReveal(index: 4, step: 0.05)
+                    }
                     row {
                         Button("Sign out") { Task { await signOut() } }
                             .buttonStyle(.discover(.danger, fullWidth: true))
