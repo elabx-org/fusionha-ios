@@ -10,10 +10,10 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `4152c68a` |
-| fusionha release | **0.4.220** (`v0.4.220`, 2026-10-19: Requests Proposal 2; `needs_you` on `/requests/counts`; "Needs an admin") |
+| fusionha commit | `64ced709` |
+| fusionha release | **0.4.222** (`v0.4.222`, 2026-10-19: solid status fills, status by wash; 0.4.221 shared palettes) |
 | Checked on | 2026-10-19 |
-| Previous sync | `82724c7b` / 0.4.217 (2026-10-19) |
+| Previous sync | `4152c68a` / 0.4.220 (2026-10-19) |
 | Last CI | build-362 on `2006eed`: green |
 | Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
 
@@ -41,6 +41,20 @@ ported and green, and nothing is half done. Still to do:
   `App/LiveActivityController.swift`).
 - The redesign migration of the remaining screens (task "Migrate every
   screen to the redesign").
+
+## 0.4.221–0.4.222 and the #54 parity audit
+
+- **0.4.221** shared palettes: `design/palettes.json` is pinned at
+  `Shared/palettes.json`; `SharedPalettesTests` asserts `PaletteTokens`
+  match it. The stored `onAccent` is gone (computed by contrast). The web's
+  mono status language (shade + pattern + glyph, `lib/status.ts`) is ported
+  as `MonoStatus` (FusionhaKit) and a Mono-aware `actWash` (B8).
+- **0.4.222** no gradient on status rails or meters, and status shown by an
+  ambient wash, never a border or a left bar. iOS did this in B2 (combo rail
+  in two solid segments, the poster attention ring now a soft glow).
+- **#54 parity audit:** `docs/parity-audit.md` (table, batches, fusionha's
+  #56 rulings). B1 blockers, B2 part 1 and B8 have shipped; B3–B7 and B9
+  (Duo unfolded) are next. The empty Queue (#53) is ported.
 
 ## 0.4.218–0.4.220: no gradients, the deck stack, Proposal 2
 
