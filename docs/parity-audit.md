@@ -407,3 +407,20 @@ What it means for the app:
 - **Q-DC8, item-detail sheet:** drop the floating ✕ over the art for the system toolbar Close?
 - **Q-DC9, toasts on the fold:** leading column, or the trailing side (HIG: alerts trailing in Book)?
 - **Q-DC10, downloads accessory:** CLAUDE.md lists a glass "downloads accessory" that doesn't exist in code. Out of scope?
+
+### Duo rulings (fusionha #60–#62, 2026-10-19)
+
+- **Start now:** blockers DC1–DC4. For DC3, keeping drafts is a data-safety item.
+- **Q-DC1 (owner, via fusionha #61):** option (b), `.toolbarTitleDisplayMode(.inlineLarge)`. Tab-root titles go in the system bar in the system face, with the toolbar items on the same row. The logo and sign-in keep the brand face. This is reversible. *Pending direct confirmation with the owner before the headers change.*
+- **Q-DC2:** the avatar toolbar item is the Plex photo (initials fallback) with the dot badge, titled "Account".
+- **Q-DC3:**
+  - Inner portrait follows the HIG's horizontal bars: no 265 pt tabs column; the tab bar stays at the bottom.
+  - Inner landscape (about 890) uses the web's desktop layouts above 720. This re-rules A1 for History, Blocklist, Wanted and Tasks there.
+- **Q-DC4:** the Library select bar becomes a system `bottomBar`.
+- **Q-DC5:** flat keeps 7 day columns. In Book pose the week switches to the list/agenda layout.
+- **Q-DC6:** Close-only sheets opt out of vertical bars.
+- **Q-DC7:** the side-to-side fold is out of scope.
+- **Q-DC8:** drop the floating ✕ on item detail; Close is a `.cancellationAction`.
+- **Q-DC9:** in Book pose, toasts sit on the trailing half, away from the hinge.
+- **Q-DC10:** fix CLAUDE.md's stale "downloads accessory" line (with the owner's OK, since CLAUDE.md is project config).
+- **#62 scope:** system toolbar and `.inlineLarge` apply to every screen: tab roots, pushed screens and sheets/forms. Sheet actions use `.cancellationAction`, `.confirmationAction` or `.primaryAction`, each with title + symbol. A D1 checklist (screen → header actions → placement and priority) follows. Exceptions are kept only for actions that must stay in content: deck Approve/Decline, row swipes, inline card buttons.
