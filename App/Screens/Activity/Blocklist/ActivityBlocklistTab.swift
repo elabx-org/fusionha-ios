@@ -3,7 +3,8 @@ import FusionhaKit
 
 // The web's Blocklist tab (`routes/activity/BlocklistTab.tsx`): insight card with
 // reason categories + Retry recoverable, category / grouping segments, toolrow,
-// grouped or flat release rows, select mode and the clear dialog.
+// grouped or flat release rows (copies sharing title + release + reason collapse
+// to one ×N row), select mode scoped to the visible rows, and the clear dialog.
 
 struct ActivityBlocklistTab: View {
     let search: String
@@ -18,6 +19,7 @@ struct ActivityBlocklistTab: View {
     @State private var selecting = false
     @State private var selected: Set<Int> = []
     @State private var clearing = false
+    @State private var releaseGroups = false
     @State private var busy = false
 
     var body: some View {
@@ -37,6 +39,8 @@ struct ActivityBlocklistTab: View {
         }
         .animation(reduce ? nil : ActMotion.rows, value: RowsKey(category: category, grouped: grouped))
         .task(id: search) {
+            // A new search invalidates the reason picked over the old rows.
+            category = nil
             let q = search
             feed.source(model.client) { c, page, size in
                 let r = try await c.blocklistPage(page: page, pageSize: size, query: q)
@@ -44,6 +48,9 @@ struct ActivityBlocklistTab: View {
             }
             await feed.reload(resetting: true)
         }
+        // Selection covers only visible rows: a filter change or a reload drops hidden ones.
+        .onChange(of: category) { selected = BlocklistGrouping.pruned(selected, visible: filtered) }
+        .onChange(of: feed.revision) { selected = BlocklistGrouping.pruned(selected, visible: filtered) }
         .onChange(of: selecting) { publishBulk() }
         .onChange(of: selected) { publishBulk() }
         .onDisappear { bulk.config = nil }
@@ -54,6 +61,14 @@ struct ActivityBlocklistTab: View {
                       confirmLabel: busy ? "Clearing…" : "Clear blocklist", busy: busy,
                       onCancel: { clearing = false },
                       onConfirm: { Task { await clearAll() } }) { EmptyView() }
+        }
+        .sheet(isPresented: $releaseGroups) {
+            NavigationStack {
+                ReleaseGroupBlocklistPanel()
+                    .navigationTitle("Release groups")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { releaseGroups = false } } }
+            }
         }
     }
 
@@ -74,24 +89,27 @@ struct ActivityBlocklistTab: View {
     /// Flat children of the page's lazy stack (one per card).
     @ViewBuilder
     private var loadedView: some View {
-        insight.padding(.bottom, 14)
+        BlocklistInsight(total: feed.total, counts: counts, busy: busy) { await retryRecoverable() }
+            .padding(.bottom, 14)
         filterBar.padding(.bottom, 8)
         toolrow.padding(.bottom, 12)
         let rows = filtered
         if rows.isEmpty {
-            ActEmpty(message: "No \(category?.label ?? "") releases in the loaded rows.")
+            ActEmpty(message: "No \(category.map { $0.label + " " } ?? "")releases in the loaded rows\(feed.hasMore ? " yet — load more below." : ".")")
         } else if grouped {
-            let groups = Self.group(rows)
+            let groups = BlocklistGrouping.titles(rows)
             let last = groups.count - 1
             ForEach(Array(groups.enumerated()), id: \.element.key) { index, group in
-                groupCard(group).actReveal(index)
+                BlocklistTitleCard(group: group) { release in row(release, nested: true) }
+                    .actReveal(index)
                     .padding(.bottom, index == last ? 0 : 10)
                     .actRowTransition(reduce)
             }
         } else {
-            let last = rows.count - 1
-            ForEach(Array(rows.enumerated()), id: \.element.id) { index, entry in
-                row(entry, nested: false, copies: [entry]).actReveal(index)
+            let groups = BlocklistGrouping.releases(rows)
+            let last = groups.count - 1
+            ForEach(Array(groups.enumerated()), id: \.element.key) { index, release in
+                row(release, nested: false).actReveal(index)
                     .padding(.bottom, index == last ? 0 : 10)
                     .actRowTransition(reduce)
             }
@@ -100,58 +118,15 @@ struct ActivityBlocklistTab: View {
                   noun: "blocklisted releases", query: search) { Task { await feed.loadMore() } }
     }
 
-    // MARK: Insight
-
-    private var insight: some View {
-        let c = counts
-        let recoverable = c[.recoverable] ?? 0
-        return VStack(alignment: .leading, spacing: 14) {
-            ActFlow(spacing: 22, lineSpacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("\(feed.total)").font(.system(size: 24, weight: .heavy)).foregroundStyle(Theme.txt)
-                        .contentTransition(.numericText(value: Double(feed.total)))
-                    Text("BLOCKLISTED · NEVER RE-GRABBED").font(.system(size: 11, weight: .semibold)).tracking(0.5).foregroundStyle(Theme.dim)
-                }
-                ForEach([BlocklistCategory.recoverable, .manual, .permanent], id: \.self) { cat in
-                    HStack(spacing: 8) {
-                        Image(systemName: cat.icon).font(.system(size: 11, weight: .semibold)).foregroundStyle(cat.color)
-                            .frame(width: 24, height: 24).background(cat.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 7))
-                        Text("\(c[cat] ?? 0)").font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
-                        Text(cat == .recoverable ? "dead NZB" : (cat == .manual ? "manual" : "bad content"))
-                            .font(.system(size: 11.5)).foregroundStyle(Theme.mut)
-                    }
-                    .padding(.horizontal, 13)
-                    .padding(.vertical, 7)
-                    .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-            }
-            if recoverable > 0 {
-                HStack(spacing: 10) {
-                    (Text("\(recoverable) dead-NZB").bold().foregroundColor(Theme.txt)
-                     + Text(" may have recovered. Retry to re-check the source"))
-                        .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
-                    Spacer(minLength: 0)
-                    ActAsyncButton(label: "Retry recoverable", kind: .amber, externalWorking: busy) {
-                        await retryRecoverable(); return true
-                    }
-                }
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
-        .background(Theme.panel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
-    }
-
     private var filterBar: some View {
         let c = counts
+        // Only the categories present get a segment (web `BLOCKLIST_FILTER_ORDER` filter).
+        let cats = [BlocklistCategory.recoverable, .manual, .permanent].filter { (c[$0] ?? 0) > 0 }
+        var options: [(BlocklistCategory?, String)] = [(nil, "All \(feed.items.count)")]
+        for cat in cats { options.append((cat, "\(cat.label) \(c[cat] ?? 0)")) }
         return VStack(alignment: .leading, spacing: 8) {
             ScrollView(.horizontal, showsIndicators: false) {
-                ActSegment(options: [(BlocklistCategory?.none, "All \(feed.items.count)"),
-                                     (.recoverable, "Dead NZB \(c[.recoverable] ?? 0)"),
-                                     (.manual, "Manual \(c[.manual] ?? 0)"),
-                                     (.permanent, "Bad content \(c[.permanent] ?? 0)")],
-                           selection: $category)
+                ActSegment(options: options, selection: $category)
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 ActSegment(options: [(true, "Group by title"), (false, "Flat list")], selection: $grouped)
@@ -176,76 +151,26 @@ struct ActivityBlocklistTab: View {
                 .buttonStyle(ActButtonStyle(kind: .ghost))
                 .foregroundStyle(Theme.danger)
                 .disabled(!search.isEmpty)
+            Button("Release groups →") { releaseGroups = true }
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Theme.accentText)
+                .buttonStyle(.plain)
         }
     }
 
-    // MARK: Groups + rows
-
-    struct TitleGroup {
-        let key: String
-        let entries: [BlocklistEntry]
-    }
-
-    static func group(_ rows: [BlocklistEntry]) -> [TitleGroup] {
-        var order: [String] = []
-        var map: [String: [BlocklistEntry]] = [:]
-        for row in rows {
-            let key = row.mediaItemId.map { "item:\($0)" } ?? "title:\(row.itemTitle ?? row.title)"
-            if map[key] == nil { order.append(key) }
-            map[key, default: []].append(row)
-        }
-        return order.map { TitleGroup(key: $0, entries: map[$0] ?? []) }
-    }
-
-    private func groupCard(_ group: TitleGroup) -> some View {
-        let lead = group.entries[0]
-        let newest = group.entries.compactMap { ActFmt.date($0.createdAt) }.max()
-        // Collapse exact duplicates (same release) into one row with ×N.
-        var copies: [String: [BlocklistEntry]] = [:]
-        var unique: [BlocklistEntry] = []
-        for e in group.entries {
-            let k = e.sourceTitle ?? e.title
-            if copies[k] == nil { unique.append(e) }
-            copies[k, default: []].append(e)
-        }
-        return ActGroupCard(wash: nil, base: Theme.panel) {
-            ActPoster(url: lead.posterUrl, title: lead.itemTitle ?? lead.title, size: .md)
-        } title: {
-            VStack(alignment: .leading, spacing: 5) {
-                Text(lead.itemTitle ?? "Unknown title").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(2)
-                    .onTapGesture { if let id = lead.mediaItemId { model.open(id) } }
-                HStack(spacing: 5) {
-                    RoundedRectangle(cornerRadius: 1).fill(Theme.danger).frame(width: 6, height: 6)
-                    Text("\(group.entries.count) blocked")
-                }
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Theme.mut)
-                .padding(.horizontal, 7).padding(.vertical, 2)
-                .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 8))
-            }
-        } trailing: {
-            Text(newest.map { ActFmt.relative($0) } ?? "").font(.system(size: 11.5, design: .monospaced)).foregroundStyle(Theme.dim)
-        } content: {
-            VStack(spacing: 0) {
-                ForEach(Array(unique.enumerated()), id: \.element.id) { index, entry in
-                    if index > 0 { Rectangle().fill(Theme.line).frame(height: 1) }
-                    row(entry, nested: true, copies: copies[entry.sourceTitle ?? entry.title] ?? [entry])
-                }
-            }
-        }
-    }
-
+    /// A collapsed ×N row acts on every copy: unblock and select cover them all,
+    /// or the release stays blocked (web `BlocklistReleaseRow` removeAll / setMany).
     @ViewBuilder
-    /// A collapsed ×N row acts on every copy: unblock and select remove them
-    /// all, or the release stays blocked (web `BlocklistTab` removeAll / setMany).
-    private func row(_ entry: BlocklistEntry, nested: Bool, copies: [BlocklistEntry]) -> some View {
-        let ids = Set(copies.map(\.id))
-        let content = BlocklistRowView(entry: entry, nested: nested, dupes: copies.count, showReasons: showReasons,
-                                       selecting: selecting, checked: selected.contains(entry.id),
-                                       unblock: { search in Task { await unblock(copies, search: search) } })
+    private func row(_ release: BlocklistGrouping.Release, nested: Bool) -> some View {
+        let ids = Set(release.ids)
+        let checked = ids.isSubset(of: selected)
+        let content = BlocklistRowView(entry: release.lead, nested: nested, copies: release.entries, showReasons: showReasons,
+                                       selecting: selecting, checked: checked,
+                                       unblock: { search in Task { await unblock(release.entries, search: search) } },
+                                       removeCopy: { copy in Task { await unblock([copy], search: false) } })
         if selecting {
             content.contentShape(Rectangle()).onTapGesture {
-                if selected.contains(entry.id) { selected.subtract(ids) } else { selected.formUnion(ids) }
+                if checked { selected.subtract(ids) } else { selected.formUnion(ids) }
             }
         } else {
             content
@@ -257,23 +182,11 @@ struct ActivityBlocklistTab: View {
     private func unblock(_ entries: [BlocklistEntry], search: Bool) async {
         guard let client = model.client, !entries.isEmpty else { return }
         do {
-            if entries.count == 1 {
-                try await client.deleteBlocklistEntry(id: entries[0].id)
-            } else {
-                try await client.deleteBlocklistEntries(ids: entries.map(\.id))
-            }
+            try await BlocklistOps.remove(client, entries, search: search)
             if reduce { feed.remove { e in entries.contains { $0.id == e.id } } } else {
                 withAnimation(ActMotion.rows) { feed.remove { e in entries.contains { $0.id == e.id } } }
             }
-            if search {
-                var keys = Set<String>()
-                for e in entries {
-                    guard let item = e.mediaItemId else { continue }
-                    let key = "\(item)-\(e.editionId ?? -1)-\(e.episodeId ?? -1)"
-                    guard keys.insert(key).inserted else { continue }
-                    try? await client.runSearch(itemId: item, editionId: e.editionId, episodeId: e.episodeId)
-                }
-            }
+            selected.subtract(entries.map(\.id))
             if entries.count == 1 {
                 toaster.show(search ? "Un-blocklisted, searching for a replacement" : "Removed from the blocklist", tone: .success)
             } else {
@@ -290,14 +203,7 @@ struct ActivityBlocklistTab: View {
         busy = true
         defer { busy = false }
         do {
-            try await client.deleteBlocklistEntries(ids: recoverable.map(\.id))
-            var keys = Set<String>()
-            for e in recoverable {
-                guard let item = e.mediaItemId else { continue }
-                let key = "\(item)-\(e.editionId ?? -1)-\(e.episodeId ?? -1)"
-                guard keys.insert(key).inserted else { continue }
-                try? await client.runSearch(itemId: item, editionId: e.editionId, episodeId: e.episodeId)
-            }
+            try await BlocklistOps.remove(client, recoverable, search: true)
             toaster.show("Un-blocklisted \(recoverable.count) dead-NZB release\(recoverable.count == 1 ? "" : "s") — re-searching", tone: .success)
             await feed.refreshLoaded()
         } catch {
@@ -329,11 +235,8 @@ struct ActivityBlocklistTab: View {
             onSelectAll: { selected = Set(filtered.map(\.id)) },
             actions: [
                 ActBulk.Action(label: "Remove from blocklist", kind: .danger, disabled: count == 0) {
-                    let chosen = feed.items.filter { selected.contains($0.id) }
-                    Task {
-                        await unblock(chosen, search: false)
-                        selected = []
-                    }
+                    let chosen = filtered.filter { selected.contains($0.id) }
+                    Task { await unblock(chosen, search: false) }
                 },
             ])
     }

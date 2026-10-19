@@ -3,7 +3,7 @@ import FusionhaKit
 
 /// How one queue card renders (web `card-mode.ts`). Held has its own card
 /// (`QueueHeldCard`); every other mode is a `QueueStateCard`.
-enum QueueCardMode: Equatable {
+enum QueueCardMode: Hashable {
     case held, stuck, failed, retrying, importing, phase, bytes, waiting, other
 
     init(_ item: QueueItem) {

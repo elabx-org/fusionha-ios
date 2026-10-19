@@ -91,7 +91,7 @@ struct WantedView: View {
                 } else {
                     overview.padding(.top, 14).padding(.bottom, 16)
                     filterBar
-                    lead.padding(.top, 10).padding(.bottom, 14)
+                    WantedLead(tab: tab).padding(.top, 10).padding(.bottom, 14)
                     if tab == .fourk { fourkList } else { wantedList }
                 }
             }
@@ -213,45 +213,26 @@ struct WantedView: View {
         .padding(.bottom, 8)
     }
 
-    /// The web's Search all: every state-matching title (500 cap, honouring the
-    /// search box), then the per-item engine search on each unique title.
+    /// Search all, then a toast and a reload (the web invalidates the feed).
     private func searchAll() async {
         guard let client = model.client, let state = tab.state else { return }
         searchingAll = true
         defer { searchingAll = false }
         do {
-            let page = try await client.wantedPage(state: state, page: 1, pageSize: 500, query: search)
-            var seen = Set<Int>()
-            let ids = page.items.map(\.id).filter { seen.insert($0).inserted }
-            try await withThrowingTaskGroup(of: Void.self) { group in
-                for id in ids { group.addTask { try await client.runSearch(itemId: id) } }
-                try await group.waitForAll()
-            }
+            let n = try await WantedLogic.searchAll(client, state: state, query: search)
+            toaster.show(n == 0 ? "Nothing to search." : "Searching \(ActFmt.plural(n, "title"))…",
+                         tone: n == 0 ? .warning : .success)
         } catch {
             toaster.error(error)
         }
+        // Counts and cards move as soon as the engine grabs: reload, like the web's invalidation.
+        await reloadAll()
     }
 
-    // MARK: Lead
-
-    private var lead: some View {
-        let dot = Text(Image(systemName: Theme.isMono ? tab.token.symbol : "circle.fill")).font(.system(size: Theme.isMono ? 9 : 6)).foregroundColor(tab.accent).baselineOffset(1.5)
-        let b: (String) -> Text = { Text($0).foregroundColor(Theme.txt).bold() }
-        let text: Text
-        switch tab {
-        case .missing:
-            text = Text("Monitored versions with ") + b("no file yet") + Text(" — ") + dot + Text(" missing. Search runs the engine across every monitored version.")
-        case .cutoff:
-            text = Text("A file exists but sits ") + b("below the profile cutoff") + Text(" — ") + dot + Text(" an upgrade is wanted. Search looks for a release that meets cutoff.")
-        case .upcoming:
-            text = Text("Movies ") + b("awaiting a release") + Text(" — ") + dot + Text(" in cinemas, or announced, but not yet out on digital/physical for your profile. (Upcoming ") + Text("episodes").italic() + Text(" live on the Calendar.)")
-        case .fourk:
-            text = Text("Titles you already own in ") + b("HD") + Text(" for which a genuine 2160p release has been ") + b("observed") + Text(" on your indexers — ") + dot + Text(" nothing is grabbed automatically. (This is ") + b("observe-only") + Text(": it reports what has been spotted during normal searches, off by default until turned on in Settings.)")
-        }
-        return text
-            .font(.system(size: 12.5))
-            .foregroundStyle(Theme.mut)
-            .fixedSize(horizontal: false, vertical: true)
+    /// The media empty state's playful one-liner (web `emptyQuip`), off in Plain voice.
+    private var emptyQuip: String? {
+        guard settings?.voicePlayful ?? true else { return nil }
+        return VoiceQuip.mediaSuffix(kind: .movie, title: tab.rawValue, outcome: .noRelease)
     }
 
     // MARK: Lists
@@ -263,7 +244,11 @@ struct WantedView: View {
         } else if feed.error != nil && feed.items.isEmpty {
             ActEmpty(message: "The wanted list could not be loaded. Check the backend and try again.")
         } else if feed.items.isEmpty {
-            ActEmpty(message: search.isEmpty ? tab.emptyMessage : "No wanted titles match “\(search)”.")
+            if search.isEmpty {
+                ActEmpty(message: tab.emptyMessage, quip: emptyQuip)
+            } else {
+                ActEmpty(message: "No wanted titles match “\(search)”.")
+            }
         } else {
             // Flat: each card is a direct child of the page's lazy stack (a nested
             // LazyVStack made every scroll step re-measure the whole list).
@@ -290,7 +275,8 @@ struct WantedView: View {
                 let observer = settings?.uhdAvailableObserverEnabled
                 ActEmpty(message: observer == true
                          ? "Observing — nothing 4K spotted yet. Genuine 2160p releases seen during your normal searches will show up here."
-                         : (observer == false ? "The 4K observer is off — turn it on to start spotting 4K." : "Nothing spotted yet."))
+                         : (observer == false ? "The 4K observer is off — turn it on to start spotting 4K." : "Nothing spotted yet."),
+                         quip: emptyQuip)
                 if observer == false {
                     ObserverButton { await enableObserver() }
                         .frame(maxWidth: .infinity)
@@ -317,22 +303,5 @@ struct WantedView: View {
         } catch {
             toaster.error(error)
         }
-    }
-}
-
-/// "Turn on observing" (ghost, 4K-tinted).
-struct ObserverButton: View {
-    let action: () async -> Void
-    @State private var busy = false
-
-    var body: some View {
-        Button {
-            busy = true
-            Task { await action(); busy = false }
-        } label: {
-            Text(busy ? "Turning on…" : "Turn on observing").foregroundStyle(QualityTier.uhd.color)
-        }
-        .buttonStyle(ActButtonStyle(kind: .ghost))
-        .disabled(busy)
     }
 }

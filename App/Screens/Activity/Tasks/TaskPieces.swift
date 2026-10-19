@@ -89,9 +89,12 @@ struct TaskNameLine: View {
     }
 }
 
-/// `TaskLine`: the coloured fact segments joined by " · ".
+/// `TaskLine`: the coloured fact segments joined by " · ", then (Playful) the
+/// media one-liner, never on a queued run.
 struct TaskFactLine: View {
     let run: ActivityRun
+    var playful = false
+    var queued = false
 
     var body: some View {
         let parts = TasksLogic.factParts(run)
@@ -104,6 +107,9 @@ struct TaskFactLine: View {
             } else {
                 text = text + Text(part.text)
             }
+        }
+        if let quip = TaskVoice.quip(run, playful: playful, queued: queued) {
+            text = text + Text("  — ").foregroundColor(Theme.dim) + Text(quip).italic().foregroundColor(Theme.dim)
         }
         return text
             .font(.system(size: 12.5))

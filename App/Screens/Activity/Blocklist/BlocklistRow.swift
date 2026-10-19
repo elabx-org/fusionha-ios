@@ -6,11 +6,14 @@ import FusionhaKit
 struct BlocklistRowView: View {
     let entry: BlocklistEntry
     let nested: Bool
-    let dupes: Int
+    /// Every copy sharing title + release + reason (the lead first).
+    let copies: [BlocklistEntry]
     let showReasons: Bool
     let selecting: Bool
     let checked: Bool
     let unblock: (_ search: Bool) -> Void
+    /// Un-blocklists one copy of a ×N row.
+    let removeCopy: (BlocklistEntry) -> Void
     @Environment(AppModel.self) private var model
     @Environment(ActToaster.self) private var toaster
     @Environment(\.actReduceMotion) private var reduce
@@ -38,12 +41,12 @@ struct BlocklistRowView: View {
                         .foregroundStyle(cat.color)
                         .padding(.horizontal, 6).padding(.vertical, 1)
                         .background(cat.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
-                        if dupes > 1 {
-                            Text("×\(dupes)").font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(Theme.mut)
+                        if copies.count > 1 {
+                            Text("×\(copies.count)").font(.system(size: 11, weight: .bold, design: .monospaced)).foregroundStyle(Theme.mut)
                         }
                     }
                     if showReasons, let reason = entry.reason {
-                        Text(reason).font(.system(size: 11)).foregroundStyle(Theme.mut)
+                        Text(FailureCopy.format(reason, context: .blocklist).detail).font(.system(size: 11)).foregroundStyle(Theme.mut)
                     } else {
                         Text(entry.sourceTitle ?? entry.title)
                             .font(.system(size: 11, design: .monospaced))
@@ -97,8 +100,9 @@ struct BlocklistRowView: View {
     private var details: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let reason = entry.reason {
-                Text(reason).font(.system(size: 12)).foregroundStyle(Theme.txt)
-                Text(reason).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.mut)
+                let fail = FailureCopy.format(reason, context: .blocklist)
+                Text(fail.detail).font(.system(size: 12)).foregroundStyle(Theme.txt)
+                Text(fail.raw).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.mut)
                     .padding(6).frame(maxWidth: .infinity, alignment: .leading)
                     .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 6))
             }
@@ -109,6 +113,7 @@ struct BlocklistRowView: View {
                     }
                 }
             }
+            if copies.count > 1 { copiesList }
             if let guid = entry.guid {
                 HStack(spacing: 6) {
                     Text(guid).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim).lineLimit(1).truncationMode(.middle)
@@ -124,6 +129,34 @@ struct BlocklistRowView: View {
     }
 }
 
+extension BlocklistRowView {
+    /// Each collapsed copy with its own remove (web `blocklist-copies`).
+    var copiesList: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(copies) { copy in
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(copy.sourceTitle ?? copy.title).font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(Theme.txt).lineLimit(1).truncationMode(.middle)
+                        Text([copy.indexer ?? copy.source ?? "—", ActFmt.relative(copy.createdAt),
+                              copy.size.map { ActFmt.bytes($0) }].compactMap { $0 }.joined(separator: " · "))
+                            .font(.system(size: 11)).foregroundStyle(Theme.dim)
+                    }
+                    Spacer(minLength: 0)
+                    Button { removeCopy(copy) } label: {
+                        Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
+                            .frame(width: 32, height: 32).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Remove copy \(copy.id) from blocklist")
+                }
+            }
+        }
+        .padding(8)
+        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
 struct BlocklistWash: ViewModifier {
     let nested: Bool
     let tone: StatusTone
@@ -132,9 +165,7 @@ struct BlocklistWash: ViewModifier {
         if nested && Theme.isMono {
             content.background(MonoWash(token: tone.mono, color: tone.color, radius: 0))
         } else if nested {
-            content.background(
-                LinearGradient(stops: [.init(color: tone.color.opacity(0.10), location: 0), .init(color: tone.color.opacity(0), location: 0.42)],
-                               startPoint: .leading, endPoint: .trailing))
+            content.background(tone.color.opacity(0.06))
         } else {
             content.actWash(tone)
         }

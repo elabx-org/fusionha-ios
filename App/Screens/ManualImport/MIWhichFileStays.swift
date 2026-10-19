@@ -1,116 +1,132 @@
 import SwiftUI
 import FusionhaKit
 
-/// "Which file stays?" (the web's `WhichFileStays`): the file on disk and this
-/// file side by side; tap the one you want. "This file" is bound to the file
-/// on screen; "Current" never expires. A held upgrade shows This file
-/// preselected (display only, nothing is sent).
+/// "Which file stays?" (the web's `WhichFileStays`, ruling R9: its column
+/// pick): the file on disk and this file as two columns; tap a column's head
+/// or any of its values to keep that file. "This file" is bound to the file on
+/// screen; "Current" never expires. A held upgrade shows This file selected
+/// (display only, nothing is sent).
 struct MIWhichFileStays: View {
     let row: ManualImportRow
     let pending: Bool
     let onPick: (String) -> Void
     @State private var showAll = false
 
+    private enum Column: String { case keep = "keep_current", take = "import" }
+
     private var current: ManualImportExistingFile? { row.existingFile }
     private var worse: Bool { current?.verdict.map { $0.upgrade != true } ?? (row.held != nil) }
-    private var selection: String? {
-        row.replaceChoice ?? (row.held != nil && current != nil && !worse ? "import" : nil)
+    private var selection: Column? {
+        (row.replaceChoice ?? (row.held != nil && current != nil && !worse ? "import" : nil)).flatMap(Column.init)
     }
 
     var body: some View {
         let rows = ManualImportCompare.whichFileRows(row) ?? []
         let changed = rows.filter(\.changed)
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Which file stays?").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.txt)
-            HStack(spacing: 8) {
-                choice("keep_current", icon: "internaldrive", tint: Theme.dim, title: "Current",
-                       sub: "\(current?.releaseGroup ?? "on disk") · on disk")
-                choice("import", icon: worse ? "arrow.down" : "arrow.up", tint: worse ? Theme.danger : Theme.done,
-                       title: "This file", sub: "\(row.parsed.releaseGroup ?? "new") · \(worse ? "downgrade" : "upgrade")")
+        let shown = showAll ? rows : changed
+        VStack(alignment: .leading, spacing: 8) {
+            Text("WHICH FILE STAYS?").font(.system(size: 12, weight: .semibold)).tracking(0.7).foregroundStyle(Theme.dim)
+            Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 0) {
+                GridRow {
+                    Color.clear.frame(width: 1, height: 1).gridCellUnsizedAxes([.horizontal, .vertical])
+                    head(.keep, last: shown.isEmpty)
+                    head(.take, last: shown.isEmpty)
+                }
+                ForEach(Array(shown.enumerated()), id: \.element.label) { i, r in
+                    GridRow {
+                        Text(r.label).font(.system(size: 12)).foregroundStyle(Theme.dim)
+                            .frame(minWidth: 76, alignment: .leading)
+                        cell(.keep, last: i == shown.count - 1) { Text(r.current).foregroundStyle(Theme.txt) }
+                        cell(.take, last: i == shown.count - 1) { incoming(r) }
+                    }
+                }
+            }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Which file stays?")
+            if rows.count > changed.count {
+                Button(showAll ? "Show fewer" : "Show all \(rows.count)") { showAll.toggle() }
+                    .buttonStyle(ActButtonStyle(kind: .ghost))
             }
             if rows.isEmpty {
                 Text("Both files are compared once they're measured.").font(.footnote).foregroundStyle(Theme.mut)
-            } else {
-                MICompareGrid(rows: showAll ? rows : changed)
-                if rows.count > changed.count {
-                    Button(showAll ? "Show fewer" : "Show all \(rows.count)") { showAll.toggle() }
-                        .buttonStyle(ActButtonStyle(kind: .ghost))
-                }
             }
             Text(hint).font(.footnote).foregroundStyle(Theme.mut).fixedSize(horizontal: false, vertical: true)
         }
+        .padding(12)
+        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .opacity(pending ? 0.6 : 1)
         .sensoryFeedback(.selection, trigger: row.replaceChoice)
     }
 
     private var hint: String {
         let group = current?.releaseGroup ?? "current"
         switch selection {
-        case "import": return worse ? "This file replaces your \(group) file, a downgrade on the rows marked with a down arrow." : "This file replaces your \(group) file."
-        case "keep_current": return "Your \(group) file stays. This one is skipped\(row.held != nil ? ", and the download is removed when you finish" : "")."
-        default: return "Tap the file you want to keep in your library."
+        case .take: return worse ? "This file replaces your \(group) file, a downgrade on the rows marked with a down arrow." : "This file replaces your \(group) file."
+        case .keep: return "Your \(group) file stays. This one is skipped\(row.held != nil ? ", and the download is removed when you finish" : "")."
+        case nil: return "Tap the file you want to keep in your library."
         }
     }
 
-    private func choice(_ value: String, icon: String, tint: Color, title: String, sub: String) -> some View {
-        let on = selection == value
-        return Button { if !pending, row.replaceChoice != value { onPick(value) } } label: {
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Image(systemName: icon).foregroundStyle(tint)
-                    Text(title).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
-                    Spacer(minLength: 0)
-                    Image(systemName: on ? "largecircle.fill.circle" : "circle")
-                        .foregroundStyle(on ? Theme.i1 : Theme.dim)
-                }
-                Text(sub).font(.system(size: 11.5)).foregroundStyle(Theme.mut).lineLimit(1)
+    /// The selected column's colour: neutral for Current, amber for a downgrade, green for an upgrade.
+    private func tint(_ column: Column) -> Color {
+        column == .keep ? Theme.txt : worse ? Theme.miss : Theme.done
+    }
+
+    private func head(_ column: Column, last: Bool) -> some View {
+        let on = selection == column
+        let keep = column == .keep
+        let shape = UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: last ? 12 : 0,
+                                           bottomTrailingRadius: last ? 12 : 0, topTrailingRadius: 12, style: .continuous)
+        return Button { pick(column) } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Image(systemName: keep ? "internaldrive" : worse ? "arrow.down" : "arrow.up")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(keep ? Theme.dim : worse ? Theme.danger : Theme.done)
+                    .frame(width: 24, height: 24)
+                    .background((keep ? Theme.dim : worse ? Theme.danger : Theme.done).opacity(0.14),
+                                in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .padding(.bottom, 3)
+                Text(keep ? "Current" : "This file").font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
+                Text(keep ? "\(current?.releaseGroup ?? "on disk") · on disk"
+                          : "\(row.parsed.releaseGroup ?? "new") · \(worse ? "downgrade" : "upgrade")")
+                    .font(.system(size: 11)).foregroundStyle(Theme.dim).lineLimit(1)
             }
-            .padding(10)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.panel2, in: RoundedRectangle(cornerRadius: Theme.radiusSm, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.radiusSm, style: .continuous)
-                .strokeBorder(on ? Theme.i1 : Theme.line, lineWidth: on ? 1.5 : 1))
+            .padding(.horizontal, 8).padding(.top, 9).padding(.bottom, 8)
+            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+            .background(on ? tint(column).opacity(keep ? 0.07 : 0.12) : .clear, in: shape)
+            .overlay(shape.stroke(on ? tint(column) : Theme.line, lineWidth: on ? 1.5 : 1))
+            .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .opacity(pending ? 0.6 : 1)
-        .accessibilityAddTraits(on ? .isSelected : [])
+        .accessibilityLabel(keep ? "Current file" : "This file")
+        .accessibilityAddTraits(on ? [.isSelected] : [])
     }
-}
 
-/// Current vs this file, one attribute a line; this file's value carries the direction.
-struct MICompareGrid: View {
-    let rows: [ManualImportCompare.WhichRow]
-
-    var body: some View {
-        Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 5) {
-            ForEach(rows, id: \.label) { r in
-                GridRow {
-                    Text(r.label).foregroundStyle(Theme.mut)
-                    Text(r.current).foregroundStyle(Theme.txt)
-                    HStack(spacing: 3) {
-                        if r.tone != .same {
-                            Image(systemName: r.tone == .up ? "arrow.up" : "arrow.down").font(.system(size: 11, weight: .bold))
-                        }
-                        Text(r.incoming)
-                    }
-                    .foregroundStyle(r.tone == .up ? Theme.done : r.tone == .down ? Theme.danger : Theme.txt)
-                }
-                .font(.system(size: 12.5))
-            }
-        }
+    private func cell<Content: View>(_ column: Column, last: Bool, @ViewBuilder content: () -> Content) -> some View {
+        let on = selection == column
+        let shape = UnevenRoundedRectangle(bottomLeadingRadius: last ? 12 : 0, bottomTrailingRadius: last ? 12 : 0, style: .continuous)
+        return content()
+            .font(.system(size: 12.5, design: .monospaced))
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(on ? tint(column).opacity(column == .keep ? 0.07 : 0.12) : .clear, in: shape)
+            .contentShape(Rectangle())
+            .onTapGesture { pick(column) }
+            .accessibilityHidden(true)
     }
-}
 
-/// The upgrade compare (no choice to make): the changed attributes only.
-struct MICompareTable: View {
-    let row: ManualImportRow
-    let title: String
-
-    var body: some View {
-        if let rows = ManualImportCompare.whichFileRows(row), !rows.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.txt)
-                MICompareGrid(rows: rows.filter(\.changed))
+    @ViewBuilder private func incoming(_ r: ManualImportCompare.WhichRow) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            if r.tone != .same {
+                Image(systemName: r.tone == .up ? "arrow.up" : "arrow.down").font(.system(size: 11, weight: .bold))
             }
+            Text(r.incoming)
         }
+        .foregroundStyle(r.tone == .up ? Theme.done : r.tone == .down ? Theme.miss : Theme.txt)
+    }
+
+    private func pick(_ column: Column) {
+        guard !pending, row.replaceChoice != column.rawValue else { return }
+        onPick(column.rawValue)
     }
 }

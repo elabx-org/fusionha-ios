@@ -9,6 +9,8 @@ struct BlockReleaseGroupSheet: View {
     let mediaItemId: Int
     let title: String
     let claimedResolution: Int?
+    /// The measured size, e.g. "640×480".
+    var probedSize: String? = nil
 
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -22,8 +24,9 @@ struct BlockReleaseGroupSheet: View {
         NavigationStack {
             Form {
                 Section {
+                    Text(lead).font(.subheadline).foregroundStyle(Theme.txt)
                     if let evidence {
-                        Text("\(evidence.mislabeledCount) of \(evidence.probedCount) probed \(group) releases were fakes.")
+                        Text(MislabelFacts.proofSentence(group: group, count: evidence.mislabeledCount))
                             .font(.subheadline).foregroundStyle(Theme.mut)
                     }
                     Picker("Block", selection: $scope) {
@@ -34,7 +37,7 @@ struct BlockReleaseGroupSheet: View {
                     .pickerStyle(.inline)
                     .labelsHidden()
                 }
-                if scope != .release {
+                if scope != .release, canCustomFormat {
                     Section {
                         Toggle("Add a custom format", isOn: $customFormat)
                     } footer: {
@@ -56,7 +59,7 @@ struct BlockReleaseGroupSheet: View {
                     Text(error).foregroundStyle(Theme.danger).font(.footnote)
                 }
             }
-            .navigationTitle("Block release group?")
+            .navigationTitle("Block \(group)?")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
@@ -70,10 +73,20 @@ struct BlockReleaseGroupSheet: View {
         .presentationDetents([.medium, .large])
     }
 
+    private var canCustomFormat: Bool { model.me?.can("quality.manage") == true }
+
+    /// The dialog's lead (web `BlockGroupDialog`).
+    private var lead: String {
+        let claimed = claimedResolution.map { "\($0)p" } ?? "a higher resolution"
+        let files = probedSize.map { ", but the files are \($0)" } ?? ", but the files are smaller"
+        return "\(group) labelled these releases \(claimed)\(files). This release is already blocklisted. "
+            + "Decide whether to stop grabbing the group's releases too."
+    }
+
     private var lines: [String] {
         HeldCopy.consequences(scope, group: group, title: title,
                               otherTitles: evidence?.otherTitles.map(\.title) ?? [],
-                              withCustomFormat: customFormat && scope != .release)
+                              withCustomFormat: customFormat && scope != .release && canCustomFormat)
     }
 
     private func loadEvidence() async {
@@ -86,7 +99,7 @@ struct BlockReleaseGroupSheet: View {
         working = true
         defer { working = false }
         do {
-            _ = try await client.blockReleaseGroup(group, scope: scope, mediaItemId: mediaItemId, createCustomFormat: customFormat)
+            _ = try await client.blockReleaseGroup(group, scope: scope, mediaItemId: mediaItemId, createCustomFormat: customFormat && canCustomFormat)
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             model.toast(HeldCopy.scopeLabel(scope, group: group, title: title), title: "Release group blocked", variant: .success)
             dismiss()

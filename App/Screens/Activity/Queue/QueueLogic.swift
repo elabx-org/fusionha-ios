@@ -122,37 +122,6 @@ enum QueueLogic {
         return meta.note
     }
 
-    // The hero's stage buckets.
-    static let heroStages = ["Queued", "Parsing", "Processed", "Linking", "Caching", "Importing"]
-
-    static func heroBucket(_ phase: String) -> Int {
-        switch phase {
-        case "queued": return 0
-        case "parsing", "downloading": return 1
-        case "processed": return 2
-        case "linking": return 3
-        case "caching", "probing", "validating": return 4
-        default: return 5
-        }
-    }
-
-    static func stageDistribution(_ items: [QueueItem]) -> [Int] {
-        var d = Array(repeating: 0, count: heroStages.count)
-        for item in items where item.lane != .retrying {
-            if item.isPhaseMode, let phase = item.phase { d[heroBucket(phase)] += 1 } else if item.isBytePreparing { d[0] += 1 }
-        }
-        return d
-    }
-
-    static func workingFailed(_ items: [QueueItem]) -> (working: Int, failed: Int) {
-        var working = 0, failed = 0
-        for item in items {
-            if item.lane == .retrying { failed += 1; continue }
-            if item.isPhaseMode || item.isBytePreparing { working += 1 }
-        }
-        return (working, failed)
-    }
-
     /// Several downloads on one card (fusionha 0.4.194, `queue-groups.ts`):
     /// a pair is one title + episode in two or more versions (4K + HD), a lane
     /// each; a group is separate downloads of one title + version, collapsed by
@@ -297,21 +266,5 @@ enum QueueLogic {
         let shownFailed = Array(failed.prefix(5))
         let shown = shownFailed + Array(imported.prefix(max(0, 5 - shownFailed.count)))
         return (shown, groups.count - shown.count)
-    }
-
-    /// `queueWashStatus`: a status tone, so Monochrome draws its pattern.
-    static func wash(_ item: QueueItem) -> StatusTone {
-        let queued = StatusTone(color: Theme.dim)
-        switch item.cockpitState {
-        case .held: return StatusTone(.stuck)
-        case .stuck: return StatusTone(.danger)
-        case .stalled: return StatusTone(.stuck)
-        case .importing: return StatusTone(.grab)
-        case .queued: return queued
-        default:
-            if item.phase == "error" || (item.phaseTerminal == true && item.phase != "complete") { return StatusTone(.stuck) }
-            if item.phase == "queued" { return queued }
-            return StatusTone(.grab)
-        }
     }
 }

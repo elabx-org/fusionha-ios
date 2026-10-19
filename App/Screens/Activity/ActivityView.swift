@@ -74,9 +74,12 @@ final class ActChrome {
     var searchInput = ""
     var search = ""
 
+    /// `?item_id=` (+ `?q=` as its label): History scoped to one title (web `item-filter.ts`).
+    var itemFilter: HistoryItemFilter?
+
     init(tab: ActivityTab) { self.tab = tab }
 
-    var searchable: Bool { tab == .queue || tab == .history || tab == .blocklist }
+    var searchable: Bool { tab == .queue || tab == .history || tab == .blocklist || tab == .audit }
 }
 
 private struct ActTabsNamespaceKey: EnvironmentKey {
@@ -125,7 +128,7 @@ struct ActivityView: View {
             switch chrome.tab {
             case .queue: ActivityQueueTab(search: chrome.search)
             case .wanted: WantedView(embedded: true)
-            case .history: ActivityHistoryTab(search: chrome.search)
+            case .history: ActivityHistoryTab(search: chrome.search, itemId: chrome.itemFilter?.itemId)
             case .blocklist: ActivityBlocklistTab(search: chrome.search)
             case .tasks: ActivityTasksTab()
             case .audit: ActivityAuditTab(search: chrome.search)
@@ -189,6 +192,14 @@ struct ActivityView: View {
             chrome.tab = tab
             model.pendingActivityTab = nil
         }
+        .onChange(of: model.pendingHistoryFilter, initial: true) {
+            // `fusionha://activity/history?item_id=…&q=…` (an issue thread's History strip).
+            guard let filter = model.pendingHistoryFilter else { return }
+            model.pendingHistoryFilter = nil
+            chrome.itemFilter = filter
+            chrome.searchInput = ""
+            chrome.tab = .history
+        }
         .onChange(of: model.pendingRescueIds, initial: true) {
             guard let ids = model.pendingRescueIds, !ids.isEmpty else { return }
             model.pendingRescueIds = nil
@@ -217,87 +228,5 @@ struct ActivityPage<Content: View>: View {
             .padding(.bottom, bulk.config == nil ? 90 : 190)
         }
         .scrollDismissesKeyboard(.immediately)
-    }
-}
-
-/// The header (title, live caption, Manual import, search) and the tab strip.
-/// Reads the polled queue counts itself, so a queue tick re-renders only this.
-struct ActivityPageHeader: View {
-    @Environment(AppModel.self) private var model
-    @Environment(ActChrome.self) private var chrome
-    @Environment(ActRouter.self) private var router
-    @Environment(\.actTabsNamespace) private var tabsNamespace
-
-    private var visibleTabs: [ActivityTab] {
-        var tabs: [ActivityTab] = [.queue, .history, .wanted, .blocklist, .tasks]
-        if model.me?.hasPermission("system.admin") == true { tabs.append(.audit) }
-        if model.me?.hasPermission("integrations.manage") == true { tabs.append(.indexers) }
-        return tabs
-    }
-
-    var body: some View {
-        @Bindable var chrome = chrome
-        let held = model.queueHeld
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                ShellTitleRow("Activity") {
-                    Button {
-                        router.manualImport()
-                    } label: {
-                        ViewThatFits(in: .horizontal) {
-                            Label("Manual import", systemImage: "square.and.arrow.down")
-                                .padding(.horizontal, 14)
-                            Image(systemName: "square.and.arrow.down")
-                                .frame(width: 36)
-                        }
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.txt)
-                        .frame(height: 36)
-                        .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .glassControl()
-                    .accessibilityLabel("Manual import")
-                    if model.me?.isAdmin == true { QueuePauseButton() }
-                }
-                Text(caption(held: held))
-                    .font(.system(size: 15))
-                    .foregroundStyle(Theme.mut)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                // "Review all N" is Needs you's own outline button now (0.4.198).
-                if chrome.searchable {
-                    ActSearch(placeholder: "Search by title…", text: $chrome.searchInput)
-                }
-            }
-            .padding(.bottom, 20)
-            ActTabs(items: visibleTabs.map { t in
-                ActTabs<ActivityTab>.Item(value: t, label: label(t),
-                                          badge: t == .queue ? model.queueTotal : 0,
-                                          badgeColor: held > 0 ? Theme.miss : Theme.grab,
-                                          badgeInk: Theme.onFill(hex: held > 0 ? Theme.palette.miss : Theme.palette.grab))
-            }, selection: $chrome.tab, namespace: tabsNamespace)
-            .padding(.bottom, 20)
-        }
-    }
-
-    private func label(_ t: ActivityTab) -> String {
-        switch t {
-        case .queue: return "Queue"
-        case .wanted: return "Wanted"
-        case .history: return "History"
-        case .blocklist: return "Blocklist"
-        case .tasks: return "Tasks"
-        case .audit: return "Audit"
-        case .indexers: return "Indexers"
-        }
-    }
-
-    private func caption(held: Int) -> String {
-        let downloading = max(0, model.queueTotal - held)
-        var parts: [String] = []
-        if downloading > 0 { parts.append("\(downloading) downloading · live") }
-        if held > 0 { parts.append("\(held) need manual import") }
-        return parts.isEmpty ? "No active downloads" : parts.joined(separator: " · ")
     }
 }

@@ -61,6 +61,20 @@ enum WantedTab: String, CaseIterable, Hashable {
 
 /// The web's per-edition state vocabulary on the Wanted wire.
 enum WantedLogic {
+    /// The web's Search all: every state-matching title (500 cap, honouring the
+    /// search box), then the per-item engine search on each unique title.
+    /// Returns how many titles were searched.
+    static func searchAll(_ client: APIClient, state: WantedState, query: String) async throws -> Int {
+        let page = try await client.wantedPage(state: state, page: 1, pageSize: 500, query: query)
+        var seen = Set<Int>()
+        let ids = page.items.map(\.id).filter { seen.insert($0).inserted }
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for id in ids { group.addTask { try await client.runSearch(itemId: id) } }
+            try await group.waitForAll()
+        }
+        return ids.count
+    }
+
     static func stateColor(_ state: String) -> Color { WantedStateToken.token(state).color }
 
     static func stateTone(_ state: String) -> StatusTone { StatusTone(WantedStateToken.token(state)) }

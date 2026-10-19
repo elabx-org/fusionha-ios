@@ -70,20 +70,28 @@ struct ActivityTasksTab: View {
     @Environment(ActToaster.self) private var toaster
     @Environment(\.actReduceMotion) private var reduce
     @State private var store = TasksStore()
+    /// The `?focus=<run_id>` deep-link target, kept while the tab shows.
+    @State private var focusRunId: Int?
 
     var body: some View {
         let _ = PerfCount.hit("ActivityTasksTab.body")
-        let feed = store.feed
         ActivityPage {
-            if !feed.loaded && feed.error == nil {
-                ActEmpty(message: "Loading the task feed…")
-            } else if feed.error != nil && feed.items.isEmpty {
-                ActEmpty(message: "The task feed could not be loaded. Check the backend and try again.")
+            if let focus = focusRunId {
+                // Only a focus link pays for the reader (it wraps the lazy rows).
+                ScrollViewReader { proxy in
+                    VStack(alignment: .leading, spacing: 0) { pageContent }
+                        .task(id: store.feed.loaded) { await scroll(proxy, to: focus) }
+                }
             } else {
-                loadedView
+                pageContent
             }
         }
-        .animation(reduce ? nil : ActMotion.rows, value: feed.items.filter { $0.status == "running" }.map(\.id))
+        .onChange(of: model.pendingTaskFocus, initial: true) {
+            guard let id = model.pendingTaskFocus else { return }
+            model.pendingTaskFocus = nil
+            focusRunId = id
+        }
+        .animation(reduce ? nil : ActMotion.rows, value: store.feed.items.filter { $0.status == "running" }.map(\.id))
         .task {
             store.isAdmin = model.me?.hasPermission("system.admin") == true
             await store.load(model.client)
@@ -91,6 +99,28 @@ struct ActivityTasksTab: View {
             while await ActivityPoll.next(after: .seconds(store.anyRunning ? 2 : 15), model: model) {
                 await store.refresh(model.client)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var pageContent: some View {
+        let feed = store.feed
+        if !feed.loaded && feed.error == nil {
+            ActEmpty(message: "Loading the task feed…")
+        } else if feed.error != nil && feed.items.isEmpty {
+            ActEmpty(message: "The task feed could not be loaded. Check the backend and try again.")
+        } else {
+            loadedView
+        }
+    }
+
+    private func scroll(_ proxy: ScrollViewProxy, to runId: Int) async {
+        guard store.feed.loaded else { return }
+        try? await Task.sleep(for: .milliseconds(350))
+        if reduce {
+            proxy.scrollTo(TaskFocus.scrollId(runId), anchor: .center)
+        } else {
+            withAnimation(.easeInOut(duration: 0.35)) { proxy.scrollTo(TaskFocus.scrollId(runId), anchor: .center) }
         }
     }
 
@@ -119,7 +149,12 @@ struct ActivityTasksTab: View {
             if showSystem {
                 sectionLabel("System")
                 VStack(spacing: 10) {
-                    if showEnrichment, let enrich { EnrichmentCard(status: enrich) }
+                    if showEnrichment, let enrich {
+                        EnrichmentCard(status: enrich)
+                        if let subs = enrich.subtasks, !subs.isEmpty {
+                            EnrichmentSubtasksView(subtasks: subs) { await store.refresh(model.client) }
+                        }
+                    }
                     if let rssTask { RssSyncCard(task: rssTask, latestRun: items.first { $0.trigger == "rss" }) }
                     if let watchlists { WatchlistsTaskCard(summary: watchlists) }
                     if !scheduled.isEmpty { ScheduledCard(tasks: scheduled) }
@@ -134,6 +169,8 @@ struct ActivityTasksTab: View {
                 VStack(spacing: 9) {
                     ForEach(searchRuns) { run in
                         SearchRunCard(run: run) { Task { await store.refresh(model.client) } }
+                            .taskFocusFlash(run.id == focusRunId)
+                            .id(TaskFocus.scrollId(run.id))
                             .actRowTransition(reduce)
                     }
                 }
@@ -142,7 +179,8 @@ struct ActivityTasksTab: View {
                 sectionLabel("Scanning").padding(.top, showSystem || !searchRuns.isEmpty ? 22 : 0)
                 VStack(spacing: 9) {
                     ForEach(scanning) { run in
-                        RunningRow(run: run, queued: false, playful: store.playful).actRowTransition(reduce)
+                        RunningRow(run: run, queued: false, playful: store.playful, focused: run.id == focusRunId)
+                            .actRowTransition(reduce)
                     }
                 }
             }
@@ -150,7 +188,8 @@ struct ActivityTasksTab: View {
                 sectionLabel("Queued (\(queued.count))").padding(.top, !searchRuns.isEmpty || !scanning.isEmpty ? 22 : 0)
                 VStack(spacing: 9) {
                     ForEach(queued) { run in
-                        RunningRow(run: run, queued: true, playful: store.playful).actRowTransition(reduce)
+                        RunningRow(run: run, queued: true, playful: store.playful, focused: run.id == focusRunId)
+                            .actRowTransition(reduce)
                     }
                 }
             }
@@ -164,7 +203,7 @@ struct ActivityTasksTab: View {
                 sectionLabel("Recent").padding(.top, !running.isEmpty || showSystem ? 22 : 0)
                 if folded { WatchlistsFoldedNote() }
                 ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
-                    RecentGroupView(group: group, tasks: store.tasks)
+                    RecentGroupView(group: group, tasks: store.tasks, playful: store.playful, focusRunId: focusRunId)
                         .actReveal(index, stagger: 0.03)
                         .padding(.bottom, index == last ? 0 : 9)
                         .background(alignment: .topLeading) {

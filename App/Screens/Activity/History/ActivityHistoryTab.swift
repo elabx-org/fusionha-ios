@@ -9,7 +9,9 @@ import FusionhaKit
 
 struct ActivityHistoryTab: View {
     let search: String
+    var itemId: Int? = nil
     @Environment(AppModel.self) private var model
+    @Environment(ActChrome.self) private var chrome
     @Environment(ActToaster.self) private var toaster
     @Environment(\.actReduceMotion) private var reduce
     @State private var feed = ActFeed<HistoryEntry> { _, _ in ([], 0) }
@@ -22,6 +24,9 @@ struct ActivityHistoryTab: View {
     var body: some View {
         let _ = PerfCount.hit("ActivityHistoryTab.body")
         ActivityPage {
+            if let filter = chrome.itemFilter {
+                HistoryItemFilterChip(filter: filter) { chrome.itemFilter = nil }.padding(.bottom, 12)
+            }
             if (!feed.loaded && feed.error == nil) || (derived.revision < 0 && !feed.items.isEmpty) {
                 ActEmpty(message: "Loading history…")
             } else if feed.error != nil && feed.items.isEmpty {
@@ -36,11 +41,11 @@ struct ActivityHistoryTab: View {
         // Filter switches animate; page appends don't (animating a whole page's
         // insertion made the lazy stack build every new row at once).
         .animation(reduce ? nil : ActMotion.rows, value: RowsKey(filter: storyFilter, raw: raw))
-        .task(id: search) {
+        .task(id: "\(search)|\(itemId ?? 0)") {
             let client = model.client
-            let q = search
+            let q = search, item = itemId
             feed.source(client) { c, page, size in
-                let r = try await c.historyPage(page: page, pageSize: size, query: q)
+                let r = try await c.historyPage(page: page, pageSize: size, query: q, itemId: item)
                 return (r.items, r.total)
             }
             await feed.reload(resetting: true)

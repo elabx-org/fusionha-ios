@@ -11,6 +11,8 @@ public enum LooseValue: Decodable, Sendable, Hashable {
     case number(Double)
     case bool(Bool)
     case null
+    /// A nested object (e.g. a HELD row's `probed_resolution {w, h}`).
+    case object([String: LooseValue])
     case other
 
     public init(from decoder: Decoder) throws {
@@ -19,6 +21,7 @@ public enum LooseValue: Decodable, Sendable, Hashable {
         else if let v = try? c.decode(Bool.self) { self = .bool(v) }
         else if let v = try? c.decode(Double.self) { self = .number(v) }
         else if let v = try? c.decode(String.self) { self = .string(v) }
+        else if let v = try? c.decode([String: LooseValue].self) { self = .object(v) }
         else { self = .other }
     }
 
@@ -27,7 +30,7 @@ public enum LooseValue: Decodable, Sendable, Hashable {
         case .string(let s): return s
         case .number(let n): return n.rounded() == n ? String(Int(n)) : String(n)
         case .bool(let b): return b ? "true" : "false"
-        case .null, .other: return nil
+        case .null, .object, .other: return nil
         }
     }
 }
@@ -36,9 +39,22 @@ extension Dictionary where Key == String, Value == LooseValue {
     /// Looks a value up by its wire key (the decoder may have camel-cased it).
     public func text(_ snakeKey: String) -> String? {
         if let v = self[snakeKey]?.text { return v }
+        return self[Self.camel(snakeKey)]?.text
+    }
+
+    static func camel(_ snakeKey: String) -> String {
         let parts = snakeKey.split(separator: "_")
-        let camel = parts.enumerated().map { $0.offset == 0 ? String($0.element) : $0.element.capitalized }.joined()
-        return self[camel]?.text
+        return parts.enumerated().map { $0.offset == 0 ? String($0.element) : $0.element.capitalized }.joined()
+    }
+
+    /// The raw value under a wire key, snake or camel-cased.
+    public func value(_ snakeKey: String) -> LooseValue? {
+        self[snakeKey] ?? self[Self.camel(snakeKey)]
+    }
+
+    public func number(_ snakeKey: String) -> Double? {
+        if case .number(let n)? = value(snakeKey), n.isFinite { return n }
+        return nil
     }
 }
 
@@ -203,6 +219,9 @@ public struct RunCandidate: Decodable, Sendable, Identifiable, Hashable {
     public let indexer: String?
     public let quality: String?
     public let cfScore: Int?
+    /// The custom formats behind `cf_score` (#163); empty or absent on historical rows.
+    public let matched: [CFTestMatch]?
+    public let versionId: Int?
     public let action: String
     public let reason: String
     public let blocklisted: Bool?
@@ -210,6 +229,8 @@ public struct RunCandidate: Decodable, Sendable, Identifiable, Hashable {
 
 public struct CommandRunDetail: Decodable, Sendable {
     public let id: Int
+    /// The run's title, whose versions' profiles judged each candidate.
+    public let itemId: Int?
     public let candidates: [RunCandidate]
     // The run's live state (the gradual-search strip polls this).
     public let status: String?
@@ -239,8 +260,18 @@ public struct ActivityEnrichmentStatus: Decodable, Sendable {
     public let issues: [EnrichmentIssue]?
 }
 
+/// One per-import analysis nested under the global sweep (`SessionEnrichmentSubtaskRead`).
 public struct EnrichmentSubtask: Decodable, Sendable, Hashable {
     public let importSessionId: Int?
+    public let label: String?
+    /// `active` · `paused` · `cancelled`
+    public let control: String?
+    /// `analyzing` · `complete` · `paused` · `cancelled`
+    public let state: String?
+    public let total: Int?
+    public let enriched: Int?
+    public let pending: Int?
+    public let issue: Int?
 }
 
 /// The two settings the Activity / Wanted screens flip (`GET/PUT /api/v1/settings`).

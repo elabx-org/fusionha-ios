@@ -104,8 +104,10 @@ struct ItemDetailView: View {
             store.client = model.client
             store.queue = model.queue
             applyScreenshotEnvironment()
+            applyPendingTab()
             await store.load()
         }
+        .onChange(of: model.pendingDetailTab) { applyPendingTab() }
         .onChange(of: model.queue) { store.queue = model.queue }
         .onChange(of: store.deleted) {
             guard store.deleted else { return }
@@ -191,6 +193,12 @@ struct ItemDetailView: View {
         .background(Theme.bg.opacity(0.82))
         .glassEffect(.regular, in: .rect)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
+    }
+
+    private func applyPendingTab() {
+        guard let tab = model.pendingDetailTab else { return }
+        model.pendingDetailTab = nil
+        store.tab = tab
     }
 
     // MARK: CI screenshots

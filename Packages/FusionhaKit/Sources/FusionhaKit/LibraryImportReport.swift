@@ -15,7 +15,16 @@ public struct LibraryImportTaskView: Sendable, Hashable {
     public let issueCount: Int
 
     public init(_ task: LibraryImportEnrichment) {
-        let raw = task.state ?? ""
+        self.init(state: task.state, total: task.total, enriched: task.enriched, issue: task.issue)
+    }
+
+    /// A per-import analysis nested under Tasks › Media enrichment.
+    public init(_ sub: EnrichmentSubtask) {
+        self.init(state: sub.state, total: sub.total, enriched: sub.enriched, issue: sub.issue)
+    }
+
+    init(state rawState: String?, total rawTotal: Int?, enriched rawEnriched: Int?, issue rawIssue: Int?) {
+        let raw = rawState ?? ""
         let known = ["complete", "paused", "cancelled"]
         state = known.contains(raw) ? raw : "analyzing"
         switch state {
@@ -24,15 +33,15 @@ public struct LibraryImportTaskView: Sendable, Hashable {
         case "cancelled": stateLabel = "Cancelled"
         default: stateLabel = "Analyzing"
         }
-        let total = max(0, task.total ?? 0)
-        let enriched = min(max(0, task.enriched ?? 0), total)
+        let total = max(0, rawTotal ?? 0)
+        let enriched = min(max(0, rawEnriched ?? 0), total)
         if state == "complete" {
             percent = 100
         } else {
             percent = total > 0 ? min(100, Int((Double(enriched) / Double(total) * 100).rounded())) : 0
         }
         progressLabel = "Analyzing \(LibraryImportRules.grouped(enriched)) of \(LibraryImportRules.grouped(total)) files"
-        issueCount = max(0, task.issue ?? 0)
+        issueCount = max(0, rawIssue ?? 0)
     }
 
     public var isAnalyzing: Bool { state == "analyzing" }

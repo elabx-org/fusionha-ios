@@ -13,7 +13,6 @@ struct QueueStateCard: View {
     var nested = false
     /// A lane of a 4K + HD pair: the version leads, not the shared episode.
     var pairLane = false
-    var soonest = false
     @Environment(AppModel.self) private var model
 
     private var mode: QueueCardMode { QueueCardMode(item) }
@@ -108,10 +107,9 @@ struct QueueStateBody: View {
                 ActIndeterminateBar(color: Theme.done, height: 3)
             case .retrying:
                 let at = item.stages?.current.map { " · at \(QueueRail.stageLabel($0).lowercased())" } ?? ""
-                reason("Retrying" + at, failure)
+                reason("Retrying" + at, failure.detail)
             case .failed:
-                let at = item.stages?.current.map { "Failed at \(QueueRail.stageLabel($0).lowercased())" } ?? "Failed"
-                reason(at, failure)
+                reason(failure.title, [failure.detail, failure.sub].compactMap { $0 }.joined(separator: " "))
             case .stuck:
                 reason("No release left to try", item.nextStep ?? "every candidate was tried or blocklisted")
             case .phase, .held:
@@ -120,20 +118,15 @@ struct QueueStateBody: View {
             if [.bytes, .waiting, .other].contains(mode), let next = item.nextStep {
                 Text(next).font(.system(size: 14)).foregroundStyle(Theme.mut)
             }
-            if item.hasPackDecisions {
-                QueuePackDecisionsView(item: item)
-            } else if let ranges = item.packRanges {
-                QueuePackLine(item: item, ranges: ranges)
-            }
-            if item.hasPackDecisions || item.packRanges != nil {
-                QueuePackEpisodesList(downloadId: item.id, fileCount: item.fileCount)
-            }
+            if QueuePackSection.shows(item) { QueuePackSection(item: item) }
         }
     }
 
     private var client: String { item.downloadClient ?? "The download client" }
 
-    private var failure: String? { item.terminalReason ?? item.step ?? item.warning }
+    private var failure: FailureCopy.Formatted {
+        FailureCopy.format(item.terminalReason ?? item.step ?? item.warning, context: .download)
+    }
 
     private var rail: QueueRailModel {
         switch mode {

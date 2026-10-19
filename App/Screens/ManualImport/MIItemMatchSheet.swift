@@ -2,13 +2,18 @@ import SwiftUI
 import FusionhaKit
 
 /// Match to library item (web `ItemMatchDialog`): search the library and
-/// attach this file to another title (an `item_id` override).
+/// attach this file, or every file of a title (Re-match), to another title
+/// (an `item_id` override per row).
 struct MIItemMatchSheet: View {
-    let row: ManualImportRow
+    let rows: [ManualImportRow]
+    private var row: ManualImportRow { rows[0] }
     @Environment(AppModel.self) private var model
     @Environment(ManualImportSession.self) private var session
     @Environment(\.dismiss) private var dismiss
     @State private var term = ""
+
+    init(row: ManualImportRow) { rows = [row] }
+    init(rows: [ManualImportRow]) { self.rows = rows }
 
     private var matches: [MediaItem] {
         let q = term.trimmingCharacters(in: .whitespaces).lowercased()
@@ -23,7 +28,7 @@ struct MIItemMatchSheet: View {
                     ForEach(matches) { item in
                         Button {
                             Task {
-                                await session.patch(row, ["item_id": .int(item.id)])
+                                for r in rows where !r.committed { await session.patch(r, ["item_id": .int(item.id)]) }
                                 if item.kind == .series { await session.loadSeasons(itemId: item.id) }
                                 dismiss()
                             }

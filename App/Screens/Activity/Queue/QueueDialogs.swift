@@ -34,9 +34,17 @@ struct RemoveQueueDialog: View {
     }
 }
 
+/// One download listed in a group's "Remove all" confirm.
+struct BulkRemoveEntry: Hashable {
+    let label: String
+    let size: Double
+}
+
 struct BulkRemoveDialog: View {
     let count: Int
     let fileCount: Int
+    /// When given, the confirm lists every download and the total size.
+    var entries: [BulkRemoveEntry] = []
     let defaultBlocklist: Bool
     let busy: Bool
     let onConfirm: (_ deleteFiles: Bool, _ blocklist: Bool) -> Void
@@ -51,6 +59,7 @@ struct BulkRemoveDialog: View {
                   confirmLabel: parts.isEmpty ? "Remove \(count)" : "Remove and " + parts.joined(separator: " and "),
                   busy: busy, onCancel: onCancel,
                   onConfirm: { onConfirm(deleteFiles && fileCount > 0, blocklist) }) {
+            if !entries.isEmpty { entryList }
             if fileCount > 0 {
                 ActOption(label: "Also delete the downloaded file\(count == 1 ? "" : "s") from disk (\(fileCount) of \(count) on disk)",
                           isOn: $deleteFiles)
@@ -60,5 +69,28 @@ struct BulkRemoveDialog: View {
         }
         // Pre-ticked only when every row has a file on disk (web BulkRemoveDialog).
         .onAppear { blocklist = defaultBlocklist; deleteFiles = fileCount > 0 && fileCount >= count }
+    }
+
+    /// "4 downloads · 4.7 GB total", then each download and its size.
+    private var entryList: some View {
+        let total = entries.reduce(0) { $0 + max(0, $1.size) }
+        return VStack(alignment: .leading, spacing: 6) {
+            Text("\(ActFmt.plural(entries.count, "download")) · \(ActFmt.bytes(total)) total")
+                .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(Array(entries.enumerated()), id: \.offset) { _, entry in
+                        HStack(spacing: 8) {
+                            Text(entry.label).font(.system(size: 13)).foregroundStyle(Theme.txt).lineLimit(1)
+                            Spacer(minLength: 4)
+                            Text(ActFmt.bytes(entry.size)).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.mut)
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: 180)
+        }
+        .padding(10)
+        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
