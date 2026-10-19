@@ -32,20 +32,16 @@ struct MIRowView: View {
         .padding(.vertical, 10)
         .padding(.trailing, 12)
         .padding(.leading, 4)
-        .background {
-            let shape = RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-            shape.fill(Theme.panel).overlay(shape.fill(wash))
-        }
-        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line))
+        .actWash(wash, radius: Theme.radius, base: Theme.panel)
     }
 
-    /// A faint status wash over the solid row (content stays solid, never glass).
-    private var wash: Color {
-        guard !row.committed else { return .clear }
+    /// A status wash over the solid row (content stays solid, never glass).
+    private var wash: StatusTone? {
+        guard !row.committed else { return nil }
         switch row.status {
-        case "no_match": return Theme.danger.opacity(0.07)
-        case "needs_attention": return Theme.miss.opacity(0.06)
-        default: return .clear
+        case "no_match": return StatusTone(.danger)
+        case "needs_attention": return StatusTone(.miss)
+        default: return nil
         }
     }
 

@@ -19,11 +19,13 @@ final class ManualImportSession {
     var rowErrors: [Int: String] = [:]
     var rowWarnings: [Int: String] = [:]
     var importMode: ManualImportMode = .auto
+    /// The verdict strip's filter; Select all picks only what it shows.
+    var filter: ManualImportFilter = .all
     /// A commit or finish in flight.
     var working = false
     /// Rows with an override in flight.
     private(set) var pendingRows: Set<Int> = []
-    private(set) var bulkBusy = false
+    var bulkBusy = false
     private(set) var probeStalled = false
     /// A folder scan in flight.
     private(set) var scanning = false
@@ -202,9 +204,8 @@ final class ManualImportSession {
 
     // MARK: Probes
 
-    /// Fills late probes while any are pending: backs off 2, 4, 8, then 15 s
-    /// without progress, pauses during a commit, and stalls after two minutes
-    /// with no progress (`retryProbes` starts again).
+    /// Fills late probes while any are pending: backs off 2, 4, 8, then 15 s without
+    /// progress, pauses during a commit, stalls after two minutes (`retryProbes` restarts).
     func pollProbes() async {
         guard let client, let scanId = scan?.scanId else { return }
         var noProgress = 0
