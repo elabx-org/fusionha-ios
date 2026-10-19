@@ -17,7 +17,7 @@ struct AddDetailsRoute: Hashable {
 /// the configure step (Add title v2, `AddConfigView`) sets up each version and
 /// `POST /api/v1/library`. "View details" pushes the title's preview inside
 /// the sheet with a zoom from the hero, and "Continue adding" zooms back to
-/// the same configure state. Requester accounts get a Request flow instead.
+/// the same configure state. Requester accounts get the request sheet instead.
 struct AddTitleSheet: View {
     /// Open straight on this title's configure step (Discover, a preview page).
     var initialPick: AddPick?
@@ -86,15 +86,15 @@ struct AddTitleSheet: View {
                           onClose: { dismiss() }, onAdded: { added($0, flow: flow) },
                           zoom: flow.pick.tmdbResult == nil ? nil : (id: heroZoomId(flow), namespace: zoomSpace))
                 .id(flow.pick.key)
+        } else if let requestPick {
+            // A requester's pick goes through the one request path (web
+            // `RequestModal`): versions, seasons, quota and the wishlist.
+            RequestModal(pick: requestPick) { Task { await model.refreshShell() } }
+                .id(requestPick.id)
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    if let requestPick {
-                        header(title: "Request title", sub: "Pick the quality to request")
-                        RequestConfigurator(result: requestPick) { dismiss() }
-                    } else {
-                        searchStep
-                    }
+                    searchStep
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 22)

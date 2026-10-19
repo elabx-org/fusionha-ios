@@ -46,57 +46,6 @@ struct LibraryResultRow: View {
     }
 }
 
-/// A TMDB result row with Add (or Request, for requesters) / In library.
-struct SearchResultRow: View {
-    @Environment(AppModel.self) private var model
-    let result: MediaSearchResult
-    @State private var requested = false
-
-    var body: some View {
-        HStack(spacing: 12) {
-            PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w154"))
-                .frame(width: 44, height: 66)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            VStack(alignment: .leading, spacing: 4) {
-                Text(result.title).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                HStack(spacing: 6) {
-                    if let year = result.year { Text(String(year)) }
-                    if result.isAnime { AnimeChip() } else { KindGlyph(kind: result.kind) }
-                }
-                .font(.system(size: 12)).foregroundStyle(Theme.mut)
-            }
-            Spacer(minLength: 0)
-            action
-        }
-    }
-
-    @ViewBuilder
-    private var action: some View {
-        if result.inLibrary, let id = model.libraryItemId(for: result), !model.requestScoped {
-            Button("Open ↗") { model.open(id) }
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(Theme.mut)
-                .buttonStyle(.plain)
-        } else if model.requestScoped {
-            Button(requested ? "Requested" : "Request") {
-                Task {
-                    try? await model.client?.request(MediaRequestCreate(tmdbId: result.tmdbId, kind: result.kind, tier: .hd))
-                    requested = true
-                }
-            }
-            .font(.system(size: 13, weight: .bold))
-            .buttonStyle(.bordered)
-            .tint(Theme.indigo)
-            .disabled(requested || result.inLibrary)
-        } else {
-            Button("Add") { model.addPrefill = result; model.showingAdd = true }
-                .font(.system(size: 13, weight: .bold))
-                .buttonStyle(.bordered)
-                .tint(Theme.indigo)
-        }
-    }
-}
-
 extension Bundle {
     var appVersion: String {
         let short = infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"

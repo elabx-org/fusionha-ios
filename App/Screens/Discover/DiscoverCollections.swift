@@ -85,7 +85,7 @@ struct CollectionCard: View {
                 .background(Theme.card)
                 .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Theme.line))
-                .shadow(color: .black.opacity(0.55), radius: 12, y: 12)
+                .shadow(color: Theme.shelfShadow.opacity(0.6), radius: 12, y: 12)
                 .overlay(alignment: .topLeading) {
                     CollectionRingBadge(owned: collection.ownedCount, total: collection.totalCount).padding(8)
                 }
@@ -109,7 +109,7 @@ struct CollectionRingBadge: View {
     var body: some View {
         let fraction = total > 0 ? Double(owned) / Double(total) : 0
         ZStack {
-            Circle().stroke(Theme.txt.opacity(0.18), lineWidth: 3.5)
+            Circle().stroke(Theme.onScrim.opacity(0.18), lineWidth: 3.5)
             Circle()
                 .trim(from: 0, to: fraction)
                 .stroke(Theme.done, style: StrokeStyle(lineWidth: 3.5, lineCap: .butt))
@@ -119,15 +119,15 @@ struct CollectionRingBadge: View {
             } else {
                 Text(verbatim: "\(owned)/\(total)")
                     .font(.system(size: 11, weight: .bold).monospacedDigit())
-                    .foregroundStyle(Theme.txt)
+                    .foregroundStyle(Theme.onScrim)
                     .lineLimit(1).minimumScaleFactor(0.7)
             }
         }
         .padding(1.75)
         .frame(width: 33, height: 33)
         .background(Theme.scrim.opacity(0.92), in: Circle())
-        .overlay(Circle().strokeBorder(.white.opacity(0.16)))
-        .shadow(color: .black.opacity(0.75), radius: 7, y: 4)
+        .overlay(Circle().strokeBorder(Theme.plateLine))
+        .shadow(color: Theme.shelfShadow.opacity(0.8), radius: 7, y: 4)
         .accessibilityLabel("\(owned) of \(total) owned")
     }
 }

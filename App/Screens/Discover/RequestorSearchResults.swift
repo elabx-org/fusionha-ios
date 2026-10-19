@@ -5,6 +5,7 @@ import FusionhaKit
 
 struct RequestorSearchResults: View {
     @Environment(AppModel.self) private var model
+    @Environment(DiscoverStore.self) private var store
     let term: String
     let kind: SearchKind
     let canAdd: Bool
@@ -32,6 +33,7 @@ struct RequestorSearchResults: View {
                 state = .loaded(try await client.search(term: term, kind: kind))
             } catch is CancellationError {
             } catch {
+                store.railFailed(error)
                 state = .failed
             }
         }

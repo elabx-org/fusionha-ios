@@ -85,17 +85,44 @@ public enum RequestOffer {
         }
     }
 
-    /// "Me too on HD·1080p · free · New request for UHD·4K · uses 1 of your quota".
-    public static func summary(_ picks: [(tier: QualityTier, act: Act)], limited: Bool) -> String {
-        [Act.join, .watch, .new].compactMap { act -> String? in
+    /// One clause of the demand summary: the act words (bold on screen) and the rest.
+    public struct SummaryPart: Equatable, Sendable {
+        public let lead: String
+        public let rest: String
+    }
+
+    /// "**Me too** on HD·1080p · free", "**New request** for UHD·4K · uses 1 of
+    /// your quota", in join, watch, new order (web `ActSummary`).
+    public static func summaryParts(_ picks: [(tier: QualityTier, act: Act)], limited: Bool) -> [SummaryPart] {
+        [Act.join, .watch, .new].compactMap { act -> SummaryPart? in
             let tiers = picks.filter { $0.act == act }.map(\.tier.chipLabel)
             guard !tiers.isEmpty else { return nil }
+            let list = tiers.joined(separator: " + ")
             switch act {
-            case .new: return "New request for \(tiers.joined(separator: " + "))\(limited ? " · uses \(tiers.count) of your quota" : "")"
-            case .join: return "Me too on \(tiers.joined(separator: " + ")) · free"
-            case .watch: return "Watch on \(tiers.joined(separator: " + ")) · free"
+            case .new:
+                return SummaryPart(lead: "New request", rest: " for \(list)\(limited ? " · uses \(tiers.count) of your quota" : "")")
+            case .join: return SummaryPart(lead: "Me too", rest: " on \(list) · free")
+            case .watch: return SummaryPart(lead: "Watch", rest: " on \(list) · free")
             }
-        }.joined(separator: " · ")
+        }
+    }
+
+    /// "Me too on HD·1080p · free · New request for UHD·4K · uses 1 of your quota".
+    public static func summary(_ picks: [(tier: QualityTier, act: Act)], limited: Bool) -> String {
+        summaryParts(picks, limited: limited).map { $0.lead + $0.rest }.joined(separator: " · ")
+    }
+
+    /// The art pane's facts line (web `RequestModalArt`): the year, then a
+    /// movie's runtime or a series' season count (Specials included).
+    public static func artFacts(year: Int?, isSeries: Bool, runtime: Int?, seasonCount: Int?) -> String? {
+        var parts: [String] = []
+        if let year { parts.append(String(year)) }
+        if isSeries {
+            if let seasonCount { parts.append("\(seasonCount) season\(seasonCount == 1 ? "" : "s")") }
+        } else if let runtime, runtime > 0 {
+            parts.append("\(runtime) min")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     public static let joinedToast = "Joined · everyone is notified when it lands"

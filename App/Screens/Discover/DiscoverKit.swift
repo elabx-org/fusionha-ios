@@ -10,11 +10,10 @@ import FusionhaKit
 enum DiscoverPalette {
     /// The hard-coded search/segment well in Discover's CSS.
     static var well: Color { Theme.bg }
-    /// `color-mix(--i2 45%, --txt)`: the active segment text.
-    static var activeText: Color { Theme.txt }
-    static let activeRing = Color.clear
-    static let tmdb = Color(hex: 0x01B4E4)
-    static let tvdb = Color(hex: 0x4FB862)
+    /// `color-mix(--i1 14%, transparent)`: the selected segment's wash.
+    static var activeWash: Color { Theme.i1.opacity(0.14) }
+    /// `inset 0 0 0 1px color-mix(--i1 50%, --line)`: its edge.
+    static var activeEdge: Color { Theme.i1.mix(with: Theme.line, by: 0.5) }
 }
 
 // MARK: DiscoverMotion
@@ -89,6 +88,9 @@ struct DiscoverSegmented<Value: Hashable>: View {
     var size: Size = .sm
     /// Inside a flex-column panel the track stretches; segments stay left-aligned.
     var fullTrack = false
+    /// The phone kind lens (`DiscoverBrowseControls.module.css`): the track
+    /// spans the width in equal segments, labels centred.
+    var fill = false
 
     var body: some View {
         HStack(spacing: size == .md ? 4 : 3) {
@@ -100,14 +102,16 @@ struct DiscoverSegmented<Value: Hashable>: View {
                 } label: {
                     Text(options[index].1)
                         .font(.system(size: size == .md ? 15 : 13, weight: .semibold))
-                        .foregroundStyle(selected ? DiscoverPalette.activeText : Theme.mut)
+                        .foregroundStyle(selected ? Theme.accentText : Theme.mut)
                         .lineLimit(1)
                         .fixedSize()
-                        .padding(.horizontal, size == .md ? 16 : 11)
+                        .padding(.horizontal, fill ? 6 : (size == .md ? 16 : 11))
                         .padding(.vertical, size == .md ? 9 : 7)
+                        .frame(maxWidth: fill ? .infinity : nil, minHeight: 32)
                         .background {
                             if selected {
-                                Capsule().fill(Theme.txt.opacity(0.16))
+                                Capsule().fill(DiscoverPalette.activeWash)
+                                    .overlay(Capsule().strokeBorder(DiscoverPalette.activeEdge, lineWidth: 1))
                                     .matchedGeometryEffect(id: "seg", in: indicator)
                             }
                         }
@@ -145,8 +149,8 @@ struct DiscoverTabs<Value: Hashable>: View {
                         Text(options[index].1)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(selected ? Theme.onInk : Theme.mut)
-                        if let badge = options[index].2, badge > 0 {
-                            Text("\(badge)")
+                        if let badge = options[index].2.flatMap(BadgeCount.text) {
+                            Text(verbatim: badge)
                                 .font(.system(size: 11, weight: .bold).monospacedDigit())
                                 .foregroundStyle(Theme.onAccent)
                                 .padding(.horizontal, 5)

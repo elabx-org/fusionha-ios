@@ -45,7 +45,7 @@ struct RequestModal: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 0) {
-                    artPane
+                    RequestModalArt(pick: pick, preview: preview)
                     optionsPane
                 }
             }
@@ -86,66 +86,6 @@ struct RequestModal: View {
         previewLoaded = true
     }
 
-    // MARK: Art pane
-
-    private var artPane: some View {
-        let kindColor = pick.kind == .movie ? Theme.kindMovie : Theme.kindSeries
-        return VStack(spacing: 12) {
-            Text(pick.kind == .movie ? "MOVIE · REQUEST" : "SERIES · REQUEST")
-                .font(.system(size: 11, weight: .bold))
-                .tracking(0.5)
-                .foregroundStyle(kindColor)
-                .padding(.horizontal, 9).padding(.vertical, 3)
-                .background(kindColor.opacity(0.15), in: Capsule())
-            Color.clear
-                .aspectRatio(2 / 3, contentMode: .fit)
-                .frame(maxWidth: 190)
-                .overlay { DiscoverArt(url: TMDBImage.resized(preview?.posterUrl ?? pick.posterUrl, to: "w780")) }
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
-                .shadow(color: .black.opacity(0.5), radius: 16, y: 12)
-            Text(preview?.title ?? pick.title)
-                .font(.system(size: 20, weight: .heavy)).tracking(-0.2)
-                .foregroundStyle(Theme.txt)
-                .multilineTextAlignment(.center)
-            if let facts {
-                Text(facts).font(.system(size: 12.5)).foregroundStyle(Theme.mut)
-            }
-            if let genres = preview?.genres, !genres.isEmpty {
-                HStack(spacing: 6) {
-                    ForEach(genres.prefix(4), id: \.self) { genre in
-                        Text(genre).font(.system(size: 11)).foregroundStyle(Theme.dim)
-                            .padding(.horizontal, 9).padding(.vertical, 2)
-                            .overlay(Capsule().strokeBorder(Theme.line))
-                    }
-                }
-            }
-            if let overview = preview?.overview ?? pick.overview, !overview.isEmpty {
-                Text(overview).font(.system(size: 12)).foregroundStyle(Theme.dim)
-                    .lineSpacing(3).lineLimit(6)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 20).padding(.top, 46).padding(.bottom, 20)
-        .background(LinearGradient(colors: [kindColor.opacity(pick.kind == .movie ? 0.10 : 0.12), .clear],
-                                   startPoint: .top, endPoint: .bottom))
-        .background(Theme.panel)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
-    }
-
-    private var facts: String? {
-        var parts: [String] = []
-        if let year = preview?.year ?? pick.displayYear { parts.append(String(year)) }
-        if isSeries {
-            let count = (preview?.seasons ?? []).filter { $0.seasonNumber > 0 }.count
-            if count > 0 { parts.append(count == 1 ? "1 season" : "\(count) seasons") }
-        } else if let runtime = preview?.runtime, runtime > 0 {
-            parts.append("\(runtime) min")
-        }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
-    }
-
     // MARK: Options pane
 
     private var optionsPane: some View {
@@ -155,7 +95,8 @@ struct RequestModal: View {
                 DialogSectionLabel(text: "Versions")
                 editions
             }
-            if isSeries {
+            // Nothing on offer: no seasons to scope (web `isSeries && !nothingOfferable`).
+            if isSeries && !nothingOfferable {
                 VStack(alignment: .leading, spacing: 10) {
                     DialogSectionLabel(text: "Seasons & episodes")
                     RequestSeasonPicker(pick: pick, preview: preview, loaded: previewLoaded,
@@ -257,12 +198,25 @@ struct RequestModal: View {
 
     // MARK: Footer
 
-    private var summary: String {
+    /// The footer line; a tagged ask bolds its act words (web `ActSummary`).
+    private var summary: Text {
+        if picks.contains(where: { $0.act != .new }), offer != nil, !nothingOfferable {
+            var line = Text(verbatim: "")
+            for (index, part) in RequestOffer.summaryParts(picks, limited: quota?.limit != nil).enumerated() {
+                let lead: Text = Text(verbatim: part.lead).fontWeight(.bold).foregroundColor(Theme.txt)
+                let gap: Text = Text(verbatim: index > 0 ? " · " : "")
+                line = line + gap + lead + Text(verbatim: part.rest)
+            }
+            return line
+        }
+        return Text(verbatim: summaryLine)
+    }
+
+    private var summaryLine: String {
         if offer == nil && !offerFailed { return "Checking what you can request…" }
         if offerFailed { return "Could not check available versions." }
         if nothingOfferable { return "Nothing to request — you already have every version you can access." }
         if editionsToSend.isEmpty { return "Select a version" }
-        if picks.contains(where: { $0.act != .new }) { return RequestOffer.summary(picks, limited: quota?.limit != nil) }
         let tiers = editionsToSend.map(\.chipLabel).joined(separator: " + ")
         let title = preview?.title ?? pick.title
         guard isSeries else { return "Requesting \(title) · \(tiers)" }
@@ -285,7 +239,7 @@ struct RequestModal: View {
             let label = RequestOffer.submitLabel(picks.map(\.act))
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(summary).font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineLimit(3)
+                    summary.font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineLimit(3)
                     RequestQuotaMini(quota: quota)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)

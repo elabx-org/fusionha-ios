@@ -31,6 +31,28 @@ final class RequestOfferTests: XCTestCase {
         XCTAssertEqual(RequestOffer.summary([(.uhd, .watch)], limited: false), "Watch on UHD·4K · free")
     }
 
+    func testSummaryPartsLeadWithTheActWords() {
+        let parts = RequestOffer.summaryParts([(.uhd, .new), (.hd, .join)], limited: false)
+        XCTAssertEqual(parts.map(\.lead), ["Me too", "New request"])
+        XCTAssertEqual(parts.map(\.rest), [" on HD·1080p · free", " for UHD·4K"])
+    }
+
+    func testArtFactsCountSpecials() {
+        XCTAssertEqual(RequestOffer.artFacts(year: 2024, isSeries: true, runtime: nil, seasonCount: 3), "2024 · 3 seasons")
+        XCTAssertEqual(RequestOffer.artFacts(year: nil, isSeries: true, runtime: 50, seasonCount: 1), "1 season")
+        XCTAssertEqual(RequestOffer.artFacts(year: 2020, isSeries: false, runtime: 118, seasonCount: 2), "2020 · 118 min")
+        XCTAssertEqual(RequestOffer.artFacts(year: 2020, isSeries: false, runtime: 0, seasonCount: nil), "2020")
+        XCTAssertNil(RequestOffer.artFacts(year: nil, isSeries: false, runtime: nil, seasonCount: nil))
+    }
+
+    func testBadgeCountCapsAt99() {
+        XCTAssertNil(BadgeCount.text(0))
+        XCTAssertNil(BadgeCount.text(-2))
+        XCTAssertEqual(BadgeCount.text(7), "7")
+        XCTAssertEqual(BadgeCount.text(99), "99")
+        XCTAssertEqual(BadgeCount.text(100), "99+")
+    }
+
     func testDecodesDemandWithDefaults() throws {
         let json = #"[{"tmdb_id":5,"kind":"movie","state":"request"}]"#
         let rows = try APIClient.decoder.decode([RequestTitleDemand].self, from: Data(json.utf8))

@@ -27,17 +27,32 @@ struct DiscoverCard: View {
     private var libraryId: Int? { inLibrary ? model.libraryItemId(for: result) : nil }
     private var requestStatus: String? { store.statusByTmdb[result.tmdbId] }
     private var alreadyRequested: Bool { requestStatus == "pending" || requestStatus == "approved" }
+    private var showsQuickAdd: Bool { canAdd && !inLibrary }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Button(action: open) {
                 VStack(alignment: .leading, spacing: 0) {
                     poster
+                        .anchorPreference(key: DiscoverPosterBounds.self, value: .bounds) { $0 }
                     meta
                 }
                 .contentShape(Rectangle())
             }
             .buttonStyle(DiscoverPressStyle())
+            // R2 (fusionha #56): touch has no hover, so the ＋ stays on the
+            // poster's corner, a sibling of the card's button, never inside it.
+            .overlayPreferenceValue(DiscoverPosterBounds.self) { anchor in
+                if showsQuickAdd, let anchor {
+                    GeometryReader { geo in
+                        let rect = geo[anchor]
+                        DiscoverQuickAdd(title: result.title) {
+                            model.openAdd(result, providerOverride: DiscoverSession.shared.providerOverride)
+                        }
+                        .position(x: rect.maxX - 21, y: rect.maxY - 21)
+                    }
+                }
+            }
             if let demand, let row = demandView.row {
                 DiscoverCardDemandRow(result: result, demand: demand, row: row)
             }
@@ -95,24 +110,14 @@ struct DiscoverCard: View {
                 providerException
                 statusMark
                 if demandView.watching {
-                    Label("Watching", systemImage: "eye")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Theme.grab)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(Theme.grab.opacity(0.16), in: Capsule())
-                        .lineLimit(1)
-                        .fixedSize()
+                    DiscoverCardChip(text: "Watching", systemImage: "eye", ink: Theme.accentText, wash: Theme.i1.opacity(0.14))
                 } else if !inLibrary, !demandView.hideRequested, let status = requestStatus, status == "pending" || status == "approved" {
-                    let color = status == "pending" ? Theme.miss : Theme.done
-                    Text(status == "pending" ? "Requested" : "Approved")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(color)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
-                        .background(color.opacity(0.16), in: Capsule())
-                        .lineLimit(1)
-                        .fixedSize()
+                    // Amber awaits a decision; approved is the accent (`RequestedChip`).
+                    if status == "pending" {
+                        DiscoverCardChip(text: "Requested", ink: Theme.miss, wash: Theme.miss.opacity(0.16))
+                    } else {
+                        DiscoverCardChip(text: "Approved", ink: Theme.accentText, wash: Theme.i1.opacity(0.14))
+                    }
                 }
             }
         }
@@ -124,7 +129,7 @@ struct DiscoverCard: View {
     private var providerException: some View {
         let global = DiscoverSession.shared.globalProvider
         if result.kind == .movie && global != "tmdb" {
-            TmdbLogo(size: 9, label: "TMDB")
+            TmdbLogo(size: 11, label: "TMDB")
         } else if result.kind == .series && global == "tvdb" {
             TvdbLogo(size: 11, label: "TVDB")
         }
@@ -224,5 +229,57 @@ struct DiscoverCard: View {
         } catch {
             DiscoverToasts.shared.error("Could not check for 4K", error)
         }
+    }
+}
+
+/// The poster's frame inside a card, for the corner ＋.
+struct DiscoverPosterBounds: PreferenceKey {
+    static var defaultValue: Anchor<CGRect>? { nil }
+    static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
+        value = value ?? nextValue()
+    }
+}
+
+/// A card's meta-line chip: Requested, Approved, Watching (a wash, no border).
+struct DiscoverCardChip: View {
+    let text: String
+    var systemImage: String?
+    let ink: Color
+    let wash: Color
+
+    var body: some View {
+        HStack(spacing: 4) {
+            if let systemImage { Image(systemName: systemImage) }
+            Text(text)
+        }
+        .font(.system(size: 11, weight: .semibold))
+        .foregroundStyle(ink)
+        .padding(.horizontal, 7)
+        .padding(.vertical, 3)
+        .background(wash, in: Capsule())
+        .lineLimit(1)
+        .fixedSize()
+    }
+}
+
+/// The persistent corner ＋ on an addable card (web `.addBtn` on coarse
+/// pointers): the accent disc, a 44pt target, the Add sheet on tap.
+struct DiscoverQuickAdd: View {
+    let title: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "plus")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Theme.onAccent)
+                .frame(width: 30, height: 30)
+                .background(Theme.primary, in: Circle())
+                .shadow(color: Theme.shelfShadow.opacity(0.5), radius: 6, y: 3)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PressScaleStyle(scale: 0.9))
+        .accessibilityLabel("Add \(title)")
     }
 }
