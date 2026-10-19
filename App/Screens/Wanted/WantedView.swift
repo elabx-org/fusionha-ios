@@ -48,7 +48,13 @@ struct WantedView: View {
     var body: some View {
         let _ = PerfCount.hit("WantedView.body")
         Group {
-            if embedded { page } else { Screen(showsAdd: true) { page } }
+            if embedded {
+                page
+            } else {
+                Screen(showsAdd: true) { page }
+                    .shellPage("Wanted")
+                    .toolbar { AddTitleToolbarItem(model: model) }
+            }
         }
         .overlay { ActToastOverlay(toaster: toaster).padding(.bottom, 70) }
         .environment(\.actReduceMotion, reduce)
@@ -152,16 +158,9 @@ struct WantedView: View {
 
     // MARK: Head
 
+    /// The title and Add are the system bar's (D1); the summary stays here.
     private var header: some View {
-        HStack(alignment: .top, spacing: 8) {
-            ActFlow(spacing: 12, lineSpacing: 8) {
-                Text("Wanted")
-                    .pageTitle()
-                summary
-            }
-            AddTitleButton()
-        }
-        .padding(.bottom, 4)
+        summary.padding(.bottom, 4)
     }
 
     private var summary: some View {

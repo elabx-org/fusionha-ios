@@ -35,12 +35,11 @@ struct DetailPage: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     let detail: ItemDetail
-    let close: () -> Void
     let openWeb: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            DetailHero(detail: detail, close: close)
+            DetailHero(detail: detail)
 
             VStack(alignment: .leading, spacing: 0) {
                 if let setup = model.setupProgress.activeSetup(for: detail.id) {

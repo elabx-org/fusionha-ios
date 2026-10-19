@@ -67,7 +67,8 @@ struct ActivityBlocklistTab: View {
                 ReleaseGroupBlocklistPanel()
                     .navigationTitle("Release groups")
                     .navigationBarTitleDisplayMode(.inline)
-                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { releaseGroups = false } } }
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { releaseGroups = false } } }
+                    .closeOnlyBars()
             }
         }
     }

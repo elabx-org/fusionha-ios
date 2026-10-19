@@ -52,21 +52,24 @@ struct CalViewSwitcher: View {
 struct CalNavButtons: View {
     let noun: String
     let onPrev: () -> Void
-    let onToday: () -> Void
+    /// nil leaves Today to the toolbar (D1).
+    let onToday: (() -> Void)?
     let onNext: () -> Void
 
     var body: some View {
         HStack(spacing: 0) {
             Button(action: onPrev) { chevron("chevron.left") }
                 .accessibilityLabel("Previous \(noun)")
-            Button(action: onToday) {
-                Text("Today")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Theme.txt)
-                    .lineLimit(1)
-                    .padding(.horizontal, 4)
-                    .frame(height: 36)
-                    .contentShape(Rectangle())
+            if let onToday {
+                Button(action: onToday) {
+                    Text("Today")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.txt)
+                        .lineLimit(1)
+                        .padding(.horizontal, 4)
+                        .frame(height: 36)
+                        .contentShape(Rectangle())
+                }
             }
             Button(action: onNext) { chevron("chevron.right") }
                 .accessibilityLabel("Next \(noun)")
@@ -123,16 +126,3 @@ struct CalKindChip: View {
     }
 }
 
-/// The 36pt round glass label of a calendar menu (`.g36`).
-struct CalGlassIcon: View {
-    let systemName: String
-
-    var body: some View {
-        Image(systemName: systemName)
-            .font(.system(size: 16, weight: .medium))
-            .foregroundStyle(Theme.txt)
-            .frame(width: 36, height: 36)
-            .contentShape(Circle())
-            .glassControl()
-    }
-}

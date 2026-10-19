@@ -57,7 +57,9 @@ struct RootView: View {
         .environment(\.railStyle, model.railStyle)
         .environment(\.railConsolidate, model.railConsolidate)
         .sheet(item: sheetItem, onDismiss: { DetailSheetPresence.dismissed() }) { ref in
-            ItemDetailView(store: model.detailStore(for: ref.id))
+            // A stack of its own, so Close, Refresh and Open in the web app are
+            // system toolbar items over the art (DC10, ruling Q-DC8).
+            NavigationStack { ItemDetailView(store: model.detailStore(for: ref.id)) }
                 .onAppear {
                     DetailSheetPresence.shown()
                     DeepLinkProbe.log("detail \(ref.id) shown")
@@ -160,12 +162,12 @@ private struct ShellPresentations: ViewModifier {
     }
 }
 
-/// Wraps a tab's content: the page background and a fade behind the status
-/// bar. The logo and avatar sit in each page's own title row (`ShellTitleRow`);
-/// where the web shows its mobile "+" it is `AddTitleButton` in that row.
+/// Wraps a tab's content in the page background. The title, the Account item
+/// and the page's actions are in the system bar (`.shellPage(_:)`); where the
+/// web shows its mobile "+" it is `AddTitleToolbarItem` there.
 struct Screen<Content: View>: View {
     @Environment(AppModel.self) private var model
-    /// Kept for source compatibility: pages that add place `AddTitleButton`.
+    /// Kept for source compatibility: pages that add place `AddTitleToolbarItem`.
     var showsAdd = false
     /// Kept for source compatibility: Library filters in place through the
     /// top-bar pill, every other tab opens the omni search.
@@ -175,7 +177,6 @@ struct Screen<Content: View>: View {
     var body: some View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .overlay(alignment: .top) { StatusBarFade() }
             .overlay(alignment: .top) {
                 if !model.requestScoped { SetupProgressPill(barHeight: 0) }
             }
@@ -183,16 +184,18 @@ struct Screen<Content: View>: View {
     }
 }
 
-/// The glass "+" in the title row of Library, Discover and Wanted (DIRECTION
-/// decision 1; it replaced the floating gradient orb). Opens the Add sheet.
-/// Hidden for request-scoped sessions, without the add capability, and while
-/// selecting.
-struct AddTitleButton: View {
-    @Environment(AppModel.self) private var model
+/// The "+" of Library, Discover and Wanted as a toolbar item (D1; it replaced
+/// the title row's glass "+"). Opens the Add sheet. Absent for request-scoped
+/// sessions, without the add capability, and while selecting.
+struct AddTitleToolbarItem: ToolbarContent {
+    let model: AppModel
 
-    var body: some View {
+    var body: some ToolbarContent {
         if !model.requestScoped && model.me?.can("add") != false && !model.selectMode {
-            GlassIconButton(systemName: "plus", label: "Add") { model.showingAdd = true }
+            ToolbarItem(placement: .primaryAction) {
+                Button("Add", systemImage: "plus") { model.showingAdd = true }
+            }
+            .barPriority(true)
         }
     }
 }

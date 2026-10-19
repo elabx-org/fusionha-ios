@@ -39,7 +39,7 @@ struct MoveCredentialSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(moving ? "Moving…" : "Move backend") { Task { await move() } }
+                    Button("Move backend", systemImage: "arrow.right.circle") { Task { await move() } }
                         .disabled(moving || targetId == nil || candidates.isEmpty)
                 }
             }

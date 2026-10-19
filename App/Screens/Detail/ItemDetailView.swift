@@ -4,8 +4,9 @@ import FusionhaKit
 /// The web's mobile item detail (`MobileDetailFlyout`): a large sheet with the
 /// full-bleed art hero over a blurred ambient backdrop, the item actions rail,
 /// the Versions panel (opening a row scopes the page), the rails, and the
-/// Seasons / Files (Versions) / History / Searches tabs. A glass compact bar
-/// fades in once the hero has scrolled away.
+/// Seasons / Files (Versions) / History / Searches tabs. Close, Refresh and
+/// Open in the web app are system toolbar items in the sheet and the column
+/// alike (DC10); the bar takes the title once the hero has scrolled away.
 ///
 /// The store comes from `AppModel.detailStore(for:)`, so the sheet and the
 /// shell's column show the same one: a fold / unfold keeps the page, its
@@ -15,9 +16,7 @@ struct ItemDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
-    /// True when this is the shell's trailing column (unfolded) rather than a sheet:
-    /// the close / refresh / web actions are then standard toolbar items, which
-    /// the system can move to the side of the display in some postures.
+    /// True when this is the shell's trailing column (unfolded) rather than a sheet.
     @Environment(\.detailInColumn) private var inColumn
     let store: DetailStore
     /// Closes the column; a sheet dismisses itself.
@@ -50,11 +49,11 @@ struct ItemDetailView: View {
             ScrollView {
                 Group {
                     if let detail = store.detail {
-                        DetailPage(detail: detail, close: close, openWeb: openWeb)
+                        DetailPage(detail: detail, openWeb: openWeb)
                     } else if store.loadError != nil {
                         DetailLoadError(close: close)
                     } else {
-                        DetailLoadingShell(seed: model.library.first { $0.id == itemId }, close: close)
+                        DetailLoadingShell(seed: model.library.first { $0.id == itemId })
                     }
                 }
             }
@@ -78,12 +77,6 @@ struct ItemDetailView: View {
                 await screenshotScroll(proxy)
             }
         }
-        .overlay(alignment: .top) {
-            if compact, !inColumn, let title = store.detail?.title {
-                compactBar(title)
-                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .offset(y: -6)))
-            }
-        }
         .overlay(alignment: .bottom) {
             if let toast = store.toast {
                 DetailToastView(toast: toast) { store.toast = nil }
@@ -100,19 +93,20 @@ struct ItemDetailView: View {
         .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: store.toast)
         .background { AmbientBackdrop(url: store.detail.flatMap { $0.posterUrl ?? $0.backdropUrl }) }
         .toolbar {
-            if inColumn {
-                ToolbarItem(placement: .cancellationAction) {
-                    SheetCancelButton(title: "Close detail", action: close)
-                }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button("Refresh", systemImage: "arrow.clockwise") { Task { await store.load() } }
-                    Button("Open in the web app", systemImage: "safari", action: openWeb)
-                }
+            ToolbarItem(placement: .cancellationAction) {
+                SheetCancelButton(title: "Close detail", action: close)
             }
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Button("Refresh", systemImage: "arrow.clockwise") { Task { await store.load() } }
+                Button("Open in the web app", systemImage: "safari", action: openWeb)
+            }
+            .barPriority(false)
         }
-        .navigationTitle(inColumn && compact ? (store.detail?.title ?? "") : "")
+        // The bar stays clear over the art; the title and the bar's ground
+        // come in once the hero has scrolled away (the old compact bar).
+        .navigationTitle(compact ? (store.detail?.title ?? "") : "")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackgroundVisibility(inColumn && compact ? .visible : .hidden, for: .navigationBar)
+        .toolbarBackgroundVisibility(compact ? .visible : .hidden, for: .navigationBar)
         .environment(store)
         .environment(\.detailReduceMotion, reduceMotion)
         .presentationDetents([.large])
@@ -176,25 +170,6 @@ struct ItemDetailView: View {
     private func openWeb() {
         guard let server = model.credentials?.serverURL else { return }
         openURL(server.appendingPathComponent("library/\(itemId)"))
-    }
-
-    private func compactBar(_ title: String) -> some View {
-        HStack(spacing: 10) {
-            Text(title)
-                .font(Theme.display(22, relativeTo: .headline))
-                .tracking(Theme.displayTracking(22))
-                .foregroundStyle(Theme.txt)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-            GlassIconButton(systemName: "xmark", label: "Close detail", size: 40, action: close)
-        }
-        .padding(.horizontal, Theme.pageGutter)
-        .frame(height: 56)
-        .frame(maxWidth: .infinity)
-        // Darkened so the page scrolling underneath never reads through the title.
-        .background(Theme.bg.opacity(0.82))
-        .glassEffect(.regular, in: .rect)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
     }
 
     private func applyPendingTab() {

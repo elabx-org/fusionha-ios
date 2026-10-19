@@ -57,20 +57,11 @@ struct RequestedByPill: View {
 /// bars, over the body skeleton (DetailBodySkeleton). The shimmer stops under
 /// Reduce Motion.
 struct DetailLoadingShell: View {
-    @Environment(\.detailInColumn) private var inColumn
     let seed: MediaItem?
-    let close: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             DetailHeroArt(url: TMDBImage.resized(seed?.posterUrl ?? seed?.backdropUrl, to: "original"))
-                .overlay(alignment: .topLeading) {
-                    if !inColumn {
-                        GlassIconButton(systemName: "xmark", label: "Close detail", size: 44, action: close)
-                            .padding(.top, 14)
-                            .padding(.leading, Theme.pageGutter)
-                    }
-                }
             VStack(alignment: .leading, spacing: 12) {
                 if let seed {
                     (Text(seed.title).foregroundColor(Theme.txt)

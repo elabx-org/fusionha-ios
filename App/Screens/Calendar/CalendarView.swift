@@ -107,6 +107,8 @@ struct CalendarView: View {
                 }
             }
         }
+        .shellPage(title)
+        .toolbar { barItems }
         .calToast($toast)
         .environment(\.calMotionOff, settings?.animationsEnabled == false)
         .task { await loadSettings() }

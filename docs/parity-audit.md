@@ -435,18 +435,18 @@ Anton title are retired. The title uses the system font, and the avatar becomes 
 
 | Screen | Header actions today | Toolbar placement (priority) | Stays in content | Done |
 |---|---|---|---|---|
-| Library | Add (+), Library stats, avatar | `.primaryAction` Add · `.secondaryAction` Stats · Account | filter chips, segmented, select bar (D3: system `bottomBar`) | ☐ |
-| Discover | Add (+), avatar | `.primaryAction` Add · Account | Browse/Requests segmented, rails | ☐ |
-| Requests | pane menu (title ▾), filter, avatar | title menu via `.toolbarTitleMenu` · `.primaryAction` Filter · Account | summary line, pills | ☐ |
-| Activity | Manual import, avatar | `.primaryAction` Manual import · Account | Queue/History/Blocklist/Tasks segmented | ☐ |
-| Calendar | ‹ Today ›, iCal menu (admin), week style (week view), avatar | `.primaryAction` Today · `.secondaryAction` iCal, week style · Account | prev/next capsule, kind chips | ☐ |
-| Wanted | Add (+) | `.primaryAction` Add · Account | summary line, tabs | ☐ |
-| Search | avatar | Account; retry `.searchable` (DC11) | results | ☐ |
-| You | avatar | Account | hub rows | ☐ |
-| Settings (cover) | Close | `.cancellationAction` Close (system) | subtitle "DB-backed · effective without restart" | ☐ |
-| Item detail sheet | custom ✕ (DC10) | `.cancellationAction` Close; hero stays clean | hero, edition chips | ☐ |
-| Add / Request modal / trailer | custom ✕ (DC10) | `.cancellationAction` Close | — | ☐ |
-| Text-only sheet buttons (DC12, ~25 sheets) | Cancel / Save / state-swapping text | `.cancellationAction` / `.confirmationAction`; close-only sheets opt out of vertical bars (#60) | — | ☐ |
+| Library | Add (+), Library stats, avatar | `.primaryAction` Add · `.secondaryAction` Stats · Account | filter chips, segmented, select bar (D3: system `bottomBar`) | ✅ D1 (build pending) |
+| Discover | Add (+), avatar | `.primaryAction` Add · Account | Browse/Requests segmented, rails | ✅ D1 (build pending) |
+| Requests | pane menu (title ▾), filter, avatar | title menu via `.toolbarTitleMenu` · `.primaryAction` Filter · Account | summary line, pills | ✅ D1 (build pending; pane menu stays in content, see notes) |
+| Activity | Manual import, avatar | `.primaryAction` Manual import · Account | Queue/History/Blocklist/Tasks segmented | ✅ D1 (build pending) |
+| Calendar | ‹ Today ›, iCal menu (admin), week style (week view), avatar | `.primaryAction` Today · `.secondaryAction` iCal, week style · Account | prev/next capsule, kind chips | ✅ D1 (build pending) |
+| Wanted | Add (+) | `.primaryAction` Add · Account | summary line, tabs | ✅ D1 (build pending) |
+| Search | avatar | Account; retry `.searchable` (DC11) | results | ✅ D1 (build pending) |
+| You | avatar | Account | hub rows | ✅ D1 (build pending) |
+| Settings (cover) | Close | `.cancellationAction` Close (system) | subtitle "DB-backed · effective without restart" | ✅ D1 (build pending) |
+| Item detail sheet | custom ✕ (DC10) | `.cancellationAction` Close; hero stays clean | hero, edition chips | ✅ D1 (build pending) |
+| Add / Request modal / trailer | custom ✕ (DC10) | `.cancellationAction` Close | — | ◐ D1 (build pending; Add configure step keeps PreviewHero ✕, see notes) |
+| Text-only sheet buttons (DC12, ~25 sheets) | Cancel / Save / state-swapping text | `.cancellationAction` / `.confirmationAction`; close-only sheets opt out of vertical bars (#60) | — | ✅ D1 (build pending) |
 
 Rules: no toolbar content in-content except the listed "stays" items; every item has a
 symbol from the CLAUDE.md icon set and a text label (the vertical bar shows the symbol,
@@ -457,3 +457,20 @@ overflow shows the label). Tick a row with its build number.
 - Activity, Calendar and sign-in toasts still use their own toast; move to `model.toast`.
 - SI1: OIDC sign-in and living-media poses.
 - Oversized: `AppModel` (665), `ScreenModels` (619), `DiscoverModels` (530), `DetailLogic` (481), `CalendarModels` (456), `EditItemSheet` (335).
+
+D1 notes (build pending):
+- **Requests:** the pane menu (view name ▾) stays in content above the summary. Requests is a segment of the
+  Discover tab, so a `.toolbarTitleMenu` would hang the pane switch off the title "Discover". Filter (with its
+  count as a badge) and Inbox's Select / Done are toolbar items; Select stays horizontal (`axisBehavior`).
+- **Calendar:** on a phone the filter menu (media type, iCal, week cards) is a toolbar item beside Today; wide
+  layouts put iCal and week style in the overflow. Prev / next stay in content.
+- **Activity:** Pause / Resume (admins) joined Manual import in the bar, disabled while in flight.
+- **Library stats:** the bar badge is a count (titles needing attention, else missing) in place of the dot.
+- **Account item:** a bitmap of the Plex photo / initials with the dot, as a `Label` image item, so the system
+  treats it as a standard item for the vertical bar. Not yet seen on a device or the Duo simulator.
+- **Add sheet:** search and request modes have the system Close; the configure step keeps `PreviewHero`'s own
+  Back / Close (shared with the Preview sheet). Moving `PreviewHero` to the toolbar is a follow-up.
+- **Sheets:** forms keep `.inline` titles (a medium detent can't spare a large title); their actions are title +
+  symbol with fixed words, progress shown by `.disabled`. Close / Done-only sheets opt out of vertical bars
+  (`closeOnlyBars()`, iOS 27.1).
+- **Settings:** the cover and every pushed panel use `.inlineLarge`; the panel heading is now the subtitle only.

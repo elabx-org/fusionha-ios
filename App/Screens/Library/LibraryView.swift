@@ -70,6 +70,7 @@ struct LibraryView: View {
                     }
             }
         }
+        .shellPage("Library")
         .toolbarVisibility(model.selectMode ? .hidden : .automatic, for: .tabBar)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if model.selectMode {

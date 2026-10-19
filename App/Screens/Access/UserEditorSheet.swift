@@ -82,7 +82,7 @@ struct UserEditorSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button(working ? "Saving…" : "Save") { Task { await save() } } }
+                ToolbarItem(placement: .confirmationAction) { Button("Save", systemImage: "checkmark") { Task { await save() } }.disabled(working) }
             }
             .sheet(isPresented: $methods) {
                 SignInMethodsSheet(user: user, onChanged: onChanged).presentationBackground(Theme.panel)
@@ -163,7 +163,7 @@ struct NewUserSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(working ? "Adding…" : "Add") { Task { await create() } }
+                    Button("Add", systemImage: "plus") { Task { await create() } }
                         .disabled(working || name.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty)
                 }
             }

@@ -36,32 +36,31 @@ struct TrailerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
-                    Text("Trailer").font(.system(size: 12)).foregroundStyle(Theme.mut)
+        // The title and Close are the system bar's (DC10); a video sheet keeps
+        // horizontal bars (Q-DC6).
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 0) {
+                if let url = URL(string: "https://www.youtube.com/embed/\(key)?autoplay=1&rel=0&playsinline=1") {
+                    YouTubePlayer(url: url)
+                        .aspectRatio(16 / 9, contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.line))
                 }
-                Spacer()
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.mut)
-                        .frame(width: 40, height: 40)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .background(Theme.panel)
+            .navigationTitle(title)
+            .navigationSubtitle("Trailer")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    SheetCancelButton(title: "Close") { dismiss() }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Close")
             }
-            .padding(.bottom, 14)
-            if let url = URL(string: "https://www.youtube.com/embed/\(key)?autoplay=1&rel=0&playsinline=1") {
-                YouTubePlayer(url: url)
-                    .aspectRatio(16 / 9, contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.line))
-            }
-            Spacer(minLength: 0)
+            .closeOnlyBars()
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 22)
-        .background(Theme.panel)
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
     }

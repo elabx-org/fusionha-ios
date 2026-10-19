@@ -101,7 +101,7 @@ struct PreviewPage: View {
         .toolbar(.hidden, for: .navigationBar)
         .task(id: route) { await load() }
         .sheet(item: $requestPick) { pick in
-            RequestModal(pick: pick) {}
+            NavigationStack { RequestModal(pick: pick) {} }
         }
     }
 

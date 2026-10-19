@@ -63,6 +63,7 @@ struct MISelectionSheet: View {
             .navigationTitle("\(picked.count) selected")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } } }
+            .closeOnlyBars()
             .navigationDestination(isPresented: $editing) {
                 MIBulkSheet(title: "Edit \(picked.count) selected", rows: picked.filter { !$0.committed }, embedded: true)
             }

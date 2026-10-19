@@ -7,15 +7,13 @@ import FusionhaKit
 
 // MARK: Page
 
-/// A native panel page: a dark Form whose first block is the panel title in
-/// the display face and its subtitle, revealed on entry. Scrolls to
+/// A native panel page: a dark Form under the panel title (the system bar's,
+/// D1), whose first block is its subtitle, revealed on entry. Scrolls to
 /// and flashes a searched-for field.
 struct SettingsForm<Content: View>: View {
     let slug: String
     @ViewBuilder var content: Content
     @Environment(SettingsFlash.self) private var flash
-
-    private var info: SettingsPanelInfo? { SettingsNav.panel(slug) }
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -39,8 +37,7 @@ struct SettingsForm<Content: View>: View {
                 withAnimation(.smooth) { proxy.scrollTo(label, anchor: .center) }
             }
         }
-        .navigationTitle(info?.title ?? slug)
-        .navigationBarTitleDisplayMode(.inline)
+        .settingsPanelTitle(slug)
         .overlay(alignment: .bottom) { SettingsSaveErrorBanner() }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {

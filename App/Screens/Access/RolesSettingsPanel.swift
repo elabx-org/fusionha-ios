@@ -139,7 +139,7 @@ private struct RoleEditorSheet: View {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 if !builtIn {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(working ? "Saving…" : "Save") { Task { await save() } }
+                        Button("Save", systemImage: "checkmark") { Task { await save() } }
                             .disabled(working || name.trimmingCharacters(in: .whitespaces).isEmpty)
                     }
                 }

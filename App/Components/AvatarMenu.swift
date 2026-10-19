@@ -2,39 +2,10 @@ import SwiftUI
 import UIKit
 import FusionhaKit
 
-// MARK: - User menu
+// MARK: - Avatar
 
-/// The avatar button (UserMenu.tsx's trigger). The amber dot shows when
-/// something needs attention. It only sets `AppModel.avatar.showingSheet`: the
-/// account sheet and what it opens (Settings, Account, Widgets) are presented
-/// once from the shell (`AvatarPresentations`), so the button can move into a
-/// system toolbar or its overflow without losing them.
-struct AvatarMenu: View {
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        Button { model.avatar.showingSheet = true } label: { label }
-            .buttonStyle(.plain)
-            .accessibilityLabel(model.attentionCount > 0 ? "Account, \(model.attentionCount) need attention" : "Account")
-    }
-
-    private var label: some View {
-        Avatar(me: model.me, size: 32)
-            .overlay(alignment: .topTrailing) {
-                if model.attentionCount > 0 && !model.requestScoped {
-                    Circle()
-                        .fill(Theme.miss)
-                        .frame(width: 9, height: 9)
-                        .overlay(Circle().strokeBorder(Theme.bg, lineWidth: 2).padding(-2))
-                        .offset(x: 1, y: -1)
-                }
-            }
-            .frame(width: 32, height: 32)
-            .padding(6)
-            .contentShape(Circle())
-            .padding(-6)
-    }
-}
+// The avatar button (UserMenu.tsx's trigger) is the system toolbar's Account
+// item now (`AccountToolbarItem`, D1).
 
 /// The 32pt gradient-initials avatar (13/700 white), or the Plex thumb from
 /// `GET /api/v1/users/{id}/avatar`, fetched with this device's credentials.

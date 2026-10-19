@@ -78,7 +78,7 @@ struct RuleEditorSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "Saving…" : "Save rule") { Task { await save() } }.disabled(saving || !draft.isValid)
+                    Button("Save rule", systemImage: "checkmark") { Task { await save() } }.disabled(saving || !draft.isValid)
                 }
             }
         }

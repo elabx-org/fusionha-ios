@@ -89,9 +89,8 @@ struct SettingsView: View {
             .background(Theme.bg)
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search settings…")
             .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
-                ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1) }
                 ToolbarItem(placement: .cancellationAction) {
                     SheetCancelButton(title: "Close settings") { dismiss() }
                 }
@@ -100,18 +99,14 @@ struct SettingsView: View {
 
     // MARK: Header
 
+    /// The title is the system bar's (D1); the subtitle stays in the page.
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Settings")
-                .pageTitle()
-                .accessibilityAddTraits(.isHeader)
-            Text("DB-backed · effective without restart")
-                .font(.system(size: 15))
-                .foregroundStyle(Theme.mut)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        .padding(.horizontal, Theme.pageGutter)
+        Text("DB-backed · effective without restart")
+            .font(.system(size: 15))
+            .foregroundStyle(Theme.mut)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .padding(.horizontal, Theme.pageGutter)
         .padding(.top, 8)
         .padding(.bottom, 22)
     }

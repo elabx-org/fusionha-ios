@@ -55,7 +55,7 @@ struct DeclineReasonSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Theme.accentText)
+                    SheetCancelButton { dismiss() }
                 }
             }
         }

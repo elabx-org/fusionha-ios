@@ -108,7 +108,7 @@ private struct SecurityResetSheet: View {
                     SheetCancelButton(title: stale && n == 0 ? "Close" : "Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(working ? "Resetting…" : "Reset \(n)", role: .destructive) { Task { await reset() } }
+                    Button("Reset \(n)", systemImage: "arrow.counterclockwise", role: .destructive) { Task { await reset() } }
                         .disabled(n == 0 || working)
                 }
             }

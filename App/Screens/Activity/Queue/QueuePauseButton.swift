@@ -3,7 +3,8 @@ import FusionhaKit
 
 /// Pause or resume fusionha's own downloads (0.4.205, admins): only the jobs
 /// fusionha tracks pause, and new grabs wait while paused. The answer names
-/// any client that couldn't pause.
+/// any client that couldn't pause. A toolbar item (D1): title + symbol, and
+/// disabled (not swapped for a spinner) while the change is in flight.
 struct QueuePauseButton: View {
     @Environment(AppModel.self) private var model
     @State private var working = false
@@ -11,25 +12,11 @@ struct QueuePauseButton: View {
 
     var body: some View {
         let paused = model.queuePaused
-        Button {
+        Button(paused ? "Resume downloads" : "Pause downloads",
+               systemImage: paused ? "play.fill" : "pause.fill") {
             if paused { Task { await toggle() } } else { confirm = true }
-        } label: {
-            Group {
-                if working {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Image(systemName: paused ? "play.fill" : "pause.fill")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(paused ? Theme.done : Theme.txt)
-                }
-            }
-            .frame(width: 36, height: 36)
-            .contentShape(Circle())
         }
-        .buttonStyle(.plain)
-        .glassControl()
         .disabled(working)
-        .accessibilityLabel(paused ? "Resume downloads" : "Pause downloads")
         .confirmationDialog("Pause fusionha's downloads?", isPresented: $confirm, titleVisibility: .visible) {
             Button("Pause downloads") { Task { await toggle() } }
         } message: {

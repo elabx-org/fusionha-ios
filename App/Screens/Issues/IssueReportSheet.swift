@@ -196,7 +196,7 @@ struct IssueModal: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         if filed != nil {
-            ToolbarItem(placement: .confirmationAction) { Button("Close") { dismiss() } }
+            ToolbarItem(placement: .cancellationAction) { SheetCancelButton(title: "Close") { dismiss() } }
         } else {
             ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
             ToolbarItem(placement: .confirmationAction) {

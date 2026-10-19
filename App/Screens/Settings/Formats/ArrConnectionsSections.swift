@@ -177,7 +177,7 @@ private struct ArrConnectionAddSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(working ? "Adding…" : "Add & test") { Task { await add() } }.disabled(!valid || working)
+                    Button("Add & test", systemImage: "checkmark") { Task { await add() } }.disabled(!valid || working)
                 }
             }
         }

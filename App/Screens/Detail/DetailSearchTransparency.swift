@@ -66,7 +66,7 @@ private struct LearnEditionAliasSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "Saving…" : "Save alias") { Task { await save(trimmed) } }
+                    Button("Save alias", systemImage: "checkmark") { Task { await save(trimmed) } }
                         .disabled(trimmed.isEmpty || saving)
                 }
             }

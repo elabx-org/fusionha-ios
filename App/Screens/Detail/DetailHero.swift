@@ -2,16 +2,13 @@ import SwiftUI
 import FusionhaKit
 
 /// The full-bleed art hero (MobileDetailFlyout, redesign `.hero` + `.d-head`):
-/// the poster bleeds to the top edge and fades into the ground; a floating
-/// glass close button; then the status chip, the display-face title + year,
+/// the poster bleeds to the top edge and fades into the ground (Close is the
+/// system toolbar's, DC10); then the status chip, the display-face title + year,
 /// tagline, meta line and genre pills, rising over the faded art. Nothing is
 /// drawn on the art itself: the heading only starts where it has faded.
 struct DetailHero: View {
     @Environment(\.detailReduceMotion) private var reduce
-    /// In the unfolded trailing column, close is a toolbar item instead.
-    @Environment(\.detailInColumn) private var inColumn
     let detail: ItemDetail
-    let close: () -> Void
 
     /// How far the heading rises over the bottom of the art.
     private static let overlap: CGFloat = 132
@@ -25,13 +22,6 @@ struct DetailHero: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             DetailHeroArt(url: artURL)
-                .overlay(alignment: .topLeading) {
-                    if !inColumn {
-                        GlassIconButton(systemName: "xmark", label: "Close detail", size: 44, action: close)
-                            .padding(.top, 14)
-                            .padding(.leading, Theme.pageGutter)
-                    }
-                }
             heading
                 .padding(.horizontal, Theme.pageGutter)
                 .padding(.top, -Self.overlap)

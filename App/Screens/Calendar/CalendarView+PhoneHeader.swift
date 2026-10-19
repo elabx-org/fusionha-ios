@@ -2,25 +2,21 @@ import SwiftUI
 import FusionhaKit
 
 // The phone Calendar header (web `CalendarHeaderMobile` + `CalendarFilterMenu`):
-// the title, the subline beside the filter menu and ‹ Today ›, then the
-// full-width view switch (labels shorten to Mo/Wk/Fc/Day/Ag when narrow). No
-// legends on a phone. Prev/next show only where a swipe also steps the period.
+// the subline beside ‹ ›, then the full-width view switch (labels shorten to
+// Mo/Wk/Fc/Day/Ag when narrow). The title, Today and the filter menu are in
+// the system bar (`barItems`, D1). No legends on a phone. Prev/next show only
+// where a swipe also steps the period.
 extension CalendarView {
     var phoneToolbar: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ShellTitleRow(title)
             HStack(spacing: 4) {
                 Text(subline)
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.mut)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                filterMenu
                 if view.phoneSteps {
                     CalPhoneIcon(systemName: "chevron.left", label: "Previous \(view.stepNoun)") { step(-1) }
-                }
-                CalPhoneIcon(systemName: "calendar.badge.clock", label: "Jump to today", action: goToday)
-                if view.phoneSteps {
                     CalPhoneIcon(systemName: "chevron.right", label: "Next \(view.stepNoun)") { step(1) }
                 }
             }
@@ -49,11 +45,9 @@ extension CalendarView {
             Divider()
             weekCardsMenu
         } label: {
-            CalPhoneIconLabel(systemName: filter == .all ? "line.3.horizontal.decrease"
-                                                         : "line.3.horizontal.decrease.circle.fill",
-                              tint: filter == .all ? Theme.txt : Theme.accentText)
+            Label("Filter media type", systemImage: filter == .all ? "line.3.horizontal.decrease"
+                                                                    : "line.3.horizontal.decrease.circle.fill")
         }
-        .accessibilityLabel("Filter media type")
         .accessibilityValue(filter.label)
     }
 

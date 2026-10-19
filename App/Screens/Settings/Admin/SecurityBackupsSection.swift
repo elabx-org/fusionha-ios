@@ -105,7 +105,7 @@ private struct SecurityBackupKeySheet: View {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 if reauth.hasPassword && !SecretsErrorCopy.isTooNew(error) {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(working ? "Turning on…" : "Turn on") { submit(.password(reauth.password)) }
+                        Button("Turn on", systemImage: "lock") { submit(.password(reauth.password)) }
                             .disabled(reauth.password.isEmpty || working)
                     }
                 }

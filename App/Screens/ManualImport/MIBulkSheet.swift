@@ -27,6 +27,7 @@ struct MIBulkSheet: View {
             NavigationStack {
                 content
                     .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } } }
+                    .closeOnlyBars()
             }
             .presentationDetents([.medium, .large])
         }

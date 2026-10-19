@@ -142,7 +142,7 @@ struct SecurityStartOverSheet: View {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 if reauth.hasPassword {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(working ? "Starting over…" : "Start over", role: .destructive) {
+                        Button("Start over", systemImage: "arrow.counterclockwise", role: .destructive) {
                             submit(.password(reauth.password))
                         }
                         .disabled(!phraseOK || reauth.password.isEmpty || working || SecretsErrorCopy.isTooNew(error))

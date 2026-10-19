@@ -37,7 +37,7 @@ struct RequestsFilterSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Reset") { withAnimation(.snappy) { nav.filter.reset(pane) } }
+                    Button("Reset", systemImage: "arrow.counterclockwise") { withAnimation(.snappy) { nav.filter.reset(pane) } }
                         .disabled(nav.filter.activeCount(pane) == 0)
                 }
                 ToolbarItem(placement: .topBarTrailing) {

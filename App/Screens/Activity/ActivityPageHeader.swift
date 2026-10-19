@@ -1,8 +1,9 @@
 import SwiftUI
 import FusionhaKit
 
-/// The header (title, live caption, Manual import, search) and the tab strip.
-/// Reads the polled queue counts itself, so a queue tick re-renders only this.
+/// The header (live caption, search) and the tab strip; the title, Manual
+/// import and Pause are in the system bar (`ActivityToolbar`, D1). Reads the
+/// polled queue counts itself, so a queue tick re-renders only this.
 struct ActivityPageHeader: View {
     @Environment(AppModel.self) private var model
     @Environment(ActChrome.self) private var chrome
@@ -21,26 +22,6 @@ struct ActivityPageHeader: View {
         let held = model.queueHeld
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
-                ShellTitleRow("Activity") {
-                    Button {
-                        router.manualImport()
-                    } label: {
-                        ViewThatFits(in: .horizontal) {
-                            Label("Manual import", systemImage: "square.and.arrow.down")
-                                .padding(.horizontal, 14)
-                            Image(systemName: "square.and.arrow.down")
-                                .frame(width: 36)
-                        }
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.txt)
-                        .frame(height: 36)
-                        .contentShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                    .glassControl()
-                    .accessibilityLabel("Manual import")
-                    if model.me?.isAdmin == true { QueuePauseButton() }
-                }
                 Text(caption(held: held))
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.mut)

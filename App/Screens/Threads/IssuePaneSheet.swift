@@ -49,7 +49,7 @@ struct IssuePaneSheet: View {
             .navigationTitle(current.mediaTitle ?? "Issue")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
                 ToolbarItem(placement: .topBarLeading) {
                     Button { dismiss(); model.open(current.mediaItemId) } label: { Image(systemName: "arrow.up.right.square") }
                         .accessibilityLabel("Open in library")
