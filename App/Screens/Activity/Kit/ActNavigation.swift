@@ -71,12 +71,18 @@ struct ActChip: View {
     var count: Int?
     let accent: Color
     var selected = false
+    /// Under Monochrome the dot is this status' glyph.
+    var mono: MonoToken? = nil
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                Circle().fill(accent).frame(width: 7, height: 7)
+                if let mono {
+                    StatusDot(token: mono, size: 7, color: accent)
+                } else {
+                    Circle().fill(accent).frame(width: 7, height: 7)
+                }
                 Text(label)
                 if let count {
                     Text("\(count)")
@@ -187,6 +193,8 @@ struct ActOverview: View {
         let label: String
         let value: Int
         let color: Color
+        /// Under Monochrome the bar wears this status' pattern.
+        var mono: MonoToken? = nil
         var id: String { label }
     }
 
@@ -209,7 +217,7 @@ struct ActOverview: View {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
                             RoundedRectangle(cornerRadius: 2).fill(Theme.txt.opacity(0.08))
-                            RoundedRectangle(cornerRadius: 2).fill(stat.color)
+                            bar(stat)
                                 .frame(width: geo.size.width * CGFloat(stat.value) / CGFloat(maxValue))
                         }
                     }
@@ -226,6 +234,15 @@ struct ActOverview: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.panel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
+    }
+
+    @ViewBuilder
+    private func bar(_ stat: Stat) -> some View {
+        if let mono = stat.mono {
+            StatusSwatch(token: mono, shape: RoundedRectangle(cornerRadius: 2), color: stat.color)
+        } else {
+            RoundedRectangle(cornerRadius: 2).fill(stat.color)
+        }
     }
 
     private func label10(_ text: String) -> some View {

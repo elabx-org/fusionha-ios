@@ -54,19 +54,26 @@ struct DetailAddChip: View {
     }
 }
 
-/// A 7pt status dot.
+/// A 7pt status dot; under Monochrome, with a `mono` token, the status' glyph.
 struct DetailDot: View {
     let color: Color
     var size: CGFloat = 7
-    var body: some View { Circle().fill(color).frame(width: size, height: size) }
+    var mono: MonoToken? = nil
+    var body: some View {
+        if let mono {
+            StatusDot(token: mono, size: size, color: color)
+        } else {
+            Circle().fill(color).frame(width: size, height: size)
+        }
+    }
 }
 
 /// The HD + UHD dots overlapped by -4 (the All header).
 struct DetailDualDots: View {
     var body: some View {
         HStack(spacing: -4) {
-            DetailDot(color: Theme.edition, size: 9)
-            DetailDot(color: Theme.grab, size: 9)
+            DetailDot(color: DetailTokens.tier(.hd), size: 9, mono: QualityTier.hd.monoToken)
+            DetailDot(color: DetailTokens.tier(.uhd), size: 9, mono: QualityTier.uhd.monoToken)
         }
     }
 }
@@ -120,14 +127,13 @@ struct DetailQualityChip: View {
     let tier: QualityTier
 
     var body: some View {
-        let color = DetailTokens.tier(tier)
         Text(DetailText.quality(quality))
             .font(.system(size: 11, weight: .bold, design: .monospaced))
-            .foregroundStyle(color)
+            .foregroundStyle(tier.chipText)
             .lineLimit(1)
             .padding(.horizontal, 8)
             .padding(.vertical, 2)
-            .background(EditionChipBackground(color: color))
+            .background(TierChipBackground(tier: tier))
     }
 }
 

@@ -36,14 +36,13 @@ struct DetailTierChip: View {
     var short = false
 
     var body: some View {
-        let color = DetailTokens.tier(tier)
         Text(short ? tier.tierShort : (label ?? tier.chipLabel))
             .font(.system(size: 11, weight: .semibold, design: .monospaced))
-            .foregroundStyle(color)
+            .foregroundStyle(tier.chipText)
             .lineLimit(1)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(EditionChipBackground(color: color))
+            .background(TierChipBackground(tier: tier))
     }
 }
 

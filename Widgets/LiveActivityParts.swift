@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import WidgetKit
+import FusionhaKit
 
 // The redesign's pieces for the Live Activity: the edition chip that is its
 // own progress bar (the redesign signature), the wash taken from the poster,
@@ -13,6 +14,8 @@ struct EditionFillChip: View {
     let label: String
     let color: Color
     var fraction: Double = 0
+    /// Under Monochrome the fill wears this status' pattern (HD and 4K differ by shade and pattern).
+    var mono: MonoToken? = nil
 
     var body: some View {
         chipText.foregroundStyle(color)
@@ -20,6 +23,7 @@ struct EditionFillChip: View {
             .overlay {
                 ZStack {
                     color
+                    if Theme.isMono, let mono { MonoPatternFill(pattern: mono.pattern) }
                     chipText.foregroundStyle(Color.black.opacity(0.82))
                 }
                 .mask(alignment: .leading) {
@@ -67,8 +71,7 @@ struct LiveActivityStageRail: View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 3) {
                 ForEach(steps.labels.indices, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(fill(i))
+                    stage(i)
                         .frame(height: 8)
                         .shadow(color: i == steps.done ? Theme.grab.opacity(0.6) : .clear, radius: 5)
                 }
@@ -87,6 +90,17 @@ struct LiveActivityStageRail: View {
         }
     }
 
+    @ViewBuilder
+    private func stage(_ i: Int) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 3, style: .continuous)
+        if Theme.isMono && i <= steps.done {
+            // Monochrome: done stages solid, the live one patterned (no gradient).
+            StatusSwatch(token: i < steps.done ? .done : .grab, shape: shape, color: Theme.grab)
+        } else {
+            shape.fill(fill(i))
+        }
+    }
+
     private func fill(_ i: Int) -> AnyShapeStyle {
         if i < steps.done { return AnyShapeStyle(Theme.grab) }
         if i == steps.done {
@@ -102,8 +116,12 @@ struct LiveActivityWash: View {
     let state: DownloadsActivityAttributes.ContentState
 
     var body: some View {
-        LinearGradient(colors: [tint.opacity(0.34), tint.opacity(0.08), .clear],
-                       startPoint: .leading, endPoint: .trailing)
+        if Theme.isMono {
+            MonoWash(token: LiveActivityTone.token(state), color: tint, radius: 0)
+        } else {
+            LinearGradient(colors: [tint.opacity(0.34), tint.opacity(0.08), .clear],
+                           startPoint: .leading, endPoint: .trailing)
+        }
     }
 
     private var tint: Color {

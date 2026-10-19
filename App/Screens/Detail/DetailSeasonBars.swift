@@ -73,7 +73,7 @@ struct DetailSeasonBars: View {
                 shape.fill(gapSeason ? Theme.miss.opacity(0.16) : Theme.txt.opacity(0.07))
                 if gapSeason { shape.strokeBorder(Theme.miss.opacity(0.4), lineWidth: 1) }
             }
-            shape.fill(edition.tier.color).frame(width: width * fraction)
+            shape.fill(DetailTokens.tier(edition.tier)).frame(width: width * fraction)
         }
         .frame(width: width, height: 8)
         .overlay {
@@ -145,9 +145,9 @@ struct DetailEpisodeTicks: View {
         let shape = RoundedRectangle(cornerRadius: 2)
         switch kind {
         case .owned:
-            shape.fill(edition.tier.color)
+            shape.fill(DetailTokens.tier(edition.tier))
         case .grab:
-            shape.fill(Theme.grab).detailPulse(low: 0.55, high: 1, period: 1.5)
+            StatusSwatch(token: .grab, shape: shape).detailPulse(low: 0.55, high: 1, period: 1.5)
         case .want:
             shape.strokeBorder(Theme.miss.mix(0.45, Theme.line), lineWidth: 1)
         case .soon:
@@ -173,18 +173,21 @@ struct DetailEpisodeTicks: View {
 
     private func tooltip(_ episode: Episode, kind: TickKind, now: Date) -> some View {
         let quality = episode.file(for: edition.id).map { DetailText.quality($0.quality) }
-        let dot: Color = switch kind {
-        case .owned: Theme.done
-        case .grab: Theme.grab
-        case .want: Theme.miss
-        case .soon: Theme.unaired
-        case .untracked: Theme.dim
+        let dot: MonoToken? = switch kind {
+        case .owned: .done
+        case .grab: .grab
+        case .want: .miss
+        case .soon: .unaired
+        case .untracked: nil
         }
         return VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 8) {
                 Text(code(episode)).font(.system(size: 12, weight: .bold, design: .monospaced))
                 HStack(spacing: 5) {
-                    RoundedRectangle(cornerRadius: 2).fill(dot).frame(width: 8, height: 8)
+                    Group {
+                        if let dot { StatusSwatch(token: dot, shape: RoundedRectangle(cornerRadius: 2)) } else { RoundedRectangle(cornerRadius: 2).fill(Theme.dim) }
+                    }
+                    .frame(width: 8, height: 8)
                     Text(statusText(episode, kind: kind, now: now) + (quality.map { " · \($0)" } ?? ""))
                 }
                 .font(.system(size: 11))

@@ -22,7 +22,7 @@ struct WantedCardView: View {
 
     private func card(_ head: WantedEdition) -> some View {
         let kind = WantedLogic.kind(isAnime: item.isAnime, kind: item.kind)
-        let tone = WantedLogic.stateColor(head.state == "missing" || head.state == "cutoff_unmet" || head.state == "upcoming" ? head.state : "missing")
+        let tone = WantedLogic.stateTone(head.state == "missing" || head.state == "cutoff_unmet" || head.state == "upcoming" ? head.state : "missing")
         let nested = tab == .missing && item.kind == .series ? (head.missingEpisodes ?? []) : []
         let total = head.missingEpisodeCount ?? nested.count
         let extra = total - nested.count
@@ -33,7 +33,11 @@ struct WantedCardView: View {
                 ActFlow(spacing: 9, lineSpacing: 4) {
                     Text(item.title).font(.system(size: 15, weight: .bold)).tracking(-0.15).foregroundStyle(Theme.txt)
                     WantedKindPill(kind: kind)
-                    Text(WantedLogic.stateLabel(head.state)).font(.system(size: 12.5, weight: .bold)).foregroundStyle(WantedLogic.stateColor(head.state))
+                    HStack(spacing: 4) {
+                        StatusGlyph(token: WantedStateToken.token(head.state), size: 10)
+                        Text(WantedLogic.stateLabel(head.state)).font(.system(size: 12.5, weight: .bold))
+                    }
+                    .foregroundStyle(WantedLogic.stateColor(head.state))
                 }
                 ActFlow(spacing: 8, lineSpacing: 4) {
                     ForEach(item.editions) { edition in editionChip(edition) }
@@ -78,11 +82,11 @@ struct WantedCardView: View {
 
     private func editionChip(_ edition: WantedEdition) -> some View {
         HStack(spacing: 6) {
-            Circle().fill(WantedLogic.stateColor(edition.state)).frame(width: 6, height: 6)
+            StatusDot(token: WantedStateToken.token(edition.state), size: 6)
             Text(edition.tier.chipLabel)
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .tracking(0.2)
-                .foregroundStyle(edition.tier.color)
+                .foregroundStyle(Theme.isMono ? Theme.tierFill(edition.tier) : edition.tier.color)
         }
         .padding(.horizontal, 9)
         .padding(.vertical, 3)

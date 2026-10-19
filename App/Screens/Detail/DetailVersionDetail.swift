@@ -215,7 +215,7 @@ struct DetailVersionDetail: View {
                     .frame(height: 4)
                     .overlay(alignment: .leading) {
                         GeometryReader { geo in
-                            Capsule().fill(edition.tier.color).frame(width: geo.size.width * fraction)
+                            Capsule().fill(DetailTokens.tier(edition.tier)).frame(width: geo.size.width * fraction)
                         }
                     }
                     .clipShape(Capsule())

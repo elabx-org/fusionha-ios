@@ -123,6 +123,8 @@ struct PaletteTokens: Sendable {
     var primaryVia: UInt32? = nil
     /// Monochrome: status is drawn as shade and pattern (rails, tier chips) instead of hue.
     var isMono = false
+    /// Monochrome's tier chips (`--tier-chip-hd` / `--tier-chip-uhd`): two greys for HD and 4K.
+    var tierChipHd: UInt32? = nil, tierChipUhd: UInt32? = nil
 
     static let graphite = PaletteTokens(
         isLight: false, bg: 0x0E0F13, panel: 0x16181E, panel2: 0x1D2028, line: 0xFFFFFF, lineOpacity: 0.08,
@@ -165,7 +167,7 @@ struct PaletteTokens: Sendable {
         txt: 0xF2F2F2, mut: 0xA6A6A6, dim: 0x858585, i1: 0xD9D9D9, i2: 0xFFFFFF,
         primaryFrom: 0xFFFFFF, primaryTo: 0xD4D4D4, onPrimary: 0x000000, onAccent: 0x000000,
         done: 0xF2F2F2, grab: 0xF2F2F2, miss: 0xBDBDBD, unaired: 0xD9D9D9, unmonitored: 0x707070, onair: 0xE0E0E0, premiere: 0xD0D0D0, stuck: 0xCFCFCF, edition: 0xF2F2F2, anime: 0xD0D0D0, danger: 0xF2F2F2,
-        isMono: true)
+        isMono: true, tierChipHd: 0xD9D9D9, tierChipUhd: 0x8C8C8C)
 
     static let noir = PaletteTokens(
         isLight: false, bg: 0x000000, panel: 0x000000, panel2: 0x0E0E0E, line: 0xFFFFFF, lineOpacity: 0.22,

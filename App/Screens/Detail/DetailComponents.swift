@@ -15,7 +15,8 @@ enum DetailTokens {
     /// Text on the gradient quality badge.
     static var badgeText: Color { Theme.bg }
 
-    static func tier(_ tier: QualityTier) -> Color { tier == .hd ? Theme.edition : Theme.grab }
+    /// HD purple / 4K cyan; under Monochrome the two tier-chip greys (`--tier-chip-*`).
+    static func tier(_ tier: QualityTier) -> Color { Theme.tierFill(tier) }
 
     static func dot(_ dot: EditionDot) -> Color {
         switch dot {

@@ -125,7 +125,7 @@ struct StatusSectionHeader: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Circle().fill(status.color).frame(width: 8, height: 8)
+            StatusDot(token: status.monoToken, size: 8)
             Text(status.sectionLabel.uppercased())
                 .font(.system(size: 13, weight: .bold))
                 .tracking(0.6)

@@ -126,6 +126,6 @@ struct QueueClearView: View {
         .padding(14)
         .frame(width: 168, alignment: .topLeading)
         .frame(maxHeight: .infinity, alignment: .topLeading)
-        .actWash(nil)
+        .actWash(Color?.none)
     }
 }

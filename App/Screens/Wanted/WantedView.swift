@@ -176,10 +176,10 @@ struct WantedView: View {
 
     private var overview: some View {
         ActOverview(total: totals?.total ?? 0, label: "wanted titles", stats: [
-            .init(label: "Missing", value: count(.missing), color: Theme.miss),
-            .init(label: "Below cutoff", value: count(.cutoff), color: Theme.edition),
-            .init(label: "Upcoming", value: count(.upcoming), color: Theme.unaired),
-            .init(label: "4K available", value: fourkCount, color: QualityTier.uhd.color),
+            .init(label: "Missing", value: count(.missing), color: Theme.miss, mono: WantedTab.missing.token),
+            .init(label: "Below cutoff", value: count(.cutoff), color: Theme.edition, mono: WantedTab.cutoff.token),
+            .init(label: "Upcoming", value: count(.upcoming), color: Theme.unaired, mono: WantedTab.upcoming.token),
+            .init(label: "4K available", value: fourkCount, color: QualityTier.uhd.color, mono: WantedTab.fourk.token),
         ])
     }
 
@@ -189,7 +189,7 @@ struct WantedView: View {
         VStack(alignment: .leading, spacing: 8) {
             ActFlow(spacing: 8, lineSpacing: 8) {
                 ForEach(WantedTab.allCases, id: \.self) { t in
-                    ActChip(label: t.label, count: count(t), accent: t.accent, selected: tab == t) {
+                    ActChip(label: t.label, count: count(t), accent: t.accent, selected: tab == t, mono: t.token) {
                         if reduce { tab = t } else { withAnimation(.snappy(duration: 0.25)) { tab = t } }
                     }
                 }
@@ -235,7 +235,7 @@ struct WantedView: View {
     // MARK: Lead
 
     private var lead: some View {
-        let dot = Text(Image(systemName: "circle.fill")).font(.system(size: 6)).foregroundColor(tab.accent).baselineOffset(1.5)
+        let dot = Text(Image(systemName: Theme.isMono ? tab.token.symbol : "circle.fill")).font(.system(size: Theme.isMono ? 9 : 6)).foregroundColor(tab.accent).baselineOffset(1.5)
         let b: (String) -> Text = { Text($0).foregroundColor(Theme.txt).bold() }
         let text: Text
         switch tab {

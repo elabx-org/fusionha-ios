@@ -90,7 +90,7 @@ struct BlocklistRowView: View {
         .padding(.horizontal, nested ? 16 : 12)
         .padding(.vertical, nested ? 8 : 9)
         .background { if !nested { Color.clear } }
-        .modifier(BlocklistWash(nested: nested, color: cat.color))
+        .modifier(BlocklistWash(nested: nested, tone: cat.tone))
         .actSelected(checked, radius: nested ? 0 : 14)
     }
 
@@ -126,15 +126,17 @@ struct BlocklistRowView: View {
 
 struct BlocklistWash: ViewModifier {
     let nested: Bool
-    let color: Color
+    let tone: StatusTone
 
     func body(content: Content) -> some View {
-        if nested {
+        if nested && Theme.isMono {
+            content.background(MonoWash(token: tone.mono, color: tone.color, radius: 0))
+        } else if nested {
             content.background(
-                LinearGradient(stops: [.init(color: color.opacity(0.10), location: 0), .init(color: color.opacity(0), location: 0.42)],
+                LinearGradient(stops: [.init(color: tone.color.opacity(0.10), location: 0), .init(color: tone.color.opacity(0), location: 0.42)],
                                startPoint: .leading, endPoint: .trailing))
         } else {
-            content.actWash(color)
+            content.actWash(tone)
         }
     }
 }

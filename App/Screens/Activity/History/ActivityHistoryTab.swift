@@ -115,10 +115,10 @@ struct ActivityHistoryTab: View {
                 .frame(height: 42, alignment: .bottom)
             }
             ActFlow(spacing: 14, lineSpacing: 8) {
-                kpi(counts[.upgraded] ?? 0, "upgraded", Theme.edition)
-                kpi(counts[.added] ?? 0, "added", Theme.done)
-                kpi(counts[.failed] ?? 0, "failed", Theme.danger)
-                kpi(counts[.grabbed] ?? 0, "grabbed", Theme.grab)
+                kpi(counts[.upgraded] ?? 0, "upgraded", .edition)
+                kpi(counts[.added] ?? 0, "added", .done)
+                kpi(counts[.failed] ?? 0, "failed", .danger)
+                kpi(counts[.grabbed] ?? 0, "grabbed", .grab)
             }
         }
         .padding(.horizontal, 22)
@@ -127,9 +127,9 @@ struct ActivityHistoryTab: View {
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
     }
 
-    private func kpi(_ value: Int, _ label: String, _ color: Color) -> some View {
+    private func kpi(_ value: Int, _ label: String, _ token: MonoToken) -> some View {
         HStack(spacing: 6) {
-            Circle().fill(color).frame(width: 9, height: 9)
+            StatusDot(token: token, size: 9)
             Text("\(value)").font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
             Text(label).font(.system(size: 12)).foregroundStyle(Theme.mut)
         }
@@ -138,10 +138,10 @@ struct ActivityHistoryTab: View {
     private var rawOverview: some View {
         let counts = derived.rawCounts
         return ActOverview(total: feed.total, label: "events", stats: [
-            .init(label: "Grabbed", value: counts["grabbed"] ?? 0, color: Theme.grab),
-            .init(label: "Imported", value: counts["imported"] ?? 0, color: Theme.done),
-            .init(label: "Failed", value: counts["failed"] ?? 0, color: Theme.danger),
-            .init(label: "Deleted", value: counts["deleted"] ?? 0, color: Theme.miss),
+            .init(label: "Grabbed", value: counts["grabbed"] ?? 0, color: Theme.grab, mono: .grab),
+            .init(label: "Imported", value: counts["imported"] ?? 0, color: Theme.done, mono: .done),
+            .init(label: "Failed", value: counts["failed"] ?? 0, color: Theme.danger, mono: .danger),
+            .init(label: "Deleted", value: counts["deleted"] ?? 0, color: Theme.miss, mono: .miss),
         ])
     }
 
@@ -153,10 +153,10 @@ struct ActivityHistoryTab: View {
                 if raw {
                     let counts = derived.rawCounts
                     ActChip(label: "All", count: feed.items.count, accent: Theme.grab, selected: rawFilter == nil) { rawFilter = nil }
-                    ForEach([("grabbed", "Grabbed", Theme.grab), ("imported", "Imported", Theme.done), ("failed", "Failed", Theme.danger),
-                             ("deleted", "Deleted", Theme.miss), ("renamed", "Renamed", Theme.edition)], id: \.0) { id, label, color in
+                    ForEach([("grabbed", "Grabbed", MonoToken.grab), ("imported", "Imported", MonoToken.done), ("failed", "Failed", MonoToken.danger),
+                             ("deleted", "Deleted", MonoToken.miss), ("renamed", "Renamed", MonoToken.edition)], id: \.0) { id, label, token in
                         if (counts[id] ?? 0) > 0 {
-                            ActChip(label: label, count: counts[id], accent: color, selected: rawFilter == id) { rawFilter = id }
+                            ActChip(label: label, count: counts[id], accent: token.color, selected: rawFilter == id, mono: token) { rawFilter = id }
                         }
                     }
                 } else {
@@ -165,7 +165,7 @@ struct ActivityHistoryTab: View {
                     ForEach([HistoryStoryType.upgraded, .added, .failed, .deleted], id: \.self) { type in
                         if (counts[type] ?? 0) > 0 {
                             ActChip(label: type == .upgraded ? "Upgrades" : type.label, count: counts[type], accent: type.color,
-                                    selected: storyFilter == type) { storyFilter = type }
+                                    selected: storyFilter == type, mono: type.mono) { storyFilter = type }
                         }
                     }
                 }

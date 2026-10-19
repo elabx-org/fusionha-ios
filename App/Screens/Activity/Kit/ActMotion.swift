@@ -173,14 +173,15 @@ struct ActProgressBar: View {
     var height: CGFloat = 5
     var fill: AnyShapeStyle = AnyShapeStyle(LinearGradient(colors: [Theme.grab.opacity(0.7), Theme.indigo, Theme.grab], startPoint: .leading, endPoint: .trailing))
     var shimmer = true
+    /// Under Monochrome the fill is this status' solid shade and pattern instead.
+    var mono: MonoToken? = nil
     @Environment(\.actReduceMotion) private var reduce
 
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
                 Capsule().fill(Theme.txt.opacity(0.09))
-                Capsule()
-                    .fill(fill)
+                fillShape
                     .overlay { if shimmer { ActShimmer() } }
                     .clipShape(Capsule())
                     .frame(width: max(0, geo.size.width * min(max(fraction, 0), 1)))
@@ -188,5 +189,14 @@ struct ActProgressBar: View {
         }
         .frame(height: height)
         .animation(reduce ? nil : ActMotion.fill, value: fraction)
+    }
+
+    @ViewBuilder
+    private var fillShape: some View {
+        if Theme.isMono, let mono {
+            StatusSwatch(token: mono, shape: Capsule())
+        } else {
+            Capsule().fill(fill)
+        }
     }
 }

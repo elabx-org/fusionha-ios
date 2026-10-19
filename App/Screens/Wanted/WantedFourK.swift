@@ -53,7 +53,8 @@ private struct FourKRail: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Theme.txt.opacity(0.07))
-                    Capsule().fill(rc).frame(width: geo.size.width * fraction * (reduce || grown ? 1 : 0))
+                    StatusSwatch(token: tier == .hd ? .done : .grab, shape: Capsule())
+                        .frame(width: geo.size.width * fraction * (reduce || grown ? 1 : 0))
                 }
             }
             .frame(height: 6)
@@ -97,7 +98,7 @@ struct WantedFourKCard: View {
         let provenance = fourKSources(item.sources, item.source)
         let hd = rail(.hd)
         let uhd = rail(.uhd)
-        ActGroupCard(wash: QualityTier.uhd.color, base: Theme.panel, defaultOpen: true, hasTrailing: false) {
+        ActGroupCard(wash: StatusTone(color: QualityTier.uhd.color, mono: QualityTier.uhd.monoToken), base: Theme.panel, defaultOpen: true, hasTrailing: false) {
             ActPoster(url: item.posterUrl, title: item.title, size: .md)
         } title: {
             ActFlow(spacing: 9, lineSpacing: 4) {
