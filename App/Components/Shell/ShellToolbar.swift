@@ -120,7 +120,9 @@ final class AccountBarArt {
         let renderer = ImageRenderer(content: AccountGlyph(photo: photo.map(PosterWashRenderer.washed),
                                                            initials: me?.initials ?? "", dot: dot))
         renderer.scale = 3
-        let image = renderer.uiImage ?? UIImage()
+        // Original rendering at the UIKit level too: the bar tints template
+        // images, and drew the first build's photo as a flat accent disc.
+        let image = renderer.uiImage?.withRenderingMode(.alwaysOriginal) ?? UIImage()
         cache = (key, image)
         return image
     }
