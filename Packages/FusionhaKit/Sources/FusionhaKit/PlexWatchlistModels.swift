@@ -35,11 +35,14 @@ public struct PlexWatchlistRead: Decodable, Sendable, Hashable {
     /// For 24 h after the first check of a newly turned-on watchlist.
     public let firstCheck: PlexWatchlistFirstCheck?
     public let lists: PlexListsRead
+    /// 0.4.215: the watchlist's running pass and ledger counts (nil from older servers).
+    public let sync: SourceSync?
+    public let counts: SourceCounts?
 
     enum CodingKeys: String, CodingKey {
         case eligible, granted, reason, enabled, status, lastCheckedAt, lastSuccessAt, nextCheckAt, lastError
         case options, alsoUhdAllowed, itemCount, requestedCount, seenCount, baselineCount, waitingCount
-        case requestedTotal, syncAvailableAt, firstCheck, lists
+        case requestedTotal, syncAvailableAt, firstCheck, lists, sync, counts
     }
 
     private struct Options: Decodable { let alsoUhd: Bool? }
@@ -67,6 +70,8 @@ public struct PlexWatchlistRead: Decodable, Sendable, Hashable {
         syncAvailableAt = c.lenient(.syncAvailableAt)
         firstCheck = c.lenient(.firstCheck)
         lists = c.orDefault(.lists, PlexListsRead(state: "unknown", sources: []))
+        sync = c.lenient(.sync)
+        counts = c.lenient(.counts)
     }
 }
 
@@ -123,11 +128,14 @@ public struct PlexListSource: Decodable, Sendable, Hashable, Identifiable {
     /// Plex deleted the list: offer Remove (cancels nothing).
     public let deleted: Bool
     public let error: String?
+    public let sync: SourceSync?
+    public let counts: SourceCounts?
 
     public var id: String { listId }
 
     enum CodingKeys: String, CodingKey {
         case listId, name, visibility, itemCount, enabled, baseline, lastCheckedAt, requestedCount, deleted, error
+        case sync, counts
     }
 
     public init(from decoder: Decoder) throws {
@@ -142,5 +150,7 @@ public struct PlexListSource: Decodable, Sendable, Hashable, Identifiable {
         requestedCount = c.orDefault(.requestedCount, 0)
         deleted = c.orDefault(.deleted, false)
         error = c.lenient(.error)
+        sync = c.lenient(.sync)
+        counts = c.lenient(.counts)
     }
 }

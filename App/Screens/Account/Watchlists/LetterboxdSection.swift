@@ -56,7 +56,7 @@ struct LetterboxdSection: View {
                 pill = ("Not connected", Theme.dim)
                 sub = "Request films from your diary, watchlist and lists"
             case .ok:
-                pill = ("Active", Theme.done)
+                pill = store.letterboxdRunning ? (SyncProgress.syncing, SyncVariant.running.color) : ("Active", Theme.done)
                 sub = "@\(read.username ?? "") · reading public data"
             case .bad:
                 pill = ("Can’t read profile", Theme.stuck)
@@ -73,6 +73,7 @@ struct LetterboxdSection: View {
                              sub: "Checks your diary, watchlist and linked sources right away. Each source at most once every 5 minutes.",
                              retryAt: store.letterboxdRetryAt ?? read.syncAvailableAt,
                              syncing: store.letterboxdSyncing,
+                             running: store.letterboxdRunning,
                              waitText: { LetterboxdLogic.checkAgain($0) }) {
                 Task { await store.syncLetterboxd(model) }
             }

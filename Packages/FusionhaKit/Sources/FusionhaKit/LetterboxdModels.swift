@@ -50,9 +50,12 @@ public struct LetterboxdDiary: Decodable, Sendable, Hashable {
     public let lastCheckedAt: String?
     public let nextCheckAt: String?
     public let baseline: String?
+    /// 0.4.215: the running pass and the ledger counts (nil from older servers).
+    public let sync: SourceSync?
+    public let counts: SourceCounts?
 
     enum CodingKeys: String, CodingKey {
-        case enabled, requestRewatches, alsoUhd, requestedCount, lastCheckedAt, nextCheckAt, baseline
+        case enabled, requestRewatches, alsoUhd, requestedCount, lastCheckedAt, nextCheckAt, baseline, sync, counts
     }
 
     public init(from decoder: Decoder) throws {
@@ -64,6 +67,8 @@ public struct LetterboxdDiary: Decodable, Sendable, Hashable {
         lastCheckedAt = c.lenient(.lastCheckedAt)
         nextCheckAt = c.lenient(.nextCheckAt)
         baseline = c.lenient(.baseline)
+        sync = c.lenient(.sync)
+        counts = c.lenient(.counts)
     }
 }
 
@@ -77,6 +82,9 @@ public struct LetterboxdWatchlistFollow: Decodable, Sendable, Hashable {
     public let sourceId: Int?
     public let truncated: Bool
     public let itemCount: Int?
+    public let nextCheckAt: String?
+    public let sync: SourceSync?
+    public let counts: SourceCounts?
 
     static let off = LetterboxdWatchlistFollow()
 
@@ -89,10 +97,14 @@ public struct LetterboxdWatchlistFollow: Decodable, Sendable, Hashable {
         sourceId = nil
         truncated = false
         itemCount = nil
+        nextCheckAt = nil
+        sync = nil
+        counts = nil
     }
 
     enum CodingKeys: String, CodingKey {
         case enabled, status, requestedCount, lastCheckedAt, lastError, sourceId, truncated, itemCount
+        case nextCheckAt, sync, counts
     }
 
     public init(from decoder: Decoder) throws {
@@ -105,6 +117,9 @@ public struct LetterboxdWatchlistFollow: Decodable, Sendable, Hashable {
         sourceId = c.lenient(.sourceId)
         truncated = c.orDefault(.truncated, false)
         itemCount = c.lenient(.itemCount)
+        nextCheckAt = c.lenient(.nextCheckAt)
+        sync = c.lenient(.sync)
+        counts = c.lenient(.counts)
     }
 }
 
@@ -130,10 +145,12 @@ public struct LbSource: Decodable, Sendable, Hashable, Identifiable {
     public let itemCount: Int?
     public let baseline: String?
     public let truncated: Bool
+    public let sync: SourceSync?
+    public let counts: SourceCounts?
 
     enum CodingKeys: String, CodingKey {
         case id, kind, label, url, owner, isSelf, enabled, status, lastCheckedAt, nextCheckAt, retryAt
-        case lastError, viaFlaresolverr, requestedCount, itemCount, baseline, truncated
+        case lastError, viaFlaresolverr, requestedCount, itemCount, baseline, truncated, sync, counts
     }
 
     public init(from decoder: Decoder) throws {
@@ -155,6 +172,8 @@ public struct LbSource: Decodable, Sendable, Hashable, Identifiable {
         itemCount = c.lenient(.itemCount)
         baseline = c.lenient(.baseline)
         truncated = c.orDefault(.truncated, false)
+        sync = c.lenient(.sync)
+        counts = c.lenient(.counts)
     }
 
     public var isList: Bool { kind == "LETTERBOXD_LIST" }

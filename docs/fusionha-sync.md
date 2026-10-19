@@ -10,11 +10,11 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `d841ca84` |
-| fusionha release | **0.4.214** (`v0.4.214`, 2026-10-18: admins decide their own requests, Requests card scale; no migration, no schema change) |
-| Checked on | 2026-10-18 |
-| Previous sync | `dcdfea48` / 0.4.205 (2026-10-16) |
-| Last CI | run 338 on `ec9c9b2`: green; shipped to `main` |
+| fusionha commit | `8fc2eb71` |
+| fusionha release | **0.4.215** (`v0.4.215`, 2026-10-19: Watchlists & lists sync progress; additive `sync` / `counts` on every source read, admin `GET /system/request-sources/summary`) |
+| Checked on | 2026-10-19 |
+| Previous sync | `d841ca84` / 0.4.214 (2026-10-18) |
+| Last CI | run 338 on `ec9c9b2`: green; the 0.4.215 port has not been through CI yet |
 | Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
 
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
@@ -32,16 +32,62 @@ ported and green, and nothing is half done. Still to do:
   rule and the card scale matched. Two fixes followed: the swipe card's
   low-space warning at 12.5 pt, and the policy sheet's note when an admin's
   `auto_approve_tiers` is inherited from "admin".
-- Coming from fusionha: sync progress for Watchlists & lists (an Account
-  card progress line and an Activity › Tasks card), then requests phase 10b
-  (MDBList, Trakt, other people's Plex lists, admin import lists). Port each
-  one when its shapes are posted.
+- 0.4.215 sync progress is ported (see its section below).
+- Coming from fusionha: requests phase 10b (MDBList, Trakt, other people's
+  Plex lists, admin import lists). Port each one when its shapes are posted.
 - Live Activity posters: the 4 KB state budget limits sharpness on
   Feather builds without the App Group (see the Live Activity notes in
   `docs/ui-plan.md` and `LiveActivityPosters` in
   `App/LiveActivityController.swift`).
 - The redesign migration of the remaining screens (task "Migrate every
   screen to the redesign").
+
+## 0.4.215: Watchlists & lists sync progress
+
+Checked against `v0.4.215` (`frontend/openapi.json`, the approved mock
+`design/mocks/requests-sync-progress.html` and the web diff
+`v0.4.214..v0.4.215 -- frontend/src`).
+
+Done:
+- `sync {state, checked, total, started_at}` (`SourceSync`) and `counts
+  {requested, owned, queued, waiting, skipped, baseline}` (`SourceCounts`) on
+  the diary, the own watchlist (which also gains `next_check_at`), every
+  linked Letterboxd source, the Plex watchlist and each Plex list. All
+  optional: an older server decodes with nil and the screens show zeros.
+- The rules live in the Kit (`SyncProgress`, the web's `sync-progress.ts` and
+  `sync-copy.ts`): the state line ("Checking 24 of 38 · 6 requested so far",
+  "Reading the source…", "Up to date · checked … · next check …", "Waiting
+  for the first check", "Couldn’t read … · … · retrying …", "Paused · …"),
+  the bar's percent, the five counts, the queued hint and the diary's
+  baseline note.
+- Account › Watchlists & lists: the state line (`SyncStatusView`, dot +
+  line + bar) and the count tiles (`SyncCountGrid`) on the own watchlist,
+  each linked source (Paused with the last counts while it is off) and the
+  Plex watchlist; the line alone on the diary and on each Plex list. Pills
+  read Syncing (grabbing) / Error (danger) while a pass runs or fails, Sync
+  now reads "Syncing…" with "Runs on its own too; this follows it.". The
+  screen re-reads every 2 s only while something runs (`.task(id:
+  store.anyRunning)`), and stops once all are idle.
+- Activity › Tasks › System: the admin-only **Watchlists & lists** card
+  (`GET /api/v1/system/request-sources/summary`, `RequestSourcesSummary`,
+  `WatchlistsTaskLogic`): the overall line and bar, one washed row per
+  source, Today (Requested · Owned · Skipped · Errors) and the three jobs as
+  mono labels with status dots. The three job runs leave Recent, with the
+  web's "no longer clutter Recent" note. The tab polls at 2 s while a source
+  runs.
+- The bar fills with the accent gradient (`Theme.fusion`, the web's
+  `--grad`); the running dot and pills use `Theme.grab` as on the web.
+- Goldens: `letterboxd_me_syncing`, `plex_watchlist_me_syncing`,
+  `request_sources_me_syncing`, `request_sources_summary` (new, in
+  `SyncProgressTests`); the 0.4.215 versions of the existing Letterboxd /
+  Plex / request-source fixtures, which gained the blocks.
+
+Not ported:
+- The admin status reads (`/users/{id}/plex-watchlist`,
+  `/users/{id}/request-sources`) also carry `sync` / `counts`; the web
+  shows nothing new there, so the app does not decode them yet.
+- The web's count "tick" (a short lift and green tint when a number
+  grows) is the system numeric roll here.
 
 ## 0.4.209–0.4.213: Account › Watchlists & lists (the user's own side)
 

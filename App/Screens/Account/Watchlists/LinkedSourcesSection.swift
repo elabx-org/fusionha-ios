@@ -52,7 +52,8 @@ struct LinkedSourcesSection: View {
 }
 
 /// One linked list or followed watchlist (web `LinkedSourceRow`): status pill,
-/// films, requested and last check, its switch, and Sync now / Remove.
+/// films, its switch and Sync now / Remove, then its state line, bar and
+/// counts (Paused with the last counts while it is off).
 private struct LinkedSourceRow: View {
     @Environment(AppModel.self) private var model
     let store: WatchlistsStore
@@ -60,18 +61,34 @@ private struct LinkedSourceRow: View {
     @State private var askingRemove = false
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            head
+            syncBlock
+        }
+        .confirmationDialog("Remove \(source.title)?", isPresented: $askingRemove, titleVisibility: .visible) {
+            Button("Remove", role: .destructive) { remove() }
+            Button("Keep it", role: .cancel) {}
+        } message: {
+            Text("Nothing already requested is cancelled.")
+        }
+    }
+
+    private var head: some View {
         let meta = LetterboxdLogic.status(source.status)
         let solved = source.viaFlaresolverr && source.status == "OK"
-        HStack(alignment: .top, spacing: 12) {
+        let running = SyncProgress.isRunning(source.sync)
+        let pill = running ? SyncProgress.syncing : (solved ? "Healthy · via solver" : meta.label)
+        let color = running ? SyncVariant.running.color : meta.tone.color
+        return HStack(alignment: .top, spacing: 12) {
             Image(systemName: source.isList ? "list.bullet" : "person.2")
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(meta.tone.color)
+                .foregroundStyle(color)
                 .frame(width: 22)
                 .padding(.top, 2)
             VStack(alignment: .leading, spacing: 4) {
                 Text(source.title).foregroundStyle(Theme.txt).lineLimit(2)
                 HStack(spacing: 6) {
-                    WatchlistPill(text: solved ? "Healthy · via solver" : meta.label, color: meta.tone.color)
+                    WatchlistPill(text: pill, color: color)
                     Text(detail).font(.caption).foregroundStyle(Theme.mut).lineLimit(1)
                 }
                 if let note { Text(note).font(.caption).foregroundStyle(Theme.miss) }
@@ -88,23 +105,26 @@ private struct LinkedSourceRow: View {
             }
             .accessibilityLabel("Options for \(source.title)")
         }
-        .confirmationDialog("Remove \(source.title)?", isPresented: $askingRemove, titleVisibility: .visible) {
-            Button("Remove", role: .destructive) { remove() }
-            Button("Keep it", role: .cancel) {}
-        } message: {
-            Text("Nothing already requested is cancelled.")
+    }
+
+    @ViewBuilder
+    private var syncBlock: some View {
+        if source.enabled {
+            SyncStatusView(sync: source.sync, requested: source.counts?.requested ?? source.requestedCount,
+                           lastCheckedAt: source.lastCheckedAt, nextCheckAt: source.nextCheckAt,
+                           lastError: source.status == "BLOCKED" ? nil : source.lastError,
+                           barLabel: "\(source.title) sync progress")
+        } else {
+            SyncStatusView(sync: source.sync, paused: true,
+                           pausedText: "switched off for now. Counts are from the last check.")
         }
+        SyncCountsView(counts: source.counts)
     }
 
     private var detail: String {
         var parts = [source.isList ? "List" : "Watchlist"]
         if let films = source.itemCount { parts.append("\(films) films") }
-        if source.enabled {
-            parts.append("\(source.requestedCount) requested")
-            parts.append("checked \(WatchlistTime.lastRun(source.lastCheckedAt))")
-        } else {
-            parts.append("Off")
-        }
+        if !source.enabled { parts.append("Off") }
         return parts.joined(separator: " · ")
     }
 

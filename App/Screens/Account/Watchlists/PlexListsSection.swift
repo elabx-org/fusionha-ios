@@ -34,7 +34,7 @@ struct PlexListsSection: View {
 }
 
 /// One Plex list: name, visibility, counts and its own switch, with the
-/// baseline choice when turned on.
+/// baseline choice when turned on; while on, its state line and bar.
 private struct PlexListRow: View {
     @Environment(AppModel.self) private var model
     let store: WatchlistsStore
@@ -56,21 +56,32 @@ private struct PlexListRow: View {
                     .disabled(store.plexBusy)
             }
         } else {
-            Toggle(isOn: Binding(get: { list.enabled || choosing }, set: { on in switchChanged(on) })) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(list.name).foregroundStyle(Theme.txt)
-                    Text(meta).font(.caption).foregroundStyle(Theme.mut)
+            VStack(alignment: .leading, spacing: 8) {
+                toggle
+                if list.enabled {
+                    SyncStatusView(sync: list.sync, requested: list.counts?.requested ?? list.requestedCount,
+                                   lastCheckedAt: list.lastCheckedAt, errorLead: "Couldn’t read this list",
+                                   barLabel: "\(list.name) sync progress")
                 }
             }
-            .disabled(store.plexBusy)
-            .accessibilityLabel("Auto-request from list \(list.name)")
-            .confirmationDialog("Turn on \(list.name)", isPresented: $choosing, titleVisibility: .visible) {
-                Button("Only new additions (recommended)") { turnOn(existing: false) }
-                Button("Also request what’s already on it") { turnOn(existing: true) }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("Only new additions: titles already on this list are noted and left alone.\n\nAlso request what’s already on it: a few at a time; titles over your weekly limit wait.")
+        }
+    }
+
+    private var toggle: some View {
+        Toggle(isOn: Binding(get: { list.enabled || choosing }, set: { on in switchChanged(on) })) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(list.name).foregroundStyle(Theme.txt)
+                Text(meta).font(.caption).foregroundStyle(Theme.mut)
             }
+        }
+        .disabled(store.plexBusy)
+        .accessibilityLabel("Auto-request from list \(list.name)")
+        .confirmationDialog("Turn on \(list.name)", isPresented: $choosing, titleVisibility: .visible) {
+            Button("Only new additions (recommended)") { turnOn(existing: false) }
+            Button("Also request what’s already on it") { turnOn(existing: true) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Only new additions: titles already on this list are noted and left alone.\n\nAlso request what’s already on it: a few at a time; titles over your weekly limit wait.")
         }
     }
 

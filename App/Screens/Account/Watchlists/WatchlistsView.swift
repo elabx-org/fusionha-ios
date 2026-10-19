@@ -43,6 +43,15 @@ struct WatchlistsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await store.load(model.client) }
         .task { await store.load(model.client) }
+        .task(id: store.anyRunning) {
+            // Every 2 s while a source is mid-pass (web `syncPollMs`); the loop
+            // ends once all are idle and restarts when one runs again.
+            while store.anyRunning {
+                try? await Task.sleep(for: .seconds(SyncProgress.runningPollSeconds))
+                if Task.isCancelled { return }
+                await store.refreshProgress(model.client)
+            }
+        }
         .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
     }
 }

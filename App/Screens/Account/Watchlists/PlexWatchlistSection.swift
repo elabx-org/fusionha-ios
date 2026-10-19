@@ -43,8 +43,11 @@ struct PlexWatchlistSection: View {
     }
 
     private var head: some View {
-        let color = checking ? Theme.grab : Self.color(state)
-        let pill = checking ? "Checking" : (state == .off && choosingOn ? "Setting up" : state.label)
+        // 0.4.215: a pass in flight on the watchlist or a list reads Syncing.
+        let syncing = state == .on && !checking && SyncProgress.plexRunning(read)
+        let color = checking || syncing ? Theme.grab : Self.color(state)
+        let pill = syncing ? SyncProgress.syncing
+            : checking ? "Checking" : (state == .off && choosingOn ? "Setting up" : state.label)
         return WatchlistCardHead(icon: "list.star", tint: Theme.mut, title: "Plex watchlist & lists",
                                  sub: state.sub, pill: pill, pillColor: color)
             .sheet(item: Binding(get: { reconnect.authURL }, set: { reconnect.authURL = $0 })) { url in

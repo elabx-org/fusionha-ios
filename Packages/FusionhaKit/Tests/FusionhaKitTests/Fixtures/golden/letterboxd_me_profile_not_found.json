@@ -10,7 +10,21 @@
     "requested_count": 0,
     "last_checked_at": "2026-10-05T21:20:00",
     "next_check_at": null,
-    "baseline": "new"
+    "baseline": "new",
+    "sync": {
+      "state": "error",
+      "checked": null,
+      "total": null,
+      "started_at": null
+    },
+    "counts": {
+      "requested": 0,
+      "owned": 0,
+      "queued": 0,
+      "waiting": 0,
+      "skipped": 0,
+      "baseline": 0
+    }
   },
   "also_uhd_allowed": true,
   "watchlist_follow": {
@@ -21,7 +35,10 @@
     "last_error": null,
     "source_id": null,
     "truncated": false,
-    "item_count": null
+    "item_count": null,
+    "next_check_at": null,
+    "sync": null,
+    "counts": null
   },
   "can_link_lists": true,
   "max_linked_lists": 5,
