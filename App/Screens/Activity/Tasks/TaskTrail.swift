@@ -9,6 +9,7 @@ struct RunTrail: View {
     @State private var detail: CommandRunDetail?
     @State private var failed = false
     @State private var rawList = false
+    @State private var profiles: [QualityTier: TrailProfile] = [:]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -27,9 +28,26 @@ struct RunTrail: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.panel2)
         .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
+        .environment(\.trailContext, TrailContext(profiles: profiles, considered: detail?.candidates.count ?? 0))
         .task {
             do { detail = try await model.client?.systemRun(id: runId) } catch { failed = true }
+            await loadProfiles()
         }
+    }
+
+    /// The same profile per tier the engine judged with (web `useTrailProfiles`):
+    /// the run title's versions, matched to the quality profiles.
+    private func loadProfiles() async {
+        guard let itemId = detail?.itemId, itemId > 0, let client = model.client else { return }
+        async let item = try? client.item(id: itemId)
+        async let records = try? client.qualityProfileRecords()
+        guard let item = await item, let records = await records else { return }
+        var map: [QualityTier: TrailProfile] = [:]
+        for edition in item.editions {
+            guard let pid = edition.qualityProfileId, let record = records.first(where: { $0.id == pid }) else { continue }
+            map[edition.tier] = TrailProfile(record)
+        }
+        profiles = map
     }
 
     private func note(_ text: String) -> some View {
@@ -204,53 +222,5 @@ struct ReasonGroupView: View {
         .background(Theme.panel, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Theme.line))
-    }
-}
-
-/// One candidate line (`.tline`): dot, release, group, size, ×N, why.
-struct CandidateLine: View {
-    let row: TasksLogic.DedupRow
-
-    var body: some View {
-        let c = row.rep
-        let dot: Color = c.action == "GRAB" ? Theme.done : (c.action == "UPGRADE" ? Theme.grab : (c.action == "REJECT" ? Theme.miss : Theme.dim))
-        let whyColor: Color = (c.action == "GRAB" || c.action == "UPGRADE") ? Theme.done : (c.action == "REJECT" ? Theme.miss : Theme.mut)
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 9) {
-                Circle().fill(dot).frame(width: 8, height: 8)
-                Text(c.releaseTitle).foregroundStyle(Theme.txt).lineLimit(1).truncationMode(.middle)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if let group = c.releaseGroup { Text(group).foregroundStyle(Theme.edition).lineLimit(1).fixedSize() }
-                if let size = c.size { Text(ActFmt.bytes(size)).foregroundStyle(Theme.dim).fixedSize() }
-                if row.count > 1 || row.indexers > 1 {
-                    Text("×\(row.count)\(row.indexers > 1 ? " · \(row.indexers) indexers" : "")")
-                        .font(.system(size: 11))
-                        .foregroundStyle(Theme.mut)
-                        .padding(.horizontal, 7).padding(.vertical, 1)
-                        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 6))
-                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.line))
-                        .fixedSize()
-                }
-            }
-            Text(why(c))
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(whyColor)
-                .lineLimit(2)
-                .padding(.leading, 17)
-        }
-        .font(.system(size: 12, design: .monospaced))
-        .padding(.vertical, 5)
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(Theme.line).frame(height: 1).mask(
-                HStack(spacing: 3) { ForEach(0..<80, id: \.self) { _ in Rectangle().frame(width: 4) } })
-        }
-    }
-
-    private func why(_ c: RunCandidate) -> String {
-        if let score = c.cfScore, score != 0 {
-            let signed = score > 0 ? "+\(score)" : "\(score)"
-            return c.reason.isEmpty ? signed : "\(c.reason) · \(signed)"
-        }
-        return c.reason.isEmpty ? "—" : c.reason
     }
 }

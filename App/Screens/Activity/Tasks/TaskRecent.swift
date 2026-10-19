@@ -6,12 +6,23 @@ import FusionhaKit
 struct RecentGroupView: View {
     let group: TasksLogic.RunGroup
     let tasks: [ActivitySystemTask]
-    @State private var expanded = false
+    var playful = false
+    /// The `?focus=` run; reveals a collapsed older run.
+    var focusRunId: Int?
+    @State private var expanded: Bool
     @Environment(\.actReduceMotion) private var reduce
+
+    init(group: TasksLogic.RunGroup, tasks: [ActivitySystemTask], playful: Bool = false, focusRunId: Int? = nil) {
+        self.group = group
+        self.tasks = tasks
+        self.playful = playful
+        self.focusRunId = focusRunId
+        _expanded = State(initialValue: focusRunId.map { id in group.older.contains { $0.id == id } } ?? false)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
-            RecentRow(run: group.latest, tasks: tasks)
+            RecentRow(run: group.latest, tasks: tasks, playful: playful, focused: focusRunId == group.latest.id)
             if !group.older.isEmpty {
                 Button {
                     if reduce { expanded.toggle() } else { withAnimation(.easeOut(duration: 0.18)) { expanded.toggle() } }
@@ -37,7 +48,9 @@ struct RecentGroupView: View {
                 .accessibilityAddTraits(expanded ? .isSelected : [])
                 if expanded {
                     VStack(alignment: .leading, spacing: 9) {
-                        ForEach(group.older) { run in RecentRow(run: run, tasks: tasks) }
+                        ForEach(group.older) { run in
+                            RecentRow(run: run, tasks: tasks, playful: playful, focused: focusRunId == run.id)
+                        }
                     }
                     .padding(.leading, 16)
                     .transition(reduce ? .identity : .opacity.combined(with: .offset(y: -4)))
@@ -50,10 +63,21 @@ struct RecentGroupView: View {
 struct RecentRow: View {
     let run: ActivityRun
     let tasks: [ActivitySystemTask]
+    var playful = false
+    /// The `?focus=` target: its trail opens and the row flashes.
+    var focused = false
     @Environment(AppModel.self) private var model
     @Environment(ActToaster.self) private var toaster
     @Environment(\.actReduceMotion) private var reduce
-    @State private var open = false
+    @State private var open: Bool
+
+    init(run: ActivityRun, tasks: [ActivitySystemTask], playful: Bool = false, focused: Bool = false) {
+        self.run = run
+        self.tasks = tasks
+        self.playful = playful
+        self.focused = focused
+        _open = State(initialValue: focused)
+    }
 
     var body: some View {
         let expandable = run.releases > 0 || run.evaluated > 0 || run.skippedInFlight == true
@@ -69,7 +93,7 @@ struct RecentRow: View {
                             .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.card).padding(-4))
                         VStack(alignment: .leading, spacing: 0) {
                             TaskNameLine(run: run)
-                            TaskFactLine(run: run)
+                            TaskFactLine(run: run, playful: playful)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -106,6 +130,8 @@ struct RecentRow: View {
             }
         }
         .modifier(TaskCard(wash: stuck ? Theme.miss : nil))
+        .taskFocusFlash(focused)
+        .id(TaskFocus.scrollId(run.id))
     }
 
     private func toggle() {

@@ -6,7 +6,8 @@ import FusionhaKit
 /// optional sub-tab: `activity/indexers`, `discover/requests`), and `item/{id}`
 /// opens that title's detail sheet; `account#watchlist` opens Watchlists & lists.
 /// `activity/queue?focus={id}&block=1` (from a held-fake push) also opens
-/// "Block release group?" on that download.
+/// "Block release group?" on that download; `activity/tasks?focus={runId}`
+/// opens that run's decision trail.
 ///
 /// A link is received at the app's root (`FusionhaApp`), which exists from the
 /// first frame of a cold launch, and kept in `pendingLink` until the shell is on
@@ -40,7 +41,11 @@ extension AppModel {
         switch url.host() ?? "" {
         case "activity" where !requestScoped:
             pendingActivityTab = path.first.flatMap(ActivityTab.init(rawValue:))
-            pendingQueueFocus = PushLink.queueFocus(in: url)
+            // `?focus=` names a download on the queue and a run on Tasks.
+            let focus = PushLink.queueFocus(in: url)
+            let onTasks = path.first == ActivityTab.tasks.rawValue
+            pendingQueueFocus = onTasks ? nil : focus
+            pendingTaskFocus = onTasks ? focus?.downloadId : nil
             pendingQueueScroll = pendingQueueFocus?.downloadId
             if path.first == "history" { pendingHistoryFilter = HistoryItemFilter.parse(url) }
             // `?rescue=1,2` (the Live Activity's Review): open Manual Import on them.

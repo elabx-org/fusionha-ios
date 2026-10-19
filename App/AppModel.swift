@@ -90,6 +90,8 @@ final class AppModel {
     var pendingQueueFocus: (downloadId: Int, block: Bool)?
     /// The same `focus` for the queue tab: scroll to it, flash it, open its group.
     var pendingQueueScroll: Int?
+    /// A run a link asked Tasks to open (`activity/tasks?focus={runId}`). Consumed by the tab.
+    var pendingTaskFocus: Int?
     /// `activity/history?item_id=`: History scoped to one title.
     var pendingHistoryFilter: HistoryItemFilter?
     var pendingDiscoverTab: DiscoverTab?
