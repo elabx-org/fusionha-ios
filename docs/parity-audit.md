@@ -308,3 +308,102 @@ All of these come from web parity plus the owner's rules. Only the Duo outer-dis
 - **S3:** keep the glass tab bar (a recorded deviation) and add the status cluster.
 - **S5:** build at the web's thresholds and record a deviation wherever the Duo never reaches them.
 - **S6:** a centred single column with a max width when unfolded.
+
+## #59 Duo compatibility (owner decision: system toolbar)
+
+**The owner's decision, quoted:** "use system toolbar to stay within the design of duo and ALSO AUDIT ALL OTHER SCREENS FOR DUO Compatibility".
+
+What it means for the app:
+- Header-row actions become standard system toolbar items (title + symbol, groups, visibility priority). iOS 27.1 places them, so on the outer display and in vertical-bar contexts they move into the vertical bar.
+- The header keeps the title, the view menu and the wide segmented controls.
+- The normal iPhone keeps today's look because the system decides placement; there is no Duo branch.
+- This is a recorded iOS-native deviation from the web.
+
+**The audit:**
+- Sources: `.claude/skills/apple-hig/references/duo.md` and `duo-checklist.md`.
+- Sizes: the outer display is 466×678 pt (measured). The inner display is about 626×890 / 890×626 (estimated).
+- Method: the code was read only. Nothing was run in a simulator, and rows marked *verify* need one.
+
+**Batches** (B9 is folded into D2):
+
+| Batch | What |
+|---|---|
+| **D1 Toolbar migration** | A `NavigationStack` per tab *inside* its `Tab` (keeps TabView identity and scroll). Header actions become `ToolbarItem`/`ToolbarItemGroup` with title + symbol, `.badge`, visibility priority. Sheet bar buttons become title + symbol (`SheetCancelButton`/`SheetDoneButton`, fixed titles; progress via `.disabled`). App overflow goes into the system overflow menu (no `ellipsis`). |
+| **D2 Inner layouts** | All B9/DU rows, switching on the pane's own width (L17/R4/S2), plus the issues below. |
+| **D3 Fold & hinge** | Toasts and fixed controls off the fold. Even grid column counts with an inactive division. Sign-in and setup read `FoldInfo`. Safe-area constants replaced by insets. |
+| **D4 Sheets & popovers** | `presentationSizing(.form)` where ruled. Popovers for the Requests drawer and filter when wide. Detents that fit outer landscape (466 pt tall). Scrollable confirm dialogs. |
+| **D5 Continuity & keyboard** | The open title's `DetailStore` and child sheets survive sheet ↔ column. The split is measured ignoring the keyboard. Settings keeps one container. Focus and selected chip are restored. |
+
+**Blockers:**
+
+| # | Screen · pose | Finding | Fix | Batch |
+|---|---|---|---|---|
+| DC1 | Every tab · outer / vertical bars | No tab root sits in a `NavigationStack` (`RootView.swift:68-80, 316-327`), so there is no system bar for toolbar items. Headers are custom `ShellTitleRow` rows. | A `NavigationStack` inside each `Tab`, with `.toolbar` at the tab level. | D1 |
+| DC2 | Avatar · all | The account hub, Settings cover and widget sheets are `@State` on the avatar button (`AvatarMenu.swift:13-49`). Once the avatar is in system overflow, there is nothing to present from. | Move the flags into `AppModel` and present from `ShellPresentations`. The avatar becomes a toolbar item "Account" with `.badge`. | D1 |
+| DC3 | Item detail · fold/unfold | The column builds a new `ItemDetailView`/`DetailStore` (`DuoLayout.swift:137-142`, `ItemDetailView.swift:27`). Unfolding loses scroll, tab and scope, plus any open child sheet (search, edit, add version, rename, numbering) and its drafts. | Keep the open title's store in `AppModel`. Child-sheet flags live in the store and are re-presented; `scrollPosition(id:)`. | D5 |
+| DC4 | Shell split · inner landscape + keyboard | The split is measured from `RootView` including the keyboard (`RootView.swift:41`). Typing in the Library filter drops the height below 500, so the title column collapses back into a sheet (*verify*). | Measure with `.ignoresSafeArea(.keyboard)`. | D5 |
+
+**Visible:**
+
+| # | Screen | Pose | Finding | Batch |
+|---|---|---|---|---|
+| DC5 | Library, Discover, Wanted header ＋; Library stats | outer | Custom `GlassIconButton` rows (`LibraryHeader.swift:24-28`, `DiscoverView.swift:210`) | D1 |
+| DC6 | Library control row (Filters/grid/Select) | outer | Custom glass buttons with a hand-drawn count (`LibraryToolbar.swift:23-96`). The tier pills and kinds menu stay. | D1 |
+| DC7 | Requests header Filter + Inbox Select | outer | Custom buttons; Select swaps its text (`RequestsViewHeader.swift:60-105`) | D1 |
+| DC8 | Activity header Import / Pause | outer | `ViewThatFits` text↔icon capsule; Pause swaps to a `ProgressView` (`ActivityView.swift:244-260`, `QueuePauseButton.swift:17-30`) | D1 |
+| DC9 | Calendar iCal, week style, ‹ Today › | outer | Custom; Today is text (`CalendarView+Toolbar.swift:34-102`) | D1 |
+| DC10 | Item detail sheet Close, Add sheet, Request modal, trailer | outer | Custom ✕ overlays and hidden nav bars (`DetailHero.swift:37`, `AddTitleSheet.swift:64,105`, `RequestModal.swift:55`, `TrailerPlayer.swift:46`) | D1/D4 |
+| DC11 | Search tab | outer | No `NavigationStack`, so `.searchable` never hosted the field; it is a custom docked field (`SearchTabView.swift:42-118`). Retry `.searchable`. | D1 |
+| DC12 | Sheets with text-only or state-swapping bar buttons | vertical bars | About 25 sheets in Activity, Manual Import, Account, Settings, Issues and Requests (listed in the audit pass) | D1 |
+| DC13 | Tab bar · inner portrait, title open | inner portrait | The 560/360 rule leaves a 265 pt leading column (`DuoLayout.swift:119-125`), narrower than any iPhone | D2 (Q-DC3) |
+| DC14 | Toasts | inner Book/split | Overlay on the whole split, up to 420 wide (`RootView.swift:43-46`, `Toast.swift:52`), so it straddles the fold | D3 |
+| DC15 | Calendar month | inner split | `sizeClass == .regular` puts the desktop month grid in a 265/391 pt column (`CalendarView.swift:12,184`) | D2 |
+| DC16 | Settings | inner portrait + fold/rotation | Size-class split at 626 (ruling S2 says 720). `if wide {SplitView} else {Stack}` rebuilds the list and the open panel, losing scroll, focus and half-typed fields (`SettingsView.swift:31-57`) | D2/D5 |
+| DC17 | Sign-in, Setup | inner Book | The centred card sits across the hinge (`SignInView.swift:117`, `SetupWizardView.swift:43`) | D3 |
+| DC18 | Sign-in | outer | `.ignoresSafeArea(.container)` covers the form, so it runs under the trailing strip (`SignInView.swift:151,194`) | D3 |
+| DC19 | Account panel | inner landscape | A default sheet capped at 420 (`AccountView.swift:29`); the web uses a ~520 trailing panel | D4 |
+| DC20 | Activity confirm dialogs; Add user; Move credential | outer landscape (466 tall) | Non-scrolling dialog at `.medium` (`ActToaster.swift:107-139`); `.medium`-only detents with the keyboard (`UserEditorSheet.swift:152`, `MoveCredentialSheet.swift:48`) | D4/D5 |
+| DC21 | Requests drawer/filter; Library filters; Issues sheets | inner | Height detents are ignored at regular width; the web uses popovers or modals | D4 |
+| DC22 | Manual Import | inner | A default form sheet with phone cards; the web is split on the open Duo | D2/D4 |
+| DC23 | Inner layouts | inner | DU1–DU16 (Requests panes, Board, History table, thread/issue panes, Discover wide, Queue card pane, Library desktop, Calendar tablet/desktop, Settings, Account, sign-in side by side) | D2 |
+
+**Minor** (folded into the batches above):
+- Toast 72 pt and page-bottom 90/190 constants (D3)
+- `StatusBarFade` on the outer display (D3)
+- Odd poster-grid columns across an inactive fold (D3)
+- Detail hero minimum 360 in outer landscape (D3)
+- Tab badge tint not refreshed on bar-axis change (D5)
+- Activity chip strip not scrolled to the selection (D5)
+- Search focus not restored (D5)
+- Idle tile grid leaves an orphan row and starts at a 390 seed (D2)
+- Import report 3+2 (D2)
+- Sync count grid at narrow widths (D2)
+- The Settings `.principal` clear view (D1)
+- `ellipsis` menus (D1)
+- Account hub opens at `.medium` in outer landscape (D4)
+- One-item sheets: vertical-bar opt-out (Q-DC6)
+
+**Ready:**
+- System popovers with `presentationCompactAdaptation(.popover)`
+- Widgets (`containerBackground`, system families)
+- The Live Activity Dynamic Island regions
+- Activity state across fold (`chrome`/`router` in `ActivityView`)
+- `NavigationSplitView` Settings in Book pose
+- No `UIScreen`, idiom or orientation checks
+
+**Questions** (for the owner, via fusionha):
+- **Q-DC1, phone look:** with toolbar items, the horizontal bar sits one row above the custom title. Choose one:
+  - (a) accept two rows, with the bar background hidden
+  - (b) move the title into the bar with `.toolbarTitleDisplayMode(.inlineLarge)` (loses the custom display font in the bar)
+  - (c) keep the one-row look by branching on `toolbarVerticalEdge` (a Duo-style branch, which the decision rules out)
+- **Q-DC2, avatar in the bar:** the `person.crop.circle` symbol with a `.badge`, or the Plex photo as an opted-in custom view (must handle `toolbarVerticalEdge` and Reduce Transparency)?
+- **Q-DC3, inner width:**
+  - At 626 portrait with a title open, the tabs column is 265 pt. Keep the web's 560/360 rule, raise the portrait threshold, or minimise the tab bar while split?
+  - At 890 landscape the 720 thresholds are crossed. Should A1 ("phone column" for History, Blocklist, Wanted, Tasks) be re-ruled?
+- **Q-DC4, Library select bar:** keep it custom (parity), or move it to a system `.bottomBar` group the system can move (task-focused, minimised tab bar)?
+- **Q-DC5, Calendar month:** 7 columns can't be even across the fold. Record it as a deviation?
+- **Q-DC6, Close-only sheets:** opt out of vertical bars (`toolbarVerticalBehavior`) or keep the system default?
+- **Q-DC7, side-to-side fold:** tabs above and the title below don't fit a half-height pane with the 360 pt hero. Is that pose in scope?
+- **Q-DC8, item-detail sheet:** drop the floating ✕ over the art for the system toolbar Close?
+- **Q-DC9, toasts on the fold:** leading column, or the trailing side (HIG: alerts trailing in Book)?
+- **Q-DC10, downloads accessory:** CLAUDE.md lists a glass "downloads accessory" that doesn't exist in code. Out of scope?
