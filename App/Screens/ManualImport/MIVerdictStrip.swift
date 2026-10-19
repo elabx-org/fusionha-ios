@@ -23,16 +23,22 @@ struct MIVerdictStrip: View {
 
     private func line(_ c: [ManualImportFilter: Int]) -> some View {
         let all = c[.all] ?? 0
-        let text = Text("\(all)").bold() + Text(all == 1 ? " file · " : " files · ")
-            + (Text("\(c[.ready] ?? 0)").bold() + Text(" ready")).foregroundColor(Theme.done) + Text(" · ")
-            + (Text("\(c[.attention] ?? 0)").bold() + Text(" need a look")).foregroundColor(Theme.miss) + Text(" · ")
-            + (Text("\(c[.nomatch] ?? 0)").bold() + Text(" no match")).foregroundColor(Theme.danger)
+        let files: Text = Text("\(all)").bold() + Text(all == 1 ? " file · " : " files · ")
+        let ready: Text = count(c[.ready], " ready", Theme.done)
+        let look: Text = count(c[.attention], " need a look", Theme.miss)
+        let none: Text = count(c[.nomatch], " no match", Theme.danger)
+        let dot = Text(" · ")
+        let text: Text = files + ready + dot + look + dot + none
         return ViewThatFits(in: .horizontal) {
             HStack(spacing: 6) { text; probe }
             VStack(alignment: .leading, spacing: 4) { text; probe }
         }
         .font(.system(size: 13))
         .foregroundStyle(Theme.mut)
+    }
+
+    private func count(_ n: Int?, _ label: String, _ color: Color) -> Text {
+        (Text("\(n ?? 0)").bold() + Text(label)).foregroundColor(color)
     }
 
     @ViewBuilder private var probe: some View {
