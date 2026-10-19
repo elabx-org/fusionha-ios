@@ -17,9 +17,9 @@ struct HybridMark: View {
     /// An accessibility label, for a context with no adjacent "Hybrid" text.
     var label: String?
 
-    static let blue = Color(hex: 0x01B4E4)
-    static let green = Color(hex: 0x4FB862)
-    static let amber = Color(hex: 0xF4A02C)
+    static var blue: Color { Theme.brand(0x01B4E4) }
+    static var green: Color { Theme.brand(0x4FB862) }
+    static var amber: Color { Theme.brand(0xF4A02C) }
 
     private static let radius: CGFloat = 11.5
     private static let ringWidth: CGFloat = 4.4

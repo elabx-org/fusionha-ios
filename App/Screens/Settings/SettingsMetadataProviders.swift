@@ -36,9 +36,9 @@ enum MetadataProvider {
 
     var mark: (String, Color) {
         switch self {
-        case .tmdb: return ("TMDB", Color(hex: 0x01B4E4))
-        case .tvdb: return ("TVDB", Color(hex: 0x6CD491))
-        case .tvmaze: return ("TVmaze", Color(hex: 0x3C948B))
+        case .tmdb: return ("TMDB", Theme.brand(0x01B4E4))
+        case .tvdb: return ("TVDB", Theme.brand(0x6CD491))
+        case .tvmaze: return ("TVmaze", Theme.brand(0x3C948B))
         }
     }
 

@@ -57,7 +57,7 @@ struct MetadataProviderSegmented: View {
                 .background {
                     if active {
                         RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .fill(LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .top, endPoint: .bottom))
+                            .fill(Theme.panel2)
                             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.line))
                             .shadow(color: .black.opacity(0.25), radius: 0, y: 2)
                             .matchedGeometryEffect(id: "segment", in: indicator)

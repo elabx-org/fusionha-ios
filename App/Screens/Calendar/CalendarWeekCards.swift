@@ -23,7 +23,7 @@ private struct WeekCardChrome: ViewModifier {
             .background(accent ? tier.color.opacity(0.12) : .clear, in: shape)
             .calLivePulse(live, shape: shape, base: Theme.card)
             .clipShape(shape)
-            .overlay(shape.strokeBorder(accent ? tier.color.opacity(0.34) : Theme.line))
+            .overlay(shape.strokeBorder(Theme.line))
             .opacity(aired ? 0.55 : 1)
             .contentShape(shape)
     }

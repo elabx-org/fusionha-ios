@@ -199,7 +199,7 @@ struct IssueModal: View {
                     ToolbarActionLabel(title: sending ? "Reporting…" : "Report", systemImage: "flag")
                 }
                 .buttonStyle(.glassProminent)
-                .tint(Theme.danger)
+                .tint(Theme.primary)
                 .disabled(sending || !IssueFormat.scopeComplete(scope: isSeries ? scope : "item", season: season, episode: episode))
             }
         }

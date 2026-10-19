@@ -57,7 +57,7 @@ extension AddTitleSheet {
         let active = source == value
         // Shown but unreachable without a TVDB key, so people learn it exists.
         let locked = value == .tvdb && !tvdbConfigured
-        let ring = value == .tmdb ? Theme.indigo.opacity(0.5) : Color(hex: 0x4FB862).opacity(0.55)
+        let ring = value == .tmdb ? Theme.indigo.opacity(0.5) : Theme.brand(0x4FB862).opacity(0.55)
         return Button {
             withAnimation(motion ? Motion.indicator : nil) { source = value }
         } label: {

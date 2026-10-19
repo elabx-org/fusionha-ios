@@ -62,8 +62,7 @@ struct WantedGradualStrip: View {
         .padding(.leading, 15)
         .padding(.trailing, 6)
         .padding(.vertical, 3)
-        .background(LinearGradient(stops: [.init(color: Theme.i2.opacity(0.09), location: 0), .init(color: .clear, location: 0.8)],
-                                   startPoint: .leading, endPoint: .trailing))
+        .background(Theme.i2.opacity(0.07))
         .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
         .task(id: runId) {
             while !Task.isCancelled {

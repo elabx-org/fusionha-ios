@@ -68,6 +68,11 @@ enum Theme {
     static var edition: Color { Color(hex: palette.edition) }
     static var anime: Color { Color(hex: palette.anime) }
     static var danger: Color { Color(hex: palette.danger) }
+    /// A provider's brand colour (TMDB, Discord, Prowlarr…): kept as the
+    /// provider's mark, grey under Monochrome like the web's `--provider-*`.
+    static func brand(_ hex: UInt32) -> Color { isMono ? mut : Color(hex: hex) }
+    /// Max-contrast ink on a brand fill.
+    static func onBrand(_ hex: UInt32) -> Color { isMono ? bg : onFill(hex: hex) }
     /// Plex's brand mark; Monochrome greys it like every provider colour.
     static var plexGold: Color { isMono ? txt : Color(hex: 0xE5A00D) }
     /// Text on a plexGold fill.
@@ -183,6 +188,8 @@ extension EditionStatus {
 extension QualityTier {
     /// Tier chip colour: HD = edition purple, 4K = cyan.
     var color: Color { self == .hd ? Theme.edition : Theme.grab }
+    /// Max-contrast ink on a fill in this tier's colour.
+    var ink: Color { Theme.onFill(hex: self == .hd ? Theme.palette.edition : Theme.palette.grab) }
     /// The tier pill text on cards: `HD` / `4K`.
     var pill: String { self == .hd ? "HD" : "4K" }
 }

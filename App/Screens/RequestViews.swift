@@ -150,6 +150,8 @@ struct WebCheckSquare: View {
     let checked: Bool
     var color: Color = Theme.indigo
     var size: CGFloat = 20
+    /// The tick's ink on `color`: max contrast for the accent by default.
+    var ink: Color = Theme.onAccent
 
     var body: some View {
         RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
@@ -158,7 +160,7 @@ struct WebCheckSquare: View {
                 .strokeBorder(checked ? color : Theme.line, lineWidth: 2))
             .overlay {
                 if checked {
-                    Image(systemName: "checkmark").font(.system(size: size * 0.55, weight: .heavy)).foregroundStyle(Theme.bg)
+                    Image(systemName: "checkmark").font(.system(size: size * 0.55, weight: .heavy)).foregroundStyle(ink)
                         .transition(.scale.combined(with: .opacity))
                 }
             }

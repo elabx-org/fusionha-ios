@@ -36,9 +36,7 @@ struct WatchlistsTaskCard: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(LinearGradient(colors: [tone.color.opacity(0.1), tone.color.opacity(0.02)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing))
-        .modifier(TaskCard())
+        .modifier(TaskCard(wash: tone.color))
     }
 
     private func head(_ tone: SyncVariant) -> some View {

@@ -21,8 +21,7 @@ struct DatabasePanel: View {
                 }
                 .padding(20)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(LinearGradient(colors: [Theme.panel, Theme.panel2], startPoint: .top, endPoint: .bottom),
-                            in: RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous))
+                .background(Theme.panel, in: RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous).strokeBorder(Theme.line))
                 .fetchReveal(0)
             } else {
@@ -219,7 +218,7 @@ private struct BackendCard: View {
         case .recommended:
             Text("Recommended")
                 .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Theme.bg)
+                .foregroundStyle(Theme.onAccent)
                 .padding(.horizontal, 9).padding(.vertical, 3)
                 .background(Theme.primary, in: Capsule())
         case .retained:

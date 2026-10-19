@@ -135,7 +135,7 @@ struct PipelineHero: View {
                             }
                             if active {
                                 Text(QueueLogic.heroStages[i]).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.txt)
-                                Text("\(dist[i])").font(.system(size: 11, weight: .bold).monospacedDigit()).foregroundStyle(Theme.bg)
+                                Text("\(dist[i])").font(.system(size: 11, weight: .bold).monospacedDigit()).foregroundStyle(Theme.onFill(hex: Theme.palette.grab))
                                     .padding(.horizontal, 5).background(Theme.grab, in: Capsule())
                             }
                         }
@@ -154,9 +154,7 @@ struct PipelineHero: View {
             }
         }
         .padding(14)
-        .background(
-            LinearGradient(colors: [Theme.indigo.opacity(0.06), Theme.panel], startPoint: .top, endPoint: .bottom),
-            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Theme.panel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
     }
 }

@@ -74,7 +74,7 @@ struct RequestsViewMenuSheet: View {
                 }
                 Image(systemName: "checkmark")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Theme.primary)
+                    .foregroundStyle(Theme.accentText)
                     .opacity(on ? 1 : 0)
                     .frame(width: 18)
             }

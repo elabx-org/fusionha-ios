@@ -274,7 +274,8 @@ struct ActivityPageHeader: View {
             ActTabs(items: visibleTabs.map { t in
                 ActTabs<ActivityTab>.Item(value: t, label: label(t),
                                           badge: t == .queue ? model.queueTotal : 0,
-                                          badgeColor: held > 0 ? Theme.miss : Theme.grab)
+                                          badgeColor: held > 0 ? Theme.miss : Theme.grab,
+                                          badgeInk: Theme.onFill(hex: held > 0 ? Theme.palette.miss : Theme.palette.grab))
             }, selection: $chrome.tab, namespace: tabsNamespace)
             .padding(.bottom, 20)
         }

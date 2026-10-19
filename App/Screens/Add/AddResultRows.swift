@@ -186,10 +186,10 @@ struct TvdbRow: View {
                 } else {
                     Text("Add via TVDB")
                         .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Theme.bg)
+                        .foregroundStyle(Theme.onBrand(0x4FB862))
                         .padding(.horizontal, 10)
                         .frame(height: 30)
-                        .background(Color(hex: 0x4FB862), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                        .background(Theme.brand(0x4FB862), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                 }
             }
             .buttonStyle(PressScaleStyle())

@@ -110,9 +110,6 @@ struct QueueGroupCard: View {
             }
             .padding(.vertical, 8)
         }
-        .overlay {
-            if soonest { RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.grab.opacity(0.45)) }
-        }
         .confirmationDialog(removeAllTitle(downloads), isPresented: $confirmingRemoveAll, titleVisibility: .visible) {
             Button("Remove \(downloads.count) downloads", role: .destructive) { removeMany(downloads.map(\.id), false, false) }
             if downloads.contains(where: { $0.hasDownloadedFile == true }) {
@@ -231,9 +228,8 @@ struct QueueGroupCard: View {
         .padding(.leading, 20)
         .padding(.trailing, 16)
         .padding(.vertical, 8)
-        .overlay(alignment: .leading) {
-            Capsule().fill(stripe).frame(width: 3).padding(.vertical, 8).offset(x: 5)
-        }
+        // The member's state as a wash, never a left bar.
+        .background(stripe.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     /// The opened member: release, client · indexer · protocol · age, the next

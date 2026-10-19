@@ -105,7 +105,7 @@ struct RecentRow: View {
                     .transition(reduce ? .identity : .opacity)
             }
         }
-        .modifier(TaskCard(border: stuck ? Theme.miss.opacity(0.35) : Theme.line))
+        .modifier(TaskCard(wash: stuck ? Theme.miss : nil))
     }
 
     private func toggle() {

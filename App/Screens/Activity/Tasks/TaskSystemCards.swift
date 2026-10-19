@@ -43,7 +43,7 @@ struct EnrichmentCard: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .modifier(TaskCard(border: settled ? Theme.line : Theme.grab.opacity(0.3)))
+        .modifier(TaskCard(wash: settled ? nil : Theme.grab))
     }
 }
 

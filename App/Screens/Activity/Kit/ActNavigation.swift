@@ -10,6 +10,8 @@ struct ActTabs<Value: Hashable>: View {
         let label: String
         var badge: Int = 0
         var badgeColor: Color = Theme.grab
+        /// Max-contrast ink for the badge fill (black or white by luminance).
+        var badgeInk: Color = Theme.onFill(hex: Theme.palette.grab)
     }
 
     let items: [Item]
@@ -35,7 +37,7 @@ struct ActTabs<Value: Hashable>: View {
                             if item.badge > 0 {
                                 Text("\(item.badge)")
                                     .font(.system(size: 11, weight: .bold).monospacedDigit())
-                                    .foregroundStyle(Theme.bg)
+                                    .foregroundStyle(item.badgeInk)
                                     .padding(.horizontal, 5)
                                     .frame(minWidth: 18, minHeight: 18)
                                     .background(item.badgeColor, in: Capsule())

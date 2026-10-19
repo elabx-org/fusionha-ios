@@ -44,12 +44,7 @@ struct IndexerCard: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 15)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            LinearGradient(colors: [stateColor.opacity(0.10), stateColor.opacity(0)], startPoint: .leading, endPoint: .center),
-            in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .strokeBorder(metric.state == "backoff" ? Theme.miss.opacity(0.35) : Theme.line))
+        .actWash(stateColor, radius: 16, base: Theme.card)
         .opacity(metric.state == "disabled" ? 0.72 : 1)
     }
 
@@ -64,9 +59,9 @@ struct IndexerCard: View {
                     if indexer.source == "prowlarr" {
                         Text("P")
                             .font(.system(size: 11, weight: .heavy))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Theme.onBrand(0xE66001))
                             .frame(width: 16, height: 16)
-                            .background(Color(hex: 0xE66001), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                            .background(Theme.brand(0xE66001), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
                             .accessibilityLabel("Synced from Prowlarr")
                     }
                     let tint = indexer.isTorrent ? Theme.grab : Theme.indigo

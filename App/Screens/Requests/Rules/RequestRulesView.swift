@@ -108,10 +108,8 @@ struct RequestRulesView: View {
             }
         }
         .padding(12)
-        .background(Theme.panel, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .overlay(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 2).fill(tone.opacity(0.7)).frame(width: 3).padding(.vertical, 10)
-        }
+        // Status as the ambient wash, never a left bar (web RuleRow).
+        .actWash(tone, radius: Theme.radius, base: Theme.panel)
         .opacity(rule.enabled ? 1 : 0.6)
     }
 

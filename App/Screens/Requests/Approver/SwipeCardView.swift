@@ -5,7 +5,7 @@ import FusionhaKit
 /// top; the title, "Requested by Priya + 2 · 3 d ago", the tier chip and the
 /// source in words sit below it. Facts and the setup with Adjust live in
 /// Details. While dragged, the APPROVE / DECLINE wash grows with distance
-/// (Approve in the accent, as its button).
+/// (Approve in done-green, as the web's SwipeCard `.ap`).
 struct SwipeCardView: View {
     let request: MediaRequest
     let triage: RequestTriage?
@@ -83,9 +83,9 @@ struct SwipeCardView: View {
         let approve = min(approveBlocked ? 0.3 : 1, max(0, dragX / 120))
         let decline = min(1, max(0, -dragX / 120))
         return ZStack {
-            Theme.primary.opacity(0.35 * approve)
+            Theme.done.opacity(0.35 * approve)
             Theme.danger.opacity(0.35 * decline)
-            Text("APPROVE").font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.primary)
+            Text("APPROVE").font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.done)
                 .rotationEffect(.degrees(-12)).opacity(approve)
             Text("DECLINE").font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.danger)
                 .rotationEffect(.degrees(12)).opacity(decline)

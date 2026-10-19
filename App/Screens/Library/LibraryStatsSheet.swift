@@ -56,7 +56,7 @@ struct LibraryStatsSheet: View {
                     meter("4K coverage") {
                         GeometryReader { geo in
                             Capsule()
-                                .fill(LinearGradient(colors: [Theme.edition, Theme.grab], startPoint: .leading, endPoint: .trailing))
+                                .fill(Theme.grab)
                                 .frame(width: grown && pulse.titles > 0 ? geo.size.width * CGFloat(pulse.fourKTitles) / CGFloat(pulse.titles) : 0)
                         }
                         .frame(height: 9)
@@ -196,7 +196,7 @@ struct LibraryStatsSheet: View {
             .padding(.vertical, 9)
             .background(isActive ? color.opacity(0.12) : Theme.panel2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(isActive ? color.opacity(0.6) : Theme.line))
+                .strokeBorder(Theme.line))
         }
         .buttonStyle(PressScaleStyle())
     }

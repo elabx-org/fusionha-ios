@@ -30,8 +30,7 @@ struct MIHeldStripView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.miss.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.miss.opacity(0.25)))
+        .actWash(Theme.miss, radius: Theme.radius, base: Theme.panel)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Held download")
     }

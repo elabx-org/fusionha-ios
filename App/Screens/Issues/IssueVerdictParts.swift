@@ -4,7 +4,7 @@ import FusionhaKit
 extension IssueFormat.Tone {
     var color: Color {
         switch self {
-        case .working: return Theme.grab
+        case .working: return Theme.i2
         case .resolved: return Theme.done
         case .attention: return Theme.miss
         case .accent: return Theme.primary

@@ -216,7 +216,7 @@ struct RequestModal: View {
                             if selected { selectedTiers.remove(tier) } else { selectedTiers.insert(tier) }
                         } label: {
                             HStack(spacing: 13) {
-                                WebCheckSquare(checked: selected, color: tier.color)
+                                WebCheckSquare(checked: selected, color: tier.color, ink: tier.ink)
                                 RoundedRectangle(cornerRadius: 3).fill(tier.color).frame(width: 9, height: 9)
                                 Text(tier.chipLabel).font(.system(size: 14.5, weight: .semibold)).foregroundStyle(Theme.txt)
                                 Spacer(minLength: 0)

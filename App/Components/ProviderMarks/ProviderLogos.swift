@@ -17,7 +17,7 @@ struct TmdbLogo: View {
             .frame(height: size)
             .padding(.horizontal, 5)
             .padding(.vertical, 2)
-            .background(Color(hex: 0x0D253F), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .background(Theme.brand(0x0D253F), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Theme.txt.opacity(0.07)))
             .providerMarkAccessibility(label)
     }
@@ -50,7 +50,7 @@ struct TvmazeLogo: View {
             .frame(height: size)
             .padding(.horizontal, 5)
             .padding(.vertical, 2)
-            .background(Color(hex: 0x150E0E), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .background(Theme.brand(0x150E0E), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(Theme.txt.opacity(0.07)))
             .providerMarkAccessibility(label)
     }

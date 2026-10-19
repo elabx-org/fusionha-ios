@@ -89,7 +89,7 @@ struct CalButtonStyle: ButtonStyle {
         case .subtle: return Theme.txt
         case .ghost: return Theme.mut
         case .danger: return Theme.danger
-        case .primary: return Theme.bg
+        case .primary: return Theme.onAccent
         }
     }
 

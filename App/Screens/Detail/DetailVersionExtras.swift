@@ -45,7 +45,7 @@ struct DetailAttentionBanner: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .background(color.mix(0.08, Theme.panel), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(color.mix(0.45, Theme.line)))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
         .accessibilityElement(children: .contain)
     }
 

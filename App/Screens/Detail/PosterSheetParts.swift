@@ -93,8 +93,6 @@ struct SheetPrimaryButton: View {
             .frame(maxWidth: .infinity)
             .frame(height: 54)
             .background(Theme.primary, in: Capsule())
-            .overlay(Capsule().strokeBorder(.white.opacity(0.7), lineWidth: 1)
-                .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .center)))
             .contentShape(Capsule())
         }
         .buttonStyle(SheetPrimaryStyle())

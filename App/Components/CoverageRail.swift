@@ -243,9 +243,14 @@ struct RailBar: View {
         if Theme.isMono {
             MonoRailFill(status: MonoStatus(state, attention: attention))
         } else if combo {
-            Capsule().fill(LinearGradient(colors: [Theme.edition, Theme.grab], startPoint: .leading, endPoint: .trailing))
+            // HD and 4K as two solid segments (no gradient on progress).
+            HStack(spacing: 1) {
+                Rectangle().fill(Theme.edition)
+                Rectangle().fill(Theme.grab)
+            }
+            .clipShape(Capsule())
         } else if state == .downloading && !attention {
-            Capsule().fill(LinearGradient(colors: [Theme.grab, Theme.grab.opacity(0.3)], startPoint: .leading, endPoint: .trailing))
+            Capsule().fill(Theme.grab)
         } else {
             Capsule().fill(color)
         }

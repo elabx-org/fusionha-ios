@@ -11,7 +11,7 @@ enum DetailTokens {
     /// `--line2` (undefined in the web CSS; its intended value).
     static var line2: Color { Theme.txt.opacity(0.14) }
     /// IMDb yellow; a deeper amber on Daylight's white.
-    static var star: Color { Theme.isLight ? Color(hex: 0xA16207) : Color(hex: 0xF5C518) }
+    static var star: Color { Theme.brand(Theme.isLight ? 0xA16207 : 0xF5C518) }
     /// Text on the gradient quality badge.
     static var badgeText: Color { Theme.bg }
 
@@ -84,7 +84,7 @@ extension View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         return background {
             shape
-                .fill(LinearGradient(colors: [Theme.panel2, Theme.panel], startPoint: .top, endPoint: .bottom))
+                .fill(Theme.card)
                 .shadow(color: .black.opacity(shadow ? 0.55 : 0), radius: shadow ? 14 : 0, y: shadow ? 10 : 0)
         }
         .overlay(shape.strokeBorder(Theme.txt.opacity(0.06), lineWidth: 0.5))

@@ -96,8 +96,8 @@ struct DetailVersionRow: View {
         }
         .clipShape(shape)
         .detailCard()
-        // The opened card is ringed in its status colour, never filled.
-        .overlay(shape.strokeBorder(statusColor.opacity(open ? 0.45 : 0), lineWidth: 1))
+        // The opened card takes its status as a soft wash, never a ring.
+        .overlay(shape.fill(statusColor.opacity(open ? 0.07 : 0)).allowsHitTesting(false))
     }
 
     /// `61.2 GB` (`.vsize`).

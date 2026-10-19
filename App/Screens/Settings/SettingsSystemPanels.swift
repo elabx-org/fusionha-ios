@@ -329,7 +329,7 @@ struct AboutSettingsPanel: View {
             Spacer(minLength: 0)
         }
         .padding(18)
-        .background(LinearGradient(colors: [Theme.panel, Theme.card], startPoint: .top, endPoint: .bottom))
+        .background(Theme.panel)
         .overlay(alignment: .topTrailing) {
             RadialGradient(colors: [Theme.indigo.opacity(0.12), .clear], center: .topTrailing, startRadius: 0, endRadius: 220)
                 .allowsHitTesting(false)

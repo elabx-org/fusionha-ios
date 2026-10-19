@@ -79,7 +79,7 @@ struct SeasonsTab: View {
                     .foregroundStyle(Theme.miss)
                     .padding(12)
                     .background(Theme.miss.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.miss.opacity(0.4)))
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.line))
                 }
                 .buttonStyle(.plain)
                 .padding(.bottom, 12)
@@ -266,11 +266,11 @@ private struct SeasonBar: View {
             let dlW = total > 0 ? w * CGFloat(downloading) / CGFloat(total) : 0
             let attentionShare = done > 0 ? Double(attention) / Double(done) : 0
             HStack(spacing: 0) {
-                LinearGradient(stops: [
-                    .init(color: Theme.done, location: 0),
-                    .init(color: Theme.done, location: max(0, 1 - attentionShare)),
-                    .init(color: Theme.stuck, location: 1),
-                ], startPoint: .leading, endPoint: .trailing)
+                // Done, then the share that needs attention, as solid segments.
+                HStack(spacing: 0) {
+                    Theme.done.frame(width: (shown ? doneW : 0) * (1 - attentionShare))
+                    Theme.stuck.frame(width: (shown ? doneW : 0) * attentionShare)
+                }
                 .frame(width: shown ? doneW : 0)
                 if downloading > 0 {
                     Theme.grab

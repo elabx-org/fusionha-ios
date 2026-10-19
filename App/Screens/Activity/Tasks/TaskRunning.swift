@@ -29,7 +29,7 @@ struct RunningRow: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
-        .modifier(TaskCard(border: Theme.grab.opacity(0.3)))
+        .modifier(TaskCard(wash: Theme.grab))
     }
 }
 
@@ -155,7 +155,7 @@ struct SearchRunCard: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 15)
-        .actWash(tone, radius: 11, base: Theme.card, border: tone.opacity(stuck ? 0.34 : 0.24))
+        .actWash(tone, radius: 11, base: Theme.card)
     }
 
     private func count(_ glyph: String, _ value: Int, _ label: String, _ color: Color) -> some View {

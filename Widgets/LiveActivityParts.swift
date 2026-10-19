@@ -90,7 +90,7 @@ struct LiveActivityStageRail: View {
     private func fill(_ i: Int) -> AnyShapeStyle {
         if i < steps.done { return AnyShapeStyle(Theme.grab) }
         if i == steps.done {
-            return AnyShapeStyle(LinearGradient(colors: [Theme.grab, Theme.grab.opacity(0.25)], startPoint: .leading, endPoint: .trailing))
+            return AnyShapeStyle(Theme.grab.opacity(0.55))
         }
         return AnyShapeStyle(Color.white.opacity(0.12))
     }

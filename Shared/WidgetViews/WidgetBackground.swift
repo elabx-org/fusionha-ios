@@ -22,7 +22,7 @@ private struct WidgetPaletteBackground: ViewModifier {
         content
             .environment(\.colorScheme, Theme.isLight ? .light : .dark)
             .containerBackground(for: .widget) {
-                LinearGradient(colors: [Theme.panel, Theme.bg], startPoint: .top, endPoint: .bottom)
+                Theme.panel
             }
     }
 }

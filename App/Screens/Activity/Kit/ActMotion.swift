@@ -35,7 +35,8 @@ enum ActMotion {
 // main thread ~50% busy on an idle Queue tab (`RepeatForever`). All of them
 // are static under reduced motion.
 
-/// `queue-sweep` / `activity-sweep`: a light band crossing a progress fill, 1.35s ease-in-out.
+/// `queue-sweep` / `activity-sweep`: a translucent solid band crossing a
+/// progress fill, 1.35s ease-in-out (no gradient on progress, web 0.4.218).
 struct ActShimmer: View {
     var duration = 1.35
     @Environment(\.actReduceMotion) private var reduce
@@ -44,10 +45,9 @@ struct ActShimmer: View {
         if !reduce {
             GeometryReader { geo in
                 RepeatForever(animation: .easeInOut(duration: duration).repeatForever(autoreverses: false)) { on in
-                    LinearGradient(colors: [Theme.sweep.opacity(0), Theme.sweep.opacity(0.28), Theme.sweep.opacity(0)],
-                                   startPoint: .leading, endPoint: .trailing)
-                        .frame(width: geo.size.width)
-                        .offset(x: geo.size.width * (on ? 1 : -1))
+                    Theme.i1.opacity(0.22)
+                        .frame(width: geo.size.width * 0.3)
+                        .offset(x: geo.size.width * (on ? 1 : -0.3))
                 }
             }
             .clipped()
@@ -71,7 +71,7 @@ struct ActIndeterminateBar: View {
                 } else {
                     RepeatForever(animation: .easeInOut(duration: 1.35).repeatForever(autoreverses: false)) { on in
                         Capsule()
-                            .fill(LinearGradient(colors: [color.opacity(0), color, color.opacity(0)], startPoint: .leading, endPoint: .trailing))
+                            .fill(color.opacity(0.85))
                             .frame(width: geo.size.width * 0.36)
                             .offset(x: geo.size.width * (on ? 1 : -0.36))
                     }

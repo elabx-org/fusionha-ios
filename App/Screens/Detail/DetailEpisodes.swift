@@ -96,9 +96,7 @@ private struct EpisodeCard: View {
             }
         }
         .background {
-            if failed {
-                LinearGradient(colors: [Theme.miss.opacity(0.08), .clear], startPoint: .leading, endPoint: .trailing)
-            }
+            if failed { Theme.miss.opacity(0.08) }
         }
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
         .detailAnimation(.easeInOut(duration: 0.2), value: expanded)

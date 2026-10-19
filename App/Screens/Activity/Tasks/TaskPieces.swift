@@ -61,15 +61,15 @@ func taskIconColor(_ kind: TaskIconKind) -> Color {
     }
 }
 
-/// The `.cmd` card frame.
+/// The `.cmd` card frame: a running or stuck run shows its state as the
+/// ambient wash over the neutral hairline, never a tinted border.
 struct TaskCard: ViewModifier {
-    var border: Color = Theme.line
+    var wash: Color? = nil
 
     func body(content: Content) -> some View {
         content
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .actWash(wash, radius: 11, base: Theme.card)
             .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(border))
     }
 }
 

@@ -34,7 +34,7 @@ struct WidgetPosterPlaceholder: View {
             if mode == .accented || preview {
                 Color.white.opacity(0.12)
             } else {
-                LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Theme.panel2
             }
         }
         .overlay(Image(systemName: "film").font(.caption2).foregroundStyle(.tertiary))

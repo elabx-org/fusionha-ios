@@ -134,7 +134,7 @@ struct SearchAmberBox<Content: View>: View {
         .padding(.horizontal, 13)
         .background(Theme.panel2.mix(0.92, Theme.miss), in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-            .strokeBorder(Theme.miss.opacity(0.38)))
+            .strokeBorder(Theme.line))
         .padding(.bottom, 12)
     }
 }
@@ -224,7 +224,7 @@ struct SearchCFWarning: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
         .background(Theme.panel2.mix(0.92, Theme.miss), in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.miss.opacity(0.4)))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line))
         .padding(.bottom, 12)
     }
 }
@@ -305,7 +305,7 @@ struct ReleaseCard: View {
         .padding(.horizontal, 12)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-            .strokeBorder(blocklisted ? Theme.miss.opacity(0.45) : Theme.line))
+            .strokeBorder(Theme.line))
         .opacity(rejected ? 0.72 : 1)
     }
 

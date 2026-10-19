@@ -13,9 +13,9 @@ struct AgentKindMeta {
         self.kind = kind
         switch kind {
         case .discord:
-            label = "Discord"; sub = "Post to a Discord channel via an incoming webhook URL."; color = Color(hex: 0x5865F2)
+            label = "Discord"; sub = "Post to a Discord channel via an incoming webhook URL."; color = Theme.brand(0x5865F2)
         case .telegram:
-            label = "Telegram"; sub = "Send via a bot token to a chat/channel id."; color = Color(hex: 0x29A9EB)
+            label = "Telegram"; sub = "Send via a bot token to a chat/channel id."; color = Theme.brand(0x29A9EB)
         case .webhook:
             label = "Webhook"; sub = "POST a JSON payload to any generic HTTP endpoint."; color = Theme.edition
         }

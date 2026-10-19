@@ -13,12 +13,8 @@ struct EditionChipBackground: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         shape
-            .fill(LinearGradient(colors: [color.opacity(0.24), color.opacity(0.12)], startPoint: .top, endPoint: .bottom))
+            .fill(color.opacity(0.18))
             .overlay(shape.strokeBorder(color.opacity(0.34), lineWidth: 1))
-            .overlay(alignment: .top) {
-                shape.strokeBorder(.white.opacity(0.16), lineWidth: 1)
-                    .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .init(x: 0.5, y: 0.25)))
-            }
     }
 }
 
