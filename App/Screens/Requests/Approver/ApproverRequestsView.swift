@@ -64,13 +64,14 @@ struct ApproverRequestsView: View {
         case .history:
             RequestsHistoryView(onOpenThread: { thread = $0 })
         case .threads:
-            plain { ThreadsPanelView() }
+            plain { ThreadsPanelView(state: nav.filter[.threads].issueState,
+                                     type: nav.threadTypes ? nav.filter[.threads].threadType : nil) }
         case .issues:
             RequestsIssuesView()
         case .insights:
             plain { RequestInsightsView() }
         case .mine:
-            plain { MineView() }
+            plain { MineView(filter: nav.filter[.mine]) }
         }
     }
 
@@ -90,6 +91,7 @@ struct ApproverRequestsView: View {
         if canApprove { panes.append(.insights) }
         panes.append(.mine)
         nav.panes = panes
+        nav.threadTypes = canApprove && canIssues
         if !panes.contains(nav.pane) { nav.pane = panes.first ?? .mine }
         openPending()
     }

@@ -78,7 +78,7 @@ struct TriageInboxView: View {
                 } else if nav.inboxList && !inbox.queue.isEmpty {
                     InboxRowsView(inbox: inbox, viewerId: viewerId, onOpen: { details = $0 }, onDeclineWithReason: { noting = $0 })
                 } else {
-                    SwipeDeckView(inbox: inbox, viewerId: viewerId, onDetails: { details = $0 }, onAdjust: { adjusting = $0 },
+                    SwipeDeckView(inbox: inbox, viewerId: viewerId, onDetails: { details = $0 },
                                   onSelectMode: { nav.selecting = true }, onOpenThread: onOpenThread,
                                   onOpenBoard: onOpenBoard, onOpenHistory: onOpenHistory)
                 }

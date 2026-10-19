@@ -1,99 +1,82 @@
 import SwiftUI
 import FusionhaKit
 
-/// One deck card (web `SwipeCard`): a blurred poster backdrop with the poster
-/// and "Priya + 2", the title, tiers · kind · source, four facts, the usual
-/// setup with Adjust and the scope line. While dragged, the APPROVE / DECLINE
-/// wash grows with distance (Approve in the accent, as its button).
+/// One deck card (Final mock, web `SwipeCard` 0.4.217): the poster fills the
+/// top; the title, "Requested by Priya + 2 · 3 d ago", the tier chip and the
+/// source in words sit below it. Facts and the setup with Adjust live in
+/// Details. While dragged, the APPROVE / DECLINE wash grows with distance
+/// (Approve in the accent, as its button).
 struct SwipeCardView: View {
     let request: MediaRequest
     let triage: RequestTriage?
     let dragX: CGFloat
     let warning: String?
     let approveBlocked: Bool
-    let onAdjust: () -> Void
 
     private var title: String { request.title ?? "TMDB #\(request.tmdbId)" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             art
-            VStack(alignment: .leading, spacing: 10) {
-                (Text(title).fontWeight(.bold) + Text(verbatim: request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+            VStack(alignment: .leading, spacing: 0) {
+                (Text(title).fontWeight(.heavy) + Text(verbatim: request.year.map { " (\($0))" } ?? "").fontWeight(.medium).foregroundColor(Theme.mut))
                     .font(.system(size: 19))
                     .foregroundStyle(Theme.txt)
                     .lineLimit(2)
-                HStack(spacing: 6) {
+                requestedBy
+                    .padding(.top, 3).padding(.bottom, 10)
+                HStack(spacing: 8) {
                     ForEach(request.tiers, id: \.self) { ActTierChip(tier: $0) }
-                    Text("· \(TriageFacts.kindText(request, isAnime: triage?.isAnime)) · \(RequestLifecycle.sourceText(request.source))")
-                        .lineLimit(1)
+                    Text(RequestLifecycle.sourceText(request.source)).lineLimit(1)
                 }
-                .font(.system(size: 12.5))
+                .font(.system(size: 13))
                 .foregroundStyle(Theme.mut)
                 if let held = request.held {
                     Label(held.label, systemImage: "hand.raised.fill")
                         .font(.system(size: 11.5, weight: .semibold)).foregroundStyle(Theme.miss)
+                        .padding(.top, 8)
                 }
                 if let warning {
                     Text("\(warning) Swipe right again to approve anyway.")
                         .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt)
                         .padding(8).frame(maxWidth: .infinity, alignment: .leading)
-                        .actWash(Theme.miss, radius: 10, base: Theme.panel2)
+                        .actWash(Theme.miss, radius: 10, base: Theme.card)
+                        .padding(.top, 10)
                 }
-                facts
-                ApproveSetupRow(triage: triage, own: false, compact: true, onAdjust: onAdjust)
                 RequestScopeLine(request: request, triage: triage, compact: true)
+                    .padding(.top, 8)
             }
-            .padding(14)
+            .padding(.horizontal, 16).padding(.vertical, 14)
         }
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay { washes }
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Theme.line))
         .contentShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .shadow(color: .black.opacity(0.25), radius: 14, y: 8)
     }
 
-    private var art: some View {
+    /// "Requested by **Priya** + 2 · 3 d ago".
+    private var requestedBy: some View {
         let extra = max(0, (triage?.demand.count ?? 1) - 1)
-        return ZStack(alignment: .bottomLeading) {
-            PosterImage(url: TMDBImage.resized(request.poster, to: "w342"))
-                .frame(height: 150)
-                .frame(maxWidth: .infinity)
-                .blur(radius: 24)
-                .opacity(0.55)
-                .clipped()
-                // The fill overflows its frame; clipped() hides it but not its
-                // hit area, which reached over the lane tabs above the card.
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-            HStack(alignment: .bottom, spacing: 12) {
-                ActPoster(url: request.poster, title: title, size: .md)
-                HStack(spacing: 6) {
-                    RequestAvatar(name: TriageFacts.requesterName(request), size: 24, fontSize: 11)
-                    (Text(TriageFacts.firstName(TriageFacts.requesterName(request))).fontWeight(.bold) + Text(extra > 0 ? " + \(extra)" : ""))
-                        .font(.system(size: 12.5))
-                        .foregroundStyle(Theme.txt)
-                }
-                .padding(.leading, 3).padding(.trailing, 10).padding(.vertical, 3)
-                .background(.ultraThinMaterial, in: Capsule())
-            }
-            .padding(14)
-        }
-        .frame(height: 150)
-        .background(Theme.panel2)
+        let age = TriageFacts.compactAge(request.requestedAt)
+        return (Text("Requested by ") + Text(TriageFacts.firstName(TriageFacts.requesterName(request))).fontWeight(.semibold).foregroundColor(Theme.txt)
+                + Text(extra > 0 ? " + \(extra)" : "") + Text(age.isEmpty ? "" : " · \(age) ago"))
+            .font(.system(size: 14))
+            .foregroundStyle(Theme.mut)
+            .lineLimit(1)
     }
 
-    private var facts: some View {
-        let size = TriageFacts.size(triage)
-        let free = TriageFacts.freeAfter(triage)
-        let four = TriageFacts.fourK(triage).tile
-        let release = TriageFacts.release(triage)
-        return LazyVGrid(columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)], spacing: 6) {
-            TriageTileView(label: "Size", value: Text(size.short), compact: true)
-            TriageTileView(label: "Free after", value: Text(free.value), tone: free.tone, compact: true)
-            TriageTileView(label: "4K release", value: Text(four.short), tone: four.tone, compact: true)
-            TriageTileView(label: "Release", value: Text(release.short), tone: release.tone, compact: true)
-        }
+    /// The poster fills the top of the card (no text on the art).
+    private var art: some View {
+        PosterImage(url: TMDBImage.resized(request.poster, to: "w500"))
+            .frame(height: 190)
+            .frame(maxWidth: .infinity)
+            .clipped()
+            // The fill overflows its frame; clipped() hides it but not its
+            // hit area, which reached over the header above the card.
+            .allowsHitTesting(false)
+            .background(Theme.panel2)
+            .accessibilityHidden(true)
     }
 
     private var washes: some View {

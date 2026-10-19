@@ -36,6 +36,10 @@ struct MyRequestsView: View {
         }
     }
 
+    /// Set inside the approver's Requests (Mine view): the status and sources
+    /// come from the filter sheet, so the in-page rails are hidden.
+    var fixedFilter: Filter? = nil
+    var origins: Set<RequestOrigin>? = nil
     @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
     @State private var filter: Filter = .active
@@ -55,13 +59,15 @@ struct MyRequestsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             if let quota { RequestQuotaMeter(quota: quota) }
-            DiscoverSegmented(options: Filter.allCases.map { f -> (Filter, String) in
-                (f, f.count(counts).map { $0 > 0 ? "\(f.title) \($0)" : f.title } ?? f.title)
-            }, selection: $filter, fullTrack: true)
-            RequestSourceFilterBar(bySource: bySource, value: $source)
+            if fixedFilter == nil {
+                DiscoverSegmented(options: Filter.allCases.map { f -> (Filter, String) in
+                    (f, f.count(counts).map { $0 > 0 ? "\(f.title) \($0)" : f.title } ?? f.title)
+                }, selection: $filter, fullTrack: true)
+                RequestSourceFilterBar(bySource: bySource, value: $source)
+            }
             content
         }
-        .task(id: "\(filter.rawValue)-\(store.requestsVersion)-\(sourceKey)") { await poll() }
+        .task(id: "\(current.rawValue)-\(store.requestsVersion)-\(sourceKey)") { await poll() }
         .sheet(item: $thread) { request in
             RequestThreadSheet(request: request) { Task { await refresh() } }
         }
@@ -74,7 +80,7 @@ struct MyRequestsView: View {
         } else if failed && items.isEmpty {
             DiscoverEmptyState(message: "Could not load your requests.")
         } else if items.isEmpty {
-            DiscoverEmptyState(message: source != nil ? "Nothing from this source matches this filter." : filter.empty)
+            DiscoverEmptyState(message: !sourceQuery.isEmpty ? "Nothing from this source matches this filter." : current.empty)
         } else {
             LazyVStack(spacing: 12) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, request in
@@ -95,7 +101,8 @@ struct MyRequestsView: View {
 
     // MARK: Loading
 
-    private var sourceQuery: [URLQueryItem] { source?.query ?? [] }
+    private var current: Filter { fixedFilter ?? filter }
+    private var sourceQuery: [URLQueryItem] { origins.map(RequestOrigin.query) ?? source?.query ?? [] }
     private var sourceKey: String { sourceQuery.map { "\($0.name)=\($0.value ?? "")" }.joined(separator: "&") }
 
     private func poll() async {
@@ -104,7 +111,7 @@ struct MyRequestsView: View {
         cursor = nil
         loaded = false
         let extra = sourceQuery
-        if let page = await client.cached({ try await $0.requestsPage(view: "mine", filter: filter.rawValue, extra: extra) }) {
+        if let page = await client.cached({ try await $0.requestsPage(view: "mine", filter: current.rawValue, extra: extra) }) {
             items = page.items
             cursor = page.nextCursor
             loaded = true
@@ -123,7 +130,7 @@ struct MyRequestsView: View {
         guard let client = model.client else { return }
         do {
             let extra = sourceQuery
-            async let pageCall = client.requestsPage(view: "mine", filter: filter.rawValue, extra: extra)
+            async let pageCall = client.requestsPage(view: "mine", filter: current.rawValue, extra: extra)
             async let countsCall = try? client.requestCounts(view: "mine", extra: extra)
             async let allCall = try? client.requestCounts(view: "mine")
             async let quotaCall = try? client.requestQuota()
@@ -150,7 +157,7 @@ struct MyRequestsView: View {
         loadingMore = true
         defer { loadingMore = false }
         do {
-            let page = try await client.requestsPage(view: "mine", filter: filter.rawValue, cursor: next, extra: sourceQuery)
+            let page = try await client.requestsPage(view: "mine", filter: current.rawValue, cursor: next, extra: sourceQuery)
             let known = Set(items.map(\.id))
             items += page.items.filter { !known.contains($0.id) }
             cursor = page.nextCursor

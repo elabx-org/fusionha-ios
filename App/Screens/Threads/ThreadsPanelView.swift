@@ -10,6 +10,8 @@ struct ThreadsPanelView: View {
     /// Set by a parent that shows the state in its own filter sheet
     /// (Requests › Issues): open · resolved · all; hides the picker here.
     var state: String? = nil
+    /// Set with `state` by the approver's Threads view: all · request · issue.
+    var type: String? = nil
     /// The loaded rows, for the parent's count.
     var onItems: (([ThreadItem]) -> Void)? = nil
     @Environment(AppModel.self) private var model
@@ -24,11 +26,14 @@ struct ThreadsPanelView: View {
     private var canRequests: Bool { model.me?.hasPermission("requests.approve") ?? false }
     private var canIssues: Bool { model.me?.hasPermission("issues.manage") ?? false }
     private var fixed: String? { only ?? (canRequests && !canIssues ? "request" : (canIssues && !canRequests ? "issue" : nil)) }
-    private var effective: String? { fixed ?? (kind == "all" ? nil : kind) }
+    private var effective: String? {
+        let k = type ?? kind
+        return fixed ?? (k == "all" ? nil : k)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if fixed == nil {
+            if fixed == nil && state == nil {
                 Picker("Thread type", selection: $kind) {
                     Text(countLabel("All", nil)).tag("all")
                     Text(countLabel("Requests", "request")).tag("request")

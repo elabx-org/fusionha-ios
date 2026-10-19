@@ -39,7 +39,9 @@ enum RequestsPane: String, CaseIterable, Hashable, Identifiable {
         case .board: return [.search, .requester, .source, .density]
         case .history: return [.search, .status, .source]
         case .issues: return [.issueState]
-        case .threads, .insights, .mine: return []
+        case .threads: return [.threadType, .issueState]
+        case .mine: return [.mineType, .mineStatus, .source]
+        case .insights: return []
         }
     }
 }
@@ -64,6 +66,8 @@ final class RequestsNav {
     var rulesOpen = false
     /// Inbox: the deck or the "Select several" list.
     var selecting = false
+    /// Threads offers Type only to someone who manages requests and issues.
+    var threadTypes = true
     /// Requesters seen in the loaded rows, for the filter sheet.
     var people: [RequestPerson] = []
     /// The open view's row count under the current filters.
@@ -87,7 +91,7 @@ final class RequestsNav {
 /// The filters one view applies, kept per view so switching views doesn't
 /// carry a History status into the Board.
 struct RequestsFilter: Equatable {
-    enum Section: Hashable { case search, requester, source, density, status, display, issueState }
+    enum Section: Hashable { case search, requester, source, density, status, display, issueState, threadType, mineType, mineStatus }
 
     struct Values: Equatable {
         var search = ""
@@ -95,8 +99,14 @@ struct RequestsFilter: Equatable {
         var origins: Set<RequestOrigin> = []
         var compact = false
         var status: HistoryFilter = .all
-        /// Issues: open · resolved · all.
+        /// Issues and Threads: open · resolved · all.
         var issueState = "open"
+        /// Threads: all · request · issue (only when the viewer manages both).
+        var threadType = "all"
+        /// Mine: my requests or my issues.
+        var mineIssues = false
+        /// Mine › Requests: Active · Available · All.
+        var mineStatus: MyRequestsView.Filter = .active
     }
 
     private var byPane: [RequestsPane: Values] = [:]
@@ -113,6 +123,9 @@ struct RequestsFilter: Equatable {
         if v.requesterId != nil { n += 1 }
         if v.status != .all { n += 1 }
         if v.issueState != "open" { n += 1 }
+        if v.threadType != "all" { n += 1 }
+        if v.mineIssues { n += 1 }
+        if v.mineStatus != .active { n += 1 }
         if !v.search.trimmingCharacters(in: .whitespaces).isEmpty { n += 1 }
         return n
     }

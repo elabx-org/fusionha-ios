@@ -25,6 +25,11 @@ struct RequestsFilterChips: View {
         if v.issueState != "open" {
             out.append(Chip(id: "i", label: v.issueState == "resolved" ? "Resolved" : "All states") { $0.issueState = "open" })
         }
+        if v.threadType != "all" {
+            out.append(Chip(id: "t", label: v.threadType == "issue" ? "Issues" : "Requests") { $0.threadType = "all" })
+        }
+        if v.mineIssues { out.append(Chip(id: "m", label: "My issues") { $0.mineIssues = false }) }
+        if v.mineStatus != .active { out.append(Chip(id: "ms", label: v.mineStatus.title) { $0.mineStatus = .active }) }
         for o in RequestOrigin.allCases where v.origins.contains(o) {
             out.append(Chip(id: "o-\(o.rawValue)", label: o.title) { $0.origins.remove(o) })
         }

@@ -11,7 +11,6 @@ struct SwipeDeckView: View {
     let inbox: InboxModel
     let viewerId: Int?
     let onDetails: (MediaRequest) -> Void
-    let onAdjust: (MediaRequest) -> Void
     let onSelectMode: () -> Void
     let onOpenThread: (MediaRequest) -> Void
     let onOpenBoard: () -> Void
@@ -64,7 +63,7 @@ struct SwipeDeckView: View {
         let canApprove = TriageFacts.loaded(t) && !TriageFacts.setupMissing(t)
         return SwipeCardView(request: request, triage: t, dragX: isTop ? dx : 0,
                              warning: isTop && inbox.armedId == request.id ? TriageFacts.lowSpaceMessage(t) : nil,
-                             approveBlocked: !canApprove, onAdjust: { onAdjust(request) })
+                             approveBlocked: !canApprove)
             .scaleEffect(1 - CGFloat(position) * 0.04, anchor: .top)
             .offset(x: dx, y: CGFloat(position) * 12)
             .rotationEffect(.degrees(Double(dx) / 18))
@@ -188,8 +187,11 @@ struct DeckEdges: View {
         ZStack(alignment: .bottom) {
             ForEach(Array((0..<count).reversed()), id: \.self) { i in
                 let depth = CGFloat(i + 1) * (1 - lift * 0.6)
+                // panel2 alone sits too close to the page on dark palettes, so
+                // each edge is lifted with a little of the text colour.
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(i == 0 ? Theme.panel2 : Theme.panel)
+                    .fill(Theme.panel2)
+                    .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Theme.txt.opacity(i == 0 ? 0.07 : 0.04)))
                     .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Theme.line))
                     .padding(.horizontal, 14 * depth)
                     .offset(y: 9 * depth)

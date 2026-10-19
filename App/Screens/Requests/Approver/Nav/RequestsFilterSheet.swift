@@ -36,6 +36,29 @@ struct RequestsFilterSheet: View {
                             }
                         }
                     }
+                    if sections.contains(.mineType) {
+                        group("Type") {
+                            option("Requests", on: !nav.filter[pane].mineIssues) { nav.filter[pane].mineIssues = false }
+                            option("Issues", on: nav.filter[pane].mineIssues) {
+                                // Status and sources are request filters: drop them.
+                                nav.filter[pane] = RequestsFilter.Values(mineIssues: true)
+                            }
+                        }
+                    }
+                    if sections.contains(.mineStatus) && !nav.filter[pane].mineIssues {
+                        group("Status") {
+                            ForEach(MyRequestsView.Filter.allCases, id: \.self) { f in
+                                option(f.title, on: nav.filter[pane].mineStatus == f) { nav.filter[pane].mineStatus = f }
+                            }
+                        }
+                    }
+                    if sections.contains(.threadType) && nav.threadTypes {
+                        group("Type") {
+                            ForEach([("all", "All"), ("request", "Requests"), ("issue", "Issues")], id: \.0) { t in
+                                option(t.1, on: nav.filter[pane].threadType == t.0) { nav.filter[pane].threadType = t.0 }
+                            }
+                        }
+                    }
                     if sections.contains(.issueState) {
                         group("State") {
                             ForEach([("open", "Open"), ("resolved", "Resolved"), ("all", "All")], id: \.0) { s in
@@ -51,7 +74,7 @@ struct RequestsFilterSheet: View {
                             }
                         }
                     }
-                    if sections.contains(.source) {
+                    if sections.contains(.source) && !(pane == .mine && nav.filter[pane].mineIssues) {
                         group("Source") {
                             ForEach(RequestOrigin.allCases, id: \.self) { o in
                                 option(o.title, on: nav.filter[pane].origins.contains(o)) {
@@ -120,7 +143,8 @@ struct RequestsFilterSheet: View {
     private var resultLabel: String {
         guard let n = nav.resultCount else { return "Show results" }
         let noun = nav.pane == .history ? (n == 1 ? "decision" : "decisions")
-            : nav.pane == .issues ? (n == 1 ? "issue" : "issues") : (n == 1 ? "request" : "requests")
+            : nav.pane == .issues ? (n == 1 ? "issue" : "issues")
+            : nav.pane == .threads ? (n == 1 ? "thread" : "threads") : (n == 1 ? "request" : "requests")
         return "Show \(n) \(noun)"
     }
 
