@@ -47,6 +47,7 @@ struct TrailerRail: View {
                 }
             } catch is CancellationError {
             } catch {
+                store.railFailed(error)
                 state = .failed
             }
         }
@@ -58,10 +59,19 @@ struct TrailerRail: View {
     }
 }
 
+/// A 16:9 backdrop with a centred play button (`TrailerRail.tsx`). The art
+/// stays clean: "In library" sits on the meta line, and the corner ＋ (add-
+/// capable callers, titles not in the library) opens the Add sheet.
 struct TrailerCard: View {
+    @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
     let trailer: TrailerResult
     let canAdd: Bool
+
+    /// The row's flag, or the loaded library (the web's `idByTmdb`).
+    private var inLibrary: Bool {
+        trailer.inLibrary || model.libraryItemId(for: trailer.asSearchResult) != nil
+    }
 
     /// 300pt wide is 900px at @3x: the w1280 backdrop (posters stop at w780).
     private var art: URL? {
@@ -71,55 +81,71 @@ struct TrailerCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Button { store.trailer = trailer } label: {
-                Color.clear
-                    .aspectRatio(16 / 9, contentMode: .fit)
-                    .overlay { DiscoverArt(url: art) }
-                    .overlay { Theme.scrim.opacity(0.28) }
-                    .overlay {
-                        Image(systemName: "play.fill")
-                            .font(.system(size: 20))
-                            .foregroundStyle(Theme.onAccent)
-                            .frame(width: 52, height: 52)
-                            .background(Theme.primary, in: Circle())
-                            .scaleEffect(0.86)
-                    }
-                    .background(Theme.card)
-                    .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-                    .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Theme.line))
-                    .shadow(color: .black.opacity(0.55), radius: 12, y: 12)
+            Button { store.trailer = trailer } label: { backdrop }
+                .buttonStyle(DiscoverPressStyle())
+                .accessibilityLabel("Play \(trailer.title) trailer")
+                .overlay(alignment: .topTrailing) {
+                    if !inLibrary && canAdd { addButton }
+                }
+            meta
+        }
+    }
+
+    private var backdrop: some View {
+        Color.clear
+            .aspectRatio(16 / 9, contentMode: .fit)
+            .overlay { DiscoverArt(url: art) }
+            .overlay { Theme.scrim.opacity(0.28) }
+            .overlay {
+                Image(systemName: "play.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(Theme.onAccent)
+                    .frame(width: 52, height: 52)
+                    .background(Theme.primary, in: Circle())
+                    .scaleEffect(0.86)
             }
-            .buttonStyle(DiscoverPressStyle())
-            .accessibilityLabel("Play trailer for \(trailer.title)")
-            .overlay(alignment: .topLeading) {
-                if trailer.inLibrary { PosterStatusBadge(kind: .inLibrary).padding(8) }
-            }
-            .overlay(alignment: .topTrailing) {
-                if !trailer.inLibrary && canAdd {
-                    Button { store.preview = PreviewRoute(trailer.asSearchResult) } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 30, height: 30)
-                            .background(Theme.scrim.opacity(0.6),
-                                        in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                                        .frame(minWidth: 44, minHeight: 44)
-                                        .contentShape(Rectangle())
-                                        .padding(.horizontal, -7).padding(.vertical, -7)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(8)
-                    .accessibilityLabel("Add \(trailer.title)")
+            .background(Theme.card)
+            .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Theme.line))
+            .shadow(color: Theme.shelfShadow.opacity(0.6), radius: 12, y: 12)
+    }
+
+    /// The corner ＋: the Add sheet on this title, with the session "Add as".
+    private var addButton: some View {
+        Button {
+            model.openAdd(trailer.asSearchResult, providerOverride: DiscoverSession.shared.providerOverride)
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.onScrim)
+                .frame(width: 30, height: 30)
+                .background(Theme.scrim.opacity(0.6), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+                .padding(.horizontal, -7).padding(.vertical, -7)
+        }
+        .buttonStyle(.plain)
+        .padding(8)
+        .accessibilityLabel("Add \(trailer.title)")
+    }
+
+    private var meta: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(trailer.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
+            HStack(spacing: 6) {
+                Text(subline).font(.system(size: 11)).foregroundStyle(Theme.mut).lineLimit(1)
+                Spacer(minLength: 0)
+                if inLibrary {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Theme.done)
+                        .accessibilityLabel("In library")
                 }
             }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(trailer.title).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                Text(subline).font(.system(size: 11)).foregroundStyle(Theme.mut).lineLimit(1)
-            }
-            .padding(.top, 8)
-            .padding(.horizontal, 2)
         }
+        .padding(.top, 8)
+        .padding(.horizontal, 2)
     }
 
     private var subline: String {

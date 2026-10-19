@@ -7,6 +7,7 @@ import FusionhaKit
 /// touches Requests.
 struct DiscoverBrowseControls: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @Binding var kind: SearchKind
     @Binding var query: String
     let canAdd: Bool
@@ -14,7 +15,9 @@ struct DiscoverBrowseControls: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            DiscoverSegmented(options: SearchKind.allCases.map { ($0, $0.title) }, selection: $kind, size: .md)
+            // Phone: four equal segments across the width (the web's ≤720 grid).
+            DiscoverSegmented(options: SearchKind.allCases.map { ($0, $0.title) }, selection: $kind, size: .md,
+                              fill: sizeClass != .regular)
                 .padding(.bottom, 14)
             if canAdd {
                 Button { model.openAdd(nil, providerOverride: DiscoverSession.shared.providerOverride) } label: {

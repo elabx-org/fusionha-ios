@@ -40,6 +40,7 @@ enum RailLoad<T> {
 /// A titled horizontal rail of Discover posters.
 struct DiscoverRail<Icon: View, Toggle: View>: View {
     @Environment(AppModel.self) private var model
+    @Environment(DiscoverStore.self) private var store
     let title: String
     /// Changes when the rail must refetch (kind, window, monetization).
     let key: String
@@ -81,6 +82,7 @@ struct DiscoverRail<Icon: View, Toggle: View>: View {
                 state = .loaded(try await load(client))
             } catch is CancellationError {
             } catch {
+                store.railFailed(error)
                 state = .failed
             }
         }

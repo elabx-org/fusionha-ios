@@ -112,7 +112,7 @@ struct RequestQuotaPrompt: View {
                         .disabled(pending)
                 }
                 Button("Cancel", action: onCancel)
-                    .buttonStyle(.discover(.subtle))
+                    .buttonStyle(.discover(.ghost))
                     .disabled(pending)
             }
             .padding(.top, 2)

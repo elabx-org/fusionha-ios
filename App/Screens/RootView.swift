@@ -73,10 +73,11 @@ struct RootView: View {
             } else {
                 Tab("Library", image: "nav-library", value: AppTab.library) { LibraryView() }
                 Tab("Discover", image: "nav-discover", value: AppTab.discover) { DiscoverView() }
-                    .badge(model.requestsBadge)
+                    // `needs_you`, capped at 99+ like the web's badge.
+                    .badge(BadgeCount.text(model.requestsBadge).map { Text(verbatim: $0) })
                 Tab("Calendar", image: "nav-calendar", value: AppTab.calendar) { CalendarView() }
                 Tab("Activity", image: "nav-activity", value: AppTab.activity) { ActivityView() }
-                    .badge(model.queueTotal > 0 ? Text(model.queueTotal > 99 ? "99+" : "\(model.queueTotal)") : nil)
+                    .badge(BadgeCount.text(model.queueTotal).map { Text(verbatim: $0) })
                 Tab(value: AppTab.search, role: .search) { SearchTabView() }
             }
         }

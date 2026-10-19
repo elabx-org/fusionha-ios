@@ -23,9 +23,11 @@ struct PosterStatusBadge: View {
         }
         .frame(width: 27, height: 27)
         .background(Theme.scrim.opacity(0.5), in: Circle())
-        .background(.ultraThinMaterial, in: Circle())
-        .overlay(Circle().strokeBorder(.white.opacity(0.16)))
-        .shadow(color: .black.opacity(0.75), radius: 7, y: 4)
+        // The frosted plate stays dark on every palette (art is dark), so its
+        // hairline and glyphs read on Daylight too.
+        .background { Circle().fill(.ultraThinMaterial).environment(\.colorScheme, .dark) }
+        .overlay(Circle().strokeBorder(Theme.plateLine))
+        .shadow(color: Theme.shelfShadow.opacity(0.8), radius: 7, y: 4)
         .accessibilityLabel(kind == .inLibrary ? "In library" : kind == .trending ? "Trending" : "Tracked, no file yet")
     }
 }
@@ -168,8 +170,8 @@ struct RequestStatusPill: View {
             .padding(.horizontal, 9)
             .padding(.vertical, 2)
             .background(color.opacity(0.16), in: Capsule())
+            // Status is a wash, never a border.
             .background(Theme.panel2, in: Capsule())
-            .overlay(Capsule().strokeBorder(color.opacity(0.32)))
     }
 }
 

@@ -100,7 +100,7 @@ struct DiscoverToastView: View {
         .padding(.leading, 15).padding(.trailing, 13).padding(.top, 13).padding(.bottom, 15)
         .frame(maxWidth: 420)
         .statusWash(color, base: Theme.panel.opacity(0.92), radius: Theme.radius)
-        .shadow(color: .black.opacity(0.55), radius: 22, y: 18)
+        .shadow(color: Theme.shelfShadow.opacity(0.6), radius: 22, y: 18)
         .accessibilityElement(children: .combine)
     }
 }

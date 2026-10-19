@@ -61,6 +61,12 @@ extension Theme {
     /// A dim disc or pill over poster art (art is dark in every palette).
     static var scrim: Color { Color(hex: 0x0C0D11) }
 
+    /// Text and glyphs on a `scrim` plate (the scrim is dark in every palette).
+    static var onScrim: Color { .white }
+
+    /// The hairline ringing a frosted plate over art (the web's 16% white edge).
+    static var plateLine: Color { onScrim.opacity(0.16) }
+
     /// The hole and track of a progress ring, from the ground.
     static var ringTrack: Color { isLight ? panel2 : .black.opacity(0.55) }
     static var ringHole: Color { bg.opacity(0.85) }
