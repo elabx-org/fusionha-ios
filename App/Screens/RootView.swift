@@ -73,7 +73,7 @@ struct RootView: View {
             } else {
                 Tab("Library", image: "nav-library", value: AppTab.library) { LibraryView() }
                 Tab("Discover", image: "nav-discover", value: AppTab.discover) { DiscoverView() }
-                    .badge(model.canApproveRequests ? model.pendingRequests : 0)
+                    .badge(model.requestsBadge)
                 Tab("Calendar", image: "nav-calendar", value: AppTab.calendar) { CalendarView() }
                 Tab("Activity", image: "nav-activity", value: AppTab.activity) { ActivityView() }
                     .badge(model.queueTotal > 0 ? Text(model.queueTotal > 99 ? "99+" : "\(model.queueTotal)") : nil)
@@ -82,7 +82,7 @@ struct RootView: View {
         }
         .tint(Theme.indigo)
         // Count badges in the accent, as on the web, not the system red.
-        .tabBadgeTint(key: "\(model.pendingRequests)-\(model.queueTotal)-\(model.tab)")
+        .tabBadgeTint(key: "\(model.requestsBadge)-\(model.queueTotal)-\(model.tab)")
         .tabBarMinimizeBehavior(.onScrollDown)
     }
 }

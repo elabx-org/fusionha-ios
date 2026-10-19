@@ -106,6 +106,18 @@ final class RequestsNavLogicTests: XCTestCase {
         XCTAssertEqual(bare.line, "Hello")
     }
 
+    // MARK: Proposal 2
+
+    func testIssueCountsAndTheDrawerLine() throws {
+        let json = #"[{"type":"issue","id":1,"issue":{"id":1,"media_item_id":1,"issue_type":"video","scope":"item","status":"open","state":"NEEDS_ADMIN"}},{"type":"issue","id":2,"issue":{"id":2,"media_item_id":1,"issue_type":"video","scope":"item","status":"open","state":"FIXING"}},{"type":"issue","id":3,"issue":{"id":3,"media_item_id":1,"issue_type":"video","scope":"item","status":"open","state":"RESOLVED"}},{"type":"request","id":4}]"#
+        let items = try APIClient.decoder.decode([ThreadItem].self, from: Data(json.utf8))
+        XCTAssertEqual(IssueCounts.of(items), IssueCounts(open: 2, needYou: 1))
+        XCTAssertEqual(RequestsNeedYou.line(pending: 9, issues: 2), "11 need you · 9 pending requests · 2 issues")
+        XCTAssertEqual(RequestsNeedYou.line(pending: nil, issues: 2), "2 issues need you")
+        XCTAssertEqual(RequestsNeedYou.line(pending: 1, issues: nil), "1 pending request")
+        XCTAssertNil(RequestsNeedYou.line(pending: nil, issues: nil))
+    }
+
     // MARK: Stage facts
 
     func testSharedRequester() {

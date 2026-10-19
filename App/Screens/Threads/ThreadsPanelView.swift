@@ -7,6 +7,11 @@ import FusionhaKit
 struct ThreadsPanelView: View {
     /// Fix the list to one kind (e.g. Discover's Issues tab).
     var only: String? = nil
+    /// Set by a parent that shows the state in its own filter sheet
+    /// (Requests › Issues): open · resolved · all; hides the picker here.
+    var state: String? = nil
+    /// The loaded rows, for the parent's count.
+    var onItems: (([ThreadItem]) -> Void)? = nil
     @Environment(AppModel.self) private var model
     @State private var kind = "all"
     @State private var mode = "open"
@@ -31,15 +36,18 @@ struct ThreadsPanelView: View {
                 }
                 .pickerStyle(.segmented)
             }
-            Picker("Thread state", selection: $mode) {
-                Text("Open").tag("open")
-                Text("Resolved").tag("resolved")
-                Text("All").tag("all")
+            if state == nil {
+                Picker("Thread state", selection: $mode) {
+                    Text("Open").tag("open")
+                    Text("Resolved").tag("resolved")
+                    Text("All").tag("all")
+                }
+                .pickerStyle(.segmented)
             }
-            .pickerStyle(.segmented)
             content
         }
-        .task(id: "\(effective ?? "all")-\(mode)") {
+        .onChange(of: items) { onItems?(items) }
+        .task(id: "\(effective ?? "all")-\(currentMode)") {
             items = []
             cursor = nil
             loaded = false
@@ -84,7 +92,8 @@ struct ThreadsPanelView: View {
         }
     }
 
-    private var stateParam: String? { mode == "open" ? "OPEN" : (mode == "resolved" ? "RESOLVED" : nil) }
+    private var currentMode: String { state ?? mode }
+    private var stateParam: String? { currentMode == "open" ? "OPEN" : (currentMode == "resolved" ? "RESOLVED" : nil) }
 
     private func load() async {
         guard let client = model.client else { return }

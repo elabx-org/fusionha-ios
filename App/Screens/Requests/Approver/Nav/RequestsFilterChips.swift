@@ -22,6 +22,9 @@ struct RequestsFilterChips: View {
             out.append(Chip(id: "u", label: name) { $0.requesterId = nil })
         }
         if v.status != .all { out.append(Chip(id: "s", label: v.status.title) { $0.status = .all }) }
+        if v.issueState != "open" {
+            out.append(Chip(id: "i", label: v.issueState == "resolved" ? "Resolved" : "All states") { $0.issueState = "open" })
+        }
         for o in RequestOrigin.allCases where v.origins.contains(o) {
             out.append(Chip(id: "o-\(o.rawValue)", label: o.title) { $0.origins.remove(o) })
         }

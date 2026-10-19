@@ -72,9 +72,11 @@ struct TriageInboxView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.top, 36)
-                } else if nav.selecting && !inbox.queue.isEmpty {
+                } else if nav.inboxList && nav.selecting && !inbox.queue.isEmpty {
                     InboxListView(inbox: inbox, viewerId: viewerId, onOpen: { details = $0 },
                                   onBackToCards: { nav.selecting = false; inbox.selected = [] })
+                } else if nav.inboxList && !inbox.queue.isEmpty {
+                    InboxRowsView(inbox: inbox, viewerId: viewerId, onOpen: { details = $0 }, onDeclineWithReason: { noting = $0 })
                 } else {
                     SwipeDeckView(inbox: inbox, viewerId: viewerId, onDetails: { details = $0 }, onAdjust: { adjusting = $0 },
                                   onSelectMode: { nav.selecting = true }, onOpenThread: onOpenThread,
@@ -93,7 +95,8 @@ struct TriageInboxView: View {
                 requestsCount(queue.count, "waiting" + (oldest.isEmpty ? "" : " · oldest \(oldest)"))
             }
         } action: {
-            if !queue.isEmpty {
+            // Select belongs to the list (Proposal 2): cards decide one at a time.
+            if nav.inboxList && !queue.isEmpty {
                 RequestsTextAction(title: nav.selecting ? "Done" : "Select") {
                     nav.selecting.toggle()
                     if !nav.selecting { inbox.selected = [] }

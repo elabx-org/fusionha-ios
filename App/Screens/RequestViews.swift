@@ -173,8 +173,11 @@ struct RequestsPanel: View {
     @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
     let approver: Bool
+    var issues = false
 
+    /// Approvers and issue managers get the Requests menu (Proposal 2);
+    /// everyone else keeps My requests.
     var body: some View {
-        if approver { ApproverRequestsView() } else { MineView() }
+        if approver || issues { ApproverRequestsView(canApprove: approver, canIssues: issues) } else { MineView() }
     }
 }

@@ -8,6 +8,11 @@ struct RequestsViewMenuSheet: View {
     @Environment(RequestsNav.self) private var nav
     let counts: [RequestsPane: Int]
     let panes: [RequestsPane]
+    /// Issues: how many of the open ones need an admin ("2 need you").
+    var needYou: Int?
+    /// "11 need you · 9 pending requests · 2 issues".
+    var breakdown: String?
+    var showsRules = true
     let onRules: () -> Void
 
     var body: some View {
@@ -18,7 +23,12 @@ struct RequestsViewMenuSheet: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)
                 .accessibilityAddTraits(.isHeader)
+            if let breakdown {
+                Text(breakdown).font(.system(size: 13)).foregroundStyle(Theme.mut)
+                    .padding(.horizontal, 12).padding(.bottom, 8)
+            }
             ForEach(panes) { pane in row(pane) }
+            if showsRules {
             Divider().overlay(Theme.line).padding(.horizontal, 10).padding(.vertical, 6)
             Button(action: onRules) {
                 HStack(spacing: 14) {
@@ -35,12 +45,13 @@ struct RequestsViewMenuSheet: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.top, 22)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .presentationDetents([.height(CGFloat(panes.count) * 52 + 150)])
+        .presentationDetents([.height(CGFloat(panes.count) * 52 + (showsRules ? 150 : 90) + (breakdown == nil ? 0 : 26))])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.panel)
         .sensoryFeedback(.selection, trigger: nav.pane)
@@ -51,7 +62,12 @@ struct RequestsViewMenuSheet: View {
         return Button { nav.open(pane) } label: {
             HStack(spacing: 14) {
                 Image(systemName: pane.icon).font(.system(size: 17)).foregroundStyle(Theme.mut).frame(width: 24)
-                Text(pane.title).font(.system(size: 16)).foregroundStyle(Theme.txt)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(pane.title).font(.system(size: 16)).foregroundStyle(Theme.txt)
+                    if pane == .issues, let needYou, needYou > 0 {
+                        Text("\(needYou) need you").font(.system(size: 12)).foregroundStyle(Theme.mut)
+                    }
+                }
                 Spacer()
                 if let n = counts[pane], n > 0 {
                     Text(verbatim: "\(n)").font(.system(size: 14).monospacedDigit()).foregroundStyle(Theme.mut)

@@ -4,7 +4,7 @@ import FusionhaKit
 /// The approver's views (Final mock, 2026-10-18): one header row names the
 /// current view and opens the drawer. Rules lives in Settings › Requests.
 enum RequestsPane: String, CaseIterable, Hashable, Identifiable {
-    case inbox, board, history, threads, insights, mine
+    case inbox, board, history, threads, issues, insights, mine
 
     var id: String { rawValue }
 
@@ -14,6 +14,7 @@ enum RequestsPane: String, CaseIterable, Hashable, Identifiable {
         case .board: return "Board"
         case .history: return "History"
         case .threads: return "Threads"
+        case .issues: return "Issues"
         case .insights: return "Insights"
         case .mine: return "Mine"
         }
@@ -25,6 +26,7 @@ enum RequestsPane: String, CaseIterable, Hashable, Identifiable {
         case .board: return "rectangle.split.3x1"
         case .history: return "list.bullet"
         case .threads: return "text.bubble"
+        case .issues: return "exclamationmark.triangle"
         case .insights: return "chart.bar"
         case .mine: return "person"
         }
@@ -33,9 +35,10 @@ enum RequestsPane: String, CaseIterable, Hashable, Identifiable {
     /// The filter sections this view offers; none hides the Filter button.
     var filters: Set<RequestsFilter.Section> {
         switch self {
-        case .inbox: return [.requester, .source]
+        case .inbox: return [.requester, .source, .display]
         case .board: return [.search, .requester, .source, .density]
         case .history: return [.search, .status, .source]
+        case .issues: return [.issueState]
         case .threads, .insights, .mine: return []
         }
     }
@@ -48,6 +51,13 @@ enum RequestsPane: String, CaseIterable, Hashable, Identifiable {
 @Observable
 final class RequestsNav {
     var pane: RequestsPane = .inbox
+    /// The views this person may open, in menu order (each gated on its own
+    /// permission: requests.approve, issues.manage).
+    var panes: [RequestsPane] = RequestsPane.allCases
+    /// Inbox as cards or a list (Proposal 2), remembered on this device.
+    var inboxList: Bool = UserDefaults.standard.bool(forKey: "requests.inbox.list") {
+        didSet { UserDefaults.standard.set(inboxList, forKey: "requests.inbox.list") }
+    }
     var filter = RequestsFilter()
     var menuOpen = false
     var filterOpen = false
@@ -77,7 +87,7 @@ final class RequestsNav {
 /// The filters one view applies, kept per view so switching views doesn't
 /// carry a History status into the Board.
 struct RequestsFilter: Equatable {
-    enum Section: Hashable { case search, requester, source, density, status }
+    enum Section: Hashable { case search, requester, source, density, status, display, issueState }
 
     struct Values: Equatable {
         var search = ""
@@ -85,6 +95,8 @@ struct RequestsFilter: Equatable {
         var origins: Set<RequestOrigin> = []
         var compact = false
         var status: HistoryFilter = .all
+        /// Issues: open · resolved · all.
+        var issueState = "open"
     }
 
     private var byPane: [RequestsPane: Values] = [:]
@@ -100,6 +112,7 @@ struct RequestsFilter: Equatable {
         var n = v.origins.count
         if v.requesterId != nil { n += 1 }
         if v.status != .all { n += 1 }
+        if v.issueState != "open" { n += 1 }
         if !v.search.trimmingCharacters(in: .whitespaces).isEmpty { n += 1 }
         return n
     }

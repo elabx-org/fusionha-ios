@@ -11,12 +11,14 @@ import FusionhaKit
 final class ShellState {
     private(set) var attentionCount = 0
     private(set) var pendingRequests = 0
+    /// Issues an admin has to act on (`NEEDS_ADMIN`), for issue managers.
+    private(set) var issuesNeedingAction = 0
     private(set) var commandsActive = false
     private(set) var settings: ShellSettings?
     /// Quality-profile names for the compact list's subline.
     private(set) var profileNames: [Int: String] = [:]
 
-    func refresh(client: APIClient, requestScoped: Bool, canApproveRequests: Bool) async {
+    func refresh(client: APIClient, requestScoped: Bool, canApproveRequests: Bool, canManageIssues: Bool = false) async {
         if let value = try? await client.shellSettings() { set(settings: value) }
         if profileNames.isEmpty, let profiles = try? await client.qualityProfiles() {
             profileNames = Dictionary(profiles.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
@@ -37,6 +39,10 @@ final class ShellState {
            pendingRequests != pending.count {
             pendingRequests = pending.count
         }
+        if canManageIssues, let page = try? await client.adminThreads(type: "issue", state: "OPEN") {
+            let n = IssueCounts.of(page.items).needYou
+            if issuesNeedingAction != n { issuesNeedingAction = n }
+        }
     }
 
     /// Re-reads the settings after an admin change.
@@ -49,6 +55,7 @@ final class ShellState {
         settings = nil
         attentionCount = 0
         pendingRequests = 0
+        issuesNeedingAction = 0
     }
 
     private func set(settings value: ShellSettings?) {

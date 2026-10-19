@@ -45,6 +45,10 @@ final class DiscoverStore {
     var requestsLoaded = false
     var requestsFailed = false
     var pendingCount = 0
+    /// Open issues and those needing an admin, for issue managers (Proposal 2).
+    var issueCounts = IssueCounts()
+    /// The Requests view to open next (`?tab=issues` lands on Issues).
+    var requestsPane: RequestsPane?
     var preview: PreviewRoute?
     var requestPick: MediaSearchResult?
     var trailer: TrailerResult?
@@ -72,7 +76,7 @@ final class DiscoverStore {
         return map
     }
 
-    func loadRequests(_ client: APIClient?, approver: Bool) async {
+    func loadRequests(_ client: APIClient?, approver: Bool, issues: Bool = false) async {
         guard let client else { return }
         do {
             requests = try await client.requests(status: nil)
@@ -85,6 +89,11 @@ final class DiscoverStore {
             pendingCount = (try? await client.requests(status: "pending").count) ?? requests.filter { $0.status == "pending" }.count
         } else {
             pendingCount = 0
+        }
+        if issues, let page = try? await client.adminThreads(type: "issue", state: "OPEN") {
+            issueCounts = IssueCounts.of(page.items)
+        } else if !issues {
+            issueCounts = IssueCounts()
         }
     }
 }
@@ -156,7 +165,7 @@ struct DiscoverView: View {
             AddCollectionSheet(summary: collection) { store.collectionsVersion += 1 }
         }
         .task(id: "\(me?.id ?? -1)|\(store.requestsVersion)") {
-            await store.loadRequests(model.client, approver: canApprove)
+            await store.loadRequests(model.client, approver: canApprove, issues: canManageIssues)
         }
         .task {
             if let settings = try? await model.client?.discoverSettings() {
@@ -166,7 +175,13 @@ struct DiscoverView: View {
         }
         // In-library cards route by the library list (the web's `idByTmdb`).
         .task { if !model.libraryLoaded && !model.requestScoped { await model.loadLibrary() } }
-        .onChange(of: canManageIssues) { if tab == .issues && !canManageIssues { tab = .browse } }
+        // Issues lives in the Requests menu now (Proposal 2): the old tab and
+        // `?tab=issues` open Requests on Issues.
+        .onChange(of: tab, initial: true) { _, now in
+            guard now == .issues else { return }
+            store.requestsPane = .issues
+            tab = .requests
+        }
         .onChange(of: model.pendingDiscoverTab, initial: true) {
             // `fusionha://discover/requests` from the widget.
             guard let pending = model.pendingDiscoverTab else { return }
@@ -191,63 +206,13 @@ struct DiscoverView: View {
     // MARK: Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ShellTitleRow("Discover") { AddTitleButton() }
-                .padding(.bottom, 14)
-            DiscoverSegmented(options: SearchKind.allCases.map { ($0, $0.title) }, selection: $kind, size: .md)
-                .padding(.bottom, 14)
-            if canAdd {
-                Button { model.openAdd(nil, providerOverride: DiscoverSession.shared.providerOverride) } label: {
-                    HStack(spacing: 12) {
-                        Image(systemName: "magnifyingglass").font(.system(size: 16, weight: .semibold))
-                        Text("Search TMDB to add movies, series & anime…")
-                            .font(.system(size: 14.5))
-                            .lineLimit(1)
-                        Spacer(minLength: 0)
-                    }
-                    .foregroundStyle(Theme.mut)
-                    .padding(.horizontal, 14)
-                    .frame(maxWidth: 560, minHeight: 44, alignment: .leading)
-                    .background(DiscoverPalette.well, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.line))
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Search TMDB to add movies, series and anime")
-                DiscoverAddAsControl()
-                    .padding(.top, 8)
-            } else if canRequest {
-                HStack(spacing: 12) {
-                    Image(systemName: "magnifyingglass").font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.mut)
-                    TextField("", text: $query, prompt: Text("Search movies & shows to request…").foregroundStyle(Theme.mut))
-                        .font(.system(size: 16))
-                        .foregroundStyle(Theme.txt)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.search)
-                    if !query.isEmpty {
-                        Button { query = "" } label: {
-                            Image(systemName: "xmark").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
-                                .frame(width: 24, height: 24)
-                                .background(Theme.txt.opacity(0.12), in: Circle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Clear")
-                    }
-                }
-                .padding(.horizontal, 14)
-                .frame(maxWidth: 560, minHeight: 44)
-                .background(DiscoverPalette.well, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.line))
-            }
-        }
-        .padding(.bottom, 22)
+        ShellTitleRow("Discover") { AddTitleButton() }
+            .padding(.bottom, 14)
     }
 
     private var tabs: some View {
-        var options: [(DiscoverTab, String, Int?)] = [(.browse, "Browse", nil),
-                                                      (.requests, "Requests", canApprove ? store.pendingCount : nil)]
-        if canManageIssues { options.append((.issues, "Issues", nil)) }
+        let badge = (canApprove ? store.pendingCount : 0) + (canManageIssues ? store.issueCounts.needYou : 0)
+        let options: [(DiscoverTab, String, Int?)] = [(.browse, "Browse", nil), (.requests, "Requests", badge)]
         return DiscoverTabs(options: options, selection: $tab)
             .padding(.top, 4)
             .padding(.bottom, 22)
@@ -258,11 +223,10 @@ struct DiscoverView: View {
     @ViewBuilder
     private var content: some View {
         switch tab {
-        case .requests:
-            RequestsPanel(approver: canApprove)
-        case .issues:
-            ThreadsPanelView(only: "issue")
+        case .requests, .issues:
+            RequestsPanel(approver: canApprove, issues: canManageIssues)
         case .browse:
+            DiscoverBrowseControls(kind: $kind, query: $query, canAdd: canAdd, canRequest: canRequest)
             if requestorSearching {
                 RequestorSearchResults(term: query.trimmingCharacters(in: .whitespaces), kind: kind,
                                        canAdd: canAdd, canRequest: canRequest)

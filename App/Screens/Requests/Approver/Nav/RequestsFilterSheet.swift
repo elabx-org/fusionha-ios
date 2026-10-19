@@ -36,6 +36,13 @@ struct RequestsFilterSheet: View {
                             }
                         }
                     }
+                    if sections.contains(.issueState) {
+                        group("State") {
+                            ForEach([("open", "Open"), ("resolved", "Resolved"), ("all", "All")], id: \.0) { s in
+                                option(s.1, on: nav.filter[pane].issueState == s.0) { nav.filter[pane].issueState = s.0 }
+                            }
+                        }
+                    }
                     if sections.contains(.requester) {
                         group("Requester") {
                             option("Anyone", on: nav.filter[pane].requesterId == nil) { nav.filter[pane].requesterId = nil }
@@ -51,6 +58,17 @@ struct RequestsFilterSheet: View {
                                     if nav.filter[pane].origins.contains(o) { nav.filter[pane].origins.remove(o) } else { nav.filter[pane].origins.insert(o) }
                                 }
                             }
+                        }
+                    }
+                    if sections.contains(.display) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            label("Display")
+                            Picker("Display", selection: $nav.inboxList) {
+                                Text("Cards").tag(false)
+                                Text("List").tag(true)
+                            }
+                            .pickerStyle(.segmented)
+                            Text("Remembered on this device.").font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.leading, 4)
                         }
                     }
                     if sections.contains(.density) {
@@ -101,7 +119,8 @@ struct RequestsFilterSheet: View {
     /// "Show 9 requests" once the view has counted, else "Show results".
     private var resultLabel: String {
         guard let n = nav.resultCount else { return "Show results" }
-        let noun = nav.pane == .history ? (n == 1 ? "decision" : "decisions") : (n == 1 ? "request" : "requests")
+        let noun = nav.pane == .history ? (n == 1 ? "decision" : "decisions")
+            : nav.pane == .issues ? (n == 1 ? "issue" : "issues") : (n == 1 ? "request" : "requests")
         return "Show \(n) \(noun)"
     }
 

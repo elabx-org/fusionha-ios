@@ -119,6 +119,15 @@ final class AppModel {
     let shell = ShellState()
     var attentionCount: Int { shell.attentionCount }
     var pendingRequests: Int { shell.pendingRequests }
+    /// The Requests badge (Proposal 2): pending requests plus issues needing
+    /// action, each counted only for someone who can act on it.
+    var requestsBadge: Int {
+        (canApproveRequests ? shell.pendingRequests : 0) + (canManageIssues ? shell.issuesNeedingAction : 0)
+    }
+    var canManageIssues: Bool {
+        guard let me else { return false }
+        return me.isAdmin || (me.permissions ?? []).contains("issues.manage")
+    }
     var commandsActive: Bool { shell.commandsActive }
     var settings: ShellSettings? { shell.settings }
 
@@ -509,7 +518,8 @@ final class AppModel {
 
     func refreshShell() async {
         guard let client else { return }
-        await shell.refresh(client: client, requestScoped: requestScoped, canApproveRequests: canApproveRequests)
+        await shell.refresh(client: client, requestScoped: requestScoped, canApproveRequests: canApproveRequests,
+                            canManageIssues: canManageIssues)
     }
 
     // MARK: Setup progress

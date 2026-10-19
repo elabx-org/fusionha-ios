@@ -143,3 +143,37 @@ public enum RequestStageFacts {
         return only
     }
 }
+
+/// Issues in the Requests menu (Proposal 2, approved 2026-10-19): how many
+/// are open, and how many need an admin. The badge counts only the second.
+public struct IssueCounts: Sendable, Equatable {
+    public let open: Int
+    public let needYou: Int
+
+    public init(open: Int = 0, needYou: Int = 0) {
+        self.open = open
+        self.needYou = needYou
+    }
+
+    /// From issue threads: open is anything not resolved; an issue needs you
+    /// when the checks have handed it to an admin (`NEEDS_ADMIN`).
+    public static func of(_ items: [ThreadItem]) -> IssueCounts {
+        let issues = items.compactMap { $0.type == "issue" ? $0.issue : nil }
+        let open = issues.filter { ($0.state ?? "OPEN") != "RESOLVED" }
+        return IssueCounts(open: open.count, needYou: open.filter { $0.state == "NEEDS_ADMIN" }.count)
+    }
+}
+
+/// The drawer's breakdown line: "11 need you · 9 pending requests · 2 issues".
+public enum RequestsNeedYou {
+    public static func line(pending: Int?, issues: Int?) -> String? {
+        let parts = [pending.map { "\($0) pending \($0 == 1 ? "request" : "requests")" },
+                     issues.map { "\($0) \($0 == 1 ? "issue" : "issues")" }].compactMap { $0 }
+        let total = (pending ?? 0) + (issues ?? 0)
+        guard !parts.isEmpty else { return nil }
+        if parts.count == 1 {
+            return pending != nil ? parts[0] : "\(total) \(total == 1 ? "issue needs" : "issues need") you"
+        }
+        return "\(total) need you · " + parts.joined(separator: " · ")
+    }
+}
