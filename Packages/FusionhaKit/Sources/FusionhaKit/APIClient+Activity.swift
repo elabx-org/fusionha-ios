@@ -69,8 +69,10 @@ extension APIClient {
 
     // MARK: History
 
-    public func historyPage(page: Int = 1, pageSize: Int = 50, query: String? = nil) async throws -> HistoryPage {
-        try await get("/api/v1/history", query: q([("page", "\(page)"), ("page_size", "\(pageSize)"), ("q", Self.nonEmpty(query))]))
+    /// `itemId`: History of one title (`?item_id=`, web `item-filter.ts`).
+    public func historyPage(page: Int = 1, pageSize: Int = 50, query: String? = nil, itemId: Int? = nil) async throws -> HistoryPage {
+        try await get("/api/v1/history", query: q([("page", "\(page)"), ("page_size", "\(pageSize)"), ("q", Self.nonEmpty(query)),
+                                                  ("item_id", itemId.map(String.init))]))
     }
 
     public func historySparkline(days: Int = 14) async throws -> [HistorySparklineDay] {
