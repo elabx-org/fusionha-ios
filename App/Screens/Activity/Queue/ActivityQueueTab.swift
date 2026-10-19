@@ -104,17 +104,13 @@ struct ActivityQueueTab: View {
 
     var finished: (rows: [QueueLogic.Finished], overflow: Int) { QueueLogic.justFinished(store.justFinished) }
 
-    @ViewBuilder
+    /// The web's pipeline strip, the only hero it has (Q8).
     private var hero: some View {
         let items = store.items
-        let hasPhase = items.contains { $0.isPhaseMode }
         let realBps = items.filter { !$0.isPhaseMode && [.downloading, .stalled, .awaiting].contains($0.cockpitState) }
             .reduce(0) { $0 + (store.telemetry[$1.id]?.bps ?? 0) }
-        if !hasPhase && (items.contains { $0.isByteTransferring } || realBps > 0) {
-            BandwidthPulseHero(items: items, history: store.bandwidth)
-        } else {
-            PipelineHero(items: items, aggregateBps: realBps, hasPhaseWork: hasPhase, lastImport: store.lastImport)
-        }
+        return PipelineHero(items: items, aggregateBps: realBps, hasPhaseWork: items.contains { $0.isPhaseMode },
+                            lastImport: store.lastImport)
     }
 }
 
