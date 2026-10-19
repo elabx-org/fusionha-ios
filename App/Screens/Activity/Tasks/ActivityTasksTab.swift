@@ -3,8 +3,9 @@ import FusionhaKit
 
 // Activity · Tasks (`routes/TasksTab.tsx`, `TasksTab.module.css`,
 // `routes/tasks-format.ts`): the voice toggle, the System cards (Media
-// enrichment / RSS Sync / Scheduled), live backlog searches with Stop, Scanning
-// and Queued runs, and the Recent timeline with each run's decision trail.
+// enrichment / RSS Sync / Watchlists & lists / Scheduled), live backlog
+// searches with Stop, Scanning and Queued runs, and the Recent timeline with
+// each run's decision trail.
 
 // MARK: - Store
 
@@ -14,16 +15,25 @@ final class TasksStore {
     let feed = ActFeed<ActivityRun>(pageSize: 200) { _, _ in ([], 0) }
     var tasks: [ActivitySystemTask] = []
     var enrichment: ActivityEnrichmentStatus?
+    /// The admin rollup behind the Watchlists & lists card (0.4.215); nil for others.
+    var watchlists: RequestSourcesSummary?
+    var isAdmin = false
     var playful = true
 
-    var anyRunning: Bool { feed.items.contains { $0.status == "running" } || tasks.contains { $0.running } }
+    var anyRunning: Bool {
+        feed.items.contains { $0.status == "running" } || tasks.contains { $0.running }
+            || (watchlists?.runningSources ?? 0) > 0
+    }
 
     /// Recent (finished) runs grouped for the timeline, rebuilt only when the feed changes.
     @ObservationIgnored private var groupsCache: (revision: Int, groups: [TasksLogic.RunGroup])?
     var recentGroups: [TasksLogic.RunGroup] {
         let revision = feed.revision
         if let cache = groupsCache, cache.revision == revision { return cache.groups }
-        let groups = TasksLogic.groupRuns(feed.items.filter { $0.status != "running" })
+        // The three watchlist jobs live in their card, not in Recent (web `isWatchlistJobRun`).
+        let groups = TasksLogic.groupRuns(feed.items.filter {
+            $0.status != "running" && !WatchlistsTaskLogic.isWatchlistJobRun($0.name)
+        })
         groupsCache = (revision, groups)
         return groups
     }
@@ -49,6 +59,7 @@ final class TasksStore {
         async let e = try? client.activityEnrichmentStatus()
         if let tasks = await t { self.tasks = tasks }
         enrichment = await e
+        if isAdmin, let summary = try? await client.requestSourcesSummary() { watchlists = summary }
     }
 }
 
@@ -74,6 +85,7 @@ struct ActivityTasksTab: View {
         }
         .animation(reduce ? nil : ActMotion.rows, value: feed.items.filter { $0.status == "running" }.map(\.id))
         .task {
+            store.isAdmin = model.me?.hasPermission("system.admin") == true
             await store.load(model.client)
             // The web polls fast (2s) while any run is live, slowly otherwise.
             while await ActivityPoll.next(after: .seconds(store.anyRunning ? 2 : 15), model: model) {
@@ -84,7 +96,8 @@ struct ActivityTasksTab: View {
 
     @ViewBuilder
     private var loadedView: some View {
-        let items = store.feed.items
+        let all = store.feed.items
+        let items = all.filter { !WatchlistsTaskLogic.isWatchlistJobRun($0.name) }
         let running = items.filter { $0.status == "running" }
         let searchRuns = running.filter { $0.search != nil }
         let scanning = running.filter { $0.search == nil && $0.phase != nil && $0.phase != "queued" }
@@ -94,7 +107,9 @@ struct ActivityTasksTab: View {
         let showEnrichment = (enrich?.pendingFiles ?? 0) > 0 || (enrich?.issueFiles ?? 0) > 0
         let rssTask = store.tasks.first { TasksLogic.isRss($0.name) }
         let scheduled = TasksLogic.scheduledTasks(store.tasks)
-        let showSystem = showEnrichment || rssTask != nil || !scheduled.isEmpty
+        let watchlists = store.watchlists.flatMap { $0.sources.isEmpty ? nil : $0 }
+        let showSystem = showEnrichment || rssTask != nil || !scheduled.isEmpty || watchlists != nil
+        let folded = watchlists != nil && items.count < all.count
 
         if running.isEmpty && recent.isEmpty && !showSystem {
             ActEmpty(message: "No searches yet. RSS syncs, scheduled sweeps and searches show up here — each with what it grabbed and why.")
@@ -106,6 +121,7 @@ struct ActivityTasksTab: View {
                 VStack(spacing: 10) {
                     if showEnrichment, let enrich { EnrichmentCard(status: enrich) }
                     if let rssTask { RssSyncCard(task: rssTask, latestRun: items.first { $0.trigger == "rss" }) }
+                    if let watchlists { WatchlistsTaskCard(summary: watchlists) }
                     if !scheduled.isEmpty { ScheduledCard(tasks: scheduled) }
                 }
             }
@@ -138,10 +154,15 @@ struct ActivityTasksTab: View {
                     }
                 }
             }
+            if recent.isEmpty && folded {
+                sectionLabel("Recent").padding(.top, 22)
+                WatchlistsFoldedNote()
+            }
             if !recent.isEmpty {
                 let groups = store.recentGroups
                 let last = groups.count - 1
                 sectionLabel("Recent").padding(.top, !running.isEmpty || showSystem ? 22 : 0)
+                if folded { WatchlistsFoldedNote() }
                 ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
                     RecentGroupView(group: group, tasks: store.tasks)
                         .actReveal(index, stagger: 0.03)

@@ -38,7 +38,21 @@
         "last_checked_at": "2026-10-09T21:16:00",
         "requested_count": 3,
         "deleted": false,
-        "error": null
+        "error": null,
+        "sync": {
+          "state": "idle",
+          "checked": null,
+          "total": null,
+          "started_at": null
+        },
+        "counts": {
+          "requested": 3,
+          "owned": 0,
+          "queued": 0,
+          "waiting": 0,
+          "skipped": 0,
+          "baseline": 0
+        }
       },
       {
         "list_id": "list-b",
@@ -50,7 +64,21 @@
         "last_checked_at": null,
         "requested_count": 0,
         "deleted": false,
-        "error": null
+        "error": null,
+        "sync": {
+          "state": "idle",
+          "checked": null,
+          "total": null,
+          "started_at": null
+        },
+        "counts": {
+          "requested": 0,
+          "owned": 0,
+          "queued": 0,
+          "waiting": 0,
+          "skipped": 0,
+          "baseline": 0
+        }
       },
       {
         "list_id": "list-c",
@@ -62,9 +90,37 @@
         "last_checked_at": "2026-10-09T21:16:00",
         "requested_count": 1,
         "deleted": false,
-        "error": null
+        "error": null,
+        "sync": {
+          "state": "idle",
+          "checked": null,
+          "total": null,
+          "started_at": null
+        },
+        "counts": {
+          "requested": 1,
+          "owned": 0,
+          "queued": 0,
+          "waiting": 0,
+          "skipped": 0,
+          "baseline": 0
+        }
       }
     ]
+  },
+  "sync": {
+    "state": "idle",
+    "checked": null,
+    "total": null,
+    "started_at": null
+  },
+  "counts": {
+    "requested": 12,
+    "owned": 2,
+    "queued": 0,
+    "waiting": 2,
+    "skipped": 2,
+    "baseline": 23
   },
   "paused": false,
   "consecutive_failures": 0,

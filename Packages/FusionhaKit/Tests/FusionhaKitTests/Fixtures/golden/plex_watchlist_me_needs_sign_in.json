@@ -23,5 +23,19 @@
   "lists": {
     "state": "unknown",
     "sources": []
+  },
+  "sync": {
+    "state": "idle",
+    "checked": null,
+    "total": null,
+    "started_at": null
+  },
+  "counts": {
+    "requested": 0,
+    "owned": 0,
+    "queued": 0,
+    "waiting": 0,
+    "skipped": 0,
+    "baseline": 0
   }
 }

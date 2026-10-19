@@ -113,6 +113,14 @@ extension APIClient {
         try await sendJSON("POST", "/api/v1/me/request-sources/\(id)/sync")
     }
 
+    // MARK: Admin rollup (0.4.215)
+
+    /// Every user's enabled Plex / Letterboxd sources, today's totals and the
+    /// three jobs: the Activity › Tasks "Watchlists & lists" card. `system.admin`.
+    public func requestSourcesSummary() async throws -> RequestSourcesSummary {
+        try await get("/api/v1/system/request-sources/summary")
+    }
+
     // MARK: Helpers
 
     static func targetBody(_ target: LbSourceTarget) -> [String: SettingsJSON] {

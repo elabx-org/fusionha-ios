@@ -13,7 +13,10 @@
     "last_error": null,
     "source_id": null,
     "truncated": false,
-    "item_count": null
+    "item_count": null,
+    "next_check_at": null,
+    "sync": null,
+    "counts": null
   },
   "can_link_lists": true,
   "max_linked_lists": 5,

@@ -1,0 +1,224 @@
+[
+  {
+    "id": 1,
+    "kind": "LETTERBOXD_RSS",
+    "label": null,
+    "url": "https://letterboxd.com/example_member/rss/",
+    "owner": "example_member",
+    "is_self": false,
+    "enabled": true,
+    "status": "OK",
+    "last_checked_at": "2026-10-09T20:42:00",
+    "next_check_at": "2026-10-10T02:20:00",
+    "retry_at": null,
+    "last_error": null,
+    "via_flaresolverr": false,
+    "requested_count": 7,
+    "item_count": 50,
+    "baseline": "new",
+    "truncated": false,
+    "options": {
+      "request_rewatches": false,
+      "also_uhd": false
+    },
+    "sync": {
+      "state": "idle",
+      "checked": null,
+      "total": null,
+      "started_at": null
+    },
+    "counts": {
+      "requested": 7,
+      "owned": 0,
+      "queued": 0,
+      "waiting": 0,
+      "skipped": 0,
+      "baseline": 0
+    }
+  },
+  {
+    "id": 2,
+    "kind": "LETTERBOXD_WATCHLIST",
+    "label": null,
+    "url": "https://letterboxd.com/example_member/watchlist/",
+    "owner": "example_member",
+    "is_self": true,
+    "enabled": true,
+    "status": "DEGRADED",
+    "last_checked_at": "2026-10-09T20:40:00",
+    "next_check_at": "2026-10-10T08:20:00",
+    "retry_at": null,
+    "last_error": "Only the first 560 films are followed",
+    "via_flaresolverr": false,
+    "requested_count": 0,
+    "item_count": 605,
+    "baseline": "new",
+    "truncated": true,
+    "options": {
+      "request_rewatches": false,
+      "also_uhd": false
+    },
+    "sync": {
+      "state": "running",
+      "checked": 24,
+      "total": 38,
+      "started_at": "2026-10-09T21:19:00"
+    },
+    "counts": {
+      "requested": 0,
+      "owned": 0,
+      "queued": 0,
+      "waiting": 0,
+      "skipped": 0,
+      "baseline": 1
+    }
+  },
+  {
+    "id": 3,
+    "kind": "LETTERBOXD_LIST",
+    "label": "Best of 2026",
+    "url": "https://letterboxd.com/example_critic/list/best-of-2026/",
+    "owner": "example_critic",
+    "is_self": false,
+    "enabled": true,
+    "status": "OK",
+    "last_checked_at": "2026-10-09T19:20:00",
+    "next_check_at": "2026-10-10T07:20:00",
+    "retry_at": null,
+    "last_error": null,
+    "via_flaresolverr": false,
+    "requested_count": 4,
+    "item_count": 159,
+    "baseline": "new",
+    "truncated": false,
+    "options": {
+      "request_rewatches": false,
+      "also_uhd": false
+    },
+    "sync": {
+      "state": "idle",
+      "checked": null,
+      "total": null,
+      "started_at": null
+    },
+    "counts": {
+      "requested": 4,
+      "owned": 0,
+      "queued": 0,
+      "waiting": 0,
+      "skipped": 0,
+      "baseline": 2
+    }
+  },
+  {
+    "id": 4,
+    "kind": "LETTERBOXD_LIST",
+    "label": "Slow cinema",
+    "url": "https://letterboxd.com/example_friend/list/slow-cinema/",
+    "owner": "example_friend",
+    "is_self": false,
+    "enabled": true,
+    "status": "BLOCKED",
+    "last_checked_at": "2026-10-09T06:20:00",
+    "next_check_at": "2026-10-10T03:20:00",
+    "retry_at": "2026-10-10T03:20:00",
+    "last_error": "Letterboxd is blocking automatic reads right now",
+    "via_flaresolverr": false,
+    "requested_count": 0,
+    "item_count": null,
+    "baseline": "new",
+    "truncated": false,
+    "options": {
+      "request_rewatches": false,
+      "also_uhd": false
+    },
+    "sync": {
+      "state": "error",
+      "checked": null,
+      "total": null,
+      "started_at": null
+    },
+    "counts": {
+      "requested": 0,
+      "owned": 0,
+      "queued": 1,
+      "waiting": 0,
+      "skipped": 0,
+      "baseline": 0
+    }
+  },
+  {
+    "id": 5,
+    "kind": "LETTERBOXD_WATCHLIST",
+    "label": null,
+    "url": "https://letterboxd.com/example_friend/watchlist/",
+    "owner": "example_friend",
+    "is_self": false,
+    "enabled": true,
+    "status": "PRIVATE",
+    "last_checked_at": "2026-10-09T18:00:00",
+    "next_check_at": null,
+    "retry_at": null,
+    "last_error": "This watchlist isn’t public",
+    "via_flaresolverr": false,
+    "requested_count": 0,
+    "item_count": null,
+    "baseline": "new",
+    "truncated": false,
+    "options": {
+      "request_rewatches": false,
+      "also_uhd": false
+    },
+    "sync": {
+      "state": "idle",
+      "checked": null,
+      "total": null,
+      "started_at": null
+    },
+    "counts": {
+      "requested": 0,
+      "owned": 0,
+      "queued": 0,
+      "waiting": 0,
+      "skipped": 0,
+      "baseline": 0
+    }
+  },
+  {
+    "id": 6,
+    "kind": "LETTERBOXD_WATCHLIST",
+    "label": null,
+    "url": "https://letterboxd.com/letterboxd/watchlist/",
+    "owner": "letterboxd",
+    "is_self": false,
+    "enabled": true,
+    "status": "PENDING",
+    "last_checked_at": null,
+    "next_check_at": "2026-10-09T21:20:00",
+    "retry_at": null,
+    "last_error": null,
+    "via_flaresolverr": false,
+    "requested_count": 0,
+    "item_count": null,
+    "baseline": "new",
+    "truncated": false,
+    "options": {
+      "request_rewatches": false,
+      "also_uhd": false
+    },
+    "sync": {
+      "state": "idle",
+      "checked": null,
+      "total": null,
+      "started_at": null
+    },
+    "counts": {
+      "requested": 0,
+      "owned": 0,
+      "queued": 0,
+      "waiting": 0,
+      "skipped": 0,
+      "baseline": 0
+    }
+  }
+]

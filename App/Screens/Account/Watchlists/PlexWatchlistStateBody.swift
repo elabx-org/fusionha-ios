@@ -83,6 +83,17 @@ struct PlexWatchlistActive: View {
             if read.waitingCount > 0 {
                 Text("\(read.waitingCount) waiting for your weekly limit").font(.footnote).foregroundStyle(Theme.miss)
             }
+            VStack(alignment: .leading, spacing: 10) {
+                SyncStatusView(sync: read.sync, requested: read.counts?.requested ?? read.requestedTotal,
+                               lastCheckedAt: read.lastCheckedAt, nextCheckAt: read.nextCheckAt,
+                               lastError: read.lastError, errorLead: "Couldn’t read the watchlist",
+                               barLabel: "Watchlist sync progress")
+                SyncCountsView(counts: read.counts)
+                if let queued = SyncProgress.queuedHint(read.counts) {
+                    Text(queued).font(.footnote).foregroundStyle(Theme.mut)
+                }
+            }
+            .padding(.vertical, 2)
         }
         if let first = read.firstCheck {
             WatchlistInfo(icon: "checkmark.circle", lead: "First check done.", rest: PlexWatchlistCopy.firstCheck(first))
@@ -94,6 +105,7 @@ struct PlexWatchlistActive: View {
         WatchlistSyncRow(title: "Check now", sub: PlexWatchlistCopy.checkNowSub(lists: enabledLists),
                          retryAt: store.plexRetryAt ?? read.syncAvailableAt,
                          syncing: store.plexSyncing || checking,
+                         running: SyncProgress.plexRunning(read),
                          waitText: { "You can check again in \($0)s" }) {
             Task { await store.syncPlex(model) }
         }

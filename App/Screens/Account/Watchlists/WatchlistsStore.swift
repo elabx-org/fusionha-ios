@@ -38,6 +38,23 @@ final class WatchlistsStore {
         if let list = try? await client.requestSources() { sources = list }
     }
 
+    // MARK: Sync progress (0.4.215)
+
+    /// Any Plex or Letterboxd source mid-pass: the screen re-reads every 2 s.
+    var anyRunning: Bool { SyncProgress.plexRunning(plex) || letterboxdRunning }
+
+    var letterboxdRunning: Bool { SyncProgress.letterboxdRunning(letterboxd, sources: sources) }
+
+    /// A quiet re-read of both cards and the linked sources while a source runs.
+    func refreshProgress(_ client: APIClient?) async {
+        guard let client else { return }
+        async let plexRead = try? client.plexWatchlist()
+        async let lbRead = try? client.letterboxd()
+        if let next = await plexRead { plex = next }
+        if let next = await lbRead { letterboxd = next }
+        await loadSources(client)
+    }
+
     // MARK: Plex
 
     /// Runs one Plex write and keeps its answer; toasts `success` or the error.

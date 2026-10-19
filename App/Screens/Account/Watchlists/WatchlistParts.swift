@@ -98,34 +98,38 @@ struct WatchlistInfo: View {
     }
 }
 
-/// A Sync now button with its cooldown: spinner while checking, "Sync now"
-/// otherwise, disabled until `retryAt` passes (ticks every second).
+/// A Sync now button with its cooldown: "Syncing…" while a check runs (ours,
+/// or one the schedule started: `running`), "Sync now" otherwise, disabled
+/// until `retryAt` passes (ticks every second).
 struct WatchlistSyncRow: View {
     let title: String
     let sub: String
     let retryAt: String?
     let syncing: Bool
+    var running = false
     let waitText: (Int) -> String
     let action: () -> Void
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let left = WatchlistTime.secondsLeft(retryAt, now: context.date)
+            let busy = syncing || running
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).foregroundStyle(Theme.txt)
-                    Text(left > 0 && !syncing ? waitText(left) : sub).font(.caption).foregroundStyle(Theme.mut)
+                    Text(running ? SyncProgress.followsIt : (left > 0 && !busy ? waitText(left) : sub))
+                        .font(.caption).foregroundStyle(Theme.mut)
                 }
                 Spacer(minLength: 8)
                 Button(action: action) {
-                    if syncing {
-                        HStack(spacing: 6) { ProgressView().controlSize(.small); Text("Checking…") }
+                    if busy {
+                        HStack(spacing: 6) { ProgressView().controlSize(.small); Text(SyncProgress.syncingButton) }
                     } else {
                         Label("Sync now", systemImage: "arrow.clockwise")
                     }
                 }
                 .buttonStyle(.bordered)
-                .disabled(syncing || left > 0)
+                .disabled(busy || left > 0)
             }
         }
     }

@@ -33,7 +33,21 @@
         "last_checked_at": null,
         "requested_count": 0,
         "deleted": false,
-        "error": null
+        "error": null,
+        "sync": {
+          "state": "idle",
+          "checked": null,
+          "total": null,
+          "started_at": null
+        },
+        "counts": {
+          "requested": 0,
+          "owned": 0,
+          "queued": 0,
+          "waiting": 0,
+          "skipped": 0,
+          "baseline": 0
+        }
       },
       {
         "list_id": "list-b",
@@ -45,7 +59,21 @@
         "last_checked_at": null,
         "requested_count": 0,
         "deleted": false,
-        "error": null
+        "error": null,
+        "sync": {
+          "state": "idle",
+          "checked": null,
+          "total": null,
+          "started_at": null
+        },
+        "counts": {
+          "requested": 0,
+          "owned": 0,
+          "queued": 0,
+          "waiting": 0,
+          "skipped": 0,
+          "baseline": 0
+        }
       },
       {
         "list_id": "list-c",
@@ -57,8 +85,36 @@
         "last_checked_at": null,
         "requested_count": 0,
         "deleted": false,
-        "error": null
+        "error": null,
+        "sync": {
+          "state": "idle",
+          "checked": null,
+          "total": null,
+          "started_at": null
+        },
+        "counts": {
+          "requested": 0,
+          "owned": 0,
+          "queued": 0,
+          "waiting": 0,
+          "skipped": 0,
+          "baseline": 0
+        }
       }
     ]
+  },
+  "sync": {
+    "state": "idle",
+    "checked": null,
+    "total": null,
+    "started_at": null
+  },
+  "counts": {
+    "requested": 0,
+    "owned": 0,
+    "queued": 0,
+    "waiting": 0,
+    "skipped": 0,
+    "baseline": 0
   }
 }

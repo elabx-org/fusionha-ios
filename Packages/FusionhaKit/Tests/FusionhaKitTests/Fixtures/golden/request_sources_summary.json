@@ -1,0 +1,191 @@
+{
+  "running_sources": 1,
+  "checked": 24,
+  "total": 38,
+  "next_run_at": "2026-10-09T21:20:00",
+  "sources": [
+    {
+      "source_id": 2,
+      "user_id": 2,
+      "owner": "member",
+      "kind": "LETTERBOXD_WATCHLIST",
+      "label": "example_member",
+      "state": "running",
+      "checked": 24,
+      "total": 38,
+      "started_at": "2026-10-09T21:19:00",
+      "counts": {
+        "requested": 0,
+        "owned": 0,
+        "queued": 0,
+        "waiting": 0,
+        "skipped": 0,
+        "baseline": 1
+      },
+      "last_checked_at": "2026-10-09T20:40:00",
+      "next_check_at": "2026-10-10T08:20:00",
+      "last_error": "Only the first 560 films are followed"
+    },
+    {
+      "source_id": 7,
+      "user_id": 5,
+      "owner": "lost",
+      "kind": "LETTERBOXD_RSS",
+      "label": "example_friend",
+      "state": "error",
+      "checked": null,
+      "total": null,
+      "started_at": null,
+      "counts": {
+        "requested": 0,
+        "owned": 0,
+        "queued": 0,
+        "waiting": 0,
+        "skipped": 0,
+        "baseline": 0
+      },
+      "last_checked_at": "2026-10-05T21:20:00",
+      "next_check_at": null,
+      "last_error": "Letterboxd has no profile with that name"
+    },
+    {
+      "source_id": 4,
+      "user_id": 2,
+      "owner": "member",
+      "kind": "LETTERBOXD_LIST",
+      "label": "Slow cinema",
+      "state": "error",
+      "checked": null,
+      "total": null,
+      "started_at": null,
+      "counts": {
+        "requested": 0,
+        "owned": 0,
+        "queued": 1,
+        "waiting": 0,
+        "skipped": 0,
+        "baseline": 0
+      },
+      "last_checked_at": "2026-10-09T06:20:00",
+      "next_check_at": "2026-10-10T03:20:00",
+      "last_error": "Letterboxd is blocking automatic reads right now"
+    },
+    {
+      "source_id": 1,
+      "user_id": 2,
+      "owner": "member",
+      "kind": "LETTERBOXD_RSS",
+      "label": "example_member",
+      "state": "idle",
+      "checked": null,
+      "total": null,
+      "started_at": null,
+      "counts": {
+        "requested": 7,
+        "owned": 0,
+        "queued": 0,
+        "waiting": 0,
+        "skipped": 0,
+        "baseline": 0
+      },
+      "last_checked_at": "2026-10-09T20:42:00",
+      "next_check_at": "2026-10-10T02:20:00",
+      "last_error": null
+    },
+    {
+      "source_id": 3,
+      "user_id": 2,
+      "owner": "member",
+      "kind": "LETTERBOXD_LIST",
+      "label": "Best of 2026",
+      "state": "idle",
+      "checked": null,
+      "total": null,
+      "started_at": null,
+      "counts": {
+        "requested": 4,
+        "owned": 0,
+        "queued": 0,
+        "waiting": 0,
+        "skipped": 0,
+        "baseline": 2
+      },
+      "last_checked_at": "2026-10-09T19:20:00",
+      "next_check_at": "2026-10-10T07:20:00",
+      "last_error": null
+    },
+    {
+      "source_id": 5,
+      "user_id": 2,
+      "owner": "member",
+      "kind": "LETTERBOXD_WATCHLIST",
+      "label": "example_friend",
+      "state": "idle",
+      "checked": null,
+      "total": null,
+      "started_at": null,
+      "counts": {
+        "requested": 0,
+        "owned": 0,
+        "queued": 0,
+        "waiting": 0,
+        "skipped": 0,
+        "baseline": 0
+      },
+      "last_checked_at": "2026-10-09T18:00:00",
+      "next_check_at": null,
+      "last_error": "This watchlist isn’t public"
+    },
+    {
+      "source_id": 6,
+      "user_id": 2,
+      "owner": "member",
+      "kind": "LETTERBOXD_WATCHLIST",
+      "label": "letterboxd",
+      "state": "idle",
+      "checked": null,
+      "total": null,
+      "started_at": null,
+      "counts": {
+        "requested": 0,
+        "owned": 0,
+        "queued": 0,
+        "waiting": 0,
+        "skipped": 0,
+        "baseline": 0
+      },
+      "last_checked_at": null,
+      "next_check_at": "2026-10-09T21:20:00",
+      "last_error": null
+    }
+  ],
+  "today": {
+    "requested": 3,
+    "owned": 0,
+    "skipped": 0,
+    "errors": 1
+  },
+  "jobs": [
+    {
+      "name": "request-source-sync",
+      "last_run_at": null,
+      "last_status": null,
+      "running": false,
+      "next_run_at": null
+    },
+    {
+      "name": "plex-watchlist-poll",
+      "last_run_at": null,
+      "last_status": null,
+      "running": false,
+      "next_run_at": null
+    },
+    {
+      "name": "letterboxd-csv-match",
+      "last_run_at": null,
+      "last_status": null,
+      "running": false,
+      "next_run_at": null
+    }
+  ]
+}

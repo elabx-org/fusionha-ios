@@ -14,8 +14,9 @@ struct LetterboxdDiarySection: View {
             Section("Diary") {
                 Toggle(isOn: Binding(get: { diary.enabled || choosing }, set: { on in switchChanged(on, diary: diary, user: user) })) {
                     HStack(spacing: 8) {
+                        let pill = Self.pill(diary)
                         Text("Request films from my Letterboxd diary")
-                        WatchlistPill(text: diary.enabled ? "Active" : "Off", color: diary.enabled ? Theme.done : Theme.dim)
+                        WatchlistPill(text: pill.text, color: pill.color)
                     }
                 }
                 .disabled(store.letterboxdBusy)
@@ -45,6 +46,10 @@ struct LetterboxdDiarySection: View {
             (value: WatchlistTime.lastRun(diary.lastCheckedAt), label: "Last checked"),
             (value: WatchlistTime.until(diary.nextCheckAt), label: "Next check"),
         ])
+        SyncStatusView(sync: diary.sync, requested: diary.counts?.requested ?? diary.requestedCount,
+                       lastCheckedAt: diary.lastCheckedAt, nextCheckAt: diary.nextCheckAt,
+                       errorLead: "Couldn’t read the diary", note: SyncProgress.baselineNote(diary.counts?.baseline),
+                       barLabel: "Diary sync progress")
         Toggle(isOn: Binding(get: { diary.requestRewatches }, set: { on in save(user, rewatches: on) })) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Also request rewatches")
@@ -64,6 +69,16 @@ struct LetterboxdDiarySection: View {
         .disabled(!read.alsoUhdAllowed || store.letterboxdBusy)
         Text(LetterboxdLogic.diaryHint(hours: LetterboxdLogic.scheduleHours(last: diary.lastCheckedAt, next: diary.nextCheckAt)))
             .font(.footnote).foregroundStyle(Theme.mut)
+    }
+
+    /// Off, or Syncing / Error / Active from the diary's sync (web `LetterboxdDiary`).
+    static func pill(_ diary: LetterboxdDiary) -> (text: String, color: Color) {
+        guard diary.enabled else { return ("Off", Theme.dim) }
+        switch SyncProgress.variant(diary.sync) {
+        case .running: return (SyncProgress.syncing, SyncVariant.running.color)
+        case .error: return ("Error", SyncVariant.error.color)
+        default: return ("Active", Theme.done)
+        }
     }
 
     private func switchChanged(_ on: Bool, diary: LetterboxdDiary, user: String) {
@@ -109,7 +124,13 @@ struct LetterboxdFollowSection: View {
         Section("My watchlist") {
             Toggle(isOn: Binding(get: { follow.enabled || choosing }, set: { on in switchChanged(on) })) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Follow my public watchlist")
+                    HStack(spacing: 8) {
+                        Text("Follow my public watchlist")
+                        if follow.enabled {
+                            let pill = LetterboxdFollowState.pill(follow)
+                            WatchlistPill(text: pill.text, color: pill.color)
+                        }
+                    }
                     Text("Reads your public watchlist page about every 12 hours and keeps it in sync. **Best effort:** Letterboxd can block this (the diary can’t be blocked).")
                         .font(.caption).foregroundStyle(Theme.mut)
                 }
@@ -124,35 +145,9 @@ struct LetterboxdFollowSection: View {
             } message: {
                 Text("Only new additions: films already on your watchlist are noted and left alone.\n\nAlso request what’s already on it: a few at a time; titles over your weekly limit wait.")
             }
-            if follow.enabled { statusRows }
+            if follow.enabled { LetterboxdFollowState(follow: follow) }
         }
         .listRowBackground(AccountStyle.cell)
-    }
-
-    @ViewBuilder
-    private var statusRows: some View {
-        let status = follow.status ?? "PENDING"
-        let meta = LetterboxdLogic.status(status)
-        HStack(spacing: 8) {
-            WatchlistPill(text: meta.label, color: meta.tone.color)
-            Text("\(follow.requestedCount) requested · checked \(WatchlistTime.lastRun(follow.lastCheckedAt))")
-                .font(.caption).foregroundStyle(Theme.mut)
-        }
-        switch status {
-        case "PRIVATE":
-            WatchlistAttention(lead: "Your watchlist isn’t public.",
-                               rest: "fusionha can’t read it, so nothing is syncing. fusionha can only follow what’s public on Letterboxd. Set your watchlist to public in your Letterboxd settings to keep it in sync, then press Sync now.",
-                               color: Theme.miss)
-        case "BLOCKED":
-            WatchlistAttention(lead: "Letterboxd is blocking fusionha right now.",
-                               rest: "It retries on its own. To backfill meanwhile, use the one-time import under Advanced.")
-        case "DEGRADED":
-            if let error = follow.lastError {
-                Label(error, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(Theme.miss)
-            }
-        default:
-            EmptyView()
-        }
     }
 
     private func switchChanged(_ on: Bool) {
