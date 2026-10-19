@@ -41,6 +41,11 @@ struct DefaultProfilesSettingsPanel: View {
                               selection: store.stringBinding("default_movie_minimum_availability", "released"))
             }
 
+            SettingsSection {
+                DefaultProfilesMappingExample().settingsField("Library Import mapping")
+                DefaultProfilesTagLegend().settingsField("Add + Import")
+            }
+
             if let cells {
                 ForEach(Self.kinds, id: \.0) { kind in
                     SettingsSection(kind.1) {
@@ -102,12 +107,7 @@ struct DefaultProfilesSettingsPanel: View {
         HStack {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt)
-                Text(tag)
-                    .font(.system(size: 11, weight: .heavy))
-                    .foregroundStyle(tagColor)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
-                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(tagColor.opacity(0.4)))
+                DefaultProfilesTag(text: tag, color: tagColor)
             }
             Spacer()
             Picker(title, selection: selection) {

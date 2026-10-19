@@ -34,7 +34,7 @@ struct ClientCapabilityRow: View {
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
-                .background(tone(cap).opacity(0.06), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .actWash(tone(cap), radius: 11)
             }
         }
         .task { cap = try? await model.client?.clientCapabilities(clientId: clientId) }
