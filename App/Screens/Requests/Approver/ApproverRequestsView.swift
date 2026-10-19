@@ -1,60 +1,70 @@
 import SwiftUI
 import FusionhaKit
 
-/// The approver's Requests area (web `ApproverRequests`): Inbox N · Board ·
-/// History · Threads · Rules · Insights, plus Mine (their own requests). Any view opens a request's thread here.
+/// The approver's Requests area (Final mock, approved 2026-10-18): one header
+/// row names the view and opens the drawer (Inbox · Board · History · Threads
+/// · Insights · Mine); filters live in a sheet; Rules is in Settings ›
+/// Requests. Any view opens a request's thread here.
 struct ApproverRequestsView: View {
-    enum Lane: Hashable { case inbox, board, history, threads, rules, insights, mine }
-
+    @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
-    @State private var lane: Lane = .inbox
-    @State private var historyFilter: HistoryFilter = .all
+    @State private var nav = RequestsNav()
     @State private var thread: MediaRequest?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // The selected lane always scrolls into view (Rules and Insights
-            // sit past the edge on a phone).
-            ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-            DiscoverSegmented(options: [
-                (Lane.inbox, store.pendingCount > 0 ? "Inbox \(store.pendingCount)" : "Inbox"),
-                (Lane.board, "Board"),
-                (Lane.history, "History"),
-                (Lane.threads, "Threads"),
-                (Lane.rules, "Rules"),
-                (Lane.insights, "Insights"),
-                (Lane.mine, "Mine"),
-            ], selection: $lane)
+        @Bindable var nav = nav
+        content
+            .environment(nav)
+            .animation(.snappy, value: nav.filter)
+            .sheet(isPresented: $nav.menuOpen) {
+                RequestsViewMenuSheet(counts: [.inbox: store.pendingCount], panes: RequestsPane.allCases) {
+                    nav.menuOpen = false
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(350))
+                        nav.rulesOpen = true
+                    }
+                }
+                .environment(nav)
             }
-            .onChange(of: lane) { _, now in withAnimation(.snappy) { proxy.scrollTo(now, anchor: .center) } }
-            .onAppear { proxy.scrollTo(lane, anchor: .center) }
+            .sheet(isPresented: $nav.filterOpen) {
+                RequestsFilterSheet().environment(nav)
             }
-            switch lane {
-            case .inbox:
-                TriageInboxView(onOpenThread: { thread = $0 }, onOpenBoard: { lane = .board }, onOpenHistory: openHistory)
-            case .board:
-                RequestsBoardView(onOpenThread: { thread = $0 }, onOpenHistory: openHistory)
-            case .history:
-                RequestsHistoryView(initialFilter: historyFilter, onOpenThread: { thread = $0 })
-                    .id(historyFilter)
-            case .threads:
-                ThreadsPanelView()
-            case .rules:
-                RequestRulesView()
-            case .insights:
-                RequestInsightsView()
-            case .mine:
-                MineView()
+            .fullScreenCover(isPresented: $nav.rulesOpen) {
+                SettingsView(client: model.client, initialPanel: "requestrules")
             }
+            .sheet(item: $thread) { request in
+                RequestThreadSheet(request: request) { store.requestsVersion += 1 }
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch nav.pane {
+        case .inbox:
+            TriageInboxView(onOpenThread: { thread = $0 }, onOpenBoard: { nav.open(.board) }, onOpenHistory: openHistory)
+        case .board:
+            RequestsBoardView(onOpenThread: { thread = $0 }, onOpenHistory: openHistory)
+        case .history:
+            RequestsHistoryView(onOpenThread: { thread = $0 })
+        case .threads:
+            plain { ThreadsPanelView() }
+        case .insights:
+            plain { RequestInsightsView() }
+        case .mine:
+            plain { MineView() }
         }
-        .sheet(item: $thread) { request in
-            RequestThreadSheet(request: request) { store.requestsVersion += 1 }
+    }
+
+    /// Views with no filters of their own: the header, then the view.
+    private func plain<V: View>(@ViewBuilder _ view: () -> V) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            RequestsViewHeader()
+            view()
         }
     }
 
     private func openHistory(_ filter: HistoryFilter) {
-        historyFilter = filter
-        lane = .history
+        nav.filter[.history].status = filter
+        nav.open(.history)
     }
 }

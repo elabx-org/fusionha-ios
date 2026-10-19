@@ -97,6 +97,8 @@ enum SettingsNav {
         .init(id: "database", label: "Database", title: "Database",
               subtitle: "The storage backend — SQLite (default) or Postgres — with an in-app migration.",
               icon: "cylinder.split.1x2"),
+        .init(id: "requestrules", label: "Rules", title: "Request rules",
+              subtitle: "Approve requests automatically, top to bottom; guards hold one for a person.", icon: "slider.horizontal.3"),
         .init(id: "guardrails", label: "Guardrails", title: "Guardrails",
               subtitle: "The Auto-fix kill switch, its limits, and what is paused.", icon: "shield"),
         .init(id: "blocklist", label: "Blocklist", title: "Blocklist",
@@ -132,7 +134,7 @@ enum SettingsNav {
     static let sections: [SettingsSectionInfo] = [
         .init(id: "fetching", label: "Fetching",
               panels: ["clients", "indexers", "connect", "notifications", "instances"]),
-        .init(id: "requests", label: "Requests", panels: ["guardrails"]),
+        .init(id: "requests", label: "Requests", panels: ["requestrules", "guardrails"]),
         .init(id: "system", label: "System",
               panels: ["appearance", "system", "database", "backup", "security", "logs", "about", "versions",
                        "experimental", "discover", "maintenance"]),

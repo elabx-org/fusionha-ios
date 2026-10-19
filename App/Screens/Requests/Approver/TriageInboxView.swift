@@ -11,8 +11,8 @@ struct TriageInboxView: View {
     let onOpenHistory: (HistoryFilter) -> Void
     @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
+    @Environment(RequestsNav.self) private var nav
     @State private var inbox = InboxModel()
-    @State private var listMode = false
     @State private var details: MediaRequest?
     @State private var adjusting: MediaRequest?
     @State private var noting: MediaRequest?
@@ -24,8 +24,15 @@ struct TriageInboxView: View {
             .task {
                 inbox.bind(model.client) { message, title, variant in model.toast(message, title: title, variant: variant) }
                 inbox.viewerIsAdmin = model.me?.isAdmin == true
+                inbox.filterItems = nav.filter.query(.inbox)
                 await inbox.poll()
             }
+            .onChange(of: nav.filter.query(.inbox)) { _, items in
+                inbox.filterItems = items
+                Task { await inbox.refresh() }
+            }
+            .onChange(of: inbox.items) { nav.remember(inbox.items) }
+            .onChange(of: inbox.queue.count, initial: true) { nav.resultCount = inbox.queue.count }
             .onDisappear { inbox.flush() }
             .onChange(of: store.requestsVersion) { Task { await inbox.refresh() } }
             .onChange(of: model.me?.isAdmin) { inbox.viewerIsAdmin = model.me?.isAdmin == true }
@@ -46,24 +53,42 @@ struct TriageInboxView: View {
             }
     }
 
-    @ViewBuilder
     private var content: some View {
-        if !inbox.loaded {
-            DiscoverEmptyState(message: "Loading requests…")
-        } else if inbox.failed && inbox.items.isEmpty {
-            DiscoverEmptyState(message: "Could not load requests.")
-        } else {
-            VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
+            header
+            if !inbox.loaded {
+                DiscoverEmptyState(message: "Loading requests…")
+            } else if inbox.failed && inbox.items.isEmpty {
+                DiscoverEmptyState(message: "Could not load requests.")
+            } else {
                 if inbox.failed {
                     Text("Couldn’t refresh. Showing the last list.").font(.system(size: 12)).foregroundStyle(Theme.miss)
                 }
-                if listMode && !inbox.queue.isEmpty {
+                if nav.selecting && !inbox.queue.isEmpty {
                     InboxListView(inbox: inbox, viewerId: viewerId, onOpen: { details = $0 },
-                                  onBackToCards: { listMode = false; inbox.selected = [] })
+                                  onBackToCards: { nav.selecting = false; inbox.selected = [] })
                 } else {
                     SwipeDeckView(inbox: inbox, viewerId: viewerId, onDetails: { details = $0 }, onAdjust: { adjusting = $0 },
-                                  onSelectMode: { listMode = true }, onOpenThread: onOpenThread,
+                                  onSelectMode: { nav.selecting = true }, onOpenThread: onOpenThread,
                                   onOpenBoard: onOpenBoard, onOpenHistory: onOpenHistory)
+                }
+            }
+        }
+    }
+
+    /// "9 waiting · oldest 5d" under the view name; Select switches to the list.
+    private var header: some View {
+        let queue = inbox.queue
+        let oldest = TriageFacts.oldestAge(queue)
+        return RequestsViewHeader {
+            if inbox.loaded {
+                requestsCount(queue.count, "waiting" + (oldest.isEmpty ? "" : " · oldest \(oldest)"))
+            }
+        } action: {
+            if !queue.isEmpty {
+                RequestsTextAction(title: nav.selecting ? "Done" : "Select") {
+                    nav.selecting.toggle()
+                    if !nav.selecting { inbox.selected = [] }
                 }
             }
         }

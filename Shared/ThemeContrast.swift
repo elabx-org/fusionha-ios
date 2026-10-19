@@ -34,6 +34,10 @@ extension Theme {
     /// Text and glyphs on a `danger` fill (OLED's danger is pale pink).
     static var onDanger: Color { onFill(hex: palette.danger) }
 
+    /// The accent as text (a status word, a link): lifted toward white on the
+    /// dark grounds so small type keeps its contrast; the accent itself on Daylight.
+    static var accentText: Color { isLight ? i1 : i1.mix(with: .white, by: 0.3) }
+
     // MARK: Surfaces
 
     /// The poster's drop shadow: deep on the dark grounds, soft on Daylight.

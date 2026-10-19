@@ -24,6 +24,8 @@ final class BoardModel {
     private(set) var loaded = false
     var search = ""
     var userId: Int?
+    /// The filter sheet's source (`source=`), added to every bucket and count.
+    var extra: [URLQueryItem] = []
 
     @ObservationIgnored private var seen: [Int: RequestPerson] = [:]
 
@@ -36,14 +38,14 @@ final class BoardModel {
 
     func refresh(_ client: APIClient?) async {
         guard let client else { return }
-        let filters = RequestBoard.filterItems(search: search.trimmingCharacters(in: .whitespaces), userId: userId)
+        let filters = RequestBoard.filterItems(search: search.trimmingCharacters(in: .whitespaces), userId: userId) + extra
         await withTaskGroup(of: (RequestBoard.Bucket, Result<RequestPage, Error>).self) { group in
             for bucket in RequestBoard.Bucket.allCases {
                 let q = bucket.query(search: search.trimmingCharacters(in: .whitespaces), userId: userId)
                 group.addTask {
                     do {
                         return (bucket, .success(try await client.requestsPage(view: "all", filter: q.filter, sort: "last_event",
-                                                                               limit: RequestBoard.page, extra: q.extra)))
+                                                                               limit: RequestBoard.page, extra: q.extra + extra)))
                     } catch {
                         return (bucket, .failure(error))
                     }
@@ -72,7 +74,7 @@ final class BoardModel {
         buckets[bucket] = state
         let q = bucket.query(search: search.trimmingCharacters(in: .whitespaces), userId: userId)
         if let page = try? await client.requestsPage(view: "all", filter: q.filter, sort: "last_event", limit: RequestBoard.page,
-                                                     cursor: cursor, extra: q.extra) {
+                                                     cursor: cursor, extra: q.extra + extra) {
             let known = Set(state.items.map(\.id))
             state.items += page.items.filter { !known.contains($0.id) }
             state.cursor = page.nextCursor
@@ -121,6 +123,11 @@ final class BoardModel {
         case .approved, .downloading:
             return RequestBoard.countLabel(loadedCount, exact: buckets[.active]?.cursor == nil)
         }
+    }
+
+    /// The header figure as a number, for the summary line and section headers.
+    func count(_ column: RequestBoard.Column) -> Int {
+        Int(countLabel(column).filter(\.isNumber)) ?? 0
     }
 
     /// Pending only: rows held for quota, counted beside the figure.

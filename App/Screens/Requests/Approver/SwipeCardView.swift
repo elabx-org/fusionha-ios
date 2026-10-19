@@ -4,7 +4,7 @@ import FusionhaKit
 /// One deck card (web `SwipeCard`): a blurred poster backdrop with the poster
 /// and "Priya + 2", the title, tiers · kind · source, four facts, the usual
 /// setup with Adjust and the scope line. While dragged, the APPROVE / DECLINE
-/// wash grows with distance.
+/// wash grows with distance (Approve in the accent, as its button).
 struct SwipeCardView: View {
     let request: MediaRequest
     let triage: RequestTriage?
@@ -100,9 +100,9 @@ struct SwipeCardView: View {
         let approve = min(approveBlocked ? 0.3 : 1, max(0, dragX / 120))
         let decline = min(1, max(0, -dragX / 120))
         return ZStack {
-            Theme.done.opacity(0.35 * approve)
+            Theme.primary.opacity(0.35 * approve)
             Theme.danger.opacity(0.35 * decline)
-            Text("APPROVE").font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.done)
+            Text("APPROVE").font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.primary)
                 .rotationEffect(.degrees(-12)).opacity(approve)
             Text("DECLINE").font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.danger)
                 .rotationEffect(.degrees(12)).opacity(decline)

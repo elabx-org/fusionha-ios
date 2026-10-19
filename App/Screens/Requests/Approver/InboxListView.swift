@@ -14,15 +14,7 @@ struct InboxListView: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            HStack {
-                (Text("\(inbox.queue.count)").fontWeight(.bold) + Text(" waiting"))
-                    .font(.system(size: 13.5)).foregroundStyle(Theme.mut)
-                Spacer()
-                Button(action: onBackToCards) {
-                    Image(systemName: "rectangle.stack").font(.system(size: 16)).frame(width: 40, height: 40)
-                }
-                .accessibilityLabel("Back to cards")
-            }
+            // The count and "Done" (back to cards) live in the shared header row.
             LazyVStack(spacing: 8) {
                 ForEach(inbox.queue) { r in row(r) }
             }

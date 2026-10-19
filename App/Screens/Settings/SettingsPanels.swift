@@ -31,6 +31,8 @@ func settingsPanel(_ slug: String) -> some View {
     case "backup": BackupPanel()
     case "logs": LogsPanel()
     case "guardrails": GuardrailsSettingsPanel()
+    // Moved from Discover › Requests (approved Requests nav, 2026-10-18).
+    case "requestrules": ScrollView { RequestRulesView().padding(16) }.background(Theme.bg)
     case "access": UsersSettingsPanel()
     case "roles": RolesSettingsPanel()
     case "blocklist": ReleaseGroupBlocklistPanel()

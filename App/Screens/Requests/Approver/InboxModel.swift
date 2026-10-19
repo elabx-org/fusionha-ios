@@ -33,6 +33,8 @@ final class InboxModel {
     var selected: Set<Int> = []
     /// Admins decide their own requests too (fusionha 0.4.214).
     var viewerIsAdmin = false
+    /// The filter sheet's requester and source (`user_id`, `source`).
+    var filterItems: [URLQueryItem] = []
 
     @ObservationIgnored private var undoTask: Task<Void, Never>?
     @ObservationIgnored private var client: APIClient?
@@ -62,7 +64,7 @@ final class InboxModel {
         guard let client else { return }
         do {
             let page = try await client.requestsPage(view: "all", filter: nil, sort: "requested", limit: 50,
-                                                     extra: [URLQueryItem(name: "status", value: "pending")])
+                                                     extra: [URLQueryItem(name: "status", value: "pending")] + filterItems)
             items = page.items
             failed = false
         } catch is CancellationError {

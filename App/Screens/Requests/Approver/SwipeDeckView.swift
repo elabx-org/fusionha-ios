@@ -30,8 +30,14 @@ struct SwipeDeckView: View {
     var body: some View {
         let deck = deck
         VStack(spacing: 14) {
-            header(deck)
             if let top = deck.first {
+                HStack {
+                    Text("Swipe right to approve · left to decline")
+                    Spacer(minLength: 8)
+                    Text(verbatim: "1 of \(deck.count)").monospacedDigit()
+                }
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.mut)
                 ZStack {
                     ForEach(Array(Array(deck.prefix(3).enumerated()).reversed()), id: \.element.id) { position, request in
                         card(request, position: position, isTop: request.id == top.id)
@@ -39,28 +45,12 @@ struct SwipeDeckView: View {
                 }
                 .frame(maxWidth: .infinity)
                 buttons(top)
-                Text("Swipe right to approve · left to decline")
-                    .font(.system(size: 12)).foregroundStyle(Theme.dim)
             } else {
                 InboxZeroView(ownOnly: !inbox.queue.isEmpty, onShowList: onSelectMode,
                               onOpenThread: onOpenThread, onOpenBoard: onOpenBoard, onOpenHistory: onOpenHistory)
             }
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: feedback)
-    }
-
-    private func header(_ deck: [MediaRequest]) -> some View {
-        let oldest = TriageFacts.oldestAge(deck)
-        return HStack {
-            (Text("\(deck.count)").fontWeight(.bold) + Text(" waiting" + (oldest.isEmpty ? "" : " · oldest \(oldest)")))
-                .font(.system(size: 13.5))
-                .foregroundStyle(Theme.mut)
-            Spacer()
-            Button(action: onSelectMode) {
-                Image(systemName: "checklist").font(.system(size: 16)).frame(width: 40, height: 40)
-            }
-            .accessibilityLabel("Select several")
-        }
     }
 
     private func card(_ request: MediaRequest, position: Int, isTop: Bool) -> some View {
@@ -104,29 +94,40 @@ struct SwipeDeckView: View {
         }
     }
 
+    /// Decline outlined in red, Details, Approve filled in the accent (Final mock).
     private func buttons(_ top: MediaRequest) -> some View {
         let t = inbox.triage[top.id]
         let canApprove = TriageFacts.loaded(t) && !TriageFacts.setupMissing(t)
-        return HStack(spacing: 22) {
-            circleButton("xmark", size: 58, tint: Theme.danger, label: "Decline") { fly(top, right: false, canApprove: canApprove) }
-            circleButton("info", size: 44, tint: Theme.mut, label: "Details") { onDetails(top) }
-            circleButton("checkmark", size: 58, tint: Theme.done, label: canApprove ? "Approve" : (TriageFacts.loaded(t) ? TriageFacts.setupMissingNote : "Checking space…")) {
-                fly(top, right: true, canApprove: canApprove)
+        return HStack(spacing: 0) {
+            Button { fly(top, right: false, canApprove: canApprove) } label: {
+                Image(systemName: "xmark").font(.system(size: 22, weight: .bold)).foregroundStyle(Theme.danger)
+                    .frame(width: 62, height: 62)
+                    .overlay(Circle().strokeBorder(Theme.danger, lineWidth: 2))
+                    .contentShape(Circle())
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Decline")
+            .frame(maxWidth: .infinity)
+            Button("Details") { onDetails(top) }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.txt)
+                .padding(.horizontal, 16).frame(height: 38)
+                .glassEffect(.regular.interactive(), in: Capsule())
+                .buttonStyle(.plain)
+                .padding(.vertical, 3)
+            Button { fly(top, right: true, canApprove: canApprove) } label: {
+                Image(systemName: "checkmark").font(.system(size: 24, weight: .bold)).foregroundStyle(Theme.onAccent)
+                    .frame(width: 62, height: 62)
+                    .background(Theme.primary, in: Circle())
+                    .opacity(canApprove ? 1 : 0.45)
+            }
+            .buttonStyle(.plain)
             .disabled(!canApprove)
+            .accessibilityLabel(canApprove ? "Approve" : (TriageFacts.loaded(t) ? TriageFacts.setupMissingNote : "Checking space…"))
+            .frame(maxWidth: .infinity)
         }
-    }
-
-    private func circleButton(_ icon: String, size: CGFloat, tint: Color, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: size * 0.38, weight: .bold))
-                .foregroundStyle(tint)
-                .frame(width: size, height: size)
-                .glassEffect(.regular.interactive(), in: Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
+        .padding(.horizontal, 12)
+        .padding(.top, 6)
     }
 
     /// Decides the top card: approve needs triage; a low-space approve warns first.

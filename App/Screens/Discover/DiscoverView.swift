@@ -52,6 +52,9 @@ final class DiscoverStore {
     /// Bumped to refetch the collections rail after an ignore/add.
     var collectionsVersion = 0
     /// Bumped to refetch request lists after a decision.
+    /// An id inside Discover's scroll view to bring to the top (the Board's
+    /// summary jumps to a stage this way); cleared once scrolled.
+    var scrollTo: String?
     var requestsVersion = 0 {
         didSet { demand.reset() }
     }
@@ -130,6 +133,11 @@ struct DiscoverView: View {
                 .onChange(of: scrollTarget) {
                     guard let target = scrollTarget else { return }
                     proxy.scrollTo(target, anchor: .top)
+                }
+                .onChange(of: store.scrollTo) {
+                    guard let target = store.scrollTo else { return }
+                    withAnimation(.snappy) { proxy.scrollTo(target, anchor: .top) }
+                    store.scrollTo = nil
                 }
             }
         }
