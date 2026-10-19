@@ -338,10 +338,10 @@ What it means for the app:
 
 | # | Screen · pose | Finding | Fix | Batch |
 |---|---|---|---|---|
-| DC1 | Every tab · outer / vertical bars | No tab root sits in a `NavigationStack` (`RootView.swift:68-80, 316-327`), so there is no system bar for toolbar items. Headers are custom `ShellTitleRow` rows. | A `NavigationStack` inside each `Tab`, with `.toolbar` at the tab level. | D1 |
-| DC2 | Avatar · all | The account hub, Settings cover and widget sheets are `@State` on the avatar button (`AvatarMenu.swift:13-49`). Once the avatar is in system overflow, there is nothing to present from. | Move the flags into `AppModel` and present from `ShellPresentations`. The avatar becomes a toolbar item "Account" with `.badge`. | D1 |
-| DC3 | Item detail · fold/unfold | The column builds a new `ItemDetailView`/`DetailStore` (`DuoLayout.swift:137-142`, `ItemDetailView.swift:27`). Unfolding loses scroll, tab and scope, plus any open child sheet (search, edit, add version, rename, numbering) and its drafts. | Keep the open title's store in `AppModel`. Child-sheet flags live in the store and are re-presented; `scrollPosition(id:)`. | D5 |
-| DC4 | Shell split · inner landscape + keyboard | The split is measured from `RootView` including the keyboard (`RootView.swift:41`). Typing in the Library filter drops the height below 500, so the title column collapses back into a sheet (*verify*). | Measure with `.ignoresSafeArea(.keyboard)`. | D5 |
+| DC1 | Every tab · outer / vertical bars | No tab root sits in a `NavigationStack` (`RootView.swift:68-80, 316-327`), so there is no system bar for toolbar items. Headers are custom `ShellTitleRow` rows. | A `NavigationStack` inside each `Tab`, with `.toolbar` at the tab level. | D1 · ✅ build 422 |
+| DC2 | Avatar · all | The account hub, Settings cover and widget sheets are `@State` on the avatar button (`AvatarMenu.swift:13-49`). Once the avatar is in system overflow, there is nothing to present from. | Move the flags into `AppModel` and present from `ShellPresentations`. The avatar becomes a toolbar item "Account" with `.badge`. | D1 · ✅ build 422 |
+| DC3 | Item detail · fold/unfold | The column builds a new `ItemDetailView`/`DetailStore` (`DuoLayout.swift:137-142`, `ItemDetailView.swift:27`). Unfolding loses scroll, tab and scope, plus any open child sheet (search, edit, add version, rename, numbering) and its drafts. | Keep the open title's store in `AppModel`. Child-sheet flags live in the store and are re-presented; `scrollPosition(id:)`. | D5 · ✅ build 422 |
+| DC4 | Shell split · inner landscape + keyboard | The split is measured from `RootView` including the keyboard (`RootView.swift:41`). Typing in the Library filter drops the height below 500, so the title column collapses back into a sheet (*verify*). | Measure with `.ignoresSafeArea(.keyboard)`. | D5 · ✅ build 422 |
 
 **Visible:**
 
@@ -392,7 +392,7 @@ What it means for the app:
 - No `UIScreen`, idiom or orientation checks
 
 **Questions** (for the owner, via fusionha):
-- **Q-DC1, phone look:** with toolbar items, the horizontal bar sits one row above the custom title. Choose one:
+- **Q-DC1, phone look — RESOLVED (owner, 2026-10-19): (b) inlineLarge.** With toolbar items, the horizontal bar sits one row above the custom title. Choose one:
   - (a) accept two rows, with the bar background hidden
   - (b) move the title into the bar with `.toolbarTitleDisplayMode(.inlineLarge)` (loses the custom display font in the bar)
   - (c) keep the one-row look by branching on `toolbarVerticalEdge` (a Duo-style branch, which the decision rules out)
@@ -424,3 +424,30 @@ What it means for the app:
 - **Q-DC9:** in Book pose, toasts sit on the trailing half, away from the hinge.
 - **Q-DC10:** fix CLAUDE.md's stale "downloads accessory" line (with the owner's OK, since CLAUDE.md is project config).
 - **#62 scope:** system toolbar and `.inlineLarge` apply to every screen: tab roots, pushed screens and sheets/forms. Sheet actions use `.cancellationAction`, `.confirmationAction` or `.primaryAction`, each with title + symbol. A D1 checklist (screen → header actions → placement and priority) follows. Exceptions are kept only for actions that must stay in content: deck Approve/Decline, row swipes, inline card buttons.
+
+### D1 checklist: system toolbar on every screen
+
+Owner's pick (Q-DC1): **(b)**. The page title moves into the system bar with
+`.navigationTitle` + `.toolbarTitleDisplayMode(.inlineLarge)`, giving one row on a normal
+iPhone and a vertical side bar on the Duo outer display. `ShellTitleRow` and the custom
+Anton title are retired. The title uses the system font, and the avatar becomes a
+`ToolbarItem` titled "Account" (VoiceOver and the vertical bar) showing the Plex photo, with initials when there is none, plus the dot badge (Q-DC2, ruled in #60). If 27.1 cannot render the photo at bar size, raise it with fusionha; never fall back silently.
+
+| Screen | Header actions today | Toolbar placement (priority) | Stays in content | Done |
+|---|---|---|---|---|
+| Library | Add (+), Library stats, avatar | `.primaryAction` Add · `.secondaryAction` Stats · Account | filter chips, segmented, select bar (D3: system `bottomBar`) | ☐ |
+| Discover | Add (+), avatar | `.primaryAction` Add · Account | Browse/Requests segmented, rails | ☐ |
+| Requests | pane menu (title ▾), filter, avatar | title menu via `.toolbarTitleMenu` · `.primaryAction` Filter · Account | summary line, pills | ☐ |
+| Activity | Manual import, avatar | `.primaryAction` Manual import · Account | Queue/History/Blocklist/Tasks segmented | ☐ |
+| Calendar | ‹ Today ›, iCal menu (admin), week style (week view), avatar | `.primaryAction` Today · `.secondaryAction` iCal, week style · Account | prev/next capsule, kind chips | ☐ |
+| Wanted | Add (+) | `.primaryAction` Add · Account | summary line, tabs | ☐ |
+| Search | avatar | Account; retry `.searchable` (DC11) | results | ☐ |
+| You | avatar | Account | hub rows | ☐ |
+| Settings (cover) | Close | `.cancellationAction` Close (system) | subtitle "DB-backed · effective without restart" | ☐ |
+| Item detail sheet | custom ✕ (DC10) | `.cancellationAction` Close; hero stays clean | hero, edition chips | ☐ |
+| Add / Request modal / trailer | custom ✕ (DC10) | `.cancellationAction` Close | — | ☐ |
+| Text-only sheet buttons (DC12, ~25 sheets) | Cancel / Save / state-swapping text | `.cancellationAction` / `.confirmationAction`; close-only sheets opt out of vertical bars (#60) | — | ☐ |
+
+Rules: no toolbar content in-content except the listed "stays" items; every item has a
+symbol from the CLAUDE.md icon set and a text label (the vertical bar shows the symbol,
+overflow shows the label). Tick a row with its build number.
