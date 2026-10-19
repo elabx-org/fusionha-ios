@@ -478,6 +478,11 @@ web has no server step; iOS owns it.
   - reached: the server is shown with its name and version, the step's first result
   - unreachable: jam + shake "no"
   Reduce Motion / `animations_enabled` are respected as now.
+- **"Reached" data (fusionha #64):** show the host from the entered URL (no server display-name
+  setting exists) and the version from unauthenticated `GET /health` (`version`). The stage
+  fields come from `GET /api/v1/setup-status` (`login_layout`, `login_background`,
+  `login_living_media`, logo/wordmark/tagline flags). A custom server name would need a new
+  server setting; that's only if the owner asks.
 - **Budget:** a 3–7 word headline, one support line, one field, one button. "Continue"
   becomes "Connect".
 - **Forgiving input:**
