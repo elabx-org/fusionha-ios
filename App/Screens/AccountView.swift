@@ -1,39 +1,52 @@
 import SwiftUI
-import UIKit
 import WidgetKit
 import FusionhaKit
 
-/// The web's Account page (`routes/Account.tsx`, "You"): a centred role-tinted
-/// avatar, the name and role badge, then Requests made · Sign-in methods ·
-/// Reset cache & reload · Notifications (requesters; web `RequesterNotifications`)
-/// · Sign out. No page title, like the web.
+/// The web's Account panel (`AccountPanel` + `AccountContent`): the
+/// role-tinted avatar, the display name and role badge, then Requests made ·
+/// Sign-in methods · Active sessions · Reset cache & reload · Automatic
+/// requests (the Plex and Letterboxd cards, ruling S1) · Notifications · Sign
+/// out. The Account sheet and the requester's You tab both show it.
 struct AccountView: View {
+    /// The You tab's page title row; the Account sheet has its own nav title.
+    var pageTitle: String?
     @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var requestCount: Int?
     @State private var showingMethods = false
     @State private var showingSessions = false
-    @State private var showingWatchlists = false
     @State private var resetting = false
     @State private var signingOut = false
-    @State private var toast: CalToast?
+    @State private var watchlists = WatchlistsStore()
 
     var body: some View {
-        ScrollView {
-            Group {
+        ScrollViewReader { proxy in
+            List {
+                if let pageTitle {
+                    ShellTitleRow(pageTitle)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+                        .listRowSeparator(.hidden)
+                }
                 if let me = model.me {
                     content(me)
                 } else {
-                    CalEmptyState(message: "Loading account…")
+                    Text("Loading account…")
+                        .foregroundStyle(Theme.mut)
+                        .listRowBackground(Color.clear)
                 }
             }
-            .frame(maxWidth: 420)
-            .frame(maxWidth: .infinity)
-            .padding(.top, 26)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 24)
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .tint(Theme.i2)
+            .refreshable {
+                await loadRequests()
+                await watchlists.load(model.client)
+            }
+            .onChange(of: focusReady, initial: true) { scrollToWatchlist(proxy) }
         }
-        .calToast($toast)
         .task { await loadRequests() }
+        .automaticRequestsLoading(watchlists, client: model.client)
         .sheet(isPresented: $showingMethods) {
             SignInMethodsSheet()
                 .presentationDetents([.large])
@@ -41,7 +54,6 @@ struct AccountView: View {
                 .presentationBackground(Theme.panel)
         }
         .sheet(isPresented: $showingSessions) { AccountSessionsSheet() }
-        .sheet(isPresented: $showingWatchlists) { WatchlistsSheet() }
         .task {
             #if DEBUG
             if ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_ACCOUNT"] == "methods" {
@@ -52,84 +64,90 @@ struct AccountView: View {
         }
     }
 
+    @ViewBuilder
     private func content(_ me: Me) -> some View {
-        VStack(spacing: 0) {
-            VStack(spacing: 8) {
-                AccountAvatar(me: me, size: 74)
-                Text(me.displayName)
-                    .font(.system(size: 18, weight: .bold))
-                    .tracking(-0.18)
-                    .foregroundStyle(Theme.txt)
-                    .padding(.top, 4)
-                RoleBadge(me: me)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 10)
-            .padding(.bottom, 26)
-            .calReveal(0, stagger: 0.06)
+        AccountProfileHeader(me: me)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
 
-            row {
+        Section {
+            HStack {
                 Text("Requests made").foregroundStyle(Theme.txt)
                 Spacer()
-                Text("\(requestCount ?? 0)").fontWeight(.semibold).foregroundStyle(Theme.dim)
+                Text("\(requestCount ?? 0)").fontWeight(.semibold).monospacedDigit().foregroundStyle(Theme.dim)
             }
-            .calReveal(1, stagger: 0.06)
-
+            .accessibilityElement(children: .combine)
             rowButton("Sign-in methods") { showingMethods = true }
-                .calReveal(2, stagger: 0.06)
-
-            rowButton("Signed-in devices") { showingSessions = true }
-                .calReveal(2, stagger: 0.06)
-
-            rowButton("Watchlists & lists") { showingWatchlists = true }
-                .calReveal(2, stagger: 0.06)
-
+            rowButton("Active sessions") { showingSessions = true }
             rowButton(resetting ? "Resetting…" : "Reset cache & reload") { Task { await resetCache() } }
                 .disabled(resetting)
-                .calReveal(3, stagger: 0.06)
-
-            if model.requestScoped {
-                RequesterNotificationsSection { message, ok in toast = CalToast(message: message, isError: !ok) }
-                    .calReveal(4, stagger: 0.06)
-            }
-
-            row {
-                Button("Sign out") {
-                    signingOut = true
-                    Task { await model.logOut() }
-                }
-                .buttonStyle(CalButtonStyle(variant: .danger, fullWidth: true))
-                .disabled(signingOut)
-            }
-            .calReveal(4, stagger: 0.06)
         }
+        .listRowBackground(AccountStyle.cell)
+
+        AutomaticRequestsSection(store: watchlists)
+
+        AccountSectionHeading("Notifications")
+        if model.requestScoped {
+            RequesterNotificationsSection(showsTitle: false) { message, ok in
+                model.toast(message, variant: ok ? .success : .error)
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
+        } else {
+            Section {
+                // One home for the full matrix: Settings › Notifications.
+                rowButton("Notifications settings", chevron: true) {
+                    // From the Account sheet, Settings opens once the sheet has closed.
+                    model.avatar.pending = .settings("notifications")
+                    if model.showingAccount { model.showingAccount = false } else { model.avatar.openPending(model) }
+                }
+            }
+            .listRowBackground(AccountStyle.cell)
+        }
+
+        Section {
+            Button("Sign out") {
+                signingOut = true
+                Task { await model.logOut() }
+            }
+            .buttonStyle(CalButtonStyle(variant: .danger, fullWidth: true))
+            .disabled(signingOut)
+        }
+        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets())
     }
 
-    private func row<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        HStack(spacing: 0) { content() }
-            .font(.system(size: 13.5))
-            .padding(.vertical, 13)
-            .padding(.horizontal, 15)
-            .frame(maxWidth: .infinity, minHeight: 0, alignment: .leading)
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Theme.line))
-            .padding(.top, 10)
-    }
-
-    private func rowButton(_ title: String, action: @escaping () -> Void) -> some View {
+    private func rowButton(_ title: String, chevron: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(title)
-                .font(.system(size: 13.5, weight: .semibold))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 13)
-                .padding(.horizontal, 15)
-                .contentShape(Rectangle())
+            HStack {
+                Text(title).font(.body.weight(.semibold))
+                Spacer(minLength: 8)
+                if chevron {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.dim)
+                }
+            }
+            .contentShape(Rectangle())
         }
         .buttonStyle(AccountRowButtonStyle())
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(Theme.line))
-        .padding(.top, 10)
     }
+
+    // MARK: `#watchlist`
+
+    /// A deep link asked for Automatic requests and the cards are in.
+    private var focusReady: Bool {
+        model.focusAutomaticRequests && watchlists.loaded
+    }
+
+    private func scrollToWatchlist(_ proxy: ScrollViewProxy) {
+        guard focusReady else { return }
+        model.focusAutomaticRequests = false
+        guard AutomaticRequestsSection.visible(watchlists) else { return }
+        withAnimation(reduceMotion ? nil : .smooth) { proxy.scrollTo(AutomaticRequestsSection.anchor, anchor: .top) }
+    }
+
+    // MARK: Actions
 
     private func loadRequests() async {
         guard let client = model.client else { return }
@@ -147,13 +165,14 @@ struct AccountView: View {
             await model.refreshQueue()
         }
         await loadRequests()
+        await watchlists.load(model.client)
         WidgetCenter.shared.reloadAllTimelines()
         resetting = false
-        toast = CalToast(message: "Cache cleared and reloaded.")
+        model.toast("Cache cleared and reloaded.")
     }
 }
 
-/// The Account sheet the avatar menu opens on the shell (RootView hook).
+/// The Account sheet the avatar's hub opens on the shell (RootView hook).
 struct AccountSheet: View {
     @Environment(\.dismiss) private var dismiss
 
@@ -169,6 +188,8 @@ struct AccountSheet: View {
                     }
                 }
         }
+        // Sheets hide the shell's toasts.
+        .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
     }
 }
 
@@ -176,79 +197,5 @@ private struct AccountRowButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundStyle(configuration.isPressed ? Theme.i2 : Theme.txt)
-    }
-}
-
-// MARK: Avatar + role badge (`access-shared.tsx`)
-
-struct AccountAvatar: View {
-    @Environment(AppModel.self) private var model
-    let me: Me
-    var size: CGFloat = 74
-    @State private var image: UIImage?
-
-    var body: some View {
-        ZStack {
-            Circle().fill(fill)
-            if let image {
-                Image(uiImage: image).resizable().scaledToFill()
-            } else {
-                Text(me.displayInitials)
-                    .font(.system(size: size * 24 / 74, weight: .bold))
-                    .foregroundStyle(me.roleTone == .other ? Theme.mut : Theme.txt)
-            }
-        }
-        .frame(width: size, height: size)
-        .clipShape(Circle())
-        .shadow(color: .black.opacity(0.55), radius: 14, y: 10)
-        .accessibilityHidden(true)
-        .task(id: me.thumb) {
-            // The same-origin avatar proxy; initials when it fails.
-            guard me.thumb != nil, let client = model.client,
-                  let data = try? await client.avatar(userId: me.id) else { image = nil; return }
-            image = UIImage(data: data)
-        }
-    }
-
-    private var fill: AnyShapeStyle {
-        switch me.roleTone {
-        case .admin:
-            return AnyShapeStyle(LinearGradient(colors: [Theme.avatarDeep(Theme.indigo), Theme.indigo],
-                                                startPoint: .topLeading, endPoint: .bottomTrailing))
-        case .manager:
-            return AnyShapeStyle(LinearGradient(colors: [Theme.cyan, Theme.avatarDeep(Theme.cyan)],
-                                                startPoint: .topLeading, endPoint: .bottomTrailing))
-        case .requestor:
-            return AnyShapeStyle(LinearGradient(colors: [Theme.miss, Theme.avatarDeep(Theme.miss)],
-                                                startPoint: .topLeading, endPoint: .bottomTrailing))
-        case .other:
-            return AnyShapeStyle(Theme.panel2)
-        }
-    }
-}
-
-struct RoleBadge: View {
-    let me: Me
-
-    private var tint: Color {
-        switch me.roleTone {
-        case .admin: return Theme.indigo
-        case .manager: return Theme.cyan
-        case .requestor: return Theme.miss
-        case .other: return Theme.mut
-        }
-    }
-
-    var body: some View {
-        HStack(spacing: 5) {
-            Circle().fill(tint).frame(width: 6, height: 6)
-            Text(me.accountRoleName ?? "No role")
-        }
-        .font(.system(size: 11, weight: .bold))
-        .foregroundStyle(tint)
-        .padding(.horizontal, 9)
-        .padding(.vertical, 3)
-        .background(me.roleTone == .other ? Theme.panel2 : tint.opacity(me.roleTone == .manager ? 0.15 : 0.16),
-                    in: Capsule())
     }
 }

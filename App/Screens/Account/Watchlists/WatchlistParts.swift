@@ -20,10 +20,10 @@ struct WatchlistPill: View {
     }
 }
 
-/// The card head: icon tile, title, the line under it, the pill.
+/// The card head (web `.head`): the mark in its tile, title, the line under
+/// it, the pill.
 struct WatchlistCardHead: View {
-    let icon: String
-    let tint: Color
+    let mark: WatchlistMark
     let title: String
     let sub: String
     let pill: String
@@ -31,11 +31,11 @@ struct WatchlistCardHead: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Theme.isMono ? Theme.bg : Theme.onTint(tint))
-                .frame(width: 30, height: 30)
-                .background(Theme.isMono ? Theme.mut : tint, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            WatchlistMarkGlyph(mark: mark, size: mark == .letterboxd ? 19 : 18)
+                .foregroundStyle(mark.ink)
+                .frame(width: 34, height: 34)
+                .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.line))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
                 Text(sub).font(.footnote).foregroundStyle(Theme.mut)
@@ -44,6 +44,17 @@ struct WatchlistCardHead: View {
             WatchlistPill(text: pill, color: pillColor)
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// A card's state wash behind its rows (web `StatusWash` on the card): the
+/// left-edge tint over the row cell, drawn by `actWash`. Every row of the
+/// card carries it, so the tint reads as one wash down the card's edge.
+struct WatchlistWashBackground: View {
+    let token: MonoToken?
+
+    var body: some View {
+        Color.clear.actWash(token?.color, mono: token, radius: 0, base: AccountStyle.cell, border: .clear)
     }
 }
 

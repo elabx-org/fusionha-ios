@@ -36,7 +36,8 @@ struct AccountRow: View {
     }
 }
 
-/// The sheet's top: avatar, name, role and server, and a health line.
+/// The sheet's top (the web Account panel's `.head`): the role-tinted
+/// avatar, the display name, the role badge and server, and a health line.
 struct AccountHeader: View {
     let me: Me?
     let server: URL?
@@ -45,11 +46,21 @@ struct AccountHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
-                Avatar(me: me, size: 52)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(me?.username ?? "Signed in").font(.system(size: 19, weight: .bold)).foregroundStyle(Theme.txt)
-                    Text([me?.isAdmin == true ? "Administrator" : nil, server?.host].compactMap { $0 }.joined(separator: " · "))
-                        .font(.subheadline).foregroundStyle(Theme.mut).lineLimit(1)
+                if let me {
+                    AccountAvatar(me: me, size: 52)
+                } else {
+                    Avatar(me: nil, size: 52)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(me?.displayName ?? "Signed in")
+                        .font(.system(size: 19, weight: .bold)).foregroundStyle(Theme.txt)
+                        .lineLimit(1)
+                    HStack(spacing: 8) {
+                        if let me { RoleBadge(me: me) }
+                        if let host = server?.host {
+                            Text(host).font(.subheadline).foregroundStyle(Theme.mut).lineLimit(1)
+                        }
+                    }
                 }
             }
             HStack(spacing: 8) {

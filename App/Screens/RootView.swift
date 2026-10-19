@@ -112,8 +112,9 @@ private struct ShellPresentations: ViewModifier {
                 .presentationCornerRadius(20)
                 .presentationBackground(Theme.panel)
         }
-        .sheet(isPresented: $model.showingAccount) { AccountSheet().presentationBackground(Theme.bg) }
-        .sheet(isPresented: $model.showingWatchlists) { WatchlistsSheet() }
+        .sheet(isPresented: $model.showingAccount, onDismiss: { model.avatar.openPending(model) }) {
+            AccountSheet().presentationBackground(Theme.bg)
+        }
         .modifier(AvatarPresentations(avatar: model.avatar, model: model))
         .sheet(item: $model.deleteTarget) { target in
             DeleteTitleDialog(target: target)

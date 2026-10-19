@@ -23,7 +23,8 @@ struct LetterboxdSection: View {
             } footer: {
                 Text("**fusionha can only follow what’s public on Letterboxd.** Set your watchlist or a list to public to keep it in sync. Diary, watchlist and lists all update on a schedule, and Sync now checks them right away.")
             }
-            .listRowBackground(AccountStyle.cell)
+            .listRowBackground(WatchlistWashBackground(
+                token: LetterboxdLogic.wash(connection, running: store.letterboxdRunning)))
             if connection == .ok {
                 LetterboxdDiarySection(store: store, read: read, choosing: $diaryChoosing)
                 LetterboxdFollowSection(store: store, read: read)
@@ -63,7 +64,7 @@ struct LetterboxdSection: View {
                 sub = "Checks paused until the profile can be read"
             }
         }
-        return WatchlistCardHead(icon: "film.stack", tint: Theme.mut, title: "Letterboxd", sub: sub,
+        return WatchlistCardHead(mark: .letterboxd, title: "Letterboxd", sub: sub,
                                  pill: pill.0, pillColor: pill.1)
     }
 

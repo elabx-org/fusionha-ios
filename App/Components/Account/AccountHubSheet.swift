@@ -70,11 +70,6 @@ struct AccountHubSheet: View {
                     Button { close(then: .account) } label: {
                         AccountRow(icon: "person.crop.circle", tint: Theme.dim, title: "Account & security", chevron: true)
                     }
-                    NavigationLink {
-                        WatchlistsView()
-                    } label: {
-                        AccountRow(icon: "list.star", tint: Theme.plexGold, title: "Watchlists & lists")
-                    }
                     if let server = model.credentials?.serverURL {
                         Button { openURL(server.appendingPathComponent("docs")) } label: {
                             AccountRow(icon: "book.closed", tint: Theme.dim, title: "Documentation", external: true)

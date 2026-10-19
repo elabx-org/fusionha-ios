@@ -4,7 +4,7 @@ import FusionhaKit
 /// `fusionha://` deep links from the widgets, the Live Activity and notifications:
 /// `activity`, `calendar`, `library`, `wanted`, `discover` switch tabs (with an
 /// optional sub-tab: `activity/indexers`, `discover/requests`), and `item/{id}`
-/// opens that title's detail sheet; `account#watchlist` opens Watchlists & lists.
+/// opens that title's detail sheet; `account#watchlist` opens Account at Automatic requests.
 /// `activity/queue?focus={id}&block=1` (from a held-fake push) also opens
 /// "Block release group?" on that download; `activity/tasks?focus={runId}`
 /// opens that run's decision trail.
@@ -68,7 +68,9 @@ extension AppModel {
         case "account":
             // `account#watchlist` (the web's `/account#watchlist`) or `account/watchlist`.
             if url.fragment == "watchlist" || path.first == "watchlist" {
-                showingWatchlists = true
+                openAutomaticRequests()
+            } else if requestScoped {
+                tab = .you
             } else {
                 showingAccount = true
             }
@@ -87,10 +89,22 @@ extension AppModel {
         var closed = avatarCoverOpen
         if showingAdd { showingAdd = false; closed = true }
         if showingAccount { showingAccount = false; closed = true }
-        if showingWatchlists { showingWatchlists = false; closed = true }
         if deleteTarget != nil { deleteTarget = nil; closed = true }
         if let open = presentedItem, open.id != itemId { presentedItem = nil; closed = true }
         linkCloseTick += 1
         return closed
+    }
+}
+
+extension AppModel {
+    /// Account's Automatic requests (ruling S1: inline in Account, no sheet of
+    /// its own): the You tab for a requester, else the Account sheet.
+    func openAutomaticRequests() {
+        focusAutomaticRequests = true
+        if requestScoped {
+            tab = .you
+        } else {
+            showingAccount = true
+        }
     }
 }
