@@ -3,7 +3,8 @@ import FusionhaKit
 
 // The Seasons tab's episode list (MobileEpisodeList, redesign `.ep`): episode
 // rows on the ground, split by hairlines, with one status chip per scoped
-// version, and the expanded per-version facts + actions.
+// version. A tap opens the episode sheet; the chevron peeks the per-version
+// facts + actions inline.
 
 struct EpisodeList: View {
     @Environment(DetailStore.self) private var store
@@ -75,7 +76,9 @@ private struct EpisodeCard: View {
                     }
                 }
                 .contentShape(Rectangle())
-                .onTapGesture { expanded.toggle() }
+                .onTapGesture { openSheet(.details) }
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAction(named: "Episode details") { openSheet(.details) }
                 Button { expanded.toggle() } label: {
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .semibold))
@@ -129,6 +132,10 @@ private struct EpisodeCard: View {
                 .frame(width: 9, height: 9)
                 .accessibilityLabel(on ? "Monitored" : "Not monitored")
         }
+    }
+
+    private func openSheet(_ tab: EpisodeSheetTab) {
+        store.episodeSheet = EpisodeSheetTarget(episodeId: episode.id, seasonNumber: season.seasonNumber, tab: tab)
     }
 
     private var numberText: String {

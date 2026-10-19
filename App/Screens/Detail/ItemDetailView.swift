@@ -52,13 +52,9 @@ struct ItemDetailView: View {
                     if let detail = store.detail {
                         DetailPage(detail: detail, close: close, openWeb: openWeb)
                     } else if store.loadError != nil {
-                        EmptyBox(message: "This title could not be loaded.")
-                            .padding(16)
-                            .padding(.top, 80)
+                        DetailLoadError(close: close)
                     } else {
-                        DetailSpinner(size: 22, color: Theme.mut)
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 160)
+                        DetailLoadingShell(seed: model.library.first { $0.id == itemId }, close: close)
                     }
                 }
             }
@@ -70,6 +66,11 @@ struct ItemDetailView: View {
             } action: { _, y in
                 store.scrollY = y
                 if compact != (y > 200) { compact = y > 200 }
+            }
+            .onChange(of: store.revealRequests) {
+                if reduceMotion { proxy.scrollTo("requests", anchor: .center) } else {
+                    withAnimation(.easeInOut(duration: 0.35)) { proxy.scrollTo("requests", anchor: .center) }
+                }
             }
             .task(id: store.detail == nil) {
                 guard store.detail != nil else { return }

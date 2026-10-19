@@ -11,7 +11,10 @@ struct WeekMobileView: View {
     let todayIso: String
     /// Bumped by Today and the Calendar tab: land on today again.
     var todayTick = 0
-    let cardStyle: WeekCardStyle
+    /// nil = the web's phone cards (default); else one of the iOS card styles.
+    let cards: WeekCardStyle?
+    /// Steps the week on a horizontal swipe over the agenda (not the strip).
+    let swipe: HorizontalPanGesture
     @Binding var collapsed: Bool
     let title: String
     let onPrev: () -> Void
@@ -38,8 +41,14 @@ struct WeekMobileView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 4) {
                         ForEach(Array(days.enumerated()), id: \.element) { index, iso in
-                            WeekDayGroup(iso: iso, entries: byDay[iso] ?? [], isToday: iso == todayIso, style: cardStyle)
-                                .calReveal(index, stagger: 0.02)
+                            Group {
+                                if let cards {
+                                    WeekDayGroup(iso: iso, entries: byDay[iso] ?? [], isToday: iso == todayIso, style: cards)
+                                } else {
+                                    PhoneDayBlock(iso: iso, entries: byDay[iso] ?? [], todayIso: todayIso)
+                                }
+                            }
+                            .calReveal(index, stagger: 0.02)
                         }
                     }
                     .scrollTargetLayout()
@@ -47,6 +56,7 @@ struct WeekMobileView: View {
                     .padding(.top, 2)
                     .padding(.bottom, 28)
                 }
+                .gesture(swipe)
                 .scrollPosition(id: $position, anchor: .top)
                 .onScrollPhaseChange { _, phase in
                     if phase == .interacting { userMoved = true }

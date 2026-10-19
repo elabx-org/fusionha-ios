@@ -9,6 +9,8 @@ struct AddCollectionSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     let summary: CollectionSummary
+    /// The films to preselect (the detail page's "Add all missing" or one film); nil = every missing film.
+    var preselect: [Int]? = nil
     let onDone: () -> Void
 
     @State private var detail: CollectionDetail?
@@ -93,7 +95,8 @@ struct AddCollectionSheet: View {
         do {
             let loaded = try await client.collection(id: summary.collectionTmdbId)
             detail = loaded
-            selected = Set(loaded.parts.filter { $0.inLibrary != true }.map(\.tmdbId))
+            let missing = Set(loaded.parts.filter { $0.inLibrary != true }.map(\.tmdbId))
+            selected = preselect.map { missing.intersection($0) } ?? missing
         } catch {
             failed = true
             return

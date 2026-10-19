@@ -29,6 +29,20 @@ extension DetailStore {
         }
     }
 
+    /// One file's Replace (delete + re-grab) — use-replace-action's `run`.
+    func replaceFile(_ fileId: Int) async {
+        guard let client else { return }
+        do {
+            try await client.replaceFile(fileId: fileId)
+            show("Replaced — searching", variant: .success)
+            await reload()
+        } catch APIError.http(409, _) {
+            show("Mount not ready or link recovered — nothing was deleted", variant: .warning)
+        } catch {
+            show("Couldn't replace the file — try again", variant: .error)
+        }
+    }
+
     func cleanupLink(_ fileId: Int) async {
         guard let client else { return }
         do {

@@ -60,7 +60,6 @@ struct DetailVersionRow: View {
         let summary = store.summary(edition)
         let name = detail.versionName(edition)
         let statusColor = summary?.status.key.color ?? Theme.mut
-        let shape = RoundedRectangle(cornerRadius: 20, style: .continuous)
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 10) {
@@ -94,10 +93,9 @@ struct DetailVersionRow: View {
                     .transition(reduce ? .identity : .opacity.combined(with: .move(edge: .top)))
             }
         }
-        .clipShape(shape)
-        .detailCard()
-        // The opened card takes its status as a soft wash, never a ring.
-        .overlay(shape.fill(statusColor.opacity(open ? 0.07 : 0)).allowsHitTesting(false))
+        // One row of the shared panel (VersionRow.module.css `.row`): the open
+        // row takes its status as a soft wash, never a ring or a left rail.
+        .actWash(open ? statusColor : nil, mono: summary?.status.key.monoToken, radius: 0, base: .clear, border: .clear)
     }
 
     /// `61.2 GB` (`.vsize`).

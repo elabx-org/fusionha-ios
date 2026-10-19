@@ -188,11 +188,12 @@ enum PosterColumns {
 /// three tracks on phones, more when unfolded. 22 × 10 gaps like the Library.
 struct AdaptivePosterGrid<Content: View>: View {
     var spacing: CGFloat = 22
+    var columnSpacing: CGFloat = 10
     @ViewBuilder var content: Content
     @State private var columns = 3
 
     var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: columns),
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: columnSpacing, alignment: .top), count: columns),
                   alignment: .leading, spacing: spacing) {
             content
         }

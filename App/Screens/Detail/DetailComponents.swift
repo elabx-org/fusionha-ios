@@ -47,31 +47,41 @@ private extension UIColor {
 
 // MARK: - Section header
 
-/// The redesign's section header (`.section-h`): sentence case, 20pt bold,
-/// cream, with an optional quiet trailing note (counts, sizes).
+/// The section header (MobileDetailFlyout `.sec`, ruling L7): an 11pt mono,
+/// tracked, uppercase caption with an optional quiet trailing note.
 struct DetailSection: View {
     let title: String
     var see: String?
 
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(title)
-                .font(.system(size: 20, weight: .bold))
-                .tracking(-0.3)
-                .foregroundStyle(Theme.txt)
-                .lineLimit(1)
-                .accessibilityAddTraits(.isHeader)
+            DetailMonoHeading(text: title)
             Spacer(minLength: 8)
             if let see {
                 Text(see)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(Theme.mut)
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(Theme.dim)
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
         }
-        .padding(.top, 28)
-        .padding(.bottom, 10)
+        .padding(.horizontal, 2)
+        .padding(.top, 22)
+        .padding(.bottom, 9)
+    }
+}
+
+/// The web's mono section caption (`font: 800 11px mono; letter-spacing .11em; uppercase; dim`).
+struct DetailMonoHeading: View {
+    let text: String
+
+    var body: some View {
+        Text(text.uppercased())
+            .font(.system(size: 11, weight: .heavy, design: .monospaced))
+            .tracking(1.2)
+            .foregroundStyle(Theme.dim)
+            .lineLimit(1)
+            .accessibilityAddTraits(.isHeader)
     }
 }
 

@@ -94,7 +94,7 @@ struct NumberingFixSheet: View {
         applyError = nil
         confirmed = false
         do {
-            preview = try await client.numberingPreview(itemId: detail.id)
+            preview = try await client.numberingPreview(itemId: detail.id, source: store.numberingSource)
             loadError = nil
         } catch {
             loadError = (error as? APIError)?.serverMessage ?? "Couldn't build the numbering preview."

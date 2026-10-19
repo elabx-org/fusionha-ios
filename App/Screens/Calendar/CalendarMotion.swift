@@ -53,23 +53,19 @@ extension View {
     }
 }
 
-/// `calPulse`: a live grab's background breathes between mut 10 % and grab 12 % (1.8s).
+/// A live grab's background: a static grab wash over the base (C3: the wash no
+/// longer exists only as a pulse, so it survives Reduce Motion).
 private struct CalLivePulse: ViewModifier {
     let live: Bool
     let shape: RoundedRectangle
     var base: Color = Theme.mut.opacity(0.10)
-    @Environment(\.calMotionOff) private var motionOff
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var pulse = false
 
     func body(content: Content) -> some View {
-        let on = live && !motionOff && !reduceMotion
-        content
-            .background(on && pulse ? Theme.grab.opacity(0.12) : base, in: shape)
-            .onAppear {
-                guard on else { return }
-                withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) { pulse = true }
+        content.background {
+            shape.fill(base).overlay {
+                if live { shape.fill(Theme.grab.opacity(0.12)) }
             }
+        }
     }
 }
 

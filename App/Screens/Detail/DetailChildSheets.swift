@@ -4,7 +4,8 @@ import FusionhaKit
 /// Every sheet the item detail opens: interactive search, Edit, Add version,
 /// season actions and Delete, plus the item actions rail's (ItemDetail.tsx
 /// `modals`) Rename files, Edition aliases, Fix episode numbering, Manage
-/// files and Report an issue. Presented through `DetailPresenter`, so a fold /
+/// files, Switch metadata source, the episode sheet, Add collection and
+/// Report an issue. Presented through `DetailPresenter`, so a fold /
 /// unfold re-presents whichever was up on the new host.
 struct DetailChildSheets: ViewModifier {
     let presenter: DetailPresenter
@@ -77,6 +78,21 @@ private struct DetailActionSheets: ViewModifier {
                 if let detail = store.detail {
                     ManageFilesSheet(detail: detail, target: target)
                         .environment(store)
+                }
+            }
+            .sheet(item: presenter.item(\.switchTarget)) { target in
+                if let detail = store.detail {
+                    MetadataSwitchSheet(detail: detail, target: target.provider)
+                        .environment(store)
+                }
+            }
+            .sheet(item: presenter.item(\.episodeSheet)) { target in
+                EpisodeDetailSheet(target: target)
+                    .environment(store)
+            }
+            .sheet(item: presenter.item(\.collectionAdd)) { target in
+                AddCollectionSheet(summary: target.summary, preselect: target.tmdbIds) {
+                    Task { await store.loadCollection() }
                 }
             }
             .sheet(isPresented: presenter.flag(\.showingIssue)) {

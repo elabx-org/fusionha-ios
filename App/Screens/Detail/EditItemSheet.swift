@@ -55,11 +55,9 @@ struct EditItemSheet: View {
                             DialogFieldLabel(title: "Monitor", subtitle: "Sets the level for every version")
                         }
                     }
-                    LabeledContent("Metadata source") {
-                        ProviderMark(provider: detail.resolvedMetadataProvider ?? detail.metadataProvider ?? "tmdb", size: 15)
-                            .foregroundStyle(Theme.mut)
-                    }
                 }
+
+                EditSourceSection(detail: detail)
 
                 ForEach(detail.orderedEditions) { edition in
                     editionSection(edition)
@@ -82,10 +80,6 @@ struct EditItemSheet: View {
                 }
 
                 EditTagsSection(selectedTags: $selectedTags, allTags: $allTags, tagInput: $tagInput)
-
-                if isSeries, let source = detail.episodeNumberingSource {
-                    EditNumberingResetSection(itemId: detail.id, source: source, provider: detail.resolvedMetadataProvider)
-                }
             }
             .scrollContentBackground(.hidden)
             .background(Theme.bg)

@@ -28,6 +28,11 @@ struct CalendarView: View {
     @State var copyingFeed = false
     /// Bumped to bring the view back to today (Today, the tab, a re-tap).
     @State var todayTick = 0
+    /// Bumped by a period swipe (haptic).
+    @State var swipeTick = 0
+    /// Week and the Month day panel use the web's phone cards unless one of the
+    /// four server card styles was picked (a recorded iOS extra, L11).
+    @AppStorage("calendar.phoneCards") var phoneCards = true
 
     enum LoadPhase: Equatable {
         case loading, failed, loaded
@@ -38,6 +43,9 @@ struct CalendarView: View {
     var todayIso: String { CalendarMath.iso(today, cal) }
     var firstDay: Int { settings?.firstDay ?? 0 }
     var cardStyle: WeekCardStyle { .resolve(settings?.calendarWeekCardStyle) }
+    /// nil = the web's phone cards.
+    var weekCards: WeekCardStyle? { phoneCards ? nil : cardStyle }
+    var isPhone: Bool { sizeClass != .regular }
     var quipsOn: Bool { settings?.voicePlayful ?? true }
     /// Reduce Motion or the server's `animations_enabled = false`.
     var motionOff: Bool { reduceMotion || settings?.animationsEnabled == false }
@@ -105,6 +113,13 @@ struct CalendarView: View {
         .onChange(of: model.calendarTodayTick) { goToday() }
         .task(id: fetchKey) { await load() }
         .onAppear(perform: applyScreenshotView)
+        .sensoryFeedback(.selection, trigger: swipeTick)
+    }
+
+    /// The phone header (web `CalendarHeaderMobile`), else the wide toolbar.
+    @ViewBuilder
+    var header: some View {
+        if isPhone { phoneToolbar } else { toolbar }
     }
 
     // MARK: Layouts
@@ -113,11 +128,12 @@ struct CalendarView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    toolbar
+                    header
                         .padding(.bottom, 8)
                     content
                         .id("\(view)|\(bounds.start)|\(phase)")
                         .transition(.opacity)
+                        .gesture(periodSwipe)
                 }
                 .animation(motionOff ? nil : .easeOut(duration: 0.2), value: "\(view)|\(bounds.start)|\(phase)")
                 .padding(.top, 20)
@@ -136,7 +152,7 @@ struct CalendarView: View {
     private var weekLayout: some View {
         VStack(spacing: 0) {
             if !collapsed {
-                toolbar
+                header
                     .padding(.horizontal, Theme.pageGutter)
                     .padding(.bottom, 4)
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -147,7 +163,8 @@ struct CalendarView: View {
                     entries: entries,
                     todayIso: todayIso,
                     todayTick: todayTick,
-                    cardStyle: cardStyle,
+                    cards: weekCards,
+                    swipe: periodSwipe,
                     collapsed: $collapsed,
                     title: title,
                     onPrev: { step(-1) },
@@ -193,8 +210,14 @@ struct CalendarView: View {
         case .month:
             // Phone: dots and counts in the grid, the picked day listed below (web `MonthMobile`).
             MonthMobileView(month: monthAnchor, entries: entries, todayIso: todayIso, firstDay: firstDay,
-                            cardStyle: cardStyle, todayTick: todayTick)
+                            cards: weekCards, todayTick: todayTick)
                 .padding(.top, 8)
+        case .agenda where isPhone:
+            phoneList(.agenda)
+        case .forecast where isPhone:
+            phoneList(.forecast)
+        case .day where isPhone:
+            phoneList(.day)
         case .agenda:
             groupedList(
                 "Nothing is scheduled this month. Aired episodes and movie releases show up here as your monitored titles hit their dates.",
@@ -209,6 +232,17 @@ struct CalendarView: View {
                 quip: "Winter came early — and it brought loot.")
         case .week:
             EmptyView()
+        }
+    }
+
+    /// Forecast / Day / Agenda on a phone (web `MobileDayList`).
+    private func phoneList(_ kind: PhoneDayList.Kind) -> some View {
+        let (start, end) = bounds
+        return PhoneDayList(kind: kind, days: CalendarMath.isoDays(from: start, to: end, cal), entries: entries,
+                            todayIso: todayIso, firstDay: firstDay) { iso in
+            if let date = CalendarMath.date(iso, cal) {
+                withAnimation(motionOff ? nil : .snappy) { dayAnchor = date }
+            }
         }
     }
 

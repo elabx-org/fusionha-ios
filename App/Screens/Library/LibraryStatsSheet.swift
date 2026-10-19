@@ -15,6 +15,8 @@ struct LibraryStatsSheet: View {
     var manageIndexers: () -> Void = {}
     @State private var grown = false
     @State private var feed = StatsSheetFeed.shared
+    /// `/health`, read when the sheet opens (the web shares the shell's query).
+    @State private var connection: ConnectionLine = .connecting
 
     private let order: [(LibraryStatus, String)] = [
         (.all, "titles"), (.complete, "complete"), (.downloading, "downloading"),
@@ -27,12 +29,7 @@ struct LibraryStatsSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Library stats").font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.txt)
                     .padding(.trailing, 36)
-                HStack(spacing: 8) {
-                    Circle().fill(model.libraryError == nil ? Theme.done : Theme.danger)
-                        .frame(width: 8, height: 8)
-                    Text(model.libraryError == nil ? "All systems connected" : "Backend offline")
-                        .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.mut)
-                }
+                connectionLine
                 LibraryWrap(spacing: 8) {
                     ForEach(order.indices, id: \.self) { i in
                         statButton(order[i].0, order[i].1)
@@ -84,6 +81,7 @@ struct LibraryStatsSheet: View {
                 }
                 Button {
                     dismiss()
+                    model.pendingActivityTab = .tasks
                     model.tab = .activity
                 } label: {
                     Text("View all activity ›")
@@ -122,11 +120,37 @@ struct LibraryStatsSheet: View {
         .onAppear {
             withAnimation(motion ? Motion.reveal(1.1) : nil) { grown = true }
         }
+        .task { await checkHealth() }
         .task {
             while !Task.isCancelled {
                 if let client = model.client { await feed.load(client: client, queue: model.queue) }
                 try? await Task.sleep(for: .seconds(2))
             }
+        }
+    }
+
+    /// `sheetConn`: a dot (green when connected, red when offline, dim while
+    /// connecting or unknown) and the four-state label.
+    private var connectionLine: some View {
+        let dot: Color = connection == .ok ? Theme.done : connection == .offline ? Theme.danger : Theme.dim
+        return HStack(spacing: 8) {
+            Circle().fill(dot).frame(width: 8, height: 8)
+                .shadow(color: connection == .ok || connection == .offline ? dot.opacity(0.8) : .clear, radius: 3)
+            Text(connection.label)
+                .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.mut)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func checkHealth() async {
+        guard let client = model.client else { connection = .unknown; return }
+        do {
+            let health = try await client.health()
+            connection = ConnectionLine(loading: false, failed: false, status: health.status)
+        } catch is CancellationError {
+            return
+        } catch {
+            connection = .offline
         }
     }
 

@@ -77,20 +77,17 @@ struct DetailTabsView: View {
         }
         .padding(.top, 22)
         .detailAnimation(.easeInOut(duration: 0.3), value: current)
-        .task(id: current) {
-            if current == .searches && !store.runsLoaded { await store.loadRuns() }
-        }
     }
 
     @ViewBuilder
     private var pane: some View {
         switch current {
-        case .seasons: SeasonsTab(detail: detail, openWeb: openWeb)
+        case .seasons: SeasonsTab(detail: detail)
         case .files:
             if detail.isSeries { SeriesFilesTab(detail: detail) } else { MovieEditionsTab(detail: detail) }
         case .history: HistoryTab(detail: detail)
         case .searches: SearchesTab()
-        case .collection: CollectionTab(detail: detail, openWeb: openWeb)
+        case .collection: CollectionTab(detail: detail)
         }
     }
 }

@@ -36,9 +36,10 @@ struct DetailVersionsPanel: View {
             if keys.count > 1 {
                 filterRow(keys: keys, active: activeFilter, focused: focused)
             }
-            // Each version is its own shelf object (`.obj.ver`), not a row in a panel.
-            VStack(spacing: 10) {
-                ForEach(visible) { edition in
+            // Ruling L6: ONE panel (VersionsPanel.module.css), rows split by hairlines.
+            VStack(spacing: 0) {
+                ForEach(Array(visible.enumerated()), id: \.element.id) { index, edition in
+                    if index > 0 { DetailHairline() }
                     DetailVersionRow(detail: detail, edition: edition, open: focused?.id == edition.id,
                                      readOnly: readOnly, canSearch: canSearch, openWeb: openWeb,
                                      selectedSeason: compareSeason,
@@ -47,16 +48,22 @@ struct DetailVersionsPanel: View {
                     }
                 }
                 ForEach(gaps) { gap in
+                    if !visible.isEmpty || gap.id != gaps.first?.id { DetailHairline() }
                     DetailNotTrackedRow(gap: gap, showTag: detail.needsEditionTag, readOnly: readOnly) {
                         store.addPreset = AddEditionPreset(tier: gap.tier, version: gap.edition)
                     }
                 }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .detailCard()
+            VStack(spacing: 10) {
                 if let season = compareSeason {
                     DetailCompareSeasons(detail: detail, season: season, versions: visible,
                                          onPick: { cmpSeason = $0 }, onClose: { cmpSeason = nil })
                         .transition(.opacity)
                 }
             }
+            .padding(.top, compareSeason == nil ? 0 : 10)
             GradualProgressStrip()
             AutoSearchFlashStrip()
         }
@@ -263,4 +270,9 @@ struct DetailVersionsPanel: View {
         filter = next
         if let key = focused?.versionKey, next != "all", next != key { store.scope = .all }
     }
+}
+
+/// A 1pt `--line` hairline between the panel's rows.
+struct DetailHairline: View {
+    var body: some View { Rectangle().fill(Theme.line).frame(height: 1) }
 }

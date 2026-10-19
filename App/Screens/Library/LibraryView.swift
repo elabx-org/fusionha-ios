@@ -10,13 +10,17 @@ import FusionhaKit
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
+    // Every filter persists, so the Library reopens exactly as it was left
+    // (the web keeps them all in the URL); only the search box is transient.
     @AppStorage("library.kind") private var kindRaw = "all"
     @AppStorage("fusionha.library.density") private var density = "grid"
-    @State private var tier: LibraryTier = .all
-    @State private var status: LibraryStatus = .all
-    @State private var sort: LibrarySort = .title
-    @State private var recency: LibraryRecency = .all
-    @State private var group = false
+    @AppStorage("library.tier") private var tier: LibraryTier = .all
+    @AppStorage("library.status") private var status: LibraryStatus = .all
+    @AppStorage("library.sort") private var sort: LibrarySort = .title
+    @AppStorage("library.recency") private var recency: LibraryRecency = .all
+    @AppStorage("library.group") private var group = false
+    /// The compact table's column sort (local to the table, as on the web).
+    @State private var compactSort = CompactSort()
     @State private var showingFilters = false
     @State private var derived = LibraryDerived()
     @State private var scrubber = ScrubberState()
@@ -37,12 +41,13 @@ struct LibraryView: View {
     private struct Inputs: Equatable {
         var version: Int, kind: String, tier: LibraryTier, status: LibraryStatus
         var sort: LibrarySort, recency: LibraryRecency, group: Bool, query: String, compact: Bool
-        var columns: Int
+        var columns: Int, compactSort: CompactSort
     }
 
     private var inputs: Inputs {
         Inputs(version: model.libraryVersion, kind: kindRaw, tier: tier, status: status, sort: sort,
-               recency: recency, group: group, query: query, compact: compact, columns: columns)
+               recency: recency, group: group, query: query, compact: compact, columns: columns,
+               compactSort: compactSort)
     }
 
     var body: some View {
@@ -143,7 +148,7 @@ struct LibraryView: View {
         next.editionCount = visible.reduce(0) { $0 + $1.editions.count }
         next.columns = columns
         if compact {
-            next.rows = LibraryRowModel.table(visible)
+            next.rows = LibraryRowModel.table(compactSort.sorted(visible))
         } else if group {
             next.rows = LibraryRowModel.grouped(visible, columns: columns)
         } else if sort == .title {
@@ -199,14 +204,22 @@ struct LibraryView: View {
             Color.clear.frame(height: 0).id("library-top")
             LibraryHeader(derived: derived, status: $status)
                 .reveal(0)
-            LibraryToolbar(derived: derived, kind: $kindRaw, tier: $tier, density: $density,
+            LibraryKindsBar(derived: derived, kind: $kindRaw)
+                .padding(.top, 16)
+                .reveal(1)
+            LibraryToolbar(derived: derived, tier: $tier, status: $status, density: $density,
                            filterBadge: filterBadge) {
                 showingFilters = true
             }
             .padding(.top, 16)
             .padding(.bottom, 18)
-            .reveal(1)
+            .reveal(2)
         }
+    }
+
+    /// `hasActiveFilters`: anything narrowing the grid, the search box included.
+    private var filtersActive: Bool {
+        kindRaw != "all" || tier != .all || recency != .all || !query.isEmpty || sort != .title || status != .all
     }
 
     private var filterBadge: Int {
@@ -238,7 +251,7 @@ struct LibraryView: View {
                 EmptyBox(message: "Your library is empty. Use Add to search TMDB and start tracking a title in one or more versions (HD, 4K).")
             }
         } else if derived.rows.isEmpty || derived.titleCount == 0 {
-            EmptyBox(message: "No titles match \(query.isEmpty ? "these filters" : "your search"). Try clearing a filter or the search box.")
+            EmptyBox(message: LibraryPhoneCopy.noMatches(filtersActive: filtersActive))
         } else {
             lazyRows
         }
@@ -253,7 +266,9 @@ struct LibraryView: View {
                 case .items(let items):
                     LibraryGridRow(items: items, columns: derived.columns)
                 case .tableHeader:
-                    LibraryTableHeader()
+                    LibraryTableHeader(sort: compactSort) { column in
+                        withAnimation(motion ? .snappy : nil) { compactSort = compactSort.tapped(column) }
+                    }
                 case .tableRow(let item, let last):
                     LibraryTableRow(item: item, last: last)
                 }

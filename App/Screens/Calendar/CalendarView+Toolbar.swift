@@ -80,20 +80,13 @@ extension CalendarView {
 
     var weekStyleMenu: some View {
         Menu {
-            Section("Week card style") {
+            Picker("Week card style", selection: weekCardsBinding) {
+                Text("Phone cards").tag("phone")
                 ForEach(WeekCardStyle.allCases, id: \.self) { style in
-                    Button {
-                        setCardStyle(style)
-                    } label: {
-                        if style == cardStyle {
-                            Label(style.label, systemImage: "checkmark")
-                        } else {
-                            Text(style.label)
-                        }
-                        Text(style.detail)
-                    }
+                    Text(style.label).tag(style.rawValue)
                 }
             }
+            .pickerStyle(.inline)
         } label: {
             CalGlassIcon(systemName: "gearshape")
         }

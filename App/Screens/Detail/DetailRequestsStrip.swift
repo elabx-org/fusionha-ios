@@ -8,7 +8,7 @@ import FusionhaKit
 struct DetailRequestsStrip: View {
     let itemId: Int
     @Environment(AppModel.self) private var model
-    @State private var rows: [ItemRequestRow] = []
+    @Environment(DetailStore.self) private var store
     @State private var thread: MediaRequest?
     @State private var composing = false
 
@@ -17,7 +17,8 @@ struct DetailRequestsStrip: View {
 
     var body: some View {
         Group {
-            if visible && !rows.isEmpty {
+            if visible && !store.requestRows.isEmpty {
+                let rows = store.requestRows
                 let requests = rows.map(\.request)
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
@@ -71,7 +72,7 @@ struct DetailRequestsStrip: View {
 
     private func load() async {
         guard visible, let client = model.client else { return }
-        rows = (try? await client.itemRequests(itemId: itemId)) ?? rows
+        store.requestRows = (try? await client.itemRequests(itemId: itemId)) ?? store.requestRows
     }
 }
 

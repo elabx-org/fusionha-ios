@@ -107,8 +107,10 @@ extension APIClient {
 
     // MARK: Tasks
 
-    public func systemRuns(page: Int = 1, pageSize: Int = 200) async throws -> ActivityRunPage {
-        try await get("/api/v1/system/runs", query: q([("page", "\(page)"), ("page_size", "\(pageSize)")]))
+    /// `touchedItem` scopes the feed to every run relevant to one title (the detail Searches tab).
+    public func systemRuns(page: Int = 1, pageSize: Int = 200, touchedItem: Int? = nil) async throws -> ActivityRunPage {
+        try await get("/api/v1/system/runs", query: q([("touched_item", touchedItem.map(String.init)),
+                                                       ("page", "\(page)"), ("page_size", "\(pageSize)")]))
     }
 
     public func systemRun(id: Int) async throws -> CommandRunDetail {

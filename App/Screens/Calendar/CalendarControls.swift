@@ -19,11 +19,14 @@ struct CalViewSwitcher: View {
                 Button {
                     withAnimation(motion ? Motion.indicator : nil) { onSelect(mode) }
                 } label: {
-                    Text(mode.label)
+                    // Labels shorten (Mo/Wk/Fc/Day/Ag) when the segment is too narrow.
+                    ViewThatFits(in: .horizontal) {
+                        Text(mode.label).fixedSize()
+                        Text(mode.shortLabel).fixedSize()
+                    }
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(on ? Theme.txt : Theme.mut)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.8)
                         .frame(maxWidth: .infinity, minHeight: 32)
                         .background {
                             if on {
@@ -35,6 +38,7 @@ struct CalViewSwitcher: View {
                         .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(mode.label)
                 .accessibilityAddTraits(on ? .isSelected : [])
             }
         }

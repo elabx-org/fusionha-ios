@@ -8,12 +8,13 @@ import FusionhaKit
 // all stay; times are ink-2, never a generic cyan.
 
 /// The shared card chrome: radius 14, hairline, card fill (tier-tinted for
-/// `accent`), dimmed once aired, breathing while an edition is grabbing.
+/// `accent`), dimmed once aired, with a static status wash while an edition is
+/// grabbing or an aired episode is still missing.
 private struct WeekCardChrome: ViewModifier {
     let style: WeekCardStyle
     let tier: QualityTier
     let aired: Bool
-    let live: Bool
+    let wash: CalendarWash?
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous)
@@ -21,9 +22,8 @@ private struct WeekCardChrome: ViewModifier {
         content
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(accent ? tier.color.opacity(0.12) : .clear, in: shape)
-            .calLivePulse(live, shape: shape, base: Theme.card)
+            .actWash(wash?.color, mono: wash?.mono, radius: Theme.radiusLg)
             .clipShape(shape)
-            .overlay(shape.strokeBorder(Theme.line))
             .opacity(aired ? 0.55 : 1)
             .contentShape(shape)
     }
@@ -49,7 +49,7 @@ struct WeekEventCard: View {
                     poster
                 }
             }
-            .modifier(WeekCardChrome(style: style, tier: entry.accentTier, aired: entry.hasAired(now: now), live: entry.isGrabbing))
+            .modifier(WeekCardChrome(style: style, tier: entry.accentTier, aired: entry.hasAired(now: now), wash: entry.wash(now: now)))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(entry.title) · \(entry.label)\(entry.airTime().map { " · \($0)" } ?? "")")
@@ -123,7 +123,7 @@ struct SeasonDropCard: View {
                     poster
                 }
             }
-            .modifier(WeekCardChrome(style: style, tier: entry.accentTier, aired: false, live: false))
+            .modifier(WeekCardChrome(style: style, tier: entry.accentTier, aired: false, wash: group.wash(now: now)))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(entry.title) · \(season) · \(count) episodes · season drop · \(timeLine)")

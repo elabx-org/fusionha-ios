@@ -14,7 +14,7 @@ struct CalEmptyState: View {
                 .foregroundStyle(Theme.mut)
                 .lineSpacing(13.5 * 0.6 - 3)
             if let quip {
-                (Text("— ").foregroundColor(Theme.txt.opacity(0.08)) + Text(quip).italic().foregroundColor(Theme.dim))
+                (Text("— ").foregroundColor(Theme.dim) + Text(quip).italic().foregroundColor(Theme.dim))
                     .font(.system(size: 13.5))
             }
         }

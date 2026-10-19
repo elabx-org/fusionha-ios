@@ -61,10 +61,13 @@ struct DetailPage: View {
                     .id("actions")
                 ItemActionsRail(detail: detail, openWeb: openWeb)
 
+                // MobileDetailFlyout: the request strip sits above Versions.
+                DetailRequestsStrip(itemId: detail.id)
+                    .padding(.top, 14)
+                    .id("requests")
+
                 DetailVersionsPanel(detail: detail, openWeb: openWeb)
                     .id("editions")
-
-                DetailRequestsStrip(itemId: detail.id)
 
                 if detail.kind == .movie, ReleaseTimeline.hasData(detail) {
                     DetailSection(title: "Release timeline")

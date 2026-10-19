@@ -12,7 +12,6 @@ struct DetailHero: View {
     @Environment(\.detailInColumn) private var inColumn
     let detail: ItemDetail
     let close: () -> Void
-    @State private var artShown = false
 
     /// How far the heading rises over the bottom of the art.
     private static let overlap: CGFloat = 132
@@ -25,14 +24,7 @@ struct DetailHero: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Color.clear
-                .containerRelativeFrame(.vertical) { length, _ in min(max(length * 0.5, 360), 520) }
-                .frame(maxWidth: .infinity)
-                .background {
-                    art
-                    wash
-                }
-                .clipped()
+            DetailHeroArt(url: artURL)
                 .overlay(alignment: .topLeading) {
                     if !inColumn {
                         GlassIconButton(systemName: "xmark", label: "Close detail", size: 44, action: close)
@@ -78,42 +70,11 @@ struct DetailHero: View {
                 .padding(.top, 12)
                 .detailReveal(delay: 0.2)
             }
+            RequestedByPill()
+                .padding(.top, 12)
+                .detailReveal(delay: 0.22)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private var art: some View {
-        if artURL != nil {
-            PosterImage(url: artURL)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
-                .mask(LinearGradient(stops: [
-                    .init(color: .black, location: 0),
-                    .init(color: .black, location: 0.45),
-                    .init(color: .clear, location: 0.95),
-                ], startPoint: .top, endPoint: .bottom))
-                // Ken-Burns settle: the art eases in from a slight zoom.
-                .scaleEffect(artShown || reduce ? 1 : 1.06)
-                .opacity(artShown || reduce ? 1 : 0)
-                .onAppear {
-                    guard !reduce else { return }
-                    withAnimation(DetailMotion.reveal(0.9)) { artShown = true }
-                }
-        } else {
-            RadialGradient(colors: [Theme.panel2, Theme.bg], center: .top, startRadius: 0, endRadius: 520)
-        }
-    }
-
-    /// The `.hero-fade`: the art sinks into the ground under the heading.
-    private var wash: some View {
-        LinearGradient(stops: [
-            .init(color: Theme.bg.opacity(0.18), location: 0),
-            .init(color: .clear, location: 0.2),
-            .init(color: Theme.bg.opacity(0.75), location: 0.62),
-            .init(color: Theme.bg.opacity(0.92), location: 1),
-        ], startPoint: .top, endPoint: .bottom)
-        .allowsHitTesting(false)
     }
 
     /// `Andor 2022`: the display face, the year a quieter semibold.
@@ -132,33 +93,32 @@ struct DetailHero: View {
     }
 }
 
-/// The status chip (`.status-chip`): sentence-case status on a dark capsule,
-/// with a dot toned by the status text (ok / amber) when it has one.
+/// The status chip (MobileHero `.chip`): a clock glyph and the status in
+/// 11pt mono uppercase, on a wash toned by the status (hero-tone.ts: ok /
+/// amber / neutral).
 private struct HeroStatusChip: View {
     let status: String
 
-    private var tone: Color? {
+    private var tone: (Color, MonoToken)? {
         let s = status.lowercased()
-        if s.range(of: "released|available|ended", options: .regularExpression) != nil { return Theme.done }
+        if s.range(of: "released|available|ended", options: .regularExpression) != nil { return (Theme.done, .done) }
         if s.range(of: "continuing|returning|airing|on air|production|planned|upcoming", options: .regularExpression) != nil {
-            return Theme.onair
+            return (Theme.onair, .onair)
         }
         return nil
     }
 
     var body: some View {
-        HStack(spacing: 6) {
-            if let tone {
-                Circle().fill(tone).frame(width: 7, height: 7)
-            }
-            Text(status)
+        HStack(spacing: 5) {
+            Image(systemName: "clock").font(.system(size: 11, weight: .bold))
+            Text(status.uppercased()).tracking(0.5)
         }
-        .font(.system(size: 13, weight: .semibold))
-        .foregroundStyle(Theme.txt)
+        .font(.system(size: 11, weight: .heavy, design: .monospaced))
+        .foregroundStyle(tone.map { $0.0.mix(0.6, Theme.txt) } ?? Theme.mut)
         .lineLimit(1)
         .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(Theme.bg.opacity(0.8), in: Capsule())
+        .padding(.vertical, 6)
+        .actWash(tone?.0, mono: tone?.1, radius: 999, base: Theme.bg.opacity(0.85))
         .accessibilityLabel("Status: \(status)")
     }
 }
@@ -199,6 +159,11 @@ private struct HeroMetaLine: View {
             if let cert = detail.certification, !cert.isEmpty {
                 dotSep
                 Text(cert)
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.line))
+                    .accessibilityLabel("Rated \(cert)")
             }
         }
         .font(.system(size: 15))

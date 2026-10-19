@@ -9,7 +9,6 @@ struct SeasonsTab: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     let detail: ItemDetail
-    let openWeb: () -> Void
     @State private var open: Set<Int>?
 
     /// The running `tree` step's source while the season list is still empty.
@@ -67,7 +66,9 @@ struct SeasonsTab: View {
             .padding(.bottom, 14)
 
             if detail.numberingMismatch == true {
-                Button(action: openWeb) {
+                Button {
+                    store.showingNumbering = true
+                } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")
                         Text(detail.episodeNumberingSource == "tvmaze"
@@ -78,8 +79,7 @@ struct SeasonsTab: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.miss)
                     .padding(12)
-                    .background(Theme.miss.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.line))
+                    .actWash(Theme.miss, mono: .miss, radius: 10)
                 }
                 .buttonStyle(.plain)
                 .padding(.bottom, 12)

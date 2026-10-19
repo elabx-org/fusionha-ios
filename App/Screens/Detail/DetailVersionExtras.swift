@@ -67,7 +67,7 @@ struct DetailAttentionBanner: View {
 // MARK: - Not tracked
 
 /// A missing tier × edition combination as an empty shelf slot (a dashed
-/// outline, no fill): dimmed identity, "Not tracked", and a glass + Add.
+/// row in the panel): dimmed identity, "Not tracked", and a glass + Add.
 struct DetailNotTrackedRow: View {
     let gap: MissingVersion
     let showTag: Bool
@@ -101,10 +101,6 @@ struct DetailNotTrackedRow: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
-        .overlay {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .strokeBorder(Theme.txt.opacity(0.14), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
-        }
     }
 }
 
