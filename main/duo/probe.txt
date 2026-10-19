@@ -1,10 +1,10 @@
-== /Applications/Xcode_27.1_beta.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/System/Library/Frameworks/SwiftUI.framework/Modules/SwiftUI.swiftmodule/arm64-apple-ios-simulator.swiftinterface
+== /Applications/Xcode_27.1_Release_Candidate.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/System/Library/Frameworks/SwiftUI.framework/Modules/SwiftUI.swiftmodule/arm64-apple-ios-simulator.swiftinterface
 32206:  nonisolated public func toolbarVerticalBehavior(_ behavior: SwiftUI.ToolbarVerticalBehavior) -> some SwiftUICore.View
 32210:public struct ToolbarVerticalBehavior : Swift.Hashable, Swift.Sendable {
 32211:  public static let automatic: SwiftUI.ToolbarVerticalBehavior
 32212:  public static let disabled: SwiftUI.ToolbarVerticalBehavior
 32213:  public static func == (a: SwiftUI.ToolbarVerticalBehavior, b: SwiftUI.ToolbarVerticalBehavior) -> Swift.Bool
-== /Applications/Xcode_27.1_beta.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/System/Library/Frameworks/SwiftUICore.framework/Modules/SwiftUICore.swiftmodule/arm64-apple-ios-simulator.swiftinterface
+== /Applications/Xcode_27.1_Release_Candidate.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator27.1.sdk/System/Library/Frameworks/SwiftUICore.framework/Modules/SwiftUICore.swiftmodule/arm64-apple-ios-simulator.swiftinterface
 2550:  public var toolbarVerticalEdge: SwiftUICore::HorizontalEdge? {
 4843:public struct ReservedRegion : Swift::Equatable, Swift::Hashable, Swift::Identifiable, Swift::Sendable {
 4844:  public var id: SwiftUICore::ReservedRegion.SwiftUICore::ID {
@@ -73,8 +73,8 @@ iPhone 18 Pro (com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro)
 iPhone 18 Pro Max (com.apple.CoreSimulator.SimDeviceType.iPhone-18-Pro-Max)
 iPhone Duo (com.apple.CoreSimulator.SimDeviceType.iPhone-Duo)
 == Apps that can host the simulator UI
+/Applications/Xcode_27.1_Release_Candidate.app/Contents/Applications/DeviceHub.app
 /Applications/Xcode_27.2_beta_2.app/Contents/Applications/DeviceHub.app
-/Applications/Xcode_27.1_beta.app/Contents/Applications/DeviceHub.app
 /Applications/Xcode_27.app/Contents/Applications/DeviceHub.app
 == simctl commands
 Subcommands:
