@@ -10,7 +10,6 @@ import FusionhaKit
 struct SeriesFilesTab: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
-    @Environment(\.openURL) private var openURL
     let detail: ItemDetail
     @State private var collapsed: Set<String> = []
 
@@ -50,7 +49,7 @@ struct SeriesFilesTab: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             HStack {
                 Spacer()
-                DetailRenameFilesButton { DetailWebOpener(model: model, openURL: openURL, itemId: detail.id)() }
+                if (model.me?.can("edit") ?? true) && !sections.isEmpty { DetailRenameFilesButton { store.openRename() } }
             }
             if sections.isEmpty {
                 EmptyBox(message: "No files imported yet.")

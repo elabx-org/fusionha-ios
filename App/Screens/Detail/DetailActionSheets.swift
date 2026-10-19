@@ -2,7 +2,7 @@ import SwiftUI
 import FusionhaKit
 
 /// The item actions rail's sheets (ItemDetail.tsx `modals`): Rename files,
-/// Edition aliases, Fix episode numbering and Report an issue.
+/// Edition aliases, Fix episode numbering, Add collection and Report an issue.
 struct DetailActionSheets: ViewModifier {
     @Bindable var store: DetailStore
 
@@ -30,6 +30,11 @@ struct DetailActionSheets: ViewModifier {
                 if let detail = store.detail {
                     ManageFilesSheet(detail: detail, target: target)
                         .environment(store)
+                }
+            }
+            .sheet(item: $store.collectionAdd) { target in
+                AddCollectionSheet(summary: target.summary, preselect: target.tmdbIds) {
+                    Task { await store.loadCollection() }
                 }
             }
             .sheet(isPresented: $store.showingIssue) {

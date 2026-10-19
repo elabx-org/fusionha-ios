@@ -2,7 +2,7 @@ import SwiftUI
 import FusionhaKit
 
 // The release timeline (movies) and the DetailRailStack: trailer, collection,
-// more like this and cast. Plus the movie Collection tab.
+// more like this and cast.
 
 struct ReleaseTimeline: View {
     let detail: ItemDetail
@@ -107,21 +107,8 @@ struct DetailRailStack: View {
                 .accessibilityLabel("Play trailer")
             }
 
-            if let collection = detail.collection, let name = collection.name {
-                DetailSection(title: "Collection")
-                Button {
-                    withAnimation { store.tab = .collection }
-                } label: {
-                    HStack {
-                        Image(systemName: "square.stack.3d.up").foregroundStyle(Theme.mut)
-                        Text(name).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
-                        Spacer()
-                        Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
-                    }
-                    .padding(16)
-                    .detailCard()
-                }
-                .buttonStyle(DetailPressStyle())
+            if detail.collection != nil, let collection = store.collection {
+                DetailCollectionRail(collection: collection)
             }
 
             if let similar = detail.similar, !similar.isEmpty {
@@ -161,28 +148,5 @@ struct DetailRailStack: View {
                 .scrollIndicators(.hidden)
             }
         }
-    }
-}
-
-/// The movie Collection tab: the collection, with its full list in the web app.
-struct CollectionTab: View {
-    let detail: ItemDetail
-    let openWeb: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(detail.collection?.name ?? "Collection")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundStyle(Theme.txt)
-            Text("\(detail.title) is part of this collection. The full list of its movies, with what's in your library, is in the web app.")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.mut)
-            Button("Open in the web app", action: openWeb)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(Theme.i2)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .detailCard()
     }
 }

@@ -85,12 +85,12 @@ struct DetailTabsView: View {
     @ViewBuilder
     private var pane: some View {
         switch current {
-        case .seasons: SeasonsTab(detail: detail, openWeb: openWeb)
+        case .seasons: SeasonsTab(detail: detail)
         case .files:
             if detail.isSeries { SeriesFilesTab(detail: detail) } else { MovieEditionsTab(detail: detail) }
         case .history: HistoryTab(detail: detail)
         case .searches: SearchesTab()
-        case .collection: CollectionTab(detail: detail, openWeb: openWeb)
+        case .collection: CollectionTab(detail: detail)
         }
     }
 }

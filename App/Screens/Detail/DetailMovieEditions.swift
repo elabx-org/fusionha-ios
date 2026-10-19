@@ -10,7 +10,6 @@ import FusionhaKit
 struct MovieEditionsTab: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
-    @Environment(\.openURL) private var openURL
     let detail: ItemDetail
     @State private var searchingAll = false
 
@@ -38,7 +37,7 @@ struct MovieEditionsTab: View {
             }
             ScrollView(.horizontal) {
                 HStack(spacing: 8) {
-                    DetailRenameFilesButton { DetailWebOpener(model: model, openURL: openURL, itemId: detail.id)() }
+                    if (model.me?.can("edit") ?? true) && !owned.isEmpty { DetailRenameFilesButton { store.openRename() } }
                     if model.me?.can("search") ?? true {
                         Button {
                             searchingAll = true
@@ -56,8 +55,6 @@ struct MovieEditionsTab: View {
                             .padding(.horizontal, 14)
                             .frame(height: 36)
                             .background(Theme.primary, in: Capsule())
-                            .overlay(Capsule().strokeBorder(.white.opacity(0.7), lineWidth: 1)
-                                .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .center)))
                         }
                         .buttonStyle(DetailPressStyle())
                         .disabled(searchingAll)

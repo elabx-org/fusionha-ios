@@ -59,22 +59,70 @@ public struct CollectionSummary: Decodable, Sendable, Identifiable, Hashable {
     public let ownedCount: Int
     public let totalCount: Int
     public var id: Int { collectionTmdbId }
+
+    public init(collectionTmdbId: Int, name: String, posterUrl: String? = nil, backdropUrl: String? = nil,
+                ownedCount: Int = 0, totalCount: Int = 0) {
+        self.collectionTmdbId = collectionTmdbId
+        self.name = name
+        self.posterUrl = posterUrl
+        self.backdropUrl = backdropUrl
+        self.ownedCount = ownedCount
+        self.totalCount = totalCount
+    }
 }
 
 /// `GET /api/v1/collections/{id}`.
 public struct CollectionDetail: Decodable, Sendable {
     public let collectionTmdbId: Int
     public let name: String
+    public let posterUrl: String?
     public let ownedCount: Int
+    /// Owned parts that also have a file on disk (the green-check subset).
+    public let presentCount: Int?
     public let totalCount: Int
     public let parts: [CollectionPart]
+
+    public init(collectionTmdbId: Int, name: String, posterUrl: String? = nil, ownedCount: Int,
+                presentCount: Int? = nil, totalCount: Int, parts: [CollectionPart]) {
+        self.collectionTmdbId = collectionTmdbId
+        self.name = name
+        self.posterUrl = posterUrl
+        self.ownedCount = ownedCount
+        self.presentCount = presentCount
+        self.totalCount = totalCount
+        self.parts = parts
+    }
 }
 
+/// One film of a collection (`CollectionPartRead`). Three-state ownership:
+/// not `owned` → not in fusionha; `owned` without `hasFile` → tracked, no file
+/// yet; `owned` with `hasFile` → on disk.
 public struct CollectionPart: Decodable, Sendable, Hashable {
     public let tmdbId: Int
     public let title: String?
     public let year: Int?
-    public let inLibrary: Bool?
+    public let posterUrl: String?
+    public let owned: Bool?
+    public let hasFile: Bool?
+    public let libraryItemId: Int?
+    public let tiers: [QualityTier]?
+    public let ignored: Bool?
+
+    public init(tmdbId: Int, title: String? = nil, year: Int? = nil, posterUrl: String? = nil, owned: Bool? = nil,
+                hasFile: Bool? = nil, libraryItemId: Int? = nil, tiers: [QualityTier]? = nil, ignored: Bool? = nil) {
+        self.tmdbId = tmdbId
+        self.title = title
+        self.year = year
+        self.posterUrl = posterUrl
+        self.owned = owned
+        self.hasFile = hasFile
+        self.libraryItemId = libraryItemId
+        self.tiers = tiers
+        self.ignored = ignored
+    }
+
+    /// The film is in the library (with or without a file).
+    public var inLibrary: Bool? { owned }
 }
 
 public struct CollectionAddBody: Encodable, Sendable {

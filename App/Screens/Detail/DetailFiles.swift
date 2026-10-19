@@ -3,21 +3,8 @@ import UIKit
 import FusionhaKit
 
 // Parts the series Files tab (DetailSeriesFiles) and the movie Versions tab
-// (DetailMovieEditions) share: the web opener, Rename files, the tier chip,
+// (DetailMovieEditions) share: Rename files, the tier chip,
 // the analysis badge and the probe formatters.
-
-/// Opens this item in the web app (for the dialogs that live there).
-@MainActor
-struct DetailWebOpener {
-    let model: AppModel
-    let openURL: OpenURLAction
-    let itemId: Int
-
-    func callAsFunction() {
-        guard let server = model.credentials?.serverURL else { return }
-        openURL(server.appendingPathComponent("library/\(itemId)"))
-    }
-}
 
 struct DetailRenameFilesButton: View {
     let action: () -> Void
