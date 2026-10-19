@@ -24,8 +24,8 @@ The empty Queue screen (#53) is being ported separately and is not in this table
 | **B3 Requests** | the R rows (decline-reason sheet, filter groups, header subtitles, drawer counts, Rules row) | ✅ build 408 (R9 deck wash done in B2; I2/I4 done) |
 | **B4 Discover** | the D rows (Letterboxd suggestion card, trailers ＋, segmented fill, TMDB-missing state, one request path) | ✅ build 408 |
 | **B5 Activity** | the Q, H, BL, W and T rows (failure copy, card washes, pair card, pack model, held why, History lifecycle, Blocklist groups, Tasks voice) | ✅ build 408 |
-| **B6 Detail, Library, Calendar** | the L, I and C rows | — |
-| **B7 Account, Settings, shell** | the A, U, N and S rows | — |
+| **B6 Detail, Library, Calendar** | the L, I and C rows | ✅ build 438 (I5–I7, I9–I12, L2–L4, L6, L11, R1, S1, C1–C4) |
+| **B7 Account, Settings, shell** | the A, U, N and S rows | ✅ build 440 (A2–A4, S1, S2, S4, S5, U2, N1, F1; SI1 partial: OIDC and living-media poses open; S3 → D2) |
 | **B8 Monochrome** | `actWash` gains a Mono branch (shade + pattern) used by Activity, Wanted, Library, Detail tiers and the Live Activity | ✅ build 389 |
 | **B9 Duo unfolded** | the *Duo* rows, ordered Requests → Queue → Library → Calendar → Settings → the rest | — |
 
@@ -451,3 +451,9 @@ Anton title are retired. The title uses the system font, and the avatar becomes 
 Rules: no toolbar content in-content except the listed "stays" items; every item has a
 symbol from the CLAUDE.md icon set and a text label (the vertical bar shows the symbol,
 overflow shows the label). Tick a row with its build number.
+
+### Follow-ups after B6/B7 (build 440)
+- Episode sheet's Search tab: its `InteractiveSearchModel` is not parked across fold/unfold (DC3 gap).
+- Activity, Calendar and sign-in toasts still use their own toast; move to `model.toast`.
+- SI1: OIDC sign-in and living-media poses.
+- Oversized: `AppModel` (665), `ScreenModels` (619), `DiscoverModels` (530), `DetailLogic` (481), `CalendarModels` (456), `EditItemSheet` (335).
