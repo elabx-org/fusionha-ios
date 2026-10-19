@@ -81,7 +81,6 @@ struct AccountToolbarItem: ToolbarContent {
             }
             .accessibilityLabel(dot ? "Account, \(model.attentionCount) need attention" : "Account")
         }
-        .sharedBackgroundVisibility(.hidden)
         .barPriority(true)
     }
 }
@@ -93,7 +92,7 @@ struct AccountToolbarItem: ToolbarContent {
 @Observable
 final class AccountBarArt {
     static let shared = AccountBarArt()
-    static let side: CGFloat = 30
+    static let side: CGFloat = 24
 
     private(set) var photo: UIImage?
     private var photoUser: Int?

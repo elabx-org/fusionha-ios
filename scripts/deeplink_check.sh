@@ -103,12 +103,13 @@ warm deeplink-5-warm-other-title item/8 "detail 8 shown" SIMCTL_CHILD_FUSIONHA_S
 warm deeplink-6-warm-calendar calendar "applied fusionha://calendar tab=calendar" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=1
 # Every widget's background tap (widgetURL): Downloading → Activity, Recently
 # added / Library → Library, Indexers → Activity › Indexers, Requests &
-# issues → Discover › Requests, the paged widget's Wanted → Wanted.
+# issues → Discover › Requests, the paged widget's Wanted → Activity › Wanted
+# (B5; the probe logs the tab, the screenshot shows the Wanted sub-tab).
 warm deeplink-8-warm-activity activity "applied fusionha://activity tab=activity" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
 warm deeplink-9-warm-library library "applied fusionha://library tab=library" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar
 warm deeplink-10-warm-indexers activity/indexers "applied fusionha://activity/indexers tab=activity" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
 warm deeplink-11-warm-requests discover/requests "applied fusionha://discover/requests tab=discover" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
-warm deeplink-12-warm-wanted wanted "applied fusionha://wanted tab=wanted" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
+warm deeplink-12-warm-wanted wanted "applied fusionha://wanted tab=activity" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
 
 kill "$ACCEPT_PID" 2> /dev/null
 echo "prompt helper taps: $(grep -c "ACCEPTOR tapped Open" "$ACCEPT_LOG")"
