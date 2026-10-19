@@ -8,6 +8,8 @@ import FusionhaKit
 /// requester never lands in Settings.
 struct RequesterNotificationsSection: View {
     @Environment(AppModel.self) private var model
+    /// Account draws its own "Notifications" heading.
+    var showsTitle = true
     /// Shows a toast from the host screen (sheets hide the app's own toasts).
     let notify: (_ message: String, _ ok: Bool) -> Void
     @State private var push = NativePushState()
@@ -15,11 +17,13 @@ struct RequesterNotificationsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Notifications")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(Theme.txt)
-                .padding(.top, 26)
-                .accessibilityAddTraits(.isHeader)
+            if showsTitle {
+                Text("Notifications")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(Theme.txt)
+                    .padding(.top, 26)
+                    .accessibilityAddTraits(.isHeader)
+            }
 
             NotificationsSectionLabel("This device")
             card { ThisDeviceNativeCard(push: push, notify: notify) }

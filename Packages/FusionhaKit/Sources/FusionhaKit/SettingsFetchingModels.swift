@@ -145,6 +145,8 @@ public struct DownloadClientInfo: Decodable, Sendable, Identifiable, Hashable {
     public let removeFailed: Bool?
     public let postImportCategory: String?
     public let categoryMap: [String: String]?
+    /// The client's file-check capabilities (the list carries them too).
+    public let capabilities: ClientCapabilities?
 
     public var isTorrent: Bool { `protocol` == "TORRENT" }
 }
@@ -358,6 +360,23 @@ public struct ArrWebhookGroup: Decodable, Sendable, Hashable, Identifiable {
         public let onUpgrade: Bool?
         public let onRename: Bool?
         public let onDelete: Bool?
+        // The full `ArrWebhookRead` the native edit sheet (S4) loads from.
+        public var instanceId: Int?
+        public var method: Int?
+        public var username: String?
+        public var headers: [String: String]?
+        public var sendValidationResults: Bool?
+        public var passwordConfigured: Bool?
+        public var onDeleteForUpgrade: Bool?
+        public var onManualInteractionRequired: Bool?
+        public var onImportFailure: Bool?
+        public var onDownloadFailure: Bool?
+        public var onMediaAdded: Bool?
+        public var onMediaRemoved: Bool?
+        public var onHealthIssue: Bool?
+        public var onHealthRestored: Bool?
+        public var onApplicationUpdate: Bool?
+        public var pathMappings: [ArrWebhookPathMapping]?
     }
     public let instanceSlug: String
     public let instanceLabel: String
@@ -411,6 +430,8 @@ public struct WebPushSettings: Decodable, Sendable, Hashable {
     public let quietHoursEnabled: Bool?
     public let quietHoursStart: String?
     public let quietHoursEnd: String?
+    /// The daily digest's send time, `HH:MM` server time (fusionha A10); nil on older servers.
+    public let digestTime: String?
 }
 
 public struct PushTestResult: Decodable, Sendable {

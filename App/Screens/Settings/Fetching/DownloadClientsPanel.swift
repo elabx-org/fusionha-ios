@@ -19,6 +19,7 @@ struct DownloadClientsPanel: View {
     var body: some View {
         FetchingPage(slug: "clients", toaster: toaster, confirm: $confirm, refresh: load) {
             if !loaded || error != nil { FetchLoading(error: error) }
+            ImportRulesNoteView(clients: clients)
             VStack(spacing: 12) {
                 ForEach(Array(clients.enumerated()), id: \.element.id) { index, client in
                     VStack(spacing: 6) {
@@ -34,6 +35,7 @@ struct DownloadClientsPanel: View {
                     .padding(.bottom, 14)
             }
             Button("+ Add client") { adding = true }.buttonStyle(.web())
+            AutoFixSwitchCard().padding(.top, 18)
             DecypharrStagesCard().padding(.top, 18)
         }
         .task { await load() }

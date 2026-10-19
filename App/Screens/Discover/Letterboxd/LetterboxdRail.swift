@@ -98,7 +98,7 @@ struct LetterboxdRail: View {
             if let hint {
                 Text(hint).font(.system(size: 12)).foregroundStyle(Theme.dim)
             }
-            Button(SuggestionRail.manage) { model.showingWatchlists = true }
+            Button(SuggestionRail.manage) { model.openAutomaticRequests() }
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.accentText)
                 .buttonStyle(.plain)

@@ -106,12 +106,10 @@ private struct FileManagementForm: View {
                           description: "Periodically re-check tracked files for broken links. Off = detection stops refreshing; manual rescan + Replace/Clean-up still work.")
             SettingNumber(key: "dangling_reconcile_interval_hours", label: "Sweep interval",
                           description: "How often the background sweep runs (1–168 hours).", unit: "hours", min: 1, max: 168)
-        }
-
-        ForEach([("movie", "Movies"), ("series", "Series"), ("anime", "Anime")], id: \.0) { kind in
-            SettingsSection(kind.1) {
-                SettingToggle(key: "auto_cleanup_dead_links_\(kind.0)", label: "Clean up dead links — \(kind.1)")
-                SettingToggle(key: "auto_search_after_loss_\(kind.0)", label: "Search after loss — \(kind.1)")
+            SelfHealMatrixHeader().settingsField("Search after loss")
+            ForEach(SelfHealMatrix.kinds) { kind in
+                SelfHealMatrixRow(kind: kind)
+                    .settingsField(kind.id == "movie" ? "Clean up dead links" : "Self-heal \(kind.label)")
             }
         }
 

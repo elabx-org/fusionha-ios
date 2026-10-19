@@ -24,7 +24,7 @@ struct RequestRulesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SettingsPanelHeading(slug: "requestrules")
+            SettingsPanelHeading(slug: "request-rules")
             Text("Rules approve requests without a person. Order matters; the first matching rule wins. Guards win: if a guard trips, the request waits for a person even when a rule would approve it.")
                 .font(.system(size: 14)).foregroundStyle(Theme.mut)
                 .fixedSize(horizontal: false, vertical: true)

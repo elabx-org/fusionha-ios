@@ -3,7 +3,7 @@ import FusionhaKit
 
 /// Settings › Naming (web `NamingPanel`): rename / illegal-character toggles,
 /// the always-on series edition folder note, per-kind format fields, a token
-/// palette that inserts into the focused field and the live colour-coded
+/// palette that inserts at the focused field's cursor and the live colour-coded
 /// full-path preview. Reads and autosaves `GET/PUT /api/v1/naming` one key at a time.
 struct NamingSettingsPanel: View {
     @Environment(SettingsStore.self) private var settings
@@ -30,6 +30,8 @@ private struct NamingForm: View {
     @Environment(SettingsStore.self) private var store
     @State private var kind: NamingKind = .series
     @State private var drafts: [String: String] = [:]
+    /// Each field's caret / selection, so a token lands where the cursor is.
+    @State private var selections: [String: TextSelection] = [:]
     /// The field a token chip inserts into (the last one focused in this kind).
     @State private var target = "series_folder_format"
     @FocusState private var focused: String?
@@ -62,7 +64,8 @@ private struct NamingForm: View {
             .pickerStyle(.segmented)
             .onChange(of: kind) { target = NamingFormat.fields(kind)[0].key }
             ForEach(NamingFormat.fields(kind)) { field in
-                NamingFormatField(field: field, text: binding(field.key), focused: $focused) { commit(field.key) }
+                NamingFormatField(field: field, text: binding(field.key), selection: selection(field.key),
+                                  focused: $focused) { commit(field.key) }
             }
         }
         SettingsSection("Insert token — into the focused field") {
@@ -84,6 +87,10 @@ private struct NamingForm: View {
         Binding(get: { value(key) }, set: { drafts[key] = $0 })
     }
 
+    private func selection(_ key: String) -> Binding<TextSelection?> {
+        Binding(get: { selections[key] }, set: { selections[key] = $0 })
+    }
+
     /// Saves a field's draft if it changed; an empty anime format is `null`.
     private func commit(_ key: String) {
         guard let draft = drafts[key] else { return }
@@ -96,12 +103,24 @@ private struct NamingForm: View {
         }
     }
 
-    /// Appends the token to the target field; saves straight away unless the
-    /// field is still being edited (then it saves when editing ends).
+    /// Puts the token at the target field's cursor (over its selection, or
+    /// at the end when it has none) and moves the caret after it; saves
+    /// straight away unless the field is still being edited.
     private func insert(_ token: String) {
         let key = focused ?? target
-        drafts[key] = value(key) + token
+        let current = value(key)
+        let result = NamingFormat.insert(token, into: current, range: offsets(selections[key], in: current))
+        drafts[key] = result.text
+        selections[key] = TextSelection(insertionPoint: result.text.index(result.text.startIndex, offsetBy: result.caret))
         if focused != key { commit(key) }
+    }
+
+    /// A selection as character offsets into `text`, or nil when there is none.
+    private func offsets(_ selection: TextSelection?, in text: String) -> Range<Int>? {
+        guard let selection, case .selection(let range) = selection.indices,
+              range.upperBound <= text.endIndex else { return nil }
+        let lower = text.distance(from: text.startIndex, to: range.lowerBound)
+        return lower..<(lower + text.distance(from: range.lowerBound, to: range.upperBound))
     }
 }
 
@@ -109,6 +128,7 @@ private struct NamingForm: View {
 private struct NamingFormatField: View {
     let field: NamingField
     @Binding var text: String
+    @Binding var selection: TextSelection?
     var focused: FocusState<String?>.Binding
     let onCommit: () -> Void
 
@@ -122,7 +142,7 @@ private struct NamingFormatField: View {
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
-            TextField("", text: $text, prompt: Text(field.placeholder ?? "").foregroundStyle(Theme.dim))
+            TextField("", text: $text, selection: $selection, prompt: Text(field.placeholder ?? "").foregroundStyle(Theme.dim))
                 .font(.system(size: 13, design: .monospaced))
                 .foregroundStyle(Theme.txt)
                 .textInputAutocapitalization(.never)

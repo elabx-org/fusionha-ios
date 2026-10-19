@@ -6,12 +6,15 @@ import FusionhaKit
 enum ToastVariant: Sendable {
     case success, error, warning, info
 
-    var color: Color {
+    var color: Color { token.color }
+
+    /// The status token behind the variant (its wash and Monochrome pattern).
+    var token: MonoToken {
         switch self {
-        case .success: return Theme.done
-        case .error: return Theme.danger
-        case .warning: return Theme.miss
-        case .info: return Theme.grab
+        case .success: return .done
+        case .error: return .danger
+        case .warning: return .miss
+        case .info: return .grab
         }
     }
 
@@ -31,13 +34,14 @@ struct ToastMessage: Identifiable, Equatable {
     var title: String?
     var variant: ToastVariant = .success
     var duration: Double = 4
+    var action: ToastAction?
 
     static func == (lhs: ToastMessage, rhs: ToastMessage) -> Bool { lhs.id == rhs.id }
 }
 
 /// The toast viewport: stacked, centred cards above the tab bar. Each card is
-/// `icon | body | dismiss` on a translucent panel washed with its variant
-/// colour, with a 2.5pt timer bar draining over its duration.
+/// `icon | body (+ action) | dismiss` on the panel washed with its variant's
+/// status (`actWash`), with a 2.5pt timer bar that drains while it isn't held.
 struct ToastHost: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -45,7 +49,7 @@ struct ToastHost: View {
     var body: some View {
         VStack(spacing: 10) {
             ForEach(model.toasts) { toast in
-                ToastCard(toast: toast) { model.dismissToast(toast.id) }
+                ToastCard(toast: toast, clock: model.toastClock) { model.dismissToast(toast.id) }
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .offset(y: 14)))
             }
         }
@@ -57,8 +61,9 @@ struct ToastHost: View {
 
 private struct ToastCard: View {
     let toast: ToastMessage
+    let clock: ToastClock
     let dismiss: () -> Void
-    @State private var drained = false
+    @AccessibilityFocusState private var voiceOverFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -76,6 +81,7 @@ private struct ToastCard: View {
                 } else {
                     Text(toast.message).font(.system(size: 13, weight: .medium)).foregroundStyle(Theme.txt)
                 }
+                if let action = toast.action { actionButton(action) }
             }
             .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
@@ -87,34 +93,65 @@ private struct ToastCard: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Dismiss")
+            .accessibilityLabel("Dismiss notification")
         }
         .padding(.top, 13)
         .padding(.trailing, 13)
         .padding(.bottom, 15)
         .padding(.leading, 15)
-        .background {
-            ZStack(alignment: .leading) {
-                Rectangle().fill(.ultraThinMaterial)
-                Theme.panel.opacity(0.92)
-                LinearGradient(colors: [vc.opacity(0.16), .clear], startPoint: .leading, endPoint: .trailing)
-            }
-        }
-        .overlay(alignment: .bottomLeading) {
-            GeometryReader { geo in
-                Rectangle().fill(vc.opacity(0.55))
-                    .frame(width: drained ? 0 : geo.size.width, height: 2.5)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-            }
-        }
+        .overlay(alignment: .bottomLeading) { timerBar(vc) }
+        .actWash(vc, mono: toast.variant.token, radius: Theme.radius, base: Theme.panel)
         .clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line))
         .shadow(color: .black.opacity(0.55), radius: 22, y: 18)
-        .onAppear {
-            guard !reduceMotion else { return }
-            withAnimation(.linear(duration: toast.duration)) { drained = true }
-        }
+        // A finger on the card holds its clock (the web's hover pause).
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in clock.hold(toast.id, by: "press", true) }
+                .onEnded { _ in clock.hold(toast.id, by: "press", false) }
+        )
         .accessibilityElement(children: .combine)
+        .accessibilityFocused($voiceOverFocused)
+        .accessibilityActions {
+            if let action = toast.action {
+                Button(action.label) { run(action) }
+            }
+            Button("Dismiss notification", action: dismiss)
+        }
+        .onChange(of: voiceOverFocused) { _, focused in clock.hold(toast.id, by: "voiceover", focused) }
+        .onDisappear {
+            clock.hold(toast.id, by: "press", false)
+            clock.hold(toast.id, by: "voiceover", false)
+        }
+    }
+
+    private func actionButton(_ action: ToastAction) -> some View {
+        Button { run(action) } label: {
+            HStack(spacing: 5) {
+                Text(action.label)
+                Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold))
+            }
+            .font(.system(size: 13, weight: .semibold))
+            .foregroundStyle(Theme.accentText)
+            .padding(.top, 6)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func run(_ action: ToastAction) {
+        dismiss()
+        action.handler()
+    }
+
+    /// Drains with the clock; a still, full bar under Reduce Motion (web).
+    private func timerBar(_ color: Color) -> some View {
+        let fraction = reduceMotion ? 1 : (clock.remaining[toast.id] ?? 1)
+        return GeometryReader { geo in
+            Rectangle().fill(color.opacity(0.55))
+                .frame(width: geo.size.width * fraction, height: 2.5)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+                .animation(reduceMotion ? nil : .linear(duration: ToastCountdown.tick), value: fraction)
+        }
+        .accessibilityHidden(true)
     }
 }
-

@@ -19,6 +19,8 @@ struct UserEditorSheet: View {
     @State private var methods = false
     @State private var sessions = false
     @State private var confirmDelete = false
+    @State private var password = ""
+    @State private var currentPassword = ""
 
     init(user: UserAccount, roles: [RoleDetail], onChanged: @escaping () async -> Void) {
         self.user = user
@@ -43,6 +45,18 @@ struct UserEditorSheet: View {
                     Toggle("Can sign in", isOn: $active).tint(Theme.i1).disabled(isSelf)
                 } footer: {
                     Text(isSelf ? "You can’t disable your own account." : "Disabling blocks sign-in, signs out every session and stops the account’s API tokens. It can be turned back on.")
+                }
+                Section {
+                    if isSelf {
+                        SecureField("Current password", text: $currentPassword).textContentType(.password)
+                    }
+                    SecureField("Reset password (optional)", text: $password, prompt: Text("Leave blank to keep current"))
+                        .textContentType(.newPassword)
+                } header: {
+                    Text("Password")
+                } footer: {
+                    Text(isSelf ? "Enter your current password to set a new one."
+                         : "The server checks the person’s current password, so a reset only works if you know it. Otherwise use Sign-in methods.")
                 }
                 Section {
                     Button("Sign-in methods", systemImage: "lock") { methods = true }
@@ -90,11 +104,16 @@ struct UserEditorSheet: View {
         if trimmed != user.username, !trimmed.isEmpty { fields["username"] = .string(trimmed) }
         if roleId != user.roleId { fields["role_id"] = roleId.map { .int($0) } ?? .null }
         if active != (user.isActive != false) { fields["is_active"] = .bool(active) }
-        guard !fields.isEmpty else { return dismiss() }
+        let newPassword = password.trimmingCharacters(in: .whitespaces).isEmpty ? nil : password
+        guard !fields.isEmpty || newPassword != nil else { return dismiss() }
         working = true
         defer { working = false }
         do {
-            _ = try await client.updateUser(id: user.id, fields)
+            if !fields.isEmpty { _ = try await client.updateUser(id: user.id, fields) }
+            if let newPassword {
+                try await client.changePassword(userId: user.id, newPassword: newPassword,
+                                                currentPassword: isSelf ? currentPassword : "")
+            }
             await onChanged()
             dismiss()
         } catch {
