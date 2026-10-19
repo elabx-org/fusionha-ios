@@ -24,6 +24,9 @@ final class QueueStore {
     private(set) var pages = 1
     private(set) var telemetry: [Int: QueueTelemetry] = [:]
     private(set) var bandwidth: [Double] = []
+    /// The queue has held work since this tab opened, so going empty again is
+    /// "the queue just emptied" (QueueIdleSwap's `celebrate`).
+    private(set) var sawWork = false
     private var samples: [Int: (done: Double, t: Date)] = [:]
     private var query = ""
     private var generation = 0
@@ -85,6 +88,7 @@ final class QueueStore {
     private func apply(_ page: QueuePage) {
         // Polled every 1.5s: only touch what changed so unchanged sections don't re-render.
         if items != page.items { items = page.items }
+        if !page.items.isEmpty && !sawWork { sawWork = true }
         if total != page.total { total = page.total }
         let finished = page.justFinished ?? []
         if justFinished != finished { justFinished = finished }
