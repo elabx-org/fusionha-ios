@@ -38,6 +38,10 @@ extension Theme {
     /// dark grounds so small type keeps its contrast; the accent itself on Daylight.
     static var accentText: Color { isLight ? i1 : i1.mix(with: .white, by: 0.3) }
 
+    /// The Letterboxd mark (the web's `LbIcon` in `--i2`); a grey under
+    /// Monochrome, where a brand tint would read as a status.
+    static var letterboxdMark: Color { isMono ? mut : i2 }
+
     // MARK: Surfaces
 
     /// The poster's drop shadow: deep on the dark grounds, soft on Daylight.

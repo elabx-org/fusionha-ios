@@ -134,7 +134,7 @@ Done: `/me/plex-watchlist` (+ sources, sync), `/me/letterboxd`,
 poll `GET …/preview/{token}`, commit) and `/me/suggestions`.
 `App/Screens/Account/Watchlists/` has every read-model state, and
 `fusionha://account#watchlist` opens it. Discover gets the "From your
-Letterboxd" rail (`LetterboxdRail.swift`). Goldens are in
+Letterboxd" rail (`Discover/Letterboxd/`). Goldens are in
 `WatchlistSourcesTests`.
 
 ## 0.4.209–0.4.214: automatic request sources (requests, approver, admin)
