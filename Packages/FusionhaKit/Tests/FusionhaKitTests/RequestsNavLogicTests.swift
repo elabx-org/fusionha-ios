@@ -118,6 +118,15 @@ final class RequestsNavLogicTests: XCTestCase {
         XCTAssertNil(RequestsNeedYou.line(pending: nil, issues: nil))
     }
 
+    func testCountsDecodeNeedsYouAndStayOptional() throws {
+        let with = #"{"inbox":9,"waiting":0,"active":1,"available":28,"declined":2,"all":40,"needs_you":{"total":11,"requests":9,"issues":2,"open_issues":4}}"#
+        let c = try APIClient.decoder.decode(RequestCounts.self, from: Data(with.utf8))
+        XCTAssertEqual(c.needsYou?.total, 11)
+        XCTAssertEqual(c.needsYou?.openIssues, 4)
+        let old = #"{"inbox":9,"waiting":0,"active":1,"available":28,"declined":2,"all":40}"#
+        XCTAssertNil(try APIClient.decoder.decode(RequestCounts.self, from: Data(old.utf8)).needsYou)
+    }
+
     // MARK: Stage facts
 
     func testSharedRequester() {

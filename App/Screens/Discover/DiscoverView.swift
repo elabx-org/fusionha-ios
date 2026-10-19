@@ -90,7 +90,9 @@ final class DiscoverStore {
         } else {
             pendingCount = 0
         }
-        if issues, let page = try? await client.adminThreads(type: "issue", state: "OPEN") {
+        if issues, let n = try? await client.requestCounts(view: "all").needsYou {
+            issueCounts = IssueCounts(open: n.openIssues, needYou: n.issues)
+        } else if issues, let page = try? await client.adminThreads(type: "issue", state: "OPEN") {
             issueCounts = IssueCounts.of(page.items)
         } else if !issues {
             issueCounts = IssueCounts()

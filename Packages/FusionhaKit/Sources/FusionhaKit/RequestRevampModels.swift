@@ -110,6 +110,18 @@ public struct RequestCounts: Decodable, Sendable, Hashable {
     /// One bucket per automatic source over the caller's scope (MANUAL left
     /// out); nil from a server before 0.4.209.
     public let bySource: [RequestSourceCount]?
+    /// The Requests badge (0.4.220): pending requests the caller can approve
+    /// plus issues needing an admin; nil from an older server.
+    public let needsYou: RequestNeedsYou?
+}
+
+/// `needs_you` on `GET /requests/counts` (0.4.220): `total` is the badge;
+/// `openIssues` is the Issues row's count. Ignores view and filters.
+public struct RequestNeedsYou: Decodable, Sendable, Hashable {
+    public let total: Int
+    public let requests: Int
+    public let issues: Int
+    public let openIssues: Int
 }
 
 /// `GET /api/v1/requests/quota`: nil `limit` means unlimited.

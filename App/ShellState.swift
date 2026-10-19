@@ -35,6 +35,13 @@ final class ShellState {
                 if commandsActive != active { commandsActive = active }
             }
         }
+        // 0.4.220 counts both for us; older servers are counted by hand.
+        if canApproveRequests || canManageIssues,
+           let needsYou = try? await client.requestCounts(view: "all").needsYou {
+            if pendingRequests != needsYou.requests { pendingRequests = needsYou.requests }
+            if issuesNeedingAction != needsYou.issues { issuesNeedingAction = needsYou.issues }
+            return
+        }
         if canApproveRequests, let pending = try? await client.requests(status: "pending"),
            pendingRequests != pending.count {
             pendingRequests = pending.count
