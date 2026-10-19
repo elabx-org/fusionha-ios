@@ -122,6 +122,10 @@ final class DetailStore {
     var collectionFailed = false
     /// The Add-collection sheet, preselected to these films.
     var collectionAdd: CollectionAddTarget?
+    /// Who asked for this title (`GET /api/v1/requests/item/{id}`): the hero pill and the strip.
+    var requestRows: [ItemRequestRow] = []
+    /// Bumped by the hero's "Requested by" pill: the page scrolls to the strip.
+    var revealRequests = 0
 
     init(itemId: Int) {
         self.itemId = itemId
