@@ -118,14 +118,7 @@ struct QueueStateBody: View {
             if [.bytes, .waiting, .other].contains(mode), let next = item.nextStep {
                 Text(next).font(.system(size: 14)).foregroundStyle(Theme.mut)
             }
-            if item.hasPackDecisions {
-                QueuePackDecisionsView(item: item)
-            } else if let ranges = item.packRanges {
-                QueuePackLine(item: item, ranges: ranges)
-            }
-            if item.hasPackDecisions || item.packRanges != nil {
-                QueuePackEpisodesList(downloadId: item.id, fileCount: item.fileCount)
-            }
+            if QueuePackSection.shows(item) { QueuePackSection(item: item) }
         }
     }
 
