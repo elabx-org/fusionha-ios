@@ -22,6 +22,9 @@ final class InteractiveSearchModel {
     var triggers: [String: String] = [:]
     var toast: SearchToast?
     var grabSuccess = 0
+    /// The newest decision pass's passed-over reasons, per version (SkipReasonChips).
+    var skipGroups: [Int: [TasksLogic.ReasonGroup]] = [:]
+    private var lastDecisionRun: CommandRunDetail?
     private var started = false
 
     init(store: DetailStore, target: InteractiveTarget) {
@@ -103,6 +106,25 @@ final class InteractiveSearchModel {
                                                               episodeId: target.episodeId, seasonNumber: target.seasonNumber) {
             scopeStatus[editionId] = status
         }
+    }
+
+    /// The newest run that carries a decision trail for this title, its
+    /// REJECT/SKIP candidates in this version's scope, grouped by reason.
+    func loadSkipReasons() async {
+        guard let client = store.client, editionId != 0, skipGroups[editionId] == nil else { return }
+        if lastDecisionRun == nil {
+            guard let page = try? await client.systemRuns(pageSize: 50, touchedItem: store.itemId),
+                  let latest = page.items.first(where: { $0.evaluated > 0 }),
+                  let run = try? await client.systemRun(id: latest.id) else { return }
+            lastDecisionRun = run
+        }
+        guard let run = lastDecisionRun else { return }
+        let tier = edition?.tier
+        let passed = run.candidates.filter { c in
+            (c.action == "REJECT" || c.action == "SKIP")
+                && RunVersionScope.candidateInScope(candidateVersionId: c.versionId, quality: c.quality, versionId: editionId, tier: tier)
+        }
+        skipGroups[editionId] = TasksLogic.groupByReason(passed)
     }
 
     private func loadCooldown() async {

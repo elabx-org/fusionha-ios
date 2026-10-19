@@ -86,7 +86,7 @@ struct HistoryTab: View {
                 switch view {
                 case .timeline: HistoryTimeline(detail: detail, entries: entries)
                 case .lifecycle: HistoryLifecycle(detail: detail, entries: entries)
-                case .insights: HistoryInsights(entries: entries)
+                case .insights: HistoryInsightsView(versions: store.scopedEditions, entries: entries)
                 }
             }
         }
@@ -265,73 +265,5 @@ private struct HistoryLifecycle: View {
                 .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line))
             }
         }
-    }
-}
-
-// MARK: - Insights
-
-private struct HistoryInsights: View {
-    let entries: [HistoryEntry]
-
-    var body: some View {
-        let imports = entries.filter { $0.eventType == "IMPORTED" }.sorted { $0.createdAt < $1.createdAt }
-        let scores = imports.compactMap(\.cfScore)
-        let net = (scores.last ?? 0) - (scores.first ?? 0)
-        let grabs = entries.filter { $0.eventType == "GRABBED" }.count
-        let failures = entries.filter { $0.eventType.contains("FAILED") }.count
-        VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("NET CF SCORE GAINED").font(.system(size: 11, weight: .bold)).tracking(0.6).foregroundStyle(Theme.dim)
-                Text("\(net >= 0 ? "+" : "")\(net)")
-                    .font(.system(size: 30, weight: .heavy, design: .monospaced))
-                    .foregroundStyle(net > 0 ? Theme.done : Theme.txt)
-                if scores.count > 1 {
-                    Sparkline(values: scores.map(Double.init)).frame(height: 36)
-                }
-            }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 11))
-            .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line))
-            HStack(spacing: 8) {
-                stat("Grabs", grabs, Theme.grab)
-                stat("Imports", imports.count, Theme.done)
-                stat("Failures", failures, Theme.danger)
-            }
-        }
-    }
-
-    private func stat(_ label: String, _ value: Int, _ color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("\(value)").font(.system(size: 20, weight: .heavy, design: .monospaced)).foregroundStyle(color)
-            Text(label.uppercased()).font(.system(size: 11, weight: .bold)).tracking(0.5).foregroundStyle(Theme.dim)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 11))
-        .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line))
-    }
-}
-
-private struct Sparkline: View {
-    let values: [Double]
-    @State private var drawn = false
-
-    var body: some View {
-        GeometryReader { geo in
-            let lo = values.min() ?? 0, hi = values.max() ?? 1
-            let span = max(hi - lo, 1)
-            Path { path in
-                for (i, v) in values.enumerated() {
-                    let x = geo.size.width * CGFloat(i) / CGFloat(max(values.count - 1, 1))
-                    let y = geo.size.height * (1 - CGFloat((v - lo) / span))
-                    if i == 0 { path.move(to: CGPoint(x: x, y: y)) } else { path.addLine(to: CGPoint(x: x, y: y)) }
-                }
-            }
-            .trim(from: 0, to: drawn ? 1 : 0)
-            .stroke(Theme.done, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-        }
-        .detailAnimation(.easeOut(duration: 0.8), value: drawn)
-        .onAppear { drawn = true }
     }
 }

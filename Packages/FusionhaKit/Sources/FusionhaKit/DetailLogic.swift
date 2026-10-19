@@ -40,6 +40,9 @@ public enum DetailText {
         return nil
     }
 
+    /// `formatScore` (detail-format.ts): a signed custom-format score, `+120` / `0` / `-40`.
+    public static func score(_ value: Int) -> String { value > 0 ? "+\(value)" : "\(value)" }
+
     /// `formatBytes` (detail-format.ts): base 1024, ≥100 rounded, else one decimal.
     public static func bytes(_ value: Double?) -> String {
         guard let size = value, size.isFinite, size > 0 else { return "0 B" }

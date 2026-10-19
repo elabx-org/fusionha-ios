@@ -77,9 +77,6 @@ struct DetailTabsView: View {
         }
         .padding(.top, 22)
         .detailAnimation(.easeInOut(duration: 0.3), value: current)
-        .task(id: current) {
-            if current == .searches && !store.runsLoaded { await store.loadRuns() }
-        }
     }
 
     @ViewBuilder

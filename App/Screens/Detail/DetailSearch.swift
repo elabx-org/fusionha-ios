@@ -76,6 +76,7 @@ struct InteractiveSearchPane: View {
                 VStack(alignment: .leading, spacing: 0) {
                     if let status = model.scopeStatus[model.editionId] { ScopeStatusStrip(status: status) }
                     if !model.cooldown.isEmpty { CooldownNotice(indexers: model.cooldown) }
+                    SkipReasonChips(groups: model.skipGroups[model.editionId] ?? []) { model.store.viewTrail() }
                     if model.editions.count > 1 {
                         SearchEditionToggle(model: model)
                         SearchedStrip(model: model)
@@ -134,7 +135,10 @@ struct InteractiveSearchPane: View {
         .animation(reduce ? nil : .easeOut(duration: 0.2), value: model.toast)
         .sensoryFeedback(.success, trigger: model.grabSuccess)
         .task { await model.start() }
-        .task(id: model.editionId) { await model.loadScopeStatus() }
+        .task(id: model.editionId) {
+            await model.loadScopeStatus()
+            await model.loadSkipReasons()
+        }
         .task(id: model.toast?.id) {
             guard model.toast != nil else { return }
             do { try await Task.sleep(for: .seconds(2.6)) } catch { return }

@@ -18,12 +18,14 @@ extension DetailStore {
             let grabbed = decisions.filter(\.grabbed)
             flash = SearchFlash(phase: .done, scope: label, grabbed: grabbed.count, score: grabbed.compactMap(\.score).max())
             if grabbed.isEmpty {
-                show("Searched \(label) — nothing grabbed", variant: .warning)
+                // A completed no-grab: amber, never red, with the pause reason when auto was paused.
+                show(SearchPauseNote.nothingGrabbed(label, note: pauseNote(editionId: editionId, season: season, episodeId: episodeId)),
+                     variant: .warning, actionLabel: "View trail") { [weak self] in self?.viewTrail() }
             } else {
                 let versions = Set(grabbed.compactMap(\.editionId)).count
                 let n = max(versions, 1)
                 show("Searching \(label) — grabbing \(n) version\(n == 1 ? "" : "s")", variant: .success,
-                     actionLabel: "View trail") { [weak self] in self?.tab = .searches }
+                     actionLabel: "View trail") { [weak self] in self?.viewTrail() }
             }
             scheduleFlashClear()
             await reload()
@@ -34,6 +36,29 @@ extension DetailStore {
             show("Couldn't search \(label)", variant: .error)
             return nil
         }
+    }
+
+    /// "View trail": the Searches tab (closing the search or episode sheet first).
+    func viewTrail() {
+        interactive = nil
+        episodeSheet = nil
+        tab = .searches
+    }
+
+    /// `pauseToastNote` for this search's scope: an episode's failed-download
+    /// cooldown, or a season's empty-search backoff.
+    private func pauseNote(editionId: Int?, season: Int?, episodeId: Int?) -> String? {
+        let ids = Set(editionId.map { [$0] } ?? scopedEditions.map(\.id))
+        let clock: (Date) -> String = { $0.formatted(date: .omitted, time: .shortened) }
+        if let episodeId {
+            return SearchPauseNote.note(cooldown: SearchPauseNote.cooldown(pauses, episodeId: episodeId, versionIds: ids),
+                                        backoff: nil, clock: clock)
+        }
+        if let season {
+            return SearchPauseNote.note(cooldown: nil, backoff: SearchPauseNote.backoff(pauses, season: season, versionIds: ids),
+                                        clock: clock)
+        }
+        return nil
     }
 
     func scheduleFlashClear() {
