@@ -1,7 +1,8 @@
 import SwiftUI
 import FusionhaKit
 
-/// One account: rename, role, enable / disable, sessions, request policy, its
+/// One account: rename, role, enable / disable, sign-in methods, request
+/// policy, per-instance access (non-admins), sessions, its
 /// automatic request sources (Plex watchlist, Letterboxd), delete.
 struct UserEditorSheet: View {
     let user: UserAccount
@@ -15,6 +16,7 @@ struct UserEditorSheet: View {
     @State private var working = false
     @State private var error: String?
     @State private var policy = false
+    @State private var methods = false
     @State private var sessions = false
     @State private var confirmDelete = false
 
@@ -43,7 +45,13 @@ struct UserEditorSheet: View {
                     Text(isSelf ? "You can’t disable your own account." : "Disabling blocks sign-in, signs out every session and stops the account’s API tokens. It can be turned back on.")
                 }
                 Section {
+                    Button("Sign-in methods", systemImage: "lock") { methods = true }
                     Button("Request policy", systemImage: "slider.horizontal.3") { policy = true }
+                    if !user.isAdmin {
+                        NavigationLink { UserAccessScreen(user: user) } label: {
+                            Label("Manage per-instance access…", systemImage: "key")
+                        }
+                    }
                     Button("Signed-in devices" + ((user.activeSessionCount ?? 0) > 0 ? " · \(user.activeSessionCount ?? 0)" : ""),
                            systemImage: "iphone.and.arrow.forward") { sessions = true }
                 }
@@ -61,6 +69,9 @@ struct UserEditorSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) { Button(working ? "Saving…" : "Save") { Task { await save() } } }
+            }
+            .sheet(isPresented: $methods) {
+                SignInMethodsSheet(user: user, onChanged: onChanged).presentationBackground(Theme.panel)
             }
             .sheet(isPresented: $policy) { RequestPolicySheet(target: .user(user.id, user.displayName)) }
             .sheet(isPresented: $sessions) { AccountSessionsSheet(userId: user.id, title: "\(user.displayName)’s devices") }
