@@ -110,19 +110,7 @@ enum ActFmt {
         return "in \(remaining / 3600)h \(String(format: "%02d", (remaining % 3600) / 60))m"
     }
 
-    private static let qualityLabels: [String: String] = [
-        "REMUX_2160P": "Bluray-2160p Remux", "BLURAY_2160P": "Bluray-2160p", "WEBDL_2160P": "WEBDL-2160p",
-        "WEBRIP_2160P": "WEBRip-2160p", "HDTV_2160P": "HDTV-2160p", "REMUX_1080P": "Bluray-1080p Remux",
-        "BLURAY_1080P": "Bluray-1080p", "WEBDL_1080P": "WEBDL-1080p", "WEBRIP_1080P": "WEBRip-1080p",
-        "RAWHD": "Raw-HD", "HDTV_1080P": "HDTV-1080p", "BLURAY_720P": "Bluray-720p", "WEBDL_720P": "WEBDL-720p",
-        "WEBRIP_720P": "WEBRip-720p", "HDTV_720P": "HDTV-720p", "BLURAY_576P": "Bluray-576p",
-        "BLURAY_480P": "Bluray-480p", "DVD": "DVD", "DVDR": "DVD-R", "WEBDL_480P": "WEBDL-480p",
-        "WEBRIP_480P": "WEBRip-480p", "SDTV": "SDTV", "BRDISK": "BR-DISK", "DVDSCR": "DVDSCR",
-        "REGIONAL": "REGIONAL", "TELECINE": "TELECINE", "TELESYNC": "TELESYNC", "CAM": "CAM",
-        "WORKPRINT": "WORKPRINT", "UNKNOWN": "Unknown",
-    ]
-
-    static func quality(_ raw: String) -> String { qualityLabels[raw] ?? raw }
+    static func quality(_ raw: String) -> String { QualityLabels.text(raw) }
 
     static func protocolLabel(_ raw: String?) -> String? {
         guard let raw else { return nil }

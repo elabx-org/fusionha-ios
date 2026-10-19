@@ -27,6 +27,22 @@ final class IdleSummaryTests: XCTestCase {
         XCTAssertTrue(try summary { $0["disk"] = NSNull() }.isReady)   // unreadable disk doesn't block
     }
 
+    func testReadinessCopy() throws {
+        let s = try summary()
+        XCTAssertEqual(s.clientsToggleLabel, "2 clients")
+        XCTAssertTrue(s.allClientsOn)
+        XCTAssertEqual(s.rootsVolumesText, "2 roots, one volume")
+        XCTAssertEqual(s.indexersSubText, "1 in backoff · 21 grabs 24h")
+        XCTAssertEqual(s.rssSubText, "every 15 min · last took 3s")
+        XCTAssertEqual(s.searchSubText(upgradeClock: "21:37"), "Missing")   // no upgrade task
+        XCTAssertEqual(s.freeFraction, 0.33, accuracy: 0.001)
+        XCTAssertFalse(s.diskLow)
+        let rss = try XCTUnwrap(s.tasks.rss?.nextRunDate)
+        // Due at 22:38:00.123, last took 3.2 s → refetch 8.2 s after it.
+        XCTAssertEqual(try XCTUnwrap(IdleTime.refetchDelay(s.tasks, now: rss.addingTimeInterval(-60))), 68.2, accuracy: 0.01)
+        XCTAssertEqual(try XCTUnwrap(IdleTime.refetchDelay(s.tasks, now: rss.addingTimeInterval(5))), 5, accuracy: 0.01)
+    }
+
     func testLabels() {
         XCTAssertEqual(IdleSummary.everyLabel(seconds: 900), "every 15 min")
         XCTAssertEqual(IdleSummary.everyLabel(seconds: 43_200), "every 12 h")
