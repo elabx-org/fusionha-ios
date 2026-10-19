@@ -452,8 +452,12 @@ Rules: no toolbar content in-content except the listed "stays" items; every item
 symbol from the CLAUDE.md icon set and a text label (the vertical bar shows the symbol,
 overflow shows the label). Tick a row with its build number.
 
-### Follow-ups after B6/B7 (build 440)
-- Episode sheet's Search tab: its `InteractiveSearchModel` is not parked across fold/unfold (DC3 gap).
-- Activity, Calendar and sign-in toasts still use their own toast; move to `model.toast`.
-- SI1: OIDC sign-in and living-media poses.
-- Oversized: `AppModel` (665), `ScreenModels` (619), `DiscoverModels` (530), `DetailLogic` (481), `CalendarModels` (456), `EditItemSheet` (335).
+### Batch F: follow-ups after B6/B7 (queued after D1; fusionha #63)
+
+| Row | Item | Done |
+|---|---|---|
+| F1 | Users: search field (web parity) | ☐ |
+| F2 | SI1: OIDC sign-in and the living-media poses | ☐ |
+| F3 | Episode sheet's Search tab: park its `InteractiveSearchModel` across fold/unfold (DC3: no lost state) | ☐ |
+| F4 | Activity, Calendar and sign-in toasts on `model.toast`, so Q-DC9 hinge placement applies everywhere | ☐ |
+| F5 | Split oversized files to ~300–400 lines: `AppModel` (665), `ScreenModels` (619), `DiscoverModels` (530), `DetailLogic` (481), `CalendarModels` (456), `EditItemSheet` (335) | ☐ |
