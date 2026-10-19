@@ -45,7 +45,7 @@ struct BoardStageRow: View {
                 Text("Needs a manual import").fontWeight(.semibold).foregroundStyle(Theme.stuck).lineLimit(1)
             } else if let pct = lead?.progressPct {
                 Text(verbatim: "\(pct)%").fontWeight(.bold).monospacedDigit().foregroundStyle(Theme.grab)
-                Text(parts()).lineLimit(1)
+                Text(parts(DownloadTimeLeft.text(lead?.etaSeconds))).lineLimit(1)
             } else {
                 Text(parts(lead.map { RequestLifecycle.stepWord($0).capitalizedFirst })).lineLimit(1)
             }

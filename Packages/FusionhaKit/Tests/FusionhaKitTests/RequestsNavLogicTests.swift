@@ -85,6 +85,27 @@ final class RequestsNavLogicTests: XCTestCase {
         XCTAssertEqual(words(RequestBoardSummary.parts(pending: 0, downloading: 0, available: 0)), ["No requests yet"])
     }
 
+    // MARK: 0.4.216
+
+    func testTimeLeft() {
+        XCTAssertNil(DownloadTimeLeft.text(nil))
+        XCTAssertEqual(DownloadTimeLeft.text(30), "less than a minute left")
+        XCTAssertEqual(DownloadTimeLeft.text(720), "about 12 min left")
+        XCTAssertEqual(DownloadTimeLeft.text(5400), "about 1.5 h left")
+        XCTAssertEqual(DownloadTimeLeft.text(7200), "about 2 h left")
+        XCTAssertEqual(DownloadTimeLeft.text(50000), "about 14 h left")
+    }
+
+    func testLifecycleEtaAndThreadLastMessageDecode() throws {
+        let r = request(#""lifecycle":[{"tier":"HD-1080p","step":"downloading","progress_pct":62,"needs_manual_import":false,"importing":false,"eta_seconds":720}]"#)
+        XCTAssertEqual(r.lifecycle?.first?.etaSeconds, 720)
+        let json = #"{"type":"request","id":5,"title":"Chime","last_message":{"author_name":"Sam","author_kind":"user","text":"Can this be 4K as well?","at":"2026-10-19T05:00:00"}}"#
+        let item = try APIClient.decoder.decode(ThreadItem.self, from: Data(json.utf8))
+        XCTAssertEqual(item.lastMessage?.line, "Sam: Can this be 4K as well?")
+        let bare = try APIClient.decoder.decode(ThreadLastMessage.self, from: Data(#"{"text":"Hello","at":"2026-10-19T05:00:00"}"#.utf8))
+        XCTAssertEqual(bare.line, "Hello")
+    }
+
     // MARK: Stage facts
 
     func testSharedRequester() {

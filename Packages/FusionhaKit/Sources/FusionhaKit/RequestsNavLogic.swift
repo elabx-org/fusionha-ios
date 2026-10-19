@@ -118,6 +118,18 @@ public enum RequestBoardSummary {
     }
 }
 
+/// "about 12 min left" from the server's `eta_seconds` (0.4.216); nil hides it.
+public enum DownloadTimeLeft {
+    public static func text(_ seconds: Int?) -> String? {
+        guard let seconds, seconds >= 0 else { return nil }
+        if seconds < 60 { return "less than a minute left" }
+        let minutes = Int((Double(seconds) / 60).rounded())
+        if minutes < 60 { return "about \(minutes) min left" }
+        let hours = Double(seconds) / 3600
+        return hours < 10 ? "about \(String(format: "%.1f", hours).replacingOccurrences(of: ".0", with: "")) h left" : "about \(Int(hours.rounded())) h left"
+    }
+}
+
 /// The phone Board's per-stage facts (Final mock): "all by eafx" when every
 /// row in a stage shares a requester, and how many rows a stage shows before
 /// "Show all N".

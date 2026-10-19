@@ -18,23 +18,27 @@ struct RequestInsightsView: View {
         return w.year.map { "\(title) (\($0))" } ?? title
     }
 
+    /// "last 12 weeks" from the server, else what this view asks for.
+    private var window: String { data?.windowLabel ?? "last 12 weeks" }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("Insights").font(Theme.display(26)).foregroundStyle(Theme.txt)
+            // The header row names the view; this says which window the cards cover (0.4.216).
+            Text(window.capitalizedFirst).font(.system(size: 13)).foregroundStyle(Theme.mut)
             if let data {
                 tiles(data)
                 card("Requests decided per day") { OutcomeChart(days: data.perDay) }
                 card("Top requesters") {
                     RankList(items: data.topRequesters.map { ($0.person.displayName, $0.requests) }, color: Theme.i1,
-                             empty: "No requests in the last 30 days")
+                             empty: "No requests in the \(window)")
                 }
                 card("Most wanted") {
                     RankList(items: data.mostWanted.map { w in (Self.wantedName(w), w.people) },
-                             color: Theme.i2, empty: "Nothing requested in the last 30 days")
+                             color: Theme.i2, empty: "Nothing requested in the \(window)")
                 }
                 card("Decline reasons") {
                     RankList(items: data.declineReasons.map { (RequestInsights.reasonLabel($0.reason), $0.count) }, color: Theme.danger,
-                             empty: "No requests declined in the last 30 days")
+                             empty: "No requests declined in the \(window)")
                 }
             } else {
                 Text(failed ? "Insights are unavailable right now. We will try again shortly." : "Loading insights…")

@@ -204,6 +204,8 @@ public struct QueueItem: Decodable, Sendable, Identifiable, Hashable {
     public let edition: String?
     /// The title tracks more than one edition, so Standard is named too.
     public let hasMultipleEditions: Bool?
+    /// The download client's time left (0.4.216); nil when it doesn't know.
+    public let etaSeconds: Int?
 
     public var fraction: Double { min(max(progress / 100, 0), 1) }
 }

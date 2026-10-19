@@ -61,9 +61,11 @@ public struct RequestLifecycleEntry: Decodable, Sendable, Hashable {
     public let availableFrom: String?
     public let needsManualImport: Bool
     public let importing: Bool
+    /// The download client's time left while downloading (0.4.216); nil when unknown.
+    public let etaSeconds: Int?
 
     public init(tier: QualityTier, edition: String? = nil, step: Step, progressPct: Int? = nil, nextRetryAt: String? = nil,
-                availableFrom: String? = nil, needsManualImport: Bool = false, importing: Bool = false) {
+                availableFrom: String? = nil, needsManualImport: Bool = false, importing: Bool = false, etaSeconds: Int? = nil) {
         self.tier = tier
         self.edition = edition
         self.step = step
@@ -72,6 +74,7 @@ public struct RequestLifecycleEntry: Decodable, Sendable, Hashable {
         self.availableFrom = availableFrom
         self.needsManualImport = needsManualImport
         self.importing = importing
+        self.etaSeconds = etaSeconds
     }
 }
 

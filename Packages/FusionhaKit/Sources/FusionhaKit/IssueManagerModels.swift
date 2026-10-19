@@ -112,11 +112,28 @@ public struct ThreadItem: Decodable, Sendable, Hashable, Identifiable {
     public let request: MediaRequest?
     public let issue: MediaIssue?
     public let linkedPendingRequestId: Int?
+    /// The newest human message (0.4.216): the row shows "Author: text".
+    public let lastMessage: ThreadLastMessage?
 
     public var id: String { "\(type):\(rawId)" }
 
     enum CodingKeys: String, CodingKey {
-        case type, rawId = "id", lastEventAt, title, year, poster, request, issue, linkedPendingRequestId
+        case type, rawId = "id", lastEventAt, title, year, poster, request, issue, linkedPendingRequestId, lastMessage
+    }
+}
+
+/// A thread row's newest human message (`LastMessageRead`); system lines are
+/// skipped and `text` is cut to about 140 characters by the server.
+public struct ThreadLastMessage: Decodable, Sendable, Hashable {
+    public let authorName: String?
+    public let authorKind: String?
+    public let text: String
+    public let at: String
+
+    /// "Sam: Can this be 4K as well?", or the text alone with no author.
+    public var line: String {
+        guard let name = authorName, !name.isEmpty else { return text }
+        return "\(name): \(text)"
     }
 }
 

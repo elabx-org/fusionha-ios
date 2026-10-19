@@ -110,6 +110,8 @@ final class QueueStore {
             } else if let old = telemetry[item.id] {
                 tel = old
             }
+            // The download client's own estimate wins when the server sends one (0.4.216).
+            if let server = item.etaSeconds { tel.eta = Double(server) }
             next[item.id] = tel
             if !item.isPhaseMode, [.downloading, .stalled, .awaiting].contains(item.cockpitState) { aggregate += tel.bps }
         }

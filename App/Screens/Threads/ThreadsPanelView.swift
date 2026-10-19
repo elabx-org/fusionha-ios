@@ -137,6 +137,9 @@ struct ThreadRowView: View {
                      + Text(ThreadMeta.waitingOn(item).map { " · waiting on \($0)" } ?? "").foregroundColor(Theme.mut))
                         .font(.system(size: 12)).foregroundStyle(Theme.txt).lineLimit(1)
                 }
+                if let message = item.lastMessage {
+                    Text(message.line).font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineLimit(1)
+                }
             }
             Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 6) {
@@ -146,7 +149,7 @@ struct ThreadRowView: View {
                     Text(ThreadMeta.stateLabel(item)).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(Theme.mut)
                 }
                 HStack(spacing: 4) {
-                    if ThreadMeta.hasUnread(item) { Circle().fill(Theme.i2).frame(width: 7, height: 7).accessibilityLabel("Unread") }
+                    if ThreadMeta.hasUnread(item) { Circle().fill(Theme.primary).frame(width: 8, height: 8).accessibilityLabel("Unread") }
                     Text(ActFmt.relative(item.lastEventAt)).font(.system(size: 11.5)).foregroundStyle(Theme.dim)
                 }
             }

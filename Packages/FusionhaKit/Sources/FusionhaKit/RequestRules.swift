@@ -187,6 +187,12 @@ public struct RequestInsights: Decodable, Sendable {
     public let topRequesters: [Requester]
     public let mostWanted: [Wanted]
     public let declineReasons: [Reason]
+    /// The window the cards cover (0.4.216): "last 12 weeks".
+    public let weeks: Int?
+    public let windowStart: String?
+
+    /// "last 12 weeks", or nil on an older server.
+    public var windowLabel: String? { weeks.map { "last \($0) week\($0 == 1 ? "" : "s")" } }
 
     /// "2d 4h" / "3h 12m" / "40m"; "—" with nothing to measure.
     public static func hours(_ h: Double?) -> String {
