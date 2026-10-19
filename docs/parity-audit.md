@@ -435,18 +435,18 @@ Anton title are retired. The title uses the system font, and the avatar becomes 
 
 | Screen | Header actions today | Toolbar placement (priority) | Stays in content | Done |
 |---|---|---|---|---|
-| Library | Add (+), Library stats, avatar | `.primaryAction` Add · `.secondaryAction` Stats · Account | filter chips, segmented, select bar (D3: system `bottomBar`) | ✅ D1 (build pending) |
-| Discover | Add (+), avatar | `.primaryAction` Add · Account | Browse/Requests segmented, rails | ✅ D1 (build pending) |
+| Library | Add (+), Library stats, avatar | `.primaryAction` Add · `.secondaryAction` Stats · Account | filter chips, segmented, select bar (D3: system `bottomBar`) | ✅ build 450 |
+| Discover | Add (+), avatar | `.primaryAction` Add · Account | Browse/Requests segmented, rails | ✅ build 450 |
 | Requests | pane menu (title ▾), filter, avatar | title menu via `.toolbarTitleMenu` · `.primaryAction` Filter · Account | summary line, pills | ✅ D1 (build pending; pane menu stays in content, see notes) |
-| Activity | Manual import, avatar | `.primaryAction` Manual import · Account | Queue/History/Blocklist/Tasks segmented | ✅ D1 (build pending) |
-| Calendar | ‹ Today ›, iCal menu (admin), week style (week view), avatar | `.primaryAction` Today · `.secondaryAction` iCal, week style · Account | prev/next capsule, kind chips | ✅ D1 (build pending) |
-| Wanted | Add (+) | `.primaryAction` Add · Account | summary line, tabs | ✅ D1 (build pending) |
-| Search | avatar | Account; retry `.searchable` (DC11) | results | ✅ D1 (build pending) |
-| You | avatar | Account | hub rows | ✅ D1 (build pending) |
-| Settings (cover) | Close | `.cancellationAction` Close (system) | subtitle "DB-backed · effective without restart" | ✅ D1 (build pending) |
-| Item detail sheet | custom ✕ (DC10) | `.cancellationAction` Close; hero stays clean | hero, edition chips | ✅ D1 (build pending) |
+| Activity | Manual import, avatar | `.primaryAction` Manual import · Account | Queue/History/Blocklist/Tasks segmented | ✅ build 450 |
+| Calendar | ‹ Today ›, iCal menu (admin), week style (week view), avatar | `.primaryAction` Today · `.secondaryAction` iCal, week style · Account | prev/next capsule, kind chips | ✅ build 450 |
+| Wanted | Add (+) | `.primaryAction` Add · Account | summary line, tabs | ✅ build 450 |
+| Search | avatar | Account; retry `.searchable` (DC11) | results | ✅ build 450 |
+| You | avatar | Account | hub rows | ✅ build 450 |
+| Settings (cover) | Close | `.cancellationAction` Close (system) | subtitle "DB-backed · effective without restart" | ✅ build 450 |
+| Item detail sheet | custom ✕ (DC10) | `.cancellationAction` Close; hero stays clean | hero, edition chips | ✅ build 450 |
 | Add / Request modal / trailer | custom ✕ (DC10) | `.cancellationAction` Close | — | ◐ D1 (build pending; Add configure step keeps PreviewHero ✕, see notes) |
-| Text-only sheet buttons (DC12, ~25 sheets) | Cancel / Save / state-swapping text | `.cancellationAction` / `.confirmationAction`; close-only sheets opt out of vertical bars (#60) | — | ✅ D1 (build pending) |
+| Text-only sheet buttons (DC12, ~25 sheets) | Cancel / Save / state-swapping text | `.cancellationAction` / `.confirmationAction`; close-only sheets opt out of vertical bars (#60) | — | ✅ build 450 |
 
 Rules: no toolbar content in-content except the listed "stays" items; every item has a
 symbol from the CLAUDE.md icon set and a text label (the vertical bar shows the symbol,
@@ -510,7 +510,7 @@ web has no server step; iOS owns it.
 - **No carousel, no feature slides.** Duo: the stage spans; on the inner display the
   card stays off the hinge (DC17).
 
-D1 notes (build pending):
+D1 notes (build 450):
 - **Requests:** the pane menu (view name ▾) stays in content above the summary. Requests is a segment of the
   Discover tab, so a `.toolbarTitleMenu` would hang the pane switch off the title "Discover". Filter (with its
   count as a badge) and Inbox's Select / Done are toolbar items; Select stays horizontal (`axisBehavior`).
