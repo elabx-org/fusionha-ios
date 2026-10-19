@@ -67,8 +67,8 @@ struct HistoryInsightsView: View {
         }
     }
 
-    private func card(_ symbol: String, _ tone: Color, value: String, label: String,
-                      @ViewBuilder sub: () -> some View) -> some View {
+    private func card<Sub: View>(_ symbol: String, _ tone: Color, value: String, label: String,
+                                 @ViewBuilder sub: () -> Sub) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .semibold))
@@ -167,7 +167,7 @@ private struct ProvenanceSwimlane: View {
                     y: .value("Slot", lane.label), height: .fixed(24))
                 .foregroundStyle(color.opacity(seg.isCurrent ? 0.85 : 0.35))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
-                .accessibilityLabel(seg.title + (seg.score.map { " · \(DetailText.score($0))" } ?? ""))
+                .accessibilityLabel(Text(seg.title + (seg.score.map { " · \(DetailText.score($0))" } ?? "")))
         }
         .chartXScale(domain: start...max(Date(), start.addingTimeInterval(86_400)))
         .chartYAxis(.hidden)

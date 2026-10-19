@@ -133,7 +133,7 @@ private struct EpisodeHistoryPane: View {
     let seasonNumber: Int
 
     var body: some View {
-        let ids = detail.scopeEditionIds(store.scope).map(Set.init)
+        let ids = detail.scopeEditionIds(store.scope)
         let rows = EpisodeHistory.rows(detail.history ?? [], episodeId: episode.id, seasonNumber: seasonNumber, versionIds: ids)
         if rows.isEmpty {
             EmptyBox(message: "No history yet for this episode.")

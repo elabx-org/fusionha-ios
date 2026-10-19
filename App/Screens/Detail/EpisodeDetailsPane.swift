@@ -36,7 +36,7 @@ struct EpisodeDetailsPane: View {
         }
     }
 
-    private func row(_ label: String, @ViewBuilder value: () -> some View) -> some View {
+    private func row<V: View>(_ label: String, @ViewBuilder value: () -> V) -> some View {
         HStack {
             Text(label).font(.system(size: 13)).foregroundStyle(Theme.mut)
             Spacer(minLength: 8)

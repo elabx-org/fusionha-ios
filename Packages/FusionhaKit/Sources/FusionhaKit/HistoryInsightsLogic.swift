@@ -61,18 +61,18 @@ public enum HistoryInsightsLogic {
             .sorted { ($0.1, $0.0.id) < ($1.1, $1.0.id) }
     }
 
-    static func imports(_ events: [HistoryEntry], version: Int) -> [(HistoryEntry, Date)] {
+    static func importsOf(_ events: [HistoryEntry], version: Int) -> [(HistoryEntry, Date)] {
         ascending(events.filter { $0.editionId == version && $0.eventType == "IMPORTED" })
     }
 
     public static func stats(_ versions: [DetailEdition], _ events: [HistoryEntry],
                              calendar: Calendar = .current) -> Stats {
-        var upgrades = 0, net = 0, any = false
+        var upgrades = 0, net = 0, anyImport = false
         var byTier: [TierCount] = []
         for version in versions {
-            let imports = imports(events, version: version.id)
+            let imports = importsOf(events, version: version.id)
             guard !imports.isEmpty else { continue }
-            any = true
+            anyImport = true
             let extra = imports.count - 1
             if extra > 0 {
                 upgrades += extra
@@ -89,7 +89,7 @@ public enum HistoryInsightsLogic {
         }
         let indexers = Set(events.filter { $0.eventType == "GRABBED" }.compactMap(\.indexer).filter { !$0.isEmpty })
         return Stats(eventsCount: events.count, daySpanLabel: daySpan(events, calendar: calendar),
-                     upgradesCount: upgrades, upgradesByTier: byTier, netScore: net, hasAnyImport: any,
+                     upgradesCount: upgrades, upgradesByTier: byTier, netScore: net, hasAnyImport: anyImport,
                      indexerNames: indexers.sorted { $0.localizedCompare($1) == .orderedAscending })
     }
 
@@ -102,12 +102,12 @@ public enum HistoryInsightsLogic {
 
     /// The hero sparkline: every import's score, oldest first.
     public static func sparkline(_ events: [HistoryEntry]) -> [Int] {
-        ascending(events.filter { $0.eventType == "IMPORTED" && $0.cfScore != nil }).compactMap(\.0.cfScore)
+        ascending(events.filter { $0.eventType == "IMPORTED" && $0.cfScore != nil }).compactMap { $0.0.cfScore }
     }
 
     public static func progression(_ versions: [DetailEdition], _ events: [HistoryEntry]) -> [Series] {
         versions.map { version in
-            let points = imports(events, version: version.id).compactMap { e, at in e.cfScore.map { Point(at: at, score: $0) } }
+            let points = importsOf(events, version: version.id).compactMap { e, at in e.cfScore.map { Point(at: at, score: $0) } }
             return Series(versionId: version.id, label: version.label, tier: version.tier, points: points)
         }
     }
@@ -118,7 +118,7 @@ public enum HistoryInsightsLogic {
                                 now: Date = Date()) -> (lanes: [Lane], start: Date?) {
         let start = events.compactMap(time).min()
         let lanes = versions.map { version -> Lane in
-            let imports = imports(events, version: version.id)
+            let imports = importsOf(events, version: version.id)
             let segments = imports.indices.map { i in
                 Segment(title: imports[i].0.sourceTitle ?? "Unknown release", score: imports[i].0.cfScore,
                         start: imports[i].1, end: i + 1 < imports.count ? imports[i + 1].1 : now,
