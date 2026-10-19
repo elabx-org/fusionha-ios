@@ -18,6 +18,14 @@ struct ConnectPanel: View {
     @State private var adding = false
     @State private var toaster = FetchToaster()
     @State private var confirm: FetchConfirm?
+    @State private var webhookSheet: WebhookSheet?
+
+    /// The native arr webhook sheet: Add (no row) or Edit (a row and its instance).
+    private struct WebhookSheet: Identifiable {
+        let webhook: ArrWebhookGroup.Webhook?
+        var instanceLabel: String?
+        var id: String { webhook.map { "edit-\($0.id)" } ?? "add" }
+    }
 
     var body: some View {
         FetchingPage(slug: "connect", toaster: toaster, confirm: $confirm, refresh: load) {
@@ -38,6 +46,9 @@ struct ConnectPanel: View {
         }
         .sheet(item: $editing) { agent in
             NotificationAgentSheet(agent: agent) { await load() }
+        }
+        .sheet(item: $webhookSheet) { target in
+            ArrWebhookEditSheet(webhook: target.webhook, instanceLabel: target.instanceLabel) { await loadGroups() }
         }
     }
 
@@ -107,23 +118,19 @@ struct ConnectPanel: View {
                             MonoText(group.instanceSlug, color: Theme.dim)
                         }
                         ForEach(group.notifications) { webhook in
-                            webhookRow(webhook)
+                            webhookRow(webhook, instanceLabel: group.instanceLabel)
                                 .transition(.opacity)
                         }
                     }
                 }
             }
-            NavigationLink {
-                SettingsWebPanel(slug: "connect")
-            } label: {
-                Text("+ Add webhook")
-            }
-            .buttonStyle(.web())
+            Button("+ Add webhook") { webhookSheet = WebhookSheet(webhook: nil) }
+                .buttonStyle(.web())
         }
         .fetchCard(padding: 14, radius: 14)
     }
 
-    private func webhookRow(_ webhook: ArrWebhookGroup.Webhook) -> some View {
+    private func webhookRow(_ webhook: ArrWebhookGroup.Webhook, instanceLabel: String) -> some View {
         let chips: [(Bool?, String)] = [(webhook.onGrab, "Grab"), (webhook.onImport, "Import"), (webhook.onUpgrade, "Upgrade"),
                                         (webhook.onRename, "Rename"), (webhook.onDelete, "Delete")]
         return HStack(alignment: .top, spacing: 10) {
@@ -140,12 +147,9 @@ struct ConnectPanel: View {
                 }
             }
             Spacer(minLength: 0)
-            NavigationLink {
-                SettingsWebPanel(slug: "connect")
-            } label: {
-                Image(systemName: "pencil").font(.system(size: 14)).foregroundStyle(Theme.dim).frame(width: 34, height: 34)
+            FetchIconButton(systemName: "pencil", label: "Edit \(webhook.name)") {
+                webhookSheet = WebhookSheet(webhook: webhook, instanceLabel: instanceLabel)
             }
-            .accessibilityLabel("Edit \(webhook.name)")
             FetchIconButton(systemName: "trash", label: "Remove \(webhook.name)", danger: true) {
                 confirm = FetchConfirm(
                     title: "Remove “\(webhook.name)”?",

@@ -360,6 +360,23 @@ public struct ArrWebhookGroup: Decodable, Sendable, Hashable, Identifiable {
         public let onUpgrade: Bool?
         public let onRename: Bool?
         public let onDelete: Bool?
+        // The full `ArrWebhookRead` the native edit sheet (S4) loads from.
+        public var instanceId: Int?
+        public var method: Int?
+        public var username: String?
+        public var headers: [String: String]?
+        public var sendValidationResults: Bool?
+        public var passwordConfigured: Bool?
+        public var onDeleteForUpgrade: Bool?
+        public var onManualInteractionRequired: Bool?
+        public var onImportFailure: Bool?
+        public var onDownloadFailure: Bool?
+        public var onMediaAdded: Bool?
+        public var onMediaRemoved: Bool?
+        public var onHealthIssue: Bool?
+        public var onHealthRestored: Bool?
+        public var onApplicationUpdate: Bool?
+        public var pathMappings: [ArrWebhookPathMapping]?
     }
     public let instanceSlug: String
     public let instanceLabel: String

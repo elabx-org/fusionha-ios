@@ -48,7 +48,7 @@ struct ApproverRequestsView: View {
                 RequestsFilterSheet().environment(nav)
             }
             .fullScreenCover(isPresented: $nav.rulesOpen) {
-                SettingsView(client: model.client, initialPanel: "requestrules")
+                SettingsView(client: model.client, initialPanel: "request-rules")
             }
             .sheet(item: $thread) { request in
                 RequestThreadSheet(request: request) { store.requestsVersion += 1 }

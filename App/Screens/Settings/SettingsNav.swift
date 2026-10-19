@@ -97,8 +97,9 @@ enum SettingsNav {
         .init(id: "database", label: "Database", title: "Database",
               subtitle: "The storage backend — SQLite (default) or Postgres — with an in-app migration.",
               icon: "cylinder.split.1x2"),
-        .init(id: "requestrules", label: "Rules", title: "Request rules",
-              subtitle: "Approve requests automatically, top to bottom; guards hold one for a person.", icon: "slider.horizontal.3"),
+        // The web's slug (settings-nav-request-rules.tsx); `requestrules` is the old iOS alias.
+        .init(id: "request-rules", label: "Rules", title: "Rules",
+              subtitle: "Approve requests without a person; guards hold them for one.", icon: "checklist"),
         .init(id: "guardrails", label: "Guardrails", title: "Guardrails",
               subtitle: "The Auto-fix kill switch, its limits, and what is paused.", icon: "shield"),
         .init(id: "blocklist", label: "Blocklist", title: "Blocklist",
@@ -134,7 +135,7 @@ enum SettingsNav {
     static let sections: [SettingsSectionInfo] = [
         .init(id: "fetching", label: "Fetching",
               panels: ["clients", "indexers", "connect", "notifications", "instances"]),
-        .init(id: "requests", label: "Requests", panels: ["requestrules", "guardrails"]),
+        .init(id: "requests", label: "Requests", panels: ["request-rules", "guardrails"]),
         .init(id: "system", label: "System",
               panels: ["appearance", "system", "database", "backup", "security", "logs", "about", "versions",
                        "experimental", "discover", "maintenance"]),
@@ -142,8 +143,13 @@ enum SettingsNav {
 
     private static let byId = Dictionary(uniqueKeysWithValues: panels.map { ($0.id, $0) })
 
-    /// `editions` is the pre-0.4.122 slug of the Editions panel.
-    static func panel(_ id: String) -> SettingsPanelInfo? { byId[id == "editions" ? "versions" : id] }
+    /// Old slugs that still open their panel: `editions` (pre-0.4.122 Editions)
+    /// and `requestrules` (the pre-B7 iOS slug of Rules).
+    static let aliases = ["editions": "versions", "requestrules": "request-rules"]
+
+    static func canonical(_ id: String) -> String { aliases[id] ?? id }
+
+    static func panel(_ id: String) -> SettingsPanelInfo? { byId[canonical(id)] }
 
     /// The group or section label a panel sits under (search breadcrumbs).
     static func groupLabel(_ id: String) -> String {

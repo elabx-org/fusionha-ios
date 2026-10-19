@@ -10,6 +10,11 @@ struct SettingsField {
 }
 
 let settingsFieldIndex: [SettingsField] = [
+    // settings-search-index-request-rules.ts
+    SettingsField(panel: "request-rules", label: "Rules", keywords: ["auto-approve", "approve rules", "first match wins"]),
+    SettingsField(panel: "request-rules", label: "Guards", keywords: ["guard", "free space", "hold"]),
+    SettingsField(panel: "request-rules", label: "Add rule", keywords: ["new rule", "create"]),
+    SettingsField(panel: "request-rules", label: "Quota", keywords: ["weekly quota", "limit"]),
     SettingsField(panel: "about", label: "Copy info", keywords: ["bug report", "build", "clipboard", "commit", "diagnostics", "version"]),
     SettingsField(panel: "appearance", label: "Coverage rails", keywords: ["bar", "checkmark", "current", "dot", "fill", "glow", "library rail", "rail style", "trailing dot"]),
     SettingsField(panel: "appearance", label: "Consolidate HD + 4K", keywords: ["combine", "combo rail", "hd 4k", "merge", "single rail", "uhd"]),
