@@ -10,7 +10,7 @@ public enum ServerAddress {
     /// pasted from the browser (`https://host/library?x=1` → `https://host`).
     /// A sub-path that isn't the web app's (a reverse-proxy prefix) is kept.
     public static func clean(_ input: String) -> String {
-        var text = input.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(["\"", "'", "<", ">"]))
+        var text = input.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"'<>")))
         if let cut = text.firstIndex(where: { $0 == "?" || $0 == "#" }) { text = String(text[..<cut]) }
         let appRoutes = ["library", "discover", "calendar", "activity", "wanted", "requests", "settings", "login",
                          "search", "item", "account"]

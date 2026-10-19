@@ -187,7 +187,7 @@ struct LivingMark<Caption: View>: View {
         drawQuality(&ctx)
         if let show = engine.mediaShow {
             LivingMedia.draw(show, in: &ctx, ms: (engine.now - show.start) * 1000, mark: engine.markRect,
-                             tips: (0..<3).map(engine.tip))
+                             tips: (0..<3).map { engine.tip($0) })
         }
         for spark in engine.sparks {
             let n = spark.trail.count
