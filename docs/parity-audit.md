@@ -338,10 +338,10 @@ What it means for the app:
 
 | # | Screen · pose | Finding | Fix | Batch |
 |---|---|---|---|---|
-| DC1 | Every tab · outer / vertical bars | No tab root sits in a `NavigationStack` (`RootView.swift:68-80, 316-327`), so there is no system bar for toolbar items. Headers are custom `ShellTitleRow` rows. | A `NavigationStack` inside each `Tab`, with `.toolbar` at the tab level. | D1 |
-| DC2 | Avatar · all | The account hub, Settings cover and widget sheets are `@State` on the avatar button (`AvatarMenu.swift:13-49`). Once the avatar is in system overflow, there is nothing to present from. | Move the flags into `AppModel` and present from `ShellPresentations`. The avatar becomes a toolbar item "Account" with `.badge`. | D1 |
-| DC3 | Item detail · fold/unfold | The column builds a new `ItemDetailView`/`DetailStore` (`DuoLayout.swift:137-142`, `ItemDetailView.swift:27`). Unfolding loses scroll, tab and scope, plus any open child sheet (search, edit, add version, rename, numbering) and its drafts. | Keep the open title's store in `AppModel`. Child-sheet flags live in the store and are re-presented; `scrollPosition(id:)`. | D5 |
-| DC4 | Shell split · inner landscape + keyboard | The split is measured from `RootView` including the keyboard (`RootView.swift:41`). Typing in the Library filter drops the height below 500, so the title column collapses back into a sheet (*verify*). | Measure with `.ignoresSafeArea(.keyboard)`. | D5 |
+| DC1 | Every tab · outer / vertical bars | No tab root sits in a `NavigationStack` (`RootView.swift:68-80, 316-327`), so there is no system bar for toolbar items. Headers are custom `ShellTitleRow` rows. | A `NavigationStack` inside each `Tab`, with `.toolbar` at the tab level. | D1 · ✅ build 422 |
+| DC2 | Avatar · all | The account hub, Settings cover and widget sheets are `@State` on the avatar button (`AvatarMenu.swift:13-49`). Once the avatar is in system overflow, there is nothing to present from. | Move the flags into `AppModel` and present from `ShellPresentations`. The avatar becomes a toolbar item "Account" with `.badge`. | D1 · ✅ build 422 |
+| DC3 | Item detail · fold/unfold | The column builds a new `ItemDetailView`/`DetailStore` (`DuoLayout.swift:137-142`, `ItemDetailView.swift:27`). Unfolding loses scroll, tab and scope, plus any open child sheet (search, edit, add version, rename, numbering) and its drafts. | Keep the open title's store in `AppModel`. Child-sheet flags live in the store and are re-presented; `scrollPosition(id:)`. | D5 · ✅ build 422 |
+| DC4 | Shell split · inner landscape + keyboard | The split is measured from `RootView` including the keyboard (`RootView.swift:41`). Typing in the Library filter drops the height below 500, so the title column collapses back into a sheet (*verify*). | Measure with `.ignoresSafeArea(.keyboard)`. | D5 · ✅ build 422 |
 
 **Visible:**
 
