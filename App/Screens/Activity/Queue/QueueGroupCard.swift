@@ -8,11 +8,13 @@ struct QueueGroupCard: View {
     let group: QueueLogic.Group
     let telemetry: [Int: QueueTelemetry]
     let eta: Double?
-    let soonest: Bool
     let selecting: Bool
     @Binding var selected: Set<Int>
+    /// A deep link's download (`?focus=`): its group opens around it.
+    var focusId: Int? = nil
     let actionsFor: (QueueItem) -> QueueRowActions
-    let removeMany: (_ ids: [Int], _ blocklist: Bool, _ deleteData: Bool) -> Void
+    /// Removes the downloads one by one, then one combined toast (`use-remove-all`).
+    let removeAll: (_ items: [QueueItem], _ deleteData: Bool, _ blocklist: Bool) -> Void
     let pick: () -> Void
     @Environment(AppModel.self) private var model
     @Environment(ActRouter.self) private var router
@@ -25,11 +27,13 @@ struct QueueGroupCard: View {
     @State private var openId: Int?
     /// Collapsed by default; remembered for this run (`QueueGroupMemory`).
     @State private var groupOpen: Bool?
-    /// "Remove all": the confirmation listing every download (0.4.198).
+    /// "Remove all": the bulk remove sheet listing every download.
     @State private var confirmingRemoveAll = false
 
-    /// A pair always shows its lanes; a group remembers being opened.
-    private var isOpen: Bool { group.isPair || (groupOpen ?? QueueGroupMemory.open.contains(group.id)) }
+    private var hasFocus: Bool { focusId.map { id in group.downloads.contains { $0.id == id } } ?? false }
+
+    /// A group remembers being opened; a deep link to a member opens it.
+    private var isOpen: Bool { hasFocus || (groupOpen ?? QueueGroupMemory.open.contains(group.id)) }
 
     var body: some View {
         let downloads = group.downloads
@@ -42,13 +46,14 @@ struct QueueGroupCard: View {
                       held: downloads.filter { $0.cockpitState == .held }.count)
         let seasons = Dictionary(grouping: downloads) { season($0) }
         let isSeries = downloads.contains { $0.episodeLabel != nil }
-        ActGroupCard(wash: StatusTone(QueueGroupSummary(group: group).heldIds.isEmpty ? .grab : .stuck), base: Theme.panel,
-                     defaultOpen: group.isPair || isOpen, chevronInRow: true,
+        ActGroupCard(wash: QueueLogic.groupWash(downloads), base: Theme.panel,
+                     defaultOpen: isOpen, chevronInRow: true,
                      onToggle: { open in groupOpen = open; QueueGroupMemory.set(group.id, open: open) }) {
             ActPoster(url: lead.posterUrl, title: lead.title, size: .md)
                 .onTapGesture { model.open(group.mediaItemId) }
         } title: {
             VStack(alignment: .leading, spacing: 8) {
+                if selecting { selectAll(downloads) }
                 QueueGroupHeaderText(summary: QueueGroupSummary(group: group), open: isOpen,
                                      openTitle: { model.open(group.mediaItemId) })
                 if counts.dl > 0 {
@@ -63,7 +68,7 @@ struct QueueGroupCard: View {
                 // The group's Manual Import fills the row; the icon slots match a
                 // single card's, so every primary shares a right edge (0.4.198).
                 let summary = QueueGroupSummary(group: group)
-                if !summary.heldIds.isEmpty {
+                if !summary.heldIds.isEmpty && !selecting {
                     Button {
                         router.manualImport(rescue: summary.heldIds)
                     } label: {
@@ -110,15 +115,14 @@ struct QueueGroupCard: View {
             }
             .padding(.vertical, 8)
         }
-        .confirmationDialog(removeAllTitle(downloads), isPresented: $confirmingRemoveAll, titleVisibility: .visible) {
-            Button("Remove \(downloads.count) downloads", role: .destructive) { removeMany(downloads.map(\.id), false, false) }
-            if downloads.contains(where: { $0.hasDownloadedFile == true }) {
-                Button("Remove and delete downloaded files", role: .destructive) { removeMany(downloads.map(\.id), false, true) }
-            }
-            Button("Remove and blocklist", role: .destructive) { removeMany(downloads.map(\.id), true, false) }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(removeAllMessage(downloads))
+        // Re-made when a deep link focuses a member, so the card opens around it.
+        .id(hasFocus)
+        .sheet(isPresented: $confirmingRemoveAll) {
+            BulkRemoveDialog(count: downloads.count, fileCount: downloads.filter { $0.hasDownloadedFile == true }.count,
+                             entries: removeEntries(downloads), defaultBlocklist: false, busy: false) { deleteFiles, blocklist in
+                confirmingRemoveAll = false
+                removeAll(downloads, deleteFiles, blocklist)
+            } onCancel: { confirmingRemoveAll = false }
         }
         .task(id: rate) {
             if rate > 0 { shownRate = rate; return }
@@ -138,7 +142,7 @@ struct QueueGroupCard: View {
             if seasons.keys.compactMap({ $0 }).count >= 2 {
                 Divider()
                 ForEach(seasons.keys.compactMap { $0 }.sorted(), id: \.self) { s in
-                    Button("Remove Season \(s) (\(seasons[s]?.count ?? 0))") { removeMany((seasons[s] ?? []).map(\.id), false, false) }
+                    Button("Remove Season \(s) (\(seasons[s]?.count ?? 0))") { removeAll(seasons[s] ?? [], false, false) }
                 }
             }
             Divider()
@@ -147,16 +151,31 @@ struct QueueGroupCard: View {
         .frame(width: 40, height: 44)
     }
 
-    private func removeAllTitle(_ downloads: [QueueItem]) -> String {
-        "Remove all \(downloads.count) downloads of \(downloads[0].title)?"
+    /// "Severance · S02E03" (or the release name) with its size, per download.
+    private func removeEntries(_ downloads: [QueueItem]) -> [BulkRemoveEntry] {
+        downloads.map { item in
+            let label = QueueRemoveAllCopy.stripLabel(item.episodeLabel).map { "\(item.title) · \($0)" }
+                ?? item.releaseTitle ?? item.title
+            return BulkRemoveEntry(label: label, size: item.size)
+        }
     }
 
-    /// Every download with its size, then the total.
-    private func removeAllMessage(_ downloads: [QueueItem]) -> String {
-        let lines = downloads.prefix(12).map { "\($0.episodeLabel ?? QueueCardText.versionLabel($0)) · \(ActFmt.bytes($0.size))" }
-        let more = downloads.count > 12 ? ["+\(downloads.count - 12) more"] : []
-        let total = downloads.reduce(0) { $0 + max(0, $1.size) }
-        return (lines + more + ["Total \(ActFmt.bytes(total))"]).joined(separator: "\n")
+    /// The header's "Select all N" checkbox (web `QueueGroupCard` RowCheck).
+    private func selectAll(_ downloads: [QueueItem]) -> some View {
+        let ids = Set(downloads.map(\.id))
+        let all = ids.isSubset(of: selected)
+        return Button {
+            if all { selected.subtract(ids) } else { selected.formUnion(ids) }
+        } label: {
+            HStack(spacing: 8) {
+                ActCheckbox(checked: all)
+                Text("Select all \(downloads.count)").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
+            }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Select all \(downloads.count) \(downloads[0].title) downloads")
     }
 
     private func season(_ item: QueueItem) -> Int? {
@@ -172,14 +191,14 @@ struct QueueGroupCard: View {
         let state = item.cockpitState
         if state == .held && !selecting {
             // The web's GroupRow: the single card's parts, no poster or title.
-            QueueHeldCard(item: item, actions: actionsFor(item), nested: true, pairLane: group.isPair)
+            QueueHeldCard(item: item, actions: actionsFor(item), nested: true)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
         } else if selecting {
             compactRow(item)
         } else {
             // The same parts as a single card, without the poster and title.
-            QueueStateCard(item: item, telemetry: telemetry[item.id], actions: actionsFor(item), nested: true, pairLane: group.isPair)
+            QueueStateCard(item: item, telemetry: telemetry[item.id], actions: actionsFor(item), nested: true)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
         }
@@ -187,7 +206,7 @@ struct QueueGroupCard: View {
 
     private func compactRow(_ item: QueueItem) -> some View {
         let state = item.cockpitState
-        let stripe: Color = state == .stalled ? Theme.miss : (state == .queued ? Theme.dim : (state == .held ? Theme.stuck : Theme.grab))
+        let wash = QueueLogic.wash(item)
         let open = openId == item.id && !selecting
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
@@ -229,7 +248,7 @@ struct QueueGroupCard: View {
         .padding(.trailing, 16)
         .padding(.vertical, 8)
         // The member's state as a wash, never a left bar.
-        .background(stripe.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .actWash(wash, radius: 10, base: .clear, border: .clear)
     }
 
     /// The opened member: release, client · indexer · protocol · age, the next

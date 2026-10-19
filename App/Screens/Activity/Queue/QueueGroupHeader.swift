@@ -29,28 +29,14 @@ struct QueueGroupSummary {
 
     struct StatePart: Hashable {
         let text: String
-        let failure: Bool
+        let tone: QueueStateTone
     }
 
-    /// The states summary, failures first (`group-model.ts`): "1 failed · 3 held".
+    /// The states summary, failures first (`group-model.ts` `stateCounts`): "1 failed · 3 held".
     var states: [StatePart] {
-        func mode(_ i: QueueItem) -> String {
-            if i.outcome == "failed" || (i.phaseTerminal == true && i.phase != nil && i.phase != "complete") { return "failed" }
-            if i.lane == .retrying { return "retrying" }
-            switch i.cockpitState {
-            case .stuck: return "stuck"
-            case .held: return "held"
-            case .awaiting: return "waiting"
-            case .stalled: return "stalled"
-            case .importing: return "importing"
-            case .queued: return "queued"
-            case .downloading: return i.isPhaseMode ? "in progress" : "downloading"
-            }
-        }
-        let order = ["failed", "stuck", "held", "retrying", "waiting", "stalled", "downloading", "in progress", "importing", "queued"]
-        let counts = Dictionary(grouping: downloads, by: mode).mapValues(\.count)
-        return order.compactMap { m in
-            counts[m].map { StatePart(text: "\($0) \(m)", failure: m == "failed" || m == "stuck") }
+        let counts = Dictionary(grouping: downloads, by: QueueCardMode.init).mapValues(\.count)
+        return QueueCardMode.summaryOrder.compactMap { mode in
+            counts[mode].map { StatePart(text: "\($0) \(mode.stateLabel.text)", tone: mode.stateLabel.tone) }
         }
     }
 
@@ -107,12 +93,12 @@ struct QueueGroupHeaderText: View {
         }
     }
 
-    /// "4 downloads · 4.7 GB total · 4 held": failures red, held amber.
+    /// "4 downloads · 4.7 GB total · 4 held": failures red, held and retrying amber.
     private var countAndStates: some View {
         summary.states.reduce(Text(summary.countLine).foregroundColor(Theme.mut)) { line, part in
-            let color = part.failure ? Theme.danger : (part.text.hasSuffix("held") ? Theme.miss : Theme.mut)
+            let color = part.tone == .bad ? Theme.danger : (part.tone == .warn ? Theme.stuck : Theme.mut)
             return line + Text(" · ").foregroundColor(Theme.dim)
-                + Text(part.text).foregroundColor(color).fontWeight(part.failure || part.text.hasSuffix("held") ? .semibold : .regular)
+                + Text(part.text).foregroundColor(color).fontWeight(part.tone == .neutral ? .regular : .semibold)
         }
         .font(.system(size: 15).monospacedDigit())
         .fixedSize(horizontal: false, vertical: true)

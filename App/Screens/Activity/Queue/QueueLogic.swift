@@ -298,20 +298,4 @@ enum QueueLogic {
         let shown = shownFailed + Array(imported.prefix(max(0, 5 - shownFailed.count)))
         return (shown, groups.count - shown.count)
     }
-
-    /// `queueWashStatus`: a status tone, so Monochrome draws its pattern.
-    static func wash(_ item: QueueItem) -> StatusTone {
-        let queued = StatusTone(color: Theme.dim)
-        switch item.cockpitState {
-        case .held: return StatusTone(.stuck)
-        case .stuck: return StatusTone(.danger)
-        case .stalled: return StatusTone(.stuck)
-        case .importing: return StatusTone(.grab)
-        case .queued: return queued
-        default:
-            if item.phase == "error" || (item.phaseTerminal == true && item.phase != "complete") { return StatusTone(.stuck) }
-            if item.phase == "queued" { return queued }
-            return StatusTone(.grab)
-        }
-    }
 }

@@ -52,7 +52,7 @@ enum QueueSection: String, CaseIterable {
 
 extension QueueLogic {
     /// One section's cards, grouped as the web groups them; Downloading is
-    /// ordered by the soonest finish.
+    /// ordered by ETA (the web dropped the soonest highlight, ruling A7).
     static func entries(_ items: [QueueItem], section: QueueSection, telemetry: [Int: QueueTelemetry]) -> [Entry] {
         let groups = group(items, section: section.rawValue, pairs: section.pairsVersions)
         if section == .downloading {

@@ -13,7 +13,6 @@ struct QueueStateCard: View {
     var nested = false
     /// A lane of a 4K + HD pair: the version leads, not the shared episode.
     var pairLane = false
-    var soonest = false
     @Environment(AppModel.self) private var model
 
     private var mode: QueueCardMode { QueueCardMode(item) }
