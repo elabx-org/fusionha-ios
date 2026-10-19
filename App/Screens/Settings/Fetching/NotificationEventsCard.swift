@@ -11,23 +11,6 @@ struct NotificationEventsCard: View {
     @State private var digest: DigestPreview?
     @State private var failed: String?
 
-    private static let meta: [String: (label: String, hint: String, sev: Color)] = [
-        "grab": ("Grabbed", "A release was sent to the download client", Theme.grab),
-        "import": ("Imported", "A file was imported into the library", Theme.done),
-        "upgrade": ("Upgrade found", "A better release replaced an existing file", Theme.grab),
-        "manual_required": ("Manual import required", "A finished download is waiting for you to pick the file", Theme.miss),
-        "failed": ("Download failed", "A grab or import failed", Theme.danger),
-        "needs_attention": ("Needs attention", "A manual import or a stuck item needs you", Theme.miss),
-        "retargeted": ("Re-routed", "An imported file was moved to the version that matches its real resolution", Theme.premiere),
-        "request_available": ("Request available", "A title someone requested is now downloaded", Theme.anime),
-        "request_made": ("New request", "A user submitted a new media request", Theme.anime),
-        "request_update": ("Request update", "An approver approved, declined or changed one of your requests", Theme.anime),
-        "issue_update": ("Issue update", "An issue you reported or joined was resolved", Theme.anime),
-        "issue_auto_fixed": ("Issue auto-fixed", "fusionha confirmed a problem and repaired it (dead copy, missing episodes, Plex rescan)", Theme.done),
-        "self_service_action": ("Self-service action taken", "A user started a fix themselves: a search, a rescan or a version request", Theme.grab),
-        "issue_needs_you": ("Issue needs you", "Inconclusive check, a fix that failed twice, or a report from a client without checks", Theme.miss),
-    ]
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let failed {
@@ -59,7 +42,7 @@ struct NotificationEventsCard: View {
     }
 
     private func row(_ p: NotificationPreferenceItem) -> some View {
-        let m = Self.meta[p.eventKind] ?? (p.eventKind.replacingOccurrences(of: "_", with: " ").capitalized, "", Theme.dim)
+        let m = NotificationEventMeta.of(p.eventKind)
         let delivery = p.delivery ?? (p.enabled ? "IMMEDIATE" : "OFF")
         return HStack(alignment: .center, spacing: 10) {
             RoundedRectangle(cornerRadius: 2).fill(m.sev).frame(width: 3, height: 30)

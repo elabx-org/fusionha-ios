@@ -4,8 +4,8 @@ import UserNotifications
 import FusionhaKit
 
 /// Account › Notifications: whether iOS allows them, whether this iPhone is
-/// registered with the server, and a test. Which events notify is a server
-/// setting for now (Settings › Notifications).
+/// registered with the server, and a test. Which events notify lives in
+/// Settings › Notifications; requesters get `RequesterNotificationsPage` instead.
 struct NotificationsPrefsView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
@@ -44,12 +44,14 @@ struct NotificationsPrefsView: View {
                 .listRowBackground(AccountStyle.cell)
             }
 
-            Section {
-                Button("Choose which events notify", action: openServerSettings)
-            } footer: {
-                Text("Imports, held downloads, failures and requests are chosen on the server, in Settings › Notifications.")
+            if !model.requestScoped {
+                Section {
+                    Button("Choose which events notify", action: openServerSettings)
+                } footer: {
+                    Text("Imports, held downloads, failures and requests are chosen on the server, in Settings › Notifications.")
+                }
+                .listRowBackground(AccountStyle.cell)
             }
-            .listRowBackground(AccountStyle.cell)
         }
         .scrollContentBackground(.hidden)
         .navigationTitle("Notifications")

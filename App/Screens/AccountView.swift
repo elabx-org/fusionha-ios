@@ -5,7 +5,8 @@ import FusionhaKit
 
 /// The web's Account page (`routes/Account.tsx`, "You"): a centred role-tinted
 /// avatar, the name and role badge, then Requests made · Sign-in methods ·
-/// Reset cache & reload · Sign out. No page title, like the web.
+/// Reset cache & reload · Notifications (requesters; web `RequesterNotifications`)
+/// · Sign out. No page title, like the web.
 struct AccountView: View {
     @Environment(AppModel.self) private var model
     @State private var requestCount: Int?
@@ -86,6 +87,11 @@ struct AccountView: View {
             rowButton(resetting ? "Resetting…" : "Reset cache & reload") { Task { await resetCache() } }
                 .disabled(resetting)
                 .calReveal(3, stagger: 0.06)
+
+            if model.requestScoped {
+                RequesterNotificationsSection { message, ok in toast = CalToast(message: message, isError: !ok) }
+                    .calReveal(4, stagger: 0.06)
+            }
 
             row {
                 Button("Sign out") {
