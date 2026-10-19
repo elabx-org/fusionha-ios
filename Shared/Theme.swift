@@ -68,7 +68,10 @@ enum Theme {
     static var edition: Color { Color(hex: palette.edition) }
     static var anime: Color { Color(hex: palette.anime) }
     static var danger: Color { Color(hex: palette.danger) }
-    static let plexGold = Color(hex: 0xE5A00D)
+    /// Plex's brand mark; Monochrome greys it like every provider colour.
+    static var plexGold: Color { isMono ? txt : Color(hex: 0xE5A00D) }
+    /// Text on a plexGold fill.
+    static var onPlex: Color { isMono ? bg : .black }
 
     /// The login screen's brand gradient (Login.module.css `.stage --grad`).
     static let loginGradient = LinearGradient(

@@ -30,7 +30,8 @@ struct RequestStepperView: View {
         let stop = RequestLifecycle.stopIndex(entry.step)
         let done = entry.step == .available
         let fill = done ? 1 : Double(stop) / Double(RequestLifecycle.steps.count - 1)
-        let fillEnd: Color = done ? Theme.done : (entry.needsManualImport ? Theme.stuck : Theme.grab)
+        // Solid, never a gradient (web 0.4.218): the accent, amber when held.
+        let fillColor: Color = entry.needsManualImport ? Theme.stuck : Theme.i1
         VStack(spacing: 6) {
             ZStack(alignment: .leading) {
                 GeometryReader { geo in
@@ -38,7 +39,7 @@ struct RequestStepperView: View {
                     let width = geo.size.width - inset * 2
                     Capsule().fill(Theme.line).frame(width: width, height: 2).offset(x: inset, y: 8)
                     Capsule()
-                        .fill(LinearGradient(colors: [Theme.i1, fillEnd], startPoint: .leading, endPoint: .trailing))
+                        .fill(fillColor)
                         .frame(width: max(0, width * fill), height: 2)
                         .offset(x: inset, y: 8)
                 }

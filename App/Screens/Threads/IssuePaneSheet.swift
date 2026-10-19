@@ -74,7 +74,7 @@ struct IssuePaneSheet: View {
         return HStack(spacing: 12) {
             ActPoster(url: current.poster, title: current.mediaTitle ?? "Issue", size: .sm)
             VStack(alignment: .leading, spacing: 5) {
-                (Text(current.mediaTitle ?? "Issue").fontWeight(.bold) + Text(current.mediaYear.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+                (Text(current.mediaTitle ?? "Issue").fontWeight(.bold) + Text(verbatim: current.mediaYear.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
                     .font(.system(size: 17)).foregroundStyle(Theme.txt)
                 HStack(spacing: 6) {
                     IssueStateChip(state: current.state ?? "OPEN", reopenCount: current.reopenCount ?? 0)

@@ -203,10 +203,10 @@ struct RequestCardView: View {
                 Button { openURL(url) } label: {
                     Label("Open in Plex", systemImage: "play.fill")
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.black)
+                        .foregroundStyle(Theme.onPlex)
                         .padding(.horizontal, 12)
                         .frame(height: 32)
-                        .background(Color(hex: 0xE5A00D), in: Capsule())
+                        .background(Theme.plexGold, in: Capsule())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Open \(title) in Plex")

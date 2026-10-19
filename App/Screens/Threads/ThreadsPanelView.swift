@@ -138,7 +138,7 @@ struct ThreadRowView: View {
         HStack(alignment: .top, spacing: 10) {
             ActPoster(url: item.poster ?? issue?.poster ?? item.request?.poster, title: title, size: .sm)
             VStack(alignment: .leading, spacing: 4) {
-                (Text(title).fontWeight(.semibold) + Text((item.year ?? issue?.mediaYear ?? item.request?.year).map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+                (Text(title).fontWeight(.semibold) + Text(verbatim: (item.year ?? issue?.mediaYear ?? item.request?.year).map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
                     .font(.system(size: 14.5)).foregroundStyle(Theme.txt).lineLimit(1)
                 HStack(spacing: 5) {
                     Image(systemName: issue != nil ? "flag" : "film").font(.system(size: 11))

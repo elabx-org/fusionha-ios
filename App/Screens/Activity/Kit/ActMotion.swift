@@ -167,11 +167,12 @@ extension View {
     }
 }
 
-/// A gradient progress fill with the width transition and the shimmer sweep.
+/// A solid progress fill (no gradients, owner rule) with the width
+/// transition and the shimmer sweep.
 struct ActProgressBar: View {
     let fraction: Double
     var height: CGFloat = 5
-    var fill: AnyShapeStyle = AnyShapeStyle(LinearGradient(colors: [Theme.grab.opacity(0.7), Theme.indigo, Theme.grab], startPoint: .leading, endPoint: .trailing))
+    var fill: AnyShapeStyle = AnyShapeStyle(Theme.grab)
     var shimmer = true
     @Environment(\.actReduceMotion) private var reduce
 

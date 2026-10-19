@@ -122,7 +122,7 @@ struct TaskBar: View {
     var body: some View {
         ActProgressBar(fraction: fraction, height: 5,
                        fill: done ? AnyShapeStyle(Theme.done)
-                                  : AnyShapeStyle(LinearGradient(colors: [Theme.i1, Theme.i2], startPoint: .leading, endPoint: .trailing)),
+                                  : AnyShapeStyle(Theme.i1),
                        shimmer: live)
             .padding(.top, 8)
     }

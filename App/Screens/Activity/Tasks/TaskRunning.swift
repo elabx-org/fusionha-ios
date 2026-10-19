@@ -84,8 +84,7 @@ struct SearchRunCard: View {
                 .padding(.top, 10)
                 HStack(spacing: 12) {
                     ActProgressBar(fraction: Double(pct) / 100, height: 7,
-                                   fill: stuck ? AnyShapeStyle(LinearGradient(colors: [Theme.miss, Theme.danger.opacity(0.9)], startPoint: .leading, endPoint: .trailing))
-                                               : AnyShapeStyle(LinearGradient(colors: [Theme.edition.opacity(0.9), Theme.grab], startPoint: .leading, endPoint: .trailing)),
+                                   fill: stuck ? AnyShapeStyle(Theme.miss) : AnyShapeStyle(Theme.grab),
                                    shimmer: !stuck)
                     Text("\(search.processed) / \(search.total) · \(pct)%")
                         .font(.system(size: 13, weight: .heavy, design: .monospaced))

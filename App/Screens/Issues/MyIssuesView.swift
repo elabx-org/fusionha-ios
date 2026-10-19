@@ -81,7 +81,7 @@ struct IssueCardRow: View {
         HStack(alignment: .top, spacing: 12) {
             ActPoster(url: issue.poster, title: title, size: .md)
             VStack(alignment: .leading, spacing: 5) {
-                (Text(title).fontWeight(.semibold) + Text(issue.mediaYear.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+                (Text(title).fontWeight(.semibold) + Text(verbatim: issue.mediaYear.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
                     .font(.system(size: 15)).foregroundStyle(Theme.txt).lineLimit(2)
                 if let report {
                     HStack(spacing: 6) {
