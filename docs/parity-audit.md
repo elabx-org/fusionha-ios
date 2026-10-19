@@ -483,6 +483,19 @@ web has no server step; iOS owns it.
   fields come from `GET /api/v1/setup-status` (`login_layout`, `login_background`,
   `login_living_media`, logo/wordmark/tagline flags). A custom server name would need a new
   server setting; that's only if the owner asks.
+- **No default server (owner, fusionha #65).**
+  - The address field starts EMPTY on a fresh install. There's no pre-filled URL, no
+    hard-coded instance (not the owner's, not a demo host) and no auto-connect.
+  - The placeholder is a neutral example, `https://fusionha.example.com`.
+  - A server this device has connected to before is offered only as an explicit
+    "Recent: <host>" chip. Today the field pre-fills with `lastServer` after a sign-out;
+    F2 replaces that with the chip.
+  - The cached layout and backdrop are used only for such a remembered server.
+  - Test: a FusionhaKit `ServerMemory` (injectable `UserDefaults`) asserts that a fresh
+    store has an empty address, no recent servers and no stored `serverURL`.
+  - Audit 2026-10-19: no default URL in project.yml/Info.plist, no Settings.bundle, and no
+    host in App/Shared/extensions. The CI `FUSIONHA_SCREENSHOT_*` hooks (127.0.0.1 mock)
+    are `#if DEBUG` only, and the IPA is built `-configuration Release`.
 - **Budget:** a 3–7 word headline, one support line, one field, one button. "Continue"
   becomes "Connect".
 - **Forgiving input:**
