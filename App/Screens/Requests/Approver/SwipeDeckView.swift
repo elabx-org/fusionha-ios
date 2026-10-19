@@ -38,12 +38,17 @@ struct SwipeDeckView: View {
                 }
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.mut)
-                ZStack {
-                    ForEach(Array(Array(deck.prefix(3).enumerated()).reversed()), id: \.element.id) { position, request in
-                        card(request, position: position, isTop: request.id == top.id)
+                // The top card over the edges of the ones beneath (Final mock):
+                // the edges rise toward it as it is dragged away.
+                card(top, position: 0, isTop: true)
+                    .background(alignment: .bottom) {
+                        DeckEdges(count: min(deck.count - 1, 2), lift: min(1, abs(offset(top.id)) / Self.threshold))
                     }
-                }
-                .frame(maxWidth: .infinity)
+                    .id(top.id)
+                    .transition(reduceMotion ? .opacity : .asymmetric(insertion: .scale(scale: 0.94, anchor: .bottom).combined(with: .opacity),
+                                                                     removal: .identity))
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, deck.count > 2 ? 18 : deck.count > 1 ? 9 : 0)
                 buttons(top)
             } else {
                 InboxZeroView(ownOnly: !inbox.queue.isEmpty, onShowList: onSelectMode,
@@ -162,10 +167,36 @@ struct SwipeDeckView: View {
     }
 
     private func decide(_ request: MediaRequest, right: Bool) {
-        if right {
-            inbox.approve(request, viewerId: viewerId)
-        } else {
-            inbox.decline(request, viewerId: viewerId)
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.3)) {
+            if right {
+                inbox.approve(request, viewerId: viewerId)
+            } else {
+                inbox.decline(request, viewerId: viewerId)
+            }
         }
+    }
+}
+
+/// The cards waiting under the top one, as two edges below it (Final mock):
+/// the nearer edge narrower by 14 pt a side, the farther by 28; `lift` (0…1)
+/// draws them up toward the top card while it is dragged away.
+struct DeckEdges: View {
+    let count: Int
+    let lift: CGFloat
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            ForEach(Array((0..<count).reversed()), id: \.self) { i in
+                let depth = CGFloat(i + 1) * (1 - lift * 0.6)
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .fill(i == 0 ? Theme.panel2 : Theme.panel)
+                    .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Theme.line))
+                    .padding(.horizontal, 14 * depth)
+                    .offset(y: 9 * depth)
+                    .opacity(i == 0 ? 1 : 0.7)
+            }
+        }
+        .accessibilityHidden(true)
+        .allowsHitTesting(false)
     }
 }
