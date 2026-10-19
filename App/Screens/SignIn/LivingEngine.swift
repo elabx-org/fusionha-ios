@@ -3,7 +3,7 @@ import UIKit
 
 // MARK: - Engine (living/engine.ts)
 
-private struct LivingStop: Error {}
+struct LivingStop: Error {}
 
 @MainActor
 final class LivingEngine {
@@ -36,11 +36,11 @@ final class LivingEngine {
     var panel = CGSize(width: 402, height: 370)
     private(set) var now: Double = Date().timeIntervalSinceReferenceDate
     private var last: Double = 0
-    private var gen = 0
-    private var busy = false
-    private(set) var listening = false
-    private(set) var posing = false
-    private var unlocked = false
+    var gen = 0
+    var busy = false
+    var listening = false
+    var posing = false
+    var unlocked = false
     private(set) var tilt = CGPoint.zero
     private var pinTarget: [CGFloat] = [0, 0, 0]
     private(set) var pinX: [CGFloat] = [0, 0, 0]
@@ -49,14 +49,20 @@ final class LivingEngine {
     private(set) var sparks: [Spark] = []
     private(set) var rings: [Ring] = []
     /// The quality move's clock start (it draws its own two copies on the fx canvas).
-    private(set) var qualityStart: Double?
-    private var qualityRings = [false, false]
+    var qualityStart: Double?
+    var qualityRings = [false, false]
     /// The unlock glint's start.
     private(set) var sheenStart: Double?
-    private var idleTask: Task<Void, Never>?
-    private var restartTask: Task<Void, Never>?
-    private var settleTask: Task<Void, Never>?
+    var idleTask: Task<Void, Never>?
+    var restartTask: Task<Void, Never>?
+    var settleTask: Task<Void, Never>?
     private var started = false
+    /// `login_living_media`: the media morphs join the idle loop.
+    var media = false
+    /// The media move on stage (drawn by `LivingMark` with `LivingMedia`).
+    var mediaShow: LivingMediaShow?
+    /// The server step's "connecting" sparks.
+    var connectTask: Task<Void, Never>?
 
     struct Spark {
         let blade: Int
@@ -105,14 +111,14 @@ final class LivingEngine {
         started = false
     }
 
-    private func clock() -> Double { Date().timeIntervalSinceReferenceDate }
+    func clock() -> Double { Date().timeIntervalSinceReferenceDate }
 
-    private func sleep(_ ms: Double, _ g: Int) async throws {
+    func sleep(_ ms: Double, _ g: Int) async throws {
         try await Task.sleep(for: .milliseconds(Int(ms)))
         if g != gen { throw LivingStop() }
     }
 
-    private func animate(_ el: LivingElement, _ ms: Double, _ frames: [(Double, LivingPose)], curve: UnitCurve = .linear,
+    func animate(_ el: LivingElement, _ ms: Double, _ frames: [(Double, LivingPose)], curve: UnitCurve = .linear,
                          fields: LivingPose.Fields = .all, delay: Double = 0, forwards: Bool = true, additive: Bool = false) {
         el.anims.append(LivingAnim(start: clock() + delay / 1000, duration: ms / 1000, frames: frames, curve: curve,
                                    fields: fields, forwards: forwards, additive: additive))
@@ -158,7 +164,7 @@ final class LivingEngine {
         }
     }
 
-    private func setPins(_ n: Int) {
+    func setPins(_ n: Int) {
         let offsets = Self.pinOffsets(n)
         let scale = size / Self.refSize
         pinTarget = offsets.map { $0 * scale }
@@ -171,7 +177,7 @@ final class LivingEngine {
         ripples.append(now)
     }
 
-    private func launch(_ i: Int) {
+    func launch(_ i: Int) {
         let to = tip(i)
         let angle = Double.random(in: 0..<(2 * .pi))
         let from = CGPoint(x: to.x + CGFloat(cos(angle)) * CGFloat.random(in: 220...360),
@@ -205,22 +211,30 @@ final class LivingEngine {
 
     // MARK: Director
 
-    private func idle(_ g: Int) {
+    func idle(_ g: Int) {
         idleTask?.cancel()
         idleTask = Task { [weak self] in
             var k = 0
             do {
                 while let self, g == self.gen {
                     try await self.sleep(2600 + .random(in: 0...1200), g)
-                    try await self.play(Move.allCases[k % Move.allCases.count], g)
+                    let order = Move.order(media: self.media)
+                    try await self.play(order[k % order.count], g)
                     k += 1
                 }
             } catch {}
         }
     }
 
-    /// The neutral moves, in the idle order (`NEUTRAL_MOVES`).
-    enum Move: CaseIterable { case arrivals, fusion, pride, quality }
+    /// The moves: `NEUTRAL_MOVES`, plus the ported `MEDIA_MOVES` (TV, Anime).
+    enum Move: CaseIterable {
+        case arrivals, fusion, pride, quality, tv, anime
+
+        /// `buildMoveOrder`: neutral only, or the media morphs interleaved.
+        static func order(media: Bool) -> [Move] {
+            media ? [.arrivals, .tv, .fusion, .anime, .pride, .quality] : [.arrivals, .fusion, .pride, .quality]
+        }
+    }
 
     private func play(_ move: Move, _ g: Int) async throws {
         busy = true
@@ -230,14 +244,17 @@ final class LivingEngine {
         case .fusion: try await Self.fusion(self, g)
         case .pride: try await Self.pride(self, g)
         case .quality: try await Self.quality(self, g)
+        case .tv: try await perform(.tv, g)
+        case .anime: try await perform(.anime, g)
         }
         await home(320)
     }
 
     /// From wherever the blades are, glide back to the exact logo.
-    private func home(_ ms: Double) async {
+    func home(_ ms: Double) async {
         posing = false
         qualityStart = nil
+        mediaShow = nil
         let t = clock()
         for el in blades + [mark] {
             let current = el.pose(at: t)
@@ -251,14 +268,14 @@ final class LivingEngine {
         try? await Task.sleep(for: .milliseconds(Int(ms)))
     }
 
-    private func interrupt(_ ms: Double) async {
+    func interrupt(_ ms: Double) async {
         gen += 1
         busy = false
         idleTask?.cancel()
         await home(ms)
     }
 
-    private func restartIdleSoon() {
+    func restartIdleSoon() {
         restartTask?.cancel()
         guard !reduce, !unlocked else { return }
         restartTask = Task { [weak self] in
@@ -354,133 +371,4 @@ final class LivingEngine {
         }
         animate(art, 420, [(0, .identity), (1, LivingPose(scale: 1.35, opacity: 0))], curve: LivingEase.dive, delay: 820)
     }
-
-    // MARK: Neutral moves (living/moves.ts)
-
-    /// Arrivals: sparks in the logo's colours drift in and are taken in.
-    private static func arrivals(_ st: LivingEngine, _ g: Int) async throws {
-        for k in 0..<7 {
-            st.launch(k % 3)
-            try await st.sleep(260 + .random(in: 0...220), g)
-        }
-        try await st.sleep(1100, g)
-    }
-
-    /// Fusion: the F splits into two groups that drift apart, then rush back
-    /// together with a flash. Two apps become one.
-    private static func fusion(_ st: LivingEngine, _ g: Int) async throws {
-        let s = st.size
-        let apart: [(CGFloat, CGFloat, Double)] = [(-0.42, -0.04, -9), (0.46, 0.02, 7), (-0.42, 0.05, 8)]
-        func at(_ i: Int, _ dy: CGFloat = 0, _ rot: Double = 1) -> LivingPose {
-            LivingPose(dx: apart[i].0 * s, dy: (apart[i].1 + dy) * s, rot: apart[i].2 * rot)
-        }
-        for i in 0..<3 {
-            st.animate(st.blades[i], 700, [(0, .identity), (1, at(i))], curve: LivingEase.ease, fields: .transform)
-        }
-        try await st.sleep(700, g)
-        for i in 0..<3 {
-            st.animate(st.blades[i], 650, [(0, at(i)), (1, at(i, -0.03, 0.7))], curve: .easeInOut, fields: .transform)
-        }
-        try await st.sleep(650, g)
-        for i in 0..<3 {
-            st.animate(st.blades[i], 560, [(0, at(i, -0.03, 0.7)), (0.78, LivingPose(dx: -apart[i].0 * 0.05 * s, scale: 0.97)),
-                                           (1, .identity)], curve: LivingEase.snap, fields: .transform)
-        }
-        try await st.sleep(430, g)
-        st.ring(st.centre, lilac, s * 0.9)
-        st.animate(st.mark, 600, [(0, .identity), (0.5, LivingPose(light: 0.5)), (1, .identity)], curve: .easeOut,
-                   fields: .filter)
-        try await st.sleep(800, g)
-    }
-
-    /// Pride: a full 3D turn with a sheen across the blades, a lift, a settle.
-    private static func pride(_ st: LivingEngine, _ g: Int) async throws {
-        st.animate(st.mark, 1700, [(0, .identity), (0.5, LivingPose(dy: -8, scale: 1.04, rotY: 180)),
-                                   (0.82, LivingPose(dy: -8, scale: 1.06, rotY: 360)), (1, .identity)],
-                   curve: LivingEase.turn, fields: .transform)
-        for i in 0..<3 {
-            st.animate(st.blades[i], 1700, [(0, .identity), (0.6 + Double(i) * 0.06, LivingPose(light: 0.4)), (1, .identity)],
-                       fields: .filter)
-        }
-        try await st.sleep(1900, g)
-    }
-
-    /// Quality tiers: the F splits in two; one settles soft (HD), the other steps
-    /// up to razor-crisp (4K); each fills its own progress, then they merge.
-    private static func quality(_ st: LivingEngine, _ g: Int) async throws {
-        st.posing = true
-        st.qualityRings = [false, false]
-        st.qualityStart = st.clock()
-        defer { st.qualityStart = nil }
-        try await st.sleep(4300, g)
-    }
-
-    private func advanceQuality(_ t: Double) {
-        guard let start = qualityStart else { return }
-        let ms = (t - start) * 1000
-        guard let q = LivingQuality.frame(ms: ms, size: size, centre: centre) else { return }
-        if !qualityRings[0], ms >= 2500, q.split > 0.6 {
-            qualityRings[0] = true
-            ring(CGPoint(x: centre.x - q.offset, y: centre.y), Color(hex: 0x93C5FD), 0.55 * size)
-        }
-        if !qualityRings[1], ms >= 3150, q.split > 0.6 {
-            qualityRings[1] = true
-            ring(CGPoint(x: centre.x + q.offset, y: centre.y), Color(hex: 0xA5F3FC), 0.65 * size)
-        }
-    }
-}
-
-/// The quality move's per-frame layout (moves.ts `quality`).
-enum LivingQuality {
-    struct Frame {
-        var split: Double
-        var offset: CGFloat
-        var scaleL: CGFloat, scaleR: CGFloat
-        var resL: Int, resR: Int
-        var glowR: Double
-        var fade: Double
-        var fillL: Double, fillR: Double
-        var flashL: Double, flashR: Double
-    }
-
-    static func sstep(_ a: Double, _ b: Double, _ x: Double) -> Double {
-        let t = max(0, min(1, (x - a) / (b - a)))
-        return t * t * (3 - 2 * t)
-    }
-
-    static func frame(ms t: Double, size s: CGFloat, centre: CGPoint) -> Frame? {
-        guard t >= 0, t <= 4300 else { return nil }
-        let steps = [10, 16, 24, 36, 56, 0]
-        let split = sstep(150, 750, t) * (1 - sstep(3500, 4100, t))
-        let coarse = t > 250 && t < 3700
-        var resL = 0, resR = 0
-        if coarse {
-            resL = t < 900 ? 10 : t < 1150 ? 16 : t < 1400 ? 24 : 40
-            let k = Int(max(0, t - 900) / 170)
-            resR = t < 900 ? 10 : steps[min(steps.count - 1, k)]
-        }
-        if t > 3550 { resL = 0 }
-        let glowR = resR == 0 && t > 1700 && t < 3700 ? min(1, (t - 1700) / 300) * (1 - sstep(3400, 3700, t)) : 0
-        let fade = t < 150 ? t / 150 : t > 4150 ? max(0, (4300 - t) / 150) : 1
-        return Frame(split: split, offset: 0.64 * s * CGFloat(split), scaleL: 1 - 0.18 * CGFloat(split),
-                     scaleR: 1 - 0.06 * CGFloat(split), resL: resL, resR: resR, glowR: glowR, fade: fade,
-                     fillL: sstep(1100, 2500, t), fillR: sstep(1100, 3150, t),
-                     flashL: t > 2500 && t < 2900 ? 1 - (t - 2500) / 400 : 0,
-                     flashR: t > 3150 && t < 3550 ? 1 - (t - 3150) / 400 : 0)
-    }
-
-    /// The logo redrawn at `res`×`res` (nearest-neighbour when scaled back up).
-    @MainActor static func pixelated(_ res: Int) -> UIImage? {
-        if let hit = cache[res] { return hit }
-        guard let logo = UIImage(named: "BrandLogo") else { return nil }
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        let image = UIGraphicsImageRenderer(size: CGSize(width: res, height: res), format: format).image { _ in
-            logo.draw(in: CGRect(x: 0, y: 0, width: res, height: res))
-        }
-        cache[res] = image
-        return image
-    }
-
-    @MainActor private static var cache: [Int: UIImage] = [:]
 }

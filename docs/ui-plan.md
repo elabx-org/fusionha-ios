@@ -166,12 +166,25 @@ Header "Activity" with the live caption and a **Manual import** button, the shar
 
 ### Sign-in, account and first run
 - **Onboarding:**
-  1. Enter the server URL.
-  2. The app checks `GET /health` and `GET /api/v1/setup-status`.
+  1. Enter the server URL. This step is the app's first screen and follows the onboarding rules (F2): it sits on
+     the login stage (a fresh install shows the Living logo over the aurora backdrop; after a server has been
+     reached once, that server's cached layout and backdrop), with "Find your fusionha", one support line, one
+     field and **Connect**. The field always starts empty, with the neutral placeholder
+     `https://fusionha.example.com`; there is no default server and nothing connects on its own (fusionha #65).
+     Servers this phone reached before appear only as "Recent" chips (`ServerMemory`, long-press to forget).
+     Input is forgiving (`ServerAddress`): a pasted web-app link keeps just the server part; a bare domain
+     tries https then http; a LAN host tries http then fusionha's default port 8000. Errors say what failed and
+     what to try (`ConnectFailure`: unreachable, timed out, certificate, not fusionha, Local Network off). Before
+     the first connect to a home-network address one line explains the iOS Local Network prompt; if it was
+     denied, a row opens Settings. The Living mark ticks a pin per typed character, draws sparks in while
+     connecting, lands a ring when the server answers and jams if it doesn't.
+  2. The app checks `GET /health` (its version, shown with the host as "server · 0.4.222 · Change") and
+     `GET /api/v1/setup-status`, then cross-fades into that server's own login look. A fresh server shows
+     "Server › Set up › Sign in" over the setup button.
   3. Sign in with username and password (`POST /api/v1/auth/login`), or Plex (`POST /api/v1/auth/plex/pin`, opening `authUrl` in `ASWebAuthenticationSession` and polling `.../check`).
   4. The app **mints a personal token** (`POST /api/v1/tokens`, named after the device) and stores it in the Keychain in a shared App Group, so widgets and extensions can call the API with `X-Api-Key`.
-- **Demo:** when setup-status has `demo_mode`, an "Explore the demo" button (with the demo credentials form if `demo_require_credentials`) calls `POST /api/v1/demo/login`; the app replays the `fusionha_demo` cookie. OIDC buttons wait on the server's `/auth/providers` endpoint.
-- **Living logo layout (`login_layout = living`):** on phones the animated mark fills the top 44% over its own dot field, with the wordmark and "Everything you watch. One library, every version." under it when those login options are on, and the form below. The mark idles through the neutral moves (arrivals, fusion, pride, quality), leans towards the form while a field has focus, ticks a pin per typed character, jams and nudges the form on a failed sign-in, and spins open before entering the app. **Deviation:** the media morphs (`login_living_media`) are not drawn natively yet; the toggle still saves.
+- **Demo:** when setup-status has `demo_mode`, an "Explore the demo" button (with the demo credentials form if `demo_require_credentials`) calls `POST /api/v1/demo/login`; the app replays the `fusionha_demo` cookie. **OIDC:** not built. The web filters `GET /api/v1/auth/providers` for real OIDC providers, but the server has no such route yet (0.4.222), so no provider ever shows; the app adds the button once the server ships the route and a way to hand the session back to an app.
+- **Living logo layout (`login_layout = living`):** on phones the animated mark fills the top 44% over its own dot field, with the wordmark and "Everything you watch. One library, every version." under it when those login options are on, and the form below. The mark idles through the neutral moves (arrivals, fusion, pride, quality), leans towards the form while a field has focus, ticks a pin per typed character, jams and nudges the form on a failed sign-in, and spins open before entering the app. With `login_living_media` on, the TV and Anime morphs join the idle loop (interleaved like `buildMoveOrder`). **Deviation:** Movie, Dragon and Three kinds are vector morphs of each blade's outline into a silhouette; the native blades are masks of the logo image, so those three are not drawn.
 - **Uninitialised server:** if the server isn't set up yet, the first-run wizard opens in the web sheet. No native wizard in v1.
 - **Account:** avatar, role badge, my requests, sign out. Sign out revokes the token (`DELETE /api/v1/tokens/{id}`).
 - **Requester notifications (web `RequesterNotifications`, inline on `/account`):** a requester's Account, You tab and account sheet › Notifications show **This device** (the app's native push card: enable, blocked, server not set up, registered, Send test), their other iOS devices (removable) and **Events**: one on/off switch per kind the server lists for them (`GET/PUT /api/v1/notifications/preferences` with `enabled`), in the web's copy, with the New / Retired pills. They never open Settings. Admins keep Settings › Notifications. **Deviation:** the web's "Other devices" are browser push subscriptions; the app lists the user's other iOS app installs there instead, and rows carry the kind's colour as an ambient wash rather than the web's severity bar.

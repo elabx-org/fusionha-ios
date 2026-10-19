@@ -457,7 +457,7 @@ overflow shows the label). Tick a row with its build number.
 | Row | Item | Done |
 |---|---|---|
 | F1 | Users: search field (web parity) | ☐ |
-| F2 | SI1: OIDC sign-in and the living-media poses, plus the server step as onboarding (owner, 2026-10-19; see F2 spec) | ☐ |
+| F2 | SI1: OIDC sign-in and the living-media poses, plus the server step as onboarding (owner, 2026-10-19; see F2 spec) | ✅ (build pending): server step, no default server, TV + Anime morphs; OIDC not built (no server route); Movie/Dragon/Three kinds not ported |
 | F3 | Episode sheet's Search tab: park its `InteractiveSearchModel` across fold/unfold (DC3: no lost state) | ☐ |
 | F4 | Activity, Calendar and sign-in toasts on `model.toast`, so Q-DC9 hinge placement applies everywhere | ☐ |
 | F5 | Split oversized files to ~300–400 lines: `AppModel` (665), `ScreenModels` (619), `DiscoverModels` (530), `DetailLogic` (481), `CalendarModels` (456), `EditItemSheet` (335) | ☐ |
