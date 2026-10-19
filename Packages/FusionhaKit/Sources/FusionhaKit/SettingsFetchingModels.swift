@@ -145,6 +145,8 @@ public struct DownloadClientInfo: Decodable, Sendable, Identifiable, Hashable {
     public let removeFailed: Bool?
     public let postImportCategory: String?
     public let categoryMap: [String: String]?
+    /// The client's file-check capabilities (the list carries them too).
+    public let capabilities: ClientCapabilities?
 
     public var isTorrent: Bool { `protocol` == "TORRENT" }
 }

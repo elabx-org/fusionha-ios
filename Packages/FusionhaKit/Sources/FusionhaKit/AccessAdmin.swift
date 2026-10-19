@@ -236,6 +236,8 @@ public struct ClientCapabilities: Decodable, Sendable, Hashable {
     public let verifyCheckedAt: String?
     public let fileChecks: Bool?
     public let lastProbeError: String?
+    /// When decypharr's import rules last fired for this client (informational).
+    public let importRulesSeenAt: String?
 
     public enum State: Sendable { case available, absent, unknown }
 
