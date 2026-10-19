@@ -46,7 +46,7 @@ struct HistoryStoryRow: View {
         }
         .contentShape(Rectangle())
         .onTapGesture { if let id = story.mediaItemId { model.open(id) } }
-        .sheet(isPresented: $lifecycle) { HistoryLifecycleSheet(story: story) }
+        .sheet(isPresented: $lifecycle) { HistoryLifecycleSheet(story: story, onChanged: onChanged) }
         .sheet(isPresented: $blocklistDialog) {
             BlocklistReleaseDialog(release: story.releaseTitle ?? story.title,
                                    keepsCurrentFile: story.actionEntry.blocklistTarget?.keepsCurrentFile == true) { search, deleteFile in
