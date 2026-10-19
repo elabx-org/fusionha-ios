@@ -10,11 +10,11 @@ instead of from scratch.
 | | |
 |---|---|
 | fusionha branch | `main` |
-| fusionha commit | `8fc2eb71` |
-| fusionha release | **0.4.215** (`v0.4.215`, 2026-10-19: Watchlists & lists sync progress; additive `sync` / `counts` on every source read, admin `GET /system/request-sources/summary`) |
+| fusionha commit | `82724c7b` |
+| fusionha release | **0.4.217** (`v0.4.217`, 2026-10-19: the web Requests navigation Final; additive `LifecycleEntryRead.quality`) |
 | Checked on | 2026-10-19 |
-| Previous sync | `d841ca84` / 0.4.214 (2026-10-18) |
-| Last CI | run 338 on `ec9c9b2`: green; the 0.4.215 port has not been through CI yet |
+| Previous sync | `8fc2eb71` / 0.4.215 (2026-10-19) |
+| Last CI | build-362 on `2006eed`: green |
 | Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
 
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
@@ -26,7 +26,7 @@ release when you next touch the API layer.
 
 ## Where the cloud session stopped (2026-10-18)
 
-Every fusionha message up to #27 is read and ACKed. Everything below is
+Every fusionha message up to #42 is read and ACKed (by direct message from #32 on). Everything below is
 ported and green, and nothing is half done. Still to do:
 - 0.4.214 is tagged and checked against the final shapes (doc #28): the own-request
   rule and the card scale matched. Two fixes followed: the swipe card's
@@ -41,6 +41,28 @@ ported and green, and nothing is half done. Still to do:
   `App/LiveActivityController.swift`).
 - The redesign migration of the remaining screens (task "Migrate every
   screen to the redesign").
+
+## 0.4.216–0.4.217 and the Requests navigation Final
+
+- The Requests navigation Final (owner-approved 2026-10-18, mock
+  `requests-nav/index.html` Final v9) is built: the header row with a
+  bottom-sheet view drawer (Inbox, Board, History, Threads, Insights, Mine,
+  then Rules in Settings › Requests), a filter sheet per view that sends
+  `source=` with the server aliases (`MANUAL`, `plex`, `letterboxd`), and
+  the phone Board without a stage strip (the "9 pending · 1 downloading"
+  summary, pinned stage headers, swipe with Undo, a context menu). History
+  is grouped by day. Builds 357 and 362.
+- 0.4.216: `eta_seconds` on the queue and the lifecycle (about N min left),
+  `ThreadItemRead.last_message` (Author: text), insights `weeks` and
+  `window_start`. Build 360.
+- 0.4.217: `LifecycleEntryRead.quality` on Downloading rows, plus the
+  web's copy (Approved X / Declined X, N decided this month, No requests
+  match.). Build 362.
+- Owner rules from this round, shared with the web: text on the accent is
+  black or white by contrast (`Theme.onAccent = onFill(i1)`), and no
+  gradient on any control (the gradient stays in the logo, sign-in and
+  avatars).
+- Open: the web's 0.4.218 no-gradient sweep needs no iOS change.
 
 ## 0.4.215: Watchlists & lists sync progress
 
