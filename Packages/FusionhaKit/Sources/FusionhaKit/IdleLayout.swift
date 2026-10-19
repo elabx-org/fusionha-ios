@@ -23,13 +23,15 @@ public enum IdleLayout {
         return w < 940 ? .medium : .wide
     }
 
-    /// Readiness tile columns. Phone: two (the Download clients tile folds into
-    /// the strip, so four tiles make a 2 × 2 grid). Medium: the web's
-    /// `repeat(auto-fit, minmax(150px, 1fr))` with 10 pt gaps. Wide: all five.
-    public static func tileColumns(width w: Double, tiles: Int) -> Int {
+    /// Readiness tile columns. `width` is the view's (it picks the class),
+    /// `gridWidth` the tiles' own row inside the hero card. Phone: two (the
+    /// Download clients tile folds into the strip, so four tiles make a 2 × 2
+    /// grid). Medium: the web's `repeat(auto-fit, minmax(150px, 1fr))` with
+    /// 10 pt gaps. Wide: all five.
+    public static func tileColumns(width w: Double, gridWidth: Double, tiles: Int) -> Int {
         switch width(w) {
-        case .phone: return min(2, tiles)
-        case .medium: return Swift.max(1, Swift.min(tiles, Int((w + 10) / 160)))
+        case .phone: return Swift.min(2, tiles)
+        case .medium: return Swift.max(1, Swift.min(tiles, Int((gridWidth + 10) / 160)))
         case .wide: return tiles
         }
     }

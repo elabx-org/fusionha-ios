@@ -81,7 +81,7 @@ struct ActivityQueueTab: View {
             ActEmpty(message: "No downloads match “\(search)”.")
         } else if store.items.isEmpty && finished.rows.isEmpty {
             // Nothing downloading: system status instead of a blank list (0.4.156).
-            QueueClearView()
+            QueueClearView(celebrate: store.sawWork).transition(reduce ? .opacity : .opacity.combined(with: .offset(y: 10)))
         } else {
             // Flat children of the page's lazy stack: each section header and card is its own child.
             toolbar.padding(.bottom, 12)
