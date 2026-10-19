@@ -90,6 +90,8 @@ final class AppModel {
     var pendingQueueFocus: (downloadId: Int, block: Bool)?
     /// A run a link asked Tasks to open (`activity/tasks?focus={runId}`). Consumed by the tab.
     var pendingTaskFocus: Int?
+    /// `activity/history?item_id=`: History scoped to one title.
+    var pendingHistoryFilter: HistoryItemFilter?
     var pendingDiscoverTab: DiscoverTab?
     var showingAdd = false
     /// The Account sheet (avatar menu → Account), owned by AccountView.swift.
@@ -108,6 +110,8 @@ final class AppModel {
     /// Bumped by the top-bar logo: the visible tab scrolls to the top.
     var scrollToTopTick = 0
     var detailIntent: DetailIntent?
+    /// The tab the next opened detail starts on; the detail reads and clears it.
+    var pendingDetailTab: DetailTab?
     var deleteTarget: DeleteTarget?
 
     // Library select mode + bulk bar.
@@ -394,7 +398,9 @@ final class AppModel {
         libraryLoaded = true
     }
 
-    func open(_ itemId: Int) {
+    /// `tab:` mirrors the web's `/library/{id}?tab=…` (e.g. History's "Why this decision").
+    func open(_ itemId: Int, tab: DetailTab? = nil) {
+        pendingDetailTab = tab
         presentedItem = ItemRef(id: itemId)
     }
 

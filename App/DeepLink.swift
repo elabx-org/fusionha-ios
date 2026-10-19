@@ -46,6 +46,7 @@ extension AppModel {
             let onTasks = path.first == ActivityTab.tasks.rawValue
             pendingQueueFocus = onTasks ? nil : focus
             pendingTaskFocus = onTasks ? focus?.downloadId : nil
+            if path.first == "history" { pendingHistoryFilter = HistoryItemFilter.parse(url) }
             // `?rescue=1,2` (the Live Activity's Review): open Manual Import on them.
             let rescue = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
                 .first { $0.name == "rescue" }?.value?.split(separator: ",").compactMap { Int($0) } ?? []

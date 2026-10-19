@@ -52,7 +52,7 @@ struct BandwidthPulseHero: View {
             Chart {
                 ForEach(Array(history.enumerated()), id: \.offset) { index, bps in
                     AreaMark(x: .value("t", index), y: .value("bps", bps))
-                        .foregroundStyle(LinearGradient(colors: [Theme.grab.opacity(0.4), Theme.grab.opacity(0)], startPoint: .top, endPoint: .bottom))
+                        .foregroundStyle(Theme.grab.opacity(0.18))
                         .interpolationMethod(.monotone)
                     LineMark(x: .value("t", index), y: .value("bps", bps))
                         .foregroundStyle(Theme.grab)
@@ -77,84 +77,5 @@ struct BandwidthPulseHero: View {
         (Text("\(n)").bold().foregroundColor(Theme.txt) + Text(" \(label)"))
             .font(.system(size: 13))
             .foregroundStyle(Theme.mut)
-    }
-}
-
-struct PipelineHero: View {
-    let items: [QueueItem]
-    let aggregateBps: Double
-    let hasPhaseWork: Bool
-    /// "Last import …" for the idle line (0.4.189 `pipeline.last_import`).
-    var lastImport: QueuePipeline.LastImport? = nil
-    @Environment(\.actReduceMotion) private var reduce
-
-    var body: some View {
-        let dist = QueueLogic.stageDistribution(items)
-        let wf = QueueLogic.workingFailed(items)
-        let real = items.filter(\.isByteTransferring).count
-        let activeIdx = dist.indices.filter { dist[$0] > 0 }.max() ?? -1
-        let current = activeIdx >= 0 ? QueueLogic.heroStages[activeIdx] : nil
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Pipeline").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
-                    (Text("\(ActFmt.plural(wf.working, "job"))\(current.map { " · \($0.lowercased())" } ?? "")")
-                     + Text(real > 0 ? " · \(real) downloading · \(ActFmt.mbps(aggregateBps)) MB/s" : "").foregroundColor(Theme.grab)
-                     + Text(wf.failed > 0 ? " · \(wf.failed) failed · will retry" : "").foregroundColor(Theme.miss))
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.mut)
-                }
-                Spacer(minLength: 8)
-                VStack(alignment: .trailing, spacing: 2) {
-                    (Text("Step \(activeIdx + 1)").foregroundColor(Theme.txt) + Text("/\(QueueLogic.heroStages.count)").foregroundColor(Theme.dim))
-                        .font(.system(size: 13, weight: .bold).monospacedDigit())
-                    Text(current?.lowercased() ?? "idle").font(.system(size: 11)).foregroundStyle(Theme.mut)
-                }
-            }
-            HStack(spacing: 4) {
-                ForEach(QueueLogic.heroStages.indices, id: \.self) { i in
-                    let state = dist[i] > 0 ? 2 : (i < activeIdx ? 1 : 0)
-                    Capsule()
-                        .fill(state == 2 ? Theme.grab : (state == 1 ? Theme.indigo.opacity(0.7) : Theme.txt.opacity(0.08)))
-                        .overlay { if state == 2 { ActShimmer() } }
-                        .clipShape(Capsule())
-                        .frame(height: 5)
-                }
-            }
-            .animation(reduce ? nil : ActMotion.fill, value: dist)
-            ActFlow(spacing: 12, lineSpacing: 6) {
-                ForEach(QueueLogic.heroStages.indices, id: \.self) { i in
-                    let active = dist[i] > 0
-                    let state = active ? 2 : (i < activeIdx ? 1 : 0)
-                    Group {
-                        HStack(spacing: 5) {
-                            if active {
-                                ActPulseDot(color: Theme.grab, size: 6, spread: 4)
-                            } else {
-                                Circle().fill(state == 1 ? Theme.indigo : Theme.txt.opacity(0.15)).frame(width: 6, height: 6)
-                            }
-                            if active {
-                                Text(QueueLogic.heroStages[i]).font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.txt)
-                                Text("\(dist[i])").font(.system(size: 11, weight: .bold).monospacedDigit()).foregroundStyle(Theme.onFill(hex: Theme.palette.grab))
-                                    .padding(.horizontal, 5).background(Theme.grab, in: Capsule())
-                            }
-                        }
-                    }
-                }
-            }
-            if wf.working == 0, let last = lastImport {
-                (Text("Pipeline idle · Last import ") + Text(last.title).foregroundColor(Theme.txt)
-                 + Text(last.episodeLabel.map { " \($0)" } ?? "")
-                 + Text(" · \(ActFmt.relative(last.at))"))
-                    .font(.system(size: 11)).foregroundStyle(Theme.dim)
-                    .lineLimit(1)
-            } else {
-                Text(hasPhaseWork ? "symlink jobs finish in seconds, so no time ETA" : "waiting for a free download slot")
-                    .font(.system(size: 11)).italic().foregroundStyle(Theme.dim)
-            }
-        }
-        .padding(14)
-        .background(Theme.panel, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
     }
 }

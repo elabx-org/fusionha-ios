@@ -21,6 +21,8 @@ struct QueueHeldCard: View {
     @Environment(\.actReduceMotion) private var reduce
     @State private var showWhy = false
     @State private var blocking = false
+    /// The group's mislabel evidence: gates the proof strip and the `block=1` link.
+    @State private var evidence: ReleaseGroupEvidence?
 
     /// A proven fake from a named group, for someone who may block groups.
     private var blockableGroup: String? {
@@ -36,10 +38,15 @@ struct QueueHeldCard: View {
             QueueFactChips(item: item)
             QueueSourceLine(item: item)
             QueueStageRailView(model: QueueRail.held(item))
-            if item.hasPackDecisions { QueuePackDecisionsView(item: item) }
+            if QueuePackSection.shows(item) { QueuePackSection(item: item) }
             reason
             if item.heldDetail != nil { whyToggle }
-            if showWhy, let detail = item.heldDetail { why(detail) }
+            if showWhy, let detail = item.heldDetail {
+                HeldWhy(item: item, detail: detail, evidence: evidence, canBlockGroup: blockableGroup != nil,
+                        onImportAnyway: actions.manualImport, onBlockGroup: { _ in blocking = true })
+                    .transition(.opacity)
+                    .task { await loadEvidence() }
+            }
             if !nested {
                 HStack(spacing: 6) {
                     Button(action: actions.manualImport) {
@@ -58,12 +65,12 @@ struct QueueHeldCard: View {
         .padding(.vertical, nested ? 14 : 18)
         .actWash(QueueLogic.wash(item), radius: nested ? 12 : 16, base: nested ? Theme.panel.opacity(0.55) : Theme.card,
                  border: nested ? .clear : Theme.line)
-        .onAppear(perform: consumeFocus)
-        .onChange(of: model.pendingQueueFocus?.downloadId) { consumeFocus() }
+        .task(id: model.pendingQueueFocus?.downloadId) { await consumeFocus() }
         .sheet(isPresented: $blocking) {
             if let group = blockableGroup {
                 BlockReleaseGroupSheet(group: group, mediaItemId: item.mediaItemId, title: item.title,
-                                       claimedResolution: item.heldDetail?.claimedResolution)
+                                       claimedResolution: item.heldDetail?.claimedResolution,
+                                       probedSize: item.heldDetail?.probedResolution.map { "\($0.w)×\($0.h)" })
             }
         }
     }
@@ -129,27 +136,19 @@ struct QueueHeldCard: View {
         .buttonStyle(.plain)
     }
 
-    private func why(_ detail: HeldDetail) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HeldWhy(detail: detail)
-            if let release = item.releaseTitle {
-                Text(release)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(Theme.dim)
-                    .textSelection(.enabled)
-            }
-            if let group = blockableGroup {
-                Button("Block \(group)…", systemImage: "nosign") { blocking = true }
-                    .buttonStyle(ActButtonStyle(kind: .warn))
-            }
-        }
-        .transition(.opacity)
+    /// The block prompt shows only while the server says it is due.
+    private func loadEvidence() async {
+        guard evidence == nil, let group = blockableGroup, let client = model.client else { return }
+        evidence = try? await client.releaseGroupEvidence(group: group, mediaItemId: item.mediaItemId)
     }
 
-    /// A held-fake push links here with `block=1`: open the dialog on this row.
-    private func consumeFocus() {
+    /// A held-fake push links here with `block=1`: the dialog opens on this row
+    /// only while the prompt is due; otherwise the row just focuses.
+    private func consumeFocus() async {
         guard let focus = model.pendingQueueFocus, focus.downloadId == item.id else { return }
         model.pendingQueueFocus = nil
-        if focus.block, blockableGroup != nil { blocking = true }
+        guard focus.block, blockableGroup != nil else { return }
+        await loadEvidence()
+        if evidence?.prompt.shouldPrompt == true { blocking = true }
     }
 }
