@@ -21,9 +21,9 @@ The empty Queue screen (#53) is being ported separately and is not in this table
 |---|---|---|
 | **B1 Blockers** | Q1, Q2, BL1, L1, A1, U1 (behaviour bugs and missing role access), plus D1 | ✅ build 389 |
 | **B2 Rule sweep** | every *rule* row: status borders and left bars → wash; gradients on controls and progress → solid; `onAccent` / `accentText`; hex → `Theme` brand tokens (grey under Mono); text under 11 pt | part 1 ✅ build 389 (gradients, borders/bars → wash, on-accent ink, brand → Mono grey, the 0.4.222 poster glow); left: Discover/Account hex, toast wash, Notifications severity bar |
-| **B3 Requests** | the R rows (decline-reason sheet, filter groups, header subtitles, drawer counts, Rules row) | — |
-| **B4 Discover** | the D rows (Letterboxd suggestion card, trailers ＋, segmented fill, TMDB-missing state, one request path) | — |
-| **B5 Activity** | the Q, H, BL, W and T rows (failure copy, card washes, pair card, pack model, held why, History lifecycle, Blocklist groups, Tasks voice) | — |
+| **B3 Requests** | the R rows (decline-reason sheet, filter groups, header subtitles, drawer counts, Rules row) | ✅ build 408 (R9 deck wash done in B2; I2/I4 done) |
+| **B4 Discover** | the D rows (Letterboxd suggestion card, trailers ＋, segmented fill, TMDB-missing state, one request path) | ✅ build 408 |
+| **B5 Activity** | the Q, H, BL, W and T rows (failure copy, card washes, pair card, pack model, held why, History lifecycle, Blocklist groups, Tasks voice) | ✅ build 408 |
 | **B6 Detail, Library, Calendar** | the L, I and C rows | — |
 | **B7 Account, Settings, shell** | the A, U, N and S rows | — |
 | **B8 Monochrome** | `actWash` gains a Mono branch (shade + pattern) used by Activity, Wanted, Library, Detail tiers and the Live Activity | ✅ build 389 |
