@@ -1,99 +1,156 @@
 import SwiftUI
 import FusionhaKit
 
-/// The Library control row (redesign): one line of glass. Tier switch,
-/// kinds menu with counts, then Filters (with its badge), grid / list and
-/// select. Everything the web's kinds card and toolbar did, minus the chrome.
+/// The Library toolbar on phones (LibraryToolbar.tsx, mobile branch): Select,
+/// the tier segment, the "Needs attention · N" chip, then "Filters" with its
+/// badge and the grid / list segment. The row wraps the attention chip onto a
+/// second line when it does not fit, as the web's flex row does.
 struct LibraryToolbar: View {
     let derived: LibraryDerived
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
-    @Binding var kind: String
     @Binding var tier: LibraryTier
+    @Binding var status: LibraryStatus
     @Binding var density: String
     /// Filters set inside the sheet (recency, group, a non-title sort).
     let filterBadge: Int
     let openFilters: () -> Void
 
-    private var active: LibraryKind? { LibraryKind(rawValue: kind) }
-    private func titles(_ k: LibraryKind) -> Int { derived.kindTitles[k] ?? 0 }
+    private var attentionOn: Bool { status == .attention }
+    private var showsAttention: Bool { derived.attentionCount > 0 || attentionOn }
 
     var body: some View {
-        GlassEffectContainer(spacing: 6) {
-            HStack(spacing: 6) {
-                SegmentedPills(options: [(LibraryTier.all, "All"), (.hd, "HD"), (.uhd, "4K")], selection: $tier)
-                    .fixedSize()
-                kindsMenu
-                Spacer(minLength: 0)
-                filters
-                GlassIconButton(systemName: density == "grid" ? "square.grid.2x2" : "list.bullet",
-                                label: density == "grid" ? "Switch to list" : "Switch to grid") {
-                    withAnimation(motion ? Motion.indicator : nil) { density = density == "grid" ? "compact" : "grid" }
-                }
-                .sensoryFeedback(.selection, trigger: density)
-                GlassIconButton(systemName: model.selectMode ? "checkmark.circle.fill" : "checkmark.circle",
-                                label: model.selectMode ? "Exit select mode" : "Select titles",
-                                on: model.selectMode) {
-                    if model.selectMode { model.exitSelectMode() } else { model.selectMode = true }
-                }
-            }
-        }
-    }
-
-    // MARK: Kinds
-
-    private var kindsMenu: some View {
-        Menu {
-            Picker("Kind", selection: kindBinding) {
-                Text("All kinds").tag("all")
-                ForEach(shownKinds, id: \.self) { k in
-                    Label("\(k.plural) · \(titles(k))", systemImage: icon(k)).tag(k.rawValue)
-                }
-            }
-        } label: {
+        GlassEffectContainer(spacing: 8) {
             ViewThatFits(in: .horizontal) {
-                GlassMenuLabel(title: active?.plural ?? "All kinds", on: active != nil)
-                GlassMenuLabel(title: active?.plural ?? "Kinds", on: active != nil)
+                HStack(spacing: 8) {
+                    leading
+                    if showsAttention { attentionChip }
+                    Spacer(minLength: 0)
+                    trailing
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 8) {
+                        leading
+                        Spacer(minLength: 0)
+                        trailing
+                    }
+                    if showsAttention { attentionChip }
+                }
             }
         }
-        .accessibilityLabel("Kind: \(active?.plural ?? "All kinds")")
     }
 
-    private var kindBinding: Binding<String> {
-        Binding(get: { kind }, set: { next in withAnimation(motion ? .snappy : nil) { kind = next } })
-    }
-
-    /// Movies, Series and Anime always; Animation only when there is some.
-    private var shownKinds: [LibraryKind] {
-        var kinds: [LibraryKind] = [.movie, .series, .anime]
-        if titles(.animation) > 0 || active == .animation { kinds.append(.animation) }
-        return kinds
-    }
-
-    private func icon(_ k: LibraryKind) -> String {
-        switch k {
-        case .movie: return "film"
-        case .series, .anime: return "tv"
-        case .animation: return "paintbrush.pointed"
+    @ViewBuilder private var leading: some View {
+        GlassIconButton(systemName: model.selectMode ? "checkmark.circle.fill" : "checkmark.circle",
+                        label: model.selectMode ? "Done selecting" : "Select",
+                        on: model.selectMode) {
+            if model.selectMode { model.exitSelectMode() } else { model.selectMode = true }
         }
+        SegmentedPills(options: [(LibraryTier.all, "All"), (.hd, "HD"), (.uhd, "4K")], selection: $tier)
+            .fixedSize()
+    }
+
+    @ViewBuilder private var trailing: some View {
+        filtersChip
+        densitySegment
+    }
+
+    // MARK: Needs attention
+
+    private var attentionChip: some View {
+        Button {
+            withAnimation(motion ? .snappy : nil) { status = attentionOn ? .all : .attention }
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: "exclamationmark.triangle").font(.system(size: 12, weight: .semibold))
+                Text("Needs attention · \(derived.attentionCount)")
+                    .font(.system(size: 13, weight: .bold).monospacedDigit())
+                    .lineLimit(1)
+            }
+            .foregroundStyle(Theme.miss)
+            .padding(.horizontal, 12)
+            .frame(height: 36)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.tint(Theme.miss.opacity(attentionOn ? 0.24 : 0.1)).interactive(), in: Capsule())
+        .fixedSize()
+        .accessibilityLabel("Needs attention · \(derived.attentionCount)")
+        .accessibilityAddTraits(attentionOn ? .isSelected : [])
     }
 
     // MARK: Filters
 
-    private var filters: some View {
-        GlassIconButton(systemName: "line.3.horizontal.decrease", label: "Filters",
-                        on: filterBadge > 0, action: openFilters)
-            .overlay(alignment: .topTrailing) {
+    private var filtersChip: some View {
+        Button(action: openFilters) {
+            HStack(spacing: 7) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Theme.mut)
+                Text("Filters").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
                 if filterBadge > 0 {
                     Text("\(filterBadge)")
-                        .font(.system(size: 11.5, weight: .heavy))
+                        .font(.system(size: 11, weight: .heavy))
                         .foregroundStyle(Theme.onAccent)
                         .frame(minWidth: 17, minHeight: 17)
                         .background(Theme.primary, in: Capsule())
-                        .offset(x: 4, y: -4)
-                        .allowsHitTesting(false)
                 }
             }
-            .accessibilityValue(filterBadge > 0 ? "\(filterBadge) active" : "")
+            .padding(.horizontal, 12)
+            .frame(height: 36)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .glassControl(on: filterBadge > 0)
+        .fixedSize()
+        .accessibilityValue(filterBadge > 0 ? "\(filterBadge) active" : "")
+    }
+
+    // MARK: Density
+
+    private var densitySegment: some View {
+        SegmentedIcons(options: [("grid", "square.grid.2x2", "Poster grid"), ("compact", "list.bullet", "Compact list")],
+                       selection: densityBinding)
+    }
+
+    private var densityBinding: Binding<String> {
+        Binding(get: { density }, set: { next in
+            withAnimation(motion ? Motion.indicator : nil) { density = next }
+        })
+    }
+}
+
+/// A two-or-more segment glass control of glyphs (the web's `.vt` toggle).
+struct SegmentedIcons: View {
+    let options: [(String, String, String)]
+    @Binding var selection: String
+    @Namespace private var indicator
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(options, id: \.0) { option in
+                let (value, symbol, label) = option
+                let on = value == selection
+                Button { selection = value } label: {
+                    Image(systemName: symbol)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(on ? Theme.txt : Theme.mut)
+                        .frame(width: 34, height: 30)
+                        .background {
+                            if on {
+                                Capsule().fill(Theme.txt.opacity(0.14))
+                                    .matchedGeometryEffect(id: "seg", in: indicator)
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(label)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(3)
+        .glassEffect(.regular.interactive(), in: Capsule())
+        .sensoryFeedback(.selection, trigger: selection)
     }
 }

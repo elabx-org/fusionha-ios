@@ -668,7 +668,8 @@ final class AppModel {
         selection = []
     }
 
-    /// Runs one bulk call over the selection, then reloads the library.
+    /// Runs one bulk call over the selection; on success leaves select mode
+    /// (BulkActionBar `done`) and reloads the library.
     func bulk(_ success: String?, _ failure: String, _ call: @escaping (APIClient, [Int]) async throws -> Void) {
         let ids = Array(selection).sorted()
         guard let client, !ids.isEmpty else { return }
@@ -676,6 +677,7 @@ final class AppModel {
             do {
                 try await call(client, ids)
                 if let success { toast(success) }
+                exitSelectMode()
                 await loadLibrary()
             } catch {
                 toast(failure, variant: .error)

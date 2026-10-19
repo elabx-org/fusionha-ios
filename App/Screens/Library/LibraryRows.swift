@@ -146,7 +146,7 @@ struct StatusSectionHeader: View {
 /// more on a wide display), so the first load does not re-flow.
 struct LibraryGridSkeleton: View {
     var body: some View {
-        AdaptivePosterGrid(spacing: 18) {
+        AdaptivePosterGrid(spacing: 18, columnSpacing: 6) {
             ForEach(0..<12, id: \.self) { _ in
                 VStack(alignment: .leading, spacing: 7) {
                     RoundedRectangle(cornerRadius: 13, style: .continuous)
@@ -174,7 +174,7 @@ struct LibraryGridRow: View {
     let columns: Int
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: 6) {
             ForEach(0..<max(columns, items.count), id: \.self) { i in
                 if i < items.count {
                     PosterCard(item: items[i]).frame(maxWidth: .infinity, alignment: .top)
@@ -183,6 +183,6 @@ struct LibraryGridRow: View {
                 }
             }
         }
-        .padding(.bottom, 22)
+        .padding(.bottom, 18)
     }
 }
