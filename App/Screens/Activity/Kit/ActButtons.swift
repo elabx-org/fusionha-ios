@@ -141,10 +141,10 @@ struct ActTierChip: View {
         Text(VersionLabel.text(tier: tier, edition: edition, multipleEditions: multipleEditions)
              ?? (big ? tier.rawValue : tier.chipLabel))
             .font(.system(size: big ? 12 : 11, weight: .semibold, design: .monospaced))
-            .foregroundStyle(tier.color)
+            .foregroundStyle(tier.chipText)
             .padding(.horizontal, big ? 7 : 5)
             .padding(.vertical, big ? 3 : 2)
-            .background(EditionChipBackground(color: tier.color))
+            .background(TierChipBackground(tier: tier))
             .lineLimit(1)
             .fixedSize()
     }
@@ -155,13 +155,16 @@ struct ActQualityChip: View {
     let quality: String
 
     var body: some View {
-        let tint: Color = quality.contains("2160") ? Theme.grab : (quality.contains("1080") ? Theme.edition : Theme.mut)
+        let tier: QualityTier? = quality.contains("2160") ? .uhd : (quality.contains("1080") ? .hd : nil)
+        let tint: Color = tier?.color ?? Theme.mut
         Text(ActFmt.quality(quality))
             .font(.system(size: 11, weight: .semibold, design: .monospaced))
-            .foregroundStyle(tint)
+            .foregroundStyle(tier?.chipText ?? tint)
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
-            .background(EditionChipBackground(color: tint))
+            .background {
+                if let tier { TierChipBackground(tier: tier) } else { EditionChipBackground(color: tint) }
+            }
             .lineLimit(1)
             .fixedSize()
     }

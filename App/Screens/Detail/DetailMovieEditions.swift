@@ -24,7 +24,7 @@ struct MovieEditionsTab: View {
             HStack(spacing: 8) {
                 HStack(spacing: -4) {
                     ForEach(editions) { e in
-                        DetailDot(color: e.movieFile != nil ? (e.tier == .hd ? Theme.edition : Theme.grab) : Theme.miss, size: 11)
+                        DetailDot(color: e.movieFile != nil ? DetailTokens.tier(e.tier) : Theme.miss, size: 11, mono: e.movieFile != nil ? e.tier.monoToken : .miss)
                     }
                 }
                 let countText = Text("\(owned.count) of \(editions.count)")

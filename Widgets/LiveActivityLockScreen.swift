@@ -2,6 +2,7 @@ import ActivityKit
 import AppIntents
 import SwiftUI
 import WidgetKit
+import FusionhaKit
 
 /// The Lock Screen (and StandBy) view, one layout per state, in the redesign's
 /// language (mock "Live Activity, redesigned", 2026-10-16): one hero per state
@@ -43,7 +44,8 @@ struct LiveActivityLockScreen: View {
                     Text(row.title).font(.system(size: 15.5, weight: .bold)).lineLimit(1)
                     if let sub = row.sub { meta(sub) }
                     HStack(spacing: 8) {
-                        EditionFillChip(label: LiveActivityTone.shortVersion(row.version), color: LiveActivityTone.version(row.version), fraction: row.fraction ?? 0)
+                        EditionFillChip(label: LiveActivityTone.shortVersion(row.version), color: LiveActivityTone.version(row.version), fraction: row.fraction ?? 0,
+                                        mono: LiveActivityTone.versionToken(row.version))
                         if let rate = LiveActivityFormat.rate(state.bps) { meta(rate, size: 12) }
                     }
                     .padding(.top, 6)
@@ -159,7 +161,8 @@ struct LiveActivityLockScreen: View {
                         if let ep = event.line2 { meta(ep, size: 12) }
                     }
                     HStack(spacing: 8) {
-                        EditionFillChip(label: LiveActivityTone.shortVersion(event.version) + " ✓", color: tone, fraction: 1)
+                        EditionFillChip(label: LiveActivityTone.shortVersion(event.version) + " ✓", color: tone, fraction: 1,
+                                        mono: upgraded ? .edition : .done)
                         if let detail = event.detail, !detail.isEmpty { meta(detail, size: 12).lineLimit(1) }
                     }
                 }
@@ -177,7 +180,8 @@ struct LiveActivityLockScreen: View {
         HStack(spacing: 6) {
             Text(title).font(.system(size: 14.5, weight: .bold)).lineLimit(1)
             if let sub { meta(sub, size: 12).lineLimit(1) }
-            EditionFillChip(label: LiveActivityTone.shortVersion(version), color: LiveActivityTone.version(version))
+            EditionFillChip(label: LiveActivityTone.shortVersion(version), color: LiveActivityTone.version(version),
+                            mono: LiveActivityTone.versionToken(version))
         }
     }
 
@@ -187,7 +191,7 @@ struct LiveActivityLockScreen: View {
 
     private var needYouLine: some View {
         HStack(spacing: 6) {
-            Circle().fill(Theme.miss).frame(width: 7, height: 7)
+            StatusDot(token: .miss, size: 7)
             Text("\(state.needYou) need you · held for review")
                 .font(.system(size: 12.5, weight: .semibold))
                 .foregroundStyle(Theme.miss)

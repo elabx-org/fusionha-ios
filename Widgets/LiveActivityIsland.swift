@@ -1,6 +1,7 @@
 import ActivityKit
 import SwiftUI
 import WidgetKit
+import FusionhaKit
 
 // The Dynamic Island: compact (count · soonest finish), minimal (the
 // leading download's ring), and expanded on a long press.
@@ -139,7 +140,8 @@ struct LiveActivityIslandBottom: View {
             case .downloading:
                 HStack(spacing: 8) {
                     if let row = state.rows.first {
-                        EditionFillChip(label: LiveActivityTone.shortVersion(row.version), color: LiveActivityTone.version(row.version), fraction: row.fraction ?? 0)
+                        EditionFillChip(label: LiveActivityTone.shortVersion(row.version), color: LiveActivityTone.version(row.version), fraction: row.fraction ?? 0,
+                                        mono: LiveActivityTone.versionToken(row.version))
                     }
                     Text(line).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
                 }

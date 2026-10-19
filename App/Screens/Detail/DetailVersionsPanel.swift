@@ -118,8 +118,8 @@ struct DetailVersionsPanel: View {
             let usable = max(geo.size.width - CGFloat(max(onDisk.count - 1, 0)) * 2, 0)
             HStack(spacing: 2) {
                 ForEach(Array(onDisk.enumerated()), id: \.offset) { _, seg in
-                    Rectangle()
-                        .fill(seg.0.tier.color.opacity(seg.0.versionKey.isEmpty ? 1 : 0.6))
+                    StatusSwatch(token: seg.0.tier.monoToken, shape: Rectangle(),
+                                 color: DetailTokens.tier(seg.0.tier).opacity(seg.0.versionKey.isEmpty ? 1 : 0.6))
                         .frame(width: usable * CGFloat(seg.1 / total))
                 }
             }
@@ -140,7 +140,7 @@ struct DetailVersionsPanel: View {
             if let focused {
                 Text(detail.versionName(focused))
                     .fontWeight(.semibold)
-                    .foregroundStyle(focused.tier.color)
+                    .foregroundStyle(DetailTokens.tier(focused.tier))
                     .lineLimit(1)
                     .truncationMode(.tail)
                 Button {

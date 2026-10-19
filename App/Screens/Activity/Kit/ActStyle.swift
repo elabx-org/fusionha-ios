@@ -20,20 +20,32 @@ enum ActColor {
 
 extension View {
     /// The ambient left-edge tint: `linear-gradient(90deg, mix(c 13%, --card) 0%, --card 42%)`.
-    func actWash(_ color: Color?, radius: CGFloat = 14, base: Color = Theme.card, border: Color = Theme.line) -> some View {
+    /// Under Monochrome the status reads as a solid shade with its pattern
+    /// (`MonoWash`); `mono` names the status when the colour alone is ambiguous.
+    func actWash(_ color: Color?, mono: MonoToken? = nil, radius: CGFloat = 14, base: Color = Theme.card,
+                 border: Color = Theme.line) -> some View {
         background {
             RoundedRectangle(cornerRadius: radius, style: .continuous)
                 .fill(base)
                 .overlay {
                     if let color {
-                        LinearGradient(stops: [.init(color: color.opacity(0.13), location: 0),
-                                               .init(color: color.opacity(0), location: 0.42)],
-                                       startPoint: .leading, endPoint: .trailing)
-                            .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                        if Theme.isMono {
+                            MonoWash(token: mono ?? MonoToken.matching(color), color: color, radius: radius)
+                        } else {
+                            LinearGradient(stops: [.init(color: color.opacity(0.13), location: 0),
+                                                   .init(color: color.opacity(0), location: 0.42)],
+                                           startPoint: .leading, endPoint: .trailing)
+                                .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                        }
                     }
                 }
         }
         .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(border))
+    }
+
+    /// `actWash` for a status tone: its colour, drawn as its token under Monochrome.
+    func actWash(_ tone: StatusTone?, radius: CGFloat = 14, base: Color = Theme.card, border: Color = Theme.line) -> some View {
+        actWash(tone?.color, mono: tone?.mono, radius: radius, base: base, border: border)
     }
 }
 

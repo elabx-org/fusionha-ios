@@ -43,7 +43,7 @@ struct LibraryStatsSheet: View {
                         GeometryReader { geo in
                             HStack(spacing: 0) {
                                 ForEach([CardStatus.complete, .downloading, .missing, .upcoming], id: \.self) { seg in
-                                    Rectangle().fill(seg.color)
+                                    StatusSwatch(token: seg.monoToken, shape: Rectangle())
                                         .frame(width: grown && pulse.totalEditions > 0
                                                ? geo.size.width * CGFloat(pulse.counts[seg] ?? 0) / CGFloat(pulse.totalEditions) : 0)
                                 }
@@ -182,7 +182,9 @@ struct LibraryStatsSheet: View {
             dismiss()
         } label: {
             HStack(spacing: 9) {
-                if key == .downloading {
+                if Theme.isMono, let token = CardStatus(rawValue: key.rawValue)?.monoToken {
+                    StatusGlyph(token: token, size: 11).frame(width: 10, height: 10)
+                } else if key == .downloading {
                     PulsingDot(color: color, size: 10, period: 1.5)
                 } else {
                     Circle().fill(color).frame(width: 10, height: 10)

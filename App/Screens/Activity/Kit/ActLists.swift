@@ -65,7 +65,7 @@ struct ActFooter: View {
 // MARK: GroupCard
 
 struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: View {
-    var wash: Color?
+    var wash: StatusTone?
     var base: Color = Theme.panel
     var hasTrailing = true
     /// The expand chevron sits last in the trailing row instead of top-right
@@ -80,7 +80,7 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
     private let trailing: TrailingV
     private let content: BodyV
 
-    init(wash: Color? = nil, base: Color = Theme.panel, defaultOpen: Bool = true, hasTrailing: Bool = true,
+    init(wash: StatusTone? = nil, base: Color = Theme.panel, defaultOpen: Bool = true, hasTrailing: Bool = true,
          chevronInRow: Bool = false, onToggle: ((Bool) -> Void)? = nil,
          @ViewBuilder poster: () -> PosterV, @ViewBuilder title: () -> TitleV,
          @ViewBuilder trailing: () -> TrailingV, @ViewBuilder content: () -> BodyV) {

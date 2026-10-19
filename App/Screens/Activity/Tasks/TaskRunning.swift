@@ -85,7 +85,7 @@ struct SearchRunCard: View {
                 HStack(spacing: 12) {
                     ActProgressBar(fraction: Double(pct) / 100, height: 7,
                                    fill: stuck ? AnyShapeStyle(Theme.miss) : AnyShapeStyle(Theme.grab),
-                                   shimmer: !stuck)
+                                   shimmer: !stuck, mono: stuck ? .miss : .grab)
                     Text("\(search.processed) / \(search.total) · \(pct)%")
                         .font(.system(size: 13, weight: .heavy, design: .monospaced))
                         .foregroundStyle(Theme.txt)
@@ -155,7 +155,7 @@ struct SearchRunCard: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 15)
-        .actWash(tone, radius: 11, base: Theme.card)
+        .actWash(tone, mono: stuck ? .miss : .grab, radius: 11, base: Theme.card)
     }
 
     private func count(_ glyph: String, _ value: Int, _ label: String, _ color: Color) -> some View {

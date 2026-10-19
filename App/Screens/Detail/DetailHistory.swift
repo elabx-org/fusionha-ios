@@ -1,31 +1,35 @@
 import SwiftUI
 import FusionhaKit
 
-// The History tab (Timeline / Lifecycle / Insights) and the Searches tab.
+// The History tab (Timeline / Lifecycle / Insights). The Searches tab: DetailSearchesTab.
 
 private enum HistoryMode: String, CaseIterable {
     case timeline, lifecycle, insights
     var title: String { rawValue.capitalized }
 }
 
-private func eventStyle(_ type: String) -> (label: String, color: Color) {
+/// An event's label and status token (the node's colour, and its pattern under Monochrome).
+private func eventStyle(_ type: String) -> (label: String, color: Color, mono: MonoToken?) {
+    func style(_ label: String, _ token: MonoToken?) -> (label: String, color: Color, mono: MonoToken?) {
+        (label, token?.color ?? Theme.mut, token)
+    }
     switch type {
-    case "GRABBED": return ("Grabbed", Theme.grab)
-    case "IMPORTED": return ("Imported", Theme.done)
-    case "GRAB_FAILED": return ("Grab failed", Theme.stuck)
-    case "NEEDS_ATTENTION": return ("Needs attention", Theme.stuck)
-    case "DOWNLOAD_FAILED": return ("Download failed", Theme.danger)
-    case "FILE_MOVE_FAILED": return ("Move failed", Theme.danger)
-    case "DELETED": return ("Deleted", Theme.danger)
-    case "RENAMED": return ("Renamed", Theme.edition)
-    case "FILE_MOVED": return ("Moved", Theme.edition)
-    case "RENUMBERED": return ("Numbering fixed", Theme.edition)
-    case "MOVED_TO_EDITION", "EDITION_MOVED": return ("Moved to edition", Theme.edition)
-    default: return (type.replacingOccurrences(of: "_", with: " ").capitalized, Theme.mut)
+    case "GRABBED": return style("Grabbed", .grab)
+    case "IMPORTED": return style("Imported", .done)
+    case "GRAB_FAILED": return style("Grab failed", .stuck)
+    case "NEEDS_ATTENTION": return style("Needs attention", .stuck)
+    case "DOWNLOAD_FAILED": return style("Download failed", .danger)
+    case "FILE_MOVE_FAILED": return style("Move failed", .danger)
+    case "DELETED": return style("Deleted", .danger)
+    case "RENAMED": return style("Renamed", .edition)
+    case "FILE_MOVED": return style("Moved", .edition)
+    case "RENUMBERED": return style("Numbering fixed", .edition)
+    case "MOVED_TO_EDITION", "EDITION_MOVED": return style("Moved to edition", .edition)
+    default: return style(type.replacingOccurrences(of: "_", with: " ").capitalized, nil)
     }
 }
 
-private func triggerLabel(_ trigger: String?) -> String? {
+func triggerLabel(_ trigger: String?) -> String? {
     guard let trigger, !trigger.isEmpty else { return nil }
     switch trigger {
     case "rss": return "RSS"
@@ -142,8 +146,9 @@ private struct TimelineRow: View {
             // The spine + node.
             ZStack(alignment: .top) {
                 Rectangle().fill(Theme.line).frame(width: 2).frame(maxHeight: .infinity)
-                Circle()
-                    .fill(style.color)
+                Group {
+                    if let mono = style.mono { StatusSwatch(mono) } else { Circle().fill(style.color) }
+                }
                     .frame(width: 13, height: 13)
                     .padding(3)
                     .background(style.color.opacity(0.18), in: Circle())
@@ -328,87 +333,5 @@ private struct Sparkline: View {
         }
         .detailAnimation(.easeOut(duration: 0.8), value: drawn)
         .onAppear { drawn = true }
-    }
-}
-
-// MARK: - Searches
-
-struct SearchesTab: View {
-    @Environment(DetailStore.self) private var store
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if !store.runsLoaded {
-                DetailSpinner(size: 20, color: Theme.mut).frame(maxWidth: .infinity).padding(.vertical, 30)
-            } else if store.runs.isEmpty {
-                Text("No searches yet for this title. Manual searches, RSS syncs and scheduled sweeps that touch it show up here — each with what it grabbed and why.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.mut)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 30)
-                    .padding(.horizontal, 20)
-                    .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line, style: StrokeStyle(lineWidth: 1, dash: [4, 4])))
-            } else {
-                ForEach(store.runs) { run in
-                    RunRow(run: run)
-                }
-            }
-        }
-    }
-}
-
-private struct RunRow: View {
-    let run: CommandRun
-
-    private var statusColor: Color {
-        switch run.status ?? "" {
-        case "running": return Theme.grab
-        case "failed": return Theme.danger
-        case "interrupted": return Theme.stuck
-        default: return (run.grabbed ?? 0) + (run.upgraded ?? 0) > 0 ? Theme.done : Theme.mut
-        }
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Group {
-                if run.isRunning { DetailSpinner(size: 12, color: Theme.grab) } else { DetailDot(color: statusColor, size: 9) }
-            }
-            .frame(width: 14, height: 18)
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(run.targetSummary ?? run.targetTitle ?? run.name ?? "Search")
-                        .font(.system(size: 13.5, weight: .semibold))
-                        .foregroundStyle(Theme.txt)
-                        .lineLimit(2)
-                    if let trigger = triggerLabel(run.trigger) {
-                        Text(trigger)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(Theme.mut)
-                            .padding(.horizontal, 6).padding(.vertical, 1)
-                            .overlay(Capsule().strokeBorder(Theme.line))
-                    }
-                }
-                Text(counts).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.mut)
-                if let detail = run.detail, !detail.isEmpty {
-                    Text(detail).font(.system(size: 11.5).italic()).foregroundStyle(Theme.dim)
-                }
-            }
-            Spacer(minLength: 0)
-            Text(DetailText.relative(run.startedAt)).font(.system(size: 11.5)).foregroundStyle(Theme.dim).fixedSize()
-        }
-        .padding(12)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 11))
-        .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line))
-    }
-
-    private var counts: String {
-        var parts = ["\(run.releases ?? 0) releases"]
-        let grabbed = (run.grabbed ?? 0) + (run.upgraded ?? 0)
-        if grabbed > 0 { parts.append("\(grabbed) grabbed") }
-        if let r = run.rejected, r > 0 { parts.append("\(r) rejected") }
-        if let e = run.errors, e > 0 { parts.append("\(e) errors") }
-        return parts.joined(separator: " · ")
     }
 }

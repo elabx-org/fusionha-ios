@@ -1,6 +1,7 @@
 import ActivityKit
 import SwiftUI
 import WidgetKit
+import FusionhaKit
 
 /// The Downloads Live Activity (approved "Live Activity redesign"): the Lock
 /// Screen and StandBy views, the Dynamic Island, and the Apple Watch Smart
@@ -104,10 +105,26 @@ enum LiveActivityTone {
         }
     }
 
-    /// HD purple, 4K cyan, as everywhere else.
-    static func version(_ label: String) -> Color {
-        label.contains("4K") ? Theme.grab : Theme.edition
+    /// The state's status token (its pattern under Monochrome).
+    static func token(_ state: DownloadsActivityAttributes.ContentState) -> MonoToken {
+        switch state.mode {
+        case .problem: return .danger
+        case .held: return .miss
+        case .imported, .done: return .done
+        case .upgraded: return .edition
+        case .downloading, .steps: return .grab
+        }
     }
+
+    /// HD purple, 4K cyan, as everywhere else; Monochrome's two tier-chip greys.
+    static func version(_ label: String) -> Color {
+        Theme.tierFill(tier(label))
+    }
+
+    /// The version's tier token: 4K wears grab's pattern, HD edition's.
+    static func versionToken(_ label: String) -> MonoToken { tier(label).monoToken }
+
+    private static func tier(_ label: String) -> QualityTier { label.contains("4K") ? .uhd : .hd }
 
     /// The version without the default edition: "Standard · HD" → "HD".
     static func shortVersion(_ label: String) -> String {

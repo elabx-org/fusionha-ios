@@ -42,7 +42,7 @@ struct QueueGroupCard: View {
                       held: downloads.filter { $0.cockpitState == .held }.count)
         let seasons = Dictionary(grouping: downloads) { season($0) }
         let isSeries = downloads.contains { $0.episodeLabel != nil }
-        ActGroupCard(wash: QueueGroupSummary(group: group).heldIds.isEmpty ? Theme.grab : Theme.stuck, base: Theme.panel,
+        ActGroupCard(wash: StatusTone(QueueGroupSummary(group: group).heldIds.isEmpty ? .grab : .stuck), base: Theme.panel,
                      defaultOpen: group.isPair || isOpen, chevronInRow: true,
                      onToggle: { open in groupOpen = open; QueueGroupMemory.set(group.id, open: open) }) {
             ActPoster(url: lead.posterUrl, title: lead.title, size: .md)

@@ -31,6 +31,16 @@ enum WantedTab: String, CaseIterable, Hashable {
         }
     }
 
+    /// The tab's status token (its chip dot, strip bar and lead dot under Monochrome).
+    var token: MonoToken {
+        switch self {
+        case .missing: return .miss
+        case .cutoff: return .edition
+        case .upcoming: return .unaired
+        case .fourk: return QualityTier.uhd.monoToken
+        }
+    }
+
     var noun: String {
         switch self {
         case .missing: return "missing"
@@ -51,14 +61,9 @@ enum WantedTab: String, CaseIterable, Hashable {
 
 /// The web's per-edition state vocabulary on the Wanted wire.
 enum WantedLogic {
-    static func stateColor(_ state: String) -> Color {
-        switch state {
-        case "missing": return Theme.miss
-        case "cutoff_unmet": return Theme.edition
-        case "upcoming": return Theme.unaired
-        default: return Theme.done
-        }
-    }
+    static func stateColor(_ state: String) -> Color { WantedStateToken.token(state).color }
+
+    static func stateTone(_ state: String) -> StatusTone { StatusTone(WantedStateToken.token(state)) }
 
     static func stateLabel(_ state: String) -> String {
         switch state {

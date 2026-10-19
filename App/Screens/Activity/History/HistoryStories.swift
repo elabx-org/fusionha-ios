@@ -28,11 +28,23 @@ enum HistoryStoryType: String, CaseIterable, Sendable {
         }
     }
 
-    var wash: Color? {
+    var wash: StatusTone? {
         switch self {
-        case .grabbed, .upgraded: return Theme.done
-        case .added: return Theme.grab
-        case .deleted, .failed: return Theme.danger
+        case .grabbed, .upgraded: return StatusTone(.done)
+        case .added: return StatusTone(.grab)
+        case .deleted, .failed: return StatusTone(.danger)
+        case .other: return nil
+        }
+    }
+
+    /// The story's status token (its timeline node and KPI dot under Monochrome).
+    var mono: MonoToken? {
+        switch self {
+        case .upgraded: return .edition
+        case .added: return .done
+        case .grabbed: return .grab
+        case .failed: return .danger
+        case .deleted: return .miss
         case .other: return nil
         }
     }
