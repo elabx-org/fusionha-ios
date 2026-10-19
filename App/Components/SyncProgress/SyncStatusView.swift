@@ -99,7 +99,7 @@ struct SyncBar: View {
 
     var body: some View {
         let pct = SyncProgress.percent(sync)
-        ActProgressBar(fraction: Double(pct ?? 100) / 100, height: 5, fill: AnyShapeStyle(Theme.fusion), shimmer: true)
+        ActProgressBar(fraction: Double(pct ?? 100) / 100, height: 5, fill: AnyShapeStyle(Theme.primary), shimmer: true)
             .environment(\.actReduceMotion, systemReduce || appReduce)
             .accessibilityElement()
             .accessibilityLabel(label)

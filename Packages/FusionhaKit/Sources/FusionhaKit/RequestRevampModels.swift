@@ -63,9 +63,12 @@ public struct RequestLifecycleEntry: Decodable, Sendable, Hashable {
     public let importing: Bool
     /// The download client's time left while downloading (0.4.216); nil when unknown.
     public let etaSeconds: Int?
+    /// The release quality being downloaded ("WEBDL-1080p"), only while downloading (0.4.217).
+    public let quality: String?
 
     public init(tier: QualityTier, edition: String? = nil, step: Step, progressPct: Int? = nil, nextRetryAt: String? = nil,
-                availableFrom: String? = nil, needsManualImport: Bool = false, importing: Bool = false, etaSeconds: Int? = nil) {
+                availableFrom: String? = nil, needsManualImport: Bool = false, importing: Bool = false, etaSeconds: Int? = nil,
+                quality: String? = nil) {
         self.tier = tier
         self.edition = edition
         self.step = step
@@ -75,6 +78,7 @@ public struct RequestLifecycleEntry: Decodable, Sendable, Hashable {
         self.needsManualImport = needsManualImport
         self.importing = importing
         self.etaSeconds = etaSeconds
+        self.quality = quality
     }
 }
 

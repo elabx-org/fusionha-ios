@@ -15,12 +15,18 @@ struct RequestsHistoryView: View {
     @State private var loadingMore = false
 
     private var values: RequestsFilter.Values { nav.filter[.history] }
+
+    /// Loaded rows decided this calendar month (newest first, so the first
+    /// page covers the month unless it is a very busy one).
+    private var thisMonth: Int {
+        items.filter { RequestHistoryDays.instant($0).map { Calendar.current.isDate($0, equalTo: Date(), toGranularity: .month) } ?? false }.count
+    }
     private var key: String { "\(values.status.rawValue)|\(values.search)|\(nav.filter.query(.history))" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             RequestsViewHeader {
-                if loaded { requestsCount(items.count, cursor == nil ? "decided" : "decided, more below") }
+                if loaded { requestsCount(thisMonth, "decided this month") }
             }
             content
         }

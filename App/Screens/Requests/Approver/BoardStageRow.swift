@@ -18,7 +18,16 @@ struct BoardStageRow: View {
         RequestsListRow(request: request, compact: compact) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    if let tier = request.tiers.first { ActTierChip(tier: tier) }
+                    // Downloading shows the release quality ("WEBDL-1080p") in place of the tier (0.4.217).
+                    if column == .downloading, let quality = lead?.quality, let tier = request.tiers.first {
+                        Text(quality)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(tier.color)
+                            .padding(.horizontal, 6).frame(height: 20)
+                            .background(tier.color.opacity(0.16), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    } else if let tier = request.tiers.first {
+                        ActTierChip(tier: tier)
+                    }
                     facts
                 }
                 if column == .downloading, let pct = lead?.progressPct, lead?.needsManualImport != true {

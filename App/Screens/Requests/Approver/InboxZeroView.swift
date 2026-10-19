@@ -77,7 +77,8 @@ struct InboxZeroView: View {
     }
 }
 
-/// The 5 s Undo (web `UndoToast`): "Approving …" or "Declining … · reason",
+/// The 5 s Undo (web `UndoToast`, 0.4.217 copy): "Approved X" or "Declined X ·
+/// reason" with Change reason, then Undo.
 /// nothing is sent until it closes.
 struct InboxUndoToast: View {
     let decision: InboxDecision
@@ -88,7 +89,7 @@ struct InboxUndoToast: View {
         HStack(spacing: 10) {
             Image(systemName: decision.kind == .approve ? "checkmark" : "xmark")
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(decision.kind == .approve ? Theme.done : Theme.danger)
+                .foregroundStyle(decision.kind == .approve ? Theme.accentText : Theme.danger)
             message.font(.system(size: 13.5)).foregroundStyle(Theme.txt).lineLimit(2)
             Spacer(minLength: 4)
             if decision.kind == .decline {
@@ -97,10 +98,10 @@ struct InboxUndoToast: View {
                         Button(reason.title) { onReason(reason) }
                     }
                 } label: {
-                    Text(decision.reason.title)
+                    Text("Change reason")
                         .font(.system(size: 12.5, weight: .semibold))
                 }
-                .accessibilityLabel("Decline reason")
+                .accessibilityLabel("Change reason, now \(decision.reason.title)")
             }
             Button("Undo", action: onUndo).font(.system(size: 14, weight: .bold))
         }
@@ -115,10 +116,10 @@ struct InboxUndoToast: View {
         switch decision.kind {
         case .approve:
             return decision.ids.count > 1
-                ? Text("Approving ") + Text(decision.title).bold() + Text(" with each title’s usual setup")
-                : Text("Approving ") + Text(decision.title).bold() + Text(tiers)
+                ? Text("Approved ") + Text(decision.title).bold() + Text(" with each title’s usual setup")
+                : Text("Approved ") + Text(decision.title).bold() + Text(tiers)
         case .decline:
-            return Text("Declining ") + Text(decision.title).bold() + Text(" ·")
+            return Text("Declined ") + Text(decision.title).bold() + Text(" · \(decision.reason.title)")
         }
     }
 }

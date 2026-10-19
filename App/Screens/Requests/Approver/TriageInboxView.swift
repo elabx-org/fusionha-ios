@@ -64,7 +64,15 @@ struct TriageInboxView: View {
                 if inbox.failed {
                     Text("Couldn’t refresh. Showing the last list.").font(.system(size: 12)).foregroundStyle(Theme.miss)
                 }
-                if nav.selecting && !inbox.queue.isEmpty {
+                if inbox.queue.isEmpty && nav.filter.activeCount(.inbox) > 0 {
+                    // A filter emptied the inbox: say so, no celebration (0.4.217).
+                    VStack(spacing: 10) {
+                        Text("No requests match.").font(.system(size: 16, weight: .semibold)).foregroundStyle(Theme.txt)
+                        Button("Clear") { nav.filter.reset(.inbox) }.font(.system(size: 15, weight: .semibold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 36)
+                } else if nav.selecting && !inbox.queue.isEmpty {
                     InboxListView(inbox: inbox, viewerId: viewerId, onOpen: { details = $0 },
                                   onBackToCards: { nav.selecting = false; inbox.selected = [] })
                 } else {
