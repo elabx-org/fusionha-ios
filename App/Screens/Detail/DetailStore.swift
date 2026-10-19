@@ -101,6 +101,8 @@ final class DetailStore {
     var addPreset: AddEditionPreset?
     var showingDelete = false
     var seasonSheet: SeasonRef?
+    /// The episode sheet (EpisodeDetailDialog): Details / History / Search.
+    var episodeSheet: EpisodeSheetTarget?
     /// The item actions rail's dialogs (see DetailStore+ItemActions.swift).
     var renameScope: RenameScope?
     var showingAliases = false

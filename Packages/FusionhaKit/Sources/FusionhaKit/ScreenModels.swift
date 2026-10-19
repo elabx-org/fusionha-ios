@@ -269,6 +269,8 @@ public struct Episode: Decodable, Sendable, Hashable, Identifiable {
     public let downloadStates: [EpisodeDownload]?
     public let overview: String?
     public let airDatetime: String?
+    /// Minutes, from the metadata provider.
+    public let runtime: Int?
 }
 
 public struct EpisodeDownload: Decodable, Sendable, Hashable {

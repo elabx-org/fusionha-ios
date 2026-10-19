@@ -9,7 +9,7 @@ private enum HistoryMode: String, CaseIterable {
 }
 
 /// An event's label and status token (the node's colour, and its pattern under Monochrome).
-private func eventStyle(_ type: String) -> (label: String, color: Color, mono: MonoToken?) {
+func eventStyle(_ type: String) -> (label: String, color: Color, mono: MonoToken?) {
     func style(_ label: String, _ token: MonoToken?) -> (label: String, color: Color, mono: MonoToken?) {
         (label, token?.color ?? Theme.mut, token)
     }
@@ -47,7 +47,7 @@ func triggerLabel(_ trigger: String?) -> String? {
     }
 }
 
-private func triggerIcon(_ trigger: String?) -> String {
+func triggerIcon(_ trigger: String?) -> String {
     switch trigger ?? "" {
     case "rss": return "dot.radiowaves.up.forward"
     case "upgrade": return "arrow.up"
@@ -134,7 +134,7 @@ private struct HistoryTimeline: View {
     }
 }
 
-private struct TimelineRow: View {
+struct TimelineRow: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     let detail: ItemDetail

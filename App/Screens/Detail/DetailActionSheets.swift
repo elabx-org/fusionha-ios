@@ -32,6 +32,10 @@ struct DetailActionSheets: ViewModifier {
                         .environment(store)
                 }
             }
+            .sheet(item: $store.episodeSheet) { target in
+                EpisodeDetailSheet(target: target)
+                    .environment(store)
+            }
             .sheet(item: $store.collectionAdd) { target in
                 AddCollectionSheet(summary: target.summary, preselect: target.tmdbIds) {
                     Task { await store.loadCollection() }
