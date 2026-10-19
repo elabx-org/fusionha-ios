@@ -96,6 +96,8 @@ final class AppModel {
 
     /// App-wide toasts (components/ui/Toast). Call `toast(...)` from any screen.
     private(set) var toasts: [ToastMessage] = []
+    /// Their auto-dismiss clocks, paused while a toast is held.
+    let toastClock = ToastClock()
 
     // Shell badges and settings (ShellState.swift).
     let shell = ShellState()
@@ -484,13 +486,17 @@ final class AppModel {
 
     // MARK: Toasts
 
-    func toast(_ message: String, title: String? = nil, variant: ToastVariant = .success, duration: Double = 4) {
-        let item = ToastMessage(message: message, title: title, variant: variant, duration: duration)
+    func toast(_ message: String, title: String? = nil, variant: ToastVariant = .success, duration: Double = 4,
+               action: ToastAction? = nil) {
+        let item = ToastMessage(message: message, title: title, variant: variant, duration: duration, action: action)
         toasts.append(item)
         if toasts.count > 3 { toasts.removeFirst(toasts.count - 3) }
         Task { [weak self] in
-            try? await Task.sleep(for: .seconds(duration))
-            self?.dismissToast(item.id)
+            guard let self else { return }
+            await toastClock.run(item.id, duration: duration) { [weak self] in
+                self?.toasts.contains { $0.id == item.id } ?? false
+            }
+            dismissToast(item.id)
         }
     }
 

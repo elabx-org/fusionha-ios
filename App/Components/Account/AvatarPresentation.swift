@@ -16,6 +16,12 @@ final class AvatarPresentation {
     var showingSettings = SettingsScreenshot.openAtLaunch
     var settingsPanel = SettingsScreenshot.panel
     var showingWidgets = WidgetDiagnosticsView.openAtLaunch
+    /// The panel on top of an open Settings (any presenter), nil when closed.
+    var settingsShown: String?
+    /// A panel for the open Settings to jump to (a toast's action).
+    var settingsJump: String?
+    /// One secrets-locked toast per burst (`SecretsLockedBus.Gate`).
+    var secretsGate = SecretsLockedBus.Gate()
     /// Keychain + App Group probes for the hub's diagnostics, read off the main thread.
     var diagnostics = ""
 

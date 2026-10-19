@@ -116,6 +116,7 @@ private struct ShellPresentations: ViewModifier {
             AccountSheet().presentationBackground(Theme.bg)
         }
         .modifier(AvatarPresentations(avatar: model.avatar, model: model))
+        .modifier(SecretsLockedToaster(model: model))
         .sheet(item: $model.deleteTarget) { target in
             DeleteTitleDialog(target: target)
                 .presentationDetents([.height(320)])

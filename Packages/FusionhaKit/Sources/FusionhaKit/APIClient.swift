@@ -322,7 +322,9 @@ public final class APIClient: @unchecked Sendable {
         let http = response as? HTTPURLResponse
         let status = http?.statusCode ?? 0
         guard let http, (200..<300).contains(status) else {
-            throw APIError.http(status: status, body: String(decoding: data.prefix(8192), as: UTF8.self))
+            let error = APIError.http(status: status, body: String(decoding: data.prefix(8192), as: UTF8.self))
+            SecretsLockedBus.report(method: req.httpMethod, error: error)
+            throw error
         }
         if req.httpMethod == "GET", let url = req.url { ResponseDiskCache.write(data, for: url, response: http) }
         return (data, http)

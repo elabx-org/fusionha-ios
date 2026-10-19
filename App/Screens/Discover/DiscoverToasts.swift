@@ -22,7 +22,15 @@ final class DiscoverToasts {
     private(set) var current: DiscoverToastMessage?
     private var hide: Task<Void, Never>?
 
+    /// The app's toasts (`AppModel.toast`, set by the shell): when present,
+    /// every Discover toast goes there, so the app has one toast stack.
+    var sink: (@MainActor (_ variant: DiscoverToastVariant, _ message: String, _ title: String?) -> Void)?
+
     func show(_ variant: DiscoverToastVariant, _ message: String, title: String? = nil) {
+        if let sink {
+            sink(variant, message, title)
+            return
+        }
         let toast = DiscoverToastMessage(variant: variant, title: title, message: message)
         current = toast
         hide?.cancel()

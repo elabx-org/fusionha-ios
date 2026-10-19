@@ -23,7 +23,8 @@ struct PreviewSheet: View {
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.bg)
         .presentationCornerRadius(14)
-        .discoverToastOverlay(bottomInset: 24)
+        // Sheets hide the shell's toasts.
+        .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
         .sheet(item: $addPick) { pick in
             AddTitleSheet(initialPick: .tmdb(pick), hideViewDetails: true,
                           providerOverride: DiscoverSession.shared.providerOverride) { id in

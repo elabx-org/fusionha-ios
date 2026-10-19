@@ -61,6 +61,7 @@ struct SettingsView: View {
         .environment(\.settingsMotionOff, motionOff)
         .environment(\.settingsPush, push)
         .task { await store.load() }
+        .modifier(SettingsShellLink(path: $path))
     }
 
     /// The panels pushed on top of the sidebar's selection.
