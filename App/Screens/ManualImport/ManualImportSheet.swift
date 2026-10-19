@@ -15,6 +15,7 @@ struct ManualImportSheet: View {
     @State private var openId: Int?
     @State private var showKey = false
     @State private var pollRun = 0
+    @State private var folded: Set<String> = []
 
     init(downloadIds: [Int], client: APIClient?, onOpenWeb: @escaping () -> Void) {
         self.downloadIds = downloadIds
@@ -59,6 +60,7 @@ struct ManualImportSheet: View {
     }
 
     @ViewBuilder private var content: some View {
+        @Bindable var session = session
         if session.folderMode && session.scan == nil {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
@@ -75,16 +77,22 @@ struct ManualImportSheet: View {
                     if session.folderMode { MISourceBar() }
                     if let strip = ManualImportHeldStrip(scan: scan, decide: session.plan.need) { MIHeldStripView(strip: strip) }
                     MIPackProgress()
-                    if session.probeStalled {
-                        Button("Checking the files stalled. Retry", systemImage: "arrow.clockwise") {
-                            session.retryProbes()
-                            pollRun += 1
-                        }
-                        .buttonStyle(ActButtonStyle(kind: .warn))
+                    MIVerdictStrip(rows: scan.rows, filter: $session.filter, probing: scan.probePending ?? 0,
+                                   stalled: session.probeStalled) {
+                        session.retryProbes()
+                        pollRun += 1
                     }
-                    ForEach(blocks(scan.rows), id: \.key) { block in
-                        blockHeader(block)
-                        ForEach(block.rows) { row in MIRowView(row: row, openId: $openId) }
+                    let blocks = ManualImportBlock.group(scan.rows)
+                    MIMatchBanner(blocks: blocks, filter: $session.filter)
+                    ForEach(blocks) { block in
+                        let shown = block.rows.filter(session.filter.matches)
+                        if !shown.isEmpty {
+                            MITitleSection(block: block, rows: shown, folded: foldBinding(block.key), openId: $openId)
+                        }
+                    }
+                    if blocks.allSatisfy({ !$0.rows.contains(where: session.filter.matches) }) {
+                        Button("No files match this filter. Show all") { session.filter = .all }
+                            .buttonStyle(ActButtonStyle(kind: .ghost))
                     }
                 }
                 .padding(.horizontal, Theme.pageGutter)
@@ -122,36 +130,8 @@ struct ManualImportSheet: View {
         }
     }
 
-    private struct Block { let key: String; let title: String; let year: Int?; let rows: [ManualImportRow] }
-
-    /// One block per title; unmatched files sit last.
-    private func blocks(_ rows: [ManualImportRow]) -> [Block] {
-        var order: [String] = []
-        var grouped: [String: [ManualImportRow]] = [:]
-        for row in rows {
-            let key = row.match.itemId.map { "item-\($0)" } ?? "none"
-            if grouped[key] == nil { order.append(key) }
-            grouped[key, default: []].append(row)
-        }
-        order = order.filter { $0 != "none" } + order.filter { $0 == "none" }
-        return order.map { key in
-            let first = grouped[key]![0]
-            return Block(key: key, title: key == "none" ? "No match" : (first.match.title ?? first.parsed.title ?? "—"),
-                         year: key == "none" ? nil : first.match.year, rows: grouped[key]!)
-        }
-    }
-
-    private func blockHeader(_ block: Block) -> some View {
-        let attention = block.rows.filter { !$0.committed && $0.status != "ready" }.count
-        let ticked = block.rows.filter { session.selected.contains($0.rowId) }.count
-        return HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(block.title).font(Theme.display(22)).foregroundStyle(Theme.txt).lineLimit(1)
-            if let year = block.year { Text(String(year)).font(.subheadline).foregroundStyle(Theme.mut) }
-            Spacer(minLength: 0)
-            Text("\(block.rows.count) file\(block.rows.count == 1 ? "" : "s")"
-                 + (attention > 0 ? " · \(attention) to look at" : "") + " · \(ticked) selected")
-                .font(.caption).foregroundStyle(Theme.mut)
-        }
-        .padding(.top, 8)
+    private func foldBinding(_ key: String) -> Binding<Bool> {
+        Binding(get: { folded.contains(key) },
+                set: { if $0 { folded.insert(key) } else { folded.remove(key) } })
     }
 }
