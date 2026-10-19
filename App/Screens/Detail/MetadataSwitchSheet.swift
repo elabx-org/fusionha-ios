@@ -67,7 +67,7 @@ struct MetadataSwitchSheet: View {
             SheetCancelButton(title: step == .done ? "Close" : "Cancel") { dismiss() }
         }
         if step == .review {
-            ToolbarItem(placement: .topBarLeading) { Button("Back") { step = .match } }
+            ToolbarItem(placement: .topBarLeading) { Button("Back", systemImage: "chevron.left") { step = .match } }
         }
     }
 

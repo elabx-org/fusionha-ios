@@ -38,7 +38,7 @@ struct ManageFileEditSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "Saving…" : "Save") { Task { await save() } }
+                    Button("Save", systemImage: "checkmark") { Task { await save() } }
                         .disabled(saving || draft.fields.isEmpty)
                 }
             }

@@ -6,9 +6,9 @@ import FusionhaKit
 
 /// The iOS 26 search tab, holding the web's omni search (OmniSearchOverlay +
 /// OmniResults): owned titles first ("In your library", capped at 8), then a
-/// TMDB add lane that arms itself when nothing owned matches. The field is our
-/// own glass field docked above the tab bar, focused when the tab opens (the
-/// system's `.searchable` field never showed in this shell).
+/// TMDB add lane that arms itself when nothing owned matches. The field is the
+/// system's `.searchable` one (it shows now that the tab has its own stack,
+/// DC11), focused when the tab opens.
 struct SearchTabView: View {
     @Environment(AppModel.self) private var model
     @State private var armed = false
@@ -26,22 +26,26 @@ struct SearchTabView: View {
     private var trimmed: String { term.trimmingCharacters(in: .whitespaces) }
 
     var body: some View {
+        @Bindable var model = model
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                ShellTitleRow("Search")
-                    .padding(.horizontal, Theme.pageGutter)
-                    .padding(.top, 20)
-                    .padding(.bottom, 4)
                 if trimmed.isEmpty { hint } else { results }
             }
+            .padding(.top, 8)
             .padding(.bottom, 40)
         }
         .scrollDismissesKeyboard(.interactively)
         .background(Theme.bg.ignoresSafeArea())
-        .overlay(alignment: .top) { StatusBarFade() }
-        .safeAreaInset(edge: .bottom, spacing: 0) { field }
+        .shellPage("Search")
+        // The search tab's system field (DC11), now that the tab has a stack.
+        .searchable(text: $model.searchQuery,
+                    prompt: model.requestScoped ? "Find something to request…" : "Search your library or add something new…")
+        .searchFocused($focused)
+        .textInputAutocapitalization(.never)
+        .autocorrectionDisabled()
+        .onSubmit(of: .search) { armed = true }
         .sheet(item: $requestPick) { pick in
-            RequestModal(pick: pick) {}
+            NavigationStack { RequestModal(pick: pick) {} }
         }
         .task {
             // Open ready to type, as a search tab does.
@@ -75,46 +79,6 @@ struct SearchTabView: View {
             searchedTerm = trimmed
             searching = false
         }
-    }
-
-    private var field: some View {
-        @Bindable var model = model
-        return HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(Theme.mut)
-            TextField("", text: $model.searchQuery,
-                      prompt: Text(model.requestScoped ? "Find something to request…" : "Search your library or add something new…")
-                        .foregroundStyle(Theme.mut))
-                .font(.system(size: 16))
-                .foregroundStyle(Theme.txt)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-                .focused($focused)
-                .onSubmit { armed = true }
-            if !model.searchQuery.isEmpty {
-                Button {
-                    model.searchQuery = ""
-                    focused = true
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 17))
-                        .foregroundStyle(Theme.mut)
-                        .frame(width: 32, height: 32)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(.leading, 14)
-        .padding(.trailing, 6)
-        .frame(height: 48)
-        .contentShape(Capsule())
-        .onTapGesture { focused = true }
-        .glassControl(on: focused)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
     }
 
     private var hint: some View {

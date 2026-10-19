@@ -61,7 +61,19 @@ struct AddTitleSheet: View {
     var body: some View {
         NavigationStack(path: $path) {
             root
-                .toolbar(.hidden, for: .navigationBar)
+                // Close is a system toolbar item (DC10). The configure step
+                // keeps its own hero with Back and Close; the request modal
+                // brings its own Close.
+                .toolbar {
+                    if flow == nil && requestPick == nil {
+                        ToolbarItem(placement: .cancellationAction) {
+                            SheetCancelButton(title: "Close") { dismiss() }
+                        }
+                    }
+                }
+                .toolbarVisibility(flow == nil ? .automatic : .hidden, for: .navigationBar)
+                .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+                .closeOnlyBars()
                 .navigationDestination(for: AddDetailsRoute.self) { details in
                     previewPage(details.route)
                         .modifier(ZoomTransition(id: details.zoomId, namespace: zoomSpace))
@@ -97,23 +109,10 @@ struct AddTitleSheet: View {
                     searchStep
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 22)
+                .padding(.top, 4)
                 .padding(.bottom, 30)
             }
             .scrollDismissesKeyboard(.interactively)
-            .overlay(alignment: .topTrailing) {
-                Button { dismiss() } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.mut)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(PressScaleStyle(scale: 0.9))
-                .accessibilityLabel("Close")
-                .padding(.top, 8)
-                .padding(.trailing, 6)
-            }
             .background(Theme.panel)
         }
     }

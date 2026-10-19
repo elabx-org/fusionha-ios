@@ -49,7 +49,7 @@ struct QualityProfileEditorSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(saving ? "Saving…" : "Save profile") { Task { await save() } }
+                    Button("Save profile", systemImage: "checkmark") { Task { await save() } }
                         .disabled(!draft.valid || saving)
                 }
             }

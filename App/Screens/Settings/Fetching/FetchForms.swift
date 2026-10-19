@@ -84,11 +84,7 @@ struct FetchFormSheet<Content: View>: View {
                     SheetCancelButton(action: onCancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    if saving {
-                        ProgressView()
-                    } else {
-                        SheetDoneButton(title: saveLabel, action: onSave).disabled(!canSave)
-                    }
+                    SheetDoneButton(title: saveLabel, action: onSave).disabled(!canSave || saving)
                 }
             }
         }

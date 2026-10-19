@@ -8,8 +8,6 @@ import FusionhaKit
 /// requests (the Plex and Letterboxd cards, ruling S1) · Notifications · Sign
 /// out. The Account sheet and the requester's You tab both show it.
 struct AccountView: View {
-    /// The You tab's page title row; the Account sheet has its own nav title.
-    var pageTitle: String?
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var requestCount: Int?
@@ -22,12 +20,6 @@ struct AccountView: View {
     var body: some View {
         ScrollViewReader { proxy in
             List {
-                if let pageTitle {
-                    ShellTitleRow(pageTitle)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 4))
-                        .listRowSeparator(.hidden)
-                }
                 if let me = model.me {
                     content(me)
                 } else {

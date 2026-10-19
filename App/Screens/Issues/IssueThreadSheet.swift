@@ -33,7 +33,8 @@ struct IssueThreadSheet: View {
             .background(Theme.bg)
             .navigationTitle(issue?.mediaTitle ?? "Report")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } } }
+            .closeOnlyBars()
         }
         .presentationDetents([.large])
         .task(id: tick) { await pollIssue() }

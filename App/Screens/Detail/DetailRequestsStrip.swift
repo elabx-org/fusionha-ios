@@ -99,7 +99,7 @@ private struct BroadcastSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(sending ? "Sending…" : "Send") { Task { await send() } }
+                    Button("Send", systemImage: "paperplane") { Task { await send() } }
                         .disabled(sending || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }

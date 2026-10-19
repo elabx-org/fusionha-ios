@@ -6,17 +6,16 @@ import SwiftUI
 /// around the `TabView`, so the tab view keeps its identity and every tab its
 /// scroll position across the shell's split (`FoldSplitLayout`).
 ///
-/// Until D1 moves the header actions into it, the bar is hidden and each page
-/// keeps its own title row (`ShellTitleRow`), so a phone looks as before.
-/// Pages pushed or presented from a tab bring their own stacks only inside
-/// sheets and covers, never inside this one.
+/// Each page fills the bar with `.shellPage(_:)`: its title (`.inlineLarge`,
+/// one row with the items on a phone) and its toolbar items (D1). Pages
+/// presented from a tab bring their own stacks only inside sheets and covers,
+/// never inside this one.
 struct TabRoot<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
         NavigationStack {
             content
-                .toolbarVisibility(.hidden, for: .navigationBar)
         }
     }
 }

@@ -5,8 +5,8 @@ enum DiscoverTab: String, Hashable {
     case browse, requests, issues
 }
 
-/// The web's Discover page (`routes/Discover.tsx`, mobile layout): title, kind
-/// control, the search field (or Add sheet button), the "Add as" provider
+/// The web's Discover page (`routes/Discover.tsx`, mobile layout): the title
+/// and Add in the system bar (D1), the kind control, the search field (or Add sheet button), the "Add as" provider
 /// control, Browse · Requests · Issues tabs, then the rails.
 /// Requesters reach the same page from "My requests" with the Requests tab on.
 struct DiscoverView: View {
@@ -16,9 +16,12 @@ struct DiscoverView: View {
     @State private var tab: DiscoverTab
     @State private var query = ""
     @State private var scrollTarget: String?
+    /// The bar's title: "Discover", or "My requests" for a requester's tab.
+    private let title: String
 
-    init(initialTab: DiscoverTab = .browse) {
+    init(initialTab: DiscoverTab = .browse, title: String = "Discover") {
         _tab = State(initialValue: initialTab)
+        self.title = title
     }
 
     private var me: Me? { model.me }
@@ -36,7 +39,6 @@ struct DiscoverView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        header
                         tabs
                         content
                     }
@@ -57,13 +59,15 @@ struct DiscoverView: View {
                 }
             }
         }
+        .shellPage(title)
+        .toolbar { AddTitleToolbarItem(model: model) }
         .environment(store)
         .discoverToastOverlay()
         .sheet(item: $store.preview) { route in
             PreviewSheet(route: route, onOpenLibrary: { id in handOff { model.open(id) } })
         }
         .sheet(item: $store.requestPick) { pick in
-            RequestModal(pick: pick) { store.requestsVersion += 1 }
+            NavigationStack { RequestModal(pick: pick) { store.requestsVersion += 1 } }
         }
         .sheet(item: $store.trailer) { trailer in
             TrailerSheet(title: trailer.title, key: trailer.trailerKey)
@@ -116,11 +120,6 @@ struct DiscoverView: View {
     }
 
     // MARK: Header
-
-    private var header: some View {
-        ShellTitleRow("Discover") { AddTitleButton() }
-            .padding(.bottom, 14)
-    }
 
     private var tabs: some View {
         // `needs_you` from the shell's 30 s poll: the same figure as the nav badge.
@@ -254,6 +253,6 @@ func interleave<T>(_ a: [T], _ b: [T]) -> [T] {
 /// Requester "My requests" tab: the Discover page with the Requests tab on.
 struct RequestsView: View {
     var body: some View {
-        DiscoverView(initialTab: .requests)
+        DiscoverView(initialTab: .requests, title: "My requests")
     }
 }

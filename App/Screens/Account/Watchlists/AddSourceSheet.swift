@@ -64,7 +64,7 @@ struct AddSourceSheet: View {
             .navigationTitle("Add a Letterboxd source")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
             }
             .onChange(of: kind) { reset() }
             .onChange(of: url) { reset() }

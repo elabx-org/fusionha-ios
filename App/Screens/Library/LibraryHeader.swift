@@ -1,8 +1,8 @@
 import SwiftUI
 import FusionhaKit
 
-/// The Library page header (redesign): the display title with the glass
-/// "Library stats" button, then a two-line caption. Line one counts titles and
+/// The Library page header: Add and "Library stats" as toolbar items (D1; the
+/// title is the system bar's), then a two-line caption. Line one counts titles and
 /// versions; line two (an iOS extra) links "N downloading" to Activity. The
 /// needs-attention filter is the toolbar's chip, as on the web.
 struct LibraryHeader: View {
@@ -21,13 +21,16 @@ struct LibraryHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ShellTitleRow("Library") {
-                AddTitleButton()
-                GlassIconButton(systemName: "chart.bar.xaxis", label: "Library stats",
-                                dot: needsAttention ? Theme.miss : nil) { showingStats = true }
-            }
             caption
             LibraryFilterField().padding(.top, 4)
+        }
+        .toolbar {
+            AddTitleToolbarItem(model: model)
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
+                    .badge(statsBadge)
+            }
+            .barPriority(false)
         }
         // Warm the stats sheet's In progress / Needs attention, so it opens filled.
         .task {
@@ -58,8 +61,12 @@ struct LibraryHeader: View {
         }
     }
 
-    private var needsAttention: Bool {
-        (derived.pulse.titleCounts[.missing] ?? 0) > 0 || downloading > 0 || attention > 0
+    /// The stats item's badge: titles needing attention, else missing ones
+    /// (a count, as the HIG asks of bar items, in place of the old dot).
+    private var statsBadge: Text? {
+        let missing = derived.pulse.titleCounts[.missing] ?? 0
+        let n = attention > 0 ? attention : missing
+        return BadgeCount.text(n).map { Text(verbatim: $0) }
     }
 
     private var caption: some View {

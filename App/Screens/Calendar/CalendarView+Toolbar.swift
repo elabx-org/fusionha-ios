@@ -1,24 +1,42 @@
 import SwiftUI
 import FusionhaKit
 
-// The Calendar toolbar (the mock's calendar head): display title and counts, the
-// glass view switcher, the glass bar (‹ Today ›, kind chips, iCal feed, week card
-// style) and the status / release legends. Every control here is glass; nothing
-// in it is content.
+// The Calendar toolbar (the mock's calendar head): the counts, the glass view
+// switcher, the glass bar (‹ ›, kind chips) and the status / release legends.
+// The title, Today, the iCal feed and the week card style are in the system
+// bar (`barItems`, D1). Every control here is glass; nothing in it is content.
 extension CalendarView {
     var toolbar: some View {
         VStack(alignment: .leading, spacing: 14) {
-            VStack(alignment: .leading, spacing: 2) {
-                ShellTitleRow(title)
-                Text(subline)
-                    .font(.system(size: 15))
-                    .foregroundStyle(Theme.mut)
-            }
+            Text(subline)
+                .font(.system(size: 15))
+                .foregroundStyle(Theme.mut)
             CalViewSwitcher(selection: view, motion: !motionOff) { setView($0) }
             calBar
             legends
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The system bar's items: Today first (it stays when the bar runs out of
+    /// room); on a phone the filter menu (media type, iCal, week cards), else
+    /// the iCal feed and the week card style in the overflow.
+    @ToolbarContentBuilder
+    var barItems: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Button("Today", systemImage: "calendar.badge.clock", action: goToday)
+        }
+        .barPriority(true)
+        if isPhone {
+            ToolbarItem(placement: .primaryAction) { filterMenu }
+        } else {
+            if model.me?.isAdmin == true {
+                ToolbarItem(placement: .secondaryAction) { icalMenu }
+            }
+            if view == .week {
+                ToolbarItem(placement: .secondaryAction) { weekStyleMenu }
+            }
+        }
     }
 
     var stepNoun: String {
@@ -29,20 +47,13 @@ extension CalendarView {
         }
     }
 
-    /// `.calbar`: the ‹ Today › capsule, the kind chips (scrolling), then the
-    /// round glass buttons.
+    /// `.calbar`: the ‹ › capsule, then the kind chips (scrolling).
     var calBar: some View {
         HStack(spacing: 8) {
             if view != .forecast {
-                CalNavButtons(noun: stepNoun, onPrev: { step(-1) }, onToday: goToday, onNext: { step(1) })
+                CalNavButtons(noun: stepNoun, onPrev: { step(-1) }, onToday: nil, onNext: { step(1) })
             }
             kindChips
-            if model.me?.isAdmin == true {
-                icalMenu
-            }
-            if view == .week {
-                weekStyleMenu
-            }
         }
     }
 
@@ -70,12 +81,9 @@ extension CalendarView {
             Button("Copy feed URL", systemImage: "doc.on.doc") { Task { await feedURL(subscribe: false) } }
             Button("Subscribe in Calendar", systemImage: "calendar.badge.plus") { Task { await feedURL(subscribe: true) } }
         } label: {
-            CalGlassIcon(systemName: "dot.radiowaves.up.forward")
+            Label("iCal feed", systemImage: "dot.radiowaves.up.forward")
         }
-        .buttonStyle(.plain)
         .disabled(copyingFeed)
-        .opacity(copyingFeed ? 0.5 : 1)
-        .accessibilityLabel("Copy iCal feed URL")
     }
 
     var weekStyleMenu: some View {
@@ -88,10 +96,8 @@ extension CalendarView {
             }
             .pickerStyle(.inline)
         } label: {
-            CalGlassIcon(systemName: "gearshape")
+            Label("Week card style", systemImage: "rectangle.stack")
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Week card style")
     }
 
     // MARK: Legends (`.legend`)

@@ -49,18 +49,20 @@ struct RequestModal: View {
                     optionsPane
                 }
             }
+            // The art runs under the clear bar, as before the system Close.
+            .ignoresSafeArea(.container, edges: .top)
             footer
         }
         .background(Theme.panel)
-        .overlay(alignment: .topTrailing) {
-            Button { dismiss() } label: {
-                Image(systemName: "xmark").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.mut)
-                    .frame(width: 40, height: 40)
+        // Close is a system toolbar item (DC10); presenters give the modal a
+        // stack (`NavigationStack { RequestModal(…) }`), the Add sheet its own.
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                SheetCancelButton(title: "Close") { dismiss() }
             }
-            .buttonStyle(.plain)
-            .padding(.top, 14).padding(.trailing, 14)
-            .accessibilityLabel("Close")
         }
+        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+        .closeOnlyBars()
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.panel)
         .presentationCornerRadius(14)

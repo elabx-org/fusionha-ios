@@ -179,7 +179,7 @@ struct StagedDialogSheet: View {
         if refused {
             if error?.code != "swap_restore_refused", let report = route.report {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Discard new copy", role: .destructive) { onSwitch(StagedDialogRoute(kind: .discard, report: report)) }
+                    Button("Discard new copy", systemImage: "trash", role: .destructive) { onSwitch(StagedDialogRoute(kind: .discard, report: report)) }
                 }
             }
         } else if !stale {

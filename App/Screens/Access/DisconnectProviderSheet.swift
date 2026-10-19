@@ -52,7 +52,7 @@ struct DisconnectProviderSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(working ? "Disconnecting…" : "Disconnect", role: .destructive) { Task { await run(dryRun: false) } }
+                    Button("Disconnect", systemImage: "minus.circle", role: .destructive) { Task { await run(dryRun: false) } }
                         .disabled(working || preview == nil || preview?.refused == true)
                 }
             }

@@ -92,13 +92,18 @@ struct TriageInboxView: View {
             if inbox.loaded {
                 requestsCount(queue.count, "waiting" + (oldest.isEmpty ? "" : " · oldest \(oldest)"))
             }
-        } action: {
+        }
+        .toolbar {
             // Select belongs to the list (Proposal 2): cards decide one at a time.
+            // Like the system Edit button, its words swap, so it stays horizontal.
             if nav.inboxList && !queue.isEmpty {
-                RequestsTextAction(title: nav.selecting ? "Done" : "Select") {
-                    nav.selecting.toggle()
-                    if !nav.selecting { inbox.selected = [] }
+                ToolbarItem(placement: .primaryAction) {
+                    Button(nav.selecting ? "Done" : "Select") {
+                        nav.selecting.toggle()
+                        if !nav.selecting { inbox.selected = [] }
+                    }
                 }
+                .horizontalOnly()
             }
         }
     }
@@ -121,7 +126,8 @@ struct TriageInboxView: View {
             .background(Theme.bg)
             .navigationTitle("Decide")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { details = nil } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { details = nil } } }
+            .closeOnlyBars()
         }
         .presentationDetents([.large])
     }

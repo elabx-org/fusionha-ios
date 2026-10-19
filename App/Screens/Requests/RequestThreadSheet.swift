@@ -59,8 +59,8 @@ struct RequestThreadSheet: View {
             .navigationTitle("Conversation")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
+                ToolbarItem(placement: .confirmationAction) {
+                    SheetDoneButton { dismiss() }
                 }
             }
         }

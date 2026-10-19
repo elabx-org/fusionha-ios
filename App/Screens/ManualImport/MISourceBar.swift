@@ -111,7 +111,7 @@ struct MIFolderBrowser: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Use this folder") {
+                    Button("Use this folder", systemImage: "folder") {
                         onPick(page?.path ?? path ?? "/")
                         dismiss()
                     }

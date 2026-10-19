@@ -47,6 +47,7 @@ struct MIEpisodeSheet: View {
             .navigationTitle("Episode")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } } }
+            .closeOnlyBars()
             .disabled(session.pendingRows.contains(row.rowId))
             .task { if let item = row.match.itemId { await session.loadSeasons(itemId: item) } }
         }

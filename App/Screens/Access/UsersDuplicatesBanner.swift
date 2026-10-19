@@ -84,7 +84,7 @@ struct MergeUsersSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(working ? "Merging…" : "Confirm merge") { Task { await run(dryRun: false) } }
+                    Button("Confirm merge", systemImage: "arrow.triangle.merge") { Task { await run(dryRun: false) } }
                         .disabled(working || preview == nil || preview?.refused == true)
                 }
             }

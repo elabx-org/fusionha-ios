@@ -27,7 +27,7 @@ struct SecurityRecoveryKeySheet: View {
                 }
                 if result == nil && reauth.hasPassword && !SecretsErrorCopy.isTooNew(error) {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(working ? "Showing…" : "Show key") { submit(.password(reauth.password)) }
+                        Button("Show key", systemImage: "key") { submit(.password(reauth.password)) }
                             .disabled(reauth.password.isEmpty || working)
                     }
                 }
@@ -156,7 +156,7 @@ struct SecurityRotateSheet: View {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 if reauth.hasPassword && !SecretsErrorCopy.isTooNew(error) {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(working ? "Rotating…" : "Rotate key") { submit(.password(reauth.password)) }
+                        Button("Rotate key", systemImage: "arrow.triangle.2.circlepath") { submit(.password(reauth.password)) }
                             .disabled(reauth.password.isEmpty || working)
                     }
                 }

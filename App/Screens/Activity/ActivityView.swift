@@ -152,6 +152,17 @@ struct ActivityView: View {
                 }
             }
         }
+        .shellPage("Activity")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Manual import", systemImage: "square.and.arrow.down") { router.manualImport() }
+            }
+            .barPriority(true)
+            if model.me?.isAdmin == true {
+                ToolbarItem(placement: .primaryAction) { QueuePauseButton() }
+                    .barPriority(false)
+            }
+        }
         .environment(\.actReduceMotion, systemReduceMotion || !animationsEnabled)
         .environment(\.actTabsNamespace, tabsNamespace)
         .task {

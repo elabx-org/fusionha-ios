@@ -49,7 +49,8 @@ struct HistoryLifecycleSheet: View {
             .background(Theme.bg)
             .navigationTitle("Lifecycle")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } } }
+            .closeOnlyBars()
             .task(id: activeVersionId) { await load() }
         }
         .overlay { ActToastOverlay(toaster: toaster) }

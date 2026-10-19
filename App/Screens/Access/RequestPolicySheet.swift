@@ -44,7 +44,8 @@ struct RequestPolicySheet: View {
             .disabled(saving)
             .navigationTitle("Request policy · \(name)")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } } }
+            .closeOnlyBars()
             .task { await load() }
         }
         .presentationDetents([.large])

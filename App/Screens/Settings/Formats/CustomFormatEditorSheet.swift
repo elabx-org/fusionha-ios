@@ -74,7 +74,7 @@ struct CustomFormatEditorSheet: View {
                     SheetCancelButton(title: saved != nil && !dirty ? "Close" : "Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(working ? "Saving…" : "Save") { Task { await save() } }
+                    Button("Save", systemImage: "checkmark") { Task { await save() } }
                         .disabled(!valid || working || !dirty)
                 }
             }
