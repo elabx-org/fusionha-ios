@@ -42,10 +42,11 @@ final class BoardModel {
         await withTaskGroup(of: (RequestBoard.Bucket, Result<RequestPage, Error>).self) { group in
             for bucket in RequestBoard.Bucket.allCases {
                 let q = bucket.query(search: search.trimmingCharacters(in: .whitespaces), userId: userId)
+                let extra = q.extra + extra
                 group.addTask {
                     do {
                         return (bucket, .success(try await client.requestsPage(view: "all", filter: q.filter, sort: "last_event",
-                                                                               limit: RequestBoard.page, extra: q.extra + extra)))
+                                                                               limit: RequestBoard.page, extra: extra)))
                     } catch {
                         return (bucket, .failure(error))
                     }
