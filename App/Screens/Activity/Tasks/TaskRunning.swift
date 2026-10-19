@@ -7,6 +7,7 @@ struct RunningRow: View {
     let run: ActivityRun
     let queued: Bool
     let playful: Bool
+    var focused = false
     @Environment(\.actReduceMotion) private var reduce
 
     var body: some View {
@@ -16,7 +17,7 @@ struct RunningRow: View {
                 TaskIconTile(color: Theme.grab, spinning: !queued && !reduce) { TaskSpinnerGlyph() }
                 VStack(alignment: .leading, spacing: 0) {
                     TaskNameLine(run: run)
-                    TaskFactLine(run: run)
+                    TaskFactLine(run: run, playful: playful, queued: queued)
                     TaskBar(fraction: queued ? 0 : (pct ?? 1), live: !queued && pct == nil)
                 }
             }
@@ -30,6 +31,8 @@ struct RunningRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .modifier(TaskCard(wash: Theme.grab))
+        .taskFocusFlash(focused)
+        .id(TaskFocus.scrollId(run.id))
     }
 }
 

@@ -88,6 +88,8 @@ final class AppModel {
     /// A download a link asked the queue to bring forward (`focus`), and whether
     /// to open "Block release group?" on it (`block=1`). Consumed by the row.
     var pendingQueueFocus: (downloadId: Int, block: Bool)?
+    /// A run a link asked Tasks to open (`activity/tasks?focus={runId}`). Consumed by the tab.
+    var pendingTaskFocus: Int?
     var pendingDiscoverTab: DiscoverTab?
     var showingAdd = false
     /// The Account sheet (avatar menu → Account), owned by AccountView.swift.

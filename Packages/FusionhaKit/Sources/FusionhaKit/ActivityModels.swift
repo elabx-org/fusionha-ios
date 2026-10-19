@@ -203,6 +203,9 @@ public struct RunCandidate: Decodable, Sendable, Identifiable, Hashable {
     public let indexer: String?
     public let quality: String?
     public let cfScore: Int?
+    /// The custom formats behind `cf_score` (#163); empty or absent on historical rows.
+    public let matched: [CFTestMatch]?
+    public let versionId: Int?
     public let action: String
     public let reason: String
     public let blocklisted: Bool?
@@ -210,6 +213,8 @@ public struct RunCandidate: Decodable, Sendable, Identifiable, Hashable {
 
 public struct CommandRunDetail: Decodable, Sendable {
     public let id: Int
+    /// The run's title, whose versions' profiles judged each candidate.
+    public let itemId: Int?
     public let candidates: [RunCandidate]
     // The run's live state (the gradual-search strip polls this).
     public let status: String?
@@ -239,8 +244,18 @@ public struct ActivityEnrichmentStatus: Decodable, Sendable {
     public let issues: [EnrichmentIssue]?
 }
 
+/// One per-import analysis nested under the global sweep (`SessionEnrichmentSubtaskRead`).
 public struct EnrichmentSubtask: Decodable, Sendable, Hashable {
     public let importSessionId: Int?
+    public let label: String?
+    /// `active` · `paused` · `cancelled`
+    public let control: String?
+    /// `analyzing` · `complete` · `paused` · `cancelled`
+    public let state: String?
+    public let total: Int?
+    public let enriched: Int?
+    public let pending: Int?
+    public let issue: Int?
 }
 
 /// The two settings the Activity / Wanted screens flip (`GET/PUT /api/v1/settings`).
