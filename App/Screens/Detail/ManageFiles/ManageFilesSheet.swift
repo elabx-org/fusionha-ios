@@ -57,6 +57,9 @@ struct ManageFilesSheet: View {
             await model.load()
         }
         .onDisappear { if model.changed { Task { await store.reload() } } }
+        .retainsDraft("manage.model", $model)
+        .retainsDraft("manage.tab", $tab)
+        .retainsDraft("manage.selecting", $selecting)
     }
 
     // MARK: List

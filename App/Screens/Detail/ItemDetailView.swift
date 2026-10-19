@@ -6,6 +6,10 @@ import FusionhaKit
 /// the Versions panel (opening a row scopes the page), the rails, and the
 /// Seasons / Files (Versions) / History / Searches tabs. A glass compact bar
 /// fades in once the hero has scrolled away.
+///
+/// The store comes from `AppModel.detailStore(for:)`, so the sheet and the
+/// shell's column show the same one: a fold / unfold keeps the page, its
+/// scroll, and any child sheet with its draft (`DetailChildSheets`).
 struct ItemDetailView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -15,20 +19,30 @@ struct ItemDetailView: View {
     /// the close / refresh / web actions are then standard toolbar items, which
     /// the system can move to the side of the display in some postures.
     @Environment(\.detailInColumn) private var inColumn
-    let itemId: Int
+    let store: DetailStore
     /// Closes the column; a sheet dismisses itself.
     var onClose: (() -> Void)?
-    @State private var store: DetailStore
     @State private var compact = false
+    /// Child sheets show once ready: at once on the first host, after the old
+    /// host has left on a re-host (fold / unfold).
+    @State private var presentReady: Bool
+    @State private var position = ScrollPosition(idType: String.self)
 
-    init(itemId: Int, onClose: (() -> Void)? = nil) {
-        self.itemId = itemId
+    private var itemId: Int { store.itemId }
+
+    init(store: DetailStore, onClose: (() -> Void)? = nil) {
+        self.store = store
         self.onClose = onClose
-        _store = State(initialValue: DetailStore(itemId: itemId))
+        _presentReady = State(initialValue: !store.hosted)
     }
 
     private var reduceMotion: Bool {
         systemReduceMotion || store.settings?.animationsEnabled == false
+    }
+
+    private var presenter: DetailPresenter {
+        let host: DetailHost = inColumn ? .column : .sheet
+        return DetailPresenter(store: store, ready: presentReady) { [model] in model.detailHostAccepts(host) }
     }
 
     var body: some View {
@@ -49,11 +63,13 @@ struct ItemDetailView: View {
                 }
             }
             .scrollIndicators(.hidden)
+            .scrollPosition($position)
             .ignoresSafeArea(.container, edges: .top)
-            .onScrollGeometryChange(for: Bool.self) { geo in
-                geo.contentOffset.y + geo.contentInsets.top > 200
-            } action: { _, isPast in
-                compact = isPast
+            .onScrollGeometryChange(for: CGFloat.self) { geo in
+                geo.contentOffset.y + geo.contentInsets.top
+            } action: { _, y in
+                store.scrollY = y
+                if compact != (y > 200) { compact = y > 200 }
             }
             .task(id: store.detail == nil) {
                 guard store.detail != nil else { return }
@@ -107,6 +123,8 @@ struct ItemDetailView: View {
             applyPendingTab()
             await store.load()
         }
+        .onAppear { store.hosted = true }
+        .task { await rehost() }
         .onChange(of: model.pendingDetailTab) { applyPendingTab() }
         .onChange(of: model.queue) { store.queue = model.queue }
         .onChange(of: store.deleted) {
@@ -114,38 +132,21 @@ struct ItemDetailView: View {
             Task { await model.loadLibrary() }
             close()
         }
-        .sheet(item: $store.interactive) { target in
-            InteractiveSearchSheet(target: target)
-                .environment(store)
-                .environment(\.detailReduceMotion, reduceMotion)
-        }
-        .sheet(isPresented: $store.showingEdit) {
-            if let detail = store.detail {
-                EditItemSheet(detail: detail)
-                    .environment(store)
-            }
-        }
-        .sheet(item: $store.addPreset) { preset in
-            if let detail = store.detail {
-                AddEditionSheet(detail: detail, preset: preset)
-                    .environment(store)
-            }
-        }
-        .sheet(item: $store.seasonSheet) { ref in
-            if let detail = store.detail, let season = detail.seasons?.first(where: { $0.seasonNumber == ref.number }) {
-                SeasonActionsSheet(detail: detail, season: season)
-                    .environment(store)
-                    .presentationDetents([.medium, .large])
-            }
-        }
-        .sheet(isPresented: $store.showingDelete) {
-            if let detail = store.detail {
-                DeleteItemSheet(detail: detail)
-                    .environment(store)
-                    .presentationDetents([.height(300)])
-            }
-        }
-        .detailActionSheets(store)
+        .modifier(DetailChildSheets(presenter: presenter, reduceMotion: reduceMotion))
+    }
+
+    /// After a fold / unfold: back to the same scroll offset, then (once the
+    /// old host has left, so UIKit does not drop the presentation) re-present
+    /// whichever child sheet was up.
+    private func rehost() async {
+        guard !presentReady else { return }
+        let y = store.scrollY
+        try? await Task.sleep(for: .milliseconds(80))
+        if y > 0 { position.scrollTo(y: y) }
+        // Unfolded: the old sheet must be fully gone. Folded: this sheet must be up.
+        if inColumn { await DetailSheetPresence.settle(limit: .seconds(2)) }
+        try? await Task.sleep(for: .milliseconds(inColumn ? 150 : 550))
+        presentReady = true
     }
 
     private func close() {

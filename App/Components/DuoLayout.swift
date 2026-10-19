@@ -13,8 +13,9 @@ import FusionhaKit
 // fold so neither column runs across it, and nothing is drawn in the fold.
 //
 // Every size is container-relative (no screen sizes, idioms or orientation
-// checks). The open title lives in `AppModel.presentedItem`, so folding and
-// unfolding keeps it: sheet <-> trailing column.
+// checks). The open title lives in `AppModel.presentedItem` and its state in
+// `AppModel.detailStore(for:)`, so folding and unfolding keeps both: sheet <->
+// trailing column (`DetailContinuity` in FusionhaKit).
 
 /// Where the fold runs through a container, from its reserved `.division`
 /// regions. `nil` ranges mean no fold (folded, flat open, any other device).
@@ -136,7 +137,9 @@ struct ShellDetailColumn: View {
         Group {
             if let ref = model.presentedItem {
                 NavigationStack {
-                    ItemDetailView(itemId: ref.id, onClose: { model.presentedItem = nil })
+                    // The same store the sheet showed (`AppModel.detailStore`), so
+                    // unfolding keeps the page, its child sheets and their drafts.
+                    ItemDetailView(store: model.detailStore(for: ref.id), onClose: { model.presentedItem = nil })
                         .environment(\.detailInColumn, true)
                 }
                 .id(ref.id)

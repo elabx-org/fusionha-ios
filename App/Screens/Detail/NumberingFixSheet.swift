@@ -50,7 +50,10 @@ struct NumberingFixSheet: View {
         }
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.bg)
-        .task { await load() }
+        // A fold / unfold keeps the preview and its confirmation together.
+        .task { if preview == nil { await load() } }
+        .retainsDraft("numbering.preview", $preview)
+        .retainsDraft("numbering.confirmed", $confirmed)
     }
 
     @ViewBuilder

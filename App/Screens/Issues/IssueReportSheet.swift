@@ -58,6 +58,15 @@ struct IssueModal: View {
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.panel)
         .task { await loadVersions() }
+        // Kept across a fold / unfold when opened from a title (no-op elsewhere).
+        .retainsDraft("issue.problem", $problem)
+        .retainsDraft("issue.versionId", $versionId)
+        .retainsDraft("issue.picked", $picked)
+        .retainsDraft("issue.needVersion", $needVersion)
+        .retainsDraft("issue.scope", $scope)
+        .retainsDraft("issue.season", $season)
+        .retainsDraft("issue.episode", $episode)
+        .retainsDraft("issue.note", $note)
     }
 
     // MARK: Header

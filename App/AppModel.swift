@@ -17,36 +17,6 @@ enum SearchScope: Hashable {
     case library, everything
 }
 
-/// Opens an item's detail sheet from any screen.
-struct ItemRef: Identifiable, Hashable {
-    let id: Int
-}
-
-/// What the item detail should do once it opens, mirroring the web's
-/// `/library/{id}?search={tier}` and `?edit=1` deep links. The detail screen
-/// reads and clears `AppModel.detailIntent`.
-enum DetailIntent: Hashable {
-    case interactiveSearch(QualityTier?)
-    case edit
-    /// The Library poster sheet's drilled-in interactive search (season / episode / version).
-    case scopedSearch(ScopedSearch)
-}
-
-/// An interactive search scoped from the poster sheet: the version tabs (the
-/// first is selected), an optional season or episode, and the sheet subtitle.
-struct ScopedSearch: Hashable {
-    var editionIds: [Int]
-    var episodeId: Int?
-    var seasonNumber: Int?
-    var subtitle: String
-}
-
-/// A title waiting for the Delete confirmation (DeleteItemDialog).
-struct DeleteTarget: Identifiable, Hashable {
-    let id: Int
-    let title: String
-}
-
 enum PlexSignInError: Error {
     case timedOut
 }
@@ -73,13 +43,17 @@ final class AppModel {
     // Shell state shared by the top bar, the + button and every screen.
     var searchText = ""
     var searchScope: SearchScope = .library
-    var presentedItem: ItemRef?
+    /// The open title. Its store is kept while it stays open (AppModel+Detail.swift).
+    var presentedItem: ItemRef? { didSet { detailSlot.keep(only: presentedItem?.id) } }
+    @ObservationIgnored var detailSlot = RetainedSlot<DetailStore>()
+    @ObservationIgnored var detailGate = DetailHostGate()
     /// A `fusionha://` link waiting for the shell (`DeepLink.swift`). Each
-    /// applied link bumps `linkCloseTick`, which closes the avatar menu's covers
-    /// (Settings, Widget diagnostics); `avatarCoverOpen` says one is up.
+    /// applied link bumps `linkCloseTick`, which closes the avatar's sheets
+    /// (`avatar`, presented from the shell); `avatarCoverOpen` says one is up.
     var pendingLink: URL?
     var linkCloseTick = 0
-    var avatarCoverOpen = false
+    let avatar = AvatarPresentation()
+    var avatarCoverOpen: Bool { avatar.isOpen }
     /// A deep link's sub-tab (`fusionha://activity/indexers`, `discover/requests`),
     /// taken by the screen when it shows.
     var pendingActivityTab: ActivityTab?

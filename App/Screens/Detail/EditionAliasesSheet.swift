@@ -58,6 +58,9 @@ struct EditionAliasesSheet: View {
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.bg)
         .task { await load() }
+        .retainsDraft("aliases.term", $term)
+        .retainsDraft("aliases.edition", $edition)
+        .retainsDraft("aliases.guarded", $guarded)
     }
 
     @ViewBuilder
