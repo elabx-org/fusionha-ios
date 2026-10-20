@@ -5,6 +5,11 @@ import FusionhaKit
 /// fixed-height columns side by side, at least 220 wide each and stretched
 /// across the pane; when five don't fit the row scrolls sideways and snaps
 /// to a column, as the web does. Each column scrolls on its own (DU3).
+///
+/// When the iPhone Duo's fold runs through the Board (flat open included),
+/// the columns page instead: each page fills the space before the fold's
+/// gutter, so at every resting position a page ends before the fold and the
+/// next starts after it, and no stage straddles it (`FoldColumns.pages`).
 struct BoardColumnsView<Row: View>: View {
     let board: BoardModel
     /// A stage's rows (Pending without those the Undo is holding).
@@ -14,25 +19,61 @@ struct BoardColumnsView<Row: View>: View {
     let onOpenHistory: (HistoryFilter) -> Void
     @ViewBuilder let row: (MediaRequest, RequestBoard.Column) -> Row
 
-    private static var gap: CGFloat { 12 }
+    private var columns: [RequestBoard.Column] { RequestBoard.Column.allCases }
 
     var body: some View {
         GeometryReader { proxy in
-            let count = CGFloat(RequestBoard.Column.allCases.count)
-            let width = max(220, (proxy.size.width - Self.gap * (count - 1)) / count)
+            let plan = BoardPlan(proxy, count: columns.count)
             ScrollView(.horizontal) {
-                HStack(alignment: .top, spacing: Self.gap) {
-                    ForEach(RequestBoard.Column.allCases, id: \.self) { column in
-                        BoardColumnView(column: column, items: rows(column), board: board,
-                                        onRetry: onRetry, onLoadMore: { onLoadMore(column) },
-                                        onOpenHistory: onOpenHistory) { r in row(r, column) }
-                            .frame(width: width, height: proxy.size.height)
-                    }
+                // One layout in every pose, so the stages keep their state
+                // ("Show all", scroll) when the fold comes and goes (DC3).
+                TrackLayout(tracks: plan.tracks, width: plan.width, height: proxy.size.height) {
+                    ForEach(columns, id: \.self) { column in stage(column) }
                 }
-                .scrollTargetLayout()
             }
-            .scrollTargetBehavior(.viewAligned)
+            .scrollTargetBehavior(StrideScrollTarget(stride: plan.stride, maxOffset: plan.maxOffset))
             .scrollIndicators(.hidden)
+        }
+    }
+
+    private func stage(_ column: RequestBoard.Column) -> some View {
+        BoardColumnView(column: column, items: rows(column), board: board,
+                        onRetry: onRetry, onLoadMore: { onLoadMore(column) },
+                        onOpenHistory: onOpenHistory) { r in row(r, column) }
+    }
+}
+
+/// Where the stages go: the web's even columns snapping one at a time, or,
+/// with a top-to-bottom fold across the Board, fold pages snapping a page
+/// at a time.
+private struct BoardPlan {
+    static let gap = 12.0
+    /// The narrowest a stage may be on a fold page (the web's 220, less a
+    /// little so two fit before the Duo's fold).
+    static let foldMinWidth = 200.0
+
+    var tracks: [FoldColumns.Track]
+    var width: CGFloat
+    var stride: CGFloat
+    var maxOffset: CGFloat?
+
+    init(_ proxy: GeometryProxy, count: Int) {
+        let size = proxy.size
+        if let x = FoldInfo.verticalFold(proxy),
+           let pages = FoldColumns.pages(count: count,
+                                         gap: FoldColumns.gap(around: Double(x.lowerBound)...Double(x.upperBound)),
+                                         minimum: Self.foldMinWidth,
+                                         spacing: Self.gap) {
+            tracks = pages.tracks
+            width = CGFloat(pages.contentWidth(viewport: Double(size.width)))
+            stride = CGFloat(pages.stride)
+            maxOffset = CGFloat(pages.lastOffset)
+        } else {
+            tracks = FoldColumns.even(count: count, width: Double(size.width),
+                                      spacing: Self.gap, minimum: 220)
+            width = CGFloat(tracks.last?.maxX ?? Double(size.width))
+            stride = CGFloat((tracks.first?.width ?? 0) + Self.gap)
+            maxOffset = nil
         }
     }
 }

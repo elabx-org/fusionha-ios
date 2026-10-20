@@ -15,6 +15,10 @@ import FusionhaKit
 // open (Book) the system reports the
 // fold as a reserved `.division` region; the split then lines up with the
 // fold so neither column runs across it, and nothing is drawn in the fold.
+// Flat open the fold is still there (an inactive, zero-wide `.division`):
+// whenever `ShellSplitRule` splits, the split sits on it too, with the 40 pt
+// fold gutter (`FoldColumns.gutter`) around it, instead of the web's 418 | 532.
+// Without a fold (an iPad, any other device) the web's split is unchanged.
 //
 // Every size is container-relative (no screen sizes, idioms or orientation
 // checks). The open title lives in `AppModel.presentedItem` and its state in
@@ -29,6 +33,10 @@ struct FoldInfo: Equatable {
     var vertical: ClosedRange<CGFloat>?
     /// The fold's y-range when it runs side to side (book, portrait).
     var horizontal: ClosedRange<CGFloat>?
+    /// The fold's x-range when the Duo lies flat open (inactive, zero wide)
+    /// and it runs top to bottom through the container. `nil` when `vertical`
+    /// is set, or there is no fold.
+    var flatVertical: ClosedRange<CGFloat>?
 
     init() {}
 
@@ -45,6 +53,21 @@ struct FoldInfo: Equatable {
                 horizontal = frame.minY...max(frame.minY, frame.maxY)
             }
         }
+        if vertical == nil && horizontal == nil {
+            flatVertical = FoldInfo.verticalFold(proxy)
+        }
+    }
+
+    /// A top-to-bottom fold inside this container, active or not (flat open it
+    /// is zero wide), as its x-range in the container's coordinates. Layouts
+    /// with columns keep their columns off it (`FoldColumns`).
+    static func verticalFold(_ proxy: GeometryProxy) -> ClosedRange<CGFloat>? {
+        guard #available(iOS 27.1, *) else { return nil }
+        let width = proxy.size.width
+        let frame = proxy.reservedRegions(kind: .division, options: .includeInactive)
+            .map(\.frame)
+            .first { $0.height > 0 && $0.height >= $0.width && $0.minX > 0 && $0.maxX < width }
+        return frame.map { $0.minX...max($0.minX, $0.maxX) }
     }
 
     /// The frames of the container's `.division` reserved regions (the fold),
@@ -135,11 +158,20 @@ struct ShellSplit: Equatable {
             primary = y.lowerBound
             gap = y.upperBound - y.lowerBound
         } else if ShellSplitRule.splits(width: Double(width), height: Double(fold.size.height), hasItem: hasItem) {
-            // Flat open: the web's list | detail, the detail a phone-width-plus column.
             shown = true
             axis = .horizontal
-            primary = CGFloat(ShellSplitRule.primaryWidth(for: Double(width)))
-            gap = CGFloat(ShellSplitRule.divider)
+            if let x = fold.flatVertical,
+               let atFold = ShellSplitRule.foldSplit(width: Double(width),
+                                                     fold: Double(x.lowerBound)...Double(x.upperBound)) {
+                // Flat open on the Duo: the same rule decides, but the split
+                // sits on the fold with a gutter, so the title never crosses it.
+                primary = CGFloat(atFold.primary)
+                gap = CGFloat(atFold.gap)
+            } else {
+                // No fold: the web's list | detail, the detail a phone-width-plus column.
+                primary = CGFloat(ShellSplitRule.primaryWidth(for: Double(width)))
+                gap = CGFloat(ShellSplitRule.divider)
+            }
         }
     }
 }

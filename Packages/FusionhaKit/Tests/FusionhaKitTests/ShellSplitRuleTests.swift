@@ -67,6 +67,29 @@ final class ShellSplitRuleTests: XCTestCase {
         XCTAssertEqual(ShellSplitRule.detailWidth(for: 1366), 620)
     }
 
+    /// Flat open, the Duo's fold (inactive, zero wide) still splits the shell:
+    /// the tabs end 20 before it, the title starts 20 after it.
+    func testAFlatFoldSplitsAtTheFoldWithAGutter() throws {
+        let split = try XCTUnwrap(ShellSplitRule.foldSplit(width: 951, fold: 475...475))
+        XCTAssertEqual(split.primary, 455)
+        XCTAssertEqual(split.gap, 40)
+        XCTAssertNotEqual(split.primary, ShellSplitRule.primaryWidth(for: 951))
+    }
+
+    /// Half open, the active fold has a width: the gutter goes around it.
+    func testAnActiveFoldKeepsItsWidthInTheGap() throws {
+        let split = try XCTUnwrap(ShellSplitRule.foldSplit(width: 951, fold: 470...481))
+        XCTAssertEqual(split.primary, 450)
+        XCTAssertEqual(split.gap, 51)
+    }
+
+    /// A fold too near an edge (or outside the window) leaves the web's split.
+    func testAFoldNearAnEdgeKeepsTheWebSplit() {
+        XCTAssertNil(ShellSplitRule.foldSplit(width: 951, fold: 300...300))
+        XCTAssertNil(ShellSplitRule.foldSplit(width: 951, fold: 700...700))
+        XCTAssertNil(ShellSplitRule.foldSplit(width: 600, fold: 300...300))
+    }
+
     func testSettingsSplitsAtTheWebs720() {
         XCTAssertFalse(SettingsSplitRule.splits(width: 466))
         XCTAssertFalse(SettingsSplitRule.splits(width: 669))
