@@ -64,6 +64,8 @@ final class RequestsNav {
     var menuOpen = false
     var filterOpen = false
     var rulesOpen = false
+    /// A request's thread is open (the sheet, or the wide panel): the Inbox's keys stand down.
+    var threadOpen = false
     /// Inbox: the deck or the "Select several" list.
     var selecting = false
     /// My requests' unfiltered counts, for the Mine subtitle and the drawer.

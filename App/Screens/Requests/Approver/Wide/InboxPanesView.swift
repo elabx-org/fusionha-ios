@@ -7,20 +7,20 @@ import FusionhaKit
 /// full decision card as a sheet). Each side scrolls on its own and the page
 /// doesn't. Focus starts on the first row and, after a decision, moves to the
 /// row that took its place (web `effectiveFocus`). The bulk bar sits under
-/// the queue.
+/// the queue. On a hardware keyboard A / D decide the focused request, J / K
+/// move the focus, X selects it and Return opens its title (`triageKeys`).
 struct InboxPanesView: View {
     let inbox: InboxModel
     let viewerId: Int?
     let onAdjust: (MediaRequest) -> Void
     let onDetails: (MediaRequest) -> Void
-    @State private var focusId: Int?
-    @State private var lastIndex = 0
+    let onOpenTitle: (MediaRequest) -> Void
+    @State private var focus = TriageQueueFocus()
 
     private var focused: MediaRequest? {
         let queue = inbox.queue
-        if let focusId, let hit = queue.first(where: { $0.id == focusId }) { return hit }
-        guard !queue.isEmpty else { return nil }
-        return queue[min(lastIndex, queue.count - 1)]
+        guard let id = focus.effective(queue.map(\.id)) else { return nil }
+        return queue.first { $0.id == id }
     }
 
     var body: some View {
@@ -30,6 +30,7 @@ struct InboxPanesView: View {
                 card.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }
+        .triageKeys(on: .panes, perform: key)
     }
 
     /// The web's `minmax(294px, 380px)`, `minmax(294px, 320px)` at 1100 and below.
@@ -40,17 +41,22 @@ struct InboxPanesView: View {
 
     private var queue: some View {
         VStack(spacing: 8) {
-            ScrollView {
-                LazyVStack(spacing: 6) {
-                    ForEach(inbox.queue) { r in
-                        InboxQueueRow(request: r, inbox: inbox, viewerId: viewerId, focused: r.id == focused?.id) {
-                            focus(r)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 6) {
+                        ForEach(inbox.queue) { r in
+                            InboxQueueRow(request: r, inbox: inbox, viewerId: viewerId, focused: r.id == focused?.id) {
+                                focus.focus(r.id, in: inbox.queue.map(\.id))
+                            }
+                            .id(r.id)
                         }
                     }
+                    .padding(.bottom, 8)
                 }
-                .padding(.bottom, 8)
+                .scrollIndicators(.hidden)
+                // J / K keep the focused row in view (web `reveal`).
+                .onChange(of: focus) { if let id = focus.focusId { proxy.scrollTo(id) } }
             }
-            .scrollIndicators(.hidden)
             if !inbox.selected.isEmpty {
                 InboxBulkBar(inbox: inbox)
             }
@@ -77,9 +83,24 @@ struct InboxPanesView: View {
         }
     }
 
-    private func focus(_ r: MediaRequest) {
-        focusId = r.id
-        lastIndex = inbox.queue.firstIndex(where: { $0.id == r.id }) ?? lastIndex
+    /// The keys act through the same decide, Undo and selection as the buttons.
+    private func key(_ action: TriageKeys.Action) -> Bool {
+        guard let request = focused else { return false }
+        switch action {
+        case .approve: inbox.approve(request, viewerId: viewerId)
+        case .decline: inbox.decline(request, viewerId: viewerId)
+        case .next, .prev:
+            inbox.armedId = nil
+            focus.move(action == .next ? 1 : -1, in: inbox.queue.map(\.id))
+        case .toggle:
+            if inbox.selected.contains(request.id) {
+                inbox.selected.remove(request.id)
+            } else if !inbox.isLocked(request, viewerId: viewerId) {
+                inbox.selected.insert(request.id)
+            }
+        case .open: onOpenTitle(request)
+        }
+        return true
     }
 }
 

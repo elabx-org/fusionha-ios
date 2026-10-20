@@ -133,12 +133,29 @@ final class ThreadLogicTests: XCTestCase {
         XCTAssertEqual(ThreadBanner.leadReport(reports)?.id, 2)
         let json = #"{"id":9,"media_item_id":1,"issue_type":"playback","scope":"item","status":"open","state":"OPEN","reports":[]}"#
         var issue = try APIClient.decoder.decode(MediaIssue.self, from: Data(json.utf8))
-        XCTAssertEqual(ThreadBanner.banner(issue).text, "Resolved")
+        XCTAssertEqual(ThreadBanner.banner(issue).text, "Open")
         let waiting = #"{"id":9,"media_item_id":1,"issue_type":"playback","scope":"item","status":"open","state":"OPEN","reports":[{"id":4,"problem":"WONT_PLAY","version":{},"scope":"item","state":"AWAITING_USER","verdict_summary":{"text":"x"},"choices":[{"id":"search_missing","label":"Search for a new copy"}],"reporter":{"id":2,"display_name":"Sam"}}]}"#
         issue = try APIClient.decoder.decode(MediaIssue.self, from: Data(waiting.utf8))
         let b = ThreadBanner.banner(issue)
         XCTAssertEqual(b.text, "Waiting on Sam")
         XCTAssertEqual(b.detail, "A fix is on offer: “Search for a new copy”. They haven’t chosen yet.")
+    }
+
+    func testOpenWithNoReportsIsNeverResolved() throws {
+        let json = #"{"id":9,"media_item_id":1,"issue_type":"playback","scope":"item","status":"open","state":"OPEN","reports":[]}"#
+        let b = ThreadBanner.banner(try APIClient.decoder.decode(MediaIssue.self, from: Data(json.utf8)))
+        XCTAssertEqual(b.tone, .needs)
+        XCTAssertEqual(b.text, "Open")
+        XCTAssertEqual(b.detail, "An admin will take a look.")
+        XCTAssertFalse(b.verified)
+    }
+
+    func testResolvedWithNoReports() throws {
+        let json = #"{"id":9,"media_item_id":1,"issue_type":"playback","scope":"item","status":"resolved","state":"RESOLVED","reports":[]}"#
+        let b = ThreadBanner.banner(try APIClient.decoder.decode(MediaIssue.self, from: Data(json.utf8)))
+        XCTAssertEqual(b.tone, .ok)
+        XCTAssertEqual(b.text, "Resolved")
+        XCTAssertEqual(b.detail, "Nothing more needs doing.")
     }
 
     func testGuardrailHeldLanguage() throws {

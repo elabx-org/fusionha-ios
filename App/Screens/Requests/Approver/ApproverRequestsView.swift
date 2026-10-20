@@ -42,6 +42,7 @@ struct ApproverRequestsView: View {
             .onChange(of: "\(canApprove)|\(canIssues)") { setUp(reset: true) }
             .onChange(of: store.requestsPane) { openPending() }
             .task(id: nav.panes) { await pollMenuCounts() }
+            .onChange(of: thread?.id) { nav.threadOpen = thread != nil }
             .animation(.snappy, value: nav.filter)
             // The drawer and the filter are presented from their controls in
             // `RequestsViewHeader`: popovers when wide, sheets on a phone (DC21).

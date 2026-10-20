@@ -97,9 +97,11 @@ public enum ThreadBanner {
             Banner(tone: tone, text: text, detail: detail, verified: tag ?? verified, symbol: nil)
         }
         if let lead, let guardBanner = guardrail(issue, lead) { return guardBanner }
-        guard let lead, issue.state != "RESOLVED" else {
+        if issue.state == "RESOLVED" {
             return make(.ok, lead?.resolution ?? (said.isEmpty ? "Resolved" : said), "Nothing more needs doing.")
         }
+        // Open, but no open report to lead with: never claim it's resolved.
+        guard let lead else { return make(.needs, "Open", "An admin will take a look.", false) }
         if (issue.reopenCount ?? 0) > 0 {
             if reopenedBy?.admin == true {
                 return make(.needs, reopenedBy?.name.map { "Reopened by \($0)" } ?? "Reopened by an admin",

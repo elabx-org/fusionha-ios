@@ -55,6 +55,18 @@ struct SwipeDeckView: View {
             }
         }
         .sensoryFeedback(.impact(weight: .medium), trigger: feedback)
+        // A hardware keyboard decides the top card like a swipe; Return opens Details.
+        .triageKeys(on: .deck) { action in
+            guard let top = deck.first else { return false }
+            let t = inbox.triage[top.id]
+            let canApprove = TriageFacts.loaded(t) && !TriageFacts.setupMissing(t)
+            switch action {
+            case .approve, .decline: fly(top, right: action == .approve, canApprove: canApprove)
+            case .open: onDetails(top)
+            case .next, .prev, .toggle: return false
+            }
+            return true
+        }
     }
 
     private func card(_ request: MediaRequest, position: Int, isTop: Bool) -> some View {

@@ -21,8 +21,15 @@ struct TriageInboxView: View {
 
     private var viewerId: Int? { model.me?.id }
 
+    /// The A / D / J / K keys stand down under anything the Inbox opens.
+    private var keysEnabled: Bool {
+        details == nil && adjusting == nil && noting == nil && !inbox.paused
+            && !nav.menuOpen && !nav.filterOpen && !nav.rulesOpen && !nav.threadOpen
+    }
+
     var body: some View {
         content
+            .environment(\.triageKeysEnabled, keysEnabled)
             .task {
                 inbox.bind(model.client) { message, title, variant in model.toast(message, title: title, variant: variant) }
                 inbox.viewerIsAdmin = model.me?.isAdmin == true
@@ -73,7 +80,8 @@ struct TriageInboxView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.top, 36)
                 } else if wide && !inbox.queue.isEmpty {
-                    InboxPanesView(inbox: inbox, viewerId: viewerId, onAdjust: { adjusting = $0 }, onDetails: { details = $0 })
+                    InboxPanesView(inbox: inbox, viewerId: viewerId, onAdjust: { adjusting = $0 }, onDetails: { details = $0 },
+                                   onOpenTitle: openTitle)
                 } else if wide {
                     ScrollView {
                         SwipeDeckView(inbox: inbox, viewerId: viewerId, onDetails: { details = $0 },
@@ -81,7 +89,7 @@ struct TriageInboxView: View {
                                       onOpenBoard: onOpenBoard, onOpenHistory: onOpenHistory)
                     }
                 } else if nav.inboxList && nav.selecting && !inbox.queue.isEmpty {
-                    InboxListView(inbox: inbox, viewerId: viewerId, onOpen: { details = $0 },
+                    InboxListView(inbox: inbox, viewerId: viewerId, onOpen: { details = $0 }, onOpenTitle: openTitle,
                                   onBackToCards: { nav.selecting = false; inbox.selected = [] })
                 } else if nav.inboxList && !inbox.queue.isEmpty {
                     InboxRowsView(inbox: inbox, viewerId: viewerId, onOpen: { details = $0 }, onDeclineWithReason: { noting = $0 })
@@ -134,6 +142,8 @@ struct TriageInboxView: View {
                     onOpenTitle: { details = nil; openTitle(request) })
                 .padding(16)
             }
+            .triageKeys(on: .card) { cardKey($0, request) }
+            .environment(\.triageKeysEnabled, true)
             .background(Theme.bg)
             .navigationTitle("Decide")
             .navigationBarTitleDisplayMode(.inline)
@@ -146,10 +156,32 @@ struct TriageInboxView: View {
     }
 
     /// Skip: the next waiting request, if any.
-    private func next(after request: MediaRequest) -> MediaRequest? {
+    private func next(after request: MediaRequest) -> MediaRequest? { neighbour(of: request, 1) }
+
+    private func neighbour(of request: MediaRequest, _ delta: Int) -> MediaRequest? {
         let queue = inbox.queue
-        guard let i = queue.firstIndex(where: { $0.id == request.id }), i + 1 < queue.count else { return nil }
-        return queue[i + 1]
+        guard let i = queue.firstIndex(where: { $0.id == request.id }), queue.indices.contains(i + delta) else { return nil }
+        return queue[i + delta]
+    }
+
+    /// The keys on the Details card: A / D decide it, J / K skip, Return opens the title.
+    private func cardKey(_ action: TriageKeys.Action, _ request: MediaRequest) -> Bool {
+        switch action {
+        case .approve:
+            if inbox.approve(request, viewerId: viewerId) { details = nil }
+        case .decline:
+            if inbox.decline(request, viewerId: viewerId) { details = nil }
+        case .next, .prev:
+            guard let other = neighbour(of: request, action == .next ? 1 : -1) else { return false }
+            inbox.armedId = nil
+            details = other
+        case .open:
+            details = nil
+            openTitle(request)
+        case .toggle:
+            return false
+        }
+        return true
     }
 
     private func openTitle(_ r: MediaRequest) {

@@ -5,12 +5,18 @@ import FusionhaKit
 /// request as a row with a checkbox (own requests show, but can't be picked
 /// unless the viewer is an admin);
 /// a tap opens its card; the bulk bar declines with one reason or approves
-/// with each title's usual setup.
+/// with each title's usual setup. On a hardware keyboard J / K move a focus
+/// ring, X selects, Return opens the title, and A / D open the card first
+/// (web L11), where they decide.
 struct InboxListView: View {
     let inbox: InboxModel
     let viewerId: Int?
     let onOpen: (MediaRequest) -> Void
+    let onOpenTitle: (MediaRequest) -> Void
     let onBackToCards: () -> Void
+    @State private var focus = TriageQueueFocus()
+    /// The ring shows once the keyboard is in use, never for touch alone.
+    @State private var keyed = false
 
     var body: some View {
         VStack(spacing: 10) {
@@ -22,6 +28,25 @@ struct InboxListView: View {
                 InboxBulkBar(inbox: inbox).padding(.top, 6)
             }
         }
+        .triageKeys(on: .list, perform: key)
+    }
+
+    private func key(_ action: TriageKeys.Action) -> Bool {
+        let order = inbox.queue.map(\.id)
+        guard let id = focus.effective(order), let request = inbox.queue.first(where: { $0.id == id }) else { return false }
+        keyed = true
+        switch action {
+        case .approve, .decline: onOpen(request)
+        case .next, .prev: focus.move(action == .next ? 1 : -1, in: order)
+        case .toggle:
+            if inbox.selected.contains(id) {
+                inbox.selected.remove(id)
+            } else if !inbox.isLocked(request, viewerId: viewerId) {
+                inbox.selected.insert(id)
+            }
+        case .open: onOpenTitle(request)
+        }
+        return true
     }
 
     /// One row at the 0.4.214 card scale: a 22 pt checkbox in a 44 pt tap
@@ -57,6 +82,11 @@ struct InboxListView: View {
         // 16 pt to the visible checkbox: its 44 pt tap area overhangs by 11.
         .padding(.vertical, 14).padding(.leading, 5).padding(.trailing, 16)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            if keyed && focus.effective(inbox.queue.map(\.id)) == r.id {
+                RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.i1.opacity(0.45), lineWidth: 1.5)
+            }
+        }
     }
 
     private func rowText(_ r: MediaRequest, title: String, own: Bool) -> some View {
