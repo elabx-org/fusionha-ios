@@ -204,6 +204,7 @@ These were sent to fusionha as tensions (#55 reply), pending the owner.
 - Calendar Subscribe
 - The Search hint line
 - The Library "N downloading" link
+- The downloads bar (tab-bar bottom accessory, `downloads-bar` branch): the web has nothing like it; recorded in ui-plan §2. Duo vertical-bar placement is an open item (ui-plan "iPhone Duo")
 
 `docs/ui-plan.md` is stale for:
 - Discover and Requests (still pre-Proposal 2)
@@ -434,7 +435,7 @@ What it means for the app:
 - **Q-DC7:** the side-to-side fold is out of scope.
 - **Q-DC8:** drop the floating ✕ on item detail; Close is a `.cancellationAction`.
 - **Q-DC9:** in Book pose, toasts sit on the trailing half, away from the hinge.
-- **Q-DC10:** fix CLAUDE.md's stale "downloads accessory" line (with the owner's OK, since CLAUDE.md is project config).
+- **Q-DC10:** fix CLAUDE.md's stale "downloads accessory" line (with the owner's OK, since CLAUDE.md is project config). *Superseded 2026-10-20:* the downloads bar now exists (approved mock), so CLAUDE.md's line is accurate again and stays as it is.
 - **#62 scope:** system toolbar and `.inlineLarge` apply to every screen: tab roots, pushed screens and sheets/forms. Sheet actions use `.cancellationAction`, `.confirmationAction` or `.primaryAction`, each with title + symbol. A D1 checklist (screen → header actions → placement and priority) follows. Exceptions are kept only for actions that must stay in content: deck Approve/Decline, row swipes, inline card buttons.
 
 ### D1 checklist: system toolbar on every screen

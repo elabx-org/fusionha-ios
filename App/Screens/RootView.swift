@@ -14,6 +14,7 @@ struct RootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var fold = FoldInfo()
     @State private var toastAnchor = ToastAnchor()
+    @State private var downloadsBar = DownloadsBarState()
 
     /// With room for two columns the open title is the trailing column, not a sheet.
     private var split: ShellSplit {
@@ -103,6 +104,10 @@ struct RootView: View {
         // shell's size re-tints them after the bar changes axis.
         .tabBadgeTint(key: "\(model.requestsBadge)-\(model.queueTotal)-\(model.tab)-\(Int(fold.size.width))x\(Int(fold.size.height))-\(split.shown)")
         .tabBarMinimizeBehavior(.onScrollDown)
+        // The downloads bar (iOS-only): while the queue has items, off Activity.
+        .modifier(DownloadsBarSlot(state: downloadsBar,
+                                   shown: !model.requestScoped && model.tab != .activity && downloadsBar.hasContent))
+        .onChange(of: model.queue, initial: true) { downloadsBar.update(model.queue) }
     }
 }
 
@@ -262,30 +267,5 @@ struct DeleteTitleDialog: View {
         }
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-/// A web checkbox: an 18pt rounded square, indigo with a white tick when on.
-struct WebCheckboxStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        Button {
-            configuration.isOn.toggle()
-        } label: {
-            HStack(alignment: .top, spacing: 10) {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(configuration.isOn ? Theme.indigo : Color.clear)
-                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .strokeBorder(configuration.isOn ? Theme.indigo : Theme.mut.opacity(0.6), lineWidth: 1.5))
-                    .overlay {
-                        if configuration.isOn {
-                            Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.onAccent)
-                        }
-                    }
-                    .frame(width: 18, height: 18)
-                configuration.label
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 }

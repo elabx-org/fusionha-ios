@@ -287,6 +287,14 @@ jobs:
             shoot palette-$P-activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity $PAL
             shoot palette-$P-detail SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8 $PAL
           done
+          # The downloads bar (tab-bar accessory): needs you (the mock queue leads
+          # with a held download), downloading, and the "Imported" moment.
+          for P in aurora daylight monochrome; do
+            B="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$P"
+            shoot bar-$P-needs-you $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover
+            shoot bar-$P-downloading $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_BAR=downloading
+            shoot bar-$P-done $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_BAR=done
+          done
           # A filtered run (shots_only) stops here: the rest are the full set and its checks.
           if [ -n "${ONLY:-}" ]; then ls -l shots; exit 0; fi
           shoot 01-login SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=
