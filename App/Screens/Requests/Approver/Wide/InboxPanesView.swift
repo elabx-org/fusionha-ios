@@ -3,17 +3,16 @@ import FusionhaKit
 
 /// The wide Inbox (web `TriageInboxList` in `panes` mode, mock `.tri`): the
 /// queue on the leading side (294–380 wide), every row with its checkbox, and
-/// the focused request's decision card beside it. Each side scrolls on its
-/// own, so the card stays in view down a long queue. Focus starts on the
-/// first row and, after a decision, moves to the row that took its place
-/// (web `effectiveFocus`). The bulk bar sits under the queue.
+/// the focused request's aside beside it (`InboxAsideView`; Details opens the
+/// full decision card as a sheet). Each side scrolls on its own and the page
+/// doesn't. Focus starts on the first row and, after a decision, moves to the
+/// row that took its place (web `effectiveFocus`). The bulk bar sits under
+/// the queue.
 struct InboxPanesView: View {
     let inbox: InboxModel
     let viewerId: Int?
     let onAdjust: (MediaRequest) -> Void
-    let onDeclineWithNote: (MediaRequest) -> Void
-    let onOpenThread: (MediaRequest) -> Void
-    let onOpenTitle: (MediaRequest) -> Void
+    let onDetails: (MediaRequest) -> Void
     @State private var focusId: Int?
     @State private var lastIndex = 0
 
@@ -62,23 +61,18 @@ struct InboxPanesView: View {
     private var card: some View {
         if let request = focused {
             ScrollView {
-                DecisionCardView(
+                InboxAsideView(
                     request: request, triage: inbox.triage[request.id], own: inbox.isLocked(request, viewerId: viewerId),
                     armed: inbox.armedId == request.id,
                     onApprove: { _ = inbox.approve(request, viewerId: viewerId) },
                     onDecline: { _ = inbox.decline(request, viewerId: viewerId) },
-                    onSkip: { move(after: request) },
                     onAdjust: { onAdjust(request) },
-                    onDeclineWithNote: { onDeclineWithNote(request) },
-                    onMessage: { onOpenThread(request) },
-                    onOpenTitle: { onOpenTitle(request) })
-                .padding(16)
-                .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous).strokeBorder(Theme.line))
+                    onDetails: { onDetails(request) })
                 .id(request.id)
                 .transition(.opacity)
             }
             .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
             .animation(.snappy(duration: 0.2), value: request.id)
         }
     }
@@ -86,13 +80,6 @@ struct InboxPanesView: View {
     private func focus(_ r: MediaRequest) {
         focusId = r.id
         lastIndex = inbox.queue.firstIndex(where: { $0.id == r.id }) ?? lastIndex
-    }
-
-    /// Skip: the next waiting request (the web's J).
-    private func move(after r: MediaRequest) {
-        let queue = inbox.queue
-        guard let i = queue.firstIndex(where: { $0.id == r.id }), i + 1 < queue.count else { return }
-        focus(queue[i + 1])
     }
 }
 

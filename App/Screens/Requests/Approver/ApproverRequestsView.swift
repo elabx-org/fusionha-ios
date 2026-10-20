@@ -32,6 +32,8 @@ struct ApproverRequestsView: View {
         @Bindable var nav = nav
         content
             .modifier(RequestsViewportHeight(on: fillsHeight))
+            // Wide panes scroll on their own; the Discover page then doesn't.
+            .requestsFillsPage(fillsHeight)
             .onGeometryChange(for: Bool.self) { RequestsWideRule.isWide(contentWidth: $0.size.width) } action: { wide = $0 }
             .environment(\.requestsWide, wide)
             .environment(nav)

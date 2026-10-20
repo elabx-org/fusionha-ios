@@ -62,8 +62,10 @@ struct RequestsViewportHeight: ViewModifier {
 }
 
 /// A panel's width on the trailing side: the web's 460, or, when a fold runs
-/// top to bottom through the container (active or not), everything past it,
-/// so the panel's edge never sits on the hinge (HIG Duo checklist §6).
+/// top to bottom through the container (active or not), exactly the far side
+/// of it, so the panel never straddles the hinge and its edge never sits on
+/// it (HIG Duo checklist §6). The Duo's far half is about 470, so the panel
+/// keeps the web's size there.
 enum TrailingPanelWidth {
     static let standard: CGFloat = 460
 
@@ -72,8 +74,8 @@ enum TrailingPanelWidth {
         guard #available(iOS 27.1, *) else { return min(standard, width) }
         let fold = proxy.reservedRegions(kind: .division, options: .includeInactive)
             .map(\.frame)
-            .first { $0.height >= $0.width && $0.maxX < width }
-        if let fold { return max(width - fold.maxX, 320) }
+            .first { $0.height >= $0.width && $0.maxX < width && $0.minX > 0 }
+        if let fold { return max(width - fold.maxX, 0) }
         return min(standard, width)
     }
 }

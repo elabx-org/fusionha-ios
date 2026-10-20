@@ -13,6 +13,7 @@ struct ThreadsSplitView: View {
     /// A request thread changed (a decision, a reply): reload the list.
     let onChanged: () -> Void
     @Binding var selected: ThreadItem.ID?
+    @Environment(AppModel.self) private var model
 
     private var current: ThreadItem? {
         items.first { $0.id == selected } ?? items.first
@@ -53,7 +54,11 @@ struct ThreadsSplitView: View {
         if let item = current {
             Group {
                 if item.type == "issue", let issue = item.issue {
-                    IssuePaneView(seed: issue, linkedRequestId: item.linkedPendingRequestId)
+                    VStack(spacing: 0) {
+                        issueBar(issue)
+                        IssuePaneView(seed: issue, linkedRequestId: item.linkedPendingRequestId)
+                    }
+                    .background(Theme.bg)
                 } else if let request = item.request {
                     RequestThreadView(request: request, onChanged: onChanged)
                         .background(Theme.bg)
@@ -63,5 +68,17 @@ struct ThreadsSplitView: View {
             .clipShape(RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous).strokeBorder(Theme.line))
         }
+    }
+
+    /// The pane's head (web `PaneHeader`): Open in library, as the sheet's bar has.
+    private func issueBar(_ issue: MediaIssue) -> some View {
+        HStack {
+            Spacer()
+            Button("Open in library", systemImage: "arrow.up.right.square") { model.open(issue.mediaItemId) }
+                .font(.system(size: 13, weight: .semibold))
+                .buttonStyle(.glass)
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
     }
 }
