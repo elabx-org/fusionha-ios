@@ -20,9 +20,20 @@ instead of from scratch.
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
 
-`Packages/FusionhaKit/openapi.json` still reports `info.version` 0.2.0: the
-catch-ups added models and calls by hand. Re-pin it from a tagged fusionha
-release when you next touch the API layer.
+`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.222`** (`64ced709`,
+`info.version` 0.4.222; re-pinned 2026-10-20 from the 0.2.0 spec). It is a
+reference only: the FusionhaKit models are hand-written and nothing generates
+or tests against it. The re-pin checked the fields that were typed ahead of
+the old pin against the tagged schemas: `calendar_week_layout`
+(`AppSettingsRead`, now read through `AppSettings.weekLayout`), `needs_you`
+(`RequestCountsRead` / `NeedsYouRead`, `ImportSessionSummaryRead`),
+`eta_seconds` (`QueueRead`, `LifecycleEntryRead`), `LifecycleEntryRead.quality`,
+`last_message` (`ThreadItemRead` / `LastMessageRead`), insights `weeks` /
+`window_start` (`RequestInsightsRead`) and the sync `counts`
+(`SourceCountsRead`). All match; they stay optional or defaulted where an
+older server omits them. `ui_theme` is a plain string in the spec (no
+enum of names). `GET /api/v1/auth/providers` is still not in the spec (the
+app tolerates its absence). Re-pin again from the next tag you sync to.
 
 ## Where the cloud session stopped (2026-10-18)
 

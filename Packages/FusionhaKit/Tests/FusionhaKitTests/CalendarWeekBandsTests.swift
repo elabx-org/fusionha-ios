@@ -26,6 +26,14 @@ final class CalendarWeekBandsTests: XCTestCase {
         XCTAssertEqual(WeekLayout.resolve("stacked"), .stacked)
     }
 
+    func testSettingsDecodeTheWeekLayout() throws {
+        let stacked = try APIClient.decoder.decode(AppSettings.self, from: Data(#"{"calendar_week_layout":"stacked"}"#.utf8))
+        XCTAssertEqual(stacked.weekLayout, .stacked)
+        let older = try APIClient.decoder.decode(AppSettings.self, from: Data(#"{"first_day_of_week":1}"#.utf8))
+        XCTAssertNil(older.calendarWeekLayout)
+        XCTAssertEqual(older.weekLayout, .timeline)
+    }
+
     func testBandsSplitTheDayAtTheWebsHours() {
         XCTAssertEqual(CalendarBand.allCases, [.early, .day, .prime, .late])
         XCTAssertEqual(CalendarBand.of(hour: 0), .early)

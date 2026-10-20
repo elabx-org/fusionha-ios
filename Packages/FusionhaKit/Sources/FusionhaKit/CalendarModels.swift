@@ -11,8 +11,8 @@ public struct AppSettings: Decodable, Sendable, Equatable {
     public let firstDayOfWeek: Int?
     public let calendarDefaultView: String?
     public let calendarWeekCardStyle: String?
-    /// The desktop Week layout (`timeline` | `stacked`); newer than the pinned
-    /// spec, so optional and read only (`WeekLayout.resolve`).
+    /// `calendar_week_layout` (`AppSettingsRead`, `timeline` | `stacked`), read
+    /// only; optional so a server without it still decodes. See `weekLayout`.
     public let calendarWeekLayout: String?
     public let voicePlayful: Bool?
     public let animationsEnabled: Bool?
@@ -26,6 +26,9 @@ public struct AppSettings: Decodable, Sendable, Equatable {
         self.voicePlayful = voicePlayful
         self.animationsEnabled = animationsEnabled
     }
+
+    /// The desktop Week layout; `timeline` when unset or unknown.
+    public var weekLayout: WeekLayout { WeekLayout.resolve(calendarWeekLayout) }
 
     /// `first_day_of_week` normalised to 0 (Sunday) … 6, default Sunday.
     public var firstDay: Int { CalendarMath.normalizeFirstDay(firstDayOfWeek) }
