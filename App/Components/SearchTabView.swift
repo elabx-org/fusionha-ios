@@ -41,6 +41,8 @@ struct SearchTabView: View {
         .searchable(text: $model.searchQuery,
                     prompt: model.requestScoped ? "Find something to request…" : "Search your library or add something new…")
         .searchFocused($focused)
+        // Typing survives a fold, unfold or rotation (D5).
+        .keepsFocusAcrossResize($focused)
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
         .onSubmit(of: .search) { armed = true }

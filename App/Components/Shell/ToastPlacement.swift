@@ -59,16 +59,20 @@ enum ToastRegion {
         }
     }
 
-    /// A one-pane screen (sign-in, Settings): the trailing (or lower) side of
-    /// an active fold, else the whole container.
-    static func trailing(_ fold: FoldInfo) -> CGRect? {
+    /// A screen without the shell (sign-in, Settings): the trailing (or lower)
+    /// side of an active fold; else `pane`, a trailing pane of the screen's own
+    /// split (Settings' panel beside its sidebar), in the container's
+    /// coordinates; else the whole container.
+    static func trailing(_ fold: FoldInfo, pane: CGRect? = nil) -> CGRect? {
         if let x = fold.vertical {
             return CGRect(x: x.upperBound, y: 0, width: max(fold.size.width - x.upperBound, 0), height: fold.size.height)
         }
         if let y = fold.horizontal {
             return CGRect(x: 0, y: y.upperBound, width: fold.size.width, height: max(fold.size.height - y.upperBound, 0))
         }
-        return nil
+        guard let pane else { return nil }
+        let clipped = pane.intersection(CGRect(origin: .zero, size: fold.size))
+        return clipped.isNull || clipped.width < 1 ? nil : clipped
     }
 }
 
@@ -93,13 +97,17 @@ struct ToastLayer: View {
     }
 }
 
-/// A `ToastLayer` for a one-pane screen that reads the fold itself.
+/// A `ToastLayer` for a screen without the shell that reads the fold itself.
+/// `pane` (global) is the screen's own trailing pane while it is split.
 struct FoldToastLayer: View {
     var gap: CGFloat = 24
+    var pane: CGRect?
 
     var body: some View {
         GeometryReader { proxy in
-            ToastLayer(region: ToastRegion.trailing(FoldInfo(proxy)), gap: gap)
+            let origin = proxy.frame(in: .global).origin
+            let local = pane?.offsetBy(dx: -origin.x, dy: -origin.y)
+            ToastLayer(region: ToastRegion.trailing(FoldInfo(proxy), pane: local), gap: gap)
         }
     }
 }

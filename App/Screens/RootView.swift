@@ -98,8 +98,9 @@ struct RootView: View {
             }
         }
         .tint(Theme.indigo)
-        // Count badges in the accent, as on the web, not the system red.
-        .tabBadgeTint(key: "\(model.requestsBadge)-\(model.queueTotal)-\(model.tab)")
+        // Count badges in the accent, as on the web, not the system red; the
+        // shell's size re-tints them after the bar changes axis.
+        .tabBadgeTint(key: "\(model.requestsBadge)-\(model.queueTotal)-\(model.tab)-\(Int(fold.size.width))x\(Int(fold.size.height))-\(split.shown)")
         .tabBarMinimizeBehavior(.onScrollDown)
     }
 }

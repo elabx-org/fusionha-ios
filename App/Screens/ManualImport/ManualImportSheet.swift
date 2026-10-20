@@ -5,7 +5,7 @@ import FusionhaKit
 /// its rescue mode, phone layout): the reason strip, one block per title, a
 /// row per file, and the footer that imports or finishes the download.
 /// With no held downloads it is the folder scan (source bar, Browse…, Scan);
-/// the ⋯ menu also offers the web version as a fallback.
+/// the system overflow also offers the web version as a fallback.
 struct ManualImportSheet: View {
     let downloadIds: [Int]
     let onOpenWeb: () -> Void
@@ -31,11 +31,13 @@ struct ManualImportSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { SheetCancelButton(title: "Close") { dismiss() } }
+                    // Two system items, no ⋯ menu (D1): the key stays in the
+                    // bar, the web fallback goes to the system overflow.
                     ToolbarItem(placement: .primaryAction) {
-                        Menu {
-                            Button("Status key", systemImage: "info.circle") { showKey = true }
-                            Button("Open on the web", systemImage: "safari") { dismiss(); onOpenWeb() }
-                        } label: { Label("More", systemImage: "ellipsis") }
+                        Button("Status key", systemImage: "info.circle") { showKey = true }
+                    }
+                    ToolbarItem(placement: .secondaryAction) {
+                        Button("Open on the web", systemImage: "safari") { dismiss(); onOpenWeb() }
                     }
                 }
                 .safeAreaInset(edge: .bottom, spacing: 0) {

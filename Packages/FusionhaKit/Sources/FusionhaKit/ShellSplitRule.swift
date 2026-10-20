@@ -29,3 +29,15 @@ public enum ShellSplitRule {
         min(max(width * detailShare, detailMin), detailMax)
     }
 }
+
+/// When Settings shows its sidebar beside the open panel (the web's desktop
+/// Settings) instead of the phone's push list. Ruling S2: the web's 720 of the
+/// space Settings has, never the size class, so iPhone Duo's inner display in
+/// portrait (669) keeps the phone list and only wider windows split.
+public enum SettingsSplitRule {
+    public static let minWidth = 720.0
+
+    public static func splits(width: Double) -> Bool {
+        width >= minWidth
+    }
+}

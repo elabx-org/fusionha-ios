@@ -68,11 +68,14 @@ struct SecretsLockedToaster: ViewModifier {
 struct SettingsShellLink: ViewModifier {
     @Environment(AppModel.self) private var model
     @Binding var path: [String]
+    /// The panel pane's global frame while Settings is split, else `nil`.
+    var pane: CGRect?
 
     func body(content: Content) -> some View {
         content
-            // The trailing pane's side of the fold in Book pose (DC14).
-            .overlay { FoldToastLayer() }
+            // The trailing side of the fold in Book pose (DC14); flat open and
+            // split, the panel pane.
+            .overlay { FoldToastLayer(pane: pane) }
             .onChange(of: path, initial: true) { model.avatar.settingsShown = path.last ?? "" }
             .onChange(of: model.avatar.settingsJump) {
                 guard let jump = model.avatar.settingsJump else { return }

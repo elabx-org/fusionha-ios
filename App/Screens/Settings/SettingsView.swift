@@ -13,47 +13,61 @@ struct SettingsView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var store: SettingsStore
     @State private var flash = SettingsFlash()
+    /// The open panel (first slug) and the panels pushed on it. Empty: the
+    /// list on a phone, General beside the sidebar.
     @State private var path: [String]
     @State private var query = ""
     /// Groups and sections, all open by default (the web's `openGroups`).
     @State private var closed: Set<String> = []
+    /// Settings' own width; `nil` until the first layout.
+    @State private var width: CGFloat?
+    /// What a collapsed split shows: the list, or the open panel.
+    @State private var compactColumn: NavigationSplitViewColumn
+    /// The panel pane's frame (global), where the split's toasts sit.
+    @State private var paneFrame: CGRect?
 
     init(client: APIClient?, initialPanel: String? = nil) {
         _store = State(initialValue: SettingsStore(client: client))
         _path = State(initialValue: initialPanel.map { [$0] } ?? [])
+        _compactColumn = State(initialValue: initialPanel == nil ? .sidebar : .detail)
     }
 
     private var motionOff: Bool { reduceMotion || !store.animationsEnabled }
 
-    /// Unfolded (regular width): the web's desktop Settings, a sidebar of panels
-    /// beside the open panel. `path` is shared by both layouts (its first slug
-    /// is the sidebar selection), so folding keeps the open panel.
-    private var wide: Bool { sizeClass == .regular }
+    /// The web's desktop Settings, a sidebar of panels beside the open panel,
+    /// from 720 points of Settings' own width (ruling S2), not the size class.
+    private var wide: Bool {
+        width.map { SettingsSplitRule.splits(width: Double($0)) } ?? (sizeClass == .regular)
+    }
 
+    /// One container in every pose (DC16): the split collapses into the
+    /// phone's push list and expands again, so folding, unfolding and rotating
+    /// keep the list's scroll and the open panel with its focus and typing.
     var body: some View {
-        Group {
-            if wide {
-                NavigationSplitView {
-                    master
-                        .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 340)
-                } detail: {
-                    NavigationStack(path: detailPath) {
-                        settingsPanel(path.first ?? "general")
-                            .navigationDestination(for: String.self) { slug in
-                                settingsPanel(slug)
-                            }
+        NavigationSplitView(preferredCompactColumn: $compactColumn) {
+            master
+                .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 320)
+        } detail: {
+            NavigationStack(path: detailPath) {
+                settingsPanel(path.first ?? "general")
+                    .navigationDestination(for: String.self) { slug in
+                        settingsPanel(slug)
                     }
-                    .id(path.first ?? "general")
-                }
-                .navigationSplitViewStyle(.balanced)
-            } else {
-                NavigationStack(path: $path) {
-                    master
-                        .navigationDestination(for: String.self) { slug in
-                            settingsPanel(slug)
-                        }
-                }
             }
+            .id(path.first ?? "general")
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { paneFrame = $0 }
+        }
+        .navigationSplitViewStyle(.balanced)
+        // The split view collapses on the size class; ruling S2 puts the
+        // break at 720 of the space Settings has, so it is given that one.
+        .environment(\.horizontalSizeClass, wide ? .regular : .compact)
+        .background {
+            Color.clear.onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        }
+        .onChange(of: path) { if !path.isEmpty { compactColumn = .detail } }
+        .onChange(of: compactColumn) {
+            // Back to the list on a phone closes the panel.
+            if !wide && compactColumn == .sidebar && !path.isEmpty { path = [] }
         }
         .tint(Theme.indigo)
         .environment(store)
@@ -61,10 +75,10 @@ struct SettingsView: View {
         .environment(\.settingsMotionOff, motionOff)
         .environment(\.settingsPush, push)
         .task { await store.load() }
-        .modifier(SettingsShellLink(path: $path))
+        .modifier(SettingsShellLink(path: $path, pane: wide ? paneFrame : nil))
     }
 
-    /// The panels pushed on top of the sidebar's selection.
+    /// The panels pushed on top of the open panel.
     private var detailPath: Binding<[String]> {
         Binding(
             get: { Array(path.dropFirst()) },
@@ -73,31 +87,30 @@ struct SettingsView: View {
     }
 
     private var master: some View {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    header
-                    if query.trimmingCharacters(in: .whitespaces).isEmpty {
-                        masterList
-                    } else {
-                        SettingsSearchResults(query: query, open: open(hit:))
-                    }
-                }
-                .padding(.top, 8)
-                .padding(.bottom, 64)
-            }
-            .scrollDismissesKeyboard(.immediately)
-            .background(Theme.bg)
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search settings…")
-            .navigationTitle("Settings")
-            .toolbarTitleDisplayMode(.inlineLarge)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    SheetCancelButton(title: "Close settings") { dismiss() }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                if query.trimmingCharacters(in: .whitespaces).isEmpty {
+                    SettingsMasterList(selected: wide ? (path.first ?? "general") : nil,
+                                       closed: $closed, select: select)
+                } else {
+                    SettingsSearchResults(query: query, open: open(hit:))
                 }
             }
+            .padding(.top, 8)
+            .padding(.bottom, 64)
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .background(Theme.bg)
+        .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search settings…")
+        .navigationTitle("Settings")
+        .toolbarTitleDisplayMode(.inlineLarge)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                SheetCancelButton(title: "Close settings") { dismiss() }
+            }
+        }
     }
-
-    // MARK: Header
 
     /// The title is the system bar's (D1); the subtitle stays in the page.
     private var header: some View {
@@ -107,115 +120,8 @@ struct SettingsView: View {
             .lineLimit(1)
             .minimumScaleFactor(0.8)
             .padding(.horizontal, Theme.pageGutter)
-        .padding(.top, 8)
-        .padding(.bottom, 22)
-    }
-
-    // MARK: Master list
-
-    private var masterList: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            ForEach(SettingsNav.top, id: \.self) { id in
-                if let panel = SettingsNav.panel(id) { row(panel) }
-            }
-            ForEach(SettingsNav.groups) { group in
-                groupHeader(group)
-                if isOpen(group.id) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        ForEach(group.children, id: \.self) { id in
-                            if let panel = SettingsNav.panel(id) { row(panel, child: true) }
-                        }
-                    }
-                    .padding(.leading, 11)
-                    .overlay(alignment: .leading) { Rectangle().fill(Theme.line).frame(width: 1) }
-                    .padding(.leading, 18)
-                    .padding(.top, 2)
-                    .padding(.bottom, 6)
-                    .transition(childTransition)
-                }
-            }
-            ForEach(SettingsNav.sections) { section in
-                sectionHeader(section)
-                if isOpen(section.id) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        ForEach(section.panels, id: \.self) { id in
-                            if let panel = SettingsNav.panel(id) { row(panel) }
-                        }
-                    }
-                    .transition(childTransition)
-                }
-            }
-        }
-    }
-
-    private var childTransition: AnyTransition {
-        motionOff ? .identity : .opacity.combined(with: .move(edge: .top))
-    }
-
-    private func isOpen(_ id: String) -> Bool { !closed.contains(id) }
-
-    private func toggle(_ id: String) {
-        SettingsMotion.perform(motionOff) {
-            if closed.contains(id) { closed.remove(id) } else { closed.insert(id) }
-        }
-    }
-
-    private func row(_ panel: SettingsPanelInfo, child: Bool = false) -> some View {
-        Button { select(panel.id) } label: {
-            SettingsMasterRow(panel: panel)
-        }
-        .buttonStyle(SettingsRowButtonStyle())
-        .background {
-            if wide && (path.first ?? "general") == panel.id {
-                RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.panel2)
-            }
-        }
-        .padding(.top, panel.action ? 5 : 0)
-        .overlay(alignment: .top) {
-            if panel.action { Rectangle().fill(Theme.line).frame(height: 1) }
-        }
-    }
-
-    private func groupHeader(_ group: SettingsGroupInfo) -> some View {
-        Button { toggle(group.id) } label: {
-            HStack(spacing: 11) {
-                Image(systemName: group.icon)
-                    .font(.system(size: 15, weight: .medium))
-                    .frame(width: 18)
-                Text(group.label)
-                    .font(.system(size: 13.5, weight: .bold))
-                Spacer(minLength: 0)
-                SettingsChevron(open: isOpen(group.id))
-            }
-            .foregroundStyle(Theme.txt)
-            .padding(.horizontal, 13)
-            .padding(.vertical, 10)
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(SettingsRowButtonStyle())
-        .accessibilityValue(isOpen(group.id) ? "Expanded" : "Collapsed")
-    }
-
-    private func sectionHeader(_ section: SettingsSectionInfo) -> some View {
-        Button { toggle(section.id) } label: {
-            HStack(spacing: 0) {
-                Text(section.label.uppercased())
-                    .font(.system(size: 11, weight: .heavy))
-                    .tracking(0.57)
-                    .foregroundStyle(Theme.dim)
-                Spacer(minLength: 0)
-                SettingsChevron(open: isOpen(section.id))
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .frame(minHeight: 32)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .padding(.top, 12)
-        .padding(.bottom, 3)
-        .accessibilityValue(isOpen(section.id) ? "Expanded" : "Collapsed")
+            .padding(.top, 8)
+            .padding(.bottom, 22)
     }
 
     // MARK: Navigation
@@ -229,14 +135,10 @@ struct SettingsView: View {
         }
     }
 
-    /// A sidebar / master-list pick: pushes on a phone, replaces the detail
-    /// column when unfolded.
+    /// A sidebar / master-list pick opens that panel (on a phone the list
+    /// only shows while no panel is open).
     private func select(_ slug: String) {
-        if wide {
-            perform { path = [slug] }
-        } else {
-            push(slug)
-        }
+        perform { path = [slug] }
     }
 
     private func perform(_ change: () -> Void) {

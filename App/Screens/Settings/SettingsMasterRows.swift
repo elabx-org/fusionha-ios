@@ -2,9 +2,11 @@ import SwiftUI
 import FusionhaKit
 
 /// One master-list row: 15pt icon, title (14.5/650) over a wrapping subtitle
-/// (11.5 `--mut`), an optional ACTION tag and the trailing `›`.
+/// (11.5 `--mut`), an optional ACTION tag and the trailing `›`. `compact` is
+/// the split's sidebar label (ruling S2): icon and title only, no `›`.
 struct SettingsMasterRow: View {
     let panel: SettingsPanelInfo
+    var compact = false
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -19,23 +21,27 @@ struct SettingsMasterRow: View {
                         .font(.system(size: 14.5, weight: .semibold))
                         .tracking(-0.145)
                         .foregroundStyle(Theme.txt)
-                    Text(panel.subtitle)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(Theme.mut)
-                        .lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if !compact {
+                        Text(panel.subtitle)
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(Theme.mut)
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .padding(.top, 1)
                 Spacer(minLength: 0)
                 if panel.action { ActionTag() }
             }
-            Text("›")
-                .font(.system(size: 16))
-                .foregroundStyle(Theme.dim)
+            if !compact {
+                Text("›")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Theme.dim)
+            }
         }
         .multilineTextAlignment(.leading)
         .padding(.horizontal, 13)
-        .padding(.vertical, 11)
+        .padding(.vertical, compact ? 8 : 11)
         .frame(minHeight: 44)
         .contentShape(Rectangle())
     }

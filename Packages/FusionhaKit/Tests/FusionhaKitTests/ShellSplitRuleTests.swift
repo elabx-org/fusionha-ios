@@ -42,4 +42,12 @@ final class ShellSplitRuleTests: XCTestCase {
         XCTAssertEqual(ShellSplitRule.detailWidth(for: 951), 951 * 0.56, accuracy: 0.001)
         XCTAssertEqual(ShellSplitRule.detailWidth(for: 1366), 620)
     }
+
+    func testSettingsSplitsAtTheWebs720() {
+        XCTAssertFalse(SettingsSplitRule.splits(width: 466))
+        XCTAssertFalse(SettingsSplitRule.splits(width: 669))
+        XCTAssertFalse(SettingsSplitRule.splits(width: 719))
+        XCTAssertTrue(SettingsSplitRule.splits(width: 720))
+        XCTAssertTrue(SettingsSplitRule.splits(width: 951))
+    }
 }
