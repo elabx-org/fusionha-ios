@@ -135,6 +135,8 @@ struct ActivityView: View {
             case .indexers: ActivityIndexersTab()
             }
         }
+        // Wide layouts follow the width Activity gets, never the size class.
+        .publishesPaneSize()
         // Toasts go to the shell's host (its placement keeps them off the hinge).
         .onAppear { toaster.shell = model }
         .safeAreaInset(edge: .bottom, spacing: 0) {

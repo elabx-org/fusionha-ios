@@ -86,16 +86,26 @@ extension ActivityQueueTab {
     private func card(_ entry: QueueLogic.Entry) -> some View {
         switch entry {
         case .solo(let item, _):
-            if item.cockpitState == .held {
-                selectable(item) { QueueHeldCard(item: item, actions: actions(for: item)) }
-            } else {
-                selectable(item) {
-                    QueueStateCard(item: item, telemetry: store.telemetry[item.id], actions: actions(for: item))
+            Group {
+                if item.cockpitState == .held {
+                    selectable(item) { QueueHeldCard(item: item, actions: actions(for: item)) }
+                } else {
+                    selectable(item) {
+                        QueueStateCard(item: item, telemetry: store.telemetry[item.id], actions: actions(for: item))
+                    }
                 }
             }
+            .queueDuoSelected(duoSelectedKey == entry.id)
         case .group(let group, _) where group.isPair:
             QueuePairCard(group: group, telemetry: store.telemetry, selecting: selecting, selected: $selected,
                           actionsFor: { actions(for: $0) })
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    // Split (Duo): a tap outside its controls opens the pair beside the list.
+                    guard duoSplits, !selecting else { return }
+                    duoOpenKey = entry.id
+                }
+                .queueDuoSelected(duoSelectedKey == entry.id)
         case .group(let group, let eta):
             QueueGroupCard(group: group, telemetry: store.telemetry, eta: eta,
                            selecting: selecting, selected: $selected, focusId: focusId,
@@ -151,7 +161,7 @@ extension ActivityQueueTab {
         } else if opensTitle {
             card()
                 .contentShape(Rectangle())
-                .onTapGesture { model.open(item.mediaItemId) }
+                .onTapGesture { model.openQueueCard(item, opener: cardOpener) }
         } else {
             card()
         }

@@ -13,6 +13,14 @@ struct DefaultProfilesSettingsPanel: View {
     @State private var saving = false
     @State private var saved = false
     @State private var error: String?
+    /// Desktop Settings shows the kind × tier table (`DefaultProfilesTable`).
+    /// Read here, above the Form that hands down `settingsDesktop`, so from
+    /// the size class `SettingsView` sets from its width (`SettingsLayout`).
+    /// It needs about 640 of panel (120 + two cells of a menu each); below
+    /// that the per-kind sections stay.
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @State private var width: CGFloat = 0
+    private var desktop: Bool { sizeClass == .regular && width >= 640 }
 
     struct Cell: Equatable {
         var profile: Int?
@@ -47,10 +55,20 @@ struct DefaultProfilesSettingsPanel: View {
             }
 
             if let cells {
-                ForEach(Self.kinds, id: \.0) { kind in
-                    SettingsSection(kind.1) {
-                        ForEach(Self.tiers, id: \.self) { tier in
-                            cellRows(kind: kind.0, kindLabel: kind.1, tier: tier, cell: cells[key(kind.0, tier)] ?? Cell())
+                if desktop {
+                    SettingsSection("Defaults") {
+                        DefaultProfilesTable(kinds: Self.kinds, tiers: Self.tiers, unset: Self.unset,
+                                             profiles: { profilesFor($0).map { ($0.id, $0.name) } },
+                                             roots: roots.map { ($0.id, $0.path) },
+                                             profile: { binding($0, $1, \.profile) },
+                                             root: { binding($0, $1, \.root) })
+                    }
+                } else {
+                    ForEach(Self.kinds, id: \.0) { kind in
+                        SettingsSection(kind.1) {
+                            ForEach(Self.tiers, id: \.self) { tier in
+                                cellRows(kind: kind.0, kindLabel: kind.1, tier: tier, cell: cells[key(kind.0, tier)] ?? Cell())
+                            }
                         }
                     }
                 }
@@ -80,6 +98,7 @@ struct DefaultProfilesSettingsPanel: View {
                 SettingsLoadingRow(error: error)
             }
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .task { await load() }
     }
 

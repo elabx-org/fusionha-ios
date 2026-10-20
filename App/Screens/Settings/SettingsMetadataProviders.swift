@@ -73,80 +73,125 @@ private struct ProviderStatus {
 struct ProviderCard: View {
     let provider: MetadataProvider
     @Environment(SettingsStore.self) private var store
+    @Environment(\.settingsDesktop) private var desktop
+    @Environment(\.paneSize) private var pane
     @State private var testing = false
+
+    /// The cells side by side need about 600 of panel: below it (an iPad's
+    /// split in portrait) each label wraps a word a line, so they stack.
+    private var cellsSideBySide: Bool { desktop && pane.width >= 600 }
     @State private var running = false
     @State private var testMessage: String?
 
+    /// Phone: identity and toggle, the status line, then the cells stacked.
+    /// Desktop Settings (web `.head` + `.body` 1fr 1fr): identity, status and
+    /// toggle on one row, the two cells side by side with a hairline between.
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    provider.logo
-                        .padding(.bottom, 6)
-                    Text(provider.role.uppercased())
-                        .font(.system(size: 11, weight: .heavy))
-                        .tracking(0.5)
-                        .foregroundStyle(Theme.dim)
-                    Text(provider.name)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Theme.txt)
-                    Text(provider.blurb)
-                        .font(.system(size: 12))
-                        .foregroundStyle(Theme.mut)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                identity
                 Spacer(minLength: 0)
-                Toggle("", isOn: enabledBinding)
-                    .labelsHidden()
-                    .tint(Theme.indigo)
-                    .disabled(provider == .tmdb)
-                    .accessibilityLabel(provider == .tmdb ? "TMDB is always enabled" : "Enable \(provider.mark.0) provider")
-            }
-            HStack(spacing: 8) {
-                HStack(spacing: 6) {
-                    Circle().fill(status.color).frame(width: 6, height: 6)
-                    Text(status.label)
-                }
-                .font(.system(size: 11.5, weight: .semibold))
-                .foregroundStyle(status.color)
-                .padding(.horizontal, 10)
-                .frame(height: 24)
-                .background(status.color.opacity(0.12), in: Capsule())
-                .overlay(Capsule().strokeBorder(status.color.opacity(0.32)))
-                Text(status.meta).font(.system(size: 11.5)).foregroundStyle(Theme.mut).lineLimit(1)
-            }
-            .animation(.easeInOut(duration: 0.2), value: status.label)
-            switch provider {
-            case .tmdb:
-                ApiKeyCell(key: "tmdb_api_key", configuredKey: "tmdb_configured", label: "TMDB API key",
-                           sub: "Required · movies always use TMDB")
-                connectionCell(sub: "Probe the saved key against TMDB.", path: "/api/v1/settings/test-tmdb")
-            case .tvdb:
-                ApiKeyCell(key: "tvdb_api_key", configuredKey: "tvdb_configured", label: "TVDB API key",
-                           sub: "BYO TVDB v4 · stored redacted")
-                connectionCell(sub: "Probe against TheTVDB.", path: "/api/v1/settings/test-tvdb")
-            case .tvmaze:
-                NumberFieldRow(label: "Search delay after air", description: "Wait before auto-searching", unit: "min",
-                               value: store.double("search_air_delay_minutes", 15)) { n in
-                    store.save("search_air_delay_minutes", .number(n))
-                }
-                HStack {
-                    FieldLabel(label: "Enrichment", description: enrichmentSub)
-                    Spacer()
-                    Button {
-                        Task { await runEnrichment() }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
+                if desktop {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        statusPill
+                        statusMeta
                     }
-                    .buttonStyle(.web())
-                    .disabled(running || !store.bool("tvmaze_enabled"))
-                    .accessibilityLabel(running ? "Running…" : "Run enrichment now")
+                }
+                toggle
+            }
+            if !desktop {
+                HStack(spacing: 8) {
+                    statusPill
+                    statusMeta
                 }
             }
+            SettingsCellPair(sideBySide: cellsSideBySide) { firstCell } trailing: { secondCell }
         }
         .padding(.vertical, 6)
         .opacity(enabled ? 1 : 0.7)
         .settingsField(provider.name)
+    }
+
+    private var identity: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            provider.logo
+                .padding(.bottom, 6)
+            Text(provider.role.uppercased())
+                .font(.system(size: 11, weight: .heavy))
+                .tracking(0.5)
+                .foregroundStyle(Theme.dim)
+            Text(provider.name)
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Theme.txt)
+            Text(provider.blurb)
+                .font(.system(size: 12))
+                .foregroundStyle(Theme.mut)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var toggle: some View {
+        Toggle("", isOn: enabledBinding)
+            .labelsHidden()
+            .tint(Theme.indigo)
+            .disabled(provider == .tmdb)
+            .accessibilityLabel(provider == .tmdb ? "TMDB is always enabled" : "Enable \(provider.mark.0) provider")
+    }
+
+    private var statusPill: some View {
+        HStack(spacing: 6) {
+            Circle().fill(status.color).frame(width: 6, height: 6)
+            Text(status.label)
+        }
+        .font(.system(size: 11.5, weight: .semibold))
+        .foregroundStyle(status.color)
+        .padding(.horizontal, 10)
+        .frame(height: 24)
+        .background(status.color.opacity(0.12), in: Capsule())
+        .overlay(Capsule().strokeBorder(status.color.opacity(0.32)))
+        .animation(.easeInOut(duration: 0.2), value: status.label)
+    }
+
+    private var statusMeta: some View {
+        Text(status.meta).font(.system(size: 11.5)).foregroundStyle(Theme.mut).lineLimit(1)
+    }
+
+    @ViewBuilder private var firstCell: some View {
+        switch provider {
+        case .tmdb:
+            ApiKeyCell(key: "tmdb_api_key", configuredKey: "tmdb_configured", label: "TMDB API key",
+                       sub: "Required · movies always use TMDB")
+        case .tvdb:
+            ApiKeyCell(key: "tvdb_api_key", configuredKey: "tvdb_configured", label: "TVDB API key",
+                       sub: "BYO TVDB v4 · stored redacted")
+        case .tvmaze:
+            NumberFieldRow(label: "Search delay after air", description: "Wait before auto-searching", unit: "min",
+                           value: store.double("search_air_delay_minutes", 15)) { n in
+                store.save("search_air_delay_minutes", .number(n))
+            }
+        }
+    }
+
+    @ViewBuilder private var secondCell: some View {
+        switch provider {
+        case .tmdb:
+            connectionCell(sub: "Probe the saved key against TMDB.", path: "/api/v1/settings/test-tmdb")
+        case .tvdb:
+            connectionCell(sub: "Probe against TheTVDB.", path: "/api/v1/settings/test-tvdb")
+        case .tvmaze:
+            HStack {
+                FieldLabel(label: "Enrichment", description: enrichmentSub)
+                Spacer()
+                Button {
+                    Task { await runEnrichment() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.web())
+                .disabled(running || !store.bool("tvmaze_enabled"))
+                .accessibilityLabel(running ? "Running…" : "Run enrichment now")
+            }
+        }
     }
 
     private var enabled: Bool {
@@ -231,86 +276,5 @@ struct ProviderCard: View {
         running = true
         _ = try? await store.client?.json("POST", "/api/v1/system/tasks/air-times/run")
         running = false
-    }
-}
-
-/// A masked key with a pencil; editing shows a secure field with Save / Cancel.
-private struct ApiKeyCell: View {
-    let key: String
-    let configuredKey: String
-    let label: String
-    let sub: String
-    @Environment(SettingsStore.self) private var store
-    @State private var editing = false
-    @State private var value = ""
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                FieldLabel(label: label, description: sub)
-                Spacer()
-                if !editing {
-                    MonoText(store.bool(configuredKey) ? "•••• •••• ••••" : "Not set")
-                    Button { editing = true } label: { Image(systemName: "pencil") }
-                        .buttonStyle(.web())
-                        .accessibilityLabel("Change \(label)")
-                }
-            }
-            if editing {
-                SecureField("", text: $value, prompt: Text("Paste your \(label)").foregroundStyle(Theme.dim))
-                    .font(.system(size: 13))
-                    .padding(.horizontal, 11)
-                    .frame(height: 34)
-                    .background(Theme.bg, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.line))
-                    .onSubmit(commit)
-                HStack(spacing: 8) {
-                    Button("Save", action: commit)
-                        .buttonStyle(.web(.primary))
-                        .disabled(value.trimmingCharacters(in: .whitespaces).isEmpty)
-                    Button("Cancel") { editing = false; value = "" }
-                        .buttonStyle(.web(.ghost))
-                }
-            }
-        }
-    }
-
-    private func commit() {
-        let trimmed = value.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
-        store.save(key, .string(trimmed))
-        Task {
-            try? await Task.sleep(for: .milliseconds(600))
-            await store.load()
-        }
-        editing = false
-        value = ""
-    }
-}
-
-/// The web's `formatAgo`: "just now", "5 min ago", "3h ago", "2d ago", or a date.
-func formatAgo(_ iso: String) -> String {
-    guard let then = Format.timestamp(iso) else { return "" }
-    let secs = max(0, Int(Date().timeIntervalSince(then)))
-    if secs < 60 { return "just now" }
-    let mins = secs / 60
-    if mins < 60 { return "\(mins) min ago" }
-    let hrs = mins / 60
-    if hrs < 24 { return "\(hrs)h ago" }
-    let days = hrs / 24
-    if days < 7 { return "\(days)d ago" }
-    return then.formatted(date: .numeric, time: .omitted)
-}
-
-/// TheTVDB's required attribution line, verbatim, with its mark and a link back.
-struct TvdbAttribution: View {
-    var body: some View {
-        HStack(alignment: .top, spacing: 8) {
-            TvdbLogo(size: 20)
-            Text("Metadata provided by TheTVDB. Please consider adding missing information or subscribing. [thetvdb.com ↗](https://thetvdb.com)")
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.mut)
-                .tint(Theme.indigo)
-        }
     }
 }

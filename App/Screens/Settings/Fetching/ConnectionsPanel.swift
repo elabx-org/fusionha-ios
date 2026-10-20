@@ -33,7 +33,8 @@ struct ConnectionsPanel: View {
                 FetchSectionHead(title: "Virtual instances", count: instances.count,
                                  description: "External tools authenticate with each instance’s own API key.")
                 if !loaded || error != nil { FetchLoading(error: error) }
-                VStack(spacing: 12) {
+                // Web `InstancesPanel` `.grid`: auto-fill minmax(430, 1fr).
+                AutoFillGrid(minItemWidth: 430, spacing: 12) {
                     ForEach(Array(instances.enumerated()), id: \.element.id) { index, instance in
                         InstanceCard(instance: instance, roots: roots, revealedKey: revealed[instance.id],
                                      copied: copied,

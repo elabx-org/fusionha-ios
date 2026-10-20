@@ -1,6 +1,16 @@
 import SwiftUI
 import FusionhaKit
 
+/// How a title's rows draw (`ManualImportLayout`).
+enum MIRowMode: Equatable {
+    /// Phone cards that open in place.
+    case cards
+    /// The Duo split's list: a tap shows the file in the detail pane.
+    case pick
+    /// The desktop table; `narrow` under 1100 drops Audio and Group · service.
+    case table(narrow: Bool)
+}
+
 /// One title (the web's phone `TitleSection`): a flat header that folds, with
 /// a select-all box, the poster, the title and its match confidence (a medium
 /// match is a tag that asks "Right match?"), the meta line and Edit all; then
@@ -11,6 +21,8 @@ struct MITitleSection: View {
     let rows: [ManualImportRow]
     @Binding var folded: Bool
     @Binding var openId: Int?
+    /// How its rows draw: phone cards, the Duo split's list, or table rows.
+    var rowMode: MIRowMode = .cards
     @Environment(ManualImportSession.self) private var session
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var asking = false
@@ -22,7 +34,17 @@ struct MITitleSection: View {
             header
             if block.needsConfirm && asking { ask }
             if !folded {
-                ForEach(rows) { row in MIRowView(row: row, openId: $openId) }
+                switch rowMode {
+                case .cards:
+                    ForEach(rows) { row in MIRowView(row: row, openId: $openId) }
+                case .pick:
+                    ForEach(rows) { row in MIRowView(row: row, openId: $openId, picksDetail: true) }
+                case .table(let narrow):
+                    VStack(alignment: .leading, spacing: 4) {
+                        MITableHead(narrow: narrow)
+                        ForEach(rows) { row in MITableRow(row: row, narrow: narrow, openId: $openId) }
+                    }
+                }
             }
         }
         .sheet(isPresented: $editAll) {

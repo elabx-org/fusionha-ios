@@ -9,16 +9,50 @@ struct ImportTriageList: View {
     let onOverride: (String) -> Void
     let onClose: () -> Void
     @State private var readyOpen = false
+    /// The workspace's own width: above 720 it is the web's desktop modal.
+    @State private var width: CGFloat = 0
     @Environment(\.settingsMotionOff) private var motionOff
 
+    /// Web `.body` above 720 (`320px 1fr`): the session and Sources as a rail
+    /// beside the triage. At 720 and under, Sources is a disclosure in the list.
+    private var twoPanes: Bool { PaneRule.isDesktop(Double(width)) }
+
     var body: some View {
-        let triage = model.triage
-        List {
-            Section {
-                ImportSessionStateLine(model: model)
+        Group {
+            if twoPanes {
+                HStack(spacing: 0) {
+                    List {
+                        stateSection
+                        ImportSourcesSection(model: model, rail: true)
+                    }
+                    .scrollContentBackground(.hidden)
+                    .frame(width: 320)
+                    Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea(edges: .bottom)
+                    triageList(withSources: false)
+                }
+            } else {
+                triageList(withSources: true)
             }
-            .listRowBackground(Theme.card)
-            ImportSourcesSection(model: model)
+        }
+        .background(Theme.bg)
+        .safeAreaInset(edge: .bottom) { ImportCommitBar(model: model, onClose: onClose) }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+    }
+
+    private var stateSection: some View {
+        Section {
+            ImportSessionStateLine(model: model)
+        }
+        .listRowBackground(Theme.card)
+    }
+
+    private func triageList(withSources: Bool) -> some View {
+        let triage = model.triage
+        return List {
+            if withSources {
+                stateSection
+                ImportSourcesSection(model: model)
+            }
             if model.isDraft, !model.matched.isEmpty {
                 ImportBulkSection(model: model)
             }
@@ -26,8 +60,6 @@ struct ImportTriageList: View {
             if !triage.ready.isEmpty { readySection(triage.ready) }
         }
         .scrollContentBackground(.hidden)
-        .background(Theme.bg)
-        .safeAreaInset(edge: .bottom) { ImportCommitBar(model: model, onClose: onClose) }
     }
 
     private func needsYouSection(_ rows: [LibraryImportItem]) -> some View {
@@ -101,13 +133,15 @@ struct ImportTriageList: View {
 /// The Sources group: one card per child scan with its progress and Rescan.
 struct ImportSourcesSection: View {
     let model: ImportWorkspaceModel
+    /// The desktop rail: always open, no disclosure.
+    var rail = false
     @State private var open = false
     @Environment(\.settingsMotionOff) private var motionOff
 
     var body: some View {
         let sources = model.session?.sources ?? []
         Section {
-            if open {
+            if open || rail {
                 ForEach(sources) { src in
                     ImportSourceRow(source: src, rescanning: model.working, canRescan: model.isDraft) {
                         Task { await model.rescan(scanId: src.scanId) }
@@ -119,9 +153,11 @@ struct ImportSourcesSection: View {
                 SettingsMotion.perform(motionOff) { open.toggle() }
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "chevron.right")
-                        .rotationEffect(.degrees(open ? 90 : 0))
-                        .font(.system(size: 11, weight: .semibold))
+                    if !rail {
+                        Image(systemName: "chevron.right")
+                            .rotationEffect(.degrees(open ? 90 : 0))
+                            .font(.system(size: 11, weight: .semibold))
+                    }
                     Text("Sources · \(sources.count)").font(.system(size: 15, weight: .semibold))
                     if sources.contains(where: { $0.status == "scanning" && $0.stalled != true }) {
                         ProgressView().controlSize(.mini)
@@ -131,7 +167,8 @@ struct ImportSourcesSection: View {
                 .textCase(nil)
             }
             .buttonStyle(.plain)
-            .accessibilityValue(open ? "Expanded" : "Collapsed")
+            .allowsHitTesting(!rail)
+            .accessibilityValue(rail ? "" : open ? "Expanded" : "Collapsed")
         }
         .listRowBackground(Theme.card)
     }

@@ -34,8 +34,8 @@ struct QualityProfileFormatScoresPage: View {
         }
         .animation(motionOff || reduceMotion ? nil : .snappy, value: shown.map(\.id))
         .searchable(text: $query, prompt: "Search \(draft.kindFormats.count) custom formats…")
-        .navigationTitle("Custom Formats")
-        .navigationBarTitleDisplayMode(.inline)
+        // The title is the caller's: "Custom Formats" when pushed, the
+        // editor's own when it is the wide sheet's trailing pane.
     }
 
     private var emptyCopy: String {

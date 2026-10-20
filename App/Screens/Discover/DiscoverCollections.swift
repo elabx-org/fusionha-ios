@@ -5,6 +5,9 @@ import FusionhaKit
 
 struct CollectionsRail: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.paneSize) private var pane
+    /// The web's `.cell`: 116 on phones, 128 to 720, 158 on desktop.
+    private var cellWidth: CGFloat { CGFloat(DiscoverWidthRule.cellWidth(Double(pane.width))) }
     @Environment(DiscoverStore.self) private var store
     @State private var state: RailLoad<CollectionSummary> = .loading
 
@@ -27,7 +30,7 @@ struct CollectionsRail: View {
                     RailTrack {
                         ForEach(Array(items.enumerated()), id: \.element.id) { index, collection in
                             CollectionCard(collection: collection) { ignore(collection) }
-                                .frame(width: 116)
+                                .frame(width: cellWidth)
                                 .discoverReveal(index: index)
                         }
                     }

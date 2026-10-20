@@ -9,6 +9,7 @@ struct ActivityPageHeader: View {
     @Environment(ActChrome.self) private var chrome
     @Environment(ActRouter.self) private var router
     @Environment(\.actTabsNamespace) private var tabsNamespace
+    @Environment(\.paneSize) private var pane
 
     private var visibleTabs: [ActivityTab] {
         var tabs: [ActivityTab] = [.queue, .history, .wanted, .blocklist, .tasks]
@@ -18,34 +19,25 @@ struct ActivityPageHeader: View {
     }
 
     var body: some View {
-        @Bindable var chrome = chrome
         let held = model.queueHeld
+        @Bindable var chrome = chrome
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(caption(held: held))
-                    .font(.system(size: 15))
-                    .foregroundStyle(Theme.mut)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                // "Review all N" is Needs you's own outline button now (0.4.198).
-                if chrome.searchable {
-                    ActSearch(placeholder: chrome.tab == .audit ? "Search titles" : "Search by title…",
-                              text: $chrome.searchInput)
-                }
-                // Ruling A6: mirror the web header's "Resolve all held (N)".
-                if held > 0 {
-                    Button {
-                        router.manualImport(rescue: model.queueHeldIds)
-                    } label: {
-                        Label("Resolve all held (\(held))", systemImage: "square.and.arrow.down")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(Theme.txt)
-                            .padding(.horizontal, 14)
-                            .frame(height: 36)
-                            .contentShape(Capsule())
+            Group {
+                if pane.isDesktopPane {
+                    // Desktop (web `Activity.module.css` .head above 720): one row,
+                    // the caption, then the search (200–340) and Resolve all held.
+                    HStack(spacing: 14) {
+                        captionText(held: held)
+                        Spacer(minLength: 0)
+                        search.frame(minWidth: 200, maxWidth: 340)
+                        resolveHeld(held)
                     }
-                    .buttonStyle(.plain)
-                    .glassControl()
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        captionText(held: held)
+                        search
+                        resolveHeld(held)
+                    }
                 }
             }
             .padding(.bottom, 20)
@@ -56,6 +48,42 @@ struct ActivityPageHeader: View {
                                           badgeInk: Theme.onFill(hex: held > 0 ? Theme.palette.miss : Theme.palette.grab))
             }, selection: $chrome.tab, namespace: tabsNamespace)
             .padding(.bottom, 20)
+        }
+    }
+
+    private func captionText(held: Int) -> some View {
+        Text(caption(held: held))
+            .font(.system(size: 15))
+            .foregroundStyle(Theme.mut)
+            .lineLimit(1)
+            .truncationMode(.tail)
+    }
+
+    // "Review all N" is Needs you's own outline button now (0.4.198).
+    @ViewBuilder private var search: some View {
+        @Bindable var chrome = chrome
+        if chrome.searchable {
+            ActSearch(placeholder: chrome.tab == .audit ? "Search titles" : "Search by title…",
+                      text: $chrome.searchInput)
+        }
+    }
+
+    /// Ruling A6: mirror the web header's "Resolve all held (N)".
+    @ViewBuilder private func resolveHeld(_ held: Int) -> some View {
+        if held > 0 {
+            Button {
+                router.manualImport(rescue: model.queueHeldIds)
+            } label: {
+                Label("Resolve all held (\(held))", systemImage: "square.and.arrow.down")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Theme.txt)
+                    .padding(.horizontal, 14)
+                    .frame(height: 36)
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .glassControl()
+            .fixedSize()
         }
     }
 

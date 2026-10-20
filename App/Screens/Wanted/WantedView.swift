@@ -51,7 +51,7 @@ struct WantedView: View {
             if embedded {
                 page
             } else {
-                Screen(showsAdd: true) { page }
+                Screen(showsAdd: true) { page }.publishesPaneSize()
                     .shellPage("Wanted")
                     .toolbar { AddTitleToolbarItem(model: model) }
             }

@@ -62,11 +62,36 @@ struct PlexLibraryRow: View {
     let flash: Bool
     let onOverride: (String?) -> Void
     @Environment(\.settingsMotionOff) private var motionOff
+    @Environment(\.settingsDesktop) private var desktop
+    @Environment(\.paneSize) private var pane
 
     private var state: PlexLibraryState { PlexLibraryEvidence.state(lib) }
 
+    /// The web's `.row` (`minmax(0, 1fr) auto`): evidence | controls, one
+    /// column on the phone or once the panel is 560 or narrower.
+    private var wide: Bool { desktop && pane.width > 560 }
+
     var body: some View {
         let color = PlexColors.state(state)
+        Group {
+            if wide {
+                HStack(alignment: .center, spacing: 14) {
+                    info.frame(maxWidth: .infinity, alignment: .leading)
+                    controls.fixedSize()
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 7) {
+                    info
+                    controls
+                }
+            }
+        }
+        .padding(11)
+        .background(color.opacity(flash ? 0.24 : 0.10), in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .animation(motionOff ? nil : .easeOut(duration: 0.4), value: flash)
+    }
+
+    private var info: some View {
         VStack(alignment: .leading, spacing: 7) {
             title
             Text(PlexLibraryEvidence.evidenceText(lib)).font(.system(size: 12)).foregroundStyle(Theme.mut)
@@ -81,11 +106,7 @@ struct PlexLibraryRow: View {
                     .foregroundStyle(state == .gone ? Theme.dim : Theme.stuck)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            controls
         }
-        .padding(11)
-        .background(color.opacity(flash ? 0.24 : 0.10), in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .animation(motionOff ? nil : .easeOut(duration: 0.4), value: flash)
     }
 
     private var title: some View {

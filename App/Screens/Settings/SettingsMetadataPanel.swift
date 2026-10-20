@@ -144,6 +144,7 @@ struct MetadataSettingsPanel: View {
 private struct HybridPrecedenceRows: View {
     @Environment(SettingsStore.self) private var store
     @Environment(\.settingsMotionOff) private var motionOff
+    @Environment(\.settingsDesktop) private var desktop
 
     private static let fields: [(id: String, label: String, description: String)] = [
         ("title", "Title · Overview · Artwork", "names, summaries, posters"),
@@ -181,8 +182,12 @@ private struct HybridPrecedenceRows: View {
         }
         .padding(.vertical, 4)
         ForEach(Self.fields, id: \.id) { field in
-            VStack(alignment: .leading, spacing: 8) {
+            // Desktop Settings: the web's `.field` grid, label 190 | chain.
+            let layout = desktop ? AnyLayout(HStackLayout(alignment: .center, spacing: 12))
+                                 : AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+            layout {
                 FieldLabel(label: field.label, description: field.description)
+                    .frame(width: desktop ? 190 : nil, alignment: .leading)
                 HStack(spacing: 6) {
                     let chain = order[field.id] ?? []
                     ForEach(Array(chain.enumerated()), id: \.element) { index, source in

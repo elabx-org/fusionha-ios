@@ -7,6 +7,9 @@ import FusionhaKit
 struct MIRowView: View {
     let row: ManualImportRow
     @Binding var openId: Int?
+    /// The Duo split's list: a tap shows the file in the detail pane (`openId`
+    /// is then the pane's row) instead of opening it in place.
+    var picksDetail = false
     @Environment(ManualImportSession.self) private var session
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -17,13 +20,15 @@ struct MIRowView: View {
             HStack(alignment: .top, spacing: 4) {
                 checkbox
                 Button {
+                    if picksDetail { openId = row.rowId; return }
                     withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { openId = open ? nil : row.rowId }
                 } label: { lines }
                 .buttonStyle(.plain)
-                .accessibilityHint(open ? "Closes the file" : "Opens the file")
+                .accessibilityHint(picksDetail ? "Shows the file beside the list" : open ? "Closes the file" : "Opens the file")
+                .accessibilityAddTraits(picksDetail && open ? .isSelected : [])
             }
             notes
-            if open {
+            if open && !picksDetail {
                 MIRowBody(row: row)
                     .padding(.top, 6)
                     .transition(.opacity)
@@ -35,8 +40,10 @@ struct MIRowView: View {
         .actWash(wash, radius: Theme.radius, base: Theme.panel)
     }
 
-    /// A status wash over the solid row (content stays solid, never glass).
+    /// A status wash over the solid row (content stays solid, never glass). The
+    /// split's current row is an ambient accent tint, never a border.
     private var wash: StatusTone? {
+        if picksDetail && open { return StatusTone(color: Theme.i2) }
         guard !row.committed else { return nil }
         switch row.status {
         case "no_match": return StatusTone(.danger)
@@ -81,42 +88,35 @@ struct MIRowView: View {
         .contentShape(Rectangle())
     }
 
-    @ViewBuilder private var titleLine: some View {
+    private var titleLine: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
-            if row.match.itemId == nil {
-                Label("No match", systemImage: "xmark.circle").foregroundStyle(Theme.danger)
-            } else if row.target.isSeries {
-                if let code = ManualImportRules.episodeCode(row) {
-                    Text(code).font(.system(size: 13, weight: .bold, design: .monospaced)).foregroundStyle(Theme.i2)
-                }
-                let titles = episodeTitles
-                Text(titles.first ?? row.match.title ?? "—").lineLimit(1)
-                if titles.count > 1 { Text("+ \(titles.count - 1) more").foregroundStyle(Theme.mut) }
-            } else {
-                Text(row.match.title ?? row.parsed.title ?? "—").lineLimit(1)
-                if let edition = row.target.edition { Text(edition).foregroundStyle(Theme.edition) }
+            MIRowTitle(row: row)
+            if !picksDetail {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Theme.dim)
+                    .rotationEffect(.degrees(open ? 180 : 0))
             }
-            Image(systemName: "chevron.down")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Theme.dim)
-                .rotationEffect(.degrees(open ? 180 : 0))
         }
         .font(.system(size: 15, weight: .semibold))
         .foregroundStyle(Theme.txt)
     }
 
-    private var episodeTitles: [String] {
-        guard let item = row.match.itemId, let seasons = session.seasons[item] else { return [] }
-        let ids = Set(row.target.coveredEpisodeIds)
-        return seasons.flatMap(\.episodes).filter { ids.contains($0.id) }
-            .sorted { $0.episodeNumber < $1.episodeNumber }.compactMap(\.title)
-    }
+    private var notes: some View { MIRowNotes(row: row) }
+}
 
-    @ViewBuilder private var notes: some View {
+/// Under a row: a rescue's finding chips and actions, then its advisory,
+/// error and warning lines (the card row and the table row share them).
+struct MIRowNotes: View {
+    let row: ManualImportRow
+    var indent: CGFloat = 48
+    @Environment(ManualImportSession.self) private var session
+
+    var body: some View {
         // A held row of a rescue shows finding chips and its actions (0.4.202); the sentence moves into them.
         let rescue = session.tally(for: row) != nil
         if rescue {
-            MIFindingLine(row: row).padding(.leading, 48).padding(.top, 6)
+            MIFindingLine(row: row).padding(.leading, indent).padding(.top, 6)
         }
         let lines: [(String, Color)] = [
             (rescue ? nil : ManualImportRules.advisory(row)).map { ($0, Theme.miss) },
@@ -127,7 +127,7 @@ struct MIRowView: View {
             Text(line.0)
                 .font(.system(size: 12.5))
                 .foregroundStyle(line.1)
-                .padding(.leading, 48)
+                .padding(.leading, indent)
                 .padding(.top, 4)
                 .fixedSize(horizontal: false, vertical: true)
         }

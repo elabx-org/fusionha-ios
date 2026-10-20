@@ -11,16 +11,7 @@ struct QualityProfileLadderPage: View {
 
     var body: some View {
         Form {
-            Section {
-                ForEach(Array(draft.rows.enumerated()), id: \.element.id) { index, row in
-                    rowView(row, index: index)
-                }
-                .onMove { draft.moveRows(from: $0, to: $1) }
-            } header: {
-                Text("\(draft.allowedCount) allowed · Upgrade until \(draft.cutoffLabel)")
-            } footer: {
-                Text("higher = preferred · drag to reorder")
-            }
+            QualityProfileLadderSection(draft: draft, groupEdit: groupEdit)
         }
         .navigationTitle("Qualities")
         .navigationBarTitleDisplayMode(.inline)
@@ -28,6 +19,35 @@ struct QualityProfileLadderPage: View {
             ToolbarItem(placement: .primaryAction) {
                 Button(groupEdit ? "Done" : "Edit Groups") { groupEdit.toggle() }
             }
+        }
+    }
+}
+
+/// The ladder itself, as a Form section: the page above, or the editor's
+/// Qualities pane on a wide sheet, which passes `onToggleGroups` to put
+/// "Edit Groups" in the section header.
+struct QualityProfileLadderSection: View {
+    @Bindable var draft: QualityProfileDraft
+    let groupEdit: Bool
+    var onToggleGroups: (() -> Void)?
+
+    var body: some View {
+        Section {
+            ForEach(Array(draft.rows.enumerated()), id: \.element.id) { index, row in
+                rowView(row, index: index)
+            }
+            .onMove { draft.moveRows(from: $0, to: $1) }
+        } header: {
+            HStack {
+                Text("\(draft.allowedCount) allowed · Upgrade until \(draft.cutoffLabel)")
+                if let onToggleGroups {
+                    Spacer()
+                    Button(groupEdit ? "Done" : "Edit Groups", action: onToggleGroups)
+                        .textCase(nil)
+                }
+            }
+        } footer: {
+            Text("higher = preferred · drag to reorder")
         }
     }
 

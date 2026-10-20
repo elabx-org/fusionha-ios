@@ -32,6 +32,9 @@ struct QualityProfilesSettingsPanel: View {
         .refreshable { await load() }
         .sheet(item: $editing) { target in
             QualityProfileEditorSheet(profile: target.profile) { await load() }
+                // The web's editor is a wide modal: page-sized when unfolded,
+                // so its Qualities | Custom Formats panes can open above 820.
+                .presentationSizing(.page)
         }
         .confirmationDialog("Delete \(deleting?.name ?? "this profile")?",
                             isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),

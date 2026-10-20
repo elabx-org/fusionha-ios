@@ -75,6 +75,7 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
     var onToggle: ((Bool) -> Void)? = nil
     @State private var open: Bool
     @Environment(\.actReduceMotion) private var reduceMotion
+    @Environment(\.paneSize) private var pane
     private let poster: PosterV
     private let title: TitleV
     private let trailing: TrailingV
@@ -98,22 +99,18 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top, spacing: 11) {
-                    poster
-                    title.frame(maxWidth: .infinity, alignment: .leading)
-                    if !chevronInRow {
+            Group {
+                if pane.isDesktopPane {
+                    // Desktop (web `GroupCard.module.css` above 720): one header row,
+                    // [poster] [title] [trailing] [chevron].
+                    HStack(alignment: .center, spacing: 11) {
+                        poster
+                        title.frame(maxWidth: .infinity, alignment: .leading)
+                        if hasTrailing { trailing.fixedSize(horizontal: true, vertical: false) }
                         chevron
-                            .padding(.top, -6)
-                            .padding(.trailing, -6)
                     }
-                }
-                if hasTrailing {
-                    HStack(spacing: chevronInRow ? 0 : 10) {
-                        Spacer(minLength: 0)
-                        trailing
-                        if chevronInRow { chevron }
-                    }
+                } else {
+                    phoneHeader
                 }
             }
             .padding(.horizontal, 16)
@@ -128,6 +125,29 @@ struct ActGroupCard<PosterV: View, TitleV: View, TrailingV: View, BodyV: View>: 
         }
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .actWash(wash, radius: 14, base: base)
+    }
+
+    /// Phone (720 and under): poster, title and chevron, then the trailing
+    /// cluster on its own full-width row so it never crushes the title.
+    private var phoneHeader: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top, spacing: 11) {
+                poster
+                title.frame(maxWidth: .infinity, alignment: .leading)
+                if !chevronInRow {
+                    chevron
+                        .padding(.top, -6)
+                        .padding(.trailing, -6)
+                }
+            }
+            if hasTrailing {
+                HStack(spacing: chevronInRow ? 0 : 10) {
+                    Spacer(minLength: 0)
+                    trailing
+                    if chevronInRow { chevron }
+                }
+            }
+        }
     }
 
     private var chevron: some View {

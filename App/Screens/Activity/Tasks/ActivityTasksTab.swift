@@ -148,17 +148,9 @@ struct ActivityTasksTab: View {
             voiceToggle.padding(.bottom, 16)
             if showSystem {
                 sectionLabel("System")
-                VStack(spacing: 10) {
-                    if showEnrichment, let enrich {
-                        EnrichmentCard(status: enrich)
-                        if let subs = enrich.subtasks, !subs.isEmpty {
-                            EnrichmentSubtasksView(subtasks: subs) { await store.refresh(model.client) }
-                        }
-                    }
-                    if let rssTask { RssSyncCard(task: rssTask, latestRun: items.first { $0.trigger == "rss" }) }
-                    if let watchlists { WatchlistsTaskCard(summary: watchlists) }
-                    if !scheduled.isEmpty { ScheduledCard(tasks: scheduled) }
-                }
+                TaskSystemSection(enrichment: showEnrichment ? enrich : nil, rss: rssTask,
+                                  latestRss: items.first { $0.trigger == "rss" }, watchlists: watchlists,
+                                  scheduled: scheduled) { await store.refresh(model.client) }
             }
             if let issues = enrich?.issues, !issues.isEmpty {
                 sectionLabel("Needs attention").padding(.top, showSystem ? 22 : 0)

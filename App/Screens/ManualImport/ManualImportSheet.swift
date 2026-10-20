@@ -2,8 +2,9 @@ import SwiftUI
 import FusionhaKit
 
 /// Manual Import for held downloads, native (the web's Manual Import modal in
-/// its rescue mode, phone layout): the reason strip, one block per title, a
-/// row per file, and the footer that imports or finishes the download.
+/// its rescue mode): the reason strip, one block per title, a row per file,
+/// and the footer that imports or finishes the download. Phone cards, the Duo
+/// split (list | file) or the desktop table, by the sheet's own size.
 /// With no held downloads it is the folder scan (source bar, Browse…, Scan);
 /// the system overflow also offers the web version as a fallback.
 struct ManualImportSheet: View {
@@ -16,6 +17,8 @@ struct ManualImportSheet: View {
     @State private var showKey = false
     @State private var pollRun = 0
     @State private var folded: Set<String> = []
+    /// The sheet's measured size (`layout`).
+    @State private var size: CGSize = .zero
 
     init(downloadIds: [Int], client: APIClient?, onOpenWeb: @escaping () -> Void) {
         self.downloadIds = downloadIds
@@ -41,8 +44,10 @@ struct ManualImportSheet: View {
                     }
                 }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    if session.scan != nil { MIFooter() }
+                    // The split hosts the footer in its list pane (web `SplitBody`).
+                    if session.scan != nil && layout != .split { MIFooter() }
                 }
+                .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         }
         .environment(session)
         .sheet(isPresented: $showKey) { MIStatusKey() }
@@ -60,12 +65,11 @@ struct ManualImportSheet: View {
         }
         .interactiveDismissDisabled(session.working)
         // Unfolded: the page size, so the file rows use the inner display's
-        // width (DC22). The web's split layout there is D2.
+        // width (DC22); `layout` then picks cards, the split or the table from it.
         .presentationSizing(.page)
     }
 
     @ViewBuilder private var content: some View {
-        @Bindable var session = session
         if session.folderMode && session.scan == nil {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
@@ -77,33 +81,16 @@ struct ManualImportSheet: View {
             }
             .scrollDismissesKeyboard(.immediately)
         } else if let scan = session.scan {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 10) {
-                    if session.folderMode { MISourceBar() }
-                    if let strip = ManualImportHeldStrip(scan: scan, decide: session.plan.need) { MIHeldStripView(strip: strip) }
-                    MIPackProgress()
-                    MIVerdictStrip(rows: scan.rows, filter: $session.filter, probing: scan.probePending ?? 0,
-                                   stalled: session.probeStalled) {
-                        session.retryProbes()
-                        pollRun += 1
-                    }
-                    let blocks = ManualImportBlock.group(scan.rows)
-                    MIMatchBanner(blocks: blocks, filter: $session.filter)
-                    ForEach(blocks) { block in
-                        let shown = block.rows.filter(session.filter.matches)
-                        if !shown.isEmpty {
-                            MITitleSection(block: block, rows: shown, folded: foldBinding(block.key), openId: $openId)
-                        }
-                    }
-                    if blocks.allSatisfy({ !$0.rows.contains(where: session.filter.matches) }) {
-                        Button("No files match this filter. Show all") { session.filter = .all }
-                            .buttonStyle(ActButtonStyle(kind: .ghost))
-                    }
+            if layout == .split {
+                MISplitBody(scan: scan, detailId: $openId, folded: $folded) { pollRun += 1 }
+            } else {
+                ScrollView {
+                    MIScanList(scan: scan, rowMode: rowMode, openId: $openId, folded: $folded) { pollRun += 1 }
+                        .padding(.horizontal, Theme.pageGutter)
+                        .padding(.vertical, 12)
                 }
-                .padding(.horizontal, Theme.pageGutter)
-                .padding(.vertical, 12)
+                .scrollDismissesKeyboard(.immediately)
             }
-            .scrollDismissesKeyboard(.immediately)
         } else if let error = session.loadError {
             ContentUnavailableView {
                 Label("Couldn't open the files", systemImage: "exclamationmark.triangle")
@@ -135,8 +122,14 @@ struct ManualImportSheet: View {
         }
     }
 
-    private func foldBinding(_ key: String) -> Binding<Bool> {
-        Binding(get: { folded.contains(key) },
-                set: { if $0 { folded.insert(key) } else { folded.remove(key) } })
+    /// The sheet's own size picks the layout (ruling R4; web
+    /// `useManualImportLayout`): the split at 720 and under on a split-capable
+    /// screen, the table above 720, phone cards otherwise.
+    private var layout: ManualImportLayout {
+        size == .zero ? .cards : ManualImportLayout.mode(width: Double(size.width), height: Double(size.height))
+    }
+
+    private var rowMode: MIRowMode {
+        layout == .table ? .table(narrow: ManualImportLayout.tableIsNarrow(Double(size.width))) : .cards
     }
 }

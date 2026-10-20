@@ -11,6 +11,7 @@ struct QueuePairCard: View {
     @Binding var selected: Set<Int>
     let actionsFor: (QueueItem) -> QueueRowActions
     @Environment(AppModel.self) private var model
+    @Environment(\.queueCardOpener) private var opener
 
     var body: some View {
         let downloads = group.downloads
@@ -43,10 +44,10 @@ struct QueuePairCard: View {
                 .padding(.horizontal, -12)
             }
             ActPoster(url: lead.posterUrl, title: lead.title, size: .md)
-                .onTapGesture { model.open(lead.mediaItemId) }
+                .onTapGesture { model.openQueueCard(lead, opener: opener) }
             VStack(alignment: .leading, spacing: 4) {
                 Text(lead.title).font(.system(size: 18, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(2)
-                    .onTapGesture { model.open(lead.mediaItemId) }
+                    .onTapGesture { model.openQueueCard(lead, opener: opener) }
                     .accessibilityAddTraits(.isButton)
                 if let sub = QueueCardText.subtitle(lead) {
                     Text(sub).font(.system(size: 15)).foregroundStyle(Theme.mut).lineLimit(2)

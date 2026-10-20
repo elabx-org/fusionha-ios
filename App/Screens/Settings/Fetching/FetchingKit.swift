@@ -45,6 +45,7 @@ struct FetchingPage<Content: View>: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .background(Theme.bg)
+        .settingsLayout()
         .refreshable { await refresh?() }
         .navigationTitle(info?.title ?? slug)
         .navigationBarTitleDisplayMode(.inline)

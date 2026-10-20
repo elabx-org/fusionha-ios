@@ -36,6 +36,12 @@ public enum IdleLayout {
         }
     }
 
+    /// `tileColumns`, evened out so no tile sits alone on the last row: the
+    /// web's auto-fit leaves 4 + 1 from about 681 to 833; the app shows 3 + 2.
+    public static func balancedTileColumns(width w: Double, gridWidth: Double, tiles: Int) -> Int {
+        PaneRule.balancedColumns(fitting: tileColumns(width: w, gridWidth: gridWidth, tiles: tiles), items: tiles)
+    }
+
     /// Coming up next and Recently finished side by side (desktop, balanced).
     public static func sideBySide(width w: Double, _ balance: Balance) -> Bool {
         width(w) == .wide && balance.arrangement == .columns
