@@ -31,8 +31,8 @@ struct LibraryStatsSheet: View {
                     }
                 }
                 PulseMeters(pulse: pulse, grown: grown)
-                .padding(.top, 16)
-                .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
+                    .padding(.top, 16)
+                    .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
                 section("In progress") {
                     StatsInProgressList(operations: feed.inProgress) { _ in
                         dismiss()
