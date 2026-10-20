@@ -20,6 +20,7 @@ struct ActivityPageHeader: View {
 
     var body: some View {
         let held = model.queueHeld
+        @Bindable var chrome = chrome
         VStack(alignment: .leading, spacing: 0) {
             Group {
                 if pane.isDesktopPane {

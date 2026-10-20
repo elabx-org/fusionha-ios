@@ -31,6 +31,7 @@ struct SettingsForm<Content: View>: View {
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.bg)
             .environment(\.settingsPanelSlug, slug)
+            .settingsLayout()
             .task(id: flash.target(in: slug)) {
                 guard let label = flash.target(in: slug) else { return }
                 try? await Task.sleep(for: .milliseconds(350))
