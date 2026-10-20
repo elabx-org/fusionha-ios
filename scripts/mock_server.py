@@ -227,6 +227,15 @@ def requests_rows(query):
          "editions": ["UHD-2160p"], "seasons": [], "episodes": [], "status": "deferred", "reason": "not_available_yet",
          "note": None, "requested_at": ago(120)},
     ]
+    # Titles, posters and requesters as the server joins them in (by TMDB id).
+    by_tmdb = {i["tmdb_id"]: i for i in load("library.json")}
+    people = {4: {"id": 4, "display_name": "maya", "avatar": None, "role": "user"},
+              6: {"id": 6, "display_name": "theo", "avatar": None, "role": "user"}}
+    for r in rows:
+        item = by_tmdb.get(r["tmdb_id"])
+        if item:
+            r |= {"title": item["title"], "year": item["year"], "poster": item["poster_url"]}
+        r["requester"] = people.get(r["user_id"])
     status = query.get("status", [None])[0]
     return [r for r in rows if status is None or r["status"] == status]
 
@@ -246,6 +255,63 @@ def issues_rows(query):
     ]
     status = query.get("status", ["open"])[0]
     return [r for r in rows if r["status"] == status]
+
+
+def threads_rows(query):
+    """The managers' Threads list (`GET /api/v1/threads?view=admin`): two
+    request threads and two issue threads, newest first, with real titles."""
+    now = dt.datetime.utcnow()
+    def ago(hours):
+        return (now - dt.timedelta(hours=hours)).isoformat()
+    lib = {i["id"]: i for i in load("library.json")}
+    maya = {"id": 4, "display_name": "maya", "avatar": None, "role": "user"}
+    theo = {"id": 6, "display_name": "theo", "avatar": None, "role": "user"}
+    requests = {r["id"]: r for r in requests_rows({})}
+    def request_thread(rid, item_id, who, hours, text):
+        item = lib[item_id]
+        request = requests[rid]
+        return {"type": "request", "id": rid, "last_event_at": ago(hours), "title": item["title"],
+                "year": item["year"], "poster": item["poster_url"], "request": request, "issue": None,
+                "linked_pending_request_id": None,
+                "last_message": {"author_name": who["display_name"], "author_kind": "user", "text": text,
+                                 "at": ago(hours)}}
+    def issue_thread(issue, who, hours, state, text, problem, verdict):
+        item = lib[issue["media_item_id"]]
+        report = {"id": issue["id"], "problem": problem, "version": {"id": None, "tier": "HD-1080p", "edition": None},
+                  "scope": issue["scope"], "season": issue["season"], "episode": issue["episode"], "state": state,
+                  "verdict_summary": {"text": verdict, "verified": state == "RESOLVED"}, "choices": [],
+                  "resolution": verdict if state == "RESOLVED" else None, "created_at": issue["created_at"],
+                  "reporter": who}
+        full = issue | {"reporter": who, "state": state, "reopen_count": 0, "participants_count": 2,
+                        "reports": [report],
+                        "media_title": item["title"], "media_year": item["year"], "poster": item["poster_url"],
+                        "resolved_at": None, "deduped": False}
+        return {"type": "issue", "id": issue["id"], "last_event_at": ago(hours), "title": item["title"],
+                "year": item["year"], "poster": item["poster_url"], "request": None, "issue": full,
+                "linked_pending_request_id": None,
+                "last_message": {"author_name": who["display_name"], "author_kind": "user", "text": text,
+                                 "at": ago(hours)}}
+    issues = {i["id"]: i for i in issues_rows({"status": ["open"]}) + issues_rows({"status": ["resolved"]})}
+    rows = [
+        request_thread(1, 4, maya, 1, "Can this be the 4K HDR release?"),
+        issue_thread(issues[1], maya, 3, "CHECKING", "Audio drifts out of sync after ten minutes.",
+                     "OTHER", "Checking the file against the release."),
+        request_thread(2, 10, maya, 6, "Seasons 1 and 2 to start, thanks."),
+        issue_thread(issues[2], theo, 26, "OPEN", "Stutters every few seconds on the Apple TV.",
+                     "WONT_PLAY", "Plays on the server; the client may be transcoding."),
+        issue_thread(issues[3], maya, 96, "RESOLVED", "Subs are there now, thank you.",
+                     "LANGUAGE", "Grabbed a release with English subtitles."),
+    ]
+    kind = query.get("type", [None])[0]
+    state = query.get("state", [None])[0]
+    def open_(row):
+        return row["type"] == "request" or row["issue"]["state"] != "RESOLVED"
+    rows = [r for r in rows if kind in (None, "", r["type"])]
+    if state == "OPEN":
+        rows = [r for r in rows if open_(r)]
+    elif state == "RESOLVED":
+        rows = [r for r in rows if not open_(r)]
+    return {"items": rows, "next_cursor": None}
 
 
 def discover():
@@ -406,6 +472,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/v1/requests": lambda: requests_rows(query),
             "/api/v1/requests/offerable": lambda: {"editions": ["HD-1080p", "UHD-2160p"], "mode": "choose", "auto_editions": []},
             "/api/v1/issues": lambda: issues_rows(query),
+            "/api/v1/threads": lambda: threads_rows(query),
             # Requester names for the widget's Requests & issues view.
             "/api/v1/users": lambda: [{"id": 1, "username": "admin", "is_admin": True},
                                       {"id": 4, "username": "maya (plex:4471)", "is_admin": False},

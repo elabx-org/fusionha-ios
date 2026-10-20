@@ -73,8 +73,7 @@ struct TriageInboxView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.top, 36)
                 } else if wide && !inbox.queue.isEmpty {
-                    InboxPanesView(inbox: inbox, viewerId: viewerId, onAdjust: { adjusting = $0 },
-                                   onDeclineWithNote: { noting = $0 }, onOpenThread: onOpenThread, onOpenTitle: openTitle)
+                    InboxPanesView(inbox: inbox, viewerId: viewerId, onAdjust: { adjusting = $0 }, onDetails: { details = $0 })
                 } else if wide {
                     ScrollView {
                         SwipeDeckView(inbox: inbox, viewerId: viewerId, onDetails: { details = $0 },
@@ -142,6 +141,8 @@ struct TriageInboxView: View {
             .closeOnlyBars()
         }
         .presentationDetents([.large])
+        // Wide, Details opens from the Inbox aside: the web's modal, a form sheet.
+        .formSheet()
     }
 
     /// Skip: the next waiting request, if any.

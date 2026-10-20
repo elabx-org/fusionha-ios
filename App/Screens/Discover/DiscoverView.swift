@@ -48,6 +48,8 @@ struct DiscoverView: View {
                     .padding(.bottom, Theme.pageBottom)
                 }
                 .scrollDismissesKeyboard(.interactively)
+                // Wide Requests panes scroll on their own: no page scroll around them (D2a).
+                .requestsWidePageScroll()
                 .onChange(of: scrollTarget) {
                     guard let target = scrollTarget else { return }
                     proxy.scrollTo(target, anchor: .top)
