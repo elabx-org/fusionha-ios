@@ -1,21 +1,11 @@
 Port:
-    UUID: 3867E70A-0D88-4843-9677-4C2330C4943A
+    UUID: 3EB46A77-904A-4878-8759-C1D50A8CFA22
     Class: Unknown
     Port Identifier: com.apple.display.captureservice
     Power state: On
 
 Port:
-    UUID: FBDCA2A5-4979-4065-8DE9-D56721BF89C6
-    Class: Display
-    Port Identifier: com.apple.framebuffer.display
-    Power state: On
-    Display class: 1
-    Default width: 7680
-    Default height: 4320
-    Default pixel format: 'BGRA'
-
-Port:
-    UUID: 1CAC11E9-06D8-4BC7-96BD-29C0DB01B9D5
+    UUID: 1FFA9CEB-6850-4341-A52C-AC1760368897
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -34,7 +24,17 @@ Port:
         Pixel size casting = Yes
 
 Port:
-    UUID: 8C9C8D0A-8BED-471A-904A-44D31C2355B5
+    UUID: B093A27A-55A8-48A1-9303-4ECA522A1DBF
+    Class: Display
+    Port Identifier: com.apple.framebuffer.display
+    Power state: On
+    Display class: 1
+    Default width: 7680
+    Default height: 4320
+    Default pixel format: 'BGRA'
+
+Port:
+    UUID: 8969A186-D8CB-43F0-930E-CEDEA95E0749
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -44,7 +44,7 @@ Port:
     Default pixel format: 'BGRA'
 
 Port:
-    UUID: 6B9A40FE-5FBA-49D2-B0B1-BA805A3D8C98
+    UUID: D79053B4-8FA3-4FD9-9FB0-6C22515552B1
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -63,7 +63,7 @@ Port:
         Pixel size casting = Yes
 
 Port:
-    UUID: 03583C05-FCF7-4AFB-BB56-D683B8976B6D
+    UUID: B422A3B2-38F2-45F4-B673-8FF10D39BD9C
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -73,7 +73,7 @@ Port:
     Default pixel format: 'BGRA'
 
 Port:
-    UUID: 4A713F41-AEC7-4A5C-8834-BF25F74872C3
+    UUID: 2B02F523-5EC3-4992-A211-3D1EF409BBD8
     Class: DisplayAdapter
     Port Identifier: com.apple.framebuffer.server
     Power state: On
@@ -82,9 +82,9 @@ Port:
     (2) TVOut:
         Screen ID: 2
         Name: TVOut
-        Unique ID: A6BBA7B2-6EE7-409D-8101-0AECBA436810
+        Unique ID: ACADE182-F313-4DAD-9809-355CE745274B
         Device Name: external-0
-        Seed: 35
+        Seed: 25
         Screen Type: TVOut
         Pixel Size: {720, 480}
         Dot Pitch: 72
@@ -100,9 +100,9 @@ Port:
     (3) LCD-1:
         Screen ID: 3
         Name: LCD-1
-        Unique ID: 0F059646-0684-4C0E-BAF5-DFBEEF9F5676
+        Unique ID: 20BA7E9F-D2BB-4EB1-A6FC-532B93245325
         Device Name: primary-1
-        Seed: 36
+        Seed: 26
         Screen Type: Integrated
         Pixel Size: {2007, 2853}
         Dot Pitch: 460
@@ -118,9 +118,9 @@ Port:
     (4) Wireless:
         Screen ID: 4
         Name: Wireless
-        Unique ID: 860A3B75-0B49-4AA1-89D1-097398F140BA
+        Unique ID: D113AA8B-A6C0-4FC2-AE82-668DC582397F
         Device Name: wireless0
-        Seed: 37
+        Seed: 27
         Screen Type: CarPlay
         Pixel Size: {720, 480}
         Dot Pitch: 72
@@ -133,30 +133,12 @@ Port:
         HDR Mode: SDR
         Refresh Rate: 6000
         UI Orientation: Ambiguous
-    (1) LCD:
-        Screen ID: 1
-        Name: LCD
-        Unique ID: D5F04A90-B5F6-460F-A88B-916C92524140
-        Device Name: primary
-        Seed: 38
-        Screen Type: Integrated
-        Pixel Size: {1398, 2034}
-        Dot Pitch: 460
-        Mask URL: file:///Library/Developer/DeviceKit/FramebufferMasks/1C896A2B-F0D7-405C-8D0F-66E4B80AD044.pdf
-        Mask ID: 1C896A2B-F0D7-405C-8D0F-66E4B80AD044
-        Chrome ID: com.apple.dt.devicekit.chrome.phone15
-        Preferred UI Scale: 3
-        Pixel Format: 'BGRA'
-        Colorspace: DCI-P3
-        HDR Mode: SDR
-        Refresh Rate: 6000
-        UI Orientation: Portrait
     (5) Resizable:
         Screen ID: 5
         Name: Resizable
-        Unique ID: 39B1BDF6-EF53-4A12-A66E-6E626401381E
+        Unique ID: 5EB9FF0B-4268-41F3-9BC7-81D9E21E12A4
         Device Name: resizable
-        Seed: 39
+        Seed: 28
         Screen Type: Scene
         Pixel Size: {7680, 4320}
         Dot Pitch: 120
@@ -169,27 +151,45 @@ Port:
         HDR Mode: SDR
         Refresh Rate: 6000
         UI Orientation: Ambiguous
+    (1) LCD:
+        Screen ID: 1
+        Name: LCD
+        Unique ID: DF92F08B-50C7-4ECB-82AD-6B5928308C73
+        Device Name: primary
+        Seed: 29
+        Screen Type: Integrated
+        Pixel Size: {1398, 2034}
+        Dot Pitch: 460
+        Mask URL: file:///Library/Developer/DeviceKit/FramebufferMasks/1C896A2B-F0D7-405C-8D0F-66E4B80AD044.pdf
+        Mask ID: 1C896A2B-F0D7-405C-8D0F-66E4B80AD044
+        Chrome ID: com.apple.dt.devicekit.chrome.phone15
+        Preferred UI Scale: 3
+        Pixel Format: 'BGRA'
+        Colorspace: DCI-P3
+        HDR Mode: SDR
+        Refresh Rate: 6000
+        UI Orientation: Portrait
 
 Port:
-    UUID: DA5B410B-95FB-4B27-A49D-AFF99B86D784
+    UUID: D600379C-2043-43AD-A99B-ACCE0E34D0DE
     Class: Accelerator
     Port Identifier: com.apple.accelerator.metal
     Power state: On
 
 Port:
-    UUID: 81F38770-707B-4C4B-9821-0448F9A9B5A0
+    UUID: 5AAAD0C8-32B4-4515-9CB8-CD64CDB7627B
     Class: Accelerator
     Port Identifier: com.apple.accelerator.iosurface
     Power state: On
 
 Port:
-    UUID: 6EF50F7B-EA70-4CDE-A01B-B9BAF71945A6
+    UUID: 883EE0D9-A29E-45EB-A228-7562C8910777
     Class: LegacyHID
     Port Identifier: com.apple.CoreSimulator.HID.LegacyHID
     Power state: On
 
 Port:
-    UUID: 21586C5A-78D8-4A4E-A16C-BFCD8C5CE393
+    UUID: AC06472F-ACCB-4ECE-9446-6CC7FF1019D3
     Class: StreamProcessor
     Port Identifier: com.apple.SimStreamProcessor.default
     Power state: On
@@ -204,7 +204,7 @@ Port:
     Memory regions:
 
 Port:
-    UUID: 031B9062-2D7B-4003-A0D1-F24594D712E3
+    UUID: FAB064C1-DE05-4B57-BE03-017A4A6A9473
     Class: StreamProcessor
     Port Identifier: com.apple.SimStreamProcessor.default
     Power state: On
@@ -219,25 +219,25 @@ Port:
     Memory regions:
 
 Port:
-    UUID: 2A48242F-75DC-4F9F-8CC4-987DABC99DC7
+    UUID: 276D8FBA-3B4D-498C-9397-700204350CFC
     Class: Audio
     Port Identifier: com.apple.CoreSimulator.Audio.HostRoute
     Power state: On
     Guest Audio Input -> Default Host Audio Device
     Guest Audio Output -> Default Host Audio Device
     Host Audio Devices:
-        AVIODevice: Speakers (0 In / 2 Out)
-        AVIODevice 2: Microphone (2 In / 0 Out)
+        AVIODevice: Microphone (2 In / 0 Out)
+        AVIODevice 2: Speakers (0 In / 2 Out)
         NullAudioDevice_UID: Data Source Item 0 (2 In / 2 Out)
 
 Port:
-    UUID: D1A62E5E-972E-4436-B6F6-7E216953542D
+    UUID: 66B183AF-8AB2-4A24-A30C-269E6290CCC1
     Class: Unknown
     Port Identifier: com.apple.gputools.service.simulator
     Power state: On
 
 Port:
-    UUID: C99C130D-06F2-475E-AFF1-A78BA5E9C9C7
+    UUID: BCA417A4-887B-43D0-9870-826D8C10997F
     Class: Unknown
     Port Identifier: com.apple.gputools.GPUToolsAgentService.simulator
     Power state: On
