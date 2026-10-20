@@ -331,7 +331,7 @@ What it means for the app:
 | **D1 Toolbar migration** | A `NavigationStack` per tab *inside* its `Tab` (keeps TabView identity and scroll). Header actions become `ToolbarItem`/`ToolbarItemGroup` with title + symbol, `.badge`, visibility priority. Sheet bar buttons become title + symbol (`SheetCancelButton`/`SheetDoneButton`, fixed titles; progress via `.disabled`). App overflow goes into the system overflow menu (no `ellipsis`). |
 | **D2 Inner layouts** | All B9/DU rows, switching on the pane's own width (L17/R4/S2), plus the issues below. |
 | **D3 Fold & hinge** | Toasts and fixed controls off the fold. Even grid column counts with an inactive division. Sign-in and setup read `FoldInfo`. Safe-area constants replaced by insets. |
-| **D4 Sheets & popovers** | `presentationSizing(.form)` where ruled. Popovers for the Requests drawer and filter when wide. Detents that fit outer landscape (466 pt tall). Scrollable confirm dialogs. |
+| **D4 Sheets & popovers** | `presentationSizing(.form)` where ruled. Popovers for the Requests drawer and filter when wide. Detents that fit outer landscape (466 pt tall). Scrollable confirm dialogs. ✅ (build pending): see D4 notes |
 | **D5 Continuity & keyboard** | The open title's `DetailStore` and child sheets survive sheet ↔ column. The split is measured ignoring the keyboard. Settings keeps one container. Focus and selected chip are restored. |
 
 **Blockers:**
@@ -352,7 +352,7 @@ What it means for the app:
 | DC7 | Requests header Filter + Inbox Select | outer | Custom buttons; Select swaps its text (`RequestsViewHeader.swift:60-105`) | D1 |
 | DC8 | Activity header Import / Pause | outer | `ViewThatFits` text↔icon capsule; Pause swaps to a `ProgressView` (`ActivityView.swift:244-260`, `QueuePauseButton.swift:17-30`) | D1 |
 | DC9 | Calendar iCal, week style, ‹ Today › | outer | Custom; Today is text (`CalendarView+Toolbar.swift:34-102`) | D1 |
-| DC10 | Item detail sheet Close, Add sheet, Request modal, trailer | outer | Custom ✕ overlays and hidden nav bars (`DetailHero.swift:37`, `AddTitleSheet.swift:64,105`, `RequestModal.swift:55`, `TrailerPlayer.swift:46`) | D1/D4 |
+| DC10 | Item detail sheet Close, Add sheet, Request modal, trailer | outer | Custom ✕ overlays and hidden nav bars (`DetailHero.swift:37`, `AddTitleSheet.swift:64,105`, `RequestModal.swift:55`, `TrailerPlayer.swift:46`) | D1/D4 · ✅ (build pending): the last one, the Add configure step, now has system Close + Back to search (`AddConfigView` toolbar); PreviewHero's buttons are optional and the hand-built compact bar is gone (the bar takes the title past the hero) |
 | DC11 | Search tab | outer | No `NavigationStack`, so `.searchable` never hosted the field; it is a custom docked field (`SearchTabView.swift:42-118`). Retry `.searchable`. | D1 |
 | DC12 | Sheets with text-only or state-swapping bar buttons | vertical bars | About 25 sheets in Activity, Manual Import, Account, Settings, Issues and Requests (listed in the audit pass) | D1 |
 | DC13 | Tab bar · inner portrait, title open | inner portrait | The 560/360 rule leaves a 265 pt leading column (`DuoLayout.swift:119-125`), narrower than any iPhone | D2 (Q-DC3) |
@@ -361,10 +361,10 @@ What it means for the app:
 | DC16 | Settings | inner portrait + fold/rotation | Size-class split at 626 (ruling S2 says 720). `if wide {SplitView} else {Stack}` rebuilds the list and the open panel, losing scroll, focus and half-typed fields (`SettingsView.swift:31-57`) | D2/D5 |
 | DC17 | Sign-in, Setup | inner Book | The centred card sits across the hinge (`SignInView.swift:117`, `SetupWizardView.swift:43`) | D3 · ✅ verified (F2, build 460): all three sign-in stages and the setup wizard lay out inside `FoldSafe`, the larger side of the fold; D3 adds their toasts on the trailing side |
 | DC18 | Sign-in | outer | `.ignoresSafeArea(.container)` covers the form, so it runs under the trailing strip (`SignInView.swift:151,194`) | D3 · ✅ verified (F2, build 460): only the backdrops ignore the safe area; the split/living stages ignore the top edge only, so the form keeps clear of the side strip |
-| DC19 | Account panel | inner landscape | A default sheet capped at 420 (`AccountView.swift:29`); the web uses a ~520 trailing panel | D4 |
-| DC20 | Activity confirm dialogs; Add user; Move credential | outer landscape (466 tall) | Non-scrolling dialog at `.medium` (`ActToaster.swift:107-139`); `.medium`-only detents with the keyboard (`UserEditorSheet.swift:152`, `MoveCredentialSheet.swift:48`) | D4/D5 |
-| DC21 | Requests drawer/filter; Library filters; Issues sheets | inner | Height detents are ignored at regular width; the web uses popovers or modals | D4 |
-| DC22 | Manual Import | inner | A default form sheet with phone cards; the web is split on the open Duo | D2/D4 |
+| DC19 | Account panel | inner landscape | A default sheet capped at 420 (`AccountView.swift:29`); the web uses a ~520 trailing panel | D4 · ✅ (build pending): `AccountSheet` is a form sheet unfolded (`formSheet()`); centred, not trailing (deviation, see D4 notes) |
+| DC20 | Activity confirm dialogs; Add user; Move credential | outer landscape (466 tall) | Non-scrolling dialog at `.medium` (`ActToaster.swift:107-139`); `.medium`-only detents with the keyboard (`UserEditorSheet.swift:152`, `MoveCredentialSheet.swift:48`) | D4/D5 · ✅ (build pending): `ActDialog` scrolls its words and options with Cancel / the action pinned, at `[.mediumFitting, .large]`; Add user and Move credential are `[.mediumFitting, .large]` |
+| DC21 | Requests drawer/filter; Library filters; Issues sheets | inner | Height detents are ignored at regular width; the web uses popovers or modals | D4 · ✅ (build pending): drawer, Filter and Library Filters open from their controls via `sheetPopover` (popover wide, phone sheet compact); report an issue, both issue threads and the rule editor are form sheets (R7) |
+| DC22 | Manual Import | inner | A default form sheet with phone cards; the web is split on the open Duo | D2/D4 · D4 part ✅ (build pending): page-sized sheet (`presentationSizing(.page)`); the split layout stays with D2 |
 | DC23 | Inner layouts | inner | DU1–DU16 (Requests panes, Board, History table, thread/issue panes, Discover wide, Queue card pane, Library desktop, Calendar tablet/desktop, Settings, Account, sign-in side by side) | D2 |
 
 **Minor** (folded into the batches above):
@@ -380,8 +380,8 @@ What it means for the app:
 - Sync count grid at narrow widths (D2)
 - The Settings `.principal` clear view (D1)
 - `ellipsis` menus (D1)
-- Account hub opens at `.medium` in outer landscape (D4)
-- One-item sheets: vertical-bar opt-out (Q-DC6)
+- Account hub opens at `.medium` in outer landscape (D4) · ✅ (build pending): `.mediumFitting` (whole height when the sheet's room is under 520 pt)
+- One-item sheets: vertical-bar opt-out (Q-DC6) · ✅ (build pending): `closeOnlyBars()` on the 17 Close/Done-only sheets D1 missed (list in D4 notes)
 
 **Ready:**
 - System popovers with `presentationCompactAdaptation(.popover)`
@@ -445,7 +445,7 @@ Anton title are retired. The title uses the system font, and the avatar becomes 
 | You | avatar | Account | hub rows | ✅ build 450 |
 | Settings (cover) | Close | `.cancellationAction` Close (system) | subtitle "DB-backed · effective without restart" | ✅ build 450 |
 | Item detail sheet | custom ✕ (DC10) | `.cancellationAction` Close; hero stays clean | hero, edition chips | ✅ build 450 |
-| Add / Request modal / trailer | custom ✕ (DC10) | `.cancellationAction` Close | — | ◐ D1 (build pending; Add configure step keeps PreviewHero ✕, see notes) |
+| Add / Request modal / trailer | custom ✕ (DC10) | `.cancellationAction` Close | — | ✅ D1 build 450; Add configure step ✅ D4 (build pending) |
 | Text-only sheet buttons (DC12, ~25 sheets) | Cancel / Save / state-swapping text | `.cancellationAction` / `.confirmationAction`; close-only sheets opt out of vertical bars (#60) | — | ✅ build 450 |
 
 Rules: no toolbar content in-content except the listed "stays" items; every item has a
@@ -523,7 +523,8 @@ D1 notes (build 450):
 - **Account item:** a bitmap of the Plex photo / initials with the dot, as a `Label` image item, so the system
   treats it as a standard item for the vertical bar. Not yet seen on a device or the Duo simulator.
 - **Add sheet:** search and request modes have the system Close; the configure step keeps `PreviewHero`'s own
-  Back / Close (shared with the Preview sheet). Moving `PreviewHero` to the toolbar is a follow-up.
+  Back / Close (shared with the Preview sheet). Moving `PreviewHero` to the toolbar is a follow-up. *(Done in D4
+  for the configure step; the Preview sheet's own hero buttons are unchanged.)*
 - **Sheets:** forms keep `.inline` titles (a medium detent can't spare a large title); their actions are title +
   symbol with fixed words, progress shown by `.disabled`. Close / Done-only sheets opt out of vertical bars
   (`closeOnlyBars()`, iOS 27.1).
@@ -534,3 +535,29 @@ D1 notes (build 450):
   which keeps the items at the cost of the tab bar. Owner chose to keep the tab bar; Add + Account stay under "•••" there.
 
 - **Duo inner display (simulator report, run 39331548937):** a second integrated screen of 2007×2853 px @3x, i.e. **669×951 pt** (vs the 626×890 estimate). To confirm on a device before D2 layouts use it.
+
+D4 notes (build pending):
+- **Helpers** (`App/Components/SheetSizing.swift`): `.mediumFitting` (a custom detent: the whole height when the
+  sheet's room is under 520 pt, else half, so phones held upright are unchanged), `formSheet()` and
+  `sheetPopover` (`.popover` + `presentationCompactAdaptation(horizontal: .sheet, vertical: .sheet)`, ideal
+  width/height for the popover only).
+- **Popovers (DC21):** the Requests drawer and Filter moved from `ApproverRequestsView` onto their controls in
+  `RequestsViewHeader` (the drawer's figures went with it, `RequestsDrawer`); Library's Filters onto the chip in
+  `LibraryToolbar`. The filter sheet's icon-only ✕ became `SheetCancelButton("Close")`. *Verify:* the chip sits in
+  both `ViewThatFits` candidates; only the displayed one should present.
+- **Form sheets:** request modal (R3; off inside the Add sheet, which keeps its size), report an issue,
+  `IssueThreadSheet`, `IssuePaneSheet`, rule editor (R7), Account (DC19). The request thread (`RequestThreadSheet`)
+  is not ruled and keeps the default; DU5's side pane is D2.
+- **Detents:** Account hub, `ActDialog`, Add user, Move credential, Broadcast, Change root → `[.mediumFitting, .large]`;
+  trailer → `[.mediumFitting]`. Other `[.medium, .large]` sheets were left: they can already be dragged to full.
+- **Close-only bars (Q-DC6):** Account, Add source, Letterboxd import, Edition aliases, Episode detail, Item
+  match, Decline reason, Request thread, fusionha sign-in, Plex SSO, Download client picker, Notification agent
+  picker, Configure demo, Import override, Import row editor, Sign-in methods, Widget diagnostics. The Add sheet's
+  opt-out moved to its search step, so the configure step (Close + Back) keeps the system default. The Settings
+  cover keeps the default: its pushed panels add their own items.
+- **Deviation, Account (DC19):** a centred form sheet (about 540 wide), not the web's ~520 trailing panel. iOS 27.1's
+  sheet `preferredPlacement` (HIG checklist §5: a right-placed sheet gets a vertical bar) is named but its
+  signature isn't confirmed in this repo, so it is not used.
+- **Deviation, Add configure step:** past the hero the system bar shows the title (the old custom compact bar did
+  the same). The hero runs under the clear bar with the scroll edge effect hidden until then, so the art stays clean.
+
