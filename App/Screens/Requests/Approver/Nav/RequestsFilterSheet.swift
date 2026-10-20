@@ -8,13 +8,15 @@ import FusionhaKit
 struct RequestsFilterSheet: View {
     @Environment(RequestsNav.self) private var nav
     @Environment(\.dismiss) private var dismiss
+    /// Wide, the Inbox is always the queue and its card: no Cards | List (web: phone only).
+    @Environment(\.requestsWide) private var wide
 
     var body: some View {
         let pane = nav.pane
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    ForEach(pane.filters, id: \.self) { section in
+                    ForEach(pane.filters.filter { !(wide && $0 == .display) }, id: \.self) { section in
                         RequestsFilterGroup(section: section)
                     }
                 }

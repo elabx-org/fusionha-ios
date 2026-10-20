@@ -12,6 +12,8 @@ struct TriageInboxView: View {
     @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
     @Environment(RequestsNav.self) private var nav
+    /// Wide: the web's `panes` layout, the queue beside the card (DU2).
+    @Environment(\.requestsWide) private var wide
     @State private var inbox = InboxModel()
     @State private var details: MediaRequest?
     @State private var adjusting: MediaRequest?
@@ -70,6 +72,15 @@ struct TriageInboxView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.top, 36)
+                } else if wide && !inbox.queue.isEmpty {
+                    InboxPanesView(inbox: inbox, viewerId: viewerId, onAdjust: { adjusting = $0 },
+                                   onDeclineWithNote: { noting = $0 }, onOpenThread: onOpenThread, onOpenTitle: openTitle)
+                } else if wide {
+                    ScrollView {
+                        SwipeDeckView(inbox: inbox, viewerId: viewerId, onDetails: { details = $0 },
+                                      onSelectMode: { nav.selecting = true }, onOpenThread: onOpenThread,
+                                      onOpenBoard: onOpenBoard, onOpenHistory: onOpenHistory)
+                    }
                 } else if nav.inboxList && nav.selecting && !inbox.queue.isEmpty {
                     InboxListView(inbox: inbox, viewerId: viewerId, onOpen: { details = $0 },
                                   onBackToCards: { nav.selecting = false; inbox.selected = [] })
@@ -96,7 +107,8 @@ struct TriageInboxView: View {
         .toolbar {
             // Select belongs to the list (Proposal 2): cards decide one at a time.
             // Like the system Edit button, its words swap, so it stays horizontal.
-            if nav.inboxList && !queue.isEmpty {
+            // Wide, every queue row has its checkbox already (web `panes`).
+            if nav.inboxList && !queue.isEmpty && !wide {
                 ToolbarItem(placement: .primaryAction) {
                     Button(nav.selecting ? "Done" : "Select") {
                         nav.selecting.toggle()

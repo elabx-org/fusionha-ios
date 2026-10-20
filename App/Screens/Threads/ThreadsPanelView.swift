@@ -24,6 +24,9 @@ struct ThreadsPanelView: View {
     @State private var loaded = false
     @State private var failed = false
     @State private var open: ThreadItem?
+    /// Wide in Requests: the list beside the selected thread (DU5).
+    @Environment(\.requestsWide) private var wide
+    @State private var selected: ThreadItem.ID?
 
     private var canRequests: Bool { model.me?.hasPermission("requests.approve") ?? false }
     private var canIssues: Bool { model.me?.hasPermission("issues.manage") ?? false }
@@ -63,7 +66,7 @@ struct ThreadsPanelView: View {
                 try? await Task.sleep(for: .seconds(15))
             }
         }
-        .sheet(item: $open) { item in
+        .sheet(item: Binding(get: { wide ? nil : open }, set: { open = $0 })) { item in
             if item.type == "issue", let issue = item.issue {
                 IssuePaneSheet(seed: issue, linkedRequestId: item.linkedPendingRequestId)
             } else if let request = item.request {
@@ -87,6 +90,9 @@ struct ThreadsPanelView: View {
             DiscoverEmptyState(message: "Could not load threads.")
         } else if shown.isEmpty {
             DiscoverEmptyState(message: "Nothing here. Switch the filter to see the rest.")
+        } else if wide {
+            ThreadsSplitView(items: shown, hasMore: cursor != nil, onLoadMore: { Task { await loadMore() } },
+                             onChanged: { Task { await load() } }, selected: $selected)
         } else {
             LazyVStack(spacing: 8) {
                 ForEach(shown) { item in
