@@ -71,7 +71,7 @@ struct LibraryAlphaRail: View {
                 let track = max(height - 16, 1)
                 let slot = Int(((value.location.y - 8) / track * CGFloat(letters.count)).rounded(.down))
                 let index = min(max(slot, 0), letters.count - 1)
-                guard let letter = letters[index...].first(where: present.contains) ?? letters.last(where: present.contains),
+                guard let letter = letters[index...].first(where: { present.contains($0) }) ?? letters.last(where: { present.contains($0) }),
                       letter != lastScrub else { return }
                 lastScrub = letter
                 jump(letter)
