@@ -457,7 +457,7 @@ overflow shows the label). Tick a row with its build number.
 | Row | Item | Done |
 |---|---|---|
 | F1 | Users: search field (web parity) | ✅ build 455 |
-| F2 | SI1: living-media poses, plus the server step as onboarding (owner, 2026-10-19; see F2 spec). OIDC dropped: not a server feature yet (peer #66: no `/api/v1/auth/providers`; sign-in is local + Plex SSO). If the owner wants it: spec → server → web → iOS | ✅ (build pending): server step, no default server, TV + Anime morphs |
+| F2 | SI1: living-media poses, plus the server step as onboarding (owner, 2026-10-19; see F2 spec). OIDC dropped: not a server feature yet (peer #66: no `/api/v1/auth/providers`; sign-in is local + Plex SSO). If the owner wants it: spec → server → web → iOS | ✅ build 460: server step, no default server, TV + Anime morphs |
 | F2b | Living-media morphs still to port: Movie, Dragon, Three kinds (from F2) | ☐ |
 | F3 | Episode sheet's Search tab: park its `InteractiveSearchModel` across fold/unfold (DC3: no lost state) | ✅ build 455 |
 | F4 | Activity, Calendar and sign-in toasts on `model.toast`, so Q-DC9 hinge placement applies everywhere | ✅ build 455: Activity + Wanted through `ActToaster.shell`, Calendar direct; sign-in already used it; sheets keep `CalToast` (now `Components/SheetToast.swift`) |
