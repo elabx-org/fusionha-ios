@@ -29,8 +29,12 @@ private struct ToastAnchorWriter: ViewModifier {
 
     func body(content: Content) -> some View {
         content.background {
+            // The background is laid out inside the tab's safe area, so its
+            // bottom edge is already the tab bar's top. (`safeAreaInsets` still
+            // reports the bar's inset here; subtracting it again lifted toasts
+            // ~85pt too high in screenshot run 39365805012.)
             Color.clear.onGeometryChange(for: CGFloat.self) { proxy in
-                proxy.frame(in: .global).maxY - proxy.safeAreaInsets.bottom
+                proxy.frame(in: .global).maxY
             } action: { bottom in
                 if anchor?.tabSafeBottom != bottom { anchor?.tabSafeBottom = bottom }
             }

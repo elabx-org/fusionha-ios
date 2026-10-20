@@ -55,7 +55,7 @@ struct RootView: View {
         // split, so they never straddle the fold (DC14).
         .overlay {
             ToastLayer(region: ToastRegion.shell(split, size: fold.size),
-                       clearsAbove: split.shown ? nil : toastAnchor.tabSafeBottom)
+                       clearsAbove: split.shown ? nil : toastAnchor.tabSafeBottom, gap: 16)
         }
         .environment(toastAnchor)
         .environment(\.motionEnabled, !reduceMotion && model.animationsEnabled)
