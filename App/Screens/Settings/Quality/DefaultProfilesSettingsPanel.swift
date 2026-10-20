@@ -16,8 +16,11 @@ struct DefaultProfilesSettingsPanel: View {
     /// Desktop Settings shows the kind × tier table (`DefaultProfilesTable`).
     /// Read here, above the Form that hands down `settingsDesktop`, so from
     /// the size class `SettingsView` sets from its width (`SettingsLayout`).
+    /// It needs about 640 of panel (120 + two cells of a menu each); below
+    /// that the per-kind sections stay.
     @Environment(\.horizontalSizeClass) private var sizeClass
-    private var desktop: Bool { sizeClass == .regular }
+    @State private var width: CGFloat = 0
+    private var desktop: Bool { sizeClass == .regular && width >= 640 }
 
     struct Cell: Equatable {
         var profile: Int?
@@ -95,6 +98,7 @@ struct DefaultProfilesSettingsPanel: View {
                 SettingsLoadingRow(error: error)
             }
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .task { await load() }
     }
 

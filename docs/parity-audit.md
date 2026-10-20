@@ -588,4 +588,9 @@ D2c notes (Activity, Queue, Discover, Manual Import, Settings panels; build pend
   opens its two panes above 820 of the sheet. **Not built:** Custom formats' 760/1100 rail \| editor \| Live test
   (the iOS panel is a list that opens a sheet editor; the Duo never reaches 760). Quality profiles and Presets keep
   their native Form lists (no card grid). Metadata's provider picker keeps its own-width rule (4 across from 462).
+  Width floors beyond the web (shots, run 39411109540, iPad mini 744 split ≈ 460 panel): the Metadata cells sit side
+  by side from 600 of panel and the Default profiles table shows from 640, else the phone stacks (both compile-only).
+- **Shots (run 39411109540, iPad mini stand-in):** the stand-in's "landscape" shots render at 744 portrait like the
+  portrait ones (the orientation hook does not rotate it), so only the 744 layouts were seen: Activity one-row head,
+  Tasks System 3-up, Discover one-row controls + 158 cells, Settings Metadata head row. Everything else is compile-only.
 

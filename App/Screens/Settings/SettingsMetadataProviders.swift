@@ -74,7 +74,12 @@ struct ProviderCard: View {
     let provider: MetadataProvider
     @Environment(SettingsStore.self) private var store
     @Environment(\.settingsDesktop) private var desktop
+    @Environment(\.paneSize) private var pane
     @State private var testing = false
+
+    /// The cells side by side need about 600 of panel: below it (an iPad's
+    /// split in portrait) each label wraps a word a line, so they stack.
+    private var cellsSideBySide: Bool { desktop && pane.width >= 600 }
     @State private var running = false
     @State private var testMessage: String?
 
@@ -100,7 +105,7 @@ struct ProviderCard: View {
                     statusMeta
                 }
             }
-            SettingsCellPair(sideBySide: desktop) { firstCell } trailing: { secondCell }
+            SettingsCellPair(sideBySide: cellsSideBySide) { firstCell } trailing: { secondCell }
         }
         .padding(.vertical, 6)
         .opacity(enabled ? 1 : 0.7)

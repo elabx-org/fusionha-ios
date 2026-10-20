@@ -73,6 +73,7 @@ struct DefaultProfilesTable: View {
             }
             .pickerStyle(.menu)
             .labelsHidden()
+            .lineLimit(1)
             .tint(Theme.txt)
         }
     }
