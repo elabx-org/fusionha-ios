@@ -24,6 +24,7 @@ struct FusionhaApp: App {
                 }
             }
             .environment(model)
+            .publishesWindowSize()
             // A native app shows no scroll bars: every page, list and sheet
             // below inherits it (the Library keeps its own A–Z scrubber).
             .scrollIndicators(.hidden)

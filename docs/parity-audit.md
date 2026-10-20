@@ -603,3 +603,4 @@ D2c notes (Activity, Queue, Discover, Manual Import, Settings panels; build pend
   portrait ones (the orientation hook does not rotate it), so only the 744 layouts were seen: Activity one-row head,
   Tasks System 3-up, Discover one-row controls + 158 cells, Settings Metadata head row. Everything else is compile-only.
 
+- **D2c rulings (fusionha, 2026-10-20):** the request modal is page-sized when the window is desktop-wide (≥720, `\.windowSize` set at the app root), so its art | options panes show; a form sheet otherwise (R3). The page-sized Quality profile editor is accepted. Accepted deviations: desktop layouts on a sideways phone (the web's width rule), the Metadata/Default profiles width floors. Custom formats' 760/1100 three panes: unreachable on the Duo, to apply on iPad (☐).

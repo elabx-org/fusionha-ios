@@ -4,6 +4,7 @@ import FusionhaKit
 // MARK: - RequestModal
 
 struct RequestModal: View {
+    @Environment(\.windowSize) private var window
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     let pick: MediaSearchResult
@@ -91,7 +92,9 @@ struct RequestModal: View {
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.panel)
         .presentationCornerRadius(14)
-        .formSheet(formSized)
+        // A form sheet on the Duo; page-sized when the window is desktop-wide,
+        // so the art | options panes show as on the web's desktop modal.
+        .modifier(RequestModalSizing(formSized: formSized, wide: window.isDesktopPane))
         .task { await load() }
     }
 
@@ -316,6 +319,24 @@ struct RequestModal: View {
         } catch {
             blocked = nil
             DiscoverToasts.shared.error("Could not submit request", error)
+        }
+    }
+}
+
+/// The request modal's sheet size: a form sheet on the Duo (R3), page-sized
+/// when the window is desktop-wide so its two panes show, and the presenter's
+/// own size inside the Add sheet.
+private struct RequestModalSizing: ViewModifier {
+    let formSized: Bool
+    let wide: Bool
+
+    func body(content: Content) -> some View {
+        if !formSized {
+            content
+        } else if wide {
+            content.presentationSizing(.page)
+        } else {
+            content.formSheet()
         }
     }
 }
