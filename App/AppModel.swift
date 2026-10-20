@@ -4,23 +4,6 @@ import UIKit
 import WidgetKit
 import FusionhaKit
 
-/// The web's mobile bottom-nav destinations (shell/destinations.tsx).
-enum AppTab: Hashable {
-    case library, discover, calendar, activity
-    /// The iOS 26 search tab (the old top bar's omni search).
-    case search
-    /// Requester accounts (REQUESTOR_DESTINATIONS).
-    case requests, you
-}
-
-enum SearchScope: Hashable {
-    case library, everything
-}
-
-enum PlexSignInError: Error {
-    case timedOut
-}
-
 @MainActor
 @Observable
 final class AppModel {
@@ -229,114 +212,7 @@ final class AppModel {
         }
     }
 
-    /// `POST /api/v1/notifications/apns/devices` for this install, when signed in
-    /// (not as the read-only demo, and never against the screenshot mock).
-    func registerPushDevice() async {
-        guard let client, credentials?.method != .demoCookie,
-              ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SERVER"] == nil else { return }
-        if let device = await PushRegistration.register(with: client) {
-            UserDefaults.standard.set(device.id, forKey: "apnsDeviceId")
-        }
-        LiveActivityPushTokens.start(client: client)
-    }
-
-    // MARK: Sign-in
-
-    /// Step 1: check the server is a reachable fusionha and see which sign-in
-    /// methods it offers (`GET /health`, `GET /api/v1/setup-status`).
-    func connect(server: String) async throws -> (URL, SetupStatus) {
-        guard let url = APIClient.normalisedServerURL(server) else { throw APIError.invalidServerURL }
-        let anonymous = APIClient(baseURL: url, token: nil)
-        _ = try await anonymous.health()
-        return (url, try await anonymous.setupStatus())
-    }
-
-    /// Step 2a: username and password (sets the session cookie).
-    /// `beforeEnter` runs once the password is accepted and the token minted,
-    /// just before the app switches over (the Living logo's unlock plays there).
-    func signIn(server url: URL, username: String, password: String,
-                beforeEnter: (() async -> Void)? = nil) async throws {
-        let anonymous = APIClient(baseURL: url, token: nil)
-        try await anonymous.login(username: username, password: password)
-        try await finishSignIn(with: anonymous, beforeEnter: beforeEnter)
-    }
-
-    /// First run: create the first admin on a fresh server. Returns the signed-in
-    /// (cookie) client the wizard keeps using until `enterAfterSetup`.
-    func createFirstAdmin(server url: URL, username: String, password: String) async throws -> APIClient {
-        let anonymous = APIClient(baseURL: url, token: nil)
-        try await anonymous.createFirstAdmin(username: username, password: password)
-        return anonymous
-    }
-
-    /// The wizard's last step: mint this device's token and enter the app.
-    func enterAfterSetup(_ session: APIClient) async throws {
-        try await finishSignIn(with: session)
-    }
-
-    /// Step 2b: Plex. Mints a PIN whose `authUrl` the user opens in a browser sheet.
-    func startPlexSignIn(server url: URL) async throws -> PlexPin {
-        try await APIClient(baseURL: url, token: nil).createPlexPin()
-    }
-
-    /// Polls the PIN every 2s, like the web login, until Plex confirms (the server
-    /// then sets the session cookie). Cancel the task to stop waiting.
-    /// `authorized` runs before the app switches away from the sign-in screen, so
-    /// the caller can close the Plex browser sheet while it can still dismiss it.
-    func completePlexSignIn(server url: URL, pin: PlexPin, authorized: () async -> Void) async throws {
-        let anonymous = APIClient(baseURL: url, token: nil)
-        // The web gives up after 10 minutes.
-        let deadline = Date().addingTimeInterval(600)
-        while true {
-            try Task.checkCancellation()
-            if try await anonymous.checkPlexPin(id: pin.id) == .signedIn { break }
-            if Date() > deadline { throw PlexSignInError.timedOut }
-            try await Task.sleep(for: .seconds(2))
-        }
-        await authorized()
-        try await finishSignIn(with: anonymous)
-    }
-
-    /// "Explore the demo": `POST /api/v1/demo/login` sets the read-only demo
-    /// cookie, which this device then replays on every call.
-    func demoSignIn(server url: URL, username: String?, password: String?) async throws {
-        let anonymous = APIClient(baseURL: url, token: nil)
-        try await anonymous.demoLogin(DemoLoginRequest(username: username, password: password))
-        guard let token = anonymous.demoTokenFromCookie() else { throw APIError.http(status: 401, body: "") }
-        let creds = Credentials(serverURL: url, token: token, tokenId: nil, method: .demoCookie)
-        CredentialStore.save(creds)
-        credentials = creds
-    }
-
-    /// OIDC providers offered on the login page (older servers have none).
-    func signInProviders(server url: URL) async -> [SignInProvider] {
-        let list = (try? await APIClient(baseURL: url, token: nil).authProviders()) ?? []
-        return list.filter { $0.kind == "oidc" && $0.authorizeUrl != nil }
-    }
-
-    /// With a session cookie in place, mint a personal API token for this device so
-    /// the widgets can call the API too.
-    private func finishSignIn(with anonymous: APIClient, beforeEnter: (() async -> Void)? = nil) async throws {
-        let url = anonymous.baseURL
-        let creds: Credentials
-        do {
-            let mint = try await anonymous.mintToken(name: "fusionha iOS · \(UIDevice.current.name)")
-            creds = Credentials(serverURL: url, token: mint.token, tokenId: mint.id)
-        } catch APIError.http(403, _) {
-            // Accounts without `tokens.manage.self` (e.g. requesters) fall back to the session token.
-            guard let session = anonymous.sessionTokenFromCookie() else { throw APIError.http(status: 403, body: "") }
-            creds = Credentials(serverURL: url, token: session, tokenId: nil, method: .session)
-        }
-        await beforeEnter?()
-        CredentialStore.save(creds)
-        WebSessionStore.save(anonymous.sessionTokenFromCookie(), server: url) // Settings web panels sign in with it.
-        credentials = creds
-        WidgetCenter.shared.reloadAllTimelines()
-        AppDelegate.requestPushAuthorization()
-        // A token from an earlier session registers right away; a fresh one
-        // arrives via `.apnsTokenChanged`.
-        await registerPushDevice()
-    }
+    // MARK: Account and library
 
     func loadMe() async {
         guard let client else { return }
@@ -376,31 +252,9 @@ final class AppModel {
         libraryLoaded = true
     }
 
-    /// `tab:` mirrors the web's `/library/{id}?tab=…` (e.g. History's "Why this decision").
-    func open(_ itemId: Int, tab: DetailTab? = nil) {
-        pendingDetailTab = tab
-        presentedItem = ItemRef(id: itemId)
-    }
-
     /// The web's `/preview/{kind}/{tmdb_id}`. Until a native Preview screen
     /// exists this opens the Add sheet on that title (Preview's own Add).
     var previewHandler: ((MediaSearchResult) -> Void)?
-
-    /// Opens the Add sheet, on a title's configure step when `pick` is set.
-    func openAdd(_ pick: MediaSearchResult?, providerOverride: String? = nil) {
-        addPrefill = pick
-        addProviderOverride = providerOverride
-        showingAdd = true
-    }
-
-    func openPreview(_ result: MediaSearchResult) {
-        if let previewHandler {
-            previewHandler(result)
-        } else {
-            addPrefill = result
-            showingAdd = true
-        }
-    }
 
     /// Log out: end the server session and revoke this device's token, then
     /// forget the credentials.
@@ -504,48 +358,12 @@ final class AppModel {
         toasts.removeAll { $0.id == id }
     }
 
-    // MARK: Shell data (avatar dot, nav badges, rail settings)
-
-    func refreshShell() async {
-        guard let client else { return }
-        await shell.refresh(client: client, requestScoped: requestScoped, canApproveRequests: canApproveRequests,
-                            canManageIssues: canManageIssues)
-    }
-
     // MARK: Setup progress
 
     /// The setting-up pill and the posters' setup rings (shared by every tab).
     let setupProgress = SetupProgress()
 
-    /// Polls `GET /api/v1/library/setups`: every 2s while anything is setting
-    /// up, else every 20s. A finished step reloads the library.
-    func pollSetups() async {
-        while !Task.isCancelled {
-            if let client, Date().timeIntervalSince(setupProgress.lastRefresh) >= setupProgress.list.pollInterval {
-                if await setupProgress.refresh(client: client) { await loadLibrary() }
-            }
-            try? await Task.sleep(for: .seconds(1))
-        }
-    }
-
-    func pollShell() async {
-        while !Task.isCancelled {
-            await refreshShell()
-            try? await Task.sleep(for: .seconds(30))
-        }
-    }
-
-    /// Admins pick the library's coverage-rail display (`PUT /api/v1/settings`).
-    func updateRails(style: RailStyle? = nil, consolidate: Bool? = nil) async {
-        guard let client else { return }
-        do {
-            try await client.updateRailSettings(RailSettingsUpdate(libraryRailStyle: style?.rawValue,
-                                                                   libraryRailConsolidate: consolidate))
-            await shell.reloadSettings(client: client)
-        } catch {
-            toast("Couldn't save the rail setting", variant: .error)
-        }
-    }
+    // MARK: Cache
 
     /// "Reset cache & reload": drop cached responses and artwork, then refetch.
     func resetCacheAndReload() async {
@@ -559,109 +377,5 @@ final class AppModel {
         await refreshShell()
         await refreshQueue()
         toast("Cache cleared")
-    }
-
-    // MARK: Title actions (poster kebab, detail, bulk bar)
-
-    func autoSearch(_ id: Int) {
-        Task {
-            do {
-                try await client?.searchItem(id: id)
-            } catch {
-                toast("Couldn't start the search", variant: .error)
-            }
-        }
-    }
-
-    func interactiveSearch(_ id: Int, tier: QualityTier?) {
-        detailIntent = .interactiveSearch(tier)
-        open(id)
-    }
-
-    func scopedSearch(_ id: Int, _ scope: ScopedSearch) {
-        detailIntent = .scopedSearch(scope)
-        open(id)
-    }
-
-    func edit(_ id: Int) {
-        detailIntent = .edit
-        open(id)
-    }
-
-    func setMonitored(_ id: Int, title: String, monitored: Bool) {
-        Task {
-            do {
-                try await client?.bulkMonitor(BulkMonitorRequest(itemIds: [id], monitored: monitored))
-                toast(monitored ? "Monitoring \(title)" : "Stopped monitoring \(title)")
-                await loadLibrary()
-            } catch {
-                toast("Couldn't update \(title)", variant: .error)
-            }
-        }
-    }
-
-    /// Refresh metadata as a background run, polled every 1.5s like the web.
-    func refreshMetadata(_ id: Int, title: String) {
-        toast("Refreshing \(title)…")
-        Task {
-            guard let client else { return }
-            do {
-                let dispatch = try await client.refreshItem(id: id, metadataOnly: true)
-                var state = try await client.run(id: dispatch.runId)
-                while state.isRunning {
-                    try await Task.sleep(for: .seconds(1.5))
-                    state = try await client.run(id: dispatch.runId)
-                }
-                if state.failed {
-                    toast("Couldn't refresh \(title)", variant: .error)
-                } else {
-                    toast("Refreshed \(title)")
-                    await loadLibrary()
-                }
-            } catch {
-                toast("Couldn't refresh \(title)", variant: .error)
-            }
-        }
-    }
-
-    func confirmDelete(_ id: Int, title: String) {
-        deleteTarget = DeleteTarget(id: id, title: title)
-    }
-
-    func delete(_ target: DeleteTarget, deleteFiles: Bool) async -> Bool {
-        guard let client else { return false }
-        do {
-            try await client.deleteItem(id: target.id, deleteFiles: deleteFiles)
-            toast("\(target.title) deleted")
-            if presentedItem?.id == target.id { presentedItem = nil }
-            selection.remove(target.id)
-            await loadLibrary()
-            return true
-        } catch {
-            toast("Couldn't delete \(target.title)", variant: .error)
-            return false
-        }
-    }
-
-    func exitSelectMode() {
-        selectMode = false
-        selection = []
-    }
-
-    /// Runs one bulk call over the selection; on success leaves select mode
-    /// (BulkActionBar `done`) and reloads the library.
-    func bulk(_ success: String?, _ failure: String, _ call: @escaping (APIClient, [Int]) async throws -> Void) {
-        let ids = Array(selection).sorted()
-        guard let client, !ids.isEmpty else { return }
-        Task {
-            do {
-                try await call(client, ids)
-                if let success { toast(success) }
-                exitSelectMode()
-                await loadLibrary()
-            } catch {
-                toast(failure, variant: .error)
-            }
-        }
     }
 }
