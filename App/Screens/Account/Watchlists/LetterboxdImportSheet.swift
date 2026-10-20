@@ -38,6 +38,7 @@ struct LetterboxdImportSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
             }
+            .closeOnlyBars()
             .fileImporter(isPresented: $picking, allowedContentTypes: [.commaSeparatedText, .zip, .plainText]) { result in
                 if case .success(let url) = result { upload(url) }
             }

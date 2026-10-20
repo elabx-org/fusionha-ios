@@ -83,12 +83,6 @@ struct LibraryView: View {
         .sheet(item: $posterSheet) { item in
             LibraryPosterSheet(item: item)
         }
-        .sheet(isPresented: $showingFilters) {
-            LibraryFiltersSheet(recency: $recency, group: $group, sort: $sort)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-                .presentationBackground(Theme.panel)
-        }
         .task {
             if !model.libraryLoaded {
                 await model.restoreLibrary()
@@ -211,8 +205,11 @@ struct LibraryView: View {
                 .padding(.top, 16)
                 .reveal(1)
             LibraryToolbar(derived: derived, tier: $tier, status: $status, density: $density,
-                           filterBadge: filterBadge) {
-                showingFilters = true
+                           filterBadge: filterBadge, showingFilters: $showingFilters) {
+                LibraryFiltersSheet(recency: $recency, group: $group, sort: $sort)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                    .presentationBackground(Theme.panel)
             }
             .padding(.top, 16)
             .padding(.bottom, 18)

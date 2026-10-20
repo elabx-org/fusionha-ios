@@ -30,23 +30,8 @@ struct ApproverRequestsView: View {
             .onChange(of: store.requestsPane) { openPending() }
             .task(id: nav.panes) { await pollMenuCounts() }
             .animation(.snappy, value: nav.filter)
-            .sheet(isPresented: $nav.menuOpen) {
-                RequestsViewMenuSheet(counts: menuCounts, panes: nav.panes,
-                                      needYou: canIssues ? store.issueCounts.needYou : nil,
-                                      breakdown: RequestsNeedYou.line(pending: canApprove ? store.pendingCount : nil,
-                                                                      issues: canIssues ? store.issueCounts.needYou : nil),
-                                      showsRules: canApprove) {
-                    nav.menuOpen = false
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(350))
-                        nav.rulesOpen = true
-                    }
-                }
-                .environment(nav)
-            }
-            .sheet(isPresented: $nav.filterOpen) {
-                RequestsFilterSheet().environment(nav)
-            }
+            // The drawer and the filter are presented from their controls in
+            // `RequestsViewHeader`: popovers when wide, sheets on a phone (DC21).
             .fullScreenCover(isPresented: $nav.rulesOpen) {
                 SettingsView(client: model.client, initialPanel: "request-rules")
             }
@@ -97,16 +82,6 @@ struct ApproverRequestsView: View {
         if nav.panes.contains(pane) { nav.open(pane) }
     }
 
-    /// The drawer's figures (web `useMenuCounts`): Inbox waiting, Threads
-    /// unread open threads ("4+"), Issues open, Mine my open requests.
-    private var menuCounts: [RequestsPane: String] {
-        var out: [RequestsPane: String] = [:]
-        if store.pendingCount > 0 { out[.inbox] = String(store.pendingCount) }
-        if let label = ThreadUnread.label(nav.unreadThreads, more: nav.unreadMore) { out[.threads] = label }
-        if store.issueCounts.open > 0 { out[.issues] = String(store.issueCounts.open) }
-        if let mine = MineHeader.openCount(nav.mineCounts), mine > 0 { out[.mine] = String(mine) }
-        return out
-    }
 
     /// Unread open threads and my counts, every 30 s while Requests is open.
     private func pollMenuCounts() async {

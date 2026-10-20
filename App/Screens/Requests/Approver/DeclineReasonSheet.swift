@@ -58,6 +58,7 @@ struct DeclineReasonSheet: View {
                     SheetCancelButton { dismiss() }
                 }
             }
+            .closeOnlyBars()
         }
         .presentationDetents([.height(420), .large])
         .presentationDragIndicator(.visible)

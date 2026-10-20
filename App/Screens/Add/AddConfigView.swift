@@ -1,22 +1,6 @@
 import SwiftUI
 import FusionhaKit
 
-/// A sentence built from `SummaryPart`s: strong parts in the text colour.
-struct AddSummaryText: View {
-    let parts: [SummaryPart]
-    var prefix: String?
-
-    var body: some View {
-        parts.reduce(prefix.map { Text("\($0) ").fontWeight(.bold).foregroundColor(Theme.txt) } ?? Text("")) { text, part in
-            text + (part.strong ? Text(part.text).fontWeight(.semibold).foregroundColor(Theme.txt) : Text(part.text))
-        }
-        .foregroundStyle(Theme.mut)
-        .fixedSize(horizontal: false, vertical: true)
-        .contentTransition(.opacity)
-        .animation(.easeOut(duration: 0.2), value: parts.map(\.text).joined())
-    }
-}
-
 /// The Add title v2 configure step (web `AddConfigPanel`, phone layout): the
 /// detail page's hero scrolling with the decisions, the "Search again" and
 /// "View details" links, Details · Versions · What to monitor (series) or
@@ -31,18 +15,18 @@ struct AddConfigView: View {
     /// The hero is the zoom source for the "View details" push.
     var zoom: (id: String, namespace: Namespace.ID)?
 
-    @Environment(\.motionEnabled) private var motion
-    @State private var splitChosen = false
+    @Environment(\.motionEnabled) var motion
+    @State var splitChosen = false
     @State private var editingRow: QualityTier = .uhd
     @State private var compact = false
-    @State private var phase: AddPhase = .idle
+    @State var phase: AddPhase = .idle
     @State private var today = Date()
 
     enum AddPhase { case idle, progress, done }
 
     /// The add moment: the fill runs at least 1.1s, then "✓ Added" holds 650ms.
-    private static let fillMs = 1100
-    private static let doneMs = 650
+    static let fillMs = 1100
+    static let doneMs = 650
 
     private var poster: String? { flow.pick.posterUrl ?? flow.preview?.posterUrl }
     private var backdrop: String? { flow.pick.backdropUrl ?? flow.preview?.backdropUrl }
@@ -62,6 +46,10 @@ struct AddConfigView: View {
                 }
                 .scrollIndicators(.hidden)
                 .scrollDismissesKeyboard(.interactively)
+                // The hero runs under the sheet's clear system bar; the bar's
+                // edge effect only comes in once the title takes over.
+                .ignoresSafeArea(.container, edges: .top)
+                .scrollEdgeEffectHidden(!compact, for: .top)
                 .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y > 200 } action: { _, new in
                     withAnimation(motion ? .easeOut(duration: 0.2) : nil) { compact = new }
                 }
@@ -72,9 +60,14 @@ struct AddConfigView: View {
                 }
                 #endif
             }
-            compactBar
         }
         .background(Theme.bg)
+        // Close and Back are system toolbar items (DC10, D4), so the Duo can
+        // move them into its vertical bar; the hero stays clean. Scrolled
+        // past the hero, the bar takes the title.
+        .navigationTitle(compact ? TitleYear.display(flow.title, flow.year).title : "")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar { toolbarItems }
         .onAppear { flow.start() }
         .task(id: flow.effectiveAnime) { await flow.loadLast() }
     }
@@ -97,11 +90,23 @@ struct AddConfigView: View {
         let shown = TitleYear.display(flow.title, flow.year)
         let view = PreviewHero(art: poster ?? backdrop, status: flow.preview?.status, title: shown.title, year: shown.year,
                                tagline: flow.preview?.tagline, meta: heroMeta, genres: flow.preview?.genres ?? [],
-                               onClose: onClose, onBack: onSearchAgain, backLabel: "Back to search")
+                               onClose: nil)
         if let zoom {
             view.matchedTransitionSource(id: zoom.id, in: zoom.namespace)
         } else {
             view
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarItems: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            SheetCancelButton(title: "Close", action: onClose)
+        }
+        if let onSearchAgain {
+            ToolbarItem(placement: .navigation) {
+                Button("Back to search", systemImage: "chevron.left", action: onSearchAgain)
+            }
         }
     }
 
@@ -260,98 +265,6 @@ struct AddConfigView: View {
         }
     }
 
-    // MARK: Footer
-
-    private func footer(_ timeline: ReleaseTimelineModel) -> some View {
-        let split = flow.onTiers.count == 2
-            && (splitChosen || (flow.versions?[.uhd]?.monitor ?? flow.monitor) != flow.monitor)
-        let stop = timeline.stops.first { $0.key == flow.minAvail } ?? timeline.stops[0]
-        let parts = AddSentence.summary(
-            isSeries: flow.isSeries,
-            versions: flow.onTiers.map { ($0, flow.editions[$0]) },
-            searchNow: flow.searchNow,
-            monitor: flow.isSeries ? flow.monitorSummary(flow.monitor, withCustom: !split) : nil,
-            monitorUhd: flow.isSeries && split ? flow.monitorSummary(flow.versions?[.uhd]?.monitor ?? flow.monitor, withCustom: false) : nil,
-            stop: flow.isSeries ? nil : (label: stop.label, dateText: stop.dateText))
-        let busy = phase == .progress || (flow.isAdding && phase != .done)
-        let done = phase == .done
-        return VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 4) {
-                AddSummaryText(parts: parts).font(.system(size: 13.5))
-                if let error = flow.error, !error.folder {
-                    Text(error.message).font(.system(size: 12.5)).foregroundStyle(Theme.danger)
-                }
-            }
-            HStack(spacing: 10) {
-                Toggle(isOn: Binding(get: { flow.searchNow }, set: { flow.searchNow = $0 })) {
-                    Text("Search now").font(.system(size: 13)).foregroundStyle(Theme.mut)
-                }
-                .toggleStyle(LeadingSwitchStyle())
-                .frame(minHeight: 44)
-                .fixedSize()
-                Button { Task { await add() } } label: {
-                    ZStack(alignment: .leading) {
-                        GeometryReader { geo in
-                            Rectangle().fill(Theme.onAccent.opacity(0.18))
-                                .frame(width: geo.size.width * (phase == .done ? 1 : phase == .progress ? 0.9 : 0))
-                        }
-                        Text(done ? "✓ Added" : busy ? "Adding…" : "Add \(flow.isSeries ? "series" : "movie")")
-                            .font(.system(size: 14.5, weight: .bold))
-                            .foregroundStyle(Theme.onAccent)
-                            .frame(maxWidth: .infinity)
-                            .contentTransition(.opacity)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 52, maxHeight: 52)
-                    .background {
-                        if done {
-                            Theme.done
-                        } else {
-                            // The palette's primary, like every other main button.
-                            Theme.primary
-                        }
-                    }
-                    .clipShape(Capsule())
-                    .saturation(!done && !busy && !flow.canSubmit ? 0.2 : 1)
-                    .brightness(!done && !busy && !flow.canSubmit ? -0.3 : 0)
-                    .scaleEffect(busy && motion ? 0.97 : 1)
-                }
-                .buttonStyle(PressScaleStyle(scale: 0.97))
-                .disabled(!done && (!flow.canSubmit || busy))
-                .allowsHitTesting(!done)
-                .accessibilityLabel(done ? "Added" : busy ? "Adding" : "Add \(flow.isSeries ? "series" : "movie")")
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.top, 12)
-        .padding(.bottom, 14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular.tint(Theme.panel.opacity(0.5)), in: .rect(cornerRadius: 0))
-        // A scrim under the glass that runs to the screen edge, so the page
-        // never reads through the bar or shows below it.
-        .background { Theme.bg.opacity(0.88).ignoresSafeArea(edges: .bottom) }
-        .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
-        .sensoryFeedback(.success, trigger: done)
-    }
-
-    /// The add moment: fill → ✓ Added → close. An error resets the button and
-    /// shows inline (on the Folder row for a 409 collision).
-    private func add() async {
-        guard phase == .idle, flow.canSubmit else { return }
-        let started = Date()
-        withAnimation(motion ? .timingCurve(0.22, 1, 0.36, 1, duration: Double(Self.fillMs) / 1000) : nil) { phase = .progress }
-        guard let item = await flow.submit() else {
-            phase = .idle
-            return
-        }
-        if motion {
-            let left = Self.fillMs - Int(Date().timeIntervalSince(started) * 1000)
-            if left > 0 { try? await Task.sleep(for: .milliseconds(left)) }
-        }
-        withAnimation(motion ? .easeOut(duration: 0.2) : nil) { phase = .done }
-        try? await Task.sleep(for: .milliseconds(Self.doneMs))
-        onAdded(item)
-    }
-
     #if DEBUG
     /// CI screenshots: `…_ADD_SCROLL=versions|monitor` scrolls to a section,
     /// `…_ADD_4K` turns the 4K version on and runs its check, `…_ADD_SPLIT`
@@ -375,47 +288,6 @@ struct AddConfigView: View {
         }
     }
     #endif
-
-    // MARK: Compact bar
-
-    private var compactBar: some View {
-        HStack(spacing: 10) {
-            if let onSearchAgain {
-                Button(action: onSearchAgain) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Theme.mut)
-                        .frame(width: 40, height: 40)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Back to search")
-            }
-            Text(TitleYear.display(flow.title, flow.year).title)
-                .font(.system(size: 14, weight: .heavy))
-                .foregroundStyle(Theme.txt)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Theme.mut)
-                    .frame(width: 40, height: 40)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close")
-        }
-        .padding(.horizontal, 12)
-        .frame(height: 50)
-        .glassEffect(.regular, in: .rect(cornerRadius: 0))
-        .background { Theme.bg.opacity(0.88).ignoresSafeArea(edges: .top) }
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
-        .opacity(compact ? 1 : 0)
-        .offset(y: compact ? 0 : -8)
-        .allowsHitTesting(compact)
-        .accessibilityHidden(!compact)
-    }
 }
 
 /// A text link with its chevron before or after the title.
@@ -429,17 +301,6 @@ private struct LinkLabelStyle: LabelStyle {
             if !leading { configuration.icon.font(.system(size: 11, weight: .bold)) }
         }
         .frame(minHeight: 44)
-        .contentShape(Rectangle())
-    }
-}
-
-/// The footer's switch with its label after it ("[switch] Search now").
-private struct LeadingSwitchStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 8) {
-            Toggle("", isOn: configuration.$isOn).toggleStyle(.switch).labelsHidden().tint(Theme.indigo)
-            configuration.label
-        }
         .contentShape(Rectangle())
     }
 }

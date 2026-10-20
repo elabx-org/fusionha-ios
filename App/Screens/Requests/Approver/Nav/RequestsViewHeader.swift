@@ -4,7 +4,8 @@ import FusionhaKit
 /// The one header every approver view shares (Final mock): the view name
 /// opens the drawer and a summary sits under it. Filter, with the number of
 /// filters set as its badge, is a toolbar item (D1); a view adds its own
-/// action to the toolbar itself (Inbox: Select).
+/// action to the toolbar itself (Inbox: Select). The drawer and the filter
+/// open from their controls: popovers when wide, sheets on a phone (DC21).
 struct RequestsViewHeader<Summary: View>: View {
     @Environment(RequestsNav.self) private var nav
     @ViewBuilder var summary: () -> Summary
@@ -49,11 +50,17 @@ struct RequestsViewHeader<Summary: View>: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(nav.pane.title), change view")
+        .sheetPopover(isPresented: Bindable(nav).menuOpen, width: 320) {
+            RequestsDrawer().environment(nav)
+        }
     }
 
     private var filterButton: some View {
         let n = nav.filter.activeCount(nav.pane)
         return Button("Filter", systemImage: "line.3.horizontal.decrease") { nav.filterOpen = true }
+            .sheetPopover(isPresented: Bindable(nav).filterOpen, width: 380, height: 560) {
+                RequestsFilterSheet().environment(nav)
+            }
             .badge(BadgeCount.text(n).map { Text(verbatim: $0) })
             .accessibilityLabel(n > 0 ? "Filter, \(n) on" : "Filter")
     }

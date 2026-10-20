@@ -57,6 +57,7 @@ struct IssueModal: View {
         }
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.panel)
+        .formSheet() // R7: a form sheet when unfolded
         .task { await loadVersions() }
         // Kept across a fold / unfold when opened from a title (no-op elsewhere).
         .retainsDraft("issue.problem", $problem)

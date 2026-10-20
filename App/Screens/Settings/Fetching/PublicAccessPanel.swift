@@ -244,6 +244,7 @@ private struct DemoConfigSheet: View {
                     SheetDoneButton { dismiss() }
                 }
             }
+            .closeOnlyBars()
             .animation(motionOff ? nil : .easeOut(duration: 0.2), value: status?.demoRequireCredentials)
         }
         .tint(Theme.indigo)

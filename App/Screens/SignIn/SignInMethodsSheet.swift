@@ -40,6 +40,7 @@ struct SignInMethodsSheet: View {
                     .toolbar {
                         ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
                     }
+                    .closeOnlyBars()
                     .sheet(item: $moving) { credential in
                         MoveCredentialSheet(subject: subject, credential: credential, candidates: others) { await refresh() }
                     }

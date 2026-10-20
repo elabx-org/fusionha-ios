@@ -83,6 +83,7 @@ struct RuleEditorSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .formSheet() // R7: a form sheet when unfolded
     }
 
     private func save() async {

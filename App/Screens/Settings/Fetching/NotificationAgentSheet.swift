@@ -111,6 +111,7 @@ struct NotificationAgentSheet: View {
             .navigationTitle("Add notification")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } } }
+            .closeOnlyBars()
         }
         .tint(Theme.indigo)
     }

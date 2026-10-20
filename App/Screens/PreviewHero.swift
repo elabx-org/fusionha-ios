@@ -48,7 +48,8 @@ struct PreviewHero: View {
     let meta: [Meta]
     let genres: [String]
     var closeLabel = "Close"
-    let onClose: () -> Void
+    /// nil when the page's system toolbar carries Close (the Add configure step).
+    var onClose: (() -> Void)?
     var onBack: (() -> Void)?
     var backLabel = "Back"
 
@@ -82,12 +83,14 @@ struct PreviewHero: View {
         .containerRelativeFrame(.vertical) { height, _ in min(max(height * 0.62, min(430, height * 0.75)), 600) }
         .clipped()
         .overlay(alignment: .topLeading) {
-            HStack(spacing: 8) {
-                roundButton("xmark", label: closeLabel, action: onClose)
-                if let onBack { roundButton("chevron.left", label: backLabel, action: onBack) }
+            if let onClose {
+                HStack(spacing: 8) {
+                    roundButton("xmark", label: closeLabel, action: onClose)
+                    if let onBack { roundButton("chevron.left", label: backLabel, action: onBack) }
+                }
+                .padding(.leading, 12)
+                .padding(.top, 8)
             }
-            .padding(.leading, 12)
-            .padding(.top, 8)
         }
     }
 

@@ -43,6 +43,7 @@ struct ImportOverrideSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
             }
+            .closeOnlyBars()
             .task(id: trimmed) { await search() }
         }
     }

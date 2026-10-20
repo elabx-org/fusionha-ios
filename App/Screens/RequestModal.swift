@@ -7,6 +7,9 @@ struct RequestModal: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     let pick: MediaSearchResult
+    /// A form sheet at regular width (ruling R3); off inside the Add sheet,
+    /// which keeps its own size.
+    var formSized = true
     let onDone: () -> Void
 
     @State private var offer: OfferableEditions?
@@ -66,6 +69,7 @@ struct RequestModal: View {
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.panel)
         .presentationCornerRadius(14)
+        .formSheet(formSized)
         .task { await load() }
     }
 

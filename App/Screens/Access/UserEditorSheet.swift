@@ -168,7 +168,7 @@ struct NewUserSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.mediumFitting, .large])
     }
 
     private func create() async {

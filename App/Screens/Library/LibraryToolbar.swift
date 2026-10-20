@@ -4,8 +4,9 @@ import FusionhaKit
 /// The Library toolbar on phones (LibraryToolbar.tsx, mobile branch): Select,
 /// the tier segment, the "Needs attention · N" chip, then "Filters" with its
 /// badge and the grid / list segment. The row wraps the attention chip onto a
-/// second line when it does not fit, as the web's flex row does.
-struct LibraryToolbar: View {
+/// second line when it does not fit, as the web's flex row does. "Filters"
+/// opens its panel as a popover when wide, a sheet on a phone (DC21).
+struct LibraryToolbar<Filters: View>: View {
     let derived: LibraryDerived
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
@@ -14,7 +15,8 @@ struct LibraryToolbar: View {
     @Binding var density: String
     /// Filters set inside the sheet (recency, group, a non-title sort).
     let filterBadge: Int
-    let openFilters: () -> Void
+    @Binding var showingFilters: Bool
+    @ViewBuilder var filters: () -> Filters
 
     private var attentionOn: Bool { status == .attention }
     private var showsAttention: Bool { derived.attentionCount > 0 || attentionOn }
@@ -82,7 +84,7 @@ struct LibraryToolbar: View {
     // MARK: Filters
 
     private var filtersChip: some View {
-        Button(action: openFilters) {
+        Button { showingFilters = true } label: {
             HStack(spacing: 7) {
                 Image(systemName: "slider.horizontal.3")
                     .font(.system(size: 13, weight: .medium))
@@ -104,6 +106,7 @@ struct LibraryToolbar: View {
         .glassControl(on: filterBadge > 0)
         .fixedSize()
         .accessibilityValue(filterBadge > 0 ? "\(filterBadge) active" : "")
+        .sheetPopover(isPresented: $showingFilters, width: 380, height: 600, content: filters)
     }
 
     // MARK: Density

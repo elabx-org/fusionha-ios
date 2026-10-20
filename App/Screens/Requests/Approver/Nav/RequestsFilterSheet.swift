@@ -41,8 +41,7 @@ struct RequestsFilterSheet: View {
                         .disabled(nav.filter.activeCount(pane) == 0)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
-                        .accessibilityLabel("Close")
+                    SheetCancelButton(title: "Close") { dismiss() }
                 }
             }
         }

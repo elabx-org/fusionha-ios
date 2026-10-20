@@ -60,7 +60,7 @@ struct AvatarPresentations: ViewModifier {
         content
             .sheet(isPresented: $avatar.showingSheet, onDismiss: { avatar.openPending(model) }) {
                 AccountHubSheet(diagnostics: avatar.diagnostics) { avatar.pending = $0 }
-                    .presentationDetents([.medium, .large])
+                    .presentationDetents([.mediumFitting, .large])
                     .presentationDragIndicator(.visible)
             }
             .fullScreenCover(isPresented: $avatar.showingSettings) {

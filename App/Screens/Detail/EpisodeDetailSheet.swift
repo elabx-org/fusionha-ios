@@ -61,6 +61,7 @@ struct EpisodeDetailSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton(title: "Close") { dismiss() } }
             }
+            .closeOnlyBars()
             .safeAreaInset(edge: .bottom) { footer }
         }
         .presentationDragIndicator(.visible)

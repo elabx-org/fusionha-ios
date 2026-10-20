@@ -126,37 +126,49 @@ struct ActDialog<Options: View>: View {
     @ViewBuilder var options: Options
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
-            Text(message)
-                .font(.system(size: 13))
-                .lineSpacing(13 * 0.5 / 2)
-                .foregroundStyle(Theme.mut)
-                .padding(.top, 6)
-                .fixedSize(horizontal: false, vertical: true)
-            VStack(alignment: .leading, spacing: 10) { options }
-                .padding(.top, 16)
-            HStack(spacing: 10) {
-                Spacer(minLength: 0)
-                Button("Cancel", action: onCancel).buttonStyle(ActButtonStyle(kind: .subtle, small: false))
-                Button(action: onConfirm) {
-                    HStack(spacing: 6) {
-                        if busy { ProgressView().controlSize(.mini) }
-                        Text(confirmLabel).lineLimit(2).multilineTextAlignment(.center)
-                    }
-                }
-                .buttonStyle(ActButtonStyle(kind: confirmKind, small: false))
-                .disabled(busy)
+        // The words and options scroll; Cancel and the action stay pinned, so
+        // a long dialog still fits the Duo's outer display sideways (DC20).
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
+                Text(message)
+                    .font(.system(size: 13))
+                    .lineSpacing(13 * 0.5 / 2)
+                    .foregroundStyle(Theme.mut)
+                    .padding(.top, 6)
+                    .fixedSize(horizontal: false, vertical: true)
+                VStack(alignment: .leading, spacing: 10) { options }
+                    .padding(.top, 16)
             }
-            .padding(.top, 20)
+            .padding(.horizontal, 16)
+            .padding(.top, 22)
+            .padding(.bottom, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 22)
-        .padding(.bottom, 18)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .presentationDetents([.medium, .large])
+        .scrollBounceBehavior(.basedOnSize)
+        .safeAreaInset(edge: .bottom, spacing: 0) { buttons }
+        .presentationDetents([.mediumFitting, .large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.panel)
+    }
+
+    private var buttons: some View {
+        HStack(spacing: 10) {
+            Spacer(minLength: 0)
+            Button("Cancel", action: onCancel).buttonStyle(ActButtonStyle(kind: .subtle, small: false))
+            Button(action: onConfirm) {
+                HStack(spacing: 6) {
+                    if busy { ProgressView().controlSize(.mini) }
+                    Text(confirmLabel).lineLimit(2).multilineTextAlignment(.center)
+                }
+            }
+            .buttonStyle(ActButtonStyle(kind: confirmKind, small: false))
+            .disabled(busy)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 18)
+        .background(Theme.panel)
     }
 }
 

@@ -31,6 +31,7 @@ struct ImportRowEditorSheet: View {
                     SheetDoneButton { commitEdition(); dismiss() }
                 }
             }
+            .closeOnlyBars()
         }
         .presentationDetents([.medium, .large])
         .onAppear { edition = item.map { detectedEdition($0) } ?? "" }

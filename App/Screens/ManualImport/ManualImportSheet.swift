@@ -57,6 +57,9 @@ struct ManualImportSheet: View {
             dismiss()
         }
         .interactiveDismissDisabled(session.working)
+        // Unfolded: the page size, so the file rows use the inner display's
+        // width (DC22). The web's split layout there is D2.
+        .presentationSizing(.page)
     }
 
     @ViewBuilder private var content: some View {

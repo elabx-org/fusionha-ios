@@ -66,6 +66,7 @@ struct AddSourceSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
             }
+            .closeOnlyBars()
             .onChange(of: kind) { reset() }
             .onChange(of: url) { reset() }
             .onChange(of: username) { reset() }

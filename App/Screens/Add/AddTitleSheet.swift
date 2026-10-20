@@ -62,8 +62,8 @@ struct AddTitleSheet: View {
         NavigationStack(path: $path) {
             root
                 // Close is a system toolbar item (DC10). The configure step
-                // keeps its own hero with Back and Close; the request modal
-                // brings its own Close.
+                // adds Back to search beside its own Close (D4); the request
+                // modal brings its own Close.
                 .toolbar {
                     if flow == nil && requestPick == nil {
                         ToolbarItem(placement: .cancellationAction) {
@@ -71,9 +71,7 @@ struct AddTitleSheet: View {
                         }
                     }
                 }
-                .toolbarVisibility(flow == nil ? .automatic : .hidden, for: .navigationBar)
                 .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
-                .closeOnlyBars()
                 .navigationDestination(for: AddDetailsRoute.self) { details in
                     previewPage(details.route)
                         .modifier(ZoomTransition(id: details.zoomId, namespace: zoomSpace))
@@ -101,7 +99,7 @@ struct AddTitleSheet: View {
         } else if let requestPick {
             // A requester's pick goes through the one request path (web
             // `RequestModal`): versions, seasons, quota and the wishlist.
-            RequestModal(pick: requestPick) { Task { await model.refreshShell() } }
+            RequestModal(pick: requestPick, formSized: false) { Task { await model.refreshShell() } }
                 .id(requestPick.id)
         } else {
             ScrollView {
@@ -114,6 +112,9 @@ struct AddTitleSheet: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.panel)
+            // Close alone: horizontal bars (Q-DC6). The configure step has
+            // Close and Back, so it keeps the system default.
+            .closeOnlyBars()
         }
     }
 

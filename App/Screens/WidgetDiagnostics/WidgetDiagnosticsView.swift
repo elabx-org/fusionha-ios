@@ -41,6 +41,7 @@ struct WidgetDiagnosticsView: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
             }
+            .closeOnlyBars()
         }
         .task { report = await WidgetDiagnosticsReport.load() }
     }

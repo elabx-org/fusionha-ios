@@ -63,6 +63,7 @@ struct RequestThreadSheet: View {
                     SheetDoneButton { dismiss() }
                 }
             }
+            .closeOnlyBars()
         }
         .presentationDetents([.large])
         .task { await poll() }

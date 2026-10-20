@@ -61,7 +61,7 @@ struct TrailerSheet: View {
             }
             .closeOnlyBars()
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.mediumFitting])
         .presentationDragIndicator(.visible)
     }
 }

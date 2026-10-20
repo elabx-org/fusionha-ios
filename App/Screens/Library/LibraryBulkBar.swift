@@ -83,7 +83,7 @@ struct BulkActionBar: View {
         .task { profiles = (try? await model.client?.qualityProfiles()) ?? [] }
         .sheet(isPresented: $showingRoot) {
             ChangeRootSheet()
-                .presentationDetents([.medium])
+                .presentationDetents([.mediumFitting, .large])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Theme.panel)
         }

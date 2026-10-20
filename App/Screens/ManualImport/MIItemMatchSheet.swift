@@ -46,6 +46,7 @@ struct MIItemMatchSheet: View {
             .navigationTitle("Match to a library title")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } } }
+            .closeOnlyBars()
         }
         .task { if !model.libraryLoaded { await model.loadLibrary() } }
     }

@@ -37,6 +37,7 @@ struct IssueThreadSheet: View {
             .closeOnlyBars()
         }
         .presentationDetents([.large])
+        .formSheet() // R7: a form sheet when unfolded
         .task(id: tick) { await pollIssue() }
         .task { await pollLines() }
     }

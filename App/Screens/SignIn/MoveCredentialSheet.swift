@@ -45,7 +45,7 @@ struct MoveCredentialSheet: View {
             }
         }
         .calToast($toast)
-        .presentationDetents([.medium])
+        .presentationDetents([.mediumFitting, .large])
         .onAppear { if targetId == nil { targetId = candidates.first?.id } }
     }
 

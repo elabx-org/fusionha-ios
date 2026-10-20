@@ -104,7 +104,7 @@ private struct BroadcastSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.mediumFitting, .large])
     }
 
     private func send() async {

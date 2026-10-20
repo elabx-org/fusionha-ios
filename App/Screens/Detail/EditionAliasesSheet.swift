@@ -54,6 +54,7 @@ struct EditionAliasesSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton(title: "Close") { dismiss() } }
             }
+            .closeOnlyBars()
         }
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.bg)

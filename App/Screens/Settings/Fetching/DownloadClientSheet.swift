@@ -82,6 +82,7 @@ struct DownloadClientSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
             }
+            .closeOnlyBars()
             .safeAreaInset(edge: .top) {
                 Text("Pick a client type").font(.system(size: 13)).foregroundStyle(Theme.mut)
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 20).padding(.top, 4)
