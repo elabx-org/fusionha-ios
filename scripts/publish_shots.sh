@@ -5,6 +5,8 @@
 # a rebase conflict on binary files; a lost push race just retries.
 # Publishing is a convenience for review: if every attempt fails it warns
 # and exits 0 rather than failing the build.
+# The fetch is shallow and the checkout sparse (only <dest-dir>): the branch
+# holds every PR's PNGs, and a full checkout ran the Duo runner out of disk.
 #
 #   scripts/publish_shots.sh <src-dir> <dest-dir> [--keep-subdirs|--add]
 #
@@ -19,10 +21,12 @@ MODE=${3:-}
 [ -d "$SRC" ] || exit 0
 WT="$RUNNER_TEMP/screenshots-wt-$$"
 for i in 1 2 3 4 5 6 7 8; do
-  git fetch -q origin screenshots:refs/remotes/origin/screenshots 2>/dev/null || true
+  git fetch -q --depth=1 origin +screenshots:refs/remotes/origin/screenshots 2>/dev/null || true
   rm -rf "$WT"; git worktree prune
   if git rev-parse -q --verify refs/remotes/origin/screenshots > /dev/null; then
-    git worktree add -q --detach "$WT" refs/remotes/origin/screenshots
+    git worktree add -q --no-checkout --detach "$WT" refs/remotes/origin/screenshots &&
+      git -C "$WT" sparse-checkout set --no-cone "/$DEST/" &&
+      git -C "$WT" checkout -q
   else
     git worktree add -q --detach "$WT" && (cd "$WT" && git checkout -q --orphan tmp && { git rm -rqf . 2>/dev/null || true; })
   fi
