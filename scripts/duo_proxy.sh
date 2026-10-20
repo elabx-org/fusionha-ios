@@ -52,12 +52,23 @@ screens() {  # screens <orientation> [env…]
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACTIVITY_TAB=tasks "$@"; snap "standin-unfolded-$O-activity-tasks-ipadmini-not-real-unfold"
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=metadata "$@"; snap "standin-unfolded-$O-settings-metadata-ipadmini-not-real-unfold"
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=defaultprofiles "$@"; snap "standin-unfolded-$O-settings-defaultprofiles-ipadmini-not-real-unfold"
+  # D2b: Calendar month and week on their own width, sign-in side by side.
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=month "$@"; snap "standin-unfolded-$O-calendar-month-ipadmini-not-real-unfold"
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=week "$@"; snap "standin-unfolded-$O-calendar-week-ipadmini-not-real-unfold"
+  launch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN_LAYOUT=split SIMCTL_CHILD_FUSIONHA_SCREENSHOT_METHOD=fusionha "$@"; snap "standin-unfolded-$O-signin-split-ipadmini-not-real-unfold"
+  launch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN_LAYOUT=living SIMCTL_CHILD_FUSIONHA_SCREENSHOT_METHOD=fusionha "$@"; snap "standin-unfolded-$O-signin-living-ipadmini-not-real-unfold"
 }
 
 launch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
 screens portrait
-$PUBLISH
-screens landscape SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ORIENTATION=landscape
+# One publish at the end: a contended push to the screenshots branch can take
+# 20+ minutes and once ran the step out of time before the landscape shots.
+# The orientation hook doesn't rotate the iPad mini stand-in (its "landscape"
+# shots came out identical to portrait in D2a/D2b/D2c), so the second pass only
+# cost time. Opt back in with DUO_STANDIN_LANDSCAPE=1 once rotation works.
+if [ "${DUO_STANDIN_LANDSCAPE:-0}" = 1 ]; then
+  screens landscape SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ORIENTATION=landscape
+fi
 $PUBLISH
 xcrun simctl shutdown "$UDID" || true
 ls -l "$OUT"

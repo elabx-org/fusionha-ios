@@ -9,6 +9,11 @@ import Foundation
 /// class. So a phone held sideways (wide but short) keeps its sheet, iPhone
 /// Duo's outer display stays a phone, its inner display splits, and a window
 /// shared with another app splits only while it is roomy enough.
+///
+/// Portrait-shaped containers never split (ruling Q-DC3, the HIG's horizontal
+/// bars in inner portrait): at iPhone Duo's 669 x 951 the 560/360 rule left a
+/// tabs column narrower than any iPhone, so there the tab bar stays at the
+/// bottom and the title opens as the phone's sheet.
 public enum ShellSplitRule {
     /// Below this width the title is a sheet (iPhone Duo's outer display is ~466pt).
     public static let minWidth = 560.0
@@ -21,7 +26,7 @@ public enum ShellSplitRule {
 
     /// Whether a container this size shows the open title as a trailing column.
     public static func splits(width: Double, height: Double, hasItem: Bool) -> Bool {
-        hasItem && width >= minWidth && height >= minHeight
+        hasItem && width >= minWidth && height >= minHeight && width > height
     }
 
     /// The title column's width in a container this wide.

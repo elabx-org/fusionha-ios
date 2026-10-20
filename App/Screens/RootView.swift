@@ -58,6 +58,7 @@ struct RootView: View {
                        clearsAbove: split.shown ? nil : toastAnchor.floor, gap: 16)
         }
         .environment(toastAnchor)
+        .environment(\.bookPose, fold.vertical != nil)
         .environment(\.motionEnabled, !reduceMotion && model.animationsEnabled)
         .environment(\.railStyle, model.railStyle)
         .environment(\.railConsolidate, model.railConsolidate)

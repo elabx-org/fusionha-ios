@@ -8,6 +8,9 @@ import FusionhaKit
 struct LibraryHeader: View {
     let derived: LibraryDerived
     @Binding var status: LibraryStatus
+    /// Past 720 the pulse is inline and the status cluster holds In progress
+    /// and Needs attention, so the stats item goes (as on the web's desktop).
+    var wide = false
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @State private var showingStats = false
@@ -26,11 +29,13 @@ struct LibraryHeader: View {
         }
         .toolbar {
             AddTitleToolbarItem(model: model)
-            ToolbarItem(placement: .secondaryAction) {
-                Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
-                    .badge(statsBadge)
+            if !wide {
+                ToolbarItem(placement: .secondaryAction) {
+                    Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
+                        .badge(statsBadge)
+                }
+                .barPriority(false)
             }
-            .barPriority(false)
         }
         // Warm the stats sheet's In progress / Needs attention, so it opens filled.
         .task {

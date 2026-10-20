@@ -7,6 +7,8 @@ import FusionhaKit
 /// and the scroll thumb can jump to any row.
 enum LibraryRowModel: Identifiable {
     case section(CardStatus, Int)
+    /// A–Z letter header (wide layout): the letter and its title count.
+    case letter(String, Int)
     case items([MediaItem])
     case tableHeader
     case tableRow(MediaItem, last: Bool)
@@ -14,6 +16,7 @@ enum LibraryRowModel: Identifiable {
     var id: String {
         switch self {
         case .section(let status, _): return "status-\(status.rawValue)"
+        case .letter(let letter, _): return "letter-\(letter)"
         case .items(let items): return "row-\(items[0].id)"
         case .tableHeader: return "table-header"
         case .tableRow(let item, _): return "table-\(item.id)"
@@ -34,7 +37,8 @@ enum LibraryRowModel: Identifiable {
     /// continuous run of 3-card rows with no letter headers. Each letter's jump
     /// target is the row holding its FIRST title; each row remembers the letter
     /// of its first card for the thumb's "where am I" bubble.
-    static func alpha(_ items: [MediaItem], columns: Int = 3) -> (rows: [LibraryRowModel], index: LibraryAlphaIndex) {
+    static func alpha(_ items: [MediaItem], columns: Int = 3, headers: Bool = false) -> (rows: [LibraryRowModel], index: LibraryAlphaIndex) {
+        if headers { return alphaSectioned(items, columns: columns) }
         var rows: [LibraryRowModel] = []
         chunk(items[...], columns: columns, into: &rows)
         var index = LibraryAlphaIndex()
@@ -45,6 +49,34 @@ enum LibraryRowModel: Identifiable {
                 let letter = LibraryView.letter(for: card.title)
                 if index.letterRow[letter] == nil { index.letterRow[letter] = row.id }
             }
+        }
+        index.letters = LibraryAlphaIndex.alphabet.filter { index.letterRow[$0] != nil }
+        return (rows, index)
+    }
+
+    /// The A–Z grid past 720 (`buildRowModel` with `headers: true`): a letter
+    /// header before each letter's run, its titles starting a fresh row. The
+    /// rail jumps to the header.
+    private static func alphaSectioned(_ items: [MediaItem], columns: Int) -> (rows: [LibraryRowModel], index: LibraryAlphaIndex) {
+        var rows: [LibraryRowModel] = []
+        var index = LibraryAlphaIndex()
+        var start = items.startIndex
+        while start < items.endIndex {
+            let letter = LibraryView.letter(for: items[start].title)
+            var end = start
+            while end < items.endIndex && LibraryView.letter(for: items[end].title) == letter { end += 1 }
+            // A letter that comes back (an odd sort key) continues its first run
+            // without a second header, so row ids stay unique.
+            if index.letterRow[letter] == nil {
+                let header = LibraryRowModel.letter(letter, end - start)
+                index.letterRow[letter] = header.id
+                index.rowLetter[header.id] = (rows.count, letter)
+                rows.append(header)
+            }
+            let first = rows.count
+            chunk(items[start..<end], columns: columns, into: &rows)
+            for i in first..<rows.count { index.rowLetter[rows[i].id] = (i, letter) }
+            start = end
         }
         index.letters = LibraryAlphaIndex.alphabet.filter { index.letterRow[$0] != nil }
         return (rows, index)
@@ -115,6 +147,30 @@ struct LibraryAlphaIndex {
     /// The letter at the top of the grid, from the rows on screen.
     func activeLetter(visible ids: [String]) -> String? {
         ids.compactMap { rowLetter[$0] }.min { $0.0 < $1.0 }?.1
+    }
+}
+
+/// The A–Z letter header (`.alphaHead`): the letter, a hairline, the count.
+struct LibraryLetterHeader: View {
+    let letter: String
+    let count: Int
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(letter)
+                .font(.system(size: 21, weight: .heavy))
+                .foregroundStyle(Theme.txt)
+                .frame(width: 30, alignment: .leading)
+                .accessibilityHidden(true)
+            Rectangle().fill(Theme.line).frame(height: 1)
+            Text("\(count)").font(.system(size: 12, design: .monospaced).monospacedDigit()).foregroundStyle(Theme.dim)
+        }
+        .padding(.vertical, 8)
+        .padding(.top, 4)
+        .padding(.bottom, 14)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(letter), \(count) \(count == 1 ? "title" : "titles")")
+        .accessibilityAddTraits(.isHeader)
     }
 }
 

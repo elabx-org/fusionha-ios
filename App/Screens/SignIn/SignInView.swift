@@ -37,6 +37,8 @@ struct SignInView: View {
     @State var nudges = 0
     /// The native first-run setup for a fresh server.
     @State var settingUp = false
+    /// The stage's width: past 720 / 760 the art sits beside the form (DU15).
+    @State var stageWidth: CGFloat = 0
 
     enum Field { case server, username, password, demoUser, demoPass }
 
@@ -92,6 +94,7 @@ struct SignInView: View {
             .id(look.layout ?? "centered")
             .transition(.opacity)
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { stageWidth = $0 }
         .animation(motionOff ? nil : .easeInOut(duration: 0.5), value: look)
         // On a half-open Duo the toasts keep to the trailing side of the fold (DC14).
         .overlay { FoldToastLayer() }
@@ -109,6 +112,11 @@ struct SignInView: View {
         .task {
             // CI screenshots: connect to the mock server and pick a method.
             let env = ProcessInfo.processInfo.environment
+            // Landscape sign-in shots (the shell's hook doesn't run signed out).
+            if env["FUSIONHA_SCREENSHOT_ORIENTATION"] == "landscape",
+               let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight)) { _ in }
+            }
             guard let login = env["FUSIONHA_SCREENSHOT_LOGIN"], !login.isEmpty else { return }
             server = login
             await connect()

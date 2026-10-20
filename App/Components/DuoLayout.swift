@@ -8,7 +8,11 @@ import FusionhaKit
 // points, `ShellSplitRule`, the web's rule: the iPhone Duo's inner display, an
 // iPad) the shell becomes two columns like the web's wide layout: the tabs on
 // the leading side and the open title on the trailing side, in place of the
-// sheet. When the Duo is half open (Book) the system reports the
+// sheet. Only landscape-shaped windows split: in inner portrait (669 x 951)
+// the tab bar stays at the bottom and the title keeps the phone's sheet, the
+// HIG's horizontal bars (ruling Q-DC3); the sheet and the column share one
+// `DetailStore` (DC3), so rotating keeps the open page. When the Duo is half
+// open (Book) the system reports the
 // fold as a reserved `.division` region; the split then lines up with the
 // fold so neither column runs across it, and nothing is drawn in the fold.
 //
@@ -183,6 +187,9 @@ struct ShellDetailColumn: View {
 extension EnvironmentValues {
     /// True when the title detail is the shell's trailing column rather than a sheet.
     @Entry var detailInColumn = false
+    /// True while the Duo is half open with the fold top to bottom (Book pose):
+    /// layouts that read across the whole width switch to one column (Q-DC5).
+    @Entry var bookPose = false
 }
 
 /// Library / Discover poster columns for a content width: three on every
