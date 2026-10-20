@@ -1,31 +1,10 @@
 import SwiftUI
 import FusionhaKit
 
-// The sign-in card's steps: server address, the method pill and its
-// reveal (password or Plex), and the demo section.
+// The sign-in card's later steps: the method pill and its reveal (password
+// or Plex), and the demo section. Step 1 lives in SignInServerStep.swift.
 
 extension SignInView {
-    // MARK: Step 1: server
-
-    var serverForm: some View {
-        VStack(spacing: 0) {
-            LoginField(label: "Server address") {
-                TextField("", text: $server, prompt: Text("192.168.1.10:8787 or https://…").foregroundStyle(Theme.dim))
-                    .textContentType(.URL)
-                    .keyboardType(.URL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.go)
-                    .focused($field, equals: .server)
-                    .onSubmit { Task { await connect() } }
-            } focused: { field == .server }
-            errorText
-            GradientSubmit(title: "Continue", working: working, enabled: !server.isEmpty) {
-                Task { await connect() }
-            }
-        }
-    }
-
     // MARK: Step 2: method pill + reveal
 
     @ViewBuilder

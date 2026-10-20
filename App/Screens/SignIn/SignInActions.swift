@@ -16,15 +16,43 @@ extension SignInView {
         connected = nil
         method = nil
         error = nil
+        failure = nil
+        recents = memory.recents
     }
 
+    /// Step 1: find fusionha at the typed address. The Living mark draws sparks
+    /// in while it tries, lands a ring when it answers, and jams if it doesn't.
     func connect() async {
-        await run {
-            let (url, status) = try await model.connect(server: server)
-            withAnimation(.snappy) {
-                connected = (url, status)
+        guard !working else { return }
+        let input = server
+        working = true
+        error = nil
+        failure = nil
+        if isLiving { living.connecting() }
+        defer { working = false }
+        let lan = ServerAddress.candidates(input).first.map(ServerAddress.isLocal) ?? false
+        do {
+            let probe = try await model.probe(input)
+            if lan { memory.localNetworkExplained = true }
+            memory.remember(RememberedServer(url: probe.url, loginLayout: probe.status.loginLayout,
+                                             loginBackground: probe.status.loginBackground,
+                                             livingMedia: probe.status.loginLivingMedia, version: probe.version))
+            living.setMedia(probe.status.loginLivingMedia == true)
+            if isLiving { living.reached() }
+            withAnimation(motionOff ? nil : .easeInOut(duration: 0.5)) {
+                connected = probe
                 method = nil
             }
+            server = probe.url.absoluteString
+        } catch is CancellationError {
+            living.connectTask?.cancel()
+        } catch {
+            if lan { memory.localNetworkExplained = true }
+            let failure = (error as? ServerProbeError)?.failure ?? .unreachable
+            self.failure = failure
+            self.error = failure.message
+            if isLiving { living.refused() } else { living.connectTask?.cancel() }
+            nudges += 1
         }
     }
 

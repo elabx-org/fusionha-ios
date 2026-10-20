@@ -21,7 +21,13 @@ struct SetupWizardView: View {
 
     private let steps = 6
 
+    /// On a half-open Duo the wizard keeps to one side of the fold (DC17).
     var body: some View {
+        FoldSafe { _ in page }
+            .background(Theme.bg.ignoresSafeArea())
+    }
+
+    private var page: some View {
         VStack(alignment: .leading, spacing: 22) {
             progress
             Group {

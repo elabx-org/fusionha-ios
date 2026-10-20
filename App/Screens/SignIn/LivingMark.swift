@@ -10,6 +10,9 @@ import UIKit
 struct LivingMark<Caption: View>: View {
     let engine: LivingEngine
     let reduce: Bool
+    /// The server step before any server is known: the default backdrop behind
+    /// the mark instead of the dot field.
+    var backdrop: BackdropMode? = nil
     @ViewBuilder var caption: Caption
 
     /// Where the three blades are cut from the logo (fraction of its height).
@@ -21,7 +24,9 @@ struct LivingMark<Caption: View>: View {
         TimelineView(.animation(minimumInterval: nil, paused: reduce)) { context in
             let _ = engine.advance(to: context.date)
             ZStack {
-                Canvas { ctx, size in drawDots(ctx, size) }
+                if backdrop == nil {
+                    Canvas { ctx, size in drawDots(ctx, size) }
+                }
                 VStack(spacing: 0) {
                     markView
                         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { engine.markRect = $0 }
@@ -39,7 +44,13 @@ struct LivingMark<Caption: View>: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(hex: 0x08090D))
+        .background {
+            if let backdrop {
+                LoginBackdrop(mode: backdrop, motionOff: reduce)
+            } else {
+                Color(hex: 0x08090D)
+            }
+        }
         .clipped()
         .coordinateSpace(.named(Self.space))
         .onGeometryChange(for: CGSize.self) { $0.size } action: { engine.panel = $0 }
@@ -52,6 +63,7 @@ struct LivingMark<Caption: View>: View {
     @ViewBuilder
     private var markView: some View {
         let mark = engine.mark.pose(at: engine.now)
+        let media = engine.mediaPose
         let hidden = engine.qualityStart != nil
         Group {
             if reduce {
@@ -70,6 +82,10 @@ struct LivingMark<Caption: View>: View {
         .rotation3DEffect(.degrees(mark.rotY), axis: (x: 0, y: 1, z: 0), perspective: 0.45)
         .scaleEffect(mark.scale)
         .offset(y: mark.dy)
+        // A media morph (TV, Anime) poses the whole mark.
+        .scaleEffect(x: media.sx, y: media.sy)
+        .offset(x: media.dx, y: media.dy)
+        .brightness(media.light * 0.45)
         .opacity(hidden ? 0 : 1)
         // The tilt wrapper: a gentle bob, turned toward the form while listening.
         .rotation3DEffect(.degrees(Double(-engine.tilt.y) * 9), axis: (x: 1, y: 0, z: 0), perspective: 0.45)
@@ -169,6 +185,10 @@ struct LivingMark<Caption: View>: View {
         var ctx = ctx
         ctx.blendMode = .plusLighter
         drawQuality(&ctx)
+        if let show = engine.mediaShow {
+            LivingMedia.draw(show, in: &ctx, ms: (engine.now - show.start) * 1000, mark: engine.markRect,
+                             tips: (0..<3).map { engine.tip($0) })
+        }
         for spark in engine.sparks {
             let n = spark.trail.count
             for j in 1..<max(n, 1) where n > 1 {
