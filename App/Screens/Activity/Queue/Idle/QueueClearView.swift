@@ -15,18 +15,26 @@ struct QueueClearView: View {
     @Environment(AppModel.self) private var model
     @Environment(ActChrome.self) private var chrome
     @State private var feed = QueueIdleFeed()
-    @State private var width: CGFloat = 390
+    /// The measured width; nothing is laid out before it (no phone-sized seed
+    /// that then jumps to the wide layout on an unfolded Duo).
+    @State private var width: CGFloat?
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 30)) { context in
-            content(now: context.date)
+        Group {
+            if let width {
+                TimelineView(.periodic(from: .now, by: 30)) { context in
+                    content(now: context.date, width: width)
+                }
+            } else {
+                Color.clear.frame(height: 1)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .task { await feed.run(model.client) }
     }
 
-    private func content(now: Date) -> some View {
+    private func content(now: Date, width: CGFloat) -> some View {
         let coming = feed.calendar.map { IdleComingUp.derive($0, now: now) }
         let recent = feed.imports.map { IdleRecent.derive($0, limit: IdleRecent.max) }
         let balance = IdleLayout.balance(coming: coming, recent: recent)
@@ -42,8 +50,8 @@ struct QueueClearView: View {
             QueueClearHero(summary: feed.summary, failed: feed.summaryFailed, episodes48h: coming?.episodes,
                            celebrate: celebrate, playful: feed.playful, quipSeed: recent?.first?.title ?? "queue",
                            compact: compact,
-                           tileColumns: IdleLayout.tileColumns(width: w, gridWidth: w - (compact ? 24 : 44),
-                                                                  tiles: compact ? 4 : 5),
+                           tileColumns: IdleLayout.balancedTileColumns(width: w, gridWidth: w - (compact ? 24 : 44),
+                                                                          tiles: compact ? 4 : 5),
                            openHistory: openHistory)
             if IdleLayout.sideBySide(width: w, balance) {
                 // `minmax(0, 1.2fr) minmax(0, 1fr)` with a 16 pt gap.

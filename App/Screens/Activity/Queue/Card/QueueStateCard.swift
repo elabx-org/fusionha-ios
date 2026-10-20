@@ -13,32 +13,55 @@ struct QueueStateCard: View {
     var nested = false
     /// A lane of a 4K + HD pair: the version leads, not the shared episode.
     var pairLane = false
-    @Environment(AppModel.self) private var model
+    /// The Duo's trailing column: the body only; the column draws the title
+    /// and pins the readout and actions to its foot (`QueueDuoPane`).
+    var bare = false
 
     private var mode: QueueCardMode { QueueCardMode(item) }
 
     var body: some View {
         let mode = self.mode
+        if bare {
+            parts(mode, showTier: true)
+        } else if nested {
+            VStack(alignment: .leading, spacing: 12) {
+                nestedHead(mode)
+                parts(mode, showTier: false)
+                if mode != .other {
+                    QueueStateReadout(item: item, mode: mode, telemetry: telemetry, search: actions.search)
+                        .padding(.top, 2)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .actWash(QueueLogic.wash(item), radius: 12, base: Theme.panel.opacity(0.55), border: .clear)
+            .accessibilityElement(children: .contain)
+        } else {
+            QueueCardFrame(item: item) {
+                parts(mode, showTier: true)
+            } aside: { wide in
+                HStack(spacing: 10) {
+                    QueueStateReadout(item: item, mode: mode, telemetry: telemetry, search: actions.search)
+                    if !wide { Spacer(minLength: 0) }
+                    QueueCardActions(item: item, actions: actions, broken: mode.isBroken)
+                }
+                .padding(.top, wide ? 0 : 2)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 18)
+            .actWash(QueueLogic.wash(item), radius: 16, base: Theme.card, border: Theme.line)
+            .accessibilityElement(children: .contain)
+        }
+    }
+
+    /// The meta line, release chips, source line and the state's body.
+    private func parts(_ mode: QueueCardMode, showTier: Bool) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            if nested { nestedHead(mode) } else { QueueCardHead(item: item) }
-            QueueCardMeta(item: item, showTier: !nested, fullDownload: mode == .bytes)
+            QueueCardMeta(item: item, showTier: showTier, fullDownload: mode == .bytes)
             QueueFactChips(item: item)
             QueueSourceLine(item: item)
             QueueStateBody(item: item, mode: mode, telemetry: telemetry)
-            if !nested || mode != .other {
-                HStack(spacing: 10) {
-                    QueueStateReadout(item: item, mode: mode, telemetry: telemetry, search: actions.search)
-                    Spacer(minLength: 0)
-                    if !nested { QueueCardActions(item: item, actions: actions, broken: mode.isBroken) }
-                }
-                .padding(.top, 2)
-            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, nested ? 14 : 18)
-        .actWash(QueueLogic.wash(item), radius: nested ? 12 : 16, base: nested ? Theme.panel.opacity(0.55) : Theme.card,
-                 border: nested ? .clear : Theme.line)
-        .accessibilityElement(children: .contain)
     }
 
     private func nestedHead(_ mode: QueueCardMode) -> some View {
@@ -50,29 +73,6 @@ struct QueueStateCard: View {
             Spacer(minLength: 4)
             QueueCardActions(item: item, actions: actions, broken: mode.isBroken)
                 .padding(.trailing, -8)
-        }
-    }
-}
-
-/// Poster, title and episode (or year) of a single card.
-struct QueueCardHead: View {
-    let item: QueueItem
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            ActPoster(url: item.posterUrl, title: item.title, size: .md)
-                .onTapGesture { model.open(item.mediaItemId) }
-            VStack(alignment: .leading, spacing: 3) {
-                Text(item.title).font(.system(size: 18, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(2)
-                    .onTapGesture { model.open(item.mediaItemId) }
-                    .accessibilityAddTraits(.isButton)
-                if let sub = QueueCardText.subtitle(item) {
-                    Text(sub).font(.system(size: 15)).foregroundStyle(Theme.mut).lineLimit(2)
-                }
-            }
-            .padding(.top, 6)
-            Spacer(minLength: 0)
         }
     }
 }

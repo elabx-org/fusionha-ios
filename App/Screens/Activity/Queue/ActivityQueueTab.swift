@@ -28,14 +28,31 @@ struct ActivityQueueTab: View {
     @State var upNextOpenId: Int?
     /// A `?focus=` download: its card is flashed and its group opened.
     @State var focusId: Int?
+    /// The card open beside the list on iPhone Duo (`QueueDuoRule`); kept
+    /// across a rotation, shown only while the pane splits.
+    @State var duoOpenKey: String?
+    @Environment(\.paneSize) var pane
 
     var body: some View {
         let _ = PerfCount.hit("ActivityQueueTab.body")
-        ScrollViewReader { proxy in
-            ActivityPage { content }
-                .onChange(of: model.pendingQueueScroll, initial: true) { bringFocusForward(proxy) }
-                .onChange(of: store.items.map(\.id)) { bringFocusForward(proxy) }
+        let open = duoSplits ? QueueDuoOpen.find(duoOpenKey, items: store.items, telemetry: store.telemetry) : nil
+        // The list keeps its place in the tree, so its scroll survives opening and closing cards.
+        HStack(spacing: 0) {
+            ScrollViewReader { proxy in
+                ActivityPage { content }
+                    .onChange(of: model.pendingQueueScroll, initial: true) { bringFocusForward(proxy) }
+                    .onChange(of: store.items.map(\.id)) { bringFocusForward(proxy) }
+            }
+            .frame(width: open == nil ? nil : pane.width * QueueDuoRule.listShare)
+            if let open {
+                QueueDuoPane(open: open, telemetry: store.telemetry, actionsFor: { actions(for: $0) }) {
+                    duoOpenKey = nil
+                }
+                .transition(reduce ? .opacity : .move(edge: .trailing).combined(with: .opacity))
+            }
         }
+        .animation(reduce ? nil : .snappy(duration: 0.28), value: open?.entry.id)
+        .environment(\.queueCardOpener, cardOpener)
         .animation(reduce ? nil : ActMotion.rows, value: store.items.map(\.id))
         .task(id: search) {
             await store.reload(model.client, query: search)
@@ -103,6 +120,22 @@ struct ActivityQueueTab: View {
     }
 
     var finished: (rows: [QueueLogic.Finished], overflow: Int) { QueueLogic.justFinished(store.justFinished) }
+
+    /// Split-capable and still the phone layout: the inner display in portrait.
+    var duoSplits: Bool { QueueDuoRule.splits(width: Double(pane.width), height: Double(pane.height)) }
+
+    /// The card open beside the list, for its ring.
+    var duoSelectedKey: String? { duoSplits ? duoOpenKey : nil }
+
+    /// While split, a card's tap, poster or title opens it beside the list.
+    var cardOpener: QueueCardOpener? {
+        guard duoSplits else { return nil }
+        return QueueCardOpener { item in
+            guard let key = QueueDuoOpen.key(for: item, items: store.items, telemetry: store.telemetry) else { return false }
+            duoOpenKey = key
+            return true
+        }
+    }
 
     /// The web's pipeline strip, the only hero it has (Q8).
     private var hero: some View {

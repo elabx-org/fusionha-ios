@@ -6,6 +6,12 @@ import FusionhaKit
 struct DiscoverFiltersPanel: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.paneSize) private var pane
+    /// `repeat(auto-fit, minmax(150px, 1fr))` across the panel's inside (page gutters 2 × 16, padding 2 × 14).
+    private var filterColumns: [GridItem] {
+        let count = DiscoverWidthRule.filterColumns(Double(max(0, pane.width - 60)), fields: 5)
+        return Array(repeating: GridItem(.flexible(), spacing: 12), count: pane.width > 0 ? count : 2)
+    }
     let kind: SearchKind
     let canAdd: Bool
     let canRequest: Bool
@@ -49,7 +55,7 @@ struct DiscoverFiltersPanel: View {
                 .buttonStyle(.plain)
             }
             if open {
-                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)],
+                LazyVGrid(columns: filterColumns,
                           alignment: .leading, spacing: 12) {
                     field("Genre", value: genres.first { $0.id == filter.genre }?.name ?? "Any genre") {
                         Button("Any genre") { filter.genre = nil }

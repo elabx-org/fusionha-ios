@@ -5,6 +5,8 @@ import FusionhaKit
 /// as, Name vs file, then the file itself.
 struct MIRowBody: View {
     let row: ManualImportRow
+    /// Lines the body up under the row's title; the split's detail pane uses none.
+    var indent: CGFloat = 48
     @Environment(ManualImportSession.self) private var session
     @State private var matching = false
 
@@ -19,7 +21,7 @@ struct MIRowBody: View {
             section("Name vs file") { nameVsFile }
             section("File") { fileBlock }
         }
-        .padding(.leading, 48)
+        .padding(.leading, indent)
         .disabled(session.working)
         .sheet(isPresented: $matching) { MIItemMatchSheet(row: row).environment(session) }
     }

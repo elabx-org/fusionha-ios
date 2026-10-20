@@ -18,6 +18,19 @@ struct BlocklistRowView: View {
     @Environment(ActToaster.self) private var toaster
     @Environment(\.actReduceMotion) private var reduce
     @State private var expanded = false
+    @Environment(\.paneSize) private var pane
+
+    /// Quality, size, then indexer · protocol (the release's provenance).
+    private var metaChips: some View {
+        ActFlow(spacing: 6, lineSpacing: 3) {
+            if let q = entry.quality { ActQualityChip(quality: q) }
+            if let size = entry.size { ActMonoChip(text: ActFmt.bytes(size)) }
+            let meta = [entry.indexer, ActFmt.protocolLabel(entry.protocol)].compactMap { $0 }.joined(separator: " · ")
+            if !meta.isEmpty {
+                Text(meta).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim)
+            }
+        }
+    }
 
     var body: some View {
         let cat = BlocklistCategory(reason: entry.reason)
@@ -54,16 +67,11 @@ struct BlocklistRowView: View {
                             .lineLimit(1)
                             .truncationMode(.middle)
                     }
-                    ActFlow(spacing: 6, lineSpacing: 3) {
-                        if let q = entry.quality { ActQualityChip(quality: q) }
-                        if let size = entry.size { ActMonoChip(text: ActFmt.bytes(size)) }
-                        let meta = [entry.indexer, ActFmt.protocolLabel(entry.protocol)].compactMap { $0 }.joined(separator: " · ")
-                        if !meta.isEmpty {
-                            Text(meta).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim)
-                        }
-                    }
+                    if !pane.isDesktopPane { metaChips }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                // Desktop (web `.rowMain` above 720): quality · size · source sit on the row.
+                if pane.isDesktopPane { metaChips.fixedSize().padding(.top, 2) }
                 if !selecting {
                     HStack(spacing: -10) {
                         ActIconButton(systemImage: cat.primary.icon, label: cat.primary.label, tint: Theme.indigo) {

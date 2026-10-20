@@ -40,6 +40,9 @@ enum RailLoad<T> {
 /// A titled horizontal rail of Discover posters.
 struct DiscoverRail<Icon: View, Toggle: View>: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.paneSize) private var pane
+    /// The web's `.cell`: 116 on phones, 128 to 720, 158 on desktop.
+    private var cellWidth: CGFloat { CGFloat(DiscoverWidthRule.cellWidth(Double(pane.width))) }
     @Environment(DiscoverStore.self) private var store
     let title: String
     /// Changes when the rail must refetch (kind, window, monetization).
@@ -62,7 +65,7 @@ struct DiscoverRail<Icon: View, Toggle: View>: View {
                 RailTrack {
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                         DiscoverCard(result: item, trending: trending, canAdd: canAdd, canRequest: canRequest)
-                            .frame(width: 116)
+                            .frame(width: cellWidth)
                             .discoverReveal(index: index)
                     }
                 }

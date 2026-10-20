@@ -25,6 +25,9 @@ struct RequestModal: View {
     @State private var quota: RequestQuota?
     /// The ask the server refused for quota; non-nil shows the wishlist prompt.
     @State private var blocked: RequestCreateBody?
+    /// The modal's own width: two panes above 720 (a page-sized Add sheet; the
+    /// R3 form sheet stays one column).
+    @State private var width: CGFloat = 0
 
     private var isSeries: Bool { pick.kind == .series }
     /// The versions on offer: the server's per-viewer demand list (join, Watch
@@ -45,17 +48,36 @@ struct RequestModal: View {
     private var canSubmit: Bool { offer != nil && !nothingOfferable && !editionsToSend.isEmpty && !sending }
 
     var body: some View {
-        VStack(spacing: 0) {
-            ScrollView {
+        Group {
+            if DiscoverWidthRule.requestTwoPanes(Double(width)) {
+                // Wide (web `.layout`, `300px 1fr` above 720): the art pane beside
+                // the options, each scrolling on its own; the footer under the options.
+                HStack(spacing: 0) {
+                    ScrollView { RequestModalArt(pick: pick, preview: preview, sidePane: true) }
+                        .frame(width: 300)
+                        .background(Theme.panel)
+                        .overlay(alignment: .trailing) { Rectangle().fill(Theme.line).frame(width: 1) }
+                    VStack(spacing: 0) {
+                        ScrollView { optionsPane.padding(.top, 26) }
+                        footer
+                    }
+                }
+                .ignoresSafeArea(.container, edges: .top)
+            } else {
                 VStack(spacing: 0) {
-                    RequestModalArt(pick: pick, preview: preview)
-                    optionsPane
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            RequestModalArt(pick: pick, preview: preview)
+                            optionsPane
+                        }
+                    }
+                    // The art runs under the clear bar, as before the system Close.
+                    .ignoresSafeArea(.container, edges: .top)
+                    footer
                 }
             }
-            // The art runs under the clear bar, as before the system Close.
-            .ignoresSafeArea(.container, edges: .top)
-            footer
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .background(Theme.panel)
         // Close is a system toolbar item (DC10); presenters give the modal a
         // stack (`NavigationStack { RequestModal(…) }`), the Add sheet its own.

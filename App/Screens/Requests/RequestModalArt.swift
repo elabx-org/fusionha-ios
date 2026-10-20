@@ -6,6 +6,8 @@ import FusionhaKit
 struct RequestModalArt: View {
     let pick: MediaSearchResult
     let preview: MediaPreviewDetail?
+    /// Wide (two panes): the art is the leading column; the modal rules its edge.
+    var sidePane = false
 
     private var isSeries: Bool { pick.kind == .series }
 
@@ -64,6 +66,8 @@ struct RequestModalArt: View {
         .background(LinearGradient(colors: [kindColor.opacity(pick.kind == .movie ? 0.10 : 0.12), .clear],
                                    startPoint: .top, endPoint: .bottom))
         .background(Theme.panel)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
+        .overlay(alignment: .bottom) {
+            if !sidePane { Rectangle().fill(Theme.line).frame(height: 1) }
+        }
     }
 }

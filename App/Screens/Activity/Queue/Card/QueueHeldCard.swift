@@ -17,6 +17,8 @@ struct QueueHeldCard: View {
     var nested = false
     /// A lane of a 4K + HD pair: the version leads, not the shared episode.
     var pairLane = false
+    /// The Duo's trailing column: no poster, title or card frame.
+    var bare = false
     @Environment(AppModel.self) private var model
     @Environment(\.actReduceMotion) private var reduce
     @State private var showWhy = false
@@ -32,9 +34,48 @@ struct QueueHeldCard: View {
     }
 
     var body: some View {
+        framed
+            .task(id: model.pendingQueueFocus?.downloadId) { await consumeFocus() }
+        .sheet(isPresented: $blocking) {
+            if let group = blockableGroup {
+                BlockReleaseGroupSheet(group: group, mediaItemId: item.mediaItemId, title: item.title,
+                                       claimedResolution: item.heldDetail?.claimedResolution,
+                                       probedSize: item.heldDetail?.probedResolution.map { "\($0.w)×\($0.h)" })
+            }
+        }
+    }
+
+    /// Nested in a group (episode head), bare in the Duo column (body and
+    /// Review only), or a card on the shared frame (narrow or wide).
+    @ViewBuilder private var framed: some View {
+        if bare {
+            VStack(alignment: .leading, spacing: 12) {
+                parts(showTier: true)
+                reviewRow(wide: false).padding(.top, 2)
+            }
+        } else if nested {
+            VStack(alignment: .leading, spacing: 12) {
+                nestedHead
+                parts(showTier: false)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .actWash(QueueLogic.wash(item), radius: 12, base: Theme.panel.opacity(0.55), border: .clear)
+        } else {
+            QueueCardFrame(item: item) {
+                parts(showTier: true)
+            } aside: { wide in
+                reviewRow(wide: wide).padding(.top, wide ? 0 : 2)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 18)
+            .actWash(QueueLogic.wash(item), radius: 16, base: Theme.card, border: Theme.line)
+        }
+    }
+
+    private func parts(showTier: Bool) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            if nested { nestedHead } else { head }
-            QueueCardMeta(item: item, showTier: !nested)
+            QueueCardMeta(item: item, showTier: showTier)
             QueueFactChips(item: item)
             QueueSourceLine(item: item)
             QueueStageRailView(model: QueueRail.held(item))
@@ -47,48 +88,21 @@ struct QueueHeldCard: View {
                     .transition(.opacity)
                     .task { await loadEvidence() }
             }
-            if !nested {
-                HStack(spacing: 6) {
-                    Button(action: actions.manualImport) {
-                        // "Review" on a phone; the full words stay for VoiceOver (0.4.198).
-                        Label("Review", systemImage: "square.and.arrow.down")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(ActButtonStyle(kind: .primary, small: false))
-                    .accessibilityLabel("Review in Manual Import")
-                    QueueCardActions(item: item, actions: actions)
-                }
-                .padding(.top, 2)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, nested ? 14 : 18)
-        .actWash(QueueLogic.wash(item), radius: nested ? 12 : 16, base: nested ? Theme.panel.opacity(0.55) : Theme.card,
-                 border: nested ? .clear : Theme.line)
-        .task(id: model.pendingQueueFocus?.downloadId) { await consumeFocus() }
-        .sheet(isPresented: $blocking) {
-            if let group = blockableGroup {
-                BlockReleaseGroupSheet(group: group, mediaItemId: item.mediaItemId, title: item.title,
-                                       claimedResolution: item.heldDetail?.claimedResolution,
-                                       probedSize: item.heldDetail?.probedResolution.map { "\($0.w)×\($0.h)" })
-            }
         }
     }
 
-    private var head: some View {
-        HStack(alignment: .top, spacing: 14) {
-            ActPoster(url: item.posterUrl, title: item.title, size: .md)
-                .onTapGesture { model.open(item.mediaItemId) }
-            VStack(alignment: .leading, spacing: 3) {
-                Text(item.title).font(.system(size: 18, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(2)
-                    .onTapGesture { model.open(item.mediaItemId) }
-                    .accessibilityAddTraits(.isButton)
-                if let sub = QueueCardText.subtitle(item) {
-                    Text(sub).font(.system(size: 15)).foregroundStyle(Theme.mut).lineLimit(2)
-                }
+    /// Review in Manual Import beside the icon actions. It fills the row on a
+    /// phone and sits at its own size beside the title when wide.
+    private func reviewRow(wide: Bool) -> some View {
+        HStack(spacing: 6) {
+            Button(action: actions.manualImport) {
+                // "Review" on a phone; the full words stay for VoiceOver (0.4.198).
+                Label("Review", systemImage: "square.and.arrow.down")
+                    .frame(maxWidth: wide ? nil : .infinity)
             }
-            .padding(.top, 6)
-            Spacer(minLength: 0)
+            .buttonStyle(ActButtonStyle(kind: .primary, small: false))
+            .accessibilityLabel("Review in Manual Import")
+            QueueCardActions(item: item, actions: actions)
         }
     }
 

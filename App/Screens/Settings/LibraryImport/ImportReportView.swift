@@ -49,8 +49,10 @@ struct ImportReportView: View {
         .background(Theme.bg)
     }
 
+    /// The web's `.summary` (flex-wrap, `min-width: 116px`, 12 apart): all six
+    /// on one line from about 756 pt, wrapping and stretching below that.
     private func stats(_ report: LibraryImportReport, needsYou: Int) -> some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+        StretchWrapLayout(minItemWidth: 116, spacing: 12, lineSpacing: 12) {
             stat(report.added.count, "Added", Theme.done)
             stat(report.filesAdopted, "Files adopted", Theme.txt)
             stat(report.updated, "Updated", Theme.txt)

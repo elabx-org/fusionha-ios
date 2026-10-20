@@ -59,6 +59,8 @@ struct DiscoverView: View {
                 }
             }
         }
+        // Rails, Browse's controls and the filter fields follow the page's own width.
+        .publishesPaneSize()
         .shellPage(title)
         .toolbar { AddTitleToolbarItem(model: model) }
         .environment(store)

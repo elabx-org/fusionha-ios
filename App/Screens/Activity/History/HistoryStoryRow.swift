@@ -8,6 +8,7 @@ struct HistoryStoryRow: View {
     let onChanged: () -> Void
     @Environment(AppModel.self) private var model
     @Environment(ActToaster.self) private var toaster
+    @Environment(\.paneSize) private var pane
     @State private var blocklistDialog = false
     @State private var regrabConflict = false
     @State private var regrabbing = false
@@ -24,12 +25,23 @@ struct HistoryStoryRow: View {
                     ActPoster(url: story.posterUrl, title: story.title, size: .md)
                 } title: { lines } trailing: { trailing } content: { HistoryStoryDisclosure(story: story) }
             } else {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .top, spacing: 11) {
-                        ActPoster(url: story.posterUrl, title: story.title, size: .md)
-                        lines.frame(maxWidth: .infinity, alignment: .leading)
+                Group {
+                    if pane.isDesktopPane {
+                        // Desktop: the trailing cluster stays beside the title (web `.chead`).
+                        HStack(alignment: .top, spacing: 11) {
+                            ActPoster(url: story.posterUrl, title: story.title, size: .md)
+                            lines.frame(maxWidth: .infinity, alignment: .leading)
+                            trailing.fixedSize(horizontal: true, vertical: false)
+                        }
+                    } else {
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack(alignment: .top, spacing: 11) {
+                                ActPoster(url: story.posterUrl, title: story.title, size: .md)
+                                lines.frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            HStack(spacing: 10) { Spacer(minLength: 0); trailing }
+                        }
                     }
-                    HStack(spacing: 10) { Spacer(minLength: 0); trailing }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 13)
@@ -146,6 +158,10 @@ struct HistoryStoryRow: View {
         let entry = story.actionEntry
         let hasGrab = story.events.contains { $0.eventType == "GRABBED" }
         return HStack(spacing: 2) {
+            // "N events" only on desktop; a phone keeps the time (the disclosure lists them).
+            if pane.isDesktopPane && story.events.count > 1 {
+                Text("\(story.events.count) events").font(.system(size: 12)).foregroundStyle(Theme.dim).padding(.trailing, 6)
+            }
             Text(ActFmt.relative(story.time)).font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.dim).padding(.trailing, 6)
             if story.mediaItemId != nil {
                 ActIconButton(systemImage: "point.topleft.down.to.point.bottomright.curvepath", label: "Lifecycle") { lifecycle = true }
