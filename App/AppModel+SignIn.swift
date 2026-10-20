@@ -110,6 +110,12 @@ extension AppModel {
         CredentialStore.save(creds)
         WebSessionStore.save(anonymous.sessionTokenFromCookie(), server: url) // Settings web panels sign in with it.
         credentials = creds
+        // The first load belongs to the model, not to a view: the sign-in →
+        // app hand-over can cancel a view's `.task` mid-fetch.
+        Task {
+            await loadMe()
+            if !requestScoped, !libraryLoaded { await loadLibrary() }
+        }
         WidgetCenter.shared.reloadAllTimelines()
         AppDelegate.requestPushAuthorization()
         // A token from an earlier session registers right away; a fresh one

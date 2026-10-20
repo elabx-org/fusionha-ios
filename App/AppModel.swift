@@ -247,6 +247,10 @@ final class AppModel {
             }
             libraryError = nil
         } catch {
+            // A fetch cancelled with its view (the sign-in → app hand-over) is
+            // not an answer: leave the library unloaded so the next appearance
+            // fetches again, instead of an empty library until pull-to-refresh.
+            if Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled { return }
             libraryError = error.localizedDescription
         }
         libraryLoaded = true
