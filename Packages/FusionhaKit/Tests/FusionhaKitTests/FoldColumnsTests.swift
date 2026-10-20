@@ -83,6 +83,14 @@ final class FoldColumnsTests: XCTestCase {
         XCTAssertNil(FoldColumns.pages(count: 5, gap: -20...20, minimum: 200, spacing: 12))
     }
 
+    func testPanesMeetAtTheFoldOrNotAtAll() throws {
+        let panes = try XCTUnwrap(FoldColumns.panes(width: 829, fold: 451...451, minLead: 294, minTrail: 300))
+        XCTAssertEqual(panes.lead, 431)
+        XCTAssertEqual(panes.gap, 40)
+        XCTAssertNil(FoldColumns.panes(width: 829, fold: 451...451, minLead: 294, minTrail: 400))
+        XCTAssertNil(FoldColumns.panes(width: 829, fold: 300...300, minLead: 294, minTrail: 300))
+    }
+
     func testEvenColumnsKeepTheWebsMinimum() {
         let fits = FoldColumns.even(count: 5, width: 1148, spacing: 12, minimum: 220)
         XCTAssertEqual(fits.last?.maxX ?? 0, 1148, accuracy: 1e-9)

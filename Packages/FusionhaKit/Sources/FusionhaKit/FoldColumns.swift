@@ -28,6 +28,23 @@ public enum FoldColumns {
         (fold.lowerBound - gutter / 2)...(fold.upperBound + gutter / 2)
     }
 
+    /// Two panes meeting at the fold: the leading one ends half a gutter before
+    /// it, the trailing one starts half a gutter after it.
+    public struct Panes: Equatable, Sendable {
+        public var lead: Double
+        /// The fold and its gutter, between the panes.
+        public var gap: Double
+    }
+
+    /// Two panes split at `fold` (its x-range in a container `width` wide).
+    /// `nil` when either pane would be under its minimum: keep the usual split.
+    public static func panes(width: Double, fold: ClosedRange<Double>, minLead: Double, minTrail: Double,
+                             gutter: Double = gutter) -> Panes? {
+        let gap = gap(around: fold, gutter: gutter)
+        guard gap.lowerBound >= minLead, width - gap.upperBound >= minTrail else { return nil }
+        return Panes(lead: gap.lowerBound, gap: gap.upperBound - gap.lowerBound)
+    }
+
     /// `count` columns across `width`, split into a leading group before `gap`
     /// and a trailing group after it, equal widths inside each group and
     /// `spacing` between neighbours. The split is the one whose two column

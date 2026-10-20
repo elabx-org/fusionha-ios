@@ -64,11 +64,9 @@ public enum ShellSplitRule {
     /// its minimum (then the web's split applies).
     public static func foldSplit(width: Double, fold: ClosedRange<Double>,
                                  gutter: Double = FoldColumns.gutter) -> FoldSplit? {
-        let gap = FoldColumns.gap(around: fold, gutter: gutter)
-        let primary = gap.lowerBound
-        let detail = width - gap.upperBound
-        guard primary >= primaryMin, detail >= detailMin else { return nil }
-        return FoldSplit(primary: primary, gap: gap.upperBound - gap.lowerBound)
+        guard let panes = FoldColumns.panes(width: width, fold: fold, minLead: primaryMin,
+                                            minTrail: detailMin, gutter: gutter) else { return nil }
+        return FoldSplit(primary: panes.lead, gap: panes.gap)
     }
 }
 

@@ -44,3 +44,17 @@ struct StrideScrollTarget: ScrollTargetBehavior {
         target.rect.origin.x = min(max(snapped, 0), limit)
     }
 }
+
+/// Two panes side by side (a list beside its detail) that meet at the Duo's
+/// fold when one runs top to bottom through them, flat open included, with the
+/// fold gutter between them (`FoldColumns.panes`). `nil`: keep the usual split.
+enum FoldPanes {
+    static func of(_ proxy: GeometryProxy, minLead: CGFloat, minTrail: CGFloat) -> (lead: CGFloat, gap: CGFloat)? {
+        guard let x = FoldInfo.verticalFold(proxy),
+              let panes = FoldColumns.panes(width: Double(proxy.size.width),
+                                            fold: Double(x.lowerBound)...Double(x.upperBound),
+                                            minLead: Double(minLead), minTrail: Double(minTrail))
+        else { return nil }
+        return (CGFloat(panes.lead), CGFloat(panes.gap))
+    }
+}

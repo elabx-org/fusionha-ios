@@ -22,8 +22,10 @@ struct ThreadsSplitView: View {
     var body: some View {
         GeometryReader { proxy in
             let narrow = proxy.size.width + RequestsWideRule.margins <= 960
-            HStack(alignment: .top, spacing: narrow ? 12 : 16) {
-                list.frame(width: min(narrow ? 290 : 390, proxy.size.width * 0.45))
+            // On the Duo's fold (flat open too) the list and pane meet at it (FoldPanes).
+            let fold = FoldPanes.of(proxy, minLead: 290, minTrail: 300)
+            HStack(alignment: .top, spacing: fold?.gap ?? (narrow ? 12 : 16)) {
+                list.frame(width: fold?.lead ?? min(narrow ? 290 : 390, proxy.size.width * 0.45))
                 pane.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }

@@ -58,6 +58,15 @@ struct FoldInfo: Equatable {
         }
     }
 
+    /// The top-to-bottom room to keep empty: half open, the active fold as
+    /// reported; flat open, the zero-wide fold with the fold gutter around it.
+    var verticalGap: ClosedRange<CGFloat>? {
+        if let vertical { return vertical }
+        guard let x = flatVertical else { return nil }
+        let gap = FoldColumns.gap(around: Double(x.lowerBound)...Double(x.upperBound))
+        return CGFloat(gap.lowerBound)...CGFloat(gap.upperBound)
+    }
+
     /// A top-to-bottom fold inside this container, active or not (flat open it
     /// is zero wide), as its x-range in the container's coordinates. Layouts
     /// with columns keep their columns off it (`FoldColumns`).
