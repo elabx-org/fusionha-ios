@@ -39,7 +39,8 @@ struct ToastMessage: Identifiable, Equatable {
     static func == (lhs: ToastMessage, rhs: ToastMessage) -> Bool { lhs.id == rhs.id }
 }
 
-/// The toast viewport: stacked, centred cards above the tab bar. Each card is
+/// The toast viewport: stacked, centred cards (placed by `ToastLayer`: above
+/// the tab bar, or on the trailing side of a split or fold). Each card is
 /// `icon | body (+ action) | dismiss` on the panel washed with its variant's
 /// status (`actWash`), with a 2.5pt timer bar that drains while it isn't held.
 struct ToastHost: View {

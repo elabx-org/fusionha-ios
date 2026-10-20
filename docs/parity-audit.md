@@ -356,11 +356,11 @@ What it means for the app:
 | DC11 | Search tab | outer | No `NavigationStack`, so `.searchable` never hosted the field; it is a custom docked field (`SearchTabView.swift:42-118`). Retry `.searchable`. | D1 |
 | DC12 | Sheets with text-only or state-swapping bar buttons | vertical bars | About 25 sheets in Activity, Manual Import, Account, Settings, Issues and Requests (listed in the audit pass) | D1 |
 | DC13 | Tab bar · inner portrait, title open | inner portrait | The 560/360 rule leaves a 265 pt leading column (`DuoLayout.swift:119-125`), narrower than any iPhone | D2 (Q-DC3) |
-| DC14 | Toasts | inner Book/split | Overlay on the whole split, up to 420 wide (`RootView.swift:43-46`, `Toast.swift:52`), so it straddles the fold | D3 |
+| DC14 | Toasts | inner Book/split | Overlay on the whole split, up to 420 wide (`RootView.swift:43-46`, `Toast.swift:52`), so it straddles the fold | D3 · ✅ (build pending): `ToastLayer` (`Shell/ToastPlacement.swift`) puts them on the trailing column whenever the shell splits (Book pose or the web's wide split; the lower half for a side-to-side fold); folded they clear the tab bar by its measured safe area. Sign-in and the Settings cover use `FoldToastLayer` (trailing side of an active fold). Settings flat-open split still centres them across the whole cover (no active fold there) |
 | DC15 | Calendar month | inner split | `sizeClass == .regular` puts the desktop month grid in a 265/391 pt column (`CalendarView.swift:12,184`) | D2 |
 | DC16 | Settings | inner portrait + fold/rotation | Size-class split at 626 (ruling S2 says 720). `if wide {SplitView} else {Stack}` rebuilds the list and the open panel, losing scroll, focus and half-typed fields (`SettingsView.swift:31-57`) | D2/D5 |
-| DC17 | Sign-in, Setup | inner Book | The centred card sits across the hinge (`SignInView.swift:117`, `SetupWizardView.swift:43`) | D3 |
-| DC18 | Sign-in | outer | `.ignoresSafeArea(.container)` covers the form, so it runs under the trailing strip (`SignInView.swift:151,194`) | D3 |
+| DC17 | Sign-in, Setup | inner Book | The centred card sits across the hinge (`SignInView.swift:117`, `SetupWizardView.swift:43`) | D3 · ✅ verified (F2, build 460): all three sign-in stages and the setup wizard lay out inside `FoldSafe`, the larger side of the fold; D3 adds their toasts on the trailing side |
+| DC18 | Sign-in | outer | `.ignoresSafeArea(.container)` covers the form, so it runs under the trailing strip (`SignInView.swift:151,194`) | D3 · ✅ verified (F2, build 460): only the backdrops ignore the safe area; the split/living stages ignore the top edge only, so the form keeps clear of the side strip |
 | DC19 | Account panel | inner landscape | A default sheet capped at 420 (`AccountView.swift:29`); the web uses a ~520 trailing panel | D4 |
 | DC20 | Activity confirm dialogs; Add user; Move credential | outer landscape (466 tall) | Non-scrolling dialog at `.medium` (`ActToaster.swift:107-139`); `.medium`-only detents with the keyboard (`UserEditorSheet.swift:152`, `MoveCredentialSheet.swift:48`) | D4/D5 |
 | DC21 | Requests drawer/filter; Library filters; Issues sheets | inner | Height detents are ignored at regular width; the web uses popovers or modals | D4 |
@@ -368,10 +368,10 @@ What it means for the app:
 | DC23 | Inner layouts | inner | DU1–DU16 (Requests panes, Board, History table, thread/issue panes, Discover wide, Queue card pane, Library desktop, Calendar tablet/desktop, Settings, Account, sign-in side by side) | D2 |
 
 **Minor** (folded into the batches above):
-- Toast 72 pt and page-bottom 90/190 constants (D3)
-- `StatusBarFade` on the outer display (D3)
-- Odd poster-grid columns across an inactive fold (D3)
-- Detail hero minimum 360 in outer landscape (D3)
+- Toast 72 pt and page-bottom 90/190 constants (D3) · ✅ (build pending): the shell's toasts clear the tab bar's measured top (`ToastAnchor`, from each tab's safe area); Library, Discover, Wanted and Activity pages end with `Theme.pageBottom` (24) since the tab bar and bulk bars are already in the scroll view's safe area. Unused `Theme.bottomNavClearance` removed
+- `StatusBarFade` on the outer display (D3) · ✅ removed in D1
+- Odd poster-grid columns across an inactive fold (D3) · ✅ (build pending): `FoldInfo.crossesMiddle` reads `.division` regions with `.includeInactive`; when the fold runs through a grid's middle, `PosterColumns` drops an odd count by one (Library grid and every `AdaptivePosterGrid`), so the fold lands in the centre gutter
+- Detail hero minimum 360 in outer landscape (D3) · ✅ (build pending): the 360 floor gives way to 60% of the container (`DetailHeroArt.height(for:)`, 280pt at 466 tall); phones unchanged. Deviation beyond the row: the Preview hero's 430 floor gives way to 75% the same way
 - Tab badge tint not refreshed on bar-axis change (D5)
 - Activity chip strip not scrolled to the selection (D5)
 - Search focus not restored (D5)

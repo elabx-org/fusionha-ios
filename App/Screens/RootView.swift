@@ -6,12 +6,14 @@ import FusionhaKit
 /// the native Liquid Glass tab bar, plus the iOS 26 search tab, which hides on scroll like the
 /// web's floating bar. Requester accounts get Discover, My requests and You.
 /// Item details, Add, the omni search and the Delete confirmation open as
-/// sheets, and toasts float above the tab bar, as they do on the web.
+/// sheets, and toasts float above the tab bar, as they do on the web (on the
+/// trailing column when the shell is split).
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var fold = FoldInfo()
+    @State private var toastAnchor = ToastAnchor()
 
     /// With room for two columns the open title is the trailing column, not a sheet.
     private var split: ShellSplit {
@@ -49,10 +51,13 @@ struct RootView: View {
                 }
         }
         .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: split)
-        .overlay(alignment: .bottom) {
-            ToastHost()
-                .padding(.bottom, 72)
+        // Toasts: above the tab bar when folded; on the trailing column when
+        // split, so they never straddle the fold (DC14).
+        .overlay {
+            ToastLayer(region: ToastRegion.shell(split, size: fold.size),
+                       clearsAbove: split.shown ? nil : toastAnchor.tabSafeBottom, gap: 16)
         }
+        .environment(toastAnchor)
         .environment(\.motionEnabled, !reduceMotion && model.animationsEnabled)
         .environment(\.railStyle, model.railStyle)
         .environment(\.railConsolidate, model.railConsolidate)

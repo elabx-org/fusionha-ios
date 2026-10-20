@@ -93,9 +93,8 @@ struct SignInView: View {
             .transition(.opacity)
         }
         .animation(motionOff ? nil : .easeInOut(duration: 0.5), value: look)
-        .overlay(alignment: .bottom) {
-            ToastHost().padding(.bottom, 24)
-        }
+        // On a half-open Duo the toasts keep to the trailing side of the fold (DC14).
+        .overlay { FoldToastLayer() }
         .environment(\.motionEnabled, !motionOff)
         .preferredColorScheme(.dark)
         .sheet(item: $plexURL) { url in

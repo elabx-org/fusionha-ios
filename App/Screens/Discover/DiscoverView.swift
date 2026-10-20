@@ -45,7 +45,7 @@ struct DiscoverView: View {
                     // Plex-app rhythm on phones: 16pt side margins, like Library.
                     .padding(.horizontal, 16)
                     .padding(.top, 20)
-                    .padding(.bottom, 90)
+                    .padding(.bottom, Theme.pageBottom)
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: scrollTarget) {

@@ -104,7 +104,7 @@ struct WantedView: View {
             }
             .padding(.horizontal, embedded ? Theme.pageGutter : 10)
             .padding(.top, 20)
-            .padding(.bottom, 90)
+            .padding(.bottom, Theme.pageBottom)
         }
         .scrollDismissesKeyboard(.immediately)
         .refreshable { await reloadAll() }
