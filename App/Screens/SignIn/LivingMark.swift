@@ -26,9 +26,13 @@ struct LivingMark<Caption: View>: View {
         // 60 Hz like the web's rAF: 120 Hz ProMotion doubled the work for no visible gain.
         TimelineView(.animation(minimumInterval: 1 / 60, paused: reduce)) { context in
             let _ = engine.advance(to: context.date)
+            // The canvases read the engine by reference, so their closures look
+            // unchanged to SwiftUI and it skips redrawing them (frozen ripples and
+            // sparks). Capturing this frame's time makes each frame a new input.
+            let frame = context.date
             ZStack {
                 if backdrop == nil {
-                    Canvas { ctx, size in drawDots(ctx, size) }
+                    Canvas { ctx, size in _ = frame; drawDots(ctx, size) }
                 }
                 VStack(spacing: 0) {
                     markView
@@ -41,7 +45,7 @@ struct LivingMark<Caption: View>: View {
                 }
                 .modifier(PoseEffect(pose: engine.art.pose(at: engine.now)))
                 if !reduce {
-                    Canvas { ctx, _ in drawFx(ctx) }
+                    Canvas { ctx, _ in _ = frame; drawFx(ctx) }
                         .allowsHitTesting(false)
                 }
             }
