@@ -56,7 +56,7 @@ struct BackdropCanvas: View {
                     engine.render(context, at: .now)
                 }
             } else {
-                TimelineView(.animation(minimumInterval: nil, paused: !visible || scenePhase != .active)) { timeline in
+                TimelineView(.animation(minimumInterval: 1 / 60, paused: !visible || scenePhase != .active)) { timeline in
                     Canvas { context, size in
                         engine.prepare(mode: mode, size: size, still: false)
                         engine.render(context, at: timeline.date)

@@ -30,8 +30,10 @@ public enum ServerAddress {
     }
 
     /// Whether a change to the field looks like a paste rather than typing.
+    /// Only a jump in length counts: typing the second slash of `https://`
+    /// also makes `://` appear, and must not be cleaned back to `https:/`.
     public static func looksPasted(old: String, new: String) -> Bool {
-        new.count - old.count >= 6 || (new.contains("://") && !old.contains("://"))
+        new.count - old.count >= 6
     }
 
     /// The addresses to try, best first. An explicit scheme is used as typed. A

@@ -19,9 +19,12 @@ struct LivingMark<Caption: View>: View {
     private static var seams: [CGFloat] { [0.356, 0.658] }
     private static var feather: CGFloat { 0.03 }
     private static var space: String { "living-art" }
+    /// Room around the mark for blades pushed past its frame (pins, unlock dive).
+    private static var bleed: CGFloat { 40 }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: nil, paused: reduce)) { context in
+        // 60 Hz like the web's rAF: 120 Hz ProMotion doubled the work for no visible gain.
+        TimelineView(.animation(minimumInterval: 1 / 60, paused: reduce)) { context in
             let _ = engine.advance(to: context.date)
             ZStack {
                 if backdrop == nil {
@@ -69,12 +72,17 @@ struct LivingMark<Caption: View>: View {
             if reduce {
                 Image("BrandLogo").resizable().scaledToFit()
             } else {
+                // One GPU pass for the blades and glint, instead of an offscreen
+                // pass per masked, tinted copy. The margin keeps moved blades unclipped.
                 ZStack {
                     ForEach(0..<3, id: \.self) { i in
                         blade(i)
                     }
                     sheen
                 }
+                .padding(Self.bleed)
+                .drawingGroup()
+                .padding(-Self.bleed)
             }
         }
         .frame(width: 118, height: 118)
@@ -158,6 +166,8 @@ struct LivingMark<Caption: View>: View {
         let c = engine.centre
         let t = engine.now
         let ripples = reduce ? [] : engine.ripples
+        // Dots are batched by alpha (steps of 1/40): a few dozen fills a frame, not ~650.
+        var buckets: [Int: Path] = [:]
         var y = spacing / 2
         while y < size.height {
             var x = spacing / 2
@@ -172,11 +182,15 @@ struct LivingMark<Caption: View>: View {
                         alpha += 0.55 * exp(-((d - radius) * (d - radius)) / (2 * 12 * 12)) * max(0, 1 - age / 1500)
                     }
                 }
-                ctx.fill(Path(CGRect(x: x - 0.8, y: y - 0.8, width: 1.6, height: 1.6)),
-                         with: .color(Color(red: 170 / 255, green: 180 / 255, blue: 1).opacity(min(0.9, alpha))))
+                buckets[Int((min(0.9, alpha) * 40).rounded()), default: Path()]
+                    .addRect(CGRect(x: x - 0.8, y: y - 0.8, width: 1.6, height: 1.6))
                 x += spacing
             }
             y += spacing
+        }
+        let dot = Color(red: 170 / 255, green: 180 / 255, blue: 1)
+        for (step, path) in buckets {
+            ctx.fill(path, with: .color(dot.opacity(Double(step) / 40)))
         }
     }
 

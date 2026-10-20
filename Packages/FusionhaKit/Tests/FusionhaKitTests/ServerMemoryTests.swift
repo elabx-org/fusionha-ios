@@ -91,6 +91,9 @@ final class ServerAddressTests: XCTestCase {
     func testPasteHeuristic() {
         XCTAssertTrue(ServerAddress.looksPasted(old: "", new: "https://fusionha.example.com"))
         XCTAssertFalse(ServerAddress.looksPasted(old: "fusio", new: "fusion"))
+        // Typing the second slash of the scheme is typing, not a paste.
+        XCTAssertFalse(ServerAddress.looksPasted(old: "https:/", new: "https://"))
+        XCTAssertFalse(ServerAddress.looksPasted(old: "http:/", new: "http://"))
     }
 }
 
