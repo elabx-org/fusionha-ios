@@ -1,81 +1,6 @@
 import SwiftUI
 import FusionhaKit
 
-/// A pick on the Find step: a TMDB-identified title, or a TVDB-only series.
-enum AddPick: Hashable {
-    case tmdb(MediaSearchResult)
-    case tvdb(TvdbSearchResult)
-
-    var title: String {
-        switch self {
-        case .tmdb(let r): return r.title
-        case .tvdb(let r): return r.title
-        }
-    }
-
-    var year: Int? {
-        switch self {
-        case .tmdb(let r): return r.year
-        case .tvdb(let r): return r.year
-        }
-    }
-
-    /// A TVDB-only pick is always a series (TVDB search is series-only).
-    var kind: MediaKind {
-        switch self {
-        case .tmdb(let r): return r.kind
-        case .tvdb: return .series
-        }
-    }
-
-    var tmdbAnime: Bool {
-        if case .tmdb(let r) = self { return r.isAnime }
-        return false
-    }
-
-    /// `tmdb:<kind>:<id>` / `tvdb:<id>`: the pick identity.
-    var key: String {
-        switch self {
-        case .tmdb(let r): return "tmdb:\(r.kind.rawValue):\(r.tmdbId)"
-        case .tvdb(let r): return "tvdb:\(r.tvdbId)"
-        }
-    }
-
-    var posterUrl: String? {
-        switch self {
-        case .tmdb(let r): return r.posterUrl
-        case .tvdb(let r): return r.imageUrl
-        }
-    }
-
-    var backdropUrl: String? {
-        if case .tmdb(let r) = self { return r.backdropUrl }
-        return nil
-    }
-
-    var tmdbResult: MediaSearchResult? {
-        if case .tmdb(let r) = self { return r }
-        return nil
-    }
-}
-
-/// One tier's form state before it becomes a `VersionCreate` (`TierState`).
-struct AddTierState: Equatable {
-    /// On → this version is added and monitored; off → not added at all.
-    var on: Bool
-    var rootId: Int
-    var profileId: Int
-    /// This tier's series monitor level; differs from the master only as an override.
-    var monitor: String
-}
-
-/// A failed add, typed for where it shows: a 409 folder collision on the Folder
-/// row, anything else in the footer.
-struct AddFlowError: Equatable {
-    let folder: Bool
-    let message: String
-}
-
 /// Every restorable field (the "Use last settings" undo snapshot).
 private struct AddSnapshot {
     let versions: [QualityTier: AddTierState]?
@@ -147,79 +72,6 @@ final class AddFlow {
         folderName = TitleYear.titleWithYear(pick.title, pick.year)
     }
 
-    // MARK: Derived
-
-    var kind: MediaKind { pick.kind }
-    var isSeries: Bool { kind == .series }
-    var title: String { pick.title }
-    var year: Int? { pick.year }
-    var isTvdb: Bool { if case .tvdb = pick { return true } else { return false } }
-
-    /// Anime when TMDB flagged it OR Series type = Anime.
-    var effectiveAnime: Bool {
-        switch pick {
-        case .tmdb(let r): return r.isAnime || (r.kind == .series && seriesType == "anime")
-        case .tvdb: return seriesType == "anime"
-        }
-    }
-
-    /// TMDB itself flags the pick as anime (the "Detected: anime" tag).
-    var detectedAnime: Bool { pick.tmdbAnime }
-
-    var ready: Bool { versions != nil }
-
-    /// `profilesForItem`: kindless profiles plus the title's kind (and anime).
-    static func profilesFor(_ profiles: [QualityProfileSummary], kind: MediaKind, anime: Bool) -> [QualityProfileSummary] {
-        let kinds: Set<String> = anime ? ["anime", kind.rawValue] : [kind.rawValue]
-        return profiles.filter { $0.mediaKind == nil || kinds.contains($0.mediaKind ?? "") }
-    }
-
-    var profileOptions: [QualityProfileSummary] {
-        Self.profilesFor(profiles ?? [], kind: kind, anime: effectiveAnime)
-    }
-
-    var onTiers: [QualityTier] { versions.map { v in Self.tiers.filter { v[$0]?.on == true } } ?? [] }
-
-    /// The preview's seasons, in season order (series only).
-    var seasons: [SeasonCounts]? {
-        guard isSeries, let list = preview?.seasons else { return nil }
-        return list.sorted { $0.seasonNumber < $1.seasonNumber }.map {
-            SeasonCounts(seasonNumber: $0.seasonNumber, episodeCount: $0.episodeCount,
-                         airedCount: $0.airedCount, recentCount: $0.recentCount)
-        }
-    }
-
-    var hasCustomSeasons: Bool { !seasonFrom.isEmpty }
-
-    var derivedFolder: String { TitleYear.titleWithYear(title, year) }
-    private var trimmedFolder: String { folderName.trimmingCharacters(in: .whitespaces) }
-    var folderEdited: Bool { !trimmedFolder.isEmpty && trimmedFolder != derivedFolder }
-    /// The folder every version lands in (the field, else the default).
-    var shownFolder: String { trimmedFolder.isEmpty ? derivedFolder : trimmedFolder }
-
-    /// The global default "Automatic" resolves to (Settings › Metadata).
-    var defaultProvider: String { settings?.metadataProvider ?? "tmdb" }
-    private var chosenProvider: String { provider != "auto" ? provider : defaultProvider }
-    /// A TVDB-only pick can only be built by TVDB or Hybrid.
-    var effectiveProvider: String {
-        isTvdb ? Self.tvdbPickProvider(chosenProvider) : chosenProvider
-    }
-
-    static func tvdbPickProvider(_ choice: String) -> String { choice == "hybrid" ? "hybrid" : "tvdb" }
-
-    /// The provider choice is offered for TMDB-picked series only.
-    var showProviderChoice: Bool { !isTvdb && isSeries }
-
-    /// Every id known for the pick ("Identified as"); the preview fills TVDB/IMDb.
-    var ids: (tmdb: Int?, tvdb: Int?, imdb: String?) {
-        switch pick {
-        case .tmdb(let r):
-            return (r.tmdbId, preview?.tvdbId, preview?.imdbId)
-        case .tvdb(let r):
-            return (r.tmdbId ?? preview?.tmdbId, preview?.tvdbId ?? r.tvdbId, preview?.imdbId ?? r.imdbId)
-        }
-    }
-
     // MARK: Load + seed
 
     private var started = false
@@ -283,31 +135,6 @@ final class AddFlow {
                 monitor: "all")
         }
         versions = out
-    }
-
-    private static func matches(_ text: String, _ pattern: String) -> Bool {
-        text.range(of: pattern, options: [.regularExpression, .caseInsensitive]) != nil
-    }
-
-    static func defaultRootId(_ tier: QualityTier, kind: MediaKind, roots: [RootFolder]) -> Int {
-        let wants4k = tier == .uhd
-        let kindMatch = { (r: RootFolder) in
-            kind == .series ? matches(r.path, "tv|anime|series|show") : matches(r.path, "movie|film")
-        }
-        let tierMatch = { (r: RootFolder) in matches(r.path, "4k|2160|uhd") == wants4k }
-        let chosen = roots.first { kindMatch($0) && tierMatch($0) } ?? roots.first(where: kindMatch)
-            ?? roots.first(where: tierMatch) ?? roots.first
-        return chosen?.id ?? 0
-    }
-
-    static func defaultProfileId(_ tier: QualityTier, resolvedKind: String, profiles: [QualityProfileSummary]) -> Int {
-        let wants4k = tier == .uhd
-        let is4k = { (p: QualityProfileSummary) in
-            matches(p.name, "4k|2160|uhd|ultra") || (p.allowedQualities ?? []).contains { matches($0, "2160|4k|uhd") }
-        }
-        let anime = resolvedKind == "anime" ? profiles.first { $0.mediaKind == "anime" && is4k($0) == wants4k } : nil
-        let chosen = anime ?? profiles.first { is4k($0) == wants4k } ?? profiles.first
-        return chosen?.id ?? 0
     }
 
     // MARK: Edits
@@ -466,68 +293,7 @@ final class AddFlow {
         }
     }
 
-    // MARK: Monitor counts + timeline
-
-    /// The master's (or a mode's) episode count for the sentence; nil without seasons.
-    func monitorSummary(_ mode: String, withCustom: Bool) -> AddSentence.Monitor? {
-        guard let seasons, !seasons.isEmpty else { return nil }
-        let base = MonitorPreview.compute(seasons, mode: mode)
-        let p = withCustom ? SeasonSlider.apply(seasons, base, seasonFrom) : base
-        return AddSentence.Monitor(mode: mode, count: p.count, exact: p.exact)
-    }
-
-    func timeline(today: Date = Date()) -> ReleaseTimelineModel {
-        ReleaseTimelineModel.build(preview?.timelineDates ?? TimelineDates(), today: today)
-    }
-
-    /// Nothing is out yet, so a 4K miss means "searched on release".
-    func notOutYet(_ timeline: ReleaseTimelineModel) -> Bool {
-        if isSeries {
-            guard let seasons, !seasons.isEmpty else { return false }
-            return seasons.allSatisfy { $0.airedCount == 0 }
-        }
-        return preview?.status != "Released" && !timeline.releasedOut()
-    }
-
-    // MARK: Payload + submit
-
-    var chosenVersions: [AddVersionBody] {
-        guard let versions else { return [] }
-        let folder = folderEdited ? trimmedFolder : nil
-        return onTiers.compactMap { tier in
-            guard let state = versions[tier] else { return nil }
-            let edition = editions[tier]
-            return AddVersionBody(tier: tier, edition: AddVocab.isStandardEdition(edition) ? nil : edition,
-                                  rootFolderId: state.rootId, qualityProfileId: state.profileId,
-                                  monitor: isSeries && state.monitor != monitor ? state.monitor : nil,
-                                  folderName: folder)
-        }
-    }
-
-    var canSubmit: Bool { !chosenVersions.isEmpty && !isAdding }
-
-    /// The `POST /api/v1/library` body, or nil when nothing can be added yet.
-    func payload() -> AddTitleBody? {
-        let chosen = chosenVersions
-        if chosen.isEmpty { return nil }
-        // Per-season starts need one shared level, and never ride an anime add.
-        let shared = chosen.allSatisfy { $0.monitor == nil }
-        let custom = isSeries && shared && !effectiveAnime ? SeasonSlider.payload(seasonFrom) : nil
-        switch pick {
-        case .tmdb(let r):
-            return AddTitleBody(title: r.title, kind: r.kind, year: r.year, tmdbId: r.tmdbId, tvdbId: nil,
-                                isAnime: effectiveAnime, versions: chosen, searchNow: searchNow,
-                                monitor: isSeries ? monitor : "all", minimumAvailability: isSeries ? nil : minAvail,
-                                seriesType: isSeries ? seriesType : nil,
-                                metadataProvider: isSeries && provider != "auto" ? provider : nil,
-                                seasonMonitorFrom: custom)
-        case .tvdb(let r):
-            return AddTitleBody(title: r.title, kind: .series, year: r.year, tmdbId: nil, tvdbId: r.tvdbId,
-                                isAnime: effectiveAnime, versions: chosen, searchNow: searchNow, monitor: monitor,
-                                minimumAvailability: nil, seriesType: seriesType,
-                                metadataProvider: Self.tvdbPickProvider(chosenProvider), seasonMonitorFrom: custom)
-        }
-    }
+    // MARK: Submit
 
     /// Fire the add. A failure comes back nil, with `error` set.
     func submit() async -> AddedTitle? {
