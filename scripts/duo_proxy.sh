@@ -41,6 +41,12 @@ screens() {  # screens <orientation> [env…]
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=1 "$@"; snap "standin-unfolded-$O-activity-ipadmini-not-real-unfold"
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover "$@"; snap "standin-unfolded-$O-discover-ipadmini-not-real-unfold"
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=general "$@"; snap "standin-unfolded-$O-settings-ipadmini-not-real-unfold"
+  # Requests wide layouts (D2a, DU1–DU5): Inbox panes, Board columns, History table, Threads split, thread panel.
+  local R="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_TAB=requests"
+  for P in inbox board history threads; do
+    launch $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTS_PANE=$P "$@"; snap "standin-unfolded-$O-requests-$P-ipadmini-not-real-unfold"
+  done
+  launch $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTS_PANE=history SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTS_THREAD=3 "$@"; snap "standin-unfolded-$O-requests-thread-ipadmini-not-real-unfold"
 }
 
 launch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library

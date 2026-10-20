@@ -10,6 +10,8 @@ struct RequestsHistoryView: View {
     let onOpenThread: (MediaRequest) -> Void
     @Environment(AppModel.self) private var model
     @Environment(RequestsNav.self) private var nav
+    /// Wide: the web's desktop table (DU4).
+    @Environment(\.requestsWide) private var wide
     @State private var items: [MediaRequest] = []
     @State private var cursor: String?
     @State private var loaded = false
@@ -58,6 +60,10 @@ struct RequestsHistoryView: View {
             DiscoverEmptyState(message: "Could not load history.")
         } else if items.isEmpty {
             DiscoverEmptyState(message: nav.filter.activeCount(.history) > 0 ? "Nothing decided with these filters." : "Nothing decided yet.")
+        } else if wide {
+            HistoryTableView(items: items, hasMore: cursor != nil, loadingMore: loadingMore,
+                             onLoadMore: { Task { await loadMore() } }, onOpen: onOpenThread)
+                .padding(.top, 8)
         } else {
             let byId = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
             LazyVStack(alignment: .leading, spacing: 0) {

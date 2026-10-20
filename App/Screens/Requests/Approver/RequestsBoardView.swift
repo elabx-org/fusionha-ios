@@ -18,15 +18,29 @@ struct RequestsBoardView: View {
     @State private var expanded: Set<RequestBoard.Column> = []
     @State private var declining: MediaRequest?
     @AppStorage("requests.board.peeked") private var peeked = false
+    /// Wide: the web's five columns (DU3).
+    @Environment(\.requestsWide) private var wide
 
     private var values: RequestsFilter.Values { nav.filter[.board] }
     private var key: String { "\(values.search)|\(values.requesterId ?? -1)|\(nav.filter.query(.board))" }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            RequestsViewHeader { if board.loaded { summary } }
+        VStack(alignment: .leading, spacing: wide ? 12 : 4) {
+            RequestsViewHeader {
+                if board.loaded {
+                    if wide {
+                        requestsCount(rows(.pending).count, "pending") + Text(verbatim: " · \(board.count(.downloading)) downloading")
+                    } else {
+                        summary
+                    }
+                }
+            }
             if !board.loaded {
                 DiscoverEmptyState(message: "Loading the board…")
+            } else if wide {
+                BoardColumnsView(board: board, rows: rows, onRetry: { Task { await refresh() } },
+                                 onLoadMore: { column in Task { await board.loadMore(model.client, bucket: column.bucket) } },
+                                 onOpenHistory: onOpenHistory) { r, column in columnRow(r, column: column) }
             } else {
                 stages
             }
@@ -162,6 +176,23 @@ struct RequestsBoardView: View {
             Button { onOpenThread(r) } label: { line }
                 .buttonStyle(.plain)
                 .contextMenu { BoardRowMenu(request: r, onApprove: nil, onDecline: nil, onThread: { onOpenThread(r) }) }
+        }
+    }
+
+    /// A wide column's row (web `StageRow layout="column"`): a tap opens the
+    /// thread; Pending rows decide from the context menu (no swipe inside a
+    /// sideways-scrolling board).
+    private func columnRow(_ r: MediaRequest, column: RequestBoard.Column) -> some View {
+        let decidable = column == .pending && !inbox.isLocked(r, viewerId: model.me?.id)
+        return Button { onOpenThread(r) } label: {
+            BoardStageRow(request: r, column: column, showRequester: true, compact: values.compact)
+        }
+        .buttonStyle(.plain)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Theme.line))
+        .contextMenu {
+            BoardRowMenu(request: r, onApprove: decidable ? { _ = approve(r) } : nil,
+                         onDecline: decidable ? { declining = r } : nil, onThread: { onOpenThread(r) })
         }
     }
 
