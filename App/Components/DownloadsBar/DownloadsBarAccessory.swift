@@ -126,7 +126,8 @@ struct DownloadsBarExpandedRow: View {
                 }
                 Text(finished ? DownloadsBar.finishedLine : DownloadsBar.detailLine(s))
                     .font(.caption)
-                    .foregroundStyle(Theme.mut)
+                    // Ink, not `mut`: the line sits on clear glass over posters.
+                    .foregroundStyle(Theme.txt.opacity(0.78))
                     .lineLimit(1)
                     .contentTransition(.numericText())
             }
