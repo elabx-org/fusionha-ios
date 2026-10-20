@@ -50,7 +50,8 @@ screens() {  # screens <orientation> [env…]
 
 launch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
 screens portrait
-$PUBLISH
+# One publish at the end: a contended push to the screenshots branch can take
+# 20+ minutes and once ran the step out of time before the landscape shots.
 screens landscape SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ORIENTATION=landscape
 $PUBLISH
 xcrun simctl shutdown "$UDID" || true
