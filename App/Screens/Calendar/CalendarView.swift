@@ -1,15 +1,21 @@
 import SwiftUI
 import FusionhaKit
 
-/// The web's Calendar (`routes/Calendar.tsx`, mobile layout): title + counts, the
-/// five views (Month · Week · Forecast · Day · Agenda), prev / Today / next with the
-/// kind chips and the iCal feed, the status and release-type legends, then the view
-/// body. The toolbar lives in `CalendarView+Toolbar`, actions and loading in
-/// `CalendarView+Actions`.
+/// The web's Calendar (`routes/Calendar.tsx`): title + counts, the five views
+/// (Month · Week · Forecast · Day · Agenda), prev / Today / next with the kind
+/// chips and the iCal feed, the status and release-type legends, then the view
+/// body. Its layout follows its own width (`calendar/layout.ts`, ruling DU11):
+/// under 720 the phone, 720–999 tablet (the toolbar over the phone bodies),
+/// 1000+ desktop (month grid, seven week columns, grouped lists). In Book pose
+/// the week is the list (Q-DC5). The toolbar lives in `CalendarView+Toolbar`,
+/// actions and loading in `CalendarView+Actions`.
 struct CalendarView: View {
     @Environment(AppModel.self) var model
     @Environment(\.accessibilityReduceMotion) var reduceMotion
-    @Environment(\.horizontalSizeClass) var sizeClass
+    /// Half open with the fold top to bottom: the week reads as a list (Q-DC5).
+    @Environment(\.bookPose) var bookPose
+    /// The Calendar's own width (`useCalendarWidth`), never the size class.
+    @State var width: CGFloat = 0
     /// The last chosen view, remembered per device (web `fusionha.calendar.view`).
     @AppStorage("calendar.view") var storedView = ""
     /// A view switched to without choosing it (tapping a month day opens Day).
@@ -44,7 +50,10 @@ struct CalendarView: View {
     var cardStyle: WeekCardStyle { .resolve(settings?.calendarWeekCardStyle) }
     /// nil = the web's phone cards.
     var weekCards: WeekCardStyle? { phoneCards ? nil : cardStyle }
-    var isPhone: Bool { sizeClass != .regular }
+    var layout: CalendarLayout { .of(width: Double(width)) }
+    var isPhone: Bool { layout == .phone }
+    /// Week as the day list: Book pose (Q-DC5).
+    var weekAsList: Bool { bookPose }
     var quipsOn: Bool { settings?.voicePlayful ?? true }
     /// Reduce Motion or the server's `animations_enabled = false`.
     var motionOff: Bool { reduceMotion || settings?.animationsEnabled == false }
@@ -99,12 +108,13 @@ struct CalendarView: View {
     var body: some View {
         Screen {
             Group {
-                if view == .week {
+                if view == .week && layout != .desktop && !weekAsList {
                     weekLayout
                 } else {
                     scrollLayout
                 }
             }
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         }
         .shellPage(title)
         .toolbar { barItems }
@@ -165,7 +175,8 @@ struct CalendarView: View {
                     todayTick: todayTick,
                     cards: weekCards,
                     swipe: periodSwipe,
-                    collapsed: $collapsed,
+                    // Only the phone folds its toolbar away (`collapsible`).
+                    collapsed: isPhone ? $collapsed : .constant(false),
                     title: title,
                     onPrev: { step(-1) },
                     onToday: goToday,
@@ -198,8 +209,8 @@ struct CalendarView: View {
     @ViewBuilder
     private var loadedContent: some View {
         switch view {
-        case .month where sizeClass == .regular:
-            // iPad width: the full grid with event pills.
+        case .month where layout == .desktop:
+            // Desktop width: the full grid with event pills.
             MonthGridView(month: monthAnchor, entries: entries, todayIso: todayIso, firstDay: firstDay) { iso in
                 if let date = CalendarMath.date(iso, cal) {
                     dayAnchor = date
@@ -212,11 +223,11 @@ struct CalendarView: View {
             MonthMobileView(month: monthAnchor, entries: entries, todayIso: todayIso, firstDay: firstDay,
                             cards: weekCards, todayTick: todayTick)
                 .padding(.top, 8)
-        case .agenda where isPhone:
+        case .agenda where layout != .desktop:
             phoneList(.agenda)
-        case .forecast where isPhone:
+        case .forecast where layout != .desktop:
             phoneList(.forecast)
-        case .day where isPhone:
+        case .day where layout != .desktop:
             phoneList(.day)
         case .agenda:
             groupedList(
@@ -230,8 +241,13 @@ struct CalendarView: View {
             groupedList(
                 "Nothing airs on \(CalendarMath.dayTitle(dayAnchor, cal)). Pick another day or switch views to see what's scheduled.",
                 quip: "Winter came early — and it brought loot.")
+        case .week where weekAsList:
+            // Book pose: every day of the week as the day list.
+            phoneList(.forecast)
         case .week:
-            EmptyView()
+            WeekColumnsView(days: CalendarMath.weekDays(weekAnchor, firstDay: firstDay, cal), entries: entries,
+                            todayIso: todayIso, style: cardStyle)
+                .padding(.top, 12)
         }
     }
 

@@ -41,6 +41,11 @@ screens() {  # screens <orientation> [env…]
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=1 "$@"; snap "standin-unfolded-$O-activity-ipadmini-not-real-unfold"
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover "$@"; snap "standin-unfolded-$O-discover-ipadmini-not-real-unfold"
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=general "$@"; snap "standin-unfolded-$O-settings-ipadmini-not-real-unfold"
+  # D2b: Calendar month and week on their own width, sign-in side by side.
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=month "$@"; snap "standin-unfolded-$O-calendar-month-ipadmini-not-real-unfold"
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=week "$@"; snap "standin-unfolded-$O-calendar-week-ipadmini-not-real-unfold"
+  launch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN_LAYOUT=split SIMCTL_CHILD_FUSIONHA_SCREENSHOT_METHOD=fusionha "$@"; snap "standin-unfolded-$O-signin-split-ipadmini-not-real-unfold"
+  launch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN_LAYOUT=living SIMCTL_CHILD_FUSIONHA_SCREENSHOT_METHOD=fusionha "$@"; snap "standin-unfolded-$O-signin-living-ipadmini-not-real-unfold"
 }
 
 launch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library

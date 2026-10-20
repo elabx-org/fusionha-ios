@@ -18,15 +18,14 @@ struct LibraryToolbar<Filters: View>: View {
     @Binding var showingFilters: Bool
     @ViewBuilder var filters: () -> Filters
 
-    private var attentionOn: Bool { status == .attention }
-    private var showsAttention: Bool { derived.attentionCount > 0 || attentionOn }
+    private var showsAttention: Bool { derived.attentionCount > 0 || status == .attention }
 
     var body: some View {
         GlassEffectContainer(spacing: 8) {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) {
                     leading
-                    if showsAttention { attentionChip }
+                    if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
                     Spacer(minLength: 0)
                     trailing
                 }
@@ -36,7 +35,7 @@ struct LibraryToolbar<Filters: View>: View {
                         Spacer(minLength: 0)
                         trailing
                     }
-                    if showsAttention { attentionChip }
+                    if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
                 }
             }
         }
@@ -55,30 +54,6 @@ struct LibraryToolbar<Filters: View>: View {
     @ViewBuilder private var trailing: some View {
         filtersChip
         densitySegment
-    }
-
-    // MARK: Needs attention
-
-    private var attentionChip: some View {
-        Button {
-            withAnimation(motion ? .snappy : nil) { status = attentionOn ? .all : .attention }
-        } label: {
-            HStack(spacing: 7) {
-                Image(systemName: "exclamationmark.triangle").font(.system(size: 12, weight: .semibold))
-                Text("Needs attention · \(derived.attentionCount)")
-                    .font(.system(size: 13, weight: .bold).monospacedDigit())
-                    .lineLimit(1)
-            }
-            .foregroundStyle(Theme.miss)
-            .padding(.horizontal, 12)
-            .frame(height: 36)
-            .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .glassEffect(.regular.tint(Theme.miss.opacity(attentionOn ? 0.24 : 0.1)).interactive(), in: Capsule())
-        .fixedSize()
-        .accessibilityLabel("Needs attention · \(derived.attentionCount)")
-        .accessibilityAddTraits(attentionOn ? .isSelected : [])
     }
 
     // MARK: Filters

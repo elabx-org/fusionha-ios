@@ -3,10 +3,12 @@ import FusionhaKit
 
 // MARK: - Library page
 
-/// The web's Library page on mobile (routes/Library.tsx): header with live
+/// The web's Library page (routes/Library.tsx). On a phone: header with live
 /// counts and the stats sheet, one glass control row (tier · kinds · Filters ·
-/// density · select) and the A–Z poster grid with its scroll thumb, the status-grouped
-/// grid, a plain grid for other sorts, or the compact table.
+/// density · select) and the A–Z poster grid with its scroll thumb. Past 720
+/// of its own width (ruling L17, `PaneWidthRule`): the inline pulse ribbon,
+/// the desktop toolbar, letter headers and the A–Z rail. Either way also the
+/// status-grouped grid, a plain grid for other sorts, or the compact table.
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
@@ -24,30 +26,36 @@ struct LibraryView: View {
     @State private var showingFilters = false
     @State private var derived = LibraryDerived()
     @State private var scrubber = ScrubberState()
+    @State private var rail = AlphaRailState()
     @State private var posterSheet: MediaItem?
-    /// Cards per row for the grid's current width.
-    @State private var columns = 3
+    /// The scroll's own width, and whether a fold runs through its middle.
+    @State private var pane = LibraryPane()
     /// The grid rows on screen, kept (unobserved) so a fold/unfold that changes
     /// the column count can scroll back to the same titles.
     @State private var onScreen = LibraryOnScreen()
 
-    private var kind: LibraryKind? { LibraryKind(rawValue: kindRaw) }
     private var compact: Bool { density == "compact" }
+    /// The web's desktop Library: past 720 of the Library's own width.
+    private var wide: Bool { PaneWidthRule.isWide(Double(pane.width)) }
+    /// The A–Z index applies: title sort, ungrouped, posters.
+    private var alphaMode: Bool { sort == .title && !group && !compact }
+    private var showsRail: Bool { alphaMode && derived.titleCount > 0 }
+    /// The rail column beside the grid (wide only).
+    private var railWidth: CGFloat { wide && alphaMode ? LibraryAlphaRail.width : 0 }
 
     private var query: String {
         model.searchText.trimmingCharacters(in: .whitespaces)
     }
 
-    private struct Inputs: Equatable {
-        var version: Int, kind: String, tier: LibraryTier, status: LibraryStatus
-        var sort: LibrarySort, recency: LibraryRecency, group: Bool, query: String, compact: Bool
-        var columns: Int, compactSort: CompactSort
+    /// Cards per row for the grid's width (16pt margins, the rail beside it).
+    private var columns: Int {
+        PosterColumns.count(for: pane.width - 32 - railWidth * (pane.foldMiddle ? 2 : 1), evenForFold: pane.foldMiddle)
     }
 
-    private var inputs: Inputs {
-        Inputs(version: model.libraryVersion, kind: kindRaw, tier: tier, status: status, sort: sort,
-               recency: recency, group: group, query: query, compact: compact, columns: columns,
-               compactSort: compactSort)
+    private var inputs: LibraryInputs {
+        LibraryInputs(version: model.libraryVersion, kind: kindRaw, tier: tier, status: status, sort: sort,
+                      recency: recency, group: group, query: query, compact: compact, columns: columns,
+                      compactSort: compactSort, letterHeaders: wide)
     }
 
     var body: some View {
@@ -55,10 +63,8 @@ struct LibraryView: View {
             ScrollViewReader { proxy in
                 scroll(proxy)
                     .overlay {
-                        if showsRail {
-                            ScrollScrubber(state: scrubber, letters: derived.alpha.letters) { letter in
-                                if let row = derived.alpha.letterRow[letter] { jump(to: row, proxy) }
-                            }
+                        if showsRail && !wide {
+                            ScrollScrubber(state: scrubber, letters: derived.alpha.letters) { jump(toLetter: $0, proxy) }
                         }
                     }
                     .onChange(of: derived.columns) {
@@ -72,14 +78,9 @@ struct LibraryView: View {
         }
         .shellPage("Library")
         .toolbarVisibility(model.selectMode ? .hidden : .automatic, for: .tabBar)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if model.selectMode {
-                BulkActionBar(visibleIds: derived.visibleIds)
-                    .publishesBottomBarTop("library.select")
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
+        .librarySelectBar(active: model.selectMode, visibleIds: derived.visibleIds)
         .animation(motion ? .snappy(duration: 0.3) : nil, value: model.selectMode)
+        .animation(motion ? .smooth(duration: 0.3) : nil, value: wide)
         .environment(\.openPosterSheet, { posterSheet = $0 })
         .sheet(item: $posterSheet) { item in
             LibraryPosterSheet(item: item)
@@ -97,7 +98,7 @@ struct LibraryView: View {
             }
             #endif
         }
-        .onChange(of: inputs, initial: true) { rebuild() }
+        .onChange(of: inputs, initial: true) { derived = inputs.derive(from: model.library) }
     }
 
     private func updateChrome(old: CGFloat, new: CGFloat) {
@@ -109,50 +110,6 @@ struct LibraryView: View {
         } else if delta < -4 {
             if model.chromeHidden { model.chromeHidden = false }
         }
-    }
-
-    private var showsRail: Bool { sort == .title && !group && !compact && derived.titleCount > 0 }
-
-    // MARK: Derivation
-
-    private func rebuild() {
-        let needle = query.lowercased()
-        let now = Date()
-        let recentWindow: TimeInterval = 30 * 86_400
-        func recent(_ iso: String?) -> Bool {
-            guard let date = Format.timestamp(iso) ?? Format.day(iso) else { return false }
-            return date <= now && now.timeIntervalSince(date) <= recentWindow
-        }
-        // Tier + recency + search, before the kind narrowing (the kinds card counts this set).
-        let kindBase = model.library.filter { item in
-            guard tier.matches(item) else { return false }
-            if recency == .added && !recent(item.addedAt) { return false }
-            if recency == .released && !recent(item.releaseDate) { return false }
-            return needle.isEmpty || item.title.lowercased().contains(needle)
-        }
-        var next = LibraryDerived()
-        for item in kindBase {
-            next.kindTitles[item.libraryKind, default: 0] += 1
-            next.kindEditions[item.libraryKind, default: 0] += item.editions.count
-        }
-        let base = Self.sorted(kind.map { k in kindBase.filter { $0.libraryKind == k } } ?? kindBase, by: sort)
-        next.pulse = PulseStats(base)
-        next.attentionCount = base.filter { $0.hasAttention == true }.count
-        let visible = status == .all ? base : base.filter(status.matches)
-        next.visibleIds = visible.map(\.id)
-        next.titleCount = visible.count
-        next.editionCount = visible.reduce(0) { $0 + $1.editions.count }
-        next.columns = columns
-        if compact {
-            next.rows = LibraryRowModel.table(compactSort.sorted(visible))
-        } else if group {
-            next.rows = LibraryRowModel.grouped(visible, columns: columns)
-        } else if sort == .title {
-            (next.rows, next.alpha) = LibraryRowModel.alpha(visible, columns: columns)
-        } else {
-            next.rows = LibraryRowModel.plain(visible, columns: columns)
-        }
-        derived = next
     }
 
     // MARK: Scroll
@@ -175,11 +132,20 @@ struct LibraryView: View {
             .padding(.bottom, Theme.pageBottom)
         }
         .scrollDismissesKeyboard(.immediately)
-        .onGeometryChange(for: Int.self) { proxy in
+        .onGeometryChange(for: LibraryPane.self) { proxy in
             // The grid is inset evenly, so a fold through the page's middle
             // crosses the grid's middle too: keep it in a gutter (D3).
-            PosterColumns.count(for: proxy.size.width - 32, evenForFold: FoldInfo.crossesMiddle(proxy))
-        } action: { columns = $0 }
+            LibraryPane(width: proxy.size.width, foldMiddle: FoldInfo.crossesMiddle(proxy))
+        } action: { pane = $0 }
+        // The desktop A–Z rail: a column of its own at the trailing edge, so
+        // the grid lays out beside it, never under it.
+        .safeAreaInset(edge: .trailing, spacing: 0) {
+            if wide && showsRail {
+                LibraryAlphaRail(present: Set(derived.alpha.letters), state: rail) { jump(toLetter: $0, proxy) }
+                    .padding(.vertical, 14)
+                    .transition(.opacity)
+            }
+        }
         .refreshable { await model.loadLibrary() }
         .onScrollGeometryChange(for: CGFloat.self) { geo in
             geo.contentOffset.y + geo.contentInsets.top
@@ -189,32 +155,46 @@ struct LibraryView: View {
         .onScrollGeometryChange(for: ScrubberState.Metrics.self) { geo in
             ScrubberState.Metrics(geo)
         } action: { _, metrics in
-            if showsRail { scrubber.scrolled(metrics) }
+            if showsRail && !wide { scrubber.scrolled(metrics) }
         }
         .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.5) { ids in
             onScreen.rowIds = ids
-            if showsRail { scrubber.activeLetter = derived.alpha.activeLetter(visible: ids) }
+            guard showsRail else { return }
+            let letter = derived.alpha.activeLetter(visible: ids)
+            if wide { rail.set(letter) } else { scrubber.activeLetter = letter }
         }
     }
 
+    @ViewBuilder
     private var pageTop: some View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear.frame(height: 0).id("library-top")
-            LibraryHeader(derived: derived, status: $status)
+            LibraryHeader(derived: derived, status: $status, wide: wide)
                 .reveal(0)
-            LibraryKindsBar(derived: derived, kind: $kindRaw)
+            if wide {
+                LibraryPulseRibbon(derived: derived, status: $status, kind: $kindRaw)
+                    .padding(.top, 16)
+                    .reveal(1)
+                LibraryToolbarWide(derived: derived, tier: $tier, recency: $recency, status: $status,
+                                   group: $group, sort: $sort, density: $density)
+                    .padding(.top, 16)
+                    .padding(.bottom, 18)
+                    .reveal(2)
+            } else {
+                LibraryKindsBar(derived: derived, kind: $kindRaw)
+                    .padding(.top, 16)
+                    .reveal(1)
+                LibraryToolbar(derived: derived, tier: $tier, status: $status, density: $density,
+                               filterBadge: filterBadge, showingFilters: $showingFilters) {
+                    LibraryFiltersSheet(recency: $recency, group: $group, sort: $sort)
+                        .presentationDetents([.medium, .large])
+                        .presentationDragIndicator(.visible)
+                        .presentationBackground(Theme.panel)
+                }
                 .padding(.top, 16)
-                .reveal(1)
-            LibraryToolbar(derived: derived, tier: $tier, status: $status, density: $density,
-                           filterBadge: filterBadge, showingFilters: $showingFilters) {
-                LibraryFiltersSheet(recency: $recency, group: $group, sort: $sort)
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
-                    .presentationBackground(Theme.panel)
+                .padding(.bottom, 18)
+                .reveal(2)
             }
-            .padding(.top, 16)
-            .padding(.bottom, 18)
-            .reveal(2)
         }
     }
 
@@ -225,6 +205,10 @@ struct LibraryView: View {
 
     private var filterBadge: Int {
         (recency != .all ? 1 : 0) + (group ? 1 : 0) + (sort != .title ? 1 : 0)
+    }
+
+    private func jump(toLetter letter: String, _ proxy: ScrollViewProxy) {
+        if let row = derived.alpha.letterRow[letter] { jump(to: row, proxy) }
     }
 
     /// An instant jump (a scrub letter, a fold re-anchor). It lands on the
@@ -264,6 +248,8 @@ struct LibraryView: View {
                 switch row {
                 case .section(let status, let count):
                     StatusSectionHeader(status: status, count: count)
+                case .letter(let letter, let count):
+                    LibraryLetterHeader(letter: letter, count: count)
                 case .items(let items):
                     LibraryGridRow(items: items, columns: derived.columns)
                 case .tableHeader:
@@ -277,4 +263,10 @@ struct LibraryView: View {
         }
         .scrollTargetLayout()
     }
+}
+
+/// The Library scroll's measured width and fold (`FoldInfo.crossesMiddle`).
+struct LibraryPane: Equatable {
+    var width: CGFloat = 0
+    var foldMiddle = false
 }

@@ -10,13 +10,30 @@ import FusionhaKit
 struct ShellPage: ViewModifier {
     @Environment(AppModel.self) private var model
     let title: String
+    /// The page's own width: past 720 the status cluster joins the bar (S3).
+    @State private var width: CGFloat = 0
+    @State private var clusterPanel: StatusClusterPanel?
+
+    private var showsCluster: Bool {
+        StatusClusterRule.shows(width: Double(width), requestScoped: model.requestScoped)
+    }
 
     func body(content: Content) -> some View {
         content
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             .navigationTitle(title)
             .toolbarTitleDisplayMode(.inlineLarge)
-            .toolbar { AccountToolbarItem(model: model) }
+            .toolbar {
+                StatusClusterItems(model: model, shown: showsCluster, open: $clusterPanel)
+                AccountToolbarItem(model: model)
+            }
             .task(id: model.me?.id) { await AccountBarArt.shared.load(model.me, client: model.client) }
+            .task(id: showsCluster) {
+                while showsCluster && !Task.isCancelled {
+                    await ShellStatusFeed.shared.refresh(model)
+                    try? await Task.sleep(for: .seconds(5))
+                }
+            }
     }
 }
 

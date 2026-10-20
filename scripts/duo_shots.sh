@@ -44,7 +44,7 @@ launch() {
   sleep 9
 }
 
-# The five main screens in the current pose. Extra env (the landscape
+# The main screens in the current pose. Extra env (the landscape
 # fallback) is passed through to every launch.
 screens() {  # screens <pose> <display> [env…]
   local P=$1 D=$2; shift 2
@@ -54,6 +54,7 @@ screens() {  # screens <pose> <display> [env…]
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity "$@"; snap "duo-$P-activity" "$D"
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover "$@"; snap "duo-$P-discover" "$D"
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=list "$@"; snap "duo-$P-settings" "$D"
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=week "$@"; snap "duo-$P-calendar-week" "$D"
 }
 
 # Rotation: the Device Hub's Rotate Right button, else ask the app to rotate

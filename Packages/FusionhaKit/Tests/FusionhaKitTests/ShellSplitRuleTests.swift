@@ -9,9 +9,15 @@ final class ShellSplitRuleTests: XCTestCase {
         XCTAssertFalse(ShellSplitRule.splits(width: 678, height: 466, hasItem: true))
     }
 
-    func testIPhoneDuoInnerDisplaySplitsWithATitleOpen() {
-        XCTAssertTrue(ShellSplitRule.splits(width: 669, height: 951, hasItem: true))
+    func testIPhoneDuoInnerLandscapeSplitsWithATitleOpen() {
         XCTAssertTrue(ShellSplitRule.splits(width: 951, height: 669, hasItem: true))
+    }
+
+    /// Q-DC3: inner portrait keeps the tab bar at the bottom (no 265pt tabs column).
+    func testPortraitNeverSplits() {
+        XCTAssertFalse(ShellSplitRule.splits(width: 669, height: 951, hasItem: true))
+        XCTAssertFalse(ShellSplitRule.splits(width: 744, height: 1133, hasItem: true))
+        XCTAssertFalse(ShellSplitRule.splits(width: 800, height: 800, hasItem: true))
     }
 
     func testNoTitleNoSplit() {
@@ -33,6 +39,7 @@ final class ShellSplitRuleTests: XCTestCase {
     func testWidthAndHeightFloorsAreInclusive() {
         XCTAssertFalse(ShellSplitRule.splits(width: 559, height: 800, hasItem: true))
         XCTAssertTrue(ShellSplitRule.splits(width: 560, height: 500, hasItem: true))
+        XCTAssertFalse(ShellSplitRule.splits(width: 560, height: 560, hasItem: true))
         XCTAssertFalse(ShellSplitRule.splits(width: 800, height: 499, hasItem: true))
     }
 

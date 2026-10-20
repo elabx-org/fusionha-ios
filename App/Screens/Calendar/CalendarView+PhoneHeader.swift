@@ -82,7 +82,15 @@ extension CalendarView {
     }
 
     /// The swipe that steps the period, on the body only (never the header or a strip).
-    var swipeEnabled: Bool { sizeClass == .regular ? view != .forecast : view.phoneSteps }
+    /// `useSwipeNav`: tablet steps any view with ‹ ›, the phone its stepping
+    /// views, the desktop never.
+    var swipeEnabled: Bool {
+        switch layout {
+        case .tablet: return view != .forecast
+        case .phone: return view.phoneSteps
+        case .desktop: return false
+        }
+    }
 
     var periodSwipe: HorizontalPanGesture {
         HorizontalPanGesture { _ in } onEnded: { dx in

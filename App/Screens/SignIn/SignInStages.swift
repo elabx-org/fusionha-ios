@@ -4,6 +4,8 @@ import FusionhaKit
 // The three login stages (Login.module.css `data-layout`). The backdrops run
 // edge to edge; the form never sits under the status bar or the Duo's side
 // strip (DC18), and on a half-open Duo it stays on one side of the fold (DC17).
+// Past 760 (split) and 720 (living) of the stage's width the art sits beside
+// the form (`SignInWideStages`, DU15).
 
 extension SignInView {
     /// `[data-layout='centered']`: full-bleed backdrop + veil, the glass card
@@ -29,13 +31,22 @@ extension SignInView {
         }
     }
 
+    /// `[data-layout='split']`: the hero beside the form past 760, else stacked.
+    @ViewBuilder var splitStage: some View {
+        if SignInLayoutRule.splitSideBySide(width: Double(stageWidth)) {
+            splitStageWide
+        } else {
+            splitStageStacked
+        }
+    }
+
     /// `[data-layout='split']` at phone width (`@media (max-width: 760px)`):
     /// one column, the animated hero (min 190pt) over the solid form panel;
     /// spare height is shared between the two rows like the CSS grid.
-    var splitStage: some View {
+    private var splitStageStacked: some View {
         ZStack {
             VStack(spacing: 0) {
-                Color(hex: 0x0B0D13)
+                SplitPanelFill.heroGround
                 SplitPanelFill()
             }
             .ignoresSafeArea()
@@ -43,7 +54,7 @@ extension SignInView {
                 ScrollView {
                     StretchRows(minHeight: size.height) {
                         ZStack {
-                            Color(hex: 0x0B0D13)
+                            SplitPanelFill.heroGround
                             LoginBackdrop(mode: backdropMode, motionOff: motionOff)
                             brand(hero: true)
                                 .padding(40)
@@ -63,8 +74,9 @@ extension SignInView {
         }
     }
 
-    /// `.formPanel` on phones: the solid panel under the hero, with a hairline on top.
-    func formPanel(top: Bool, minHeight: CGFloat = 0) -> some View {
+    /// `.formPanel`: the solid panel under the hero on phones, with a hairline
+    /// on top; beside the art when wide (`hairline` on its leading edge, or none).
+    func formPanel(top: Bool, minHeight: CGFloat = 0, hairline: Edge? = .top) -> some View {
         VStack(spacing: 18) {
             VStack(spacing: 0) {
                 header(centered: false)
@@ -79,7 +91,12 @@ extension SignInView {
         .padding(.vertical, 40)
         .frame(maxWidth: .infinity, minHeight: minHeight, maxHeight: .infinity, alignment: top ? .top : .center)
         .background(SplitPanelFill())
-        .overlay(alignment: .top) { Rectangle().fill(.white.opacity(0.08)).frame(height: 1) }
+        .overlay(alignment: hairline == .leading ? .leading : .top) {
+            if let hairline {
+                Rectangle().fill(.white.opacity(0.08))
+                    .frame(width: hairline == .leading ? 1 : nil, height: hairline == .leading ? nil : 1)
+            }
+        }
     }
 
     /// `[data-layout='living']` on phones: the Living logo art takes the top 44%
@@ -88,6 +105,27 @@ extension SignInView {
     /// apply under the mark: the mark IS the logo. Before any server is known
     /// (a fresh install) the default backdrop runs behind the mark instead.
     var livingStage: some View {
+        Group {
+            if SignInLayoutRule.livingSideBySide(width: Double(stageWidth)) {
+                livingStageWide
+            } else {
+                livingStageStacked
+            }
+        }
+        .onChange(of: password) { if isLiving { living.typing(password.count) } }
+        .onChange(of: server) { if isLiving, connected == nil { living.typing(server.count) } }
+        .onChange(of: field) { old, new in
+            guard isLiving else { return }
+            let listens: Set<Field> = [.password, .server]
+            if let new, listens.contains(new) {
+                living.listen()
+            } else if let old, listens.contains(old) {
+                living.unlisten()
+            }
+        }
+    }
+
+    private var livingStageStacked: some View {
         ZStack {
             VStack(spacing: 0) {
                 Color(hex: 0x08090D)
@@ -112,22 +150,14 @@ extension SignInView {
             // The art runs under the status bar; the sides stay clear (DC18).
             .ignoresSafeArea(.container, edges: .top)
         }
-        .onChange(of: password) { if isLiving { living.typing(password.count) } }
-        .onChange(of: server) { if isLiving, connected == nil { living.typing(server.count) } }
-        .onChange(of: field) { old, new in
-            guard isLiving else { return }
-            let listens: Set<Field> = [.password, .server]
-            if let new, listens.contains(new) {
-                living.listen()
-            } else if let old, listens.contains(old) {
-                living.unlisten()
-            }
-        }
     }
 }
 
 /// The split / living form panel's solid fill.
-private struct SplitPanelFill: View {
+struct SplitPanelFill: View {
+    /// The split hero's ground (`.hero` #0b0d13): the login stage is always dark.
+    static let heroGround = Color(hex: 0x0B0D13)
+
     var body: some View {
         LinearGradient(colors: [Color(red: 19 / 255, green: 21 / 255, blue: 28 / 255).opacity(0.98),
                                 Color(red: 12 / 255, green: 13 / 255, blue: 18 / 255).opacity(0.99)],
