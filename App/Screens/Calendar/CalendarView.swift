@@ -244,9 +244,14 @@ struct CalendarView: View {
         case .week where weekAsList:
             // Book pose: every day of the week as the day list.
             phoneList(.forecast)
-        case .week:
+        case .week where WeekLayout.resolve(settings?.calendarWeekLayout) == .stacked:
             WeekColumnsView(days: CalendarMath.weekDays(weekAnchor, firstDay: firstDay, cal), entries: entries,
                             todayIso: todayIso, style: cardStyle)
+                .padding(.top, 12)
+        case .week:
+            // Desktop's default: the web's banded timeline.
+            WeekTimelineView(days: CalendarMath.weekDays(weekAnchor, firstDay: firstDay, cal), entries: entries,
+                             todayIso: todayIso, style: cardStyle)
                 .padding(.top, 12)
         }
     }

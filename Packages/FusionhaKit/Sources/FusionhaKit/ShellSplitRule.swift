@@ -14,6 +14,10 @@ import Foundation
 /// bars in inner portrait): at iPhone Duo's 669 x 951 the 560/360 rule left a
 /// tabs column narrower than any iPhone, so there the tab bar stays at the
 /// bottom and the title opens as the phone's sheet.
+///
+/// The same idea in landscape (D2b follow-up): when the column left beside the
+/// title would be under `primaryMin` (360, a phone's width), the title opens
+/// as the sheet instead of squeezing the tab's pane.
 public enum ShellSplitRule {
     /// Below this width the title is a sheet (iPhone Duo's outer display is ~466pt).
     public static let minWidth = 560.0
@@ -23,10 +27,20 @@ public enum ShellSplitRule {
     public static let detailShare = 0.56
     public static let detailMin = 360.0
     public static let detailMax = 620.0
+    /// The narrowest the tab's pane beside the title may be.
+    public static let primaryMin = 360.0
+    /// The hairline between the two columns.
+    public static let divider = 1.0
 
     /// Whether a container this size shows the open title as a trailing column.
     public static func splits(width: Double, height: Double, hasItem: Bool) -> Bool {
         hasItem && width >= minWidth && height >= minHeight && width > height
+            && primaryWidth(for: width) >= primaryMin
+    }
+
+    /// The tab's pane width beside the title column (and its hairline).
+    public static func primaryWidth(for width: Double) -> Double {
+        max(width - detailWidth(for: width) - divider, 0)
     }
 
     /// The title column's width in a container this wide.

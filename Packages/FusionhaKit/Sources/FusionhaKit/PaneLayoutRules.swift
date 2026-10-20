@@ -31,10 +31,13 @@ public enum SignInLayoutRule {
 }
 
 /// The shell's status cluster (TopBar `statusCluster`): Activity, Needs
-/// attention and the backend light, shown when the tab's pane is past the
-/// mobile breakpoint (ruling S3) and the user manages the server.
+/// attention and the backend light, shown only above the web's 900 (it hides
+/// the cluster from 721 to 900; D2b follow-up ruling) and only to a user who
+/// manages the server.
 public enum StatusClusterRule {
+    public static let minWidth = 900.0
+
     public static func shows(width: Double, requestScoped: Bool) -> Bool {
-        !requestScoped && PaneWidthRule.isWide(width)
+        !requestScoped && width > minWidth
     }
 }

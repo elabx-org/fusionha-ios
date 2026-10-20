@@ -33,6 +33,9 @@ final class PaneLayoutRulesTests: XCTestCase {
 
     func testStatusClusterIsForWideManagers() {
         XCTAssertFalse(StatusClusterRule.shows(width: 669, requestScoped: false))
+        XCTAssertFalse(StatusClusterRule.shows(width: 721, requestScoped: false))
+        XCTAssertFalse(StatusClusterRule.shows(width: 900, requestScoped: false))
+        XCTAssertTrue(StatusClusterRule.shows(width: 901, requestScoped: false))
         XCTAssertTrue(StatusClusterRule.shows(width: 951, requestScoped: false))
         XCTAssertFalse(StatusClusterRule.shows(width: 951, requestScoped: true))
     }

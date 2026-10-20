@@ -37,7 +37,8 @@ extension CalendarView {
                                calendarDefaultView: settings?.calendarDefaultView,
                                calendarWeekCardStyle: style.rawValue,
                                voicePlayful: settings?.voicePlayful,
-                               animationsEnabled: settings?.animationsEnabled)
+                               animationsEnabled: settings?.animationsEnabled,
+                               calendarWeekLayout: settings?.calendarWeekLayout)
         Task {
             do {
                 try await model.client?.setWeekCardStyle(style)

@@ -36,11 +36,28 @@ final class ShellSplitRuleTests: XCTestCase {
         XCTAssertFalse(ShellSplitRule.splits(width: 420, height: 951, hasItem: true))
     }
 
-    func testWidthAndHeightFloorsAreInclusive() {
+    func testWidthAndHeightFloors() {
         XCTAssertFalse(ShellSplitRule.splits(width: 559, height: 800, hasItem: true))
-        XCTAssertTrue(ShellSplitRule.splits(width: 560, height: 500, hasItem: true))
         XCTAssertFalse(ShellSplitRule.splits(width: 560, height: 560, hasItem: true))
-        XCTAssertFalse(ShellSplitRule.splits(width: 800, height: 499, hasItem: true))
+        XCTAssertFalse(ShellSplitRule.splits(width: 1000, height: 499, hasItem: true))
+        XCTAssertTrue(ShellSplitRule.splits(width: 1000, height: 500, hasItem: true))
+    }
+
+    /// D2b follow-up: in landscape the tab's pane beside the title never drops
+    /// under 360; a narrower landscape window opens the title as the sheet.
+    func testLandscapeKeepsA360PaneBesideTheTitle() {
+        XCTAssertFalse(ShellSplitRule.splits(width: 560, height: 500, hasItem: true))
+        XCTAssertFalse(ShellSplitRule.splits(width: 700, height: 500, hasItem: true))
+        XCTAssertFalse(ShellSplitRule.splits(width: 820, height: 600, hasItem: true))
+        XCTAssertTrue(ShellSplitRule.splits(width: 821, height: 600, hasItem: true))
+        XCTAssertTrue(ShellSplitRule.splits(width: 1133, height: 744, hasItem: true))
+        XCTAssertGreaterThanOrEqual(ShellSplitRule.primaryWidth(for: 821), 360)
+        XCTAssertLessThan(ShellSplitRule.primaryWidth(for: 820), 360)
+    }
+
+    func testIPhoneDuoInnerLandscapeLeavesA417Pane() {
+        XCTAssertEqual(ShellSplitRule.primaryWidth(for: 951), 951 - 951 * 0.56 - 1, accuracy: 0.001)
+        XCTAssertGreaterThanOrEqual(ShellSplitRule.primaryWidth(for: 951), ShellSplitRule.primaryMin)
     }
 
     func testDetailColumnIsClamped() {

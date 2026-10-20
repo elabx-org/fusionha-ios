@@ -5,8 +5,8 @@ import FusionhaKit
 /// `calendar_week_layout = stacked`): seven equal day columns, each a head
 /// (weekday, date, "N airing") over that day's season drops and episodes in
 /// air order, with the now line in today's column. Cards use the server's
-/// week card style, as on the web. The timeline variant (time bands) is not
-/// ported; this is the web's own stacked option.
+/// week card style, as on the web. Shown when the server's
+/// `calendar_week_layout` is `stacked`; the default is `WeekTimelineView`.
 struct WeekColumnsView: View {
     let days: [String]
     let entries: [CalendarEntry]
@@ -57,7 +57,7 @@ struct WeekColumnsView: View {
 
 /// A day column's head (`week-day-heads`): the short weekday, the date number
 /// (the accent on today), and "N airing" under it on the desktop container.
-private struct WeekColumnHead: View {
+struct WeekColumnHead: View {
     let iso: String
     let isToday: Bool
     let count: Int

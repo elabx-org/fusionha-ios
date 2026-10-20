@@ -6,11 +6,12 @@ import FusionhaKit
 /// Select mode's bar as a system bottom bar (ruling Q-DC4), so iOS can move
 /// it into the iPhone Duo's vertical bar; the tab bar steps aside while
 /// selecting (a task-focused view). Selection ("N selected · of M filtered",
-/// Select all, Clear), the bulk Actions with the count as their badge (the
-/// HIG's badge for an inline count), and Done. The bar sits in the tab's safe
+/// Select all, Clear), the web's "N selected" as plain text between the glass
+/// groups, the bulk Actions, and Done. The bar sits in the tab's safe
 /// area, so the shell's toasts clear it (`ToastAnchor`).
 struct LibrarySelectBar: ViewModifier {
     @Environment(AppModel.self) private var model
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let active: Bool
     let visibleIds: [Int]
     @State private var profiles: [QualityProfile] = []
@@ -22,9 +23,12 @@ struct LibrarySelectBar: ViewModifier {
         content
             .toolbar {
                 if active {
+                    ToolbarItem(placement: .bottomBar) { selectionMenu(count) }
+                    ToolbarSpacer(.flexible, placement: .bottomBar)
+                    ToolbarItem(placement: .bottomBar) { countLabel(count) }
+                        .sharedBackgroundVisibility(.hidden)
+                    ToolbarSpacer(.flexible, placement: .bottomBar)
                     ToolbarItemGroup(placement: .bottomBar) {
-                        selectionMenu(count)
-                        Spacer()
                         actionsMenu(count)
                         Button("Done", systemImage: "checkmark") { model.exitSelectMode() }
                     }
@@ -67,6 +71,18 @@ struct LibrarySelectBar: ViewModifier {
         .accessibilityValue("\(count) selected")
     }
 
+    /// The web's "N selected", as plain text between the bar's glass groups.
+    private func countLabel(_ count: Int) -> some View {
+        Text("\(count) selected")
+            .font(.subheadline.weight(.semibold))
+            .monospacedDigit()
+            .foregroundStyle(Theme.txt)
+            .lineLimit(1)
+            .fixedSize()
+            .contentTransition(.numericText(value: Double(count)))
+            .animation(reduceMotion ? nil : .snappy, value: count)
+    }
+
     private func actionsMenu(_ count: Int) -> some View {
         Menu {
             Button("Monitor", systemImage: "bookmark") {
@@ -105,7 +121,6 @@ struct LibrarySelectBar: ViewModifier {
         } label: {
             Label("Actions", systemImage: "square.stack.3d.up")
         }
-        .badge(count)
         .disabled(count == 0)
         .accessibilityLabel("Actions for \(count) selected")
     }

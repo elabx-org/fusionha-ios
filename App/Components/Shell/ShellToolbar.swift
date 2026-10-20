@@ -10,7 +10,7 @@ import FusionhaKit
 struct ShellPage: ViewModifier {
     @Environment(AppModel.self) private var model
     let title: String
-    /// The page's own width: past 720 the status cluster joins the bar (S3).
+    /// The page's own width: past 900 the status cluster joins the bar (S3, as the web).
     @State private var width: CGFloat = 0
     @State private var clusterPanel: StatusClusterPanel?
 
