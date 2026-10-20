@@ -227,6 +227,15 @@ def requests_rows(query):
          "editions": ["UHD-2160p"], "seasons": [], "episodes": [], "status": "deferred", "reason": "not_available_yet",
          "note": None, "requested_at": ago(120)},
     ]
+    # Titles, posters and requesters as the server joins them in (by TMDB id).
+    by_tmdb = {i["tmdb_id"]: i for i in load("library.json")}
+    people = {4: {"id": 4, "display_name": "maya", "avatar": None, "role": "user"},
+              6: {"id": 6, "display_name": "theo", "avatar": None, "role": "user"}}
+    for r in rows:
+        item = by_tmdb.get(r["tmdb_id"])
+        if item:
+            r |= {"title": item["title"], "year": item["year"], "poster": item["poster_url"]}
+        r["requester"] = people.get(r["user_id"])
     status = query.get("status", [None])[0]
     return [r for r in rows if status is None or r["status"] == status]
 
@@ -260,16 +269,21 @@ def threads_rows(query):
     requests = {r["id"]: r for r in requests_rows({})}
     def request_thread(rid, item_id, who, hours, text):
         item = lib[item_id]
-        request = requests[rid] | {"title": item["title"], "year": item["year"], "poster": item["poster_url"],
-                                   "requester": who}
+        request = requests[rid]
         return {"type": "request", "id": rid, "last_event_at": ago(hours), "title": item["title"],
                 "year": item["year"], "poster": item["poster_url"], "request": request, "issue": None,
                 "linked_pending_request_id": None,
                 "last_message": {"author_name": who["display_name"], "author_kind": "user", "text": text,
                                  "at": ago(hours)}}
-    def issue_thread(issue, who, hours, state, text):
+    def issue_thread(issue, who, hours, state, text, problem, verdict):
         item = lib[issue["media_item_id"]]
+        report = {"id": issue["id"], "problem": problem, "version": {"id": None, "tier": "HD-1080p", "edition": None},
+                  "scope": issue["scope"], "season": issue["season"], "episode": issue["episode"], "state": state,
+                  "verdict_summary": {"text": verdict, "verified": state == "RESOLVED"}, "choices": [],
+                  "resolution": verdict if state == "RESOLVED" else None, "created_at": issue["created_at"],
+                  "reporter": who}
         full = issue | {"reporter": who, "state": state, "reopen_count": 0, "participants_count": 2,
+                        "reports": [report],
                         "media_title": item["title"], "media_year": item["year"], "poster": item["poster_url"],
                         "resolved_at": None, "deduped": False}
         return {"type": "issue", "id": issue["id"], "last_event_at": ago(hours), "title": item["title"],
@@ -280,10 +294,13 @@ def threads_rows(query):
     issues = {i["id"]: i for i in issues_rows({"status": ["open"]}) + issues_rows({"status": ["resolved"]})}
     rows = [
         request_thread(1, 4, maya, 1, "Can this be the 4K HDR release?"),
-        issue_thread(issues[1], maya, 3, "CHECKING", "Audio drifts out of sync after ten minutes."),
+        issue_thread(issues[1], maya, 3, "CHECKING", "Audio drifts out of sync after ten minutes.",
+                     "OTHER", "Checking the file against the release."),
         request_thread(2, 10, maya, 6, "Seasons 1 and 2 to start, thanks."),
-        issue_thread(issues[2], theo, 26, "OPEN", "Stutters every few seconds on the Apple TV."),
-        issue_thread(issues[3], maya, 96, "RESOLVED", "Subs are there now, thank you."),
+        issue_thread(issues[2], theo, 26, "OPEN", "Stutters every few seconds on the Apple TV.",
+                     "WONT_PLAY", "Plays on the server; the client may be transcoding."),
+        issue_thread(issues[3], maya, 96, "RESOLVED", "Subs are there now, thank you.",
+                     "LANGUAGE", "Grabbed a release with English subtitles."),
     ]
     kind = query.get("type", [None])[0]
     state = query.get("state", [None])[0]
