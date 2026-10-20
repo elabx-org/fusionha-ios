@@ -578,7 +578,7 @@ jobs:
     if: needs.plan.outputs.duo == 'true'
     continue-on-error: true
     runs-on: xcode-27
-    timeout-minutes: 100
+    timeout-minutes: 120
     permissions:
       contents: write
     steps:
@@ -658,7 +658,7 @@ jobs:
           xcrun simctl install "$UDID" build/Build/Products/Debug-iphonesimulator/Fusionha.app
 
       - name: Take iPhone Duo screenshots
-        timeout-minutes: 55
+        timeout-minutes: 75
         run: |
           python3 scripts/mock_server.py 8765 &
           sleep 2
