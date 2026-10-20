@@ -16,6 +16,8 @@ struct TabRoot<Content: View>: View {
     var body: some View {
         NavigationStack {
             content
+                // The tab bar's top, for the shell's toasts (D3).
+                .publishesToastAnchor()
         }
     }
 }

@@ -77,7 +77,9 @@ struct PreviewHero: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 14)
         }
-        .containerRelativeFrame(.vertical) { height, _ in min(max(height * 0.62, 430), 600) }
+        // The 430 floor gives way to 75% of a short container (the Duo's outer
+        // display sideways, 466pt tall), like the detail hero (D3).
+        .containerRelativeFrame(.vertical) { height, _ in min(max(height * 0.62, min(430, height * 0.75)), 600) }
         .clipped()
         .overlay(alignment: .topLeading) {
             HStack(spacing: 8) {

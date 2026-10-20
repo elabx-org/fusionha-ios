@@ -11,13 +11,20 @@ struct DetailHeroArt: View {
 
     var body: some View {
         Color.clear
-            .containerRelativeFrame(.vertical) { length, _ in min(max(length * 0.5, 360), 520) }
+            .containerRelativeFrame(.vertical) { length, _ in Self.height(for: length) }
             .frame(maxWidth: .infinity)
             .background {
                 art
                 wash
             }
             .clipped()
+    }
+
+    /// Half the container, at least 360 and at most 520, but the 360 floor
+    /// gives way to 60% of a short container (the Duo's outer display held
+    /// sideways, 466pt tall) so the heading and actions stay in view (D3).
+    static func height(for length: CGFloat) -> CGFloat {
+        min(max(length * 0.5, min(360, length * 0.6)), 520)
     }
 
     @ViewBuilder

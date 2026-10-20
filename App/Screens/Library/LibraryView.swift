@@ -177,11 +177,13 @@ struct LibraryView: View {
             // Plex-app rhythm on phones: 16pt side margins.
             .padding(.horizontal, 16)
             .padding(.top, 20)
-            .padding(.bottom, 90)
+            .padding(.bottom, Theme.pageBottom)
         }
         .scrollDismissesKeyboard(.immediately)
         .onGeometryChange(for: Int.self) { proxy in
-            PosterColumns.count(for: proxy.size.width - 32)
+            // The grid is inset evenly, so a fold through the page's middle
+            // crosses the grid's middle too: keep it in a gutter (D3).
+            PosterColumns.count(for: proxy.size.width - 32, evenForFold: FoldInfo.crossesMiddle(proxy))
         } action: { columns = $0 }
         .refreshable { await model.loadLibrary() }
         .onScrollGeometryChange(for: CGFloat.self) { geo in

@@ -226,7 +226,6 @@ struct ActivityView: View {
 /// One Activity tab's scrolling page: the shared header, then the tab's content
 /// laid out flat (each row a direct child of the lazy stack).
 struct ActivityPage<Content: View>: View {
-    @Environment(ActBulk.self) private var bulk
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -237,7 +236,7 @@ struct ActivityPage<Content: View>: View {
             }
             .padding(.horizontal, Theme.pageGutter)
             .padding(.top, 20)
-            .padding(.bottom, bulk.config == nil ? 90 : 190)
+            .padding(.bottom, Theme.pageBottom)
         }
         .scrollDismissesKeyboard(.immediately)
     }

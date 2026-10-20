@@ -51,6 +51,19 @@ struct FoldInfo: Equatable {
         }
         return []
     }
+
+    /// Whether a fold, folded flat or not (an inactive `.division` counts), runs
+    /// top to bottom through the middle of this container. Grids use it to pick
+    /// an even column count, so the fold falls in a gutter, never on a poster.
+    static func crossesMiddle(_ proxy: GeometryProxy) -> Bool {
+        guard #available(iOS 27.1, *) else { return false }
+        let width = proxy.size.width
+        guard width > 0 else { return false }
+        return proxy.reservedRegions(kind: .division, options: .includeInactive).contains { region in
+            let frame = region.frame
+            return frame.height >= frame.width && abs(frame.midX - width / 2) <= max(frame.width, 12)
+        }
+    }
 }
 
 /// Places one or two children: alone it fills the container; with a second
@@ -176,7 +189,14 @@ extension EnvironmentValues {
 /// phone (unchanged), two in a narrow column, more as the width grows (the
 /// web's `repeat(auto-fill, minmax(…))`).
 enum PosterColumns {
-    static func count(for width: CGFloat) -> Int {
+    /// `evenForFold`: a fold crosses the grid's middle (`FoldInfo.crossesMiddle`),
+    /// so an odd count drops by one and the fold lands in the centre gutter.
+    static func count(for width: CGFloat, evenForFold: Bool = false) -> Int {
+        let count = baseCount(for: width)
+        return evenForFold && count % 2 == 1 ? max(2, count - 1) : count
+    }
+
+    private static func baseCount(for width: CGFloat) -> Int {
         guard width > 0 else { return 3 }
         if width < 300 { return 2 }
         if width < 520 { return 3 }
@@ -185,7 +205,8 @@ enum PosterColumns {
 }
 
 /// A poster grid whose column count follows its own width (`PosterColumns`):
-/// three tracks on phones, more when unfolded. 22 × 10 gaps like the Library.
+/// three tracks on phones, more when unfolded, an even count when the fold
+/// crosses it. 22 × 10 gaps like the Library.
 struct AdaptivePosterGrid<Content: View>: View {
     var spacing: CGFloat = 22
     var columnSpacing: CGFloat = 10
@@ -197,6 +218,8 @@ struct AdaptivePosterGrid<Content: View>: View {
                   alignment: .leading, spacing: spacing) {
             content
         }
-        .onGeometryChange(for: Int.self) { PosterColumns.count(for: $0.size.width) } action: { columns = $0 }
+        .onGeometryChange(for: Int.self) { proxy in
+            PosterColumns.count(for: proxy.size.width, evenForFold: FoldInfo.crossesMiddle(proxy))
+        } action: { columns = $0 }
     }
 }

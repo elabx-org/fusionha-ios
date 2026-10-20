@@ -102,7 +102,10 @@ enum Theme {
 
     /// The redesign's 16pt side margin.
     static let pageGutter: CGFloat = 16
-    static let bottomNavClearance: CGFloat = 76
+    /// Breathing room under a tab page's last row. The tab bar, the bulk bar
+    /// and the home indicator are already in the scroll view's safe area, so
+    /// this is only the rest, never a bar height (D3).
+    static let pageBottom: CGFloat = 24
 
     static func kind(_ bucket: KindBucket) -> Color {
         switch bucket {

@@ -71,7 +71,8 @@ struct SettingsShellLink: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
+            // The trailing pane's side of the fold in Book pose (DC14).
+            .overlay { FoldToastLayer() }
             .onChange(of: path, initial: true) { model.avatar.settingsShown = path.last ?? "" }
             .onChange(of: model.avatar.settingsJump) {
                 guard let jump = model.avatar.settingsJump else { return }
