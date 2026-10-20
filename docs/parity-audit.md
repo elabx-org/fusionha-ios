@@ -462,7 +462,7 @@ overflow shows the label). Tick a row with its build number.
 | F3 | Episode sheet's Search tab: park its `InteractiveSearchModel` across fold/unfold (DC3: no lost state) | ✅ build 455 |
 | F4 | Activity, Calendar and sign-in toasts on `model.toast`, so Q-DC9 hinge placement applies everywhere | ✅ build 455: Activity + Wanted through `ActToaster.shell`, Calendar direct; sign-in already used it; sheets keep `CalToast` (now `Components/SheetToast.swift`) |
 | F5 | Split oversized files to ~300–400 lines: `AppModel` (665), `ScreenModels` (619), `DiscoverModels` (530), `DetailLogic` (481), `CalendarModels` (456), `EditItemSheet` (335) | ✅ build 464: all six under 400 (AppModel 381: rest writes `private(set)` state) |
-| F6 | Next oversized files (>400): `SettingsFetchingModels` 599, `AddFlow` 550, `AddFlowLogic` 544, `ActivityModels` 527, `PerfProbe` 498, `AddConfigView` 445, `SystemTasksPanel` 422, `DetailModels` 417, `PreviewView` 415, `ThreadLogic` 409 | ☐ |
+| F6 | Next oversized files (>400). Part 1 ✅ build 474: `SettingsFetchingModels`, `AddFlowLogic`, `ActivityModels`, `DetailModels`, `ThreadLogic`, `PerfProbe` all under 320. Part 2 open: views `AddFlow` 550, `AddConfigView` 445, `SystemTasksPanel` 422, `PreviewView` 415 | ◐ |
 
 #### F2 spec: first run as onboarding (owner, 2026-10-19)
 
