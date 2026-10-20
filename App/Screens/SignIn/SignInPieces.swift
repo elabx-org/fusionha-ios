@@ -41,17 +41,21 @@ struct GradientSubmit: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                TimelineView(.animation(minimumInterval: 1 / 30)) { context in
-                    let t = context.date.timeIntervalSinceReferenceDate
-                    let shift = (sin(t * .pi / 3) + 1) / 2
-                    ZStack {
-                        Theme.fusion
-                        LinearGradient(stops: [.init(color: .white.opacity(0), location: 0.3),
-                                               .init(color: .white.opacity(0.45), location: 0.5),
-                                               .init(color: .white.opacity(0), location: 0.7)],
-                                       startPoint: UnitPoint(x: -0.6 + 1.2 * shift, y: 0.5),
-                                       endPoint: UnitPoint(x: 0.4 + 1.2 * shift, y: 0.5))
-                            .blendMode(.softLight)
+                if !enabled && !working {
+                    Theme.panel2.overlay(Capsule().strokeBorder(Theme.line))
+                } else {
+                    TimelineView(.animation(minimumInterval: 1 / 30)) { context in
+                        let t = context.date.timeIntervalSinceReferenceDate
+                        let shift = (sin(t * .pi / 3) + 1) / 2
+                        ZStack {
+                            Theme.fusion
+                            LinearGradient(stops: [.init(color: .white.opacity(0), location: 0.3),
+                                                   .init(color: .white.opacity(0.45), location: 0.5),
+                                                   .init(color: .white.opacity(0), location: 0.7)],
+                                           startPoint: UnitPoint(x: -0.6 + 1.2 * shift, y: 0.5),
+                                           endPoint: UnitPoint(x: 0.4 + 1.2 * shift, y: 0.5))
+                                .blendMode(.softLight)
+                        }
                     }
                 }
                 if working, let workingTitle {
@@ -59,7 +63,9 @@ struct GradientSubmit: View {
                 } else if working {
                     ProgressView().tint(Theme.onPrimary)
                 } else {
-                    Text(title).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.onPrimary)
+                    // Disabled: a quiet capsule, not a dimmed gradient (dark ink on dark fill vanished).
+                    Text(title).font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(enabled ? Theme.onPrimary : Theme.mut)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -69,7 +75,6 @@ struct GradientSubmit: View {
         .buttonStyle(.plain)
         .padding(.top, 6)
         .disabled(!enabled || working)
-        .opacity(enabled ? 1 : 0.55)
     }
 }
 
