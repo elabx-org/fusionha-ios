@@ -75,6 +75,7 @@ struct LibraryView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if model.selectMode {
                 BulkActionBar(visibleIds: derived.visibleIds)
+                    .publishesBottomBarTop("library.select")
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }

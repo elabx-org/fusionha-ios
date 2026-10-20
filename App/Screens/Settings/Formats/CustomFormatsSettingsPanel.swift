@@ -40,7 +40,9 @@ struct CustomFormatsSettingsPanel: View {
         .sheet(item: $editing) { target in
             CustomFormatEditorSheet(target: target, profiles: profiles) { await load() }
         }
-        .safeAreaInset(edge: .bottom) { if selecting && !selected.isEmpty { bulkBar } }
+        .safeAreaInset(edge: .bottom) {
+            if selecting && !selected.isEmpty { bulkBar.publishesBottomBarTop("settings.formats.bulk") }
+        }
         .confirmationDialog("Delete \(selected.count) custom format\(selected.count == 1 ? "" : "s")?",
                             isPresented: $confirmBulk, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { Task { await bulkDelete() } }

@@ -66,6 +66,8 @@ struct RequestThreadSheet: View {
             .closeOnlyBars()
         }
         .presentationDetents([.large])
+        // Interim (D4 ruling): a form sheet unfolded until D2's side pane.
+        .formSheet()
         .task { await poll() }
         .onDisappear(perform: onChanged)
     }

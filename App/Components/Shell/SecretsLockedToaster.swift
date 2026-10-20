@@ -70,12 +70,15 @@ struct SettingsShellLink: ViewModifier {
     @Binding var path: [String]
     /// The panel pane's global frame while Settings is split, else `nil`.
     var pane: CGRect?
+    /// Settings' own: its panels' bottom bars, so its toasts clear them.
+    @State private var anchor = ToastAnchor()
 
     func body(content: Content) -> some View {
         content
             // The trailing side of the fold in Book pose (DC14); flat open and
-            // split, the panel pane.
-            .overlay { FoldToastLayer(pane: pane) }
+            // split, the panel pane; above any bottom bar.
+            .overlay { FoldToastLayer(pane: pane, clearsAbove: anchor.floor) }
+            .environment(anchor)
             .onChange(of: path, initial: true) { model.avatar.settingsShown = path.last ?? "" }
             .onChange(of: model.avatar.settingsJump) {
                 guard let jump = model.avatar.settingsJump else { return }

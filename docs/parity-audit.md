@@ -366,12 +366,14 @@ What it means for the app:
 | DC21 | Requests drawer/filter; Library filters; Issues sheets | inner | Height detents are ignored at regular width; the web uses popovers or modals | D4 · ✅ (build pending): drawer, Filter and Library Filters open from their controls via `sheetPopover` (popover wide, phone sheet compact); report an issue, both issue threads and the rule editor are form sheets (R7) |
 | DC22 | Manual Import | inner | A default form sheet with phone cards; the web is split on the open Duo | D2/D4 · D4 part ✅ (build pending): page-sized sheet (`presentationSizing(.page)`); the split layout stays with D2 |
 | DC23 | Inner layouts | inner | DU1–DU16 (Requests panes, Board, History table, thread/issue panes, Discover wide, Queue card pane, Library desktop, Calendar tablet/desktop, Settings, Account, sign-in side by side) | D2 |
+| DC24 | Account panel (D4 follow-up) | inner | A centred form sheet (DC19 deviation) | Account panel → trailing placement (web ~520 right panel) once the iOS 27.1 `preferredPlacement` API is confirmed · ☐ |
 
 **Minor** (folded into the batches above):
 - Toast 72 pt and page-bottom 90/190 constants (D3) · ✅ (build pending): the shell's toasts clear the tab bar's measured top (`ToastAnchor`, from each tab's safe area); Library, Discover, Wanted and Activity pages end with `Theme.pageBottom` (24) since the tab bar and bulk bars are already in the scroll view's safe area. Unused `Theme.bottomNavClearance` removed
 - `StatusBarFade` on the outer display (D3) · ✅ removed in D1
 - Odd poster-grid columns across an inactive fold (D3) · ✅ (build pending): `FoldInfo.crossesMiddle` reads `.division` regions with `.includeInactive`; when the fold runs through a grid's middle, `PosterColumns` drops an odd count by one (Library grid and every `AdaptivePosterGrid`), so the fold lands in the centre gutter
 - Detail hero minimum 360 in outer landscape (D3) · ✅ (build pending): the 360 floor gives way to 60% of the container (`DetailHeroArt.height(for:)`, 280pt at 466 tall); phones unchanged. Deviation beyond the row: the Preview hero's 430 floor gives way to 75% the same way
+- Toasts over bottom bars (D4 ruling, in D5) · ✅ (build pending): a bottom bar reports its top with `publishesBottomBarTop(_:)` (`ToastAnchor.barTops`), and toasts sit above the higher of it and the tab bar (`ToastAnchor.floor`): Library select, Activity bulk, and in the Settings cover (its own anchor) Custom formats' bulk bar. The Requests Inbox bulk bar scrolls with the list (not a bottom bar), so it doesn't report
 - Tab badge tint not refreshed on bar-axis change (D5) · ✅ (build pending): `TabBadgeTint`'s key carries the shell's size and split, and it re-applies once more after the resize settles (450 ms)
 - Activity chip strip not scrolled to the selection (D5) · ✅ (build pending): `ActTabs` (own file now) scrolls the selected tab to the centre on appear, on change and when the strip's width changes (`ScrollViewReader`)
 - Search focus not restored (D5) · ✅ (build pending): `keepsFocusAcrossResize` (`Components/FocusAcrossResize.swift`) re-focuses the Search tab's field after a width change (measured without the keyboard) when it was focused, or lost focus within 0.8 s of it
@@ -547,7 +549,8 @@ D4 notes (build pending):
   both `ViewThatFits` candidates; only the displayed one should present.
 - **Form sheets:** request modal (R3; off inside the Add sheet, which keeps its size), report an issue,
   `IssueThreadSheet`, `IssuePaneSheet`, rule editor (R7), Account (DC19). The request thread (`RequestThreadSheet`)
-  is not ruled and keeps the default; DU5's side pane is D2.
+  is not ruled and keeps the default; DU5's side pane is D2. **Ruled (in D5, build pending):** `ActDialog` and, as an
+  interim until D2's side pane, `RequestThreadSheet` are `formSheet()` unfolded; the phone keeps their detents.
 - **Detents:** Account hub, `ActDialog`, Add user, Move credential, Broadcast, Change root → `[.mediumFitting, .large]`;
   trailer → `[.mediumFitting]`. Other `[.medium, .large]` sheets were left: they can already be dragged to full.
 - **Close-only bars (Q-DC6):** Account, Add source, Letterboxd import, Edition aliases, Episode detail, Item

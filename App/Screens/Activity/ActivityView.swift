@@ -151,6 +151,7 @@ struct ActivityView: View {
                         .disabled(action.disabled)
                     }
                 }
+                .publishesBottomBarTop("activity.bulk")
             }
         }
         .shellPage("Activity")

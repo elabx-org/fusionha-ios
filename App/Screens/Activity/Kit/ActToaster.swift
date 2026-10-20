@@ -148,6 +148,9 @@ struct ActDialog<Options: View>: View {
         .scrollBounceBehavior(.basedOnSize)
         .safeAreaInset(edge: .bottom, spacing: 0) { buttons }
         .presentationDetents([.mediumFitting, .large])
+        // Unfolded, a centred form sheet like the web's modal (D4 ruling);
+        // the phone keeps the detents above.
+        .formSheet()
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.panel)
     }

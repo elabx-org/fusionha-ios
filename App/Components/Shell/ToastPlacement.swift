@@ -15,12 +15,40 @@ final class ToastAnchor {
     /// The bottom of the visible tab's safe area (just above the tab bar), in
     /// global coordinates. `nil` until a tab has been laid out.
     var tabSafeBottom: CGFloat?
+    /// The tops of the bottom bars on screen (Library select, Activity bulk),
+    /// in global coordinates, by bar.
+    var barTops: [String: CGFloat] = [:]
+
+    /// The line toasts sit above: the highest of the tab bar and any visible
+    /// bottom bar.
+    var floor: CGFloat? {
+        ([tabSafeBottom].compactMap { $0 } + barTops.values).min()
+    }
 }
 
 extension View {
     /// Publishes this tab's safe-area bottom (the tab bar's top) to the shell's toasts.
     func publishesToastAnchor() -> some View {
         modifier(ToastAnchorWriter())
+    }
+
+    /// Publishes this bottom bar's top to the shell's toasts while it is on
+    /// screen, so they float above it rather than over it.
+    func publishesBottomBarTop(_ id: String) -> some View {
+        modifier(BottomBarTopWriter(id: id))
+    }
+}
+
+private struct BottomBarTopWriter: ViewModifier {
+    @Environment(ToastAnchor.self) private var anchor: ToastAnchor?
+    let id: String
+
+    func body(content: Content) -> some View {
+        content
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { top in
+                if anchor?.barTops[id] != top { anchor?.barTops[id] = top }
+            }
+            .onDisappear { anchor?.barTops[id] = nil }
     }
 }
 
@@ -102,12 +130,14 @@ struct ToastLayer: View {
 struct FoldToastLayer: View {
     var gap: CGFloat = 24
     var pane: CGRect?
+    /// A bottom bar's top (global) the toasts must clear, if one is showing.
+    var clearsAbove: CGFloat?
 
     var body: some View {
         GeometryReader { proxy in
             let origin = proxy.frame(in: .global).origin
             let local = pane?.offsetBy(dx: -origin.x, dy: -origin.y)
-            ToastLayer(region: ToastRegion.trailing(FoldInfo(proxy), pane: local), gap: gap)
+            ToastLayer(region: ToastRegion.trailing(FoldInfo(proxy), pane: local), clearsAbove: clearsAbove, gap: gap)
         }
     }
 }
