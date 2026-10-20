@@ -138,9 +138,8 @@ struct ShellSplit: Equatable {
             // Flat open: the web's list | detail, the detail a phone-width-plus column.
             shown = true
             axis = .horizontal
-            let detail = CGFloat(ShellSplitRule.detailWidth(for: Double(width)))
-            primary = max(width - detail - 1, 0)
-            gap = 1
+            primary = CGFloat(ShellSplitRule.primaryWidth(for: Double(width)))
+            gap = CGFloat(ShellSplitRule.divider)
         }
     }
 }

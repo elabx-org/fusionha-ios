@@ -3,7 +3,7 @@ import FusionhaKit
 
 // MARK: - Status cluster (TopBar `statusCluster`, ruling S3)
 //
-// Past 720 of a tab's own width the web's top bar shows a status cluster:
+// Past 900 of a tab's own width the web's top bar shows a status cluster:
 // live Activity, Needs attention and the backend light. iOS keeps its glass
 // tab bar (a recorded deviation) and puts the cluster in the system bar as
 // three standard items (title + symbol, counts as badges), so iOS can still
