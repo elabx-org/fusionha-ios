@@ -156,19 +156,19 @@ The empty Queue screen (#53) is being ported separately and is not in this table
 | DU3 | Board | `RequestsBoard.tsx` (5 columns) | stage sections | Phone layout | visible |
 | DU4 | History (Requests) | `RequestsHistory.tsx` table | day groups | No table | visible |
 | DU5 | Request thread, Issues, Threads | `RequestThread.tsx` right panel, `threads.module.css .split` | sheets | No side pane (Q-R8) | visible |
-| DU6 | Discover | `DiscoverBrowseControls` one row ≥721; `Rail.module.css` cell sizes; filter auto-fit; `RequestModal` two panes | stacked; fixed 116 cards | Phone layout | visible |
-| DU7 | Manual Import | `useManualImportLayout.ts` (split ≤720 / table) | phone cards | Missing (Q-R4) | visible |
-| DU8 | Queue | `queue/duo/use-queue-duo.ts`, `QueueDuoPane.tsx` (list 294 \| card 375); the card's own 3-column grid ≥720 | tapping opens the title detail | No queue-card pane (Q-A2) | visible |
-| DU9 | Activity header, Tasks | single-row head and 3-up System grid ≥720 | phone | Only an iPad reaches 720 (Q-A1) | minor |
+| DU6 | Discover | `DiscoverBrowseControls` one row ≥721; `Rail.module.css` cell sizes; filter auto-fit; `RequestModal` two panes | stacked; fixed 116 cards | Phone layout | visible · ✅ (build pending, D2c): on the page's own width (`DiscoverWidthRule`): cells 116 / 128 / 158 at 540 / 720, lens + search + Add as on one row above 720, filters `auto-fit minmax(150, 1fr)` gap 12; the request modal is art 300 \| options above 720 of the sheet's width (see D2c notes) |
+| DU7 | Manual Import | `useManualImportLayout.ts` (split ≤720 / table) | phone cards | Missing (Q-R4) | visible · ✅ (build pending, D2c): `ManualImportLayout` on the sheet's own size: cards (folded), split list \| file (≤720, split-capable), table above 720 (Audio and Group · service from 1100) |
+| DU8 | Queue | `queue/duo/use-queue-duo.ts`, `QueueDuoPane.tsx` (list 294 \| card 375); the card's own 3-column grid ≥720 | tapping opens the title detail | No queue-card pane (Q-A2) | visible · ✅ (build pending, D2c): `QueueDuoRule` 44 \| 56 with `QueueDuoPane`; solo/pair cards open it with the i2 ring; the card's desktop grid at 720 of its own width (`QueueCardFrame`) |
+| DU9 | Activity header, Tasks | single-row head and 3-up System grid ≥720 | phone | Only an iPad reaches 720 (Q-A1) | minor · ✅ (build pending, D2c): above 720 of the Activity pane (inner landscape, Q-DC3): one-row head (caption · search 200–340 · Resolve all held), Tasks System 3-up (`TaskSystemSection`) |
 | DU10 | Library | `useIsMobile` 720: desktop toolbar, inline pulse ribbon, A–Z rail, letter headers | only the column count changes | Phone toolbar and scrubber (Q-L17) | visible |
 | DU11 | Calendar | `calendar/layout.ts` (own width: <720 phone, 720–999 tablet, ≥1000 desktop) | size class → desktop month grid | Wrong trigger; no tablet branch | visible |
 | DU12 | Settings | sidebar 212 + panel ≥720 | `SettingsView.swift:31` size class | Wrong trigger (Q-S2) | visible |
 | DU13 | Account panel | trailing panel of about 520 px ≥720 | centred sheet, 420 wide | Sheet | visible |
 | DU14 | Shell | CapsuleNav + status cluster >720 | tab bar, no cluster | No cluster (Q-S3) | visible |
 | DU15 | Sign-in | hero beside the form ≥760; living art beside it ≥720 | stacked | Phone layout | visible |
-| DU16 | Settings panels | Metadata 2 columns, Plex rows, default profiles table, quality editor ≥820, custom formats 760/1100, import two panes, card grids auto-fill | stacked | Phone layout (Q-S5) | minor |
+| DU16 | Settings panels | Metadata 2 columns, Plex rows, default profiles table, quality editor ≥820, custom formats 760/1100, import two panes, card grids auto-fill | stacked | Phone layout (Q-S5) | minor · ✅ (build pending, D2c) except Custom formats 760/1100 (☐, see D2c notes): Metadata provider cards one head row + cells 1fr \| 1fr, Hybrid fields 190 \| chain; Plex library rows evidence \| controls, "who gets 4K" auto-fill 210; Default profiles 3 × 2 table; quality editor Qualities \| Custom Formats above 820 of the (now page) sheet; Library import Sources rail 320 \| triage above 720; Instances 430 and Indexers 510 auto-fill |
 | DU17 | Item detail | docked title uses the phone layout | ShellDetailColumn | **Matches** | — |
-| DU18 | History, Blocklist, Wanted, Tasks | mobile below 720 (the inner display is about 669) | phone column | **Matches** today | — |
+| DU18 | History, Blocklist, Wanted, Tasks | mobile below 720 (the inner display is about 669) | phone column | **Matches** today | — · Q-DC3 re-rules A1 for inner landscape (D2c, build pending): above 720 of the pane, History's group header and solo rows keep the trailing inline with "N events", Blocklist keeps its meta inline, Wanted's 4K card is two columns above the web's own 760, Tasks as DU9; inner portrait keeps the phone column |
 
 HIG Duo items from the apple-hig skill (`references/duo-checklist.md`) that the web doesn't cover:
 - Keep the custom split edge and important controls off the hinge (`reservedRegion` / `ArrangementView`, iOS 27.1).
@@ -377,11 +377,11 @@ What it means for the app:
 - Tab badge tint not refreshed on bar-axis change (D5) · ✅ (build pending): `TabBadgeTint`'s key carries the shell's size and split, and it re-applies once more after the resize settles (450 ms)
 - Activity chip strip not scrolled to the selection (D5) · ✅ (build pending): `ActTabs` (own file now) scrolls the selected tab to the centre on appear, on change and when the strip's width changes (`ScrollViewReader`)
 - Search focus not restored (D5) · ✅ (build pending): `keepsFocusAcrossResize` (`Components/FocusAcrossResize.swift`) re-focuses the Search tab's field after a width change (measured without the keyboard) when it was focused, or lost focus within 0.8 s of it
-- Idle tile grid leaves an orphan row and starts at a 390 seed (D2)
-- Import report 3+2 (D2)
-- Sync count grid at narrow widths (D2)
+- Idle tile grid leaves an orphan row and starts at a 390 seed (D2) · ✅ (build pending, D2c): no seed (draws once measured); `IdleLayout.balancedTileColumns` shows 5 tiles as 3 + 2 where the web's auto-fit leaves 4 + 1 (deviation)
+- Import report 3+2 (D2) · ✅ (build pending, D2c): the web's flex-wrap, `min-width: 116` gap 12 (`StretchWrapLayout`), so it can be 4 + 2 like the web
+- Sync count grid at narrow widths (D2) · ✅ (build pending, D2c): one row while every label fits, else balanced rows (deviation: the web keeps one row and truncates)
 - The Settings `.principal` clear view (D1)
-- `ellipsis` menus (D1) · Manual Import ✅ (build pending, D5): Status key is a system item, Open on the web is `.secondaryAction` (system overflow). Still open: `ImportWorkspaceSheet` "More actions" (Settings › Import library)
+- `ellipsis` menus (D1) · Manual Import ✅ (build pending, D5): Status key is a system item, Open on the web is `.secondaryAction` (system overflow). `ImportWorkspaceSheet` ✅ (build pending, D2c): Rescan all is a system item, Discard is `.secondaryAction`
 - Account hub opens at `.medium` in outer landscape (D4) · ✅ (build pending): `.mediumFitting` (whole height when the sheet's room is under 520 pt)
 - One-item sheets: vertical-bar opt-out (Q-DC6) · ✅ (build pending): `closeOnlyBars()` on the 17 Close/Done-only sheets D1 missed (list in D4 notes)
 
@@ -563,4 +563,29 @@ D4 notes (build pending):
   signature isn't confirmed in this repo, so it is not used.
 - **Deviation, Add configure step:** past the hero the system bar shows the title (the old custom compact bar did
   the same). The hero runs under the clear bar with the scroll edge effect hidden until then, so the art stays clean.
+
+D2c notes (Activity, Queue, Discover, Manual Import, Settings panels; build pending):
+- **Trigger:** every switch reads a measured width, never the size class: `publishesPaneSize()` / `\.paneSize`
+  (`Components/PaneWidth.swift`) on Activity, Wanted, Discover and every Settings panel page; sheets measure
+  themselves. Thresholds live in `FusionhaKit/PaneRules.swift` (`PaneRule`, `QueueDuoRule`, `ManualImportLayout`,
+  `DiscoverWidthRule`), tested in `PaneRulesTests`. Inner portrait (669) keeps the phone layouts; inner landscape
+  (951) crosses 720 (Q-DC3). A phone held sideways (874) does too, as Settings did in D5.
+- **Settings panels:** viewport rules (`max-width: 720px`) follow `settingsDesktop`, true while Settings is split
+  (`SettingsSplitRule`, handed down by `SettingsView` as the size class; read via `settingsLayout()` in
+  `SettingsForm` / `FetchingPage`); container rules and card grids follow the panel's own width. `AutoFillGrid`
+  (`Components/AutoFillGrid.swift`) is `repeat(auto-fill, minmax(N, 1fr))` with row-stretch.
+- **Queue duo:** the pane runs the full height beside the header (the header scrolls with the list); only solo and
+  pair cards open it, as on the web. The split only exists from 560 to 720 on a split-capable screen, so the
+  iPad mini stand-in (744 / 1133) never shows it: compile-only.
+- **Manual Import:** the layout follows the sheet live (not latched per open as on the web), so folding and rotating
+  re-pick it. Table cells are read-only; a row opens its drawer (the phone row's body) for edits.
+- **Request modal:** art 300 \| options above 720 of the sheet's width. The R3 form sheet never gets there; only the
+  Add flow's page-sized sheet does. Open question: should a wide request modal use page sizing?
+- **Tasks:** System grid cards are top-aligned (the web stretches them to equal height).
+- **Wanted:** the 4K card goes two columns above the web's own 760, not 720.
+- **S5 deviations:** the Duo's Settings detail column is about 690 wide in landscape (951 less the sidebar), so the
+  Indexers cards' 510 × 2 and Instances' 430 × 2 only show on wider iPads; the quality editor (now a page sheet)
+  opens its two panes above 820 of the sheet. **Not built:** Custom formats' 760/1100 rail \| editor \| Live test
+  (the iOS panel is a list that opens a sheet editor; the Duo never reaches 760). Quality profiles and Presets keep
+  their native Form lists (no card grid). Metadata's provider picker keeps its own-width rule (4 across from 462).
 

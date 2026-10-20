@@ -13,6 +13,9 @@ struct QualityProfileEditorSheet: View {
     @State private var saving = false
     @State private var confirmDelete = false
     @State private var error: String?
+    /// The sheet's own width (`wide`).
+    @State private var width: CGFloat = 0
+    @State private var groupEdit = false
 
     init(profile: QualityProfileRecord?, onChanged: @escaping () async -> Void) {
         self.onChanged = onChanged
@@ -21,29 +24,42 @@ struct QualityProfileEditorSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                identity
-                summary
-                QualityProfileRulesSection(draft: draft)
-                Section {
-                    NavigationLink {
-                        QualityProfileLadderPage(draft: draft)
-                    } label: {
-                        LabeledContent("Qualities", value: "\(draft.allowedCount) allowed · \(draft.cutoffLabel)")
-                    }
-                    NavigationLink {
+            Group {
+                if wide {
+                    // Web `.body` above 820 (`minmax(340px, 0.9fr) 1.3fr`):
+                    // the profile and its Qualities | Custom Formats.
+                    HStack(spacing: 0) {
+                        Form {
+                            fields
+                            QualityProfileLadderSection(draft: draft, groupEdit: groupEdit) { groupEdit.toggle() }
+                            footer
+                        }
+                        .frame(width: max(340, (width - 1) * 0.9 / 2.2))
+                        Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea(edges: .bottom)
                         QualityProfileFormatScoresPage(draft: draft)
-                    } label: {
-                        LabeledContent("Custom Formats", value: "\(draft.scoredCount) scored")
+                    }
+                } else {
+                    Form {
+                        fields
+                        Section {
+                            NavigationLink {
+                                QualityProfileLadderPage(draft: draft)
+                            } label: {
+                                LabeledContent("Qualities", value: "\(draft.allowedCount) allowed · \(draft.cutoffLabel)")
+                            }
+                            NavigationLink {
+                                QualityProfileFormatScoresPage(draft: draft)
+                                    .navigationTitle("Custom Formats")
+                                    .navigationBarTitleDisplayMode(.inline)
+                            } label: {
+                                LabeledContent("Custom Formats", value: "\(draft.scoredCount) scored")
+                            }
+                        }
+                        footer
                     }
                 }
-                if draft.original != nil {
-                    Section {
-                        Button("Delete", systemImage: "trash", role: .destructive) { confirmDelete = true }
-                    }
-                }
-                if let error { Section { Text(error).foregroundStyle(Theme.danger).font(.footnote) } }
             }
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             .navigationTitle("Quality Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -59,6 +75,25 @@ struct QualityProfileEditorSheet: View {
             }
             .task { await loadFormats() }
         }
+    }
+
+    /// Above 820 of the sheet's own width (ruling S5: reached only by a wide
+    /// page sheet, never in iPhone Duo's sheet).
+    private var wide: Bool { width > 820 }
+
+    @ViewBuilder private var fields: some View {
+        identity
+        summary
+        QualityProfileRulesSection(draft: draft)
+    }
+
+    @ViewBuilder private var footer: some View {
+        if draft.original != nil {
+            Section {
+                Button("Delete", systemImage: "trash", role: .destructive) { confirmDelete = true }
+            }
+        }
+        if let error { Section { Text(error).foregroundStyle(Theme.danger).font(.footnote) } }
     }
 
     private var identity: some View {

@@ -57,7 +57,8 @@ struct IndexersPanel: View {
             if loaded, indexers.isEmpty, error == nil {
                 FetchEmpty(text: "No indexers yet. Add a Newznab or Torznab indexer, or let Prowlarr sync them in.")
             }
-            VStack(spacing: 12) {
+            // Web `.ixCards`: auto-fill minmax(510, 1fr), 16 apart.
+            AutoFillGrid(minItemWidth: 510, spacing: 16, lineSpacing: 12) {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { index, metric in
                     IndexerCard(metric: metric, index: index, maxShare: maxShare, maxYield: maxYield,
                                 result: results[metric.id], testing: testing.contains(metric.id),

@@ -81,15 +81,16 @@ struct ImportWorkspaceSheet: View {
         ToolbarItem(placement: .cancellationAction) {
             SheetCancelButton(title: "Close") { dismiss() }
         }
+        // No ⋯ menu (D1): Rescan all is a system item, Discard goes to the
+        // system overflow.
         if model.isDraft {
             ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button("Rescan all", systemImage: "arrow.clockwise") { Task { await model.rescan() } }
-                    Button("Discard", systemImage: "trash", role: .destructive) { confirmDiscard = true }
-                } label: {
-                    Label("More actions", systemImage: "ellipsis")
-                }
-                .disabled(model.working)
+                Button("Rescan all", systemImage: "arrow.clockwise") { Task { await model.rescan() } }
+                    .disabled(model.working)
+            }
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Discard", systemImage: "trash", role: .destructive) { confirmDiscard = true }
+                    .disabled(model.working)
             }
         }
     }

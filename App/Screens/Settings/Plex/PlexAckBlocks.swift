@@ -110,7 +110,10 @@ struct PlexWhoGets4KCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(active ? "Who gets UHD·4K now" : "Who would get UHD·4K")
                     .font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.mut)
-                ForEach(buckets) { b in card(b) }
+                // Web `.buckets`: auto-fill minmax(210, 1fr), 8 apart.
+                AutoFillGrid(minItemWidth: 210, spacing: 8) {
+                    ForEach(buckets) { b in card(b) }
+                }
             }
         }
     }
@@ -128,7 +131,7 @@ struct PlexWhoGets4KCard: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(10)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(color.opacity(0.10), in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
         .accessibilityElement(children: .combine)
     }

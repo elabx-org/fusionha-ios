@@ -41,6 +41,11 @@ screens() {  # screens <orientation> [env…]
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=1 "$@"; snap "standin-unfolded-$O-activity-ipadmini-not-real-unfold"
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover "$@"; snap "standin-unfolded-$O-discover-ipadmini-not-real-unfold"
   launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=general "$@"; snap "standin-unfolded-$O-settings-ipadmini-not-real-unfold"
+  # D2c: Activity's desktop head and Tasks grid, Settings panels' wide layouts.
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity "$@"; snap "standin-unfolded-$O-activity-queue-ipadmini-not-real-unfold"
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACTIVITY_TAB=tasks "$@"; snap "standin-unfolded-$O-activity-tasks-ipadmini-not-real-unfold"
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=metadata "$@"; snap "standin-unfolded-$O-settings-metadata-ipadmini-not-real-unfold"
+  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=defaultprofiles "$@"; snap "standin-unfolded-$O-settings-defaultprofiles-ipadmini-not-real-unfold"
 }
 
 launch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library
