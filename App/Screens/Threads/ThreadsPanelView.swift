@@ -152,7 +152,7 @@ struct ThreadRowView: View {
                     .font(.system(size: 14.5)).foregroundStyle(Theme.txt).lineLimit(1)
                 HStack(spacing: 5) {
                     Image(systemName: issue != nil ? "flag" : "film").font(.system(size: 11))
-                    Text(ThreadMeta.lineLabel(item))
+                    Text(ThreadMeta.lineLabel(item)).lineLimit(1)
                     ForEach(ThreadMeta.tiers(item), id: \.self) { ActTierChip(tier: $0) }
                 }
                 .font(.system(size: 12)).foregroundStyle(Theme.mut)
