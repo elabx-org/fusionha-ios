@@ -17,12 +17,13 @@ struct InboxListView: View {
     @State private var focus = TriageQueueFocus()
     /// The ring shows once the keyboard is in use, never for touch alone.
     @State private var keyed = false
+    @Environment(DiscoverStore.self) private var store
 
     var body: some View {
         VStack(spacing: 10) {
             // The count and "Done" (back to cards) live in the shared header row.
             LazyVStack(spacing: 8) {
-                ForEach(inbox.queue) { r in row(r) }
+                ForEach(inbox.queue) { r in row(r).id(Self.rowId(r.id)) }
             }
             if !inbox.selected.isEmpty {
                 InboxBulkBar(inbox: inbox).padding(.top, 6)
@@ -31,13 +32,18 @@ struct InboxListView: View {
         .triageKeys(on: .list, perform: key)
     }
 
+    static func rowId(_ id: Int) -> String { "inbox-row-\(id)" }
+
     private func key(_ action: TriageKeys.Action) -> Bool {
         let order = inbox.queue.map(\.id)
         guard let id = focus.effective(order), let request = inbox.queue.first(where: { $0.id == id }) else { return false }
         keyed = true
         switch action {
         case .approve, .decline: onOpen(request)
-        case .next, .prev: focus.move(action == .next ? 1 : -1, in: order)
+        case .next, .prev:
+            focus.move(action == .next ? 1 : -1, in: order)
+            // The rows live in Discover's page scroll: reveal the new focus there.
+            if let next = focus.focusId { store.scrollReveal = Self.rowId(next) }
         case .toggle:
             if inbox.selected.contains(id) {
                 inbox.selected.remove(id)

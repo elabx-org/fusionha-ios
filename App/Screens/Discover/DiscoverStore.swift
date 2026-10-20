@@ -58,6 +58,9 @@ final class DiscoverStore {
     /// An id inside Discover's scroll view to bring to the top (the Board's
     /// summary jumps to a stage this way); cleared once scrolled.
     var scrollTo: String?
+    /// An id to bring just into view, scrolling as little as it takes (the
+    /// Inbox list's J / K focus, web `reveal`); cleared once scrolled.
+    var scrollReveal: String?
     /// Bumped to refetch request lists after a decision.
     var requestsVersion = 0 {
         didSet { demand.reset() }

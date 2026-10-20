@@ -41,6 +41,9 @@ final class InboxModel {
     var filterItems: [URLQueryItem] = []
     /// More waiting rows than the first page holds.
     private(set) var more = false
+    /// No second decision for 350 ms after one, nor while a deck card flies.
+    @ObservationIgnored var lock = DecideLock()
+    var decideLocked: Bool { lock.locked() }
 
     @ObservationIgnored private var undoTask: Task<Void, Never>?
     @ObservationIgnored private var deadline = Date()
@@ -116,7 +119,7 @@ final class InboxModel {
     @discardableResult
     func approve(_ r: MediaRequest, viewerId: Int?) -> Bool {
         let t = triage[r.id]
-        guard !isLocked(r, viewerId: viewerId), TriageFacts.loaded(t), !TriageFacts.setupMissing(t) else { return false }
+        guard !decideLocked, !isLocked(r, viewerId: viewerId), TriageFacts.loaded(t), !TriageFacts.setupMissing(t) else { return false }
         if TriageFacts.lowSpaceMessage(t) != nil && armedId != r.id {
             armedId = r.id
             return false
@@ -127,7 +130,7 @@ final class InboxModel {
 
     @discardableResult
     func decline(_ r: MediaRequest, viewerId: Int?, reason: RequestReason = .notAvailableYet) -> Bool {
-        guard !isLocked(r, viewerId: viewerId) else { return false }
+        guard !decideLocked, !isLocked(r, viewerId: viewerId) else { return false }
         schedule(InboxDecision(kind: .decline, ids: [r.id], title: title(r), tiers: [], reason: reason))
         return true
     }
@@ -181,6 +184,7 @@ final class InboxModel {
 
     private func schedule(_ decision: InboxDecision) {
         flush()
+        lock.handUp()
         armedId = nil
         pending = decision
         startTimer(Self.undoSeconds)

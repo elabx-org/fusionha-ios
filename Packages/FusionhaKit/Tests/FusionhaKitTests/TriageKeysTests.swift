@@ -62,3 +62,23 @@ final class TriageKeysTests: XCTestCase {
         XCTAssertNil(f.effective([]))
     }
 }
+
+final class DecideLockTests: XCTestCase {
+    func testTwoPressesWithinTheLockDecideOnce() {
+        var lock = DecideLock()
+        let t0 = Date(timeIntervalSince1970: 1_000)
+        var decisions = 0
+        for offset in [0.0, 0.12] where lock.claim(at: t0.addingTimeInterval(offset)) { decisions += 1 }
+        XCTAssertEqual(decisions, 1)
+        XCTAssertTrue(lock.claim(at: t0.addingTimeInterval(DecideLock.window + 0.01)))
+    }
+
+    func testNothingDecidesInFlight() {
+        var lock = DecideLock()
+        lock.inFlight = true
+        XCTAssertTrue(lock.locked(at: .distantFuture))
+        XCTAssertFalse(lock.claim())
+        lock.inFlight = false
+        XCTAssertTrue(lock.claim())
+    }
+}

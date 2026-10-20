@@ -59,6 +59,11 @@ struct DiscoverView: View {
                     withAnimation(.snappy) { proxy.scrollTo(target, anchor: .top) }
                     store.scrollTo = nil
                 }
+                .onChange(of: store.scrollReveal) {
+                    guard let target = store.scrollReveal else { return }
+                    proxy.scrollTo(target)
+                    store.scrollReveal = nil
+                }
             }
         }
         // Rails, Browse's controls and the filter fields follow the page's own width.

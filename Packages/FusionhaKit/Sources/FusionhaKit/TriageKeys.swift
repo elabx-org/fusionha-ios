@@ -90,3 +90,31 @@ public struct TriageQueueFocus: Sendable, Hashable {
         lastIndex = at
     }
 }
+
+/// After a decision is handed up the Inbox ignores another for `window`
+/// (web `DECIDE_LOCK_MS`, `triage-motion.ts`), whatever the motion setting,
+/// so a double press never decides the next card too; nothing decides while
+/// a card is in flight either.
+public struct DecideLock: Sendable, Hashable {
+    public static let window: TimeInterval = 0.35
+
+    public private(set) var until: Date = .distantPast
+    /// A deck card is flying off: its decision isn't handed up yet.
+    public var inFlight = false
+
+    public init() {}
+
+    public func locked(at now: Date = Date()) -> Bool { inFlight || now < until }
+
+    /// A decision was handed up: start the window.
+    public mutating func handUp(at now: Date = Date()) {
+        until = now.addingTimeInterval(Self.window)
+    }
+
+    /// Claims the right to decide now: false while locked, else starts the window.
+    public mutating func claim(at now: Date = Date()) -> Bool {
+        guard !locked(at: now) else { return false }
+        handUp(at: now)
+        return true
+    }
+}

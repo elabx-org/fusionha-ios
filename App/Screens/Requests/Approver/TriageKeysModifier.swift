@@ -86,10 +86,25 @@ enum KeyboardContext {
         return depth
     }
 
+    /// UIKit's (private) host for an open `Menu` or context menu, looked up by
+    /// name at runtime; nil if a release renames it.
+    private static let menuContainer: AnyClass? = NSClassFromString("_UIContextMenuContainerView")
+
     /// A menu (a `Menu` or a context menu) is up: UIKit hosts it in a
-    /// container view on the window rather than presenting a controller.
+    /// container view on a window rather than presenting a controller.
+    ///
+    /// Fail-safe choice: if the class is gone we can't tell, and treating
+    /// "can't tell" as "a menu might be open" would turn the keys off for
+    /// good, so this answers false and the guard falls back to the
+    /// presentation count (`presentationDepth`) plus the open menu holding
+    /// keyboard focus itself, which keeps the Inbox container from getting
+    /// the key press at all.
     static var menuOpen: Bool {
-        keyWindow?.subviews.contains { String(describing: type(of: $0)).contains("ContextMenu") } ?? false
+        guard let menuContainer else { return false }
+        let windows = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows)
+        return windows.contains { window in
+            !window.isHidden && window.subviews.contains { $0.isKind(of: menuContainer) }
+        }
     }
 
     static func overlayOpen(above baseline: Int) -> Bool {

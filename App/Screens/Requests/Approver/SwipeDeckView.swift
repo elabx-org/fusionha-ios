@@ -148,7 +148,11 @@ struct SwipeDeckView: View {
 
     /// Decides the top card: approve needs triage; a low-space approve warns first.
     private func fly(_ request: MediaRequest, right: Bool, canApprove: Bool) {
-        guard flying == nil else { return }
+        // Nothing decides in flight or inside the decide lock (web `fly`).
+        guard flying == nil, !inbox.decideLocked else {
+            withAnimation(.spring(duration: 0.3)) { drag = nil }
+            return
+        }
         if right {
             guard canApprove else {
                 withAnimation(.spring(duration: 0.3)) { drag = nil }
@@ -169,8 +173,10 @@ struct SwipeDeckView: View {
             return
         }
         withAnimation(.easeIn(duration: 0.22)) { flying = (request.id, right) }
+        inbox.lock.inFlight = true
         Task {
             try? await Task.sleep(for: .milliseconds(230))
+            inbox.lock.inFlight = false
             decide(request, right: right)
             drag = nil
             flying = nil
