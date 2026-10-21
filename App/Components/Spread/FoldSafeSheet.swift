@@ -45,7 +45,7 @@ private struct FoldSafeSheetModifier<Item: Identifiable, Sheet: View>: ViewModif
         content
             .onGeometryChange(for: CGPoint.self) { $0.frame(in: .global).origin } action: { box.origin = $0 }
             .sheet(item: page == nil ? $item : .constant(nil)) { sheet($0) }
-            .popover(item: page == nil ? .constant(nil) : $item, attachmentAnchor: anchor, arrowEdge: Optional(Edge.bottom)) { value in
+            .popover(item: page == nil ? .constant(nil) : $item, attachmentAnchor: anchor, arrowEdge: Optional(Edge.top)) { value in
                 sheet(value)
                     .frame(idealWidth: page?.size.width, idealHeight: page?.size.height)
                     .presentationCompactAdaptation(.popover)
@@ -54,7 +54,8 @@ private struct FoldSafeSheetModifier<Item: Identifiable, Sheet: View>: ViewModif
             }
     }
 
-    /// The top centre of the column, in this view's coordinates.
+    /// The top centre of the column, in this view's coordinates (the arrow on
+    /// the popover's top edge, so it hangs down the column; harness-checked).
     private var anchor: PopoverAttachmentAnchor {
         guard let page else { return .rect(.bounds) }
         let x = page.frame.midX - box.origin.x
