@@ -78,7 +78,7 @@ struct LetterboxdRail: View {
                     .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .foldLeadingColumn()
             } else {
-                RailTrack(count: shown.items.count, cell: SuggestionCard.width) {
+                RailTrack(count: shown.items.count, cell: SuggestionCard.width, fixed: true) {
                     ForEach(Array(shown.items.enumerated()), id: \.element.id) { index, item in
                         SuggestionCard(item: item, overLimit: SuggestionRail.overLimit(quota),
                                        uhdAllowed: letterboxd?.alsoUhdAllowed ?? false,

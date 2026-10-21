@@ -13,6 +13,9 @@ struct RailTrack<Content: View>: View {
     let count: Int
     /// The cards' usual width (the narrowest a folded page's column may be).
     let cell: CGFloat
+    /// Cards that keep their own width (not `.railCell`): a page holds only
+    /// as many as fit whole.
+    var fixed = false
     @ViewBuilder var content: Content
     @State private var measured = GridFold()
 
@@ -20,7 +23,7 @@ struct RailTrack<Content: View>: View {
 
     private var pages: FoldColumns.Pages? {
         DiscoverFold.railPages(count: count, viewport: Double(measured.width), fold: measured.foldRange,
-                               cell: Double(cell), spacing: Double(Self.spacing))
+                               cell: Double(cell), spacing: Double(Self.spacing), fixed: fixed)
     }
 
     var body: some View {

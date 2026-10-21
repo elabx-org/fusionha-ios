@@ -4,12 +4,13 @@ import FusionhaKit
 extension View {
     /// CI screenshots only: renders the app inside a fixed iPhone Duo frame
     /// with a fake fold (`DuoHarness`). Compiled out of release builds, where
-    /// it returns the view unchanged.
+    /// it returns the view unchanged. `backdrop` false leaves the iPad around
+    /// the frame clear (a full-screen cover over the framed app, S3).
     @ViewBuilder
-    func duoHarness() -> some View {
+    func duoHarness(backdrop: Bool = true) -> some View {
         #if DEBUG
         if let frame = DuoHarness.frame {
-            modifier(DuoHarnessFrame(frame: frame))
+            modifier(DuoHarnessFrame(frame: frame, backdrop: backdrop))
         } else {
             self
         }
@@ -104,10 +105,11 @@ enum DuoHarness {
 /// see that nothing crosses it.
 private struct DuoHarnessFrame: ViewModifier {
     let frame: DuoHarness.Frame
+    var backdrop = true
 
     func body(content: Content) -> some View {
         ZStack {
-            Theme.panel.ignoresSafeArea()
+            (backdrop ? Theme.panel : Color.clear).ignoresSafeArea()
             content
                 .safeAreaPadding(frame.insets)
                 .environment(\.horizontalSizeClass, frame == .folded ? .compact : .regular)

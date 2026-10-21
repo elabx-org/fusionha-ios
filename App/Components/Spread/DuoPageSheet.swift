@@ -91,7 +91,7 @@ private struct DuoPageCover<Content: View>: View {
         .presentationBackground(.clear)
         // Sheets this one opens stay on the pages too.
         .environment(\.duoOpen, true)
-        .duoHarness()
+        .duoHarness(backdrop: false)
     }
 
     private var page: some View {

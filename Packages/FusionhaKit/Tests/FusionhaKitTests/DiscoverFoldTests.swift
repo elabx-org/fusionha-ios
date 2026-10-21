@@ -58,8 +58,10 @@ final class DiscoverFoldTests: XCTestCase {
         XCTAssertEqual(cell, 158)
         let pages = try XCTUnwrap(DiscoverFold.railPages(count: 20, viewport: content, fold: contentFold,
                                                          cell: cell, spacing: 14))
-        XCTAssertEqual(pages.perPage, 2)
-        XCTAssertGreaterThanOrEqual(pages.columnWidth, cell)
+        // Three of ~129 come closer to the web's 158 than two stretched to ~200.
+        XCTAssertEqual(pages.perPage, 3)
+        XCTAssertGreaterThanOrEqual(pages.columnWidth, cell * 0.8)
+        XCTAssertLessThan(pages.columnWidth, cell)
         XCTAssertEqual(pages.stride, 455.5)
         // Every resting offset (a whole number of strides) keeps every card off the fold.
         for page in 0..<pages.pageCount {
@@ -80,6 +82,11 @@ final class DiscoverFoldTests: XCTestCase {
         let trailers = try XCTUnwrap(DiscoverFold.railPages(count: 8, viewport: content, fold: contentFold,
                                                             cell: 300, spacing: 14))
         XCTAssertEqual(trailers.perPage, 1)
+        // Fixed-width cards (Letterboxd's 134) only as many as fit whole.
+        let fixed = try XCTUnwrap(DiscoverFold.railPages(count: 8, viewport: content, fold: contentFold,
+                                                         cell: 134, spacing: 14, fixed: true))
+        XCTAssertGreaterThanOrEqual(fixed.columnWidth, 134)
+        XCTAssertEqual(fixed.perPage, 2)
     }
 
     func testRailsWithoutAFoldScrollAsUsual() {

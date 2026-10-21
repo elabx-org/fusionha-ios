@@ -46,13 +46,27 @@ public enum DiscoverFold {
     /// A rail with the fold inside its viewport (`viewport` wide, the fold at
     /// `fold` in its coordinates): cards in pages that each end before the
     /// fold's gutter, scrolling a page at a time, so no card rests on the fold.
-    /// As many cards per page as fit at `cell`. `nil` without a fold inside.
+    /// The cards per page are the count whose width comes closest to `cell`
+    /// (never under 80 % of it), so a page holds 3 of the web's 158s at 129
+    /// rather than 2 stretched to 200. `fixed` cards keep their own width, so
+    /// a page holds only as many as fit whole. `nil` without a fold inside.
     public static func railPages(count: Int, viewport: Double, fold: ClosedRange<Double>?, cell: Double,
-                                 spacing: Double, gutter: Double = FoldColumns.gutter) -> FoldColumns.Pages? {
-        guard count > 0, let fold, fold.lowerBound > 0, fold.upperBound < viewport else { return nil }
+                                 spacing: Double, fixed: Bool = false,
+                                 gutter: Double = FoldColumns.gutter) -> FoldColumns.Pages? {
+        guard count > 0, cell > 0, let fold, fold.lowerBound > 0, fold.upperBound < viewport else { return nil }
         let gap = FoldColumns.gap(around: fold, gutter: gutter)
-        guard gap.lowerBound >= cell else { return nil }
-        return FoldColumns.pages(count: count, gap: gap, minimum: cell, spacing: spacing)
+        let lead = gap.lowerBound
+        guard lead >= cell else { return nil }
+        let whole = fit(lead, minimum: cell, spacing: spacing)
+        var perPage = whole
+        if !fixed {
+            let width = { (k: Int) in FoldColumns.groupWidth(lead, columns: k, spacing: spacing) }
+            let more = whole + 1
+            if width(more) >= cell * 0.8, abs(width(more) - cell) < abs(width(whole) - cell) { perPage = more }
+        }
+        // The page's column width, a hair under so the page holds exactly `perPage`.
+        let minimum = FoldColumns.groupWidth(lead, columns: perPage, spacing: spacing) - 0.01
+        return FoldColumns.pages(count: count, gap: gap, minimum: minimum, spacing: spacing)
     }
 
     // MARK: Grids
