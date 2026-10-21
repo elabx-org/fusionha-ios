@@ -320,18 +320,19 @@ final class AppModel {
         guard let client else { return }
         do {
             let page = try await client.queue()
+            let (items, total) = DownloadsBarScreenshot.shaped(page.items, total: page.total)
             // Polled every 2s: assign only what changed, so observers of the
             // total / held count (Activity's header, the tab badge) don't
             // re-render on every tick while progress moves.
-            if queue != page.items { queue = page.items }
-            if queueTotal != page.total { queueTotal = page.total }
-            let heldIds = page.items.filter { $0.status.lowercased() == "held" }.map(\.id)
+            if queue != items { queue = items }
+            if queueTotal != total { queueTotal = total }
+            let heldIds = items.filter { $0.status.lowercased() == "held" }.map(\.id)
             if queueHeldIds != heldIds { queueHeldIds = heldIds }
             if queueHeld != heldIds.count { queueHeld = heldIds.count }
             if queueError != nil { queueError = nil }
             if queuePaused != (page.paused == true) { queuePaused = page.paused == true }
-            LiveActivityController.sync(with: page.items, paused: page.paused == true)
-            let ids = page.items.map(\.id)
+            LiveActivityController.sync(with: items, paused: page.paused == true)
+            let ids = items.map(\.id)
             if ids != lastQueueIds {
                 lastQueueIds = ids
                 WidgetCenter.shared.reloadTimelines(ofKind: "Downloads")

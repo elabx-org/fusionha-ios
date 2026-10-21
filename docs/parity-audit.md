@@ -211,6 +211,7 @@ Open with a top-to-bottom fold (inner landscape, flat or Book), the app has two 
 - ✅ Shell: `SpreadContext` (`\.spread`) decides off / pages / span; the shell keeps the one `FoldSplitLayout`, so switching modes, folding and unfolding keep the tab, its scroll and the open title (DC3; the title's store is in `AppModel`). Toasts go to the right page while a tab spans.
 - ✅ Extension points for S2–S6: screens read `@Environment(\.spread)` (`isActive`, `spans`, `pages`) to switch to their Spread layouts; browse screens call `.spreadSpansBothPages(tab, enabled)`; rows that span use `FoldSpanRow` (two pieces meeting at the gutter) and grids use `PosterTracks` + `TrackRowLayout`; each tab's right-page default goes in `SpreadRightPage` (S1: "Select a title" on every tab).
 - ✅ Library (first user of the span): nothing picked, the grid is 3 posters a side with the gutter on the fold, the title and counts on the left page and the kinds, tier and filters on the right; picking a title moves the grid to the left page (3 columns, scrolled back to the same titles) and outlines the picked poster (`Theme.primary` ring). The compact list doesn't span.
+- ✅ Review fixes: the Library's scroll thumb is hidden on a Spread's left page (its trailing edge is the fold gutter, and the thumb covered the last column); the detail's entrances (`RevealModifier`, `DetailHeroArt`) also start on first layout, after one harness shot showed a title column whose hero stayed transparent; the shell keeps one implicit animation (on the split).
 - ✅ Duo screenshot harness (DEBUG only, `App/Debug/DuoHarness.swift`): the app inside a 951×669, 669×951 or 466×678 frame with the device kit's safe areas and a fake flat fold at x 475.5 (open), on a 13-inch iPad simulator, cropped to the frame (`scripts/duo_harness_shots.sh`, `duo-harness-*` shots). `FoldInfo.verticalFold` and `crossesMiddle` read the fake fold in the harness only; release builds compile it out.
 - ☐ Per-screen Spread designs: S2 Library + title, S3 Discover / Search / Add, S4 Requests, S5 Calendar + Activity, S6 Settings / Account / Sign-in / Manual Import.
 
@@ -221,7 +222,7 @@ Open with a top-to-bottom fold (inner landscape, flat or Book), the app has two 
 | Library grid | `LibraryView.swift`, `LibraryRows.swift` (`LibraryGridRow`) | S1 | ✅ 3 a side, gutter on the fold | ✅ the usual count split around the real fold (`PosterTracks`; the old even-count rule assumed a centred fold) | ✅ `testLibrarySpanIsThreeASideWithTheGutterOnTheFold`, `testLibraryWebLayoutKeepsItsCountAndClearsTheFold` |
 | Library pulse ribbon (one card) | `LibraryPulseRibbon.swift` | S2 | ✅ not shown while spanning (phone pieces); ☐ S2 design | ☐ | ☐ |
 | Library filter field, wide header (one field across the page) | `LibraryHeader.swift` | S2 | ✅ left page only while spanning | ☐ | ☐ |
-| Shell tab bar on a regular-width spanning tab (iPad-style top bar, centred over both pages; seen in the harness) | `RootView.swift` | S2 | ☐ verify on a Duo (iOS 27.1 may use the vertical bar) | ☐ same | ☐ |
+| Shell tab bar on a regular-width spanning tab (iPad-style top bar, centred over both pages; seen in the harness) | `RootView.swift` | S2 | ☐ no API places the regular-width tab bar (no leading pin, no width of its own); hosting the `TabView` in the left page would take the spanning grid with it. On the Duo, iOS 27.1 moves the tab bar into the vertical bar in landscape, which the iPad harness can't show: verify on a Duo | ☐ same | ☐ |
 | Library desktop toolbar, one-row variant | `LibraryToolbarWide.swift` | S2 | ✅ not shown while spanning | ☐ | ☐ |
 | Discover one-row controls | `DiscoverBrowseControls.swift` | S3 | ☐ | ☐ | ☐ |
 | Discover results and filters (`crossesMiddle`) | `AdaptivePosterGrid`, `DiscoverFiltersPanel.swift` | S3 | ☐ | ☐ | ☐ |
@@ -253,6 +254,7 @@ Open with a top-to-bottom fold (inner landscape, flat or Book), the app has two 
 - Calendar Subscribe
 - The Search hint line
 - The Library "N downloading" link
+- The downloads bar (tab-bar bottom accessory, `downloads-bar` branch): the web has nothing like it; recorded in ui-plan §2. Duo vertical-bar placement is an open item (ui-plan "iPhone Duo")
 
 `docs/ui-plan.md` is stale for:
 - Discover and Requests (still pre-Proposal 2)
@@ -483,7 +485,7 @@ What it means for the app:
 - **Q-DC7:** the side-to-side fold is out of scope.
 - **Q-DC8:** drop the floating ✕ on item detail; Close is a `.cancellationAction`.
 - **Q-DC9:** in Book pose, toasts sit on the trailing half, away from the hinge.
-- **Q-DC10:** fix CLAUDE.md's stale "downloads accessory" line (with the owner's OK, since CLAUDE.md is project config).
+- **Q-DC10:** fix CLAUDE.md's stale "downloads accessory" line (with the owner's OK, since CLAUDE.md is project config). *Superseded 2026-10-20:* the downloads bar now exists (approved mock), so CLAUDE.md's line is accurate again and stays as it is.
 - **#62 scope:** system toolbar and `.inlineLarge` apply to every screen: tab roots, pushed screens and sheets/forms. Sheet actions use `.cancellationAction`, `.confirmationAction` or `.primaryAction`, each with title + symbol. A D1 checklist (screen → header actions → placement and priority) follows. Exceptions are kept only for actions that must stay in content: deck Approve/Decline, row swipes, inline card buttons.
 
 ### D1 checklist: system toolbar on every screen
@@ -520,6 +522,7 @@ overflow shows the label). Tick a row with its build number.
 | F1 | Users: search field (web parity) | ✅ build 455 |
 | F2 | SI1: living-media poses, plus the server step as onboarding (owner, 2026-10-19; see F2 spec). OIDC dropped: not a server feature yet (peer #66: no `/api/v1/auth/providers`; sign-in is local + Plex SSO). If the owner wants it: spec → server → web → iOS | ✅ build 460: server step, no default server, TV + Anime morphs |
 | F2b | Living-media morphs still to port: Movie, Dragon, Three kinds (from F2) | ☐ |
+| F2c | Living fusion moves from web 0.4.224: fusionMedia (clapper × TV) and fusionQuality (HD × 4K), in the rotation by the web's `buildMoveOrder` (minus F2b's moves) with the no-same-object-neighbour rule; painters shared with the `tv` and `quality` moves. See fusionha-sync.md, 0.4.224 | ✅ branch `living-fusion` |
 | F3 | Episode sheet's Search tab: park its `InteractiveSearchModel` across fold/unfold (DC3: no lost state) | ✅ build 455 |
 | F4 | Activity, Calendar and sign-in toasts on `model.toast`, so Q-DC9 hinge placement applies everywhere | ✅ build 455: Activity + Wanted through `ActToaster.shell`, Calendar direct; sign-in already used it; sheets keep `CalToast` (now `Components/SheetToast.swift`) |
 | F5 | Split oversized files to ~300–400 lines: `AppModel` (665), `ScreenModels` (619), `DiscoverModels` (530), `DetailLogic` (481), `CalendarModels` (456), `EditItemSheet` (335) | ✅ build 464: all six under 400 (AppModel 381: rest writes `private(set)` state) |

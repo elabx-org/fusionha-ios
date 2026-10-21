@@ -71,7 +71,7 @@ struct LivingMark<Caption: View>: View {
     private var markView: some View {
         let mark = engine.mark.pose(at: engine.now)
         let media = engine.mediaPose
-        let hidden = engine.qualityStart != nil
+        let hidden = engine.qualityStart != nil || engine.fusionShow != nil
         Group {
             if reduce {
                 Image("BrandLogo").resizable().scaledToFit()
@@ -198,11 +198,14 @@ struct LivingMark<Caption: View>: View {
         }
     }
 
-    /// The fx canvas: spark trails, landing rings and the quality move's two copies.
+    /// The fx canvas: spark trails, landing rings, the quality move's two copies and the fusion dances.
     private func drawFx(_ ctx: GraphicsContext) {
         var ctx = ctx
         ctx.blendMode = .plusLighter
         drawQuality(&ctx)
+        if let show = engine.fusionShow {
+            LivingFusionFrame.paint(show, in: ctx, t: engine.fusionTime, mark: engine.markRect)
+        }
         if let show = engine.mediaShow {
             LivingMedia.draw(show, in: &ctx, ms: (engine.now - show.start) * 1000, mark: engine.markRect,
                              tips: (0..<3).map { engine.tip($0) })
@@ -232,51 +235,24 @@ struct LivingMark<Caption: View>: View {
         }
     }
 
+    /// The quality move's two copies and meters (the shared `LivingQualityArt` painters).
     private func drawQuality(_ ctx: inout GraphicsContext) {
         guard let start = engine.qualityStart,
               let q = LivingQuality.frame(ms: (engine.now - start) * 1000, size: engine.size, centre: engine.centre)
         else { return }
         let s = engine.size, c = engine.centre
-        var plain = ctx
-        plain.blendMode = .normal
         func copy(_ cx: CGFloat, _ size: CGFloat, _ res: Int, _ glow: Double) {
-            let rect = CGRect(x: cx - size / 2, y: c.y - size / 2, width: size, height: size)
-            let image: Image
-            if res > 0, let px = LivingQuality.pixelated(res) {
-                image = Image(uiImage: px).interpolation(.none)
-            } else {
-                image = Image("BrandLogo")
-            }
-            plain.drawLayer { layer in
-                layer.opacity = q.fade
-                if glow > 0 { layer.addFilter(.shadow(color: Color(hex: 0xA5F3FC).opacity(0.55 * glow), radius: CGFloat(11 * glow))) }
-                layer.draw(image.resizable(), in: rect)
-            }
+            LivingQualityArt.drawPix(ctx, in: CGRect(x: cx - size / 2, y: c.y - size / 2, width: size, height: size),
+                                     res: res, alpha: q.fade, glow: glow)
         }
         copy(c.x - q.offset, s * q.scaleL, q.resL, 0)
         copy(c.x + q.offset, s * q.scaleR, q.resR, q.glowR)
         guard q.split > 0.6 else { return }
         let alpha = min(1, (q.split - 0.6) / 0.4)
-        func bar(_ cx: CGFloat, _ y: CGFloat, _ w: CGFloat, _ fill: Double, _ flash: Double) {
-            plain.drawLayer { layer in
-                layer.opacity = alpha
-                let track = Path(roundedRect: CGRect(x: cx - w / 2, y: y, width: w, height: 4), cornerRadius: 2)
-                layer.fill(track, with: .color(.white.opacity(0.08)))
-                if fill > 0 {
-                    let bar = Path(roundedRect: CGRect(x: cx - w / 2, y: y, width: max(4, w * CGFloat(fill)), height: 4), cornerRadius: 2)
-                    layer.fill(bar, with: .linearGradient(Gradient(stops: [.init(color: Color(hex: 0x3B8CF2), location: 0),
-                                                                          .init(color: Color(hex: 0xC256B9), location: 0.55),
-                                                                          .init(color: Color(hex: 0xFDBA61), location: 1)]),
-                                                          startPoint: CGPoint(x: cx - w / 2, y: 0), endPoint: CGPoint(x: cx + w / 2, y: 0)))
-                }
-                if flash > 0 {
-                    layer.addFilter(.shadow(color: .white, radius: 6))
-                    layer.fill(track, with: .color(.white.opacity(flash)))
-                }
-            }
-        }
-        bar(c.x - q.offset, c.y + s * q.scaleL / 2 + 16, s * 0.62 * q.scaleL, q.fillL, q.flashL)
-        bar(c.x + q.offset, c.y + s * q.scaleR / 2 + 16, s * 0.62 * q.scaleR, q.fillR, q.flashR)
+        LivingQualityArt.drawBar(ctx, cx: c.x - q.offset, y: c.y + s * q.scaleL / 2 + 16, w: s * 0.62 * q.scaleL,
+                                 fill: q.fillL, flash: q.flashL, alpha: alpha)
+        LivingQualityArt.drawBar(ctx, cx: c.x + q.offset, y: c.y + s * q.scaleR / 2 + 16, w: s * 0.62 * q.scaleR,
+                                 fill: q.fillR, flash: q.flashR, alpha: alpha)
     }
 }
 

@@ -106,11 +106,19 @@ private struct RevealModifier: ViewModifier {
         content
             .opacity(shown || reduce ? 1 : 0)
             .offset(y: shown || reduce ? 0 : y)
-            .onAppear {
-                guard !shown else { return }
-                if reduce { shown = true; return }
-                withAnimation(DetailMotion.reveal(duration).delay(delay)) { shown = true }
+            .onAppear(perform: reveal)
+            // A second trigger: the first layout. A title column inserted while
+            // the launch sheet hands over to it could miss onAppear and keep the
+            // hero transparent (Duo harness, Spread with a title open).
+            .onGeometryChange(for: Bool.self) { $0.size.width > 0 } action: { laidOut in
+                if laidOut { reveal() }
             }
+    }
+
+    private func reveal() {
+        guard !shown else { return }
+        if reduce { shown = true; return }
+        withAnimation(DetailMotion.reveal(duration).delay(delay)) { shown = true }
     }
 }
 

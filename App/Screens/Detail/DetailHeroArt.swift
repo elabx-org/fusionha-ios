@@ -41,13 +41,19 @@ struct DetailHeroArt: View {
                 // Ken-Burns settle: the art eases in from a slight zoom.
                 .scaleEffect(artShown || reduce ? 1 : 1.06)
                 .opacity(artShown || reduce ? 1 : 0)
-                .onAppear {
-                    guard !reduce else { return }
-                    withAnimation(DetailMotion.reveal(0.9)) { artShown = true }
+                .onAppear(perform: showArt)
+                // Also on the first layout (see `RevealModifier`).
+                .onGeometryChange(for: Bool.self) { $0.size.width > 0 } action: { laidOut in
+                    if laidOut { showArt() }
                 }
         } else {
             RadialGradient(colors: [Theme.panel2, Theme.bg], center: .top, startRadius: 0, endRadius: 520)
         }
+    }
+
+    private func showArt() {
+        guard !reduce, !artShown else { return }
+        withAnimation(DetailMotion.reveal(0.9)) { artShown = true }
     }
 
     /// The `.hero-fade`: the art sinks into the ground under the heading.

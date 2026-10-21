@@ -17,6 +17,7 @@ struct RootView: View {
     /// iPhone Duo open: Spread (two pages at the fold) or the Web layout. Per device.
     @AppStorage(DuoOpenLayout.storageKey) private var duoLayout: DuoOpenLayout = .standard
     @State private var spanRequests = SpreadSpanRequests()
+    @State private var downloadsBar = DownloadsBarState()
 
     /// The Spread, when the Duo is open and the setting says so (else `.off`).
     private func spreadContext(_ fold: FoldInfo, hasItem: Bool) -> SpreadContext {
@@ -70,7 +71,6 @@ struct RootView: View {
         // the same split container, the title's store in the model.
         .onChange(of: duoLayout) { model.updateDetailHost(splitsWithTitle: splitsWithTitle(fold)) }
         .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: split)
-        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: spread)
         // Toasts: above the tab bar when folded; on the trailing column when
         // split, so they never straddle the fold (DC14); on the right page
         // while a Spread's tab spans both pages.
@@ -127,6 +127,10 @@ struct RootView: View {
         // shell's size re-tints them after the bar changes axis.
         .tabBadgeTint(key: "\(model.requestsBadge)-\(model.queueTotal)-\(model.tab)-\(Int(fold.size.width))x\(Int(fold.size.height))-\(split.shown)")
         .tabBarMinimizeBehavior(.onScrollDown)
+        // The downloads bar (iOS-only): while the queue has items, off Activity.
+        .modifier(DownloadsBarSlot(state: downloadsBar,
+                                   shown: !model.requestScoped && model.tab != .activity && downloadsBar.hasContent))
+        .onChange(of: model.queue, initial: true) { downloadsBar.update(model.queue) }
     }
 }
 

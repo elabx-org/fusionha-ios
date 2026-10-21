@@ -4,8 +4,8 @@ import UIKit
 // The Living logo sign-in layout (components/login/living/*): the F cut into
 // its three real blades on a dot field, tilting and bobbing, reacting to the
 // password field like a lock's tumbler pins, and acting out what the app does
-// between rests (the neutral moves: arrivals, fusion, pride, quality). The
-// media-themed morphs (`login_living_media`) are not ported yet.
+// between rests (the neutral moves: arrivals, fusion, quality, pride and the
+// HD × 4K fusion; with `login_living_media`, TV, Anime and Movies × Series too).
 
 // MARK: - Poses and keyframe animations (the web's WAAPI calls)
 

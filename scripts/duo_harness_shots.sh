@@ -62,6 +62,8 @@ shoot duo-harness-warmup open $L $SP && rm -f "$OUT/duo-harness-warmup.png"
 # Spread, Library: nothing picked (the grid spans both pages), then a title open.
 shoot duo-harness-open-spread-library open $L $SP
 shoot duo-harness-open-spread-library-title open $L $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
+# Again from a cold launch: the title's hero must render every time (S1 review blocker).
+shoot duo-harness-open-spread-library-title-2 open $L $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
 # Web layout with the same fold: the web-parity wide layout (fold-gutter fixes only).
 shoot duo-harness-open-web-library open $L $WEB
 shoot duo-harness-open-web-library-title open $L $WEB SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8

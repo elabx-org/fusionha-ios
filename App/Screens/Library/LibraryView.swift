@@ -79,7 +79,9 @@ struct LibraryView: View {
             ScrollViewReader { proxy in
                 scroll(proxy)
                     .overlay {
-                        if showsRail && !wide {
+                        // Not on a Spread's left page: there its trailing edge is the
+                        // fold gutter and the thumb would cover the last column.
+                        if showsRail && !wide && !(spread.isActive && !spread.spans) {
                             ScrollScrubber(state: scrubber, letters: derived.alpha.letters) { jump(toLetter: $0, proxy) }
                         }
                     }

@@ -25,19 +25,27 @@ struct QueuePauseButton: View {
     }
 
     private func toggle() async {
-        guard let client = model.client else { return }
         working = true
-        defer { working = false }
+        await model.toggleQueuePause()
+        working = false
+    }
+}
+
+extension AppModel {
+    /// Pauses or resumes fusionha's downloads (`POST /api/v1/queue/pause|resume`),
+    /// with the answer as a toast. Shared by Activity's toolbar and the downloads bar.
+    func toggleQueuePause() async {
+        guard let client else { return }
         do {
-            let result = model.queuePaused ? try await client.resumeQueue() : try await client.pauseQueue()
-            model.queuePaused = result.paused
+            let result = queuePaused ? try await client.resumeQueue() : try await client.pauseQueue()
+            queuePaused = result.paused
             let failed = result.clients.contains { !$0.ok }
-            model.toast(result.summary, title: result.paused ? "Downloads paused" : "Downloads resumed",
-                        variant: failed ? .warning : .success)
-            await model.refreshQueue()
+            toast(result.summary, title: result.paused ? "Downloads paused" : "Downloads resumed",
+                  variant: failed ? .warning : .success)
+            await refreshQueue()
         } catch {
-            model.toast(ErrorCopy.message(for: error, fallback: "Couldn't change the queue. Try again."),
-                        title: "Downloads", variant: .error)
+            toast(ErrorCopy.message(for: error, fallback: "Couldn't change the queue. Try again."),
+                  title: "Downloads", variant: .error)
         }
     }
 }
