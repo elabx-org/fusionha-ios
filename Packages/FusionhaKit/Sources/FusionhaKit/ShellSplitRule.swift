@@ -47,6 +47,27 @@ public enum ShellSplitRule {
     public static func detailWidth(for width: Double) -> Double {
         min(max(width * detailShare, detailMin), detailMax)
     }
+
+    /// Where the split goes when a fold runs top to bottom through the
+    /// container, flat open included: `splits` still decides whether, this
+    /// decides where.
+    public struct FoldSplit: Equatable, Sendable {
+        /// The tab's pane: it ends half a gutter before the fold.
+        public var primary: Double
+        /// The fold and the gutter around it, kept empty; the title column starts after it.
+        public var gap: Double
+    }
+
+    /// The split at the fold (`fold`, its x-range; zero wide when flat): the
+    /// tabs before it, the title after it, `gutter` around it. `nil` when the
+    /// fold isn't inside the container or either side would be narrower than
+    /// its minimum (then the web's split applies).
+    public static func foldSplit(width: Double, fold: ClosedRange<Double>,
+                                 gutter: Double = FoldColumns.gutter) -> FoldSplit? {
+        guard let panes = FoldColumns.panes(width: width, fold: fold, minLead: primaryMin,
+                                            minTrail: detailMin, gutter: gutter) else { return nil }
+        return FoldSplit(primary: panes.lead, gap: panes.gap)
+    }
 }
 
 /// When Settings shows its sidebar beside the open panel (the web's desktop

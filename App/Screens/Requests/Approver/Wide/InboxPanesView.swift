@@ -25,8 +25,10 @@ struct InboxPanesView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            HStack(alignment: .top, spacing: 18) {
-                queue.frame(width: Self.queueWidth(proxy.size.width))
+            // On the Duo's fold (flat open too) the panes meet at it (FoldPanes).
+            let fold = FoldPanes.of(proxy, minLead: 294, minTrail: 300)
+            HStack(alignment: .top, spacing: fold?.gap ?? 18) {
+                queue.frame(width: fold?.lead ?? Self.queueWidth(proxy.size.width))
                 card.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
         }

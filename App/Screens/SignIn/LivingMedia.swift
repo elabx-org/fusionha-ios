@@ -25,7 +25,7 @@ struct LivingMediaShow {
     var petals: [Petal] = []
 
     /// How long the director waits before gliding home (Anime's petals outlive the pose).
-    var duration: Double { kind == .tv ? 3500 : 3400 }
+    var duration: Double { kind == .tv ? LivingTVArt.ms : 3400 }
 }
 
 /// The mark's pose during a media move: a non-uniform scale, a nudge and a flash.
@@ -38,10 +38,6 @@ struct LivingMediaPose {
 enum LivingMedia {
     static func sstep(_ a: Double, _ b: Double, _ x: Double) -> Double { LivingQuality.sstep(a, b, x) }
     static func easeOut(_ k: Double) -> Double { 1 - pow(1 - max(0, min(1, k)), 3) }
-
-    static let brand = Gradient(stops: [.init(color: Color(hex: 0x3B8CF2), location: 0),
-                                        .init(color: Color(hex: 0xC256B9), location: 0.55),
-                                        .init(color: Color(hex: 0xFDBA61), location: 1)])
 
     static func seed(_ kind: LivingMediaShow.Kind, at start: Double, mark: CGRect) -> LivingMediaShow {
         var show = LivingMediaShow(kind: kind, start: start)
@@ -66,25 +62,12 @@ enum LivingMedia {
         }
     }
 
-    /// TV: shrinks onto the screen, switches off to a line and a dot, and back on.
+    /// TV: shrinks onto the screen, switches off to a line and a dot, and back on
+    /// (the shared `LivingTVArt` pose).
     private static func tvPose(_ t: Double, _ s: CGFloat) -> LivingMediaPose {
-        let a = sstep(0, 600, t) * (1 - sstep(3050, 3500, t))
-        let sc = 1 - 0.36 * a
-        var sx = 1.0, sy = 1.0, br = 1.0
-        if t > 1700 && t <= 2000 {
-            sy = 1 - 0.98 * easeOut((t - 1700) / 300); br = 1.8
-        } else if t > 2000 && t <= 2200 {
-            sy = 0.02; sx = 1 - easeOut((t - 2000) / 200); br = 2
-        } else if t > 2200 && t <= 2500 {
-            sx = 0; sy = 0.02
-        } else if t > 2500 && t <= 2950 {
-            let k = (t - 2500) / 450
-            sx = easeOut(k * 1.6)
-            sy = k < 0.4 ? 0.02 : 0.02 + 0.98 * easeOut((k - 0.4) / 0.6) * (1 + 0.08 * sin((k - 0.4) * 9) * (1 - k))
-            br = 1.4
-        }
-        return LivingMediaPose(sx: CGFloat(sc * sx), sy: CGFloat(sc * sy), dy: 0.05 * s * CGFloat(a),
-                               light: br > 1 ? br - 1 : 0)
+        let p = LivingTVArt.pose(t)
+        return LivingMediaPose(sx: CGFloat(p.kx), sy: CGFloat(p.ky), dy: s * CGFloat(p.ty),
+                               light: p.br > 1 ? p.br - 1 : 0)
     }
 
     /// Anime: a dash in on speed lines and a squash on impact.

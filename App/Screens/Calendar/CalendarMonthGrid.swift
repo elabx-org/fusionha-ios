@@ -4,6 +4,11 @@ import FusionhaKit
 /// `MonthView`: weekday header, rounded day cells (solid shelf objects) with up to
 /// two event pills and `+N more`. Today is lit cream. Tapping a cell's empty space
 /// opens that day in the Day view.
+///
+/// When the iPhone Duo's fold (flat open included) runs through the grid, the
+/// week splits into a leading and a trailing group around the fold's gutter
+/// (3 | 4 on a centred fold), so no day straddles it (`FoldColumns.split`).
+/// Otherwise the web's seven even columns.
 struct MonthGridView: View {
     @Environment(AppModel.self) private var model
     let month: Date
@@ -11,11 +16,13 @@ struct MonthGridView: View {
     let todayIso: String
     let firstDay: Int
     let openDay: (String) -> Void
+    /// The seven columns around the fold, `nil` without one.
+    @State private var foldTracks: [FoldColumns.Track]?
 
     private var cal: Calendar { CalendarMath.gregorian() }
 
     var body: some View {
-        let columns = Array(repeating: GridItem(.flexible(minimum: 0), spacing: 4), count: 7)
+        let columns = gridColumns
         let byDay = CalendarMath.groupByDay(entries, cal)
         let cells = CalendarMath.monthGrid(month, firstDay: firstDay, cal)
         let now = Date()
@@ -40,6 +47,24 @@ struct MonthGridView: View {
                     }
                 }
             }
+        }
+        .onGeometryChange(for: [FoldColumns.Track]?.self) { proxy in
+            FoldInfo.verticalFold(proxy).flatMap { x in
+                FoldColumns.split(count: 7, width: Double(proxy.size.width), spacing: 4,
+                                  gap: FoldColumns.gap(around: Double(x.lowerBound)...Double(x.upperBound)))
+            }
+        } action: { foldTracks = $0 }
+    }
+
+    /// The web's seven flexible columns, or fixed ones around the fold, each
+    /// spaced to the next one's start.
+    private var gridColumns: [GridItem] {
+        guard let tracks = foldTracks, tracks.count == 7 else {
+            return Array(repeating: GridItem(.flexible(minimum: 0), spacing: 4), count: 7)
+        }
+        return tracks.indices.map { i in
+            let next = i + 1 < tracks.count ? tracks[i + 1].x - tracks[i].maxX : 0
+            return GridItem(.fixed(CGFloat(tracks[i].width)), spacing: CGFloat(next))
         }
     }
 

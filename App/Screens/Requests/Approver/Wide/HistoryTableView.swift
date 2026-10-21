@@ -14,7 +14,7 @@ struct HistoryTableView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let cols = HistoryColumns(width: proxy.size.width)
+            let cols = HistoryColumns(width: proxy.size.width, fold: FoldInfo.verticalFold(proxy))
             ScrollView {
                 LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
                     Section {
@@ -42,7 +42,7 @@ struct HistoryTableView: View {
 
     private func header(_ cols: HistoryColumns) -> some View {
         HStack(spacing: HistoryColumns.gap) {
-            label("Title").frame(width: cols.title, alignment: .leading)
+            label("Title").frame(width: cols.title, alignment: .leading).padding(.trailing, cols.titleTrailing)
             label("Who").frame(width: cols.who, alignment: .leading)
             label("Status").frame(width: HistoryColumns.status, alignment: .leading)
             label("Ready in").frame(width: HistoryColumns.ready, alignment: .leading)
@@ -71,6 +71,7 @@ struct HistoryTableView: View {
                     .font(.system(size: 14)).lineLimit(1)
             }
             .frame(width: cols.title, alignment: .leading)
+            .padding(.trailing, cols.titleTrailing)
             Text(Self.who(r)).lineLimit(1).frame(width: cols.who, alignment: .leading)
             Text(word.text).fontWeight(.semibold).foregroundStyle(word.color).lineLimit(1)
                 .frame(width: HistoryColumns.status, alignment: .leading)
@@ -98,12 +99,24 @@ struct HistoryColumns {
     static let gap: CGFloat = 12
     static let status: CGFloat = 130
     static let ready: CGFloat = 80
-    let title: CGFloat
-    let who: CGFloat
+    private(set) var title: CGFloat
+    private(set) var who: CGFloat
+    /// Room after the Title track beyond `gap`: the fold gutter when the Duo's
+    /// fold crosses the table (Title ends before it, Who starts after it).
+    var titleTrailing: CGFloat = 0
 
-    init(width: CGFloat) {
+    init(width: CGFloat, fold: ClosedRange<CGFloat>? = nil) {
         let free = max(width - 28 - Self.gap * 3 - Self.status - Self.ready, 0)
         title = free * 2 / 3.2
         who = free * 1.2 / 3.2
+        guard let fold else { return }
+        let gap = FoldColumns.gap(around: Double(fold.lowerBound)...Double(fold.upperBound))
+        let foldTitle = CGFloat(gap.lowerBound) - 14
+        let extra = CGFloat(gap.upperBound - gap.lowerBound) - Self.gap
+        let foldWho = free - foldTitle - extra
+        guard foldTitle >= 160, foldWho >= 80 else { return }
+        title = foldTitle
+        who = foldWho
+        titleTrailing = extra
     }
 }

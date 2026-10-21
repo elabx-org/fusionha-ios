@@ -15,6 +15,7 @@ instead of from scratch.
 | Checked on | 2026-10-19 |
 | Previous sync | `4152c68a` / 0.4.220 (2026-10-19) |
 | Last CI | build-362 on `2006eed`: green |
+| Living fusion moves | synced to **v0.4.224** (`49c6170b`, 2026-10-20), see the 0.4.224 section; the rest of 0.4.223–0.4.224 is not yet checked |
 | Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
 
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
@@ -52,6 +53,43 @@ ported and green, and nothing is half done. Still to do:
   `App/LiveActivityController.swift`).
 - The redesign migration of the remaining screens (task "Migrate every
   screen to the redesign").
+
+## 0.4.224: the Living fusion moves (synced at `v0.4.224`, `49c6170b`)
+
+Read from `frontend/src/components/login/living/` at the tag: `fusion-dance.ts`
+(+ test), `fusion-moves.ts`, `fusion-paint.ts`, `blade-art.ts`, `tv-art.ts`,
+`quality-art.ts`, `moves.ts` and the owner-approved mock
+`design/mocks/living-fusion-moves.html`.
+
+- **Maths in FusionhaKit** (`Sources/FusionhaKit/Living/`): `FusionDance`
+  (timeline, easing, the two clap times, `tvTime` without the CRT off/on,
+  `qTime`/`qAlpha`, scales, flip, clapper morph) and `FusionDanceLayout`
+  (outlines, layout, travel, motion, pose), `LivingMat` (the canvas affine
+  maths), `LivingVector` (the traced F, resample/align/lerp, the clapper
+  outlines) and `LivingMoveName.order(media:)` (`buildMoveOrder`).
+  `FusionDanceTests` is `fusion-dance.test.ts` with the same numbers;
+  `LivingMoveOrderTests` is the rotation block of `fusion-moves.test.tsx`,
+  including the no-same-object-neighbour rule (wrap included).
+- **Shared painters:** the `tv` move and fusionMedia both draw `LivingTVArt`
+  (pose + painter); the `quality` move and fusionQuality both draw
+  `LivingQualityArt` (`drawPix`, `drawBar`) on `LivingQuality.frame`; the
+  `fusion` move and both fusion moves land with `LivingEngine.fuseFlash()`.
+  New: `LivingBladeArt` (vector blades in the blade gradients, clapper
+  stripes, board lines, clap), `LivingFusionPaint` (floor, contact spark +
+  particles, merge whirl), `LivingFusionFrame` (one frame, the 2pt shake).
+- **Rotation:** the web's order filtered to what iOS plays
+  (`LivingEngine.playable`). Media off: arrivals, fusion, quality, pride,
+  fusionQuality (the web's exactly). Media on: arrivals, fusion, pride, tv,
+  quality, anime, fusionQuality, fusionMedia (Three kinds, Movie and Dragon
+  are F2b), and the neighbour rule still holds (tested).
+- **Deviations:** the clapper is drawn only by fusionMedia (the `movie` move
+  itself is still F2b). The clap and CRT brightness use the app's existing
+  `light × 0.45` mapping for CSS `brightness()`. Shadow blur radii follow the
+  existing quality move (half the canvas `shadowBlur`).
+- **Device-only checks:** the dance's look and timing, the vector F landing
+  exactly on the image-masked mark at the end (no jump when the mark returns),
+  the 4K copy's mirror and glow, the pixelated copies under the dance's
+  transforms, and the frame rate of the fx canvas while dancing.
 
 ## 0.4.221–0.4.222 and the #54 parity audit
 

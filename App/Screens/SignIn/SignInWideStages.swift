@@ -63,8 +63,8 @@ struct StageColumns<Leading: View, Trailing: View>: View {
     var body: some View {
         GeometryReader { proxy in
             let fold = FoldInfo(proxy)
-            let lead = fold.vertical.map(\.lowerBound) ?? proxy.size.width * leadingShare
-            let gap = fold.vertical.map { $0.upperBound - $0.lowerBound } ?? 0
+            let lead = fold.verticalGap.map(\.lowerBound) ?? proxy.size.width * leadingShare
+            let gap = fold.verticalGap.map { $0.upperBound - $0.lowerBound } ?? 0
             let trail = max(proxy.size.width - lead - gap, 0)
             HStack(spacing: gap) {
                 leading.frame(width: lead, height: proxy.size.height)

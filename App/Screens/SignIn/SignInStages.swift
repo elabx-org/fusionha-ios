@@ -182,7 +182,7 @@ struct FoldSafe<Content: View>: View {
 
     static func region(_ fold: FoldInfo) -> CGRect {
         let full = CGRect(origin: .zero, size: fold.size)
-        if let x = fold.vertical {
+        if let x = fold.verticalGap {
             let leading = CGRect(x: 0, y: 0, width: x.lowerBound, height: full.height)
             let trailing = CGRect(x: x.upperBound, y: 0, width: full.width - x.upperBound, height: full.height)
             return leading.width >= trailing.width ? leading : trailing
