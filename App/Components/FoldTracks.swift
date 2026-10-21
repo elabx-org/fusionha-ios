@@ -58,3 +58,29 @@ enum FoldPanes {
         return (CGFloat(panes.lead), CGFloat(panes.gap))
     }
 }
+
+/// One grid row placed on given tracks (`PosterTracks`): child i in track i,
+/// the row as tall as its tallest child at its track's width. A poster row
+/// that keeps the fold in a gutter, in the Web layout and in a Spread span.
+struct TrackRowLayout: Layout {
+    var tracks: [FoldColumns.Track]
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let height = zip(subviews, tracks).map { view, track in
+            view.sizeThatFits(ProposedViewSize(width: CGFloat(track.width), height: nil)).height
+        }.max() ?? 0
+        return CGSize(width: proposal.width ?? CGFloat(tracks.last?.maxX ?? 0), height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        for (index, subview) in subviews.enumerated() {
+            guard index < tracks.count else {
+                subview.place(at: bounds.origin, proposal: .zero)
+                continue
+            }
+            let track = tracks[index]
+            subview.place(at: CGPoint(x: bounds.minX + CGFloat(track.x), y: bounds.minY),
+                          proposal: ProposedViewSize(width: CGFloat(track.width), height: nil))
+        }
+    }
+}

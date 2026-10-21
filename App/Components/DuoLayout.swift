@@ -25,83 +25,6 @@ import FusionhaKit
 // `AppModel.detailStore(for:)`, so folding and unfolding keeps both: sheet <->
 // trailing column (`DetailContinuity` in FusionhaKit).
 
-/// Where the fold runs through a container, from its reserved `.division`
-/// regions. `nil` ranges mean no fold (folded, flat open, any other device).
-struct FoldInfo: Equatable {
-    var size: CGSize = .zero
-    /// The fold's x-range when it runs top to bottom (book, landscape).
-    var vertical: ClosedRange<CGFloat>?
-    /// The fold's y-range when it runs side to side (book, portrait).
-    var horizontal: ClosedRange<CGFloat>?
-    /// The fold's x-range when the Duo lies flat open (inactive, zero wide)
-    /// and it runs top to bottom through the container. `nil` when `vertical`
-    /// is set, or there is no fold.
-    var flatVertical: ClosedRange<CGFloat>?
-
-    init() {}
-
-    /// Reads the fold from a container's geometry. The regions are empty on the
-    /// first geometry pass and filled in on a later one, so this is read on
-    /// every geometry change, never cached.
-    init(_ proxy: GeometryProxy) {
-        size = proxy.size
-        for frame in FoldInfo.divisionFrames(proxy) {
-            guard frame.width > 0 || frame.height > 0 else { continue }
-            if frame.height >= frame.width {
-                vertical = frame.minX...max(frame.minX, frame.maxX)
-            } else {
-                horizontal = frame.minY...max(frame.minY, frame.maxY)
-            }
-        }
-        if vertical == nil && horizontal == nil {
-            flatVertical = FoldInfo.verticalFold(proxy)
-        }
-    }
-
-    /// The top-to-bottom room to keep empty: half open, the active fold as
-    /// reported; flat open, the zero-wide fold with the fold gutter around it.
-    var verticalGap: ClosedRange<CGFloat>? {
-        if let vertical { return vertical }
-        guard let x = flatVertical else { return nil }
-        let gap = FoldColumns.gap(around: Double(x.lowerBound)...Double(x.upperBound))
-        return CGFloat(gap.lowerBound)...CGFloat(gap.upperBound)
-    }
-
-    /// A top-to-bottom fold inside this container, active or not (flat open it
-    /// is zero wide), as its x-range in the container's coordinates. Layouts
-    /// with columns keep their columns off it (`FoldColumns`).
-    static func verticalFold(_ proxy: GeometryProxy) -> ClosedRange<CGFloat>? {
-        guard #available(iOS 27.1, *) else { return nil }
-        let width = proxy.size.width
-        let frame = proxy.reservedRegions(kind: .division, options: .includeInactive)
-            .map(\.frame)
-            .first { $0.height > 0 && $0.height >= $0.width && $0.minX > 0 && $0.maxX < width }
-        return frame.map { $0.minX...max($0.minX, $0.maxX) }
-    }
-
-    /// The frames of the container's `.division` reserved regions (the fold),
-    /// in the container's own coordinates.
-    static func divisionFrames(_ proxy: GeometryProxy) -> [CGRect] {
-        if #available(iOS 27.1, *) {
-            return proxy.reservedRegions(kind: .division).map(\.frame)
-        }
-        return []
-    }
-
-    /// Whether a fold, folded flat or not (an inactive `.division` counts), runs
-    /// top to bottom through the middle of this container. Grids use it to pick
-    /// an even column count, so the fold falls in a gutter, never on a poster.
-    static func crossesMiddle(_ proxy: GeometryProxy) -> Bool {
-        guard #available(iOS 27.1, *) else { return false }
-        let width = proxy.size.width
-        guard width > 0 else { return false }
-        return proxy.reservedRegions(kind: .division, options: .includeInactive).contains { region in
-            let frame = region.frame
-            return frame.height >= frame.width && abs(frame.midX - width / 2) <= max(frame.width, 12)
-        }
-    }
-}
-
 /// Places one or two children: alone it fills the container; with a second
 /// child it splits along `axis`, the first child `primary` long, then `gap`
 /// (the fold, kept empty), then the second child. It is always the same
@@ -149,6 +72,25 @@ struct ShellSplit: Equatable {
     /// Whether the trailing column shows at all.
     var shown = false
 
+    /// The shell's split: a Spread's pages when `spread` is active, else the
+    /// Web layout's (`init(fold:hasItem:)`).
+    init(fold: FoldInfo, hasItem: Bool, spread: SpreadContext) {
+        switch spread.mode {
+        case .off:
+            self.init(fold: fold, hasItem: hasItem)
+        case .span:
+            // The tab fills both pages; it keeps the fold clear itself.
+            self.init()
+        case .pages(let pages):
+            self.init()
+            shown = true
+            primary = CGFloat(pages.left.width)
+            gap = CGFloat(pages.gap)
+        }
+    }
+
+    init() {}
+
     /// `hasItem`: a title is open. Decided from the container's own size (not
     /// the size class), so the app splits at the same sizes as the web.
     init(fold: FoldInfo, hasItem: Bool) {
@@ -189,6 +131,7 @@ struct ShellSplit: Equatable {
 /// shown when the fold splits the screen anyway).
 struct ShellDetailColumn: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.spread) private var spread
 
     var body: some View {
         Group {
@@ -200,22 +143,11 @@ struct ShellDetailColumn: View {
                         .environment(\.detailInColumn, true)
                 }
                 .id(ref.id)
+            } else if spread.isActive {
+                // The right page's default for the tab (S2–S6 fill it in).
+                SpreadRightPage()
             } else {
-                VStack(spacing: 12) {
-                    Image(systemName: "rectangle.stack")
-                        .font(.system(size: 28, weight: .regular))
-                        .foregroundStyle(Theme.dim)
-                    Text("Select a title")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Theme.txt)
-                    Text("Its versions, seasons and files open here.")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.mut)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(24)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Theme.bg)
+                SelectTitleHint()
             }
         }
         .overlay(alignment: .leading) {

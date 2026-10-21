@@ -14,10 +14,25 @@ struct RootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var fold = FoldInfo()
     @State private var toastAnchor = ToastAnchor()
+    /// iPhone Duo open: Spread (two pages at the fold) or the Web layout. Per device.
+    @AppStorage(DuoOpenLayout.storageKey) private var duoLayout: DuoOpenLayout = .standard
+    @State private var spanRequests = SpreadSpanRequests()
 
-    /// With room for two columns the open title is the trailing column, not a sheet.
+    /// The Spread, when the Duo is open and the setting says so (else `.off`).
+    private func spreadContext(_ fold: FoldInfo, hasItem: Bool) -> SpreadContext {
+        SpreadContext(fold: fold, layout: duoLayout, spanRequested: spanRequests.spans(model.tab), hasItem: hasItem)
+    }
+
+    /// With room for two columns the open title is the trailing column, not a
+    /// sheet; in a Spread the right page.
     private var split: ShellSplit {
-        ShellSplit(fold: fold, hasItem: model.presentedItem != nil)
+        let hasItem = model.presentedItem != nil
+        return ShellSplit(fold: fold, hasItem: hasItem, spread: spreadContext(fold, hasItem: hasItem))
+    }
+
+    /// Whether an open title would be a column (not a sheet) in this geometry.
+    private func splitsWithTitle(_ fold: FoldInfo) -> Bool {
+        ShellSplit(fold: fold, hasItem: true, spread: spreadContext(fold, hasItem: true)).shown
     }
 
     /// The detail sheet's binding: empty while the title shows in the trailing
@@ -32,6 +47,7 @@ struct RootView: View {
 
     var body: some View {
         let split = split
+        let spread = spreadContext(fold, hasItem: model.presentedItem != nil)
         FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap) {
             tabs
             if split.shown {
@@ -46,18 +62,26 @@ struct RootView: View {
             Color.clear
                 .ignoresSafeArea(.keyboard)
                 .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { newFold in
-                    model.updateDetailHost(splitsWithTitle: ShellSplit(fold: newFold, hasItem: true).shown)
+                    model.updateDetailHost(splitsWithTitle: splitsWithTitle(newFold))
                     fold = newFold
                 }
         }
+        // Spread <-> Web layout keeps the tab, its scroll and the open title (DC3):
+        // the same split container, the title's store in the model.
+        .onChange(of: duoLayout) { model.updateDetailHost(splitsWithTitle: splitsWithTitle(fold)) }
         .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: split)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: spread)
         // Toasts: above the tab bar when folded; on the trailing column when
-        // split, so they never straddle the fold (DC14).
+        // split, so they never straddle the fold (DC14); on the right page
+        // while a Spread's tab spans both pages.
         .overlay {
-            ToastLayer(region: ToastRegion.shell(split, size: fold.size),
-                       clearsAbove: split.shown ? nil : toastAnchor.floor, gap: 16)
+            ToastLayer(region: ToastRegion.shell(split, spread: spread, size: fold.size),
+                       clearsAbove: split.shown || spread.spans ? nil : toastAnchor.floor, gap: 16)
         }
         .environment(toastAnchor)
+        .environment(\.spread, spread)
+        .environment(\.duoOpen, fold.isDuoOpen)
+        .environment(\.spreadSpanRequests, spanRequests)
         .environment(\.bookPose, fold.vertical != nil)
         .environment(\.motionEnabled, !reduceMotion && model.animationsEnabled)
         .environment(\.railStyle, model.railStyle)
@@ -204,88 +228,5 @@ struct AddTitleToolbarItem: ToolbarContent {
             }
             .barPriority(true)
         }
-    }
-}
-
-/// The web's DeleteItemDialog: "Delete {title}?", the delete-files checkbox, Cancel /
-/// Delete (danger, "Deleting…" while pending).
-struct DeleteTitleDialog: View {
-    @Environment(AppModel.self) private var model
-    @Environment(\.dismiss) private var dismiss
-    let target: DeleteTarget
-    @State private var deleteFiles = false
-    @State private var deleting = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Delete \(target.title)?")
-                .font(.system(size: 17, weight: .bold))
-                .foregroundStyle(Theme.txt)
-                .padding(.top, 8)
-            Text("This removes the title and all its versions from your library. This cannot be undone.")
-                .font(.system(size: 13.5))
-                .foregroundStyle(Theme.mut)
-                .fixedSize(horizontal: false, vertical: true)
-            Toggle(isOn: $deleteFiles) {
-                Text("Also delete the downloaded files from disk")
-                    .font(.system(size: 13.5, weight: .medium))
-                    .foregroundStyle(Theme.txt)
-            }
-            .toggleStyle(WebCheckboxStyle())
-            Spacer(minLength: 0)
-            HStack(spacing: 10) {
-                Button { dismiss() } label: {
-                    Text("Cancel")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(Theme.txt)
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .panel(Theme.panel2, radius: Theme.radius)
-                }
-                .buttonStyle(PressScaleStyle())
-                Button {
-                    Task {
-                        deleting = true
-                        let ok = await model.delete(target, deleteFiles: deleteFiles)
-                        deleting = false
-                        if ok { dismiss() }
-                    }
-                } label: {
-                    Text(deleting ? "Deleting…" : "Delete")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(Theme.onDanger)
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .background(Theme.danger, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-                }
-                .buttonStyle(PressScaleStyle())
-                .disabled(deleting)
-            }
-        }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-/// A web checkbox: an 18pt rounded square, indigo with a white tick when on.
-struct WebCheckboxStyle: ToggleStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        Button {
-            configuration.isOn.toggle()
-        } label: {
-            HStack(alignment: .top, spacing: 10) {
-                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                    .fill(configuration.isOn ? Theme.indigo : Color.clear)
-                    .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .strokeBorder(configuration.isOn ? Theme.indigo : Theme.mut.opacity(0.6), lineWidth: 1.5))
-                    .overlay {
-                        if configuration.isOn {
-                            Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy)).foregroundStyle(Theme.onAccent)
-                        }
-                    }
-                    .frame(width: 18, height: 18)
-                configuration.label
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
     }
 }

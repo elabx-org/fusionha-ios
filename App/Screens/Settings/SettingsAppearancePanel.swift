@@ -47,7 +47,10 @@ struct AppearanceSettingsPanel: View {
             .listRowInsets(EdgeInsets())
 
             // This iPhone's colours never wait on the server's settings.
-            if tab == "theme" { AppPaletteSection() }
+            if tab == "theme" {
+                AppPaletteSection()
+                DuoOpenLayoutSection()
+            }
             if store.loaded {
                 Group {
                     switch tab {

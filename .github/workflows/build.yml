@@ -287,6 +287,8 @@ jobs:
             shoot palette-$P-activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity $PAL
             shoot palette-$P-detail SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8 $PAL
           done
+          # Settings › Appearance › "iPhone Duo, open" (the Spread switch, S1).
+          shoot duo-harness-settings-appearance SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=appearance "SIMCTL_CHILD_FUSIONHA_SCREENSHOT_APPEARANCE_SCROLL=iPhone Duo, open"
           # A filtered run (shots_only) stops here: the rest are the full set and its checks.
           if [ -n "${ONLY:-}" ]; then ls -l shots; exit 0; fi
           shoot 01-login SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=
@@ -544,6 +546,17 @@ jobs:
           shoot search-5-loading $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=loading
           shoot search-6-nomatch $I SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_VIEW=nomatch
           ls -l shots/search-*
+
+      # iPhone Duo Spread through the DEBUG harness (App/Debug/DuoHarness.swift):
+      # the app in a Duo-sized frame with a fake fold on a 13-inch iPad, cropped
+      # to the frame. Honours shots_only (e.g. ^duo-harness).
+      - name: iPhone Duo harness screenshots
+        env:
+          ONLY: ${{ inputs.shots_only }}
+        run: |
+          python3 scripts/mock_server.py 8768 &
+          sleep 2
+          scripts/duo_harness_shots.sh build/Build/Products/Debug-iphonesimulator/Fusionha.app shots http://127.0.0.1:8768 "${ONLY:-}"
 
       - uses: actions/upload-artifact@v4
         if: always()

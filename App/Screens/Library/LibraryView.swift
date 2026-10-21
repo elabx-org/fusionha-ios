@@ -12,6 +12,8 @@ import FusionhaKit
 struct LibraryView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
+    /// iPhone Duo Spread: with nothing picked the grid spans both pages.
+    @Environment(\.spread) private var spread
     // Every filter persists, so the Library reopens exactly as it was left
     // (the web keeps them all in the URL); only the search box is transient.
     @AppStorage("library.kind") private var kindRaw = "all"
@@ -33,10 +35,13 @@ struct LibraryView: View {
     /// The grid rows on screen, kept (unobserved) so a fold/unfold that changes
     /// the column count can scroll back to the same titles.
     @State private var onScreen = LibraryOnScreen()
+    /// The grid's own width and the fold through it (`LibraryGridFold`).
+    @State private var gridFold = LibraryGridFold()
 
     private var compact: Bool { density == "compact" }
-    /// The web's desktop Library: past 720 of the Library's own width.
-    private var wide: Bool { PaneWidthRule.isWide(Double(pane.width)) }
+    /// The web's desktop Library: past 720 of the Library's own width. A
+    /// Spread span keeps the phone pieces, one page each.
+    private var wide: Bool { !spread.spans && PaneWidthRule.isWide(Double(pane.width)) }
     /// The A–Z index applies: title sort, ungrouped, posters.
     private var alphaMode: Bool { sort == .title && !group && !compact }
     private var showsRail: Bool { alphaMode && derived.titleCount > 0 }
@@ -48,8 +53,19 @@ struct LibraryView: View {
     }
 
     /// Cards per row for the grid's width (16pt margins, the rail beside it).
+    /// A Spread span: three a side. A fold through the grid (Web layout, flat
+    /// or Book): the usual count, its tracks split around the real fold.
     private var columns: Int {
-        PosterColumns.count(for: pane.width - 32 - railWidth * (pane.foldMiddle ? 2 : 1), evenForFold: pane.foldMiddle)
+        if spread.spans { return PosterTracks.count(base: 3, spans: true) }
+        if gridFold.fold != nil { return PosterColumns.count(for: gridFold.width) }
+        return PosterColumns.count(for: pane.width - 32 - railWidth * (pane.foldMiddle ? 2 : 1), evenForFold: pane.foldMiddle)
+    }
+
+    /// The poster tracks that keep the fold in a gutter (`nil`: no fold).
+    private var gridTracks: [FoldColumns.Track]? {
+        PosterTracks.tracks(count: derived.columns, width: Double(gridFold.width),
+                            fold: gridFold.fold.map { Double($0.lowerBound)...Double($0.upperBound) },
+                            spans: spread.spans, spacing: LibraryGridRow.spacing)
     }
 
     private var inputs: LibraryInputs {
@@ -77,6 +93,7 @@ struct LibraryView: View {
             }
         }
         .shellPage("Library")
+        .spreadSpansBothPages(.library, !compact)
         .toolbarVisibility(model.selectMode ? .hidden : .automatic, for: .tabBar)
         .librarySelectBar(active: model.selectMode, visibleIds: derived.visibleIds)
         .animation(motion ? .snappy(duration: 0.3) : nil, value: model.selectMode)
@@ -124,6 +141,7 @@ struct LibraryView: View {
                     .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { y in
                         scrubber.setGridTop(y)
                     }
+                    .onGeometryChange(for: LibraryGridFold.self) { LibraryGridFold($0) } action: { gridFold = $0 }
                 content
             }
             // Plex-app rhythm on phones: 16pt side margins.
@@ -169,32 +187,56 @@ struct LibraryView: View {
     private var pageTop: some View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear.frame(height: 0).id("library-top")
-            LibraryHeader(derived: derived, status: $status, wide: wide)
-                .reveal(0)
-            if wide {
-                LibraryPulseRibbon(derived: derived, status: $status, kind: $kindRaw)
-                    .padding(.top, 16)
-                    .reveal(1)
-                LibraryToolbarWide(derived: derived, tier: $tier, recency: $recency, status: $status,
-                                   group: $group, sort: $sort, density: $density)
-                    .padding(.top, 16)
-                    .padding(.bottom, 18)
-                    .reveal(2)
+            if spread.spans {
+                spanTop
             } else {
-                LibraryKindsBar(derived: derived, kind: $kindRaw)
-                    .padding(.top, 16)
-                    .reveal(1)
-                LibraryToolbar(derived: derived, tier: $tier, status: $status, density: $density,
-                               filterBadge: filterBadge, showingFilters: $showingFilters) {
-                    LibraryFiltersSheet(recency: $recency, group: $group, sort: $sort)
-                        .presentationDetents([.medium, .large])
-                        .presentationDragIndicator(.visible)
-                        .presentationBackground(Theme.panel)
+                LibraryHeader(derived: derived, status: $status, wide: wide)
+                    .reveal(0)
+                if wide {
+                    LibraryPulseRibbon(derived: derived, status: $status, kind: $kindRaw)
+                        .padding(.top, 16)
+                        .reveal(1)
+                    LibraryToolbarWide(derived: derived, tier: $tier, recency: $recency, status: $status,
+                                       group: $group, sort: $sort, density: $density)
+                        .padding(.top, 16)
+                        .padding(.bottom, 18)
+                        .reveal(2)
+                } else {
+                    LibraryKindsBar(derived: derived, kind: $kindRaw)
+                        .padding(.top, 16)
+                        .reveal(1)
+                    phoneToolbar
+                        .padding(.top, 16)
+                        .padding(.bottom, 18)
+                        .reveal(2)
                 }
-                .padding(.top, 16)
-                .padding(.bottom, 18)
-                .reveal(2)
             }
+        }
+    }
+
+    /// Spread, nothing picked: the title and counts on the left page, the
+    /// kinds, tier and filters on the right (S2 refines it from the mock).
+    private var spanTop: some View {
+        FoldSpanRow {
+            LibraryHeader(derived: derived, status: $status, wide: false)
+        } trailing: {
+            VStack(alignment: .leading, spacing: 12) {
+                LibraryKindsBar(derived: derived, kind: $kindRaw)
+                phoneToolbar
+            }
+        }
+        .padding(.bottom, 18)
+        .reveal(0)
+    }
+
+    /// The phone's control row (tier · kinds · Filters · density · select).
+    private var phoneToolbar: some View {
+        LibraryToolbar(derived: derived, tier: $tier, status: $status, density: $density,
+                       filterBadge: filterBadge, showingFilters: $showingFilters) {
+            LibraryFiltersSheet(recency: $recency, group: $group, sort: $sort)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(Theme.panel)
         }
     }
 
@@ -251,7 +293,7 @@ struct LibraryView: View {
                 case .letter(let letter, let count):
                     LibraryLetterHeader(letter: letter, count: count)
                 case .items(let items):
-                    LibraryGridRow(items: items, columns: derived.columns)
+                    LibraryGridRow(items: items, columns: derived.columns, tracks: gridTracks)
                 case .tableHeader:
                     LibraryTableHeader(sort: compactSort) { column in
                         withAnimation(motion ? .snappy : nil) { compactSort = compactSort.tapped(column) }
@@ -263,10 +305,4 @@ struct LibraryView: View {
         }
         .scrollTargetLayout()
     }
-}
-
-/// The Library scroll's measured width and fold (`FoldInfo.crossesMiddle`).
-struct LibraryPane: Equatable {
-    var width: CGFloat = 0
-    var foldMiddle = false
 }

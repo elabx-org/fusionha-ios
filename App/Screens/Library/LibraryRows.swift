@@ -226,19 +226,51 @@ struct LibraryGridSkeleton: View {
 /// One poster row: `columns` cards, each row only as tall as its own tallest
 /// card (7f2b50c7), padded out with empty cells on the last row.
 struct LibraryGridRow: View {
+    static let spacing: Double = 6
     let items: [MediaItem]
     let columns: Int
+    /// With a fold through the grid: each poster's track, the fold in a gutter.
+    var tracks: [FoldColumns.Track]?
 
     var body: some View {
-        HStack(alignment: .top, spacing: 6) {
-            ForEach(0..<max(columns, items.count), id: \.self) { i in
-                if i < items.count {
-                    PosterCard(item: items[i]).frame(maxWidth: .infinity, alignment: .top)
-                } else {
-                    Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+        Group {
+            if let tracks, tracks.count == columns {
+                TrackRowLayout(tracks: tracks) {
+                    ForEach(items) { PosterCard(item: $0) }
+                }
+            } else {
+                HStack(alignment: .top, spacing: CGFloat(Self.spacing)) {
+                    ForEach(0..<max(columns, items.count), id: \.self) { i in
+                        if i < items.count {
+                            PosterCard(item: items[i]).frame(maxWidth: .infinity, alignment: .top)
+                        } else {
+                            Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
+                        }
+                    }
                 }
             }
         }
         .padding(.bottom, 18)
     }
+}
+
+/// The Library grid's own width and the top-to-bottom fold through it, in
+/// its coordinates (`FoldInfo.verticalFold`): the real fold x, so the Duo's
+/// off-centre fold lands in a gutter (the old `crossesMiddle` missed it).
+struct LibraryGridFold: Equatable {
+    var width: CGFloat = 0
+    var fold: ClosedRange<CGFloat>?
+
+    init() {}
+
+    init(_ proxy: GeometryProxy) {
+        width = proxy.size.width
+        fold = FoldInfo.verticalFold(proxy)
+    }
+}
+
+/// The Library scroll's measured width and fold (`FoldInfo.crossesMiddle`).
+struct LibraryPane: Equatable {
+    var width: CGFloat = 0
+    var foldMiddle = false
 }

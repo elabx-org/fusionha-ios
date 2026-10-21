@@ -51,13 +51,17 @@ public enum FoldColumns {
     /// widths are closest (ties go to the smaller leading group, so a centred
     /// fold splits five as 2 | 3 and seven as 3 | 4). `nil` when the gap isn't
     /// inside the container or a column would have no width: lay out as usual.
-    public static func split(count: Int, width: Double, spacing: Double, gap: ClosedRange<Double>) -> [Track]? {
+    /// `leading` forces how many go before the gap (a Spread's 3 a side).
+    public static func split(count: Int, width: Double, spacing: Double, gap: ClosedRange<Double>,
+                             leading: Int? = nil) -> [Track]? {
         guard count >= 2, gap.lowerBound > 0, gap.upperBound < width else { return nil }
         let lead = gap.lowerBound
         let trail = width - gap.upperBound
-        guard let k = leadingCount(count: count, lead: lead, trail: trail, spacing: spacing) else { return nil }
+        let chosen = leading.map { min(max($0, 1), count - 1) }
+        guard let k = chosen ?? leadingCount(count: count, lead: lead, trail: trail, spacing: spacing) else { return nil }
         let leadWidth = groupWidth(lead, columns: k, spacing: spacing)
         let trailWidth = groupWidth(trail, columns: count - k, spacing: spacing)
+        guard leadWidth > 0, trailWidth > 0 else { return nil }
         var tracks: [Track] = []
         for i in 0..<k {
             tracks.append(Track(x: Double(i) * (leadWidth + spacing), width: leadWidth))

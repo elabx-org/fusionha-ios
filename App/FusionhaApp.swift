@@ -3,7 +3,15 @@ import SwiftUI
 @main
 struct FusionhaApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @State private var model = AppModel()
+    @State private var model: AppModel
+
+    init() {
+        #if DEBUG
+        // CI's iPhone Duo harness: its launch settings land before any view reads them.
+        DuoHarness.prepare()
+        #endif
+        _model = State(initialValue: AppModel())
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -23,6 +31,8 @@ struct FusionhaApp: App {
                     RootView()
                 }
             }
+            // CI screenshots only: the app inside an iPhone Duo frame with a fake fold.
+            .duoHarness()
             .environment(model)
             .publishesWindowSize()
             // A native app shows no scroll bars: every page, list and sheet

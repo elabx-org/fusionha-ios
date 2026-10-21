@@ -74,7 +74,10 @@ private struct ToastAnchorWriter: ViewModifier {
 enum ToastRegion {
     /// The shell: the trailing column (the lower one when the fold runs side to
     /// side) whenever the shell is split, else the whole container.
-    static func shell(_ split: ShellSplit, size: CGSize) -> CGRect? {
+    static func shell(_ split: ShellSplit, spread: SpreadContext = SpreadContext(), size: CGSize) -> CGRect? {
+        if spread.spans, let page = spread.pages?.right, size.height > 0 {
+            return CGRect(x: CGFloat(page.x), y: 0, width: CGFloat(page.width), height: size.height)
+        }
         guard split.shown, size.width > 0, size.height > 0 else { return nil }
         let start = split.primary + split.gap
         switch split.axis {

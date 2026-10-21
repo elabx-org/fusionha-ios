@@ -11,6 +11,7 @@ struct PosterCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @Environment(\.openPosterSheet) private var openSheet
+    @Environment(\.spread) private var spread
     let item: MediaItem
     @State private var pressing = false
     @State private var longPresses = 0
@@ -18,6 +19,8 @@ struct PosterCard: View {
     private var monitored: Bool { item.monitored ?? true }
     private var selecting: Bool { model.selectMode }
     private var selected: Bool { model.selection.contains(item.id) }
+    /// In a Spread, the title open on the right page is outlined in the grid.
+    private var picked: Bool { spread.isActive && !selecting && model.presentedItem?.id == item.id }
 
     /// Attention glows softly around the poster; the rail says what is wrong.
     private var attentionColor: Color? {
@@ -86,7 +89,7 @@ struct PosterCard: View {
         .sensoryFeedback(.selection, trigger: selected)
         .sensoryFeedback(.selection, trigger: longPresses)
         .accessibilityElement(children: .combine)
-        .accessibilityAddTraits(selecting && selected ? [.isButton, .isSelected] : [.isButton])
+        .accessibilityAddTraits((selecting && selected) || picked ? [.isButton, .isSelected] : [.isButton])
         .accessibilityAction(named: "Actions") {
             if !selecting { openSheet?(item) }
         }
@@ -94,7 +97,13 @@ struct PosterCard: View {
 
     private var ringColor: Color {
         if selecting && selected { return Theme.txt }
+        if picked { return Theme.primary }
         return Theme.txt.opacity(0.07)
+    }
+
+    private var ringWidth: CGFloat {
+        if selecting && selected { return 2 }
+        return picked ? 2.5 : 0.5
     }
 
     private var art: some View {
@@ -103,7 +112,7 @@ struct PosterCard: View {
             .saturation(monitored ? 1 : 0.75)
             .colorMultiply(monitored ? .white : Color(white: 0.82))
             .opacity(monitored ? 1 : 0.82)
-            .shelfPoster(ring: ringColor, ringWidth: selecting && selected ? 2 : 0.5)
+            .shelfPoster(ring: ringColor, ringWidth: ringWidth)
             // Attention as a soft glow, never a coloured ring (web 0.4.222).
             .shadow(color: (attentionColor ?? .clear).opacity(0.55), radius: 7)
             .overlay { PosterArtBadges(badges: PosterBadges(item), showsMonitor: !selecting) }

@@ -9,6 +9,8 @@ import FusionhaKit
 /// iPhone Duo outer display.
 struct ShellPage: ViewModifier {
     @Environment(AppModel.self) private var model
+    @Environment(\.duoOpen) private var duoOpen
+    @AppStorage(DuoOpenLayout.storageKey) private var duoLayout: DuoOpenLayout = .standard
     let title: String
     /// The page's own width: past 900 the status cluster joins the bar (S3, as the web).
     @State private var width: CGFloat = 0
@@ -25,6 +27,7 @@ struct ShellPage: ViewModifier {
             .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {
                 StatusClusterItems(model: model, shown: showsCluster, open: $clusterPanel)
+                DuoLayoutToolbarItem(shown: duoOpen, layout: $duoLayout)
                 AccountToolbarItem(model: model)
             }
             .task(id: model.me?.id) { await AccountBarArt.shared.load(model.me, client: model.client) }
