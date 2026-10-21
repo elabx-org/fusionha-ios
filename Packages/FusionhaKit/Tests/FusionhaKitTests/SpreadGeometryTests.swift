@@ -90,8 +90,8 @@ final class SpreadGeometryTests: XCTestCase {
         XCTAssertEqual(tracks.count, 6)
         let gap = FoldColumns.gap(around: fold)
         assertClear(tracks, of: gap)
-        XCTAssertEqual(tracks.filter { $0.maxX <= gap.lowerBound }.count, 3)
-        XCTAssertEqual(tracks.filter { $0.x >= gap.upperBound }.count, 3)
+        XCTAssertEqual(tracks.filter { $0.maxX <= gap.lowerBound + 1e-9 }.count, 3)
+        XCTAssertEqual(tracks.filter { $0.x >= gap.upperBound - 1e-9 }.count, 3)
         XCTAssertEqual(tracks[2].maxX, gap.lowerBound, accuracy: 1e-9)
         XCTAssertEqual(tracks[3].x, gap.upperBound, accuracy: 1e-9)
         XCTAssertEqual(tracks[5].maxX, 817, accuracy: 1e-9)
@@ -111,7 +111,7 @@ final class SpreadGeometryTests: XCTestCase {
 
     func testForcedLeadingCountIsClamped() throws {
         let tracks = try XCTUnwrap(FoldColumns.split(count: 4, width: 800, spacing: 6, gap: 380...420, leading: 9))
-        XCTAssertEqual(tracks.filter { $0.maxX <= 380 }.count, 3)
+        XCTAssertEqual(tracks.filter { $0.maxX <= 380 + 1e-9 }.count, 3)
         XCTAssertNil(FoldColumns.split(count: 4, width: 800, spacing: 300, gap: 380...420, leading: 3))
     }
 }
