@@ -220,6 +220,8 @@ Open with a top-to-bottom fold (inner landscape, flat or Book), the app has two 
 |---|---|---|---|---|---|
 | Library grid | `LibraryView.swift`, `LibraryRows.swift` (`LibraryGridRow`) | S1 | ✅ 3 a side, gutter on the fold | ✅ the usual count split around the real fold (`PosterTracks`; the old even-count rule assumed a centred fold) | ✅ `testLibrarySpanIsThreeASideWithTheGutterOnTheFold`, `testLibraryWebLayoutKeepsItsCountAndClearsTheFold` |
 | Library pulse ribbon (one card) | `LibraryPulseRibbon.swift` | S2 | ✅ not shown while spanning (phone pieces); ☐ S2 design | ☐ | ☐ |
+| Library filter field, wide header (one field across the page) | `LibraryHeader.swift` | S2 | ✅ left page only while spanning | ☐ | ☐ |
+| Shell tab bar on a regular-width spanning tab (iPad-style top bar, centred over both pages; seen in the harness) | `RootView.swift` | S2 | ☐ verify on a Duo (iOS 27.1 may use the vertical bar) | ☐ same | ☐ |
 | Library desktop toolbar, one-row variant | `LibraryToolbarWide.swift` | S2 | ✅ not shown while spanning | ☐ | ☐ |
 | Discover one-row controls | `DiscoverBrowseControls.swift` | S3 | ☐ | ☐ | ☐ |
 | Discover results and filters (`crossesMiddle`) | `AdaptivePosterGrid`, `DiscoverFiltersPanel.swift` | S3 | ☐ | ☐ | ☐ |
