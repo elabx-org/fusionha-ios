@@ -194,8 +194,45 @@ These were sent to fusionha as tensions (#55 reply), pending the owner.
 - **Inbox panes (DU2), Threads/Issues (DU5):** the queue / list ends at the fold, the aside / pane starts after it (`FoldPanes`), when both keep their minimums.
 - **History table (DU4):** Title ends before the fold, Who starts after it.
 - **Sign-in (DU15) and Setup:** `StageColumns` and `FoldSafe` use the flat fold with its gutter too, so the side-by-side columns meet at it and the centred card and the Setup wizard sit in one half.
-- **Still on the fold flat (open):** Library pulse ribbon, one card (`LibraryPulseRibbon.swift:17`); Library grid, Discover results and filters, because `crossesMiddle` misses the Duo's off-centre fold (`DuoLayout.swift` `crossesMiddle`, `LibraryView.swift:52`, `DiscoverFiltersPanel.swift:58`); Library desktop toolbar one-row variant (`LibraryToolbarWide.swift:26`); Activity desktop head search with Resolve showing (`ActivityPageHeader.swift:28`); Activity tab strip (`Kit/ActTabs.swift:26`); Tasks System 3-up (`TaskSystemSection.swift:30`); wide queue card text (`QueueStateCard.swift:40`); Settings split panel (`SettingsView.swift:47`); Discover one-row controls (`DiscoverBrowseControls.swift:22`); request modal options (`RequestModal.swift:53`); Manual Import table (`MITableRow.swift:8`); Calendar tablet month (`CalendarMonthMobile.swift:31`).
+- **Still on the fold flat (open)** (tracked per batch in "Duo Spread mode" below; the Library grid is fixed in S1): Library pulse ribbon, one card (`LibraryPulseRibbon.swift:17`); Library grid, Discover results and filters, because `crossesMiddle` misses the Duo's off-centre fold (`DuoLayout.swift` `crossesMiddle`, `LibraryView.swift:52`, `DiscoverFiltersPanel.swift:58`); Library desktop toolbar one-row variant (`LibraryToolbarWide.swift:26`); Activity desktop head search with Resolve showing (`ActivityPageHeader.swift:28`); Activity tab strip (`Kit/ActTabs.swift:26`); Tasks System 3-up (`TaskSystemSection.swift:30`); wide queue card text (`QueueStateCard.swift:40`); Settings split panel (`SettingsView.swift:47`); Discover one-row controls (`DiscoverBrowseControls.swift:22`); request modal options (`RequestModal.swift:53`); Manual Import table (`MITableRow.swift:8`); Calendar tablet month (`CalendarMonthMobile.swift:31`).
 - **Unverified:** CI cannot simulate a fold; the fold paths are compile- and unit-test-only until a Device Hub walk on the iPhone Duo simulator.
+
+### Duo Spread mode (iOS-only, owner-approved 2026-10-20)
+
+Open with a top-to-bottom fold (inner landscape, flat or Book), the app has two layouts, chosen per device:
+
+- **Spread** (default): two pages split at the fold's real x (not the middle: on the Duo the fold is right of the content's middle because of the system column) with the 40 pt gutter, the left page ending 20 before the fold and the right page starting 20 after it. The tab is on the left page, the picked item on the right. Browse screens (Library now; Discover and Search in S3) span both pages until a title is picked, with the content in two fold-separated halves. Same web content and words; only the arrangement differs.
+- **Web layout:** the web-parity wide layout as before, with the fold-gutter fixes.
+
+**The switch:** a system toolbar button on every tab (`DuoLayoutToolbarItem`), shown only while a top-to-bottom fold exists, titled with the mode it switches to ("Spread" `rectangle.split.2x1` / "Web layout" `rectangle`); and Settings › Appearance › Theme › **iPhone Duo, open** (segmented Spread | Web layout). The Settings row is always listed, with a footer saying it only applies while an iPhone Duo is open, because Settings opens as a sheet that has no fold of its own to read. Stored in UserDefaults (`fusionha.duo.openLayout`, `DuoOpenLayout`); no server change.
+
+**S1 status (infrastructure, branch `duo-spread-s1`):**
+- ✅ Geometry in FusionhaKit with tests (`SpreadGeometry`, `PosterTracks`, `FoldColumns.split(leading:)`; `SpreadGeometryTests`).
+- ✅ Shell: `SpreadContext` (`\.spread`) decides off / pages / span; the shell keeps the one `FoldSplitLayout`, so switching modes, folding and unfolding keep the tab, its scroll and the open title (DC3; the title's store is in `AppModel`). Toasts go to the right page while a tab spans.
+- ✅ Extension points for S2–S6: screens read `@Environment(\.spread)` (`isActive`, `spans`, `pages`) to switch to their Spread layouts; browse screens call `.spreadSpansBothPages(tab, enabled)`; rows that span use `FoldSpanRow` (two pieces meeting at the gutter) and grids use `PosterTracks` + `TrackRowLayout`; each tab's right-page default goes in `SpreadRightPage` (S1: "Select a title" on every tab).
+- ✅ Library (first user of the span): nothing picked, the grid is 3 posters a side with the gutter on the fold, the title and counts on the left page and the kinds, tier and filters on the right; picking a title moves the grid to the left page (3 columns, scrolled back to the same titles) and outlines the picked poster (`Theme.primary` ring). The compact list doesn't span.
+- ✅ Duo screenshot harness (DEBUG only, `App/Debug/DuoHarness.swift`): the app inside a 951×669, 669×951 or 466×678 frame with the device kit's safe areas and a fake flat fold at x 475.5 (open), on a 13-inch iPad simulator, cropped to the frame (`scripts/duo_harness_shots.sh`, `duo-harness-*` shots). `FoldInfo.verticalFold` and `crossesMiddle` read the fake fold in the harness only; release builds compile it out.
+- ☐ Per-screen Spread designs: S2 Library + title, S3 Discover / Search / Add, S4 Requests, S5 Calendar + Activity, S6 Settings / Account / Sign-in / Manual Import.
+
+**Fold-crosser tracker (either mode: nothing on the fold).** Each screen is fixed in both Spread and the Web layout, with a test per screen for both modes (the geometry in FusionhaKit, Duo numbers: an 849 pt shell with the fold at 451.5), and checked in the `duo-harness-*` shots.
+
+| Fold-crosser | Where | Batch | Spread | Web layout | Tests |
+|---|---|---|---|---|---|
+| Library grid | `LibraryView.swift`, `LibraryRows.swift` (`LibraryGridRow`) | S1 | ✅ 3 a side, gutter on the fold | ✅ the usual count split around the real fold (`PosterTracks`; the old even-count rule assumed a centred fold) | ✅ `testLibrarySpanIsThreeASideWithTheGutterOnTheFold`, `testLibraryWebLayoutKeepsItsCountAndClearsTheFold` |
+| Library pulse ribbon (one card) | `LibraryPulseRibbon.swift` | S2 | ✅ not shown while spanning (phone pieces); ☐ S2 design | ☐ | ☐ |
+| Library desktop toolbar, one-row variant | `LibraryToolbarWide.swift` | S2 | ✅ not shown while spanning | ☐ | ☐ |
+| Discover one-row controls | `DiscoverBrowseControls.swift` | S3 | ☐ | ☐ | ☐ |
+| Discover results and filters (`crossesMiddle`) | `AdaptivePosterGrid`, `DiscoverFiltersPanel.swift` | S3 | ☐ | ☐ | ☐ |
+| Request modal options | `RequestModal.swift` | S3 | ☐ | ☐ | ☐ |
+| Activity tab strip | `Activity/Kit/ActTabs.swift` | S5 | ☐ | ☐ | ☐ |
+| Activity desktop head search (Resolve showing) | `ActivityPageHeader.swift` | S5 | ☐ | ☐ | ☐ |
+| Tasks System 3-up | `TaskSystemSection.swift` | S5 | ☐ | ☐ | ☐ |
+| Wide queue card text | `QueueStateCard.swift` | S5 | ☐ | ☐ | ☐ |
+| Calendar tablet month | `CalendarMonthMobile.swift` | S5 | ☐ | ☐ | ☐ |
+| Settings split panel | `SettingsView.swift` | S6 | ☐ | ☐ | ☐ |
+| Manual Import table | `ManualImport/MITableRow.swift` | S6 | ☐ | ☐ | ☐ |
+
+**Unverifiable without a Duo:** where iOS 27.1 places the tab bar and the toolbar switch on the real inner display (the harness runs on an iPad, whose regular-width tab bar sits at the top, centred over the whole spanning tab); the real fold x and safe areas (the harness uses the device kit's 475.5 and 22 / 24 / 22 / 78); whether `reservedRegions` reports the inactive fold inside a scroll view's content as it does for the shell; the Book pose's active fold width.
 
 ## iOS-only (keep, record in ui-plan)
 
