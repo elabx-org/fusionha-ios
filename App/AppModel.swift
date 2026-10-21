@@ -27,7 +27,15 @@ final class AppModel {
     var searchText = ""
     var searchScope: SearchScope = .library
     /// The open title. Its store is kept while it stays open (AppModel+Detail.swift).
-    var presentedItem: ItemRef? { didSet { detailSlot.keep(only: presentedItem?.id) } }
+    var presentedItem: ItemRef? {
+        didSet {
+            detailSlot.keep(only: presentedItem?.id)
+            if presentedItem != nil, spreadPreview != nil { spreadPreview = nil }
+        }
+    }
+    /// A Discover or Search preview on the iPhone Duo Spread's right page; one
+    /// right page, so opening a title closes it and the reverse (`SpreadPreview`).
+    var spreadPreview: PreviewRoute? { didSet { if spreadPreview != nil, presentedItem != nil { presentedItem = nil } } }
     @ObservationIgnored var detailSlot = RetainedSlot<DetailStore>()
     @ObservationIgnored var detailGate = DetailHostGate()
     /// A `fusionha://` link waiting for the shell (`DeepLink.swift`). Each

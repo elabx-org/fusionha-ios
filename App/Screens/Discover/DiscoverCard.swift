@@ -8,6 +8,7 @@ import FusionhaKit
 struct DiscoverCard: View {
     @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
+    @Environment(\.spread) private var spread
     let result: MediaSearchResult
     var trending = false
     let canAdd: Bool
@@ -28,6 +29,8 @@ struct DiscoverCard: View {
     private var requestStatus: String? { store.statusByTmdb[result.tmdbId] }
     private var alreadyRequested: Bool { requestStatus == "pending" || requestStatus == "approved" }
     private var showsQuickAdd: Bool { canAdd && !inLibrary }
+    /// In a Spread, the title open on the right page is outlined in the grid.
+    private var picked: Bool { spread.isActive && result.isPicked(in: model, libraryId: libraryId) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -40,6 +43,7 @@ struct DiscoverCard: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(DiscoverPressStyle())
+            .accessibilityAddTraits(picked ? .isSelected : [])
             // R2 (fusionha #56): touch has no hover, so the ＋ stays on the
             // poster's corner, a sibling of the card's button, never inside it.
             .overlayPreferenceValue(DiscoverPosterBounds.self) { anchor in
@@ -71,7 +75,7 @@ struct DiscoverCard: View {
         Color.clear
             .aspectRatio(2 / 3, contentMode: .fit)
             .overlay { DiscoverArt(url: TMDBImage.resized(result.posterUrl, to: "w500")) }
-            .shelfPoster()
+            .shelfPoster(ring: picked ? Theme.primary : nil, ringWidth: picked ? 2.5 : 0.5)
     }
 
     /// In library / trending: a mark on the meta line, never on the art.

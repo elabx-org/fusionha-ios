@@ -25,7 +25,7 @@ struct PreviewSheet: View {
         .presentationCornerRadius(14)
         // Sheets hide the shell's toasts.
         .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
-        .sheet(item: $addPick) { pick in
+        .duoPageSheet(item: $addPick) { pick in
             AddTitleSheet(initialPick: .tmdb(pick), hideViewDetails: true,
                           providerOverride: DiscoverSession.shared.providerOverride) { id in
                 // Added from the details page: open the new item (web navigates there).
@@ -100,7 +100,8 @@ struct PreviewPage: View {
         .background(Theme.bg)
         .toolbar(.hidden, for: .navigationBar)
         .task(id: route) { await load() }
-        .sheet(item: $requestPick) { pick in
+        // On the open Duo: the title on the left page, the options on the right.
+        .duoPageSheet(item: $requestPick, placement: .twoPages) { pick in
             NavigationStack { RequestModal(pick: pick) {} }
         }
     }

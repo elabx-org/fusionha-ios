@@ -6,8 +6,11 @@ import FusionhaKit
 struct CollectionsRail: View {
     @Environment(AppModel.self) private var model
     @Environment(\.paneSize) private var pane
-    /// The web's `.cell`: 116 on phones, 128 to 720, 158 on desktop.
-    private var cellWidth: CGFloat { CGFloat(DiscoverWidthRule.cellWidth(Double(pane.width))) }
+    @Environment(\.spread) private var spread
+    /// The web's `.cell`: 116 on phones, 128 to 720, 158 on desktop; a page's in a Spread span.
+    private var cellWidth: CGFloat {
+        CGFloat(DiscoverFold.railCell(paneWidth: Double(pane.width), spanPage: spread.spanPageWidth))
+    }
     @Environment(DiscoverStore.self) private var store
     @State private var state: RailLoad<CollectionSummary> = .loading
 
@@ -27,10 +30,10 @@ struct CollectionsRail: View {
                 } toggle: {
                     EmptyView()
                 } track: {
-                    RailTrack {
+                    RailTrack(count: items.count, cell: cellWidth) {
                         ForEach(Array(items.enumerated()), id: \.element.id) { index, collection in
                             CollectionCard(collection: collection) { ignore(collection) }
-                                .frame(width: cellWidth)
+                                .railCell(cellWidth)
                                 .discoverReveal(index: index)
                         }
                     }

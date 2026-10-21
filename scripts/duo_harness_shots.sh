@@ -69,6 +69,34 @@ shoot duo-harness-open-web-library open $L $WEB
 shoot duo-harness-open-web-library-title open $L $WEB SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
 # A work screen in Spread: list on the left page, the right page's default.
 shoot duo-harness-open-spread-activity open SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity $SP
+# S3: Discover › Browse. Nothing picked: the header and rails span both pages,
+# Trending 6 across (3 a side); Dune tapped: its preview on the right page,
+# the grid on the left with Dune outlined. The Web layout keeps its one-row
+# controls, rails and filters off the fold.
+D="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover"
+DUNE="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_OPEN=438631"
+FILTERS="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_FILTERS=1 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_SCROLL=filters"
+shoot duo-harness-open-spread-discover open $D $SP
+shoot duo-harness-open-spread-discover-preview open $D $SP $DUNE
+shoot duo-harness-open-spread-discover-filters open $D $SP $FILTERS
+shoot duo-harness-open-spread-discover-daylight open $D $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
+shoot duo-harness-open-spread-discover-preview-daylight open $D $SP $DUNE SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
+shoot duo-harness-open-web-discover open $D $WEB
+shoot duo-harness-open-web-discover-filters open $D $WEB $FILTERS
+shoot duo-harness-open-web-discover-preview open $D $WEB $DUNE
+# S3: the request modal (title on the left page, options on the right) and
+# the Add sheet (the right page), in both layouts.
+REQ="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUEST=movie/438631/Dune"
+shoot duo-harness-open-spread-request open $D $SP $REQ
+shoot duo-harness-open-web-request open $D $WEB $REQ
+shoot duo-harness-open-spread-add open $D $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD=1
+# S3: Search. A term: both lanes as grids spanning both pages; a result open:
+# the title on the right page, the grid on the left. The Web layout's list
+# stays before the fold.
+shoot duo-harness-open-spread-search open $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=a
+shoot duo-harness-open-spread-search-add open $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=xyz
+shoot duo-harness-open-spread-search-title open $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=a SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
+shoot duo-harness-open-web-search open $WEB SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=a
 # No top-to-bottom fold: Spread does not apply (inner portrait, folded).
 shoot duo-harness-portrait-library portrait $L $SP
 shoot duo-harness-folded-library folded $L $SP

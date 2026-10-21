@@ -46,6 +46,7 @@ struct LetterboxdRail: View {
             }
             track
             footer(base)
+                .foldLeadingColumn()
         }
         .padding(.bottom, 34)
         .accessibilityElement(children: .contain)
@@ -75,8 +76,9 @@ struct LetterboxdRail: View {
                     .padding(18)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .foldLeadingColumn()
             } else {
-                RailTrack {
+                RailTrack(count: shown.items.count, cell: SuggestionCard.width) {
                     ForEach(Array(shown.items.enumerated()), id: \.element.id) { index, item in
                         SuggestionCard(item: item, overLimit: SuggestionRail.overLimit(quota),
                                        uhdAllowed: letterboxd?.alsoUhdAllowed ?? false,

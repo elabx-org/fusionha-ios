@@ -23,10 +23,10 @@ struct TrailerRail: View {
             case .failed: RailStateLine(text: "Could not load trailers.", error: true)
             case .loaded(let items) where items.isEmpty: RailStateLine(text: "No trailers right now.")
             case .loaded(let items):
-                RailTrack {
+                RailTrack(count: items.count, cell: 300) {
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, trailer in
                         TrailerCard(trailer: trailer, canAdd: canAdd)
-                            .frame(width: 300)
+                            .railCell(300)
                             .discoverReveal(index: index)
                     }
                 }

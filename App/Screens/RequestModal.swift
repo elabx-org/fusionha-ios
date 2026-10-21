@@ -29,6 +29,9 @@ struct RequestModal: View {
     /// The modal's own width: two panes above 720 (a page-sized Add sheet; the
     /// R3 form sheet stays one column).
     @State private var width: CGFloat = 0
+    /// On the open iPhone Duo (`duoPageSheet(.twoPages)`): the title on the
+    /// left page, the options on the right, the fold between them (S3).
+    @State private var foldPanes: FoldColumns.Panes?
 
     private var isSeries: Bool { pick.kind == .series }
     /// The versions on offer: the server's per-viewer demand list (join, Watch
@@ -50,20 +53,13 @@ struct RequestModal: View {
 
     var body: some View {
         Group {
-            if DiscoverWidthRule.requestTwoPanes(Double(width)) {
+            if let foldPanes {
+                // The open Duo: the same two panes, meeting at the fold's gutter.
+                twoPanes(art: CGFloat(foldPanes.lead), gap: CGFloat(foldPanes.gap))
+            } else if DiscoverWidthRule.requestTwoPanes(Double(width)) {
                 // Wide (web `.layout`, `300px 1fr` above 720): the art pane beside
                 // the options, each scrolling on its own; the footer under the options.
-                HStack(spacing: 0) {
-                    ScrollView { RequestModalArt(pick: pick, preview: preview, sidePane: true) }
-                        .frame(width: 300)
-                        .background(Theme.panel)
-                        .overlay(alignment: .trailing) { Rectangle().fill(Theme.line).frame(width: 1) }
-                    VStack(spacing: 0) {
-                        ScrollView { optionsPane.padding(.top, 26) }
-                        footer
-                    }
-                }
-                .ignoresSafeArea(.container, edges: .top)
+                twoPanes(art: 300, gap: 0)
             } else {
                 VStack(spacing: 0) {
                     ScrollView {
@@ -79,6 +75,9 @@ struct RequestModal: View {
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .onGeometryChange(for: FoldColumns.Panes?.self) { proxy in
+            DiscoverFold.requestPanes(width: Double(proxy.size.width), fold: GridFold(proxy).foldRange)
+        } action: { foldPanes = $0 }
         .background(Theme.panel)
         // Close is a system toolbar item (DC10); presenters give the modal a
         // stack (`NavigationStack { RequestModal(…) }`), the Add sheet its own.
@@ -96,6 +95,25 @@ struct RequestModal: View {
         // so the art | options panes show as on the web's desktop modal.
         .modifier(RequestModalSizing(formSized: formSized, wide: window.isDesktopPane))
         .task { await load() }
+    }
+
+    /// The art pane `art` wide, `gap` kept empty (the fold and its gutter, or a
+    /// hairline without one), then the options with the footer under them.
+    private func twoPanes(art: CGFloat, gap: CGFloat) -> some View {
+        HStack(spacing: 0) {
+            ScrollView { RequestModalArt(pick: pick, preview: preview, sidePane: true) }
+                .frame(width: art)
+                .background(Theme.panel)
+                .overlay(alignment: .trailing) {
+                    if gap == 0 { Rectangle().fill(Theme.line).frame(width: 1) }
+                }
+            Color.clear.frame(width: gap)
+            VStack(spacing: 0) {
+                ScrollView { optionsPane.padding(.top, 26) }
+                footer
+            }
+        }
+        .ignoresSafeArea(.container, edges: .top)
     }
 
     private func load() async {
@@ -319,24 +337,6 @@ struct RequestModal: View {
         } catch {
             blocked = nil
             DiscoverToasts.shared.error("Could not submit request", error)
-        }
-    }
-}
-
-/// The request modal's sheet size: a form sheet on the Duo (R3), page-sized
-/// when the window is desktop-wide so its two panes show, and the presenter's
-/// own size inside the Add sheet.
-private struct RequestModalSizing: ViewModifier {
-    let formSized: Bool
-    let wide: Bool
-
-    func body(content: Content) -> some View {
-        if !formSized {
-            content
-        } else if wide {
-            content.presentationSizing(.page)
-        } else {
-            content.formSheet()
         }
     }
 }

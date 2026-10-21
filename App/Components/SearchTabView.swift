@@ -8,9 +8,15 @@ import FusionhaKit
 /// OmniResults): owned titles first ("In your library", capped at 8), then a
 /// TMDB add lane that arms itself when nothing owned matches. The field is the
 /// system's `.searchable` one (it shows now that the tab has its own stack,
-/// DC11), focused when the tab opens.
+/// DC11), focused when the tab opens. On the open iPhone Duo (S3): in a
+/// Spread both lanes are poster grids spanning both pages until a result is
+/// tapped (it opens on the right page, the grid moves to the left page); in
+/// the Web layout the list stays before the fold.
 struct SearchTabView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.spread) private var spread
+    /// For the Spread's Discover cards: their preview and request sheets.
+    @State private var store = DiscoverStore()
     @State private var armed = false
     @State private var remote: [MediaSearchResult] = []
     @State private var searching = false
@@ -18,8 +24,6 @@ struct SearchTabView: View {
     /// The server has no TMDB key (409 `tmdb_not_configured`).
     @State private var noKey = false
     @State private var searchedTerm = ""
-    /// A requester's pick: the request modal (web OmniResults → RequestModal).
-    @State private var requestPick: MediaSearchResult?
     @FocusState private var focused: Bool
 
     private var term: String { model.searchQuery }
@@ -27,12 +31,16 @@ struct SearchTabView: View {
 
     var body: some View {
         @Bindable var model = model
+        @Bindable var store = store
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 if trimmed.isEmpty { hint } else { results }
             }
             .padding(.top, 8)
             .padding(.bottom, 40)
+            // The Web layout on the open Duo: the list before the fold (the
+            // web's omni search is a centred palette, there on the fold).
+            .foldLeadingColumn(!spread.isActive)
         }
         .scrollDismissesKeyboard(.interactively)
         .background(Theme.bg.ignoresSafeArea())
@@ -46,9 +54,13 @@ struct SearchTabView: View {
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
         .onSubmit(of: .search) { armed = true }
-        .sheet(item: $requestPick) { pick in
+        .spreadSpansBothPages(.search, !trimmed.isEmpty)
+        .environment(store)
+        // A requester's pick: the request modal (web OmniResults → RequestModal).
+        .duoPageSheet(item: $store.requestPick, placement: .twoPages) { pick in
             NavigationStack { RequestModal(pick: pick) {} }
         }
+        .spreadPreviewHost(.search, preview: $store.preview, onOpenLibrary: { model.open($0) })
         .task {
             // Open ready to type, as a search tab does.
             try? await Task.sleep(for: .milliseconds(350))
@@ -140,49 +152,16 @@ struct SearchTabView: View {
         if !model.requestScoped {
             if owned.total > 0 {
                 groupLabel("In your library", count: owned.total)
-                ForEach(owned.rows) { item in
-                    Button {
-                        model.open(item.id)
-                    } label: {
-                        OmniRow(posterUrl: item.posterUrl, dot: Theme.kind(item.kindBucket), title: item.title,
-                                year: item.year) {
-                            TierComboLabel(tiers: item.editions.map(\.tier))
-                        } action: {
-                            OmniIconButton(symbol: "arrow.up.right", label: "Open") { model.open(item.id) }
-                        }
-                    }
-                    .buttonStyle(OmniRowStyle())
+                if spread.isActive {
+                    SearchOwnedGrid(items: owned.rows)
+                } else {
+                    ForEach(owned.rows) { ownedRow($0) }
                 }
                 if owned.total > owned.rows.count {
-                    Button {
-                        model.searchText = trimmed
-                        model.searchScope = .library
-                        model.tab = .library
-                    } label: {
-                        Text("+ \(owned.total - owned.rows.count) more in Library")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Theme.i2)
-                            .padding(.horizontal, 22)
-                            .padding(.vertical, 10)
-                    }
-                    .buttonStyle(.plain)
+                    moreInLibrary(owned.total - owned.rows.count)
                 }
             } else {
-                HStack(alignment: .top, spacing: 12) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(Theme.mut)
-                        .frame(width: 36, height: 36)
-                        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Nothing in your library for “\(trimmed)”")
-                            .font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
-                        Text("No owned titles matched — searching to add…")
-                            .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
+                nothingOwned
             }
         }
 
@@ -209,9 +188,57 @@ struct SearchTabView: View {
             .buttonStyle(.plain)
             .padding(.horizontal, 8)
             .padding(.top, 10)
+            .foldLeadingColumn()
         } else {
             addLane
         }
+    }
+
+    private func ownedRow(_ item: MediaItem) -> some View {
+        Button {
+            model.open(item.id)
+        } label: {
+            OmniRow(posterUrl: item.posterUrl, dot: Theme.kind(item.kindBucket), title: item.title,
+                    year: item.year) {
+                TierComboLabel(tiers: item.editions.map(\.tier))
+            } action: {
+                OmniIconButton(symbol: "arrow.up.right", label: "Open") { model.open(item.id) }
+            }
+        }
+        .buttonStyle(OmniRowStyle())
+    }
+
+    private func moreInLibrary(_ count: Int) -> some View {
+        Button {
+            model.searchText = trimmed
+            model.searchScope = .library
+            model.tab = .library
+        } label: {
+            Text("+ \(count) more in Library")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Theme.i2)
+                .padding(.horizontal, 22)
+                .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var nothingOwned: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(Theme.mut)
+                .frame(width: 36, height: 36)
+                .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Nothing in your library for “\(trimmed)”")
+                    .font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
+                Text("No owned titles matched — searching to add…")
+                    .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
     }
 
     @ViewBuilder
@@ -232,8 +259,12 @@ struct SearchTabView: View {
             groupLabel("Available to add",
                        credit: "· via \(OmniActions.providerShortLabel(model.settings?.metadataProvider))",
                        count: remote.count)
-            ForEach(remote) { result in
-                OmniAddRow(result: result, close: {}, request: { requestPick = $0 })
+            if spread.isActive {
+                SearchAddGrid(results: remote)
+            } else {
+                ForEach(remote) { result in
+                    OmniAddRow(result: result, close: {}, request: { store.requestPick = $0 })
+                }
             }
         }
     }
