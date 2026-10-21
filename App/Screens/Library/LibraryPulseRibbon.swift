@@ -4,7 +4,9 @@ import FusionhaKit
 /// The Library pulse inline past 720 (LibraryPulse.tsx desktop ribbon, ruling
 /// L17): one solid card (content, never glass) with the status pills beside
 /// the three meters (1.15 : 1), then the kinds row. On a phone the pills and
-/// meters live in the Library stats sheet instead.
+/// meters live in the Library stats sheet instead. With the iPhone Duo's fold
+/// through it (the Web layout) it is two cards of one height meeting at the
+/// fold's gutter: the pills and kinds before it, the meters after it.
 struct LibraryPulseRibbon: View {
     let derived: LibraryDerived
     @Binding var status: LibraryStatus
@@ -13,26 +15,57 @@ struct LibraryPulseRibbon: View {
     @State private var grown = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            RibbonColumns(spacing: 18, leadingShare: 1.15 / 2.15) {
-                LibraryWrap(spacing: 8) {
-                    ForEach(LibraryPulseParts.order, id: \.0) { entry in
-                        PulseStatButton(key: entry.0, label: entry.1, pulse: derived.pulse, status: $status)
+        FoldSplit(piece: .ribbon, fillHeight: true) {
+            card {
+                VStack(alignment: .leading, spacing: 14) {
+                    RibbonColumns(spacing: 18, leadingShare: 1.15 / 2.15) {
+                        pills
+                        meters
                     }
+                    kinds
                 }
-                PulseMeters(pulse: derived.pulse, grown: grown)
             }
-            LibraryKindsBar(derived: derived, kind: $kind)
+        } leading: {
+            card {
+                VStack(alignment: .leading, spacing: 14) {
+                    pills
+                    kinds
+                }
+            }
+        } trailing: {
+            card { meters.frame(maxHeight: .infinity) }
         }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 18)
-        .background(Theme.panel, in: RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous).strokeBorder(Theme.line))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Library summary")
         .onAppear {
             withAnimation(motion ? Motion.reveal(1.1) : nil) { grown = true }
         }
+    }
+
+    private var pills: some View {
+        LibraryWrap(spacing: 8) {
+            ForEach(LibraryPulseParts.order, id: \.0) { entry in
+                PulseStatButton(key: entry.0, label: entry.1, pulse: derived.pulse, status: $status)
+            }
+        }
+    }
+
+    private var meters: some View {
+        PulseMeters(pulse: derived.pulse, grown: grown)
+    }
+
+    private var kinds: some View {
+        LibraryKindsBar(derived: derived, kind: $kind)
+    }
+
+    /// One solid card; as tall as the row when it is one of two.
+    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .padding(.vertical, 16)
+            .padding(.horizontal, 18)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(Theme.panel, in: RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Theme.radiusLg, style: .continuous).strokeBorder(Theme.line))
     }
 }
 

@@ -98,7 +98,7 @@ struct DetailOwnedEditionCard: View {
             }
             Button("Cancel", role: .cancel) {}
         }
-        .sheet(item: $editing) { target in
+        .foldSafeSheet(item: $editing) { target in
             MovieFileEditSheet(detail: detail, target: target)
         }
     }

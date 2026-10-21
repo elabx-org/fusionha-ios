@@ -18,6 +18,9 @@ struct ItemDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     /// True when this is the shell's trailing column (unfolded) rather than a sheet.
     @Environment(\.detailInColumn) private var inColumn
+    /// The iPhone Duo is open (a top-to-bottom fold): as a column the title
+    /// sits beside the fold, so its sheets open on the column (`foldSafeSheet`).
+    @Environment(\.duoOpen) private var duoOpen
     let store: DetailStore
     /// Closes the column; a sheet dismisses itself.
     var onClose: (() -> Void)?
@@ -128,6 +131,7 @@ struct ItemDetailView: View {
             close()
         }
         .modifier(DetailChildSheets(presenter: presenter, reduceMotion: reduceMotion))
+        .foldSafePageHost(active: inColumn && duoOpen)
     }
 
     /// After a fold / unfold: back to the same scroll offset, then (once the

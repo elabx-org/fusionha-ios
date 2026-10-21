@@ -1,5 +1,5 @@
 #!/bin/bash
-# iPhone Duo harness screenshots (Spread, S1). CI cannot fold a Duo, so the
+# iPhone Duo harness screenshots (Spread, S1 and S2). CI cannot fold a Duo, so the
 # DEBUG app renders itself inside a Duo-sized frame with a fake flat fold
 # (App/Debug/DuoHarness.swift) on a large iPad simulator, and each shot is
 # cropped to that frame. Files: duo-harness-<frame>-<layout>-<screen>.png.
@@ -57,16 +57,34 @@ shoot() {  # shoot <name> <frame> [env…]
 L="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library"
 SP="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LAYOUT=spread"
 WEB="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LAYOUT=web"
+LIST="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LIST=1"
+DAY="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight"
+# Titles: Blade Runner (3, HD + 4K), Breaking Bad (8, a series).
+MOVIE="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=3"
+SERIES="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8"
 # Warm-up: the first launch against a fresh mock is still loading at 10s.
 shoot duo-harness-warmup open $L $SP && rm -f "$OUT/duo-harness-warmup.png"
 # Spread, Library: nothing picked (the grid spans both pages), then a title open.
 shoot duo-harness-open-spread-library open $L $SP
-shoot duo-harness-open-spread-library-title open $L $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
+shoot duo-harness-open-spread-library-title open $L $SP $SERIES
 # Again from a cold launch: the title's hero must render every time (S1 review blocker).
-shoot duo-harness-open-spread-library-title-2 open $L $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
+shoot duo-harness-open-spread-library-title-2 open $L $SP $SERIES
+# S2: the title page on the right page: a movie's HD and 4K cards, a series' seasons.
+shoot duo-harness-open-spread-title-movie-versions open $L $SP $MOVIE SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SCROLL=editions
+shoot duo-harness-open-spread-title-series-seasons open $L $SP $SERIES SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SCROLL=tabs
+# S2: what the title opens presents on the right page (a popover on the column), not over the fold.
+shoot duo-harness-open-spread-title-search open $L $SP $MOVIE SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SHEET=search
+shoot duo-harness-open-spread-title-edit open $L $SP $MOVIE SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SHEET=edit
+# S2: the compact list: Spread keeps it on the left page; the Web layout splits its rows at the fold.
+shoot duo-harness-open-spread-library-list open $L $SP $LIST
+shoot duo-harness-open-web-library-list open $L $WEB $LIST
+# S2: the light palette.
+shoot duo-harness-open-spread-library-daylight open $L $SP $DAY
+shoot duo-harness-open-spread-library-title-daylight open $L $SP $MOVIE $DAY
 # Web layout with the same fold: the web-parity wide layout (fold-gutter fixes only).
 shoot duo-harness-open-web-library open $L $WEB
-shoot duo-harness-open-web-library-title open $L $WEB SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
+shoot duo-harness-open-web-library-title open $L $WEB $SERIES
+shoot duo-harness-open-web-title-edit open $L $WEB $MOVIE SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SHEET=edit
 # A work screen in Spread: list on the left page, the right page's default.
 shoot duo-harness-open-spread-activity open SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity $SP
 # No top-to-bottom fold: Spread does not apply (inner portrait, folded).

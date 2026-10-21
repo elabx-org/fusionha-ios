@@ -30,7 +30,7 @@ struct LibraryView: View {
     @State private var scrubber = ScrubberState()
     @State private var rail = AlphaRailState()
     @State private var posterSheet: MediaItem?
-    /// The scroll's own width, and whether a fold runs through its middle.
+    /// The scroll's own width.
     @State private var pane = LibraryPane()
     /// The grid rows on screen, kept (unobserved) so a fold/unfold that changes
     /// the column count can scroll back to the same titles.
@@ -54,11 +54,12 @@ struct LibraryView: View {
 
     /// Cards per row for the grid's width (16pt margins, the rail beside it).
     /// A Spread span: three a side. A fold through the grid (Web layout, flat
-    /// or Book): the usual count, its tracks split around the real fold.
+    /// or Book): the usual count, its tracks split around the real fold (never
+    /// an assumed centred fold: the Duo's is right of the content's middle).
     private var columns: Int {
         if spread.spans { return PosterTracks.count(base: 3, spans: true) }
         if gridFold.fold != nil { return PosterColumns.count(for: gridFold.width) }
-        return PosterColumns.count(for: pane.width - 32 - railWidth * (pane.foldMiddle ? 2 : 1), evenForFold: pane.foldMiddle)
+        return PosterColumns.count(for: pane.width - 32 - railWidth)
     }
 
     /// The poster tracks that keep the fold in a gutter (`nil`: no fold).
@@ -66,6 +67,12 @@ struct LibraryView: View {
         PosterTracks.tracks(count: derived.columns, width: Double(gridFold.width),
                             fold: gridFold.fold.map { Double($0.lowerBound)...Double($0.upperBound) },
                             spans: spread.spans, spacing: LibraryGridRow.spacing)
+    }
+
+    /// The compact table's rows split at the fold (Web layout); `nil` without one.
+    private var tableSplit: FoldColumns.Panes? {
+        LibraryFold.table(width: Double(gridFold.width),
+                          fold: gridFold.fold.map { Double($0.lowerBound)...Double($0.upperBound) })
     }
 
     private var inputs: LibraryInputs {
@@ -152,11 +159,7 @@ struct LibraryView: View {
             .padding(.bottom, Theme.pageBottom)
         }
         .scrollDismissesKeyboard(.immediately)
-        .onGeometryChange(for: LibraryPane.self) { proxy in
-            // The grid is inset evenly, so a fold through the page's middle
-            // crosses the grid's middle too: keep it in a gutter (D3).
-            LibraryPane(width: proxy.size.width, foldMiddle: FoldInfo.crossesMiddle(proxy))
-        } action: { pane = $0 }
+        .onGeometryChange(for: LibraryPane.self) { LibraryPane(width: $0.size.width) } action: { pane = $0 }
         // The desktop A–Z rail: a column of its own at the trailing edge, so
         // the grid lays out beside it, never under it.
         .safeAreaInset(edge: .trailing, spacing: 0) {
@@ -216,10 +219,12 @@ struct LibraryView: View {
         }
     }
 
-    /// Spread, nothing picked: the title and counts on the left page, the
-    /// kinds, tier and filters on the right (S2 refines it from the mock).
+    /// Spread, nothing picked (the owner's mock): the counts and the filter
+    /// field on the left page; the kinds, tier, Filters and grid / list on the
+    /// right, sitting on the grid. The pulse stays in the stats sheet, as on
+    /// the phone (each page is phone-sized).
     private var spanTop: some View {
-        FoldSpanRow {
+        FoldSpanRow(trailingAlignment: .bottom) {
             LibraryHeader(derived: derived, status: $status, wide: false)
         } trailing: {
             VStack(alignment: .leading, spacing: 12) {
@@ -273,7 +278,7 @@ struct LibraryView: View {
     private var content: some View {
         if model.library.isEmpty {
             if !model.libraryLoaded {
-                LibraryGridSkeleton()
+                LibraryGridSkeleton(columns: derived.columns, tracks: gridTracks)
             } else if model.libraryError != nil {
                 EmptyBox(message: "Your library could not be loaded. Check the backend and try again.")
             } else {
@@ -297,11 +302,11 @@ struct LibraryView: View {
                 case .items(let items):
                     LibraryGridRow(items: items, columns: derived.columns, tracks: gridTracks)
                 case .tableHeader:
-                    LibraryTableHeader(sort: compactSort) { column in
+                    LibraryTableHeader(sort: compactSort, split: tableSplit) { column in
                         withAnimation(motion ? .snappy : nil) { compactSort = compactSort.tapped(column) }
                     }
                 case .tableRow(let item, let last):
-                    LibraryTableRow(item: item, last: last)
+                    LibraryTableRow(item: item, last: last, split: tableSplit)
                 }
             }
         }

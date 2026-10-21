@@ -39,8 +39,8 @@ struct DetailRequestsStrip: View {
             }
         }
         .task(id: itemId) { await load() }
-        .sheet(item: $thread) { r in RequestThreadSheet(request: r) { Task { await load() } } }
-        .sheet(isPresented: $composing) { BroadcastSheet(itemId: itemId) }
+        .foldSafeSheet(item: $thread) { r in RequestThreadSheet(request: r) { Task { await load() } } }
+        .foldSafeSheet(isPresented: $composing) { BroadcastSheet(itemId: itemId) }
     }
 
     private func rowView(_ row: ItemRequestRow) -> some View {

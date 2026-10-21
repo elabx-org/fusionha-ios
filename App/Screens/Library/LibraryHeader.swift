@@ -25,7 +25,9 @@ struct LibraryHeader: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             caption
-            LibraryFilterField().padding(.top, 4)
+            // The iPhone Duo's fold through the header (Web layout): the field
+            // ends at the gutter instead of running across it.
+            LibraryFilterField().foldLeadingPane().padding(.top, 4)
         }
         .toolbar {
             AddTitleToolbarItem(model: model)

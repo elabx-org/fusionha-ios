@@ -42,6 +42,9 @@ struct SelectTitleHint: View {
 /// Without a fold inside the row the pieces stack, leading first.
 struct FoldSpanRow<Leading: View, Trailing: View>: View {
     var spacing: CGFloat = 12
+    /// Where the trailing piece sits in the row's height (the Library span's
+    /// tools sit on the grid, the owner's mock: bottom).
+    var trailingAlignment: VerticalAlignment = .top
     @ViewBuilder var leading: Leading
     @ViewBuilder var trailing: Trailing
     @State private var panes: FoldColumns.Panes?
@@ -49,7 +52,7 @@ struct FoldSpanRow<Leading: View, Trailing: View>: View {
     var body: some View {
         Group {
             if let panes {
-                FoldPairLayout(lead: CGFloat(panes.lead), gap: CGFloat(panes.gap)) {
+                FoldPairLayout(lead: CGFloat(panes.lead), gap: CGFloat(panes.gap), trailingAlignment: trailingAlignment) {
                     leading
                     trailing
                 }
@@ -71,10 +74,14 @@ struct FoldSpanRow<Leading: View, Trailing: View>: View {
 }
 
 /// Two children side by side: the first `lead` wide, then `gap` kept empty,
-/// then the second in the rest; as tall as the taller one, each top-aligned.
+/// then the second in the rest; as tall as the taller one. The first is
+/// top-aligned, the second at `trailingAlignment`; with `fillHeight` both are
+/// offered the row's full height (two cards of one height).
 struct FoldPairLayout: Layout {
     var lead: CGFloat
     var gap: CGFloat
+    var trailingAlignment: VerticalAlignment = .top
+    var fillHeight = false
 
     private func widths(_ total: CGFloat) -> (CGFloat, CGFloat) {
         let first = min(max(lead, 0), total)
@@ -90,13 +97,17 @@ struct FoldPairLayout: Layout {
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         let (a, b) = widths(bounds.width)
+        let height: CGFloat? = fillHeight ? bounds.height : nil
         for (index, subview) in subviews.enumerated() {
             switch index {
             case 0:
-                subview.place(at: bounds.origin, proposal: ProposedViewSize(width: a, height: nil))
+                subview.place(at: bounds.origin, proposal: ProposedViewSize(width: a, height: height))
             case 1:
-                subview.place(at: CGPoint(x: bounds.minX + a + gap, y: bounds.minY),
-                              proposal: ProposedViewSize(width: b, height: nil))
+                let own = fillHeight ? bounds.height : subview.sizeThatFits(ProposedViewSize(width: b, height: nil)).height
+                let y = trailingAlignment == .bottom ? bounds.maxY - own
+                    : trailingAlignment == .center ? bounds.midY - own / 2 : bounds.minY
+                subview.place(at: CGPoint(x: bounds.minX + a + gap, y: y),
+                              proposal: ProposedViewSize(width: b, height: height))
             default:
                 subview.place(at: bounds.origin, proposal: .zero)
             }
