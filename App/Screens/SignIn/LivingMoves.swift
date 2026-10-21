@@ -34,9 +34,7 @@ extension LivingEngine {
                                            (1, .identity)], curve: LivingEase.snap, fields: .transform)
         }
         try await st.sleep(430, g)
-        st.ring(st.centre, lilac, s * 0.9)
-        st.animate(st.mark, 600, [(0, .identity), (0.5, LivingPose(light: 0.5)), (1, .identity)], curve: .easeOut,
-                   fields: .filter)
+        st.fuseFlash()
         try await st.sleep(800, g)
     }
 

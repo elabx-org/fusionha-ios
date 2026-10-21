@@ -20,6 +20,8 @@ public enum LivingVector {
     public static let movieShapes: [LivingPoly] = [
         roundRect(13, 27, 91, 38, 2), roundRect(13, 41, 91, 52, 2), roundRect(13, 55, 91, 94, 4),
     ].enumerated().map { i, part in align(fShapes[i], resample(part)) }
+    /// The F's blades aligned to the clapper, for the morph home.
+    public static let movieBack: [LivingPoly] = fShapes.enumerated().map { i, p in align(movieShapes[i], p) }
 
     /// Signed area (shoelace): its sign is the outline's winding.
     public static func area(_ p: LivingPoly) -> Double {
