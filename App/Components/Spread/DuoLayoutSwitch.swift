@@ -19,7 +19,7 @@ struct DuoLayoutToolbarItem: ToolbarContent {
                 .accessibilityLabel("Switch to \(target.title)")
                 .accessibilityHint("Changes how the open iPhone Duo lays out")
             }
-            .barPriority(false)
+            .barPriority(true)
         }
     }
 }

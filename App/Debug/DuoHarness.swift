@@ -33,7 +33,10 @@ extension View {
 ///
 /// Only read in DEBUG builds; the release app has no harness.
 enum DuoHarness {
-    static let space = "fusionha.duo-harness"
+    /// The window's width: the harness centres its frame in it.
+    private static let screenWidth: CGFloat = MainActor.assumeIsolated {
+        (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 1032
+    }
 
     enum Frame: String {
         /// Inner display, landscape: 951 x 669, the fold top to bottom.
@@ -85,8 +88,12 @@ enum DuoHarness {
     /// report it flat open. `nil` outside the harness or when the fold
     /// isn't inside the container.
     static func verticalFold(in proxy: GeometryProxy) -> ClosedRange<CGFloat>? {
-        guard let x = frame?.verticalFoldX else { return nil }
-        let local = x - proxy.frame(in: .named(space)).minX
+        guard let frame, let x = frame.verticalFoldX else { return nil }
+        // Global, not a named space: a named space doesn't reach through the
+        // tab view's hosting controllers (it fell back to global, 40 pt off).
+        // The frame is centred on the full-screen window.
+        let originX = (screenWidth - frame.size.width) / 2
+        let local = originX + x - proxy.frame(in: .global).minX
         guard proxy.size.height > 0, local > 0, local < proxy.size.width else { return nil }
         return local...local
     }
@@ -105,7 +112,6 @@ private struct DuoHarnessFrame: ViewModifier {
                 .safeAreaPadding(frame.insets)
                 .environment(\.horizontalSizeClass, frame == .folded ? .compact : .regular)
                 .frame(width: frame.size.width, height: frame.size.height)
-                .coordinateSpace(.named(DuoHarness.space))
                 .overlay(alignment: .topLeading) { foldGuide }
                 .clipShape(RoundedRectangle(cornerRadius: frame.cornerRadius, style: .continuous))
         }
