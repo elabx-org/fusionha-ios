@@ -23,6 +23,10 @@ on:
         description: "Only the simulator screenshots whose name matches this regex (e.g. ^palette-); skips iPhone Duo and adds to the published set"
         type: string
         default: ""
+      duo_only:
+        description: "Quick iPhone Duo check (about 15 min): only the folded Duo shots whose name matches this regex (e.g. detail|library, or . for all); skips tests, the IPA and the other screenshots"
+        type: string
+        default: ""
 
 concurrency:
   group: build-${{ github.ref }}
@@ -53,6 +57,7 @@ jobs:
           IN_SHOTS: ${{ inputs.screenshots }}
           IN_PERF: ${{ inputs.perf }}
           IN_ONLY: ${{ inputs.shots_only }}
+          IN_DUO: ${{ inputs.duo_only }}
           MSG: ${{ github.event.head_commit.message }}
         run: |
           shots=false; duo=false; perf=false
@@ -64,7 +69,8 @@ jobs:
             workflow_dispatch)
               [ "$IN_SHOTS" = true ] && { shots=true; duo=true; }
               [ -n "$IN_ONLY" ] && { shots=true; duo=false; }
-              [ "$IN_PERF" = true ] && perf=true ;;
+              [ "$IN_PERF" = true ] && perf=true
+              [ -n "$IN_DUO" ] && { shots=false; duo=true; perf=false; } ;;
             push)
               if [ "$REF" = refs/heads/main ] || [[ "$REF" == refs/tags/v* ]]; then
                 if [ -z "$BEFORE" ] || [ "$BEFORE" = 0000000000000000000000000000000000000000 ]; then ui=1
@@ -81,6 +87,8 @@ jobs:
 
   test:
     name: FusionhaKit tests
+    # A quick Duo check (duo_only) skips the tests and the IPA.
+    if: inputs.duo_only == ''
     runs-on: xcode-27
     steps:
       - uses: actions/checkout@v5
@@ -131,6 +139,7 @@ jobs:
 
   build:
     name: Build unsigned IPA
+    if: inputs.duo_only == ''
     runs-on: xcode-27
     permissions:
       contents: write
@@ -611,6 +620,7 @@ jobs:
           xcodebuild -version
 
       - name: iPhone Duo SDK probe
+        if: inputs.duo_only == ''
         continue-on-error: true
         run: |
           mkdir -p duo
@@ -680,6 +690,8 @@ jobs:
 
       - name: Take iPhone Duo screenshots
         timeout-minutes: 75
+        env:
+          DUO_ONLY: ${{ inputs.duo_only }}
         run: |
           python3 scripts/mock_server.py 8765 &
           sleep 2
@@ -694,6 +706,8 @@ jobs:
           # Opening the Device Hub has twice taken the hosted runner down; off until poses work headless.
           export DUO_UI=0
           scripts/duo_shots.sh "$UDID" duo/shots || true
+          # A quick check (duo_only) stops at the matching folded shots.
+          [ -n "$DUO_ONLY" ] && exit 0
           # Unfolded proxy: a regular-width iPad mini (labelled standin-*-not-real-unfold).
           xcrun simctl shutdown "$UDID" || true
           scripts/duo_proxy.sh build/Build/Products/Debug-iphonesimulator/Fusionha.app duo/shots || true
