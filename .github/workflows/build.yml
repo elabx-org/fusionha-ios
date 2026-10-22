@@ -700,7 +700,9 @@ jobs:
           if [ -n "${{ github.event.pull_request.number }}" ]; then DEST="pr-${{ github.event.pull_request.number }}/duo"
           elif [ "$GITHUB_REF" = refs/heads/main ]; then DEST=main/duo
           else DEST="branch-$(echo "$GITHUB_REF_NAME" | tr '/' '-' | tr -cd 'A-Za-z0-9._-')/duo"; fi
-          if [ "${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}" = true ]; then
+          # A quick check (duo_only) keeps its shots in the run's artifact only:
+          # pushing to the screenshots branch costs it about 14 minutes.
+          if [ -z "$DUO_ONLY" ] && [ "${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}" = true ]; then
             export DUO_PUBLISH="scripts/publish_shots.sh duo/shots $DEST"
           fi
           # Opening the Device Hub has twice taken the hosted runner down; off until poses work headless.
@@ -721,7 +723,7 @@ jobs:
           retention-days: 14
 
       - name: Publish to the screenshots branch
-        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        if: always() && inputs.duo_only == '' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         run: |
           mkdir -p duo/shots
           cp duo/probe.txt duo/shots/ 2>/dev/null || true
