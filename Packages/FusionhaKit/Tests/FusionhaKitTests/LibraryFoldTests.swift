@@ -70,7 +70,7 @@ final class LibraryFoldTests: XCTestCase {
         XCTAssertEqual(span.lead, gutter.lowerBound)
         XCTAssertNil(LibraryFold.filterWidth(width: span.lead, fold: nil))
         // The grid: three a side, the gutter on the fold (S1).
-        let tracks = try XCTUnwrap(PosterTracks.tracks(count: 6, width: content, fold: fold, spans: true, spacing: 6))
+        let tracks = try XCTUnwrap(PosterTracks.tracks(count: 6, width: content, fold: fold, spans: true, spacing: 12))
         XCTAssertEqual(tracks.filter { $0.maxX <= gutter.lowerBound }.count, 3)
         XCTAssertEqual(tracks.filter { $0.x >= gutter.upperBound }.count, 3)
     }

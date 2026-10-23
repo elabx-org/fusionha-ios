@@ -246,7 +246,8 @@ struct LibraryGridSkeleton: View {
 /// One poster row: `columns` cards, each row only as tall as its own tallest
 /// card (7f2b50c7), padded out with empty cells on the last row.
 struct LibraryGridRow: View {
-    static let spacing: Double = 6
+    /// Layout A: posters sit apart on their glows (the mock's ~12pt gap).
+    static let spacing: Double = 12
     let items: [MediaItem]
     let columns: Int
     /// With a fold through the grid: each poster's track, the fold in a gutter.
