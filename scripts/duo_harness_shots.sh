@@ -41,7 +41,7 @@ shoot() {  # shoot <name> <frame> [env…]
   if [ -n "$ONLY" ] && ! echo "$name" | grep -qE "$ONLY"; then return 0; fi
   env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME="$frame" "$@" \
     xcrun simctl launch --terminate-running-process "$UDID" org.elabx.fusionha > /dev/null
-  sleep 10
+  sleep "${WAIT:-10}"
   local raw="$OUT/.raw-$name.png"
   xcrun simctl io "$UDID" screenshot "$raw" > /dev/null
   # The DEBUG probe log (Account and Watchlists & lists steps), then cleared.
@@ -147,6 +147,8 @@ ACC="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1"
 LISTS="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=lists"
 SRC="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LISTS_SOURCE=letterboxd-watchlist"
 PICK="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PICK=1"
+# Account loads after a cold start, then pushes the page (and Pick): more time.
+WAIT=18
 for theme in dark daylight; do
   T=""; SUF=""
   [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
