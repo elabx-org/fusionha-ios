@@ -163,6 +163,7 @@ final class AppModel {
             credentials = Credentials(serverURL: server, token: "screenshot", tokenId: nil)
             switch env["FUSIONHA_SCREENSHOT_TAB"] {
             case "discover": tab = .discover
+            case "search": tab = .search
             case "calendar": tab = .calendar
             case "activity": tab = .activity
             case "wanted":

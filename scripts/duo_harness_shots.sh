@@ -72,7 +72,7 @@ shoot duo-harness-open-spread-library-title-2 open $L $SP $SERIES
 # S2: the title page on the right page: a movie's HD and 4K cards, a series' seasons.
 shoot duo-harness-open-spread-title-movie-versions open $L $SP $MOVIE SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SCROLL=editions
 shoot duo-harness-open-spread-title-series-seasons open $L $SP $SERIES SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SCROLL=tabs
-# S2: what the title opens presents on the right page (a popover on the column), not over the fold.
+# S2: what the title opens presents on the right page (`duoPageSheet`), not over the fold.
 shoot duo-harness-open-spread-title-search open $L $SP $MOVIE SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SHEET=search
 shoot duo-harness-open-spread-title-edit open $L $SP $MOVIE SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SHEET=edit
 # S2: the compact list: Spread keeps it on the left page; the Web layout splits its rows at the fold.
@@ -108,13 +108,26 @@ REQ="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUEST=movie/438631/Dune"
 shoot duo-harness-open-spread-request open $D $SP $REQ
 shoot duo-harness-open-web-request open $D $WEB $REQ
 shoot duo-harness-open-spread-add open $D $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD=1
-# S3: Search. A term: both lanes as grids spanning both pages; a result open:
-# the title on the right page, the grid on the left. The Web layout's list
-# stays before the fold.
-shoot duo-harness-open-spread-search open $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=a
-shoot duo-harness-open-spread-search-add open $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=xyz
-shoot duo-harness-open-spread-search-title open $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=a SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
-shoot duo-harness-open-web-search open $WEB SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=a
+# S3: unified search. Before typing (kind filter, recent, Trending spanning
+# both pages), a term (the rows on the left page, the right page's kind filter
+# and hint), a result's preview on the right page, and a library title open.
+# The Web layout's list stays before the fold. Closed (folded) as the phone.
+SE="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=search"
+SQ="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=a"
+SPV="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_PREVIEW=63639"
+for theme in dark daylight; do
+  T=""; SUF=""
+  [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
+  shoot duo-harness-open-spread-search-empty$SUF open $SE $SP $T
+  shoot duo-harness-open-spread-search$SUF open $SQ $SP $T
+  shoot duo-harness-open-spread-search-preview$SUF open $SQ $SPV $SP $T
+  shoot duo-harness-folded-search-empty$SUF folded $SE $SP $T
+  shoot duo-harness-folded-search$SUF folded $SQ $SP $T
+  shoot duo-harness-folded-search-preview$SUF folded $SQ $SPV $SP $T
+done
+shoot duo-harness-open-spread-search-title open $SQ $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
+shoot duo-harness-open-web-search open $SQ $WEB
+shoot duo-harness-open-spread-library-daylight open $L $SP $DAY
 # No top-to-bottom fold: Spread does not apply (inner portrait, folded).
 shoot duo-harness-portrait-library portrait $L $SP
 shoot duo-harness-folded-library folded $L $SP

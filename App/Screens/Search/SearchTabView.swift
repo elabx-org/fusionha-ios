@@ -95,6 +95,9 @@ struct SearchTabView: View {
             AddTitleSheet(initialPick: .tvdb(pick)) { id in model.open(id) }
         }
         .spreadPreviewHost(.search, preview: $store.preview, onOpenLibrary: { model.open($0) })
+        #if DEBUG
+        .searchScreenshotPreview(search: search) { store.preview = PreviewRoute($0) }
+        #endif
         .task {
             // Open ready to type, as a search tab does.
             try? await Task.sleep(for: .milliseconds(350))
