@@ -13,19 +13,13 @@ struct EditionStatusChips: View {
     var body: some View {
         let queue = model.queue
         let chips = EditionChipLabel.chips(for: item) { edition in
-            queue.first { $0.editionId == edition.id }.map(Self.percent)
+            queue.first { $0.editionId == edition.id }.map(QueueProgress.init)
         }
         FlowRow(spacing: 5, lineSpacing: 5) {
             ForEach(chips.indices, id: \.self) { i in
                 EditionStatusChip(chip: chips[i])
             }
         }
-    }
-
-    /// The queue row's progress: bytes when sizes are known, else the client's percent.
-    static func percent(_ q: QueueItem) -> Int {
-        let pct = q.size > 0 ? (q.size - q.sizeleft) / q.size * 100 : q.progress
-        return min(100, max(0, Int(pct.rounded())))
     }
 }
 

@@ -25,9 +25,9 @@ public struct EditionChipLabel: Equatable, Sendable {
         self.text = text
     }
 
-    /// The chip for a rail. `queuePercent` is the live download's progress
-    /// (from `/api/v1/queue`) when the version is in the queue.
-    public init(tier: QualityTier, rail: Rail, queuePercent: Int? = nil) {
+    /// The chip for a rail. `queue` is the version's live download (from
+    /// `/api/v1/queue`) when it is in the queue.
+    public init(tier: QualityTier, rail: Rail, queue: QueueProgress? = nil) {
         self.tier = tier
         if rail.attention {
             tone = rail.deadLinkOnly ? .deadLink : .attention
@@ -40,7 +40,15 @@ public struct EditionChipLabel: Equatable, Sendable {
             text = nil
         case .downloading:
             tone = .grabbing
-            if let pct = queuePercent, pct > 0 { text = "\(min(pct, 100))%" } else { text = rail.fraction ?? "↓" }
+            // A held import reads "!"; a finished transfer still importing
+            // reads ↓ (never "100%" on a version that isn't done).
+            if queue?.held == true {
+                text = "!"
+            } else if let pct = queue?.percent, pct > 0, pct < 100 {
+                text = "\(pct)%"
+            } else {
+                text = rail.fraction ?? "↓"
+            }
         case .upgrading:
             tone = .upgrading
             text = "↑"
@@ -54,9 +62,40 @@ public struct EditionChipLabel: Equatable, Sendable {
     }
 
     /// Every chip of a title, HD first (the web's edition order otherwise).
-    public static func chips(for item: MediaItem, queuePercent: (Edition) -> Int? = { _ in nil }) -> [EditionChipLabel] {
+    public static func chips(for item: MediaItem, queue: (Edition) -> QueueProgress? = { _ in nil }) -> [EditionChipLabel] {
         let rails = item.rails
-        return zip(item.editions, rails).map { EditionChipLabel(tier: $0.tier, rail: $1, queuePercent: queuePercent($0)) }
+        return zip(item.editions, rails).map { EditionChipLabel(tier: $0.tier, rail: $1, queue: queue($0)) }
+    }
+}
+
+/// A version's live download as a chip needs it: its percent (bytes when
+/// sizes are known, else the client's) and whether the import is held.
+public struct QueueProgress: Equatable, Sendable {
+    public let percent: Int
+    public let held: Bool
+
+    public init(percent: Int, held: Bool) {
+        self.percent = percent
+        self.held = held
+    }
+
+    public init(_ q: QueueItem) {
+        let pct = q.size > 0 ? (q.size - q.sizeleft) / q.size * 100 : q.progress
+        percent = min(100, max(0, Int(pct.rounded())))
+        held = q.heldReason != nil || q.heldDetail != nil || q.held != nil
+    }
+}
+
+// MARK: - Title page ambient wash
+
+/// The `--bg` scrim over the title page's blurred art (top to bottom), as
+/// (location, opacity) stops. Dark palettes use the web's values
+/// (hero-art.module.css: 78 / 62 / 50 %), a tint you feel. On a light ground
+/// the same wash reads as tan fog and drowns secondary text, so light
+/// palettes keep the page near-white: 94 % at the hero edge easing to solid.
+public enum AmbientWash {
+    public static func stops(light: Bool) -> [(location: Double, opacity: Double)] {
+        light ? [(0, 0.94), (0.3, 0.97), (1, 1)] : [(0, 0.78), (0.3, 0.62), (1, 0.5)]
     }
 }
 

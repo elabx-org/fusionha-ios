@@ -35,10 +35,14 @@ final class LibraryShelfTests: XCTestCase {
               {"id": 3, "tier": "HD-1080p", "monitored": true, "status": "done", "have": 1, "total": 1},
               {"id": 4, "tier": "UHD-2160p", "monitored": true, "status": "grabbing", "have": 0, "total": 1}]}
             """#)
-        let live = EditionChipLabel.chips(for: movie) { $0.tier == .uhd ? 30 : nil }
+        let live = EditionChipLabel.chips(for: movie) { $0.tier == .uhd ? QueueProgress(percent: 30, held: false) : nil }
         XCTAssertEqual(live[1], EditionChipLabel(tier: .uhd, tone: .grabbing, text: "30%"))
         // No queue row yet: the arrow, never a made-up percent.
         XCTAssertEqual(EditionChipLabel.chips(for: movie)[1].text, "↓")
+        // Transferred but still importing: ↓, never "100%" on a version that isn't done.
+        XCTAssertEqual(EditionChipLabel.chips(for: movie) { _ in QueueProgress(percent: 100, held: false) }[1].text, "↓")
+        // A held import: "!".
+        XCTAssertEqual(EditionChipLabel.chips(for: movie) { _ in QueueProgress(percent: 100, held: true) }[1].text, "!")
     }
 
     func testAttentionAndUpgradeChips() throws {
@@ -73,6 +77,13 @@ final class LibraryShelfTests: XCTestCase {
         XCTAssertEqual(line("2026-10-20"), "Added 3 days ago")
         XCTAssertEqual(line("2026-10-01"), "Added Oct 1")
         XCTAssertNil(RecentShelf.addedLine(nil, now: now) { _ in "" })
+    }
+
+    func testAmbientWashIsNearWhiteOnLightGroundsAndTheWebsOnDark() {
+        let light = AmbientWash.stops(light: true)
+        XCTAssertGreaterThanOrEqual(light.map(\.opacity).min() ?? 0, 0.94)
+        XCTAssertEqual(light.last?.opacity, 1)
+        XCTAssertEqual(AmbientWash.stops(light: false).map(\.opacity), [0.78, 0.62, 0.5])
     }
 
     func testKindMixShares() {

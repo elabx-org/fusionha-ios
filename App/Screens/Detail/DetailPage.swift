@@ -2,10 +2,11 @@ import SwiftUI
 import FusionhaKit
 
 /// The hero art repeated behind everything (MobileDetailFlyout `.ambient`):
-/// blurred and saturated under a `--bg` scrim of the web's values, 78% at the
-/// top to 50% at the foot (hero-art.module.css), so the whole page carries a
-/// light tint of the art. Dark themes temper it (`brightness(0.8)`); Daylight
-/// keeps it bright, so it never reads as grey fog. Content, not glass.
+/// blurred and saturated under a `--bg` scrim (`AmbientWash`). Dark palettes
+/// use the web's 78 / 62 / 50 % and temper the art (`brightness(0.8)`); light
+/// palettes keep the body near-white (94 % easing to solid), a faint tint
+/// only, since the web's wash reads as tan fog on a light ground and drowns
+/// secondary text. Content, not glass.
 struct AmbientBackdrop: View {
     let url: String?
 
@@ -21,11 +22,9 @@ struct AmbientBackdrop: View {
                     .brightness(Theme.isLight ? 0 : -0.2)
                     .clipped()
             }
-            LinearGradient(stops: [
-                .init(color: Theme.bg.opacity(0.78), location: 0),
-                .init(color: Theme.bg.opacity(0.62), location: 0.3),
-                .init(color: Theme.bg.opacity(0.5), location: 1),
-            ], startPoint: .top, endPoint: .bottom)
+            LinearGradient(stops: AmbientWash.stops(light: Theme.isLight).map {
+                Gradient.Stop(color: Theme.bg.opacity($0.opacity), location: $0.location)
+            }, startPoint: .top, endPoint: .bottom)
         }
         .ignoresSafeArea()
     }
