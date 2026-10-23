@@ -141,8 +141,8 @@ shoot duo-harness-folded-title folded $L $SP $SERIES
 shoot duo-harness-folded-title-daylight folded $L $SP $SERIES $DAY
 shoot duo-harness-open-spread-library-series-daylight open $L $SP $SERIES $DAY
 # Requests 10b: Account and Watchlists & lists (the list, a source, Pick the
-# right title). Open in a Spread, Account takes both pages and the page splits
-# list | detail at the fold; the Web layout keeps the form sheet. Closed: the phone.
+# right title). Open in a Spread, Account is the left page and Watchlists & lists
+# the right page (a source pushes there); the Web layout keeps the form sheet. Closed: the phone.
 ACC="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1"
 LISTS="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=lists"
 SRC="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LISTS_SOURCE=letterboxd-watchlist"

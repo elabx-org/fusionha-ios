@@ -18,6 +18,9 @@ struct AccountView: View {
     @State private var watchlists = WatchlistsStore()
     @State private var showingLists = false
     @State private var listsSource: String?
+    /// Account's left page in a Spread: Watchlists & lists opens on the right
+    /// page (`AccountSpreadSheet`) instead of pushing here.
+    var openListsOnPage: ((String?) -> Void)?
 
     var body: some View {
         List {
@@ -148,6 +151,7 @@ struct AccountView: View {
 
     /// Pushes Watchlists & lists, opening `sourceId` when a link named one.
     private func openLists(_ sourceId: String?) {
+        if let openListsOnPage { return openListsOnPage(sourceId) }
         listsSource = sourceId
         showingLists = true
     }
@@ -180,18 +184,17 @@ struct AccountView: View {
 /// The Account sheet the avatar's hub opens on the shell (RootView hook).
 struct AccountSheet: View {
     @Environment(\.dismiss) private var dismiss
-    /// On both pages of the open Duo (a Spread): Account keeps to the left
-    /// page; Watchlists & lists, pushed, splits itself at the fold.
+    /// Account's left page in a Spread (`AccountSpreadSheet`): no form sheet,
+    /// and Watchlists & lists opens on the right page.
     var onPages = false
+    var openListsOnPage: ((String?) -> Void)?
 
     var body: some View {
         NavigationStack {
-            AccountView()
-                .foldLeadingColumn(onPages)
+            AccountView(openListsOnPage: openListsOnPage)
                 .background(Theme.bg.ignoresSafeArea())
                 .navigationTitle("Account")
-                // Across both pages the title keeps to the left page, off the fold.
-                .toolbarTitleDisplayMode(onPages ? .inlineLarge : .inline)
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         SheetDoneButton { dismiss() }

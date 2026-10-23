@@ -8,8 +8,6 @@ struct SourceDetailView: View {
     @Environment(AppModel.self) private var model
     let store: WatchlistsStore
     let sourceId: String
-    /// Beside the list at the fold: the name shows in the head, not the bar.
-    var inSplit = false
     var onRemoved: () -> Void = {}
     @State private var reviewing = false
     @State private var reconnect = PlexReconnect()
@@ -27,7 +25,7 @@ struct SourceDetailView: View {
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
         .tint(Theme.i2)
-        .modifier(SourceDetailBar(store: store, view: view, shown: !inSplit))
+        .modifier(SourceDetailBar(store: store, view: view, shown: true))
         .task {
             #if DEBUG
             // CI screenshots: Pick the right title over the source.
@@ -49,7 +47,7 @@ struct SourceDetailView: View {
     private func content(_ view: AutoSourceView) -> some View {
         let data = AutoSourceDetail(view)
         Section {
-            SourceDetailHead(view: view, showsName: inSplit)
+            SourceDetailHead(view: view, showsName: false)
             SourceDetailStateLine(view: view, data: data)
             if Self.wantsPlexSignIn(view) { signIn }
             SyncCountsView(counts: data.counts)

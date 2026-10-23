@@ -77,11 +77,13 @@ Synced at `v0.4.226` (`57c6e464`) from `frontend/src/components/account/lists/`,
   your Plex watchlist" as a note; Remove asks first; a 403 on resume reads "An admin
   paused this source, so only an admin can resume it."). Admins get "Remembered
   matches · N" with Forget, and Users' Plex chip reads "Paused by user".
-- **Duo:** the page splits list | detail at the fold when one runs through it (the
-  Account takes both pages through `duoPageSheet` in a Spread, the list keeping
-  before the fold with `foldLeadingColumn`; the Web layout keeps the form sheet, the
-  owner's default while that decision is open); its sheets use `duoPageSheet`; the You tab's Spread right page
-  is Watchlists & lists when something needs review, else Sign-in methods.
+- **Duo:** no in-page split. In a Spread the Account cover is the spread
+  (`AccountSpreadSheet`): Account on the left page, the right page its own stack
+  with Watchlists & lists when something needs review, else Sign-in methods; the
+  row opens the page there and a source pushes inside that stack. The Web layout
+  keeps the form sheet and a plain push (owner default while that decision is
+  open); the page's sheets use `duoPageSheet`; the You tab's Spread right page
+  follows the same rule.
 - **Open:** slice 2 (MDBList, Trakt, other people's Plex lists, admin import lists);
   manual import decide (`POST /manualimport/decide`) waits for its own port.
 

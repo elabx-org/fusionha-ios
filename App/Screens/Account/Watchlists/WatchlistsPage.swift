@@ -7,8 +7,9 @@ struct ListsLink: Equatable {
 }
 
 /// Watchlists & lists (web `ListsPage`, fusionha 0.4.226), pushed from
-/// Account's Automatic requests row: the grouped sources; a source opens its
-/// detail (pushed on a phone, beside the list at the open Duo's fold). Follow
+/// Account's Automatic requests row: the grouped sources; a source pushes its
+/// detail. On the open Duo in a Spread the page is Account's right page and
+/// the detail pushes inside it (`AccountSpreadSheet`), never a split. Follow
 /// is the toolbar's `plus`; Sync now is `arrow.clockwise` and pull to refresh.
 struct WatchlistsPage: View {
     @Environment(AppModel.self) private var model
@@ -17,8 +18,6 @@ struct WatchlistsPage: View {
     /// The source a link asked for.
     var initialSource: String?
     @State private var pushed: String?
-    @State private var splitId: String?
-    @State private var panes: FoldColumns.Panes?
     @State private var following = false
     @State private var profile = false
     @State private var importing = false
@@ -30,30 +29,10 @@ struct WatchlistsPage: View {
     private var busy: Bool { store.allSyncing || store.summary?.syncing != nil }
 
     var body: some View {
-        WatchlistsSplit(panes: panes) {
-            list
-        } detail: {
-            if let id = splitId ?? store.summary?.defaultSourceId {
-                SourceDetailView(store: store, sourceId: id, inSplit: true) { splitId = nil }
-            } else {
-                Theme.bg
-            }
-        }
-        // Measured on the page's full frame, never the split's own size: the
-        // list alone (folded column) and the pair sized differently, so the
-        // panes flipped on and off every layout pass and froze the page.
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.bg)
-        .onGeometryChange(for: FoldColumns.Panes?.self) { proxy in
-            FoldInfo.verticalFold(proxy).flatMap { x in
-                FoldColumns.panes(width: Double(proxy.size.width), fold: Double(x.lowerBound)...Double(x.upperBound),
-                                  minLead: 280, minTrail: 320)
-            }
-        } action: { panes = $0 }
+        list
+            .background(Theme.bg)
         .navigationTitle(AutomaticRequestsCopy.title)
-        // Leading, as Settings' pushed panels: beside its detail it sits on the
-        // left page, never on the fold. Constant: switching it with the panes
-        // (which flip while the push slides the page in) stalled the push.
+        // Leading, as Settings' pushed panels.
         .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar { toolbar }
         .navigationDestination(item: $pushed) { id in
@@ -68,13 +47,6 @@ struct WatchlistsPage: View {
         }
         .task(id: admin) { if admin { await store.loadMatches(model.client) } }
         .onChange(of: store.summary != nil, initial: true) { openLinked() }
-        // Unfolded with a source pushed (or a link opened before the fold was
-        // measured): it moves beside the list.
-        .onChange(of: panes) {
-            guard panes != nil, let id = pushed else { return }
-            splitId = id
-            pushed = nil
-        }
         // Account is hidden under this page, so its re-read loop stops: run it here.
         .task(id: store.anyRunning) {
             while store.anyRunning {
@@ -105,7 +77,7 @@ struct WatchlistsPage: View {
             if unavailable {
                 Text(AutomaticRequestsCopy.unavailable).foregroundStyle(Theme.mut).listRowBackground(AccountStyle.cell)
             } else if let views = store.views {
-                WatchlistsSourceList(views: views, selectedId: panes == nil ? nil : (splitId ?? store.summary?.defaultSourceId),
+                WatchlistsSourceList(views: views, selectedId: nil,
                                      admin: admin, remembered: store.matches.count,
                                      onOpen: open, onFollow: { following = true }, onProfile: { profile = true },
                                      onImport: { importing = true }, onRemembered: { remembered = true })
@@ -130,8 +102,6 @@ struct WatchlistsPage: View {
     private func open(_ view: AutoSourceView) {
         if view.state == .notConnected && !view.isPlex {
             profile = true
-        } else if panes != nil {
-            splitId = view.sourceId
         } else {
             pushed = view.sourceId
         }
@@ -145,6 +115,6 @@ struct WatchlistsPage: View {
             model.toast(AutomaticRequestsCopy.badSource, variant: .warning)
             return
         }
-        if panes != nil { splitId = id } else { pushed = id }
+        pushed = id
     }
 }

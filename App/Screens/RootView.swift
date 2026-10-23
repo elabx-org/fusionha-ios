@@ -188,7 +188,7 @@ private struct ShellPresentations: ViewModifier {
         }
         .duoPageSheet(isPresented: account(paged: true),
                       placement: .twoPages, onPages: true) {
-            AccountSheet(onPages: true)
+            AccountSpreadSheet()
         }
         .onChange(of: model.showingAccount) {
             // The page cover has no onDismiss: open what the hub queued once it is gone.
