@@ -98,7 +98,7 @@ struct DetailOwnedEditionCard: View {
             }
             Button("Cancel", role: .cancel) {}
         }
-        .foldSafeSheet(item: $editing) { target in
+        .duoPageSheet(item: $editing) { target in
             MovieFileEditSheet(detail: detail, target: target)
         }
     }

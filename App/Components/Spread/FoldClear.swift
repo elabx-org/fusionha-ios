@@ -7,30 +7,10 @@ import FusionhaKit
 // without a top-to-bottom fold inside it (folded, portrait, iPad).
 
 extension View {
-    /// The view ends half a gutter before the fold when one runs through the
-    /// space it was given (the Web layout's filter field); full width otherwise.
-    func foldLeadingPane() -> some View {
-        modifier(FoldLeadingPane())
-    }
-
     /// Leaves the fold and its gutter empty in this view (a header's hairline):
     /// what runs across is drawn either side of the gap, never in it.
     func foldGapMask() -> some View {
         modifier(FoldGapMask())
-    }
-}
-
-private struct FoldLeadingPane: ViewModifier {
-    @State private var lead: CGFloat?
-
-    func body(content: Content) -> some View {
-        content
-            .frame(maxWidth: lead ?? .infinity, alignment: .leading)
-            // Measured on the full-width frame, so narrowing never re-measures.
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .onGeometryChange(for: CGFloat?.self) { proxy in
-                LibraryFold.filterWidth(width: Double(proxy.size.width), fold: proxy.foldRange).map { CGFloat($0) }
-            } action: { lead = $0 }
     }
 }
 

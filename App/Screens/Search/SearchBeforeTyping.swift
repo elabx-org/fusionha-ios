@@ -5,7 +5,8 @@ import FusionhaKit
 /// filter, recent searches as chips, then "Trending this week · TMDB" as a
 /// poster grid (3 across; 3 a page while a Spread spans both pages, the kind
 /// filter on the right page). Each poster has + Add on the art (person
-/// Request for a requester); a title you own opens.
+/// Request for a requester); a title you own is the Library's poster card
+/// (S2: art glow, status chips) and opens.
 struct SearchBeforeTyping: View {
     @Environment(AppModel.self) private var model
     @Environment(\.spread) private var spread
@@ -48,6 +49,17 @@ struct SearchBeforeTyping: View {
         }
     }
 
+    /// Trending rows you own, as their library items (requesters see none).
+    private func ownedItems(_ rows: [MediaSearchResult]) -> [String: MediaItem] {
+        guard !model.requestScoped else { return [:] }
+        let byId = Dictionary(model.library.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        var owned: [String: MediaItem] = [:]
+        for row in rows where row.inLibrary || row.libraryItemId != nil {
+            if let id = model.libraryItemId(for: row), let item = byId[id] { owned[row.id] = item }
+        }
+        return owned
+    }
+
     @ViewBuilder
     private var trending: some View {
         SearchLaneLabel(text: "Trending this week", count: nil) {
@@ -57,9 +69,18 @@ struct SearchBeforeTyping: View {
             }
         }
         if let rows = search.trending[kind] {
+            let owned = ownedItems(rows)
             AdaptivePosterGrid {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { i, result in
-                    DiscoverCard(result: result, canAdd: canAdd, canRequest: canRequest).searchStagger(i)
+                    Group {
+                        // A title you own is the Library's own card (glow, status chips).
+                        if let item = owned[result.id] {
+                            PosterCard(item: item)
+                        } else {
+                            DiscoverCard(result: result, canAdd: canAdd, canRequest: canRequest)
+                        }
+                    }
+                    .searchStagger(i)
                 }
             }
             .padding(.horizontal, Theme.pageGutter)

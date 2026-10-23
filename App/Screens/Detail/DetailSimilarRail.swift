@@ -22,7 +22,7 @@ struct DetailSimilarRail: View {
             }
         }
         .scrollClipDisabled()
-        .foldSafeSheet(item: $preview) { route in
+        .duoPageSheet(item: $preview) { route in
             PreviewSheet(route: route, onOpenLibrary: openLibrary)
         }
     }
