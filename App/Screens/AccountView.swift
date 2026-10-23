@@ -61,8 +61,11 @@ struct AccountView: View {
                 showingMethods = true
             }
             // Watchlists & lists, and a source on it (`FUSIONHA_SCREENSHOT_LISTS_SOURCE`).
+            // Once the account has loaded and the presentation has settled.
             if ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_ACCOUNT"] == "lists" {
-                try? await Task.sleep(for: .seconds(1))
+                while model.me == nil && !Task.isCancelled { try? await Task.sleep(for: .milliseconds(200)) }
+                try? await Task.sleep(for: .seconds(1.5))
+                guard !Task.isCancelled else { return }
                 openLists(ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_LISTS_SOURCE"])
             }
             #endif
