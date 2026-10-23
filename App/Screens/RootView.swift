@@ -190,7 +190,10 @@ private struct ShellPresentations: ViewModifier {
                       placement: .twoPages, onPages: true) {
             AccountSheet(onPages: true)
         }
+        .onChange(of: accountOnPages) { DeepLinkProbe.log("shell accountOnPages \(accountOnPages)") }
+        .onChange(of: measured) { DeepLinkProbe.log("shell measured \(measured)") }
         .onChange(of: model.showingAccount) {
+            DeepLinkProbe.log("shell showingAccount \(model.showingAccount)")
             // The page cover has no onDismiss: open what the hub queued once it is gone.
             guard accountOnPages, !model.showingAccount else { return }
             Task {

@@ -60,6 +60,8 @@ struct WatchlistsPage: View {
         .duoPageSheet(isPresented: $importing) {
             LetterboxdImportSheet { Task { await store.load(model.client) } }
         }
+        .onAppear { DeepLinkProbe.log("lists appear panes=\(panes != nil)") }
+        .onDisappear { DeepLinkProbe.log("lists disappear") }
         .task(id: admin) { if admin { await store.loadMatches(model.client) } }
         .onChange(of: store.summary != nil, initial: true) { openLinked() }
         // Unfolded with a source pushed (or a link opened before the fold was

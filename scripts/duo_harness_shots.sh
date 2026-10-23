@@ -44,6 +44,10 @@ shoot() {  # shoot <name> <frame> [env…]
   sleep 10
   local raw="$OUT/.raw-$name.png"
   xcrun simctl io "$UDID" screenshot "$raw" > /dev/null
+  # The DEBUG probe log (Account and Watchlists & lists steps), then cleared.
+  local probe
+  probe="$(xcrun simctl get_app_container "$UDID" org.elabx.fusionha data 2> /dev/null)/Library/Caches/deeplink-log.txt"
+  if [ -f "$probe" ]; then echo "-- $name probe:"; cat "$probe"; rm -f "$probe"; fi
   # Crop the centred frame: points x the screenshot's scale (screen pixels / 1032 or 1024 points wide).
   read -r w h <<< "$(size "$frame")"
   local px scale
