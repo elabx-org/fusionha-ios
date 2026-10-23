@@ -22,7 +22,14 @@ extension ManualImportSession {
     }
 
     func keepChoice(for row: ManualImportRow) -> ManualImportDecide.KeepChoice {
-        ManualImportDecide.keepChoice(row, scan, linked: tally(for: row)?.linked == true)
+        let saved = ManualImportDecide.downloadId(row, scan).flatMap(savedDisposition)
+        return ManualImportDecide.keepChoice(row, scan, linked: tally(for: row)?.linked == true, saved: saved)
+    }
+
+    /// This sheet's pick for the download, else the one saved on the server
+    /// (0.4.225). The finish still sends it explicitly.
+    func savedDisposition(_ downloadId: Int) -> FinishDisposition? {
+        dispositions[downloadId] ?? tallies[downloadId]?.disposition
     }
 
     // MARK: Row actions
@@ -87,7 +94,7 @@ extension ManualImportSession {
         for id in ids {
             let mine = scan.rows.filter { ManualImportDecide.downloadId($0, scan) == id }
             guard mine.contains(where: { !$0.committed && $0.replaceChoice == "keep_current" }) else { continue }
-            out[id] = dispositions[id] ?? ManualImportDecide.defaultDisposition(mine, scan)
+            out[id] = savedDisposition(id) ?? ManualImportDecide.defaultDisposition(mine, scan)
         }
         return out
     }
@@ -111,7 +118,7 @@ extension ManualImportSession {
         guard let scan else { return }
         for t in ManualImportDecide.readyToFinish(tallies) where !tried.contains(t.id) {
             let mine = scan.rows.filter { ManualImportDecide.downloadId($0, scan) == t.id }
-            await finishOne(t.id, dispositions[t.id] ?? ManualImportDecide.defaultDisposition(mine, scan))
+            await finishOne(t.id, savedDisposition(t.id) ?? ManualImportDecide.defaultDisposition(mine, scan))
         }
     }
 
@@ -143,7 +150,7 @@ extension ManualImportSession {
         markFinished([id])
     }
 
-    private func markFinished(_ ids: [Int]) {
+    func markFinished(_ ids: [Int]) {
         let fresh = Set(ids).subtracting(finishedHere)
         finishedCount += fresh.count
         finishedHere.formUnion(fresh)

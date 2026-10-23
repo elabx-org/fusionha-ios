@@ -63,6 +63,15 @@ extension APIClient {
         try await sendJSON("POST", "/api/v1/queue/\(downloadId)/finish-rescue", ["disposition": .string(disposition.rawValue)])
     }
 
+    /// Keeps, skips and imports several rows and picks their held downloads'
+    /// Keep current disposition in ONE all-or-nothing call (0.4.225). The
+    /// server then finishes every download it fully decided; the answer has the
+    /// whole scan. Refusals: 404, 422 `invalid_rows` / `unknown_download` /
+    /// `disposition_needs_keep`, 403 `forbidden`, 409 `leave_stands` / `finish_in_progress`.
+    public func manualImportDecide(scanId: Int, _ request: ManualImportDecideRequest) async throws -> ManualImportDecideResult {
+        try await manualImportCall("POST", "/api/v1/manualimport/scan/\(scanId)/decide", request.json)
+    }
+
     /// Scans, probes and commits read and link files on the server, so they get
     /// the long timeout the web waits out.
     private func manualImportCall<T: Decodable>(_ method: String, _ path: String,
@@ -85,6 +94,15 @@ extension APIError {
               let detail = object["detail"] as? [String: Any],
               let rows = detail["invalid_rows"] as? [Any] else { return nil }
         return rows.count
+    }
+
+    /// The refused rows' reasons (`invalid_rows[].reason`), in order; empty otherwise.
+    public var invalidRowReasons: [String] {
+        guard case .http(422, let body) = self,
+              let object = try? JSONSerialization.jsonObject(with: Data(body.utf8)) as? [String: Any],
+              let detail = object["detail"] as? [String: Any],
+              let rows = detail["invalid_rows"] as? [[String: Any]] else { return [] }
+        return rows.compactMap { $0["reason"] as? String }
     }
 }
 

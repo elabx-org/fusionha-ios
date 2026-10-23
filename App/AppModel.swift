@@ -179,6 +179,11 @@ final class AppModel {
                 searchQuery = omni
                 tab = .search
             }
+            // Manual import over a held download (`=77`, the mock's Office S06 pack).
+            if let rescue = env["FUSIONHA_SCREENSHOT_RESCUE"].flatMap(Int.init) {
+                tab = .activity
+                pendingRescueIds = [rescue]
+            }
             if env["FUSIONHA_SCREENSHOT_SELECT"] != nil {
                 selectMode = true
                 selection = [1, 3]

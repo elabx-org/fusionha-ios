@@ -1,0 +1,1019 @@
+{
+ "scan": {
+  "scan_id": 52,
+  "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP",
+  "counts": {
+   "total": 8,
+   "ready": 2,
+   "needs_attention": 6,
+   "no_match": 0
+  },
+  "download_id": 77,
+  "held_reason": "Not an upgrade over the existing file",
+  "held_detail": {
+   "kind": "quality",
+   "current_group": "OLD",
+   "release_blocklisted": false
+  },
+  "probe_pending": 0,
+  "downloads": [
+   {
+    "id": 77,
+    "rows_total": 8,
+    "rows_decided": 1,
+    "finished": false,
+    "library_linked": false,
+    "disposition": "leave",
+    "leave_row_id": 3
+   }
+  ],
+  "rows": [
+   {
+    "row_id": 1,
+    "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E01.mkv",
+    "relative_path": "",
+    "filename": "The.Office.S06E01.1080p.WEB-DL.mkv",
+    "size": 1200000000,
+    "parsed": {
+     "title": "The Office",
+     "season": 6,
+     "episodes": [
+      1
+     ],
+     "quality": "WEBDL_1080P",
+     "release_group": "GRP",
+     "resolution": 1080
+    },
+    "match": {
+     "item_id": 31,
+     "title": "The Office",
+     "year": 2005,
+     "confidence": "high"
+    },
+    "target": {
+     "kind": "series",
+     "tier": "HD-1080p",
+     "edition": null,
+     "version_exists": true,
+     "season": 6,
+     "episode": 1,
+     "episode_id": 601,
+     "episode_ids": [
+      601
+     ]
+    },
+    "quality": "WEBDL_1080P",
+    "status": "ready",
+    "status_reason": "Replaces HDTV-720p",
+    "selected": true,
+    "committed": false,
+    "existing_file": {
+     "media_file_id": 701,
+     "quality": "HDTV_720P",
+     "release_group": "OLD",
+     "verdict": {
+      "upgrade": true,
+      "code": "quality_upgrade"
+     }
+    },
+    "held": {
+     "download_id": 77,
+     "reason": "Not an upgrade"
+    },
+    "replace_choice": null,
+    "finish_disposition": null,
+    "orphan_episode_ids": null,
+    "joint_rows": null
+   },
+   {
+    "row_id": 2,
+    "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E02.mkv",
+    "relative_path": "",
+    "filename": "The.Office.S06E02.1080p.WEB-DL.mkv",
+    "size": 1200000000,
+    "parsed": {
+     "title": "The Office",
+     "season": 6,
+     "episodes": [
+      2
+     ],
+     "quality": "WEBDL_1080P",
+     "release_group": "GRP",
+     "resolution": 1080
+    },
+    "match": {
+     "item_id": 31,
+     "title": "The Office",
+     "year": 2005,
+     "confidence": "high"
+    },
+    "target": {
+     "kind": "series",
+     "tier": "HD-1080p",
+     "edition": null,
+     "version_exists": true,
+     "season": 6,
+     "episode": 2,
+     "episode_id": 602,
+     "episode_ids": [
+      602
+     ]
+    },
+    "quality": "WEBDL_1080P",
+    "status": "needs_attention",
+    "status_reason": "Not an upgrade",
+    "selected": false,
+    "committed": false,
+    "existing_file": {
+     "media_file_id": 702,
+     "quality": "WEBDL_1080P",
+     "release_group": "OLD",
+     "verdict": {
+      "upgrade": false,
+      "code": "quality_downgrade"
+     }
+    },
+    "held": {
+     "download_id": 77,
+     "reason": "Not an upgrade"
+    },
+    "replace_choice": null,
+    "finish_disposition": null,
+    "orphan_episode_ids": null,
+    "joint_rows": null
+   },
+   {
+    "row_id": 3,
+    "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E03.mkv",
+    "relative_path": "",
+    "filename": "The.Office.S06E03.1080p.WEB-DL.mkv",
+    "size": 1200000000,
+    "parsed": {
+     "title": "The Office",
+     "season": 6,
+     "episodes": [
+      3
+     ],
+     "quality": "WEBDL_1080P",
+     "release_group": "GRP",
+     "resolution": 1080
+    },
+    "match": {
+     "item_id": 31,
+     "title": "The Office",
+     "year": 2005,
+     "confidence": "high"
+    },
+    "target": {
+     "kind": "series",
+     "tier": "HD-1080p",
+     "edition": null,
+     "version_exists": true,
+     "season": 6,
+     "episode": 3,
+     "episode_id": 603,
+     "episode_ids": [
+      603
+     ]
+    },
+    "quality": "WEBDL_1080P",
+    "status": "needs_attention",
+    "status_reason": "Not an upgrade",
+    "selected": false,
+    "committed": false,
+    "existing_file": {
+     "media_file_id": 703,
+     "quality": "WEBDL_1080P",
+     "release_group": "OLD",
+     "verdict": {
+      "upgrade": false,
+      "code": "quality_downgrade"
+     }
+    },
+    "held": {
+     "download_id": 77,
+     "reason": "Not an upgrade"
+    },
+    "replace_choice": "keep_current",
+    "finish_disposition": "leave",
+    "orphan_episode_ids": null,
+    "joint_rows": null
+   },
+   {
+    "row_id": 4,
+    "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E04.mkv",
+    "relative_path": "",
+    "filename": "The.Office.S06E04.1080p.WEB-DL.mkv",
+    "size": 1200000000,
+    "parsed": {
+     "title": "The Office",
+     "season": 6,
+     "episodes": [
+      4
+     ],
+     "quality": "WEBDL_1080P",
+     "release_group": "GRP",
+     "resolution": 1080
+    },
+    "match": {
+     "item_id": 31,
+     "title": "The Office",
+     "year": 2005,
+     "confidence": "high"
+    },
+    "target": {
+     "kind": "series",
+     "tier": "HD-1080p",
+     "edition": null,
+     "version_exists": true,
+     "season": 6,
+     "episode": 4,
+     "episode_id": 604,
+     "episode_ids": [
+      604
+     ]
+    },
+    "quality": "WEBDL_1080P",
+    "status": "needs_attention",
+    "status_reason": "Not an upgrade",
+    "selected": false,
+    "committed": false,
+    "existing_file": {
+     "media_file_id": 704,
+     "quality": "WEBDL_1080P",
+     "release_group": "OLD",
+     "verdict": {
+      "upgrade": false,
+      "code": "quality_downgrade"
+     }
+    },
+    "held": {
+     "download_id": 77,
+     "reason": "Not an upgrade"
+    },
+    "replace_choice": null,
+    "finish_disposition": null,
+    "orphan_episode_ids": [
+     605
+    ],
+    "joint_rows": [
+     5
+    ],
+    "would_orphan": "Would leave S06E05 without a file"
+   },
+   {
+    "row_id": 5,
+    "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E05.mkv",
+    "relative_path": "",
+    "filename": "The.Office.S06E05.1080p.WEB-DL.mkv",
+    "size": 1200000000,
+    "parsed": {
+     "title": "The Office",
+     "season": 6,
+     "episodes": [
+      5
+     ],
+     "quality": "WEBDL_1080P",
+     "release_group": "GRP",
+     "resolution": 1080
+    },
+    "match": {
+     "item_id": 31,
+     "title": "The Office",
+     "year": 2005,
+     "confidence": "high"
+    },
+    "target": {
+     "kind": "series",
+     "tier": "HD-1080p",
+     "edition": null,
+     "version_exists": true,
+     "season": 6,
+     "episode": 5,
+     "episode_id": 605,
+     "episode_ids": [
+      605
+     ]
+    },
+    "quality": "WEBDL_1080P",
+    "status": "needs_attention",
+    "status_reason": "Not an upgrade",
+    "selected": false,
+    "committed": false,
+    "existing_file": {
+     "media_file_id": 705,
+     "quality": "WEBDL_1080P",
+     "release_group": "OLD",
+     "verdict": {
+      "upgrade": false,
+      "code": "quality_downgrade"
+     }
+    },
+    "held": {
+     "download_id": 77,
+     "reason": "Not an upgrade"
+    },
+    "replace_choice": null,
+    "finish_disposition": null,
+    "orphan_episode_ids": [
+     604
+    ],
+    "joint_rows": [
+     4
+    ],
+    "would_orphan": "Would leave S06E04 without a file"
+   },
+   {
+    "row_id": 6,
+    "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E06.mkv",
+    "relative_path": "",
+    "filename": "The.Office.S06E06.1080p.WEB-DL.mkv",
+    "size": 1200000000,
+    "parsed": {
+     "title": "The Office",
+     "season": 6,
+     "episodes": [
+      6
+     ],
+     "quality": "WEBDL_1080P",
+     "release_group": "GRP",
+     "resolution": 1080
+    },
+    "match": {
+     "item_id": 31,
+     "title": "The Office",
+     "year": 2005,
+     "confidence": "high"
+    },
+    "target": {
+     "kind": "series",
+     "tier": "HD-1080p",
+     "edition": null,
+     "version_exists": true,
+     "season": 6,
+     "episode": 6,
+     "episode_id": 606,
+     "episode_ids": [
+      606
+     ]
+    },
+    "quality": "WEBDL_1080P",
+    "status": "ready",
+    "status_reason": null,
+    "selected": true,
+    "committed": false,
+    "existing_file": null,
+    "held": {
+     "download_id": 77,
+     "reason": "Not an upgrade"
+    },
+    "replace_choice": null,
+    "finish_disposition": null,
+    "orphan_episode_ids": null,
+    "joint_rows": null
+   },
+   {
+    "row_id": 7,
+    "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E07.mkv",
+    "relative_path": "",
+    "filename": "The.Office.S06E07.1080p.WEB-DL.mkv",
+    "size": 1200000000,
+    "parsed": {
+     "title": "The Office",
+     "season": 6,
+     "episodes": [
+      7
+     ],
+     "quality": "WEBDL_1080P",
+     "release_group": "GRP",
+     "resolution": 1080
+    },
+    "match": {
+     "item_id": 31,
+     "title": "The Office",
+     "year": 2005,
+     "confidence": "high"
+    },
+    "target": {
+     "kind": "series",
+     "tier": "HD-1080p",
+     "edition": null,
+     "version_exists": true,
+     "season": 6,
+     "episode": 7,
+     "episode_id": 607,
+     "episode_ids": [
+      607
+     ]
+    },
+    "quality": "WEBDL_1080P",
+    "status": "needs_attention",
+    "status_reason": "Not an upgrade",
+    "selected": false,
+    "committed": false,
+    "existing_file": {
+     "media_file_id": 707,
+     "quality": "WEBDL_1080P",
+     "release_group": "OLD",
+     "verdict": {
+      "upgrade": false,
+      "code": "quality_downgrade"
+     }
+    },
+    "held": {
+     "download_id": 77,
+     "reason": "Not an upgrade"
+    },
+    "replace_choice": null,
+    "finish_disposition": null,
+    "orphan_episode_ids": null,
+    "joint_rows": null
+   },
+   {
+    "row_id": 8,
+    "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E08.mkv",
+    "relative_path": "",
+    "filename": "The.Office.S06E08.1080p.WEB-DL.mkv",
+    "size": 1200000000,
+    "parsed": {
+     "title": "The Office",
+     "season": 6,
+     "episodes": [
+      8
+     ],
+     "quality": "WEBDL_1080P",
+     "release_group": "GRP",
+     "resolution": 1080
+    },
+    "match": {
+     "item_id": 31,
+     "title": "The Office",
+     "year": 2005,
+     "confidence": "high"
+    },
+    "target": {
+     "kind": "series",
+     "tier": "HD-1080p",
+     "edition": null,
+     "version_exists": true,
+     "season": 6,
+     "episode": 8,
+     "episode_id": 608,
+     "episode_ids": [
+      608
+     ]
+    },
+    "quality": "WEBDL_1080P",
+    "status": "needs_attention",
+    "status_reason": "Not an upgrade",
+    "selected": false,
+    "committed": false,
+    "existing_file": {
+     "media_file_id": 708,
+     "quality": "WEBDL_1080P",
+     "release_group": "OLD",
+     "verdict": {
+      "upgrade": false,
+      "code": "quality_downgrade"
+     }
+    },
+    "held": {
+     "download_id": 77,
+     "reason": "Not an upgrade"
+    },
+    "replace_choice": null,
+    "finish_disposition": null,
+    "orphan_episode_ids": null,
+    "joint_rows": null
+   }
+  ]
+ },
+ "decide": {
+  "results": [
+   {
+    "row_id": 6,
+    "media_file_id": 9006,
+    "final_mode": "HARDLINK",
+    "note": null,
+    "replaced": false,
+    "error": null,
+    "warning": null,
+    "replaced_file": null,
+    "episode_ids": [
+     606
+    ]
+   }
+  ],
+  "finishes": [
+   {
+    "download_id": 77,
+    "mode": "left",
+    "blocklisted": false,
+    "deleted_files": false,
+    "library_linked": false,
+    "undo_available": false,
+    "error": null
+   }
+  ],
+  "downloads": [
+   {
+    "id": 77,
+    "rows_total": 8,
+    "rows_decided": 8,
+    "finished": true,
+    "library_linked": false,
+    "disposition": "leave",
+    "leave_row_id": 3
+   }
+  ],
+  "scan": {
+   "scan_id": 52,
+   "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP",
+   "counts": {
+    "total": 8,
+    "ready": 2,
+    "needs_attention": 6,
+    "no_match": 0
+   },
+   "download_id": 77,
+   "held_reason": "Not an upgrade over the existing file",
+   "held_detail": {
+    "kind": "quality",
+    "current_group": "OLD",
+    "release_blocklisted": false
+   },
+   "probe_pending": 0,
+   "downloads": [
+    {
+     "id": 77,
+     "rows_total": 8,
+     "rows_decided": 1,
+     "finished": false,
+     "library_linked": false,
+     "disposition": "leave",
+     "leave_row_id": 3
+    }
+   ],
+   "rows": [
+    {
+     "row_id": 1,
+     "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E01.mkv",
+     "relative_path": "",
+     "filename": "The.Office.S06E01.1080p.WEB-DL.mkv",
+     "size": 1200000000,
+     "parsed": {
+      "title": "The Office",
+      "season": 6,
+      "episodes": [
+       1
+      ],
+      "quality": "WEBDL_1080P",
+      "release_group": "GRP",
+      "resolution": 1080
+     },
+     "match": {
+      "item_id": 31,
+      "title": "The Office",
+      "year": 2005,
+      "confidence": "high"
+     },
+     "target": {
+      "kind": "series",
+      "tier": "HD-1080p",
+      "edition": null,
+      "version_exists": true,
+      "season": 6,
+      "episode": 1,
+      "episode_id": 601,
+      "episode_ids": [
+       601
+      ]
+     },
+     "quality": "WEBDL_1080P",
+     "status": "ready",
+     "status_reason": "Replaces HDTV-720p",
+     "selected": true,
+     "committed": false,
+     "existing_file": {
+      "media_file_id": 701,
+      "quality": "HDTV_720P",
+      "release_group": "OLD",
+      "verdict": {
+       "upgrade": true,
+       "code": "quality_upgrade"
+      }
+     },
+     "held": {
+      "download_id": 77,
+      "reason": "Not an upgrade"
+     },
+     "replace_choice": null,
+     "finish_disposition": null,
+     "orphan_episode_ids": null,
+     "joint_rows": null
+    },
+    {
+     "row_id": 2,
+     "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E02.mkv",
+     "relative_path": "",
+     "filename": "The.Office.S06E02.1080p.WEB-DL.mkv",
+     "size": 1200000000,
+     "parsed": {
+      "title": "The Office",
+      "season": 6,
+      "episodes": [
+       2
+      ],
+      "quality": "WEBDL_1080P",
+      "release_group": "GRP",
+      "resolution": 1080
+     },
+     "match": {
+      "item_id": 31,
+      "title": "The Office",
+      "year": 2005,
+      "confidence": "high"
+     },
+     "target": {
+      "kind": "series",
+      "tier": "HD-1080p",
+      "edition": null,
+      "version_exists": true,
+      "season": 6,
+      "episode": 2,
+      "episode_id": 602,
+      "episode_ids": [
+       602
+      ]
+     },
+     "quality": "WEBDL_1080P",
+     "status": "needs_attention",
+     "status_reason": "Not an upgrade",
+     "selected": false,
+     "committed": false,
+     "existing_file": {
+      "media_file_id": 702,
+      "quality": "WEBDL_1080P",
+      "release_group": "OLD",
+      "verdict": {
+       "upgrade": false,
+       "code": "quality_downgrade"
+      }
+     },
+     "held": {
+      "download_id": 77,
+      "reason": "Not an upgrade"
+     },
+     "replace_choice": null,
+     "finish_disposition": null,
+     "orphan_episode_ids": null,
+     "joint_rows": null
+    },
+    {
+     "row_id": 3,
+     "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E03.mkv",
+     "relative_path": "",
+     "filename": "The.Office.S06E03.1080p.WEB-DL.mkv",
+     "size": 1200000000,
+     "parsed": {
+      "title": "The Office",
+      "season": 6,
+      "episodes": [
+       3
+      ],
+      "quality": "WEBDL_1080P",
+      "release_group": "GRP",
+      "resolution": 1080
+     },
+     "match": {
+      "item_id": 31,
+      "title": "The Office",
+      "year": 2005,
+      "confidence": "high"
+     },
+     "target": {
+      "kind": "series",
+      "tier": "HD-1080p",
+      "edition": null,
+      "version_exists": true,
+      "season": 6,
+      "episode": 3,
+      "episode_id": 603,
+      "episode_ids": [
+       603
+      ]
+     },
+     "quality": "WEBDL_1080P",
+     "status": "needs_attention",
+     "status_reason": "Not an upgrade",
+     "selected": false,
+     "committed": false,
+     "existing_file": {
+      "media_file_id": 703,
+      "quality": "WEBDL_1080P",
+      "release_group": "OLD",
+      "verdict": {
+       "upgrade": false,
+       "code": "quality_downgrade"
+      }
+     },
+     "held": {
+      "download_id": 77,
+      "reason": "Not an upgrade"
+     },
+     "replace_choice": "keep_current",
+     "finish_disposition": "leave",
+     "orphan_episode_ids": null,
+     "joint_rows": null
+    },
+    {
+     "row_id": 4,
+     "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E04.mkv",
+     "relative_path": "",
+     "filename": "The.Office.S06E04.1080p.WEB-DL.mkv",
+     "size": 1200000000,
+     "parsed": {
+      "title": "The Office",
+      "season": 6,
+      "episodes": [
+       4
+      ],
+      "quality": "WEBDL_1080P",
+      "release_group": "GRP",
+      "resolution": 1080
+     },
+     "match": {
+      "item_id": 31,
+      "title": "The Office",
+      "year": 2005,
+      "confidence": "high"
+     },
+     "target": {
+      "kind": "series",
+      "tier": "HD-1080p",
+      "edition": null,
+      "version_exists": true,
+      "season": 6,
+      "episode": 4,
+      "episode_id": 604,
+      "episode_ids": [
+       604
+      ]
+     },
+     "quality": "WEBDL_1080P",
+     "status": "needs_attention",
+     "status_reason": "Not an upgrade",
+     "selected": false,
+     "committed": false,
+     "existing_file": {
+      "media_file_id": 704,
+      "quality": "WEBDL_1080P",
+      "release_group": "OLD",
+      "verdict": {
+       "upgrade": false,
+       "code": "quality_downgrade"
+      }
+     },
+     "held": {
+      "download_id": 77,
+      "reason": "Not an upgrade"
+     },
+     "replace_choice": null,
+     "finish_disposition": null,
+     "orphan_episode_ids": [
+      605
+     ],
+     "joint_rows": [
+      5
+     ],
+     "would_orphan": "Would leave S06E05 without a file"
+    },
+    {
+     "row_id": 5,
+     "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E05.mkv",
+     "relative_path": "",
+     "filename": "The.Office.S06E05.1080p.WEB-DL.mkv",
+     "size": 1200000000,
+     "parsed": {
+      "title": "The Office",
+      "season": 6,
+      "episodes": [
+       5
+      ],
+      "quality": "WEBDL_1080P",
+      "release_group": "GRP",
+      "resolution": 1080
+     },
+     "match": {
+      "item_id": 31,
+      "title": "The Office",
+      "year": 2005,
+      "confidence": "high"
+     },
+     "target": {
+      "kind": "series",
+      "tier": "HD-1080p",
+      "edition": null,
+      "version_exists": true,
+      "season": 6,
+      "episode": 5,
+      "episode_id": 605,
+      "episode_ids": [
+       605
+      ]
+     },
+     "quality": "WEBDL_1080P",
+     "status": "needs_attention",
+     "status_reason": "Not an upgrade",
+     "selected": false,
+     "committed": false,
+     "existing_file": {
+      "media_file_id": 705,
+      "quality": "WEBDL_1080P",
+      "release_group": "OLD",
+      "verdict": {
+       "upgrade": false,
+       "code": "quality_downgrade"
+      }
+     },
+     "held": {
+      "download_id": 77,
+      "reason": "Not an upgrade"
+     },
+     "replace_choice": null,
+     "finish_disposition": null,
+     "orphan_episode_ids": [
+      604
+     ],
+     "joint_rows": [
+      4
+     ],
+     "would_orphan": "Would leave S06E04 without a file"
+    },
+    {
+     "row_id": 6,
+     "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E06.mkv",
+     "relative_path": "",
+     "filename": "The.Office.S06E06.1080p.WEB-DL.mkv",
+     "size": 1200000000,
+     "parsed": {
+      "title": "The Office",
+      "season": 6,
+      "episodes": [
+       6
+      ],
+      "quality": "WEBDL_1080P",
+      "release_group": "GRP",
+      "resolution": 1080
+     },
+     "match": {
+      "item_id": 31,
+      "title": "The Office",
+      "year": 2005,
+      "confidence": "high"
+     },
+     "target": {
+      "kind": "series",
+      "tier": "HD-1080p",
+      "edition": null,
+      "version_exists": true,
+      "season": 6,
+      "episode": 6,
+      "episode_id": 606,
+      "episode_ids": [
+       606
+      ]
+     },
+     "quality": "WEBDL_1080P",
+     "status": "ready",
+     "status_reason": null,
+     "selected": true,
+     "committed": false,
+     "existing_file": null,
+     "held": {
+      "download_id": 77,
+      "reason": "Not an upgrade"
+     },
+     "replace_choice": null,
+     "finish_disposition": null,
+     "orphan_episode_ids": null,
+     "joint_rows": null
+    },
+    {
+     "row_id": 7,
+     "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E07.mkv",
+     "relative_path": "",
+     "filename": "The.Office.S06E07.1080p.WEB-DL.mkv",
+     "size": 1200000000,
+     "parsed": {
+      "title": "The Office",
+      "season": 6,
+      "episodes": [
+       7
+      ],
+      "quality": "WEBDL_1080P",
+      "release_group": "GRP",
+      "resolution": 1080
+     },
+     "match": {
+      "item_id": 31,
+      "title": "The Office",
+      "year": 2005,
+      "confidence": "high"
+     },
+     "target": {
+      "kind": "series",
+      "tier": "HD-1080p",
+      "edition": null,
+      "version_exists": true,
+      "season": 6,
+      "episode": 7,
+      "episode_id": 607,
+      "episode_ids": [
+       607
+      ]
+     },
+     "quality": "WEBDL_1080P",
+     "status": "needs_attention",
+     "status_reason": "Not an upgrade",
+     "selected": false,
+     "committed": false,
+     "existing_file": {
+      "media_file_id": 707,
+      "quality": "WEBDL_1080P",
+      "release_group": "OLD",
+      "verdict": {
+       "upgrade": false,
+       "code": "quality_downgrade"
+      }
+     },
+     "held": {
+      "download_id": 77,
+      "reason": "Not an upgrade"
+     },
+     "replace_choice": null,
+     "finish_disposition": null,
+     "orphan_episode_ids": null,
+     "joint_rows": null
+    },
+    {
+     "row_id": 8,
+     "source_path": "/downloads/The.Office.S06.1080p.WEB-DL-GRP/The.Office.S06E08.mkv",
+     "relative_path": "",
+     "filename": "The.Office.S06E08.1080p.WEB-DL.mkv",
+     "size": 1200000000,
+     "parsed": {
+      "title": "The Office",
+      "season": 6,
+      "episodes": [
+       8
+      ],
+      "quality": "WEBDL_1080P",
+      "release_group": "GRP",
+      "resolution": 1080
+     },
+     "match": {
+      "item_id": 31,
+      "title": "The Office",
+      "year": 2005,
+      "confidence": "high"
+     },
+     "target": {
+      "kind": "series",
+      "tier": "HD-1080p",
+      "edition": null,
+      "version_exists": true,
+      "season": 6,
+      "episode": 8,
+      "episode_id": 608,
+      "episode_ids": [
+       608
+      ]
+     },
+     "quality": "WEBDL_1080P",
+     "status": "needs_attention",
+     "status_reason": "Not an upgrade",
+     "selected": false,
+     "committed": false,
+     "existing_file": {
+      "media_file_id": 708,
+      "quality": "WEBDL_1080P",
+      "release_group": "OLD",
+      "verdict": {
+       "upgrade": false,
+       "code": "quality_downgrade"
+      }
+     },
+     "held": {
+      "download_id": 77,
+      "reason": "Not an upgrade"
+     },
+     "replace_choice": null,
+     "finish_disposition": null,
+     "orphan_episode_ids": null,
+     "joint_rows": null
+    }
+   ]
+  }
+ }
+}

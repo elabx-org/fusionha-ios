@@ -119,6 +119,8 @@ struct MIRowNotes: View {
             MIFindingLine(row: row).padding(.leading, indent).padding(.top, 6)
         }
         let lines: [(String, Color)] = [
+            // A joint span (one library file over several episodes) imports together.
+            ManualImportBulk.jointNote(row, session.bulkContext).map { ($0, Theme.mut) },
             (rescue ? nil : ManualImportRules.advisory(row)).map { ($0, Theme.miss) },
             session.rowErrors[row.rowId].map { ($0, Theme.danger) },
             session.rowWarnings[row.rowId].map { ($0, Theme.miss) },

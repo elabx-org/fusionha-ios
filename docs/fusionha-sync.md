@@ -17,6 +17,7 @@ instead of from scratch.
 | Last CI | build-362 on `2006eed`: green |
 | Living fusion moves | synced to **v0.4.224** (`49c6170b`, 2026-10-20), see the 0.4.224 section; the rest of 0.4.223–0.4.224 is not yet checked |
 | Watchlists & lists | requests phase 10b slice 1 synced to **v0.4.226** (`57c6e464`, 2026-10-23), see the 0.4.226 section (branch `requests-10b`) |
+| Manual Import bulk decide | held downloads synced to **0.4.225** (spec pinned `v0.4.226`), see its section (branch `mi-bulk-decide`); "bar in every scenario" built behind `ManualImportFeatures.barEverywhere` (off) |
 | Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
 
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
@@ -50,7 +51,7 @@ Synced at `v0.4.226` (`57c6e464`) from `frontend/src/components/account/lists/`,
   `POST /me/automatic-requests/sync`, `PUT /me/request-sources/{id}/pause|baseline`,
   `GET …/{id}/unmatched`, `POST …/items/{item_id}/resolve|ignore` (resolve 202 =
   queued), `GET /list-matches`, `POST /list-matches/forget` (admin), manual import
-  decide (not ported here). New fields: `source_id` / `unmatched_count` on the diary,
+  decide (ported separately, see the bulk-decide section). New fields: `source_id` / `unmatched_count` on the diary,
   linked source, Plex list, Plex watchlist and admin reads; `SourceCountsRead.unmatched`
   (`skipped` no longer includes it); `SummarySourceRead.stable_id`;
   `WatchlistFollowRead.also_uhd` / `source_key` / `unmatched_count`;
@@ -85,7 +86,38 @@ Synced at `v0.4.226` (`57c6e464`) from `frontend/src/components/account/lists/`,
   open); the page's sheets use `duoPageSheet`; the You tab's Spread right page
   follows the same rule.
 - **Open:** slice 2 (MDBList, Trakt, other people's Plex lists, admin import lists);
-  manual import decide (`POST /manualimport/decide`) waits for its own port.
+  manual import decide is ported on its own (next section).
+
+## 0.4.225: Manual Import bulk decide (held downloads; branch `mi-bulk-decide`)
+
+Ported from fusionha 0.4.225 `docs/API.md` and the web's `bulk-summary.ts`,
+`bulk-caps.ts`, `useBulkDecide`; owner-approved mock v3 (QWGSom6rT5wtYX1nBJdVRM).
+
+- **Wire:** `POST /api/v1/manualimport/scan/{id}/decide` {rows [{row_id, action}],
+  dispositions {download_id: leave|remove|remove_blocklist}, import_mode?}, all or
+  nothing (`APIClient.manualImportDecide`, `ManualImportDecideRequest/Result`).
+  Rows decode `finish_disposition`, `orphan_episode_ids`, `joint_rows`; downloads
+  `disposition`, `leave_row_id`. **Fix:** `ManualImportCommitFinish.deleted_files`
+  is a boolean on the wire (was typed `Int?`, which failed any commit with a finish).
+- **Copy:** every refusal of decide / override / commit / finish reads as words
+  (`leave_stands`, 403 `forbidden`, `disposition_not_held`, `disposition_needs_keep`,
+  `finish_in_progress`, `unknown_download`, `invalid_rows`, `db_busy`).
+- **Rules (FusionhaKit):** `ManualImportBulk` (caps, joint spans, short codes,
+  undecided), `ManualImportBulkSummary` (outcomes, reasons, dispositions with the
+  pre-pick and "Recommended", request bodies), `ManualImportBulkCopy`. Tests:
+  `ManualImportBulkTests`, `ManualImportRefusalTests` over a fixture of the mock's
+  Office S06 pack (the server has no golden fixture for decide).
+- **App:** the bulk bar on held downloads (system bottom bar: Decide ▾, N selected,
+  Select all undecided ⌘A, Import N) with a solid outcome card; Decide holds Keep
+  current (disposition submenu; remove options hidden without `system.admin`), Skip,
+  Confirm medium, Import mode, Edit N selected…. Open Duo: the sheet spans both pages
+  (`duoPageSheet(.twoPages)`), list before the fold, the decision panel after it.
+  Per-row Keep preselects the saved `finish_disposition`; joint rows say "Shared file
+  with E05 · imports together".
+- **Gated (`ManualImportFeatures.barEverywhere = false`):** the "bar in every scenario"
+  mock (T6bWkYmLvaSBmbSMa2rw5m) is not approved yet. Folder scans keep the
+  "N selected · Actions" sheet (`MISelectionSheet`) with bulk Import anyway / Select
+  all ready; flipping the flag gives them the bar too.
 
 ## Unified search (iOS, 2026-10-23; branch `duo-spread-s3-search`)
 
