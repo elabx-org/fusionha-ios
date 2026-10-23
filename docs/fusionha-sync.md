@@ -16,13 +16,16 @@ instead of from scratch.
 | Previous sync | `4152c68a` / 0.4.220 (2026-10-19) |
 | Last CI | build-362 on `2006eed`: green |
 | Living fusion moves | synced to **v0.4.224** (`49c6170b`, 2026-10-20), see the 0.4.224 section; the rest of 0.4.223–0.4.224 is not yet checked |
+| Watchlists & lists | requests phase 10b slice 1 synced to **v0.4.226** (`57c6e464`, 2026-10-23), see the 0.4.226 section (branch `requests-10b`) |
 | Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
 
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
 
-`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.222`** (`64ced709`,
-`info.version` 0.4.222; re-pinned 2026-10-20 from the 0.2.0 spec). It is a
+`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.226`** (`57c6e464`;
+re-pinned 2026-10-23 for requests phase 10b slice 1, before that `v0.4.222`
+from 2026-10-20). The v0.4.222 → v0.4.226 diff is additive only (see the
+0.4.226 section). It is a
 reference only: the FusionhaKit models are hand-written and nothing generates
 or tests against it. The re-pin checked the fields that were typed ahead of
 the old pin against the tagged schemas: `calendar_week_layout`
@@ -35,6 +38,50 @@ the old pin against the tagged schemas: `calendar_week_layout`
 older server omits them. `ui_theme` is a plain string in the spec (no
 enum of names). `GET /api/v1/auth/providers` is still not in the spec (the
 app tolerates its absence). Re-pin again from the next tag you sync to.
+
+## 0.4.226: Watchlists & lists (requests phase 10b, slice 1)
+
+Synced at `v0.4.226` (`57c6e464`) from `frontend/src/components/account/lists/`,
+`account/automatic/`, `lib/api/automatic-requests.ts`, `unmatched.ts`,
+`list-matches.ts` and `docs/fixtures/` (golden fixtures copied into
+`Tests/FusionhaKitTests/Fixtures/golden/`).
+
+- **Spec diff v0.4.222 → v0.4.226 (additive):** new `GET /me/automatic-requests/summary`,
+  `POST /me/automatic-requests/sync`, `PUT /me/request-sources/{id}/pause|baseline`,
+  `GET …/{id}/unmatched`, `POST …/items/{item_id}/resolve|ignore` (resolve 202 =
+  queued), `GET /list-matches`, `POST /list-matches/forget` (admin), manual import
+  decide (not ported here). New fields: `source_id` / `unmatched_count` on the diary,
+  linked source, Plex list, Plex watchlist and admin reads; `SourceCountsRead.unmatched`
+  (`skipped` no longer includes it); `SummarySourceRead.stable_id`;
+  `WatchlistFollowRead.also_uhd` / `source_key` / `unmatched_count`;
+  `WatchlistFollowUpdate.enabled` optional + `also_uhd`;
+  `PlexWatchlistSummaryRow.paused_by_user`. `design/palettes.json` gained Daylight's
+  `statusText` shades (`Shared/palettes.json`, `Theme.doneText` …, `Theme.text(_:)`).
+- **FusionhaKit:** `AutomaticRequestsModels`, `APIClient+AutomaticRequests`,
+  `AutomaticRequestsCopy` (state words and tones, row line, detail and remembered
+  words, Follow words), `WatchlistsPageModel` (rows joined by stable id, detail
+  data, `WatchlistsRoute`), `PickCopy` (why it wasn't matched, refusals);
+  decoding and route tests in `AutomaticRequestsTests` / `AutomaticRequestsAPITests`.
+  `PushLink` maps `/account/lists[/id]`.
+- **App:** Account's Automatic requests is one row ("9 requested this week · 1 needs
+  review", the review part amber; "Set up" when nothing is on) pushing
+  **Watchlists & lists** (`App/Screens/Account/Watchlists/`). Deep links
+  `fusionha://account/lists[/<source-id>]` (and the older `account#watchlist`).
+  Follow = toolbar `plus` (Follow a list sheet: Cancel + Follow in the toolbar,
+  "N of M linked after this"); Sync now = `arrow.clockwise` and pull to refresh
+  (paused and off sources are skipped by the server). Source detail: head, state
+  line and bar, five counts, "N films couldn't be matched · Review" (Pick the right
+  title: TMDB search, Request it / Ignore, plain words for every refusal), Options
+  (switches, "What was on it when you started", own watchlist's "Also request
+  UHD·4K"), Pause or remove (Pause / Resume; "Paused by an admin" / "Paused with
+  your Plex watchlist" as a note; Remove asks first; a 403 on resume reads "An admin
+  paused this source, so only an admin can resume it."). Admins get "Remembered
+  matches · N" with Forget, and Users' Plex chip reads "Paused by user".
+- **Duo:** the page splits list | detail at the fold when one runs through it (the
+  Account sheet is page-sized while the Duo is open); the You tab's Spread right page
+  is Watchlists & lists when something needs review, else Sign-in methods.
+- **Open:** slice 2 (MDBList, Trakt, other people's Plex lists, admin import lists);
+  manual import decide (`POST /manualimport/decide`) waits for its own port.
 
 ## Where the cloud session stopped (2026-10-18)
 

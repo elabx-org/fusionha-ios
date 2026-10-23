@@ -1,0 +1,22 @@
+{
+  "requested_last7d": 9,
+  "needs_review": 1,
+  "syncing": null,
+  "sources": [
+    {
+      "source_id": "letterboxd-diary",
+      "group": "letterboxd",
+      "state": "healthy",
+      "needs_review": 0,
+      "paused": false
+    },
+    {
+      "source_id": "letterboxd-watchlist",
+      "group": "letterboxd",
+      "state": "paused",
+      "needs_review": 1,
+      "paused": true
+    }
+  ],
+  "default_source_id": "letterboxd-watchlist"
+}

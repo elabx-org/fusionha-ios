@@ -64,10 +64,14 @@ extension APIClient {
         try await sendJSON("DELETE", "/api/v1/me/letterboxd")
     }
 
-    /// Follows (or stops following) the person's own public watchlist.
-    public func followLetterboxdWatchlist(enabled: Bool, baseline: String? = nil) async throws -> LetterboxdRead {
-        var body: [String: SettingsJSON] = ["enabled": .bool(enabled)]
+    /// Follows (or stops following) the person's own public watchlist, and
+    /// sets its own "Also request UHD·4K" (0.4.226; every field optional).
+    public func followLetterboxdWatchlist(enabled: Bool? = nil, baseline: String? = nil,
+                                          alsoUhd: Bool? = nil) async throws -> LetterboxdRead {
+        var body: [String: SettingsJSON] = [:]
+        if let enabled { body["enabled"] = .bool(enabled) }
         if let baseline { body["baseline"] = .string(baseline) }
+        if let alsoUhd { body["also_uhd"] = .bool(alsoUhd) }
         return try await sendJSON("PUT", "/api/v1/me/letterboxd/watchlist", .object(body))
     }
 

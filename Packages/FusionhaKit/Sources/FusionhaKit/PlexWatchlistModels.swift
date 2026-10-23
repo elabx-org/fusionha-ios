@@ -38,11 +38,14 @@ public struct PlexWatchlistRead: Decodable, Sendable, Hashable {
     /// 0.4.215: the watchlist's running pass and ledger counts (nil from older servers).
     public let sync: SourceSync?
     public let counts: SourceCounts?
+    /// 0.4.226: `plex-watchlist` and the titles waiting for review.
+    public let sourceId: String?
+    public let unmatchedCount: Int
 
     enum CodingKeys: String, CodingKey {
         case eligible, granted, reason, enabled, status, lastCheckedAt, lastSuccessAt, nextCheckAt, lastError
         case options, alsoUhdAllowed, itemCount, requestedCount, seenCount, baselineCount, waitingCount
-        case requestedTotal, syncAvailableAt, firstCheck, lists, sync, counts
+        case requestedTotal, syncAvailableAt, firstCheck, lists, sync, counts, sourceId, unmatchedCount
     }
 
     private struct Options: Decodable { let alsoUhd: Bool? }
@@ -72,6 +75,8 @@ public struct PlexWatchlistRead: Decodable, Sendable, Hashable {
         lists = c.orDefault(.lists, PlexListsRead(state: "unknown", sources: []))
         sync = c.lenient(.sync)
         counts = c.lenient(.counts)
+        sourceId = c.lenient(.sourceId)
+        unmatchedCount = c.orDefault(.unmatchedCount, 0)
     }
 }
 
@@ -130,12 +135,15 @@ public struct PlexListSource: Decodable, Sendable, Hashable, Identifiable {
     public let error: String?
     public let sync: SourceSync?
     public let counts: SourceCounts?
+    /// 0.4.226: the stable id (`list-<row id>`) and the titles waiting for review.
+    public let sourceId: String?
+    public let unmatchedCount: Int
 
     public var id: String { listId }
 
     enum CodingKeys: String, CodingKey {
         case listId, name, visibility, itemCount, enabled, baseline, lastCheckedAt, requestedCount, deleted, error
-        case sync, counts
+        case sync, counts, sourceId, unmatchedCount
     }
 
     public init(from decoder: Decoder) throws {
@@ -152,5 +160,7 @@ public struct PlexListSource: Decodable, Sendable, Hashable, Identifiable {
         error = c.lenient(.error)
         sync = c.lenient(.sync)
         counts = c.lenient(.counts)
+        sourceId = c.lenient(.sourceId)
+        unmatchedCount = c.orDefault(.unmatchedCount, 0)
     }
 }

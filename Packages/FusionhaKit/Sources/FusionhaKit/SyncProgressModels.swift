@@ -36,27 +36,31 @@ public struct SourceSync: Decodable, Sendable, Hashable {
 /// `counts` (`SourceCountsRead`): the ledger outcomes of one source.
 /// requested = REQUESTED + JOINED, owned = in the library, queued = over the
 /// per-check cap, waiting = over the weekly quota, skipped = policy /
-/// unmatched / declined / withdrawn, baseline = noted on the first check.
+/// declined / withdrawn / ignored, unmatched = waiting for a review (its own
+/// bucket since 0.4.226), baseline = noted on the first check.
 public struct SourceCounts: Decodable, Sendable, Hashable {
     public let requested: Int
     public let owned: Int
     public let queued: Int
     public let waiting: Int
     public let skipped: Int
+    public let unmatched: Int
     public let baseline: Int
 
     public static let empty = SourceCounts()
 
-    public init(requested: Int = 0, owned: Int = 0, queued: Int = 0, waiting: Int = 0, skipped: Int = 0, baseline: Int = 0) {
+    public init(requested: Int = 0, owned: Int = 0, queued: Int = 0, waiting: Int = 0, skipped: Int = 0,
+                unmatched: Int = 0, baseline: Int = 0) {
         self.requested = requested
         self.owned = owned
         self.queued = queued
         self.waiting = waiting
         self.skipped = skipped
+        self.unmatched = unmatched
         self.baseline = baseline
     }
 
-    enum CodingKeys: String, CodingKey { case requested, owned, queued, waiting, skipped, baseline }
+    enum CodingKeys: String, CodingKey { case requested, owned, queued, waiting, skipped, unmatched, baseline }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -65,6 +69,7 @@ public struct SourceCounts: Decodable, Sendable, Hashable {
         queued = c.orDefault(.queued, 0)
         waiting = c.orDefault(.waiting, 0)
         skipped = c.orDefault(.skipped, 0)
+        unmatched = c.orDefault(.unmatched, 0)
         baseline = c.orDefault(.baseline, 0)
     }
 }
@@ -113,12 +118,14 @@ public struct SummarySource: Decodable, Sendable, Hashable, Identifiable {
     public let lastCheckedAt: String?
     public let nextCheckAt: String?
     public let lastError: String?
+    /// 0.4.226: the source's stable string id (`letterboxd-diary`, `list-38`, …).
+    public let stableId: String?
 
     public var id: Int { sourceId }
 
     enum CodingKeys: String, CodingKey {
         case sourceId, userId, owner, kind, label, state, checked, total, startedAt, counts
-        case lastCheckedAt, nextCheckAt, lastError
+        case lastCheckedAt, nextCheckAt, lastError, stableId
     }
 
     public init(from decoder: Decoder) throws {
@@ -136,6 +143,7 @@ public struct SummarySource: Decodable, Sendable, Hashable, Identifiable {
         lastCheckedAt = c.lenient(.lastCheckedAt)
         nextCheckAt = c.lenient(.nextCheckAt)
         lastError = c.lenient(.lastError)
+        stableId = c.lenient(.stableId)
     }
 
     /// The same shape as a source read's `sync`, for the shared bar and percent.

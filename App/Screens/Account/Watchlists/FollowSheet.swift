@@ -1,18 +1,16 @@
 import SwiftUI
 import FusionhaKit
 
-/// "Add a Letterboxd source" (web `AddSourcePanel`): a list by address or
-/// someone's watchlist by username, a 25-film preview (30 s apart), the
-/// baseline, then Add. The server decides what is valid; the local check only
-/// enables Preview, and Add sends exactly what was previewed.
-struct AddSourceSheet: View {
+/// "Follow a list" (web `FollowSheet` around `AddSourcePanel`): a list by
+/// address or someone's watchlist by username, a 25-film preview (30 s apart),
+/// the baseline, then Follow. Cancel and Follow sit in the toolbar, so Follow
+/// never scrolls away: it previews first, then adds exactly what was previewed.
+struct FollowSheet: View {
     enum Kind: String, Hashable { case list, watchlist }
 
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     let store: WatchlistsStore
-    let linkedAfter: Int
-    let max: Int
     @State private var kind: Kind = .list
     @State private var url = ""
     @State private var username = ""
@@ -53,20 +51,24 @@ struct AddSourceSheet: View {
                 }
                 if let preview, previewed != nil {
                     AddSourcePreviewRows(preview: preview, existing: $existing)
-                    Section {
-                        Button(kind == .list ? "Add list" : "Add watchlist") { add() }
-                            .disabled(adding)
+                }
+                if let read = store.letterboxd {
+                    Section {} footer: {
+                        Text(FollowCopy.linkedAfter(linkedAfter(read), max: read.maxLinkedLists))
                     }
                 }
             }
             .scrollContentBackground(.hidden)
             .background(Theme.bg)
-            .navigationTitle("Add a Letterboxd source")
+            .navigationTitle(FollowCopy.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(FollowCopy.follow, systemImage: "plus") { follow() }
+                        .disabled(!ready || reading || adding)
+                }
             }
-            .closeOnlyBars()
             .onChange(of: kind) { reset() }
             .onChange(of: url) { reset() }
             .onChange(of: username) { reset() }
@@ -119,6 +121,15 @@ struct AddSourceSheet: View {
         }
     }
 
+    private func linkedAfter(_ read: LetterboxdRead) -> Int {
+        Swift.min(LetterboxdLogic.linkedCount(read, sources: store.sources) + 1, read.maxLinkedLists)
+    }
+
+    /// Follow: preview what was typed first, then add what was previewed.
+    private func follow() {
+        if previewed == target, preview != nil { add() } else { runPreview() }
+    }
+
     private func reset() {
         preview = nil
         previewed = nil
@@ -156,7 +167,8 @@ struct AddSourceSheet: View {
             defer { adding = false }
             do {
                 _ = try await client.addRequestSource(previewed, enabled: true, requestExisting: existing)
-                model.toast(LetterboxdLogic.addedToast(linkedAfter, max: max))
+                let label = preview?.title ?? "@\(preview?.owner ?? "")’s watchlist"
+                model.toast(FollowCopy.following(label))
                 await store.load(client)
                 dismiss()
             } catch {

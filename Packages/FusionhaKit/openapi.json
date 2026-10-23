@@ -3,7 +3,7 @@
   "info": {
     "title": "fusionha",
     "description": "fusionha replaces both Sonarr and Radarr with a single app that adds\nfirst-class multi-quality tracking (e.g. 1080p *and* 4K per title) and\ntreats anime as a first-class citizen. It exposes **two API surfaces**:\n\n* **fusionha-native, `/api/v1/*`** -- the app's own REST API: library items\n  (with all their quality editions), settings, config resources (root\n  folders, quality profiles, custom formats, indexers, download clients),\n  history, queue, health, and blocklist. This is what the fusionha UI (and\n  any other fusionha-aware client) talks to.\n* **arr v3 mirrors, `/<instance-slug>/api/v3/*`** -- faithful Radarr/Sonarr\n  v3 API surfaces (`radarr-hd`, `radarr-4k`, `sonarr-hd`, `sonarr-4k`), each\n  its own virtual instance with its own `X-Api-Key`. Add these to\n  Overseerr/Seer (their native 4K-service slots map to the `-4k`\n  instances) or Prowlarr exactly as you would a real Radarr/Sonarr -- they\n  are externally indistinguishable. All virtual instances are views over\n  the SAME shared item store; there is no data duplication.\n\nAuthenticate against the arr surface with the `X-Api-Key` header (per\nvirtual instance); see the Authorize button above.",
-    "version": "0.4.222"
+    "version": "0.4.226"
   },
   "paths": {
     "/api/v1/setup-status": {
@@ -5756,7 +5756,7 @@
       "post": {
         "tags": ["Requests"],
         "summary": "Sync My Plex Watchlist",
-        "description": "Check every enabled source now. **202**; once a minute per user, else\n429 ``rate_limited`` with ``sync_available_at``. 403 ``not_enabled`` when\nnothing is turned on. Poll the GET until ``last_checked_at`` moves.",
+        "description": "Check every enabled source now. **202**; once a minute per user, else\n429 ``rate_limited`` with ``sync_available_at``. 403 ``not_enabled`` when\nnothing is turned on; 409 ``source_paused`` while you have the watchlist\npaused (a paused watchlist pauses its lists). Poll the GET until ``last_checked_at`` moves.",
         "operationId": "sync_my_plex_watchlist_api_v1_me_plex_watchlist_sync_post",
         "responses": {
           "202": {
@@ -5917,7 +5917,7 @@
       "put": {
         "tags": ["Requests"],
         "summary": "Put My Watchlist Follow",
-        "description": "Follow your own public watchlist (not counted toward the limit).\n409 ``not_connected`` without a profile; 403 ``not_allowed``.",
+        "description": "Follow your own public watchlist (not counted toward the limit) and set\nits own ``also_uhd`` (until set, it uses the diary's). 409 ``not_connected``\nwithout a profile, ``not_followed`` for ``also_uhd`` before a follow,\n``policy`` (UHD\u00b74K); 403 ``not_allowed``.",
         "operationId": "put_my_watchlist_follow_api_v1_me_letterboxd_watchlist_put",
         "requestBody": {
           "content": {
@@ -6108,7 +6108,7 @@
       "post": {
         "tags": ["Requests"],
         "summary": "Sync Request Source",
-        "description": "Check one source now: once per 5 minutes per source (429 ``rate_limited``\nwith ``sync_available_at``). Owner only (404).",
+        "description": "Check one source now: once per 5 minutes per source (429 ``rate_limited``\nwith ``sync_available_at``). Owner only (404); 409 ``source_paused`` while\nyou have it paused.",
         "operationId": "sync_request_source_api_v1_me_request_sources__source_id__sync_post",
         "parameters": [
           {
@@ -6308,6 +6308,272 @@
               }
             }
           },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/request-sources/{source_id}/unmatched": {
+      "get": {
+        "tags": ["Requests"],
+        "summary": "Get Unmatched",
+        "description": "Up to 100 titles the source saw but could not turn into a TMDB match,\noldest first. 404 ``not_found`` for any source that is not yours (or is\ndeleted).",
+        "operationId": "get_unmatched_api_v1_me_request_sources__source_id__unmatched_get",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Source Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/UnmatchedItemRead" },
+                  "title": "Response Get Unmatched Api V1 Me Request Sources  Source Id  Unmatched Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/request-sources/{source_id}/items/{item_id}/resolve": {
+      "post": {
+        "tags": ["Requests"],
+        "summary": "Resolve Unmatched",
+        "description": "Request an unmatched title as the TMDB title you picked, exactly as the\nsource's next check would (same quota and auto-approve rules); the pick is\nremembered for everyone. 202 ``QUEUED`` when TMDB is unavailable. 404\n``not_found``; 409 ``not_unmatched`` / ``source_paused`` (``reason``:\n``paused`` = you paused it, else ``off``) / ``needs_sign_in`` (a Plex\nsource with no stored Plex sign-in; nothing is saved); 403 ``not_allowed``\n(a lost grant only).",
+        "operationId": "resolve_unmatched_api_v1_me_request_sources__source_id__items__item_id__resolve_post",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Source Id" }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Item Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ResolveBody" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ResolveRead" } }
+            }
+          },
+          "202": {
+            "description": "Saved; requested at the next check",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ResolveRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/request-sources/{source_id}/items/{item_id}/ignore": {
+      "post": {
+        "tags": ["Requests"],
+        "summary": "Ignore Unmatched",
+        "description": "Stop offering an unmatched title from this source (works while the source\nis off). Nothing is requested or cancelled. 404 ``not_found``; 409\n``not_unmatched``.",
+        "operationId": "ignore_unmatched_api_v1_me_request_sources__source_id__items__item_id__ignore_post",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Source Id" }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Item Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/request-sources/{source_id}/baseline": {
+      "put": {
+        "tags": ["Requests"],
+        "summary": "Put Baseline",
+        "description": "``existing`` lets the next check request titles that were already on the\nsource (within the per-check cap and quota); ``new`` stops that. Nothing\nalready requested changes. 404 ``not_found`` (also the CSV import and a\ndeleted source); 403 ``not_allowed``.",
+        "operationId": "put_baseline_api_v1_me_request_sources__source_id__baseline_put",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Source Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/BaselineBody" } }
+          }
+        },
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/automatic-requests/summary": {
+      "get": {
+        "tags": ["Requests"],
+        "summary": "Get Summary",
+        "description": "Requested this week, titles waiting for review, the running sync, every\nsource's state in page order and the default selection. Never writes and\nnever calls a provider.",
+        "operationId": "get_summary_api_v1_me_automatic_requests_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/AutoSummaryRead" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/automatic-requests/sync": {
+      "post": {
+        "tags": ["Requests"],
+        "summary": "Sync All",
+        "description": "Check every enabled source now, within each one's limit (Letterboxd: once\nper 5 minutes per source; Plex: once a minute). **202** ``{queued,\nsync_available_at}``; 429 ``rate_limited`` with ``sync_available_at`` when\nnothing could be queued.",
+        "operationId": "sync_all_api_v1_me_automatic_requests_sync_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/AutoSyncRead" } }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/list-matches": {
+      "get": {
+        "tags": ["Requests"],
+        "summary": "Get List Matches",
+        "description": "Up to 200 remembered matches, newest first, both stores. Admin only.",
+        "operationId": "get_list_matches_api_v1_list_matches_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": { "$ref": "#/components/schemas/ListMatchRead" },
+                  "type": "array",
+                  "title": "Response Get List Matches Api V1 List Matches Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/list-matches/forget": {
+      "post": {
+        "tags": ["Requests"],
+        "summary": "Forget List Match",
+        "description": "Forget one remembered match: its entry is looked up afresh at the next check.\n204; 404 ``not_found`` when nothing is remembered for that key. Admin only.",
+        "operationId": "forget_list_match_api_v1_list_matches_forget_post",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ForgetBody" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/request-sources/{source_id}/pause": {
+      "put": {
+        "tags": ["Requests"],
+        "summary": "Put Pause",
+        "description": "Pause (``true``) or resume (``false``) one of your sources. A paused\nsource is not checked and makes no requests; its Plex sign-in, baseline,\ncounts and history are kept, and a paused Plex watchlist pauses its lists\ntoo. Resuming continues where it left off: titles added meanwhile are\npicked up at the next check under the source's normal rules. Nothing\nalready requested changes. Repeating the current state is a no-op.\n404 ``not_found`` (also the CSV import and a deleted source); 403\n``not_allowed`` when resuming a source an admin paused.",
+        "operationId": "put_pause_api_v1_me_request_sources__source_id__pause_put",
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Source Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/PauseBody" } }
+          }
+        },
+        "responses": {
+          "204": { "description": "Successful Response" },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -15282,6 +15548,47 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/ManualImportScanRead" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/manualimport/scan/{scan_id}/decide": {
+      "post": {
+        "tags": ["Manual Import"],
+        "summary": "Decide Rows",
+        "operationId": "decide_rows_api_v1_manualimport_scan__scan_id__decide_post",
+        "parameters": [
+          {
+            "name": "scan_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Scan Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ManualImportDecideRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ManualImportDecideResponse" }
               }
             }
           },
@@ -25780,6 +26087,82 @@
         "title": "AuditTitleTarget",
         "description": "What a row is about, for v3's title-led rows (18a)."
       },
+      "AutoSourceRead": {
+        "properties": {
+          "source_id": { "type": "string", "title": "Source Id" },
+          "group": { "type": "string", "enum": ["letterboxd", "plex", "lists"], "title": "Group" },
+          "state": {
+            "type": "string",
+            "enum": [
+              "healthy",
+              "checking",
+              "syncing",
+              "partly_working",
+              "not_public",
+              "blocked",
+              "retrying",
+              "needs_sign_in",
+              "not_allowed",
+              "paused",
+              "off",
+              "gone",
+              "not_connected"
+            ],
+            "title": "State"
+          },
+          "needs_review": { "type": "integer", "title": "Needs Review" },
+          "paused": { "type": "boolean", "title": "Paused", "default": false }
+        },
+        "type": "object",
+        "required": ["source_id", "group", "state", "needs_review"],
+        "title": "AutoSourceRead",
+        "description": "One source in page order: its stable id (\u00a716.3), group, state word (Q5)\nand how many of its titles wait for review (``UNMATCHED``). ``paused``\n(additive): the person paused this source themselves and may resume it\n(``PUT /me/request-sources/{id}/pause``); false for an admin pause and for\na Plex list that only inherits its watchlist's pause."
+      },
+      "AutoSummaryRead": {
+        "properties": {
+          "requested_last7d": { "type": "integer", "title": "Requested Last7D" },
+          "needs_review": { "type": "integer", "title": "Needs Review" },
+          "syncing": {
+            "anyOf": [{ "$ref": "#/components/schemas/AutoSyncingRead" }, { "type": "null" }]
+          },
+          "sources": {
+            "items": { "$ref": "#/components/schemas/AutoSourceRead" },
+            "type": "array",
+            "title": "Sources"
+          },
+          "default_source_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Default Source Id"
+          }
+        },
+        "type": "object",
+        "required": ["requested_last7d", "needs_review", "syncing", "sources", "default_source_id"],
+        "title": "AutoSummaryRead"
+      },
+      "AutoSyncRead": {
+        "properties": {
+          "queued": { "items": { "type": "string" }, "type": "array", "title": "Queued" },
+          "sync_available_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Sync Available At"
+          }
+        },
+        "type": "object",
+        "required": ["queued", "sync_available_at"],
+        "title": "AutoSyncRead",
+        "description": "The stable ids queued and the earliest moment any source may sync again."
+      },
+      "AutoSyncingRead": {
+        "properties": {
+          "done": { "type": "integer", "title": "Done" },
+          "total": { "type": "integer", "title": "Total" },
+          "requested": { "type": "integer", "title": "Requested", "default": 0 }
+        },
+        "type": "object",
+        "required": ["done", "total"],
+        "title": "AutoSyncingRead",
+        "description": "The running sources' progress summed; ``requested`` counts the titles\nrequested since the earliest running pass started (additive)."
+      },
       "AutofixStatsRead": {
         "properties": {
           "days": { "type": "integer", "title": "Days" },
@@ -25922,6 +26305,15 @@
         "required": ["id", "size_bytes", "created_at", "kind", "backend"],
         "title": "BackupRecordRead",
         "description": "One backup archive on disk (list/download rows)."
+      },
+      "BaselineBody": {
+        "properties": {
+          "baseline": { "type": "string", "enum": ["new", "existing"], "title": "Baseline" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["baseline"],
+        "title": "BaselineBody"
       },
       "BlockEvidenceRead": {
         "properties": {
@@ -27844,6 +28236,8 @@
       },
       "DiaryRead": {
         "properties": {
+          "source_id": { "type": "string", "title": "Source Id", "default": "letterboxd-diary" },
+          "unmatched_count": { "type": "integer", "title": "Unmatched Count", "default": 0 },
           "enabled": { "type": "boolean", "title": "Enabled" },
           "request_rewatches": { "type": "boolean", "title": "Request Rewatches" },
           "also_uhd": { "type": "boolean", "title": "Also Uhd" },
@@ -28854,6 +29248,22 @@
         "type": "object",
         "required": ["ok", "elapsed_ms"],
         "title": "FlareTestRead"
+      },
+      "ForgetBody": {
+        "properties": {
+          "provider": { "type": "string", "enum": ["LETTERBOXD", "PLEX"], "title": "Provider" },
+          "external_key": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1,
+            "title": "External Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["provider", "external_key"],
+        "title": "ForgetBody",
+        "description": "The key goes in the body, never the path (a Plex key holds ``/`` and ``:``)."
       },
       "ForgetUnlinkedBulkRequest": {
         "properties": {
@@ -31675,6 +32085,8 @@
       "LbAdminSourceRead": {
         "properties": {
           "id": { "type": "integer", "title": "Id" },
+          "source_id": { "type": "string", "title": "Source Id" },
+          "unmatched_count": { "type": "integer", "title": "Unmatched Count", "default": 0 },
           "kind": { "type": "string", "title": "Kind" },
           "label": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Label" },
           "url": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Url" },
@@ -31718,6 +32130,7 @@
         "type": "object",
         "required": [
           "id",
+          "source_id",
           "kind",
           "label",
           "url",
@@ -31753,6 +32166,8 @@
       "LbSourceRead": {
         "properties": {
           "id": { "type": "integer", "title": "Id" },
+          "source_id": { "type": "string", "title": "Source Id" },
+          "unmatched_count": { "type": "integer", "title": "Unmatched Count", "default": 0 },
           "kind": { "type": "string", "title": "Kind" },
           "label": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Label" },
           "url": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Url" },
@@ -31795,6 +32210,7 @@
         "type": "object",
         "required": [
           "id",
+          "source_id",
           "kind",
           "label",
           "url",
@@ -32238,6 +32654,28 @@
         "title": "LineAudienceRead",
         "description": "Who an issue thread line was for (``issues.manage`` only): one person,\nor ``everyone`` for a thread-wide admin message."
       },
+      "ListMatchRead": {
+        "properties": {
+          "provider": { "type": "string", "enum": ["LETTERBOXD", "PLEX"], "title": "Provider" },
+          "external_key": { "type": "string", "title": "External Key" },
+          "entry_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Entry Url"
+          },
+          "tmdb_id": { "type": "integer", "title": "Tmdb Id" },
+          "kind": { "type": "string", "enum": ["movie", "series"], "title": "Kind" },
+          "title": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Title" },
+          "year": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Year" },
+          "resolved_by": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Resolved By"
+          },
+          "resolved_at": { "type": "string", "format": "date-time", "title": "Resolved At" }
+        },
+        "type": "object",
+        "required": ["provider", "external_key", "tmdb_id", "kind", "resolved_at"],
+        "title": "ListMatchRead"
+      },
       "LiveActivityRegister": {
         "properties": {
           "device_id": { "type": "integer", "title": "Device Id" },
@@ -32622,13 +33060,89 @@
         "description": "The per-row outcome of a commit (success carries the created ids).",
         "x-deprecated-fields": { "edition_id": "version_id" }
       },
+      "ManualImportDecideRequest": {
+        "properties": {
+          "rows": {
+            "items": { "$ref": "#/components/schemas/ManualImportDecideRow" },
+            "type": "array",
+            "minItems": 1,
+            "title": "Rows"
+          },
+          "dispositions": {
+            "additionalProperties": {
+              "type": "string",
+              "enum": ["remove", "remove_blocklist", "leave"]
+            },
+            "type": "object",
+            "title": "Dispositions"
+          },
+          "import_mode": {
+            "type": "string",
+            "enum": ["AUTO", "HARDLINK", "SYMLINK", "COPY", "MOVE"],
+            "title": "Import Mode",
+            "default": "AUTO"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["rows"],
+        "title": "ManualImportDecideRequest"
+      },
+      "ManualImportDecideResponse": {
+        "properties": {
+          "results": {
+            "items": { "$ref": "#/components/schemas/ManualImportCommitRowResult" },
+            "type": "array",
+            "title": "Results"
+          },
+          "finishes": {
+            "items": { "$ref": "#/components/schemas/ManualImportFinishRead" },
+            "type": "array",
+            "title": "Finishes"
+          },
+          "downloads": {
+            "items": { "$ref": "#/components/schemas/ManualImportDownloadRead" },
+            "type": "array",
+            "title": "Downloads"
+          },
+          "scan": { "$ref": "#/components/schemas/ManualImportScanRead" }
+        },
+        "type": "object",
+        "required": ["scan"],
+        "title": "ManualImportDecideResponse"
+      },
+      "ManualImportDecideRow": {
+        "properties": {
+          "row_id": { "type": "integer", "title": "Row Id" },
+          "action": {
+            "type": "string",
+            "enum": ["import", "keep_current", "skip"],
+            "title": "Action"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["row_id", "action"],
+        "title": "ManualImportDecideRow"
+      },
       "ManualImportDownloadRead": {
         "properties": {
           "id": { "type": "integer", "title": "Id" },
           "rows_total": { "type": "integer", "title": "Rows Total" },
           "rows_decided": { "type": "integer", "title": "Rows Decided" },
           "finished": { "type": "boolean", "title": "Finished" },
-          "library_linked": { "type": "boolean", "title": "Library Linked", "default": false }
+          "library_linked": { "type": "boolean", "title": "Library Linked", "default": false },
+          "disposition": {
+            "anyOf": [
+              { "type": "string", "enum": ["remove", "remove_blocklist", "leave"] },
+              { "type": "null" }
+            ],
+            "title": "Disposition"
+          },
+          "leave_row_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Leave Row Id"
+          }
         },
         "type": "object",
         "required": ["id", "rows_total", "rows_decided", "finished"],
@@ -32843,6 +33357,13 @@
           "replace_against_media_file_id": {
             "anyOf": [{ "type": "integer" }, { "type": "null" }],
             "title": "Replace Against Media File Id"
+          },
+          "finish_disposition": {
+            "anyOf": [
+              { "type": "string", "enum": ["remove", "remove_blocklist", "leave"] },
+              { "type": "null" }
+            ],
+            "title": "Finish Disposition"
           }
         },
         "additionalProperties": false,
@@ -33004,6 +33525,14 @@
             "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Would Orphan"
           },
+          "orphan_episode_ids": {
+            "anyOf": [{ "items": { "type": "integer" }, "type": "array" }, { "type": "null" }],
+            "title": "Orphan Episode Ids"
+          },
+          "joint_rows": {
+            "anyOf": [{ "items": { "type": "integer" }, "type": "array" }, { "type": "null" }],
+            "title": "Joint Rows"
+          },
           "status": {
             "type": "string",
             "enum": ["ready", "needs_attention", "no_match"],
@@ -33078,6 +33607,13 @@
           "replace_choice": {
             "anyOf": [{ "type": "string", "enum": ["keep_current", "import"] }, { "type": "null" }],
             "title": "Replace Choice"
+          },
+          "finish_disposition": {
+            "anyOf": [
+              { "type": "string", "enum": ["remove", "remove_blocklist", "leave"] },
+              { "type": "null" }
+            ],
+            "title": "Finish Disposition"
           },
           "title_check": {
             "anyOf": [
@@ -35333,6 +35869,13 @@
         "title": "ParkedItemsReplace",
         "description": "The coalesced full-list persist: replace the caller's ENTIRE dock with\n`items` (list order = dock order)."
       },
+      "PauseBody": {
+        "properties": { "paused": { "type": "boolean", "title": "Paused" } },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["paused"],
+        "title": "PauseBody"
+      },
       "PausedSlotRead": {
         "properties": {
           "report_id": { "type": "integer", "title": "Report Id" },
@@ -35674,6 +36217,8 @@
       },
       "PlexListSourceRead": {
         "properties": {
+          "source_id": { "type": "string", "title": "Source Id" },
+          "unmatched_count": { "type": "integer", "title": "Unmatched Count", "default": 0 },
           "list_id": { "type": "string", "title": "List Id" },
           "name": { "type": "string", "title": "Name" },
           "visibility": {
@@ -35707,7 +36252,15 @@
           }
         },
         "type": "object",
-        "required": ["list_id", "name", "enabled", "baseline", "requested_count", "deleted"],
+        "required": [
+          "source_id",
+          "list_id",
+          "name",
+          "enabled",
+          "baseline",
+          "requested_count",
+          "deleted"
+        ],
         "title": "PlexListSourceRead"
       },
       "PlexListUpdate": {
@@ -35933,6 +36486,8 @@
       },
       "PlexWatchlistAdminRead": {
         "properties": {
+          "source_id": { "type": "string", "title": "Source Id", "default": "plex-watchlist" },
+          "unmatched_count": { "type": "integer", "title": "Unmatched Count", "default": 0 },
           "eligible": { "type": "boolean", "title": "Eligible" },
           "granted": { "type": "boolean", "title": "Granted", "default": false },
           "reason": {
@@ -36043,6 +36598,8 @@
       },
       "PlexWatchlistRead": {
         "properties": {
+          "source_id": { "type": "string", "title": "Source Id", "default": "plex-watchlist" },
+          "unmatched_count": { "type": "integer", "title": "Unmatched Count", "default": 0 },
           "eligible": { "type": "boolean", "title": "Eligible" },
           "granted": { "type": "boolean", "title": "Granted", "default": false },
           "reason": {
@@ -36146,7 +36703,8 @@
           "last_checked_at": {
             "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
             "title": "Last Checked At"
-          }
+          },
+          "paused_by_user": { "type": "boolean", "title": "Paused By User", "default": false }
         },
         "type": "object",
         "required": ["user_id", "state", "source_count", "requested_count"],
@@ -38985,6 +39543,34 @@
         "required": ["names"],
         "title": "ResetUnreadableRequest"
       },
+      "ResolveBody": {
+        "properties": {
+          "tmdb_id": {
+            "type": "integer",
+            "maximum": 2000000000.0,
+            "minimum": 1.0,
+            "title": "Tmdb Id"
+          },
+          "kind": { "type": "string", "enum": ["movie", "series"], "title": "Kind" }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": ["tmdb_id", "kind"],
+        "title": "ResolveBody",
+        "description": "The person's pick of the TMDB title for one unmatched row."
+      },
+      "ResolveRead": {
+        "properties": {
+          "outcome": { "type": "string", "title": "Outcome" },
+          "request_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Request Id"
+          }
+        },
+        "type": "object",
+        "required": ["outcome", "request_id"],
+        "title": "ResolveRead"
+      },
       "ResolveTvdbIdRead": {
         "properties": {
           "matched": { "type": "boolean", "title": "Matched" },
@@ -40450,11 +41036,12 @@
           "queued": { "type": "integer", "title": "Queued", "default": 0 },
           "waiting": { "type": "integer", "title": "Waiting", "default": 0 },
           "skipped": { "type": "integer", "title": "Skipped", "default": 0 },
+          "unmatched": { "type": "integer", "title": "Unmatched", "default": 0 },
           "baseline": { "type": "integer", "title": "Baseline", "default": 0 }
         },
         "type": "object",
         "title": "SourceCountsRead",
-        "description": "Ledger outcomes of one source. requested = REQUESTED + JOINED; owned =\nOWNED (in the library); queued = QUEUED + PENDING (over the per-check cap,\ntaken by a later check); waiting = WAITING (over the weekly quota); skipped\n= SKIPPED_POLICY + UNMATCHED + DECLINED + WITHDRAWN; baseline = BASELINE\n(recorded on the first check, never requested)."
+        "description": "Ledger outcomes of one source. requested = REQUESTED + JOINED; owned =\nOWNED (in the library); queued = QUEUED + PENDING (over the per-check cap,\ntaken by a later check); waiting = WAITING (over the weekly quota); skipped\n= SKIPPED_POLICY + DECLINED + WITHDRAWN + IGNORED; unmatched = UNMATCHED\n(titles not matched to TMDB yet); baseline = BASELINE\n(recorded on the first check, never requested)."
       },
       "SourceCreate": {
         "properties": {
@@ -40675,6 +41262,7 @@
       "SummarySourceRead": {
         "properties": {
           "source_id": { "type": "integer", "title": "Source Id" },
+          "stable_id": { "type": "string", "title": "Stable Id" },
           "user_id": { "type": "integer", "title": "User Id" },
           "owner": { "type": "string", "title": "Owner" },
           "kind": { "type": "string", "title": "Kind" },
@@ -40701,7 +41289,7 @@
           }
         },
         "type": "object",
-        "required": ["source_id", "user_id", "owner", "kind", "state", "counts"],
+        "required": ["source_id", "stable_id", "user_id", "owner", "kind", "state", "counts"],
         "title": "SummarySourceRead"
       },
       "SummaryTodayRead": {
@@ -40709,6 +41297,7 @@
           "requested": { "type": "integer", "title": "Requested", "default": 0 },
           "owned": { "type": "integer", "title": "Owned", "default": 0 },
           "skipped": { "type": "integer", "title": "Skipped", "default": 0 },
+          "unmatched": { "type": "integer", "title": "Unmatched", "default": 0 },
           "errors": { "type": "integer", "title": "Errors", "default": 0 }
         },
         "type": "object",
@@ -41865,6 +42454,26 @@
         "required": ["key"],
         "title": "UnlockRequest"
       },
+      "UnmatchedItemRead": {
+        "properties": {
+          "item_id": { "type": "integer", "title": "Item Id" },
+          "title": { "type": "string", "title": "Title" },
+          "year": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Year" },
+          "source_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Source Url"
+          },
+          "reason": {
+            "type": "string",
+            "enum": ["no_tmdb_link", "ambiguous", "not_found"],
+            "title": "Reason"
+          },
+          "query": { "type": "string", "title": "Query" }
+        },
+        "type": "object",
+        "required": ["item_id", "title", "reason", "query"],
+        "title": "UnmatchedItemRead"
+      },
       "UnreadableSecretRead": {
         "properties": {
           "name": {
@@ -42580,6 +43189,11 @@
             "anyOf": [{ "type": "integer" }, { "type": "null" }],
             "title": "Source Id"
           },
+          "source_key": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Source Key"
+          },
+          "unmatched_count": { "type": "integer", "title": "Unmatched Count", "default": 0 },
           "truncated": { "type": "boolean", "title": "Truncated", "default": false },
           "item_count": {
             "anyOf": [{ "type": "integer" }, { "type": "null" }],
@@ -42594,7 +43208,8 @@
           },
           "counts": {
             "anyOf": [{ "$ref": "#/components/schemas/SourceCountsRead" }, { "type": "null" }]
-          }
+          },
+          "also_uhd": { "type": "boolean", "title": "Also Uhd", "default": false }
         },
         "type": "object",
         "required": [
@@ -42609,15 +43224,15 @@
       },
       "WatchlistFollowUpdate": {
         "properties": {
-          "enabled": { "type": "boolean", "title": "Enabled" },
+          "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }], "title": "Enabled" },
           "baseline": {
             "anyOf": [{ "type": "string", "enum": ["new", "existing"] }, { "type": "null" }],
             "title": "Baseline"
-          }
+          },
+          "also_uhd": { "anyOf": [{ "type": "boolean" }, { "type": "null" }], "title": "Also Uhd" }
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["enabled"],
         "title": "WatchlistFollowUpdate"
       },
       "WatchlistOptionsRead": {

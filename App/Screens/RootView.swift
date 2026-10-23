@@ -107,7 +107,8 @@ struct RootView: View {
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Theme.bg)
         }
-        .modifier(ShellPresentations(model: model, reduceMotion: reduceMotion, scenePhase: scenePhase))
+        .modifier(ShellPresentations(model: model, reduceMotion: reduceMotion, scenePhase: scenePhase,
+                                     duoOpen: fold.isDuoOpen))
     }
 
     /// The tabs: the whole app when folded, the leading column when unfolded.
@@ -152,6 +153,8 @@ private struct ShellPresentations: ViewModifier {
     @Bindable var model: AppModel
     let reduceMotion: Bool
     let scenePhase: ScenePhase
+    /// The iPhone Duo is open: the Account sheet is page-sized (Watchlists & lists' split).
+    let duoOpen: Bool
 
     func body(content: Content) -> some View {
         content
@@ -162,7 +165,7 @@ private struct ShellPresentations: ViewModifier {
                 .presentationBackground(Theme.panel)
         }
         .sheet(isPresented: $model.showingAccount, onDismiss: { model.avatar.openPending(model) }) {
-            AccountSheet().presentationBackground(Theme.bg)
+            AccountSheet(duoOpen: duoOpen).presentationBackground(Theme.bg)
         }
         .modifier(AvatarPresentations(avatar: model.avatar, model: model))
         .modifier(SecretsLockedToaster(model: model))

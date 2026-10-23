@@ -8,6 +8,7 @@ import Foundation
 /// - `/discover?tab=requests|issues` → `fusionha://discover/requests|issues`
 /// - `/activity?tab=queue&focus=<downloadId>[&block=1]` → `fusionha://activity/queue?focus=<id>[&block=1]`
 /// - `/activity?tab=audit` (the admin digest) → `fusionha://activity/audit`
+/// - `/account/lists[/<source-id>]` → `fusionha://account/lists[/<source-id>]`
 public enum PushLink {
     public static func deepLink(webPath: String?) -> URL? {
         guard let webPath, let parts = URLComponents(string: webPath) else { return nil }
@@ -34,6 +35,10 @@ public enum PushLink {
             if !items.isEmpty { link.queryItems = items }
         case "calendar", "wanted":
             link.host = segments[0]
+        case "account" where segments.count >= 2 && segments[1] == "lists":
+            // Watchlists & lists, and one source on it (0.4.226).
+            link.host = "account"
+            link.path = "/" + segments.dropFirst().prefix(2).joined(separator: "/")
         default:
             return nil
         }

@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import FusionhaKit
 
 /// Palette-aware tokens for things that used to be a fixed `.white`, `.black`
 /// or hex: text on status fills, shadows, shimmers and scrims. Every one
@@ -41,6 +42,31 @@ extension Theme {
     /// The Letterboxd mark (the web's `LbIcon` in `--i2`); a grey under
     /// Monochrome, where a brand tint would read as a status.
     static var letterboxdMark: Color { isMono ? mut : i2 }
+
+    // MARK: Status as text
+
+    /// A status word or count on a washed card (`--done-text` …, fusionha
+    /// 0.4.226): Daylight's deeper shades (≥ 4.5:1 on the wash), the hue
+    /// itself on the dark palettes, `mut` for the quiet states.
+    static var doneText: Color { palette.statusText.map { Color(hex: $0.done) } ?? done }
+    static var grabText: Color { palette.statusText.map { Color(hex: $0.grab) } ?? grab }
+    static var missText: Color { palette.statusText.map { Color(hex: $0.miss) } ?? miss }
+    static var stuckText: Color { palette.statusText.map { Color(hex: $0.stuck) } ?? stuck }
+    static var dangerText: Color { palette.statusText.map { Color(hex: $0.danger) } ?? danger }
+    static var dimText: Color { palette.statusText.map { Color(hex: $0.dim) } ?? mut }
+
+    /// The text shade of a status token (`dim` for nil).
+    static func text(_ token: MonoToken?) -> Color {
+        switch token {
+        case .done?: return doneText
+        case .grab?: return grabText
+        case .miss?: return missText
+        case .stuck?: return stuckText
+        case .danger?: return dangerText
+        case let other?: return color(other)
+        case nil: return dimText
+        }
+    }
 
     // MARK: Surfaces
 

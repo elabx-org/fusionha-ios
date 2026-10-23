@@ -47,13 +47,22 @@ final class SharedPalettesTests: XCTestCase {
         var defaults: [String: String] = [:]
         for m in matches(#"var (\w+): UInt32 = (0x[0-9A-Fa-f]+)"#, in: swift) { defaults[m[1]] = m[2] }
         for (name, palette) in json {
-            let block = try XCTUnwrap(matches("static let \(name) = PaletteTokens\\((.*?)\\)\\n", in: swift).first?[1],
+            var block = try XCTUnwrap(matches("static let \(name) = PaletteTokens\\((.*?)\\)\\n", in: swift).first?[1],
                                       "\(name) is missing from AppPalette.swift")
+            // 0.4.226: the nested `statusText` block (the `--*-text` shades).
+            let statusText = matches(#"statusText: PaletteStatusText\((.*?)\)"#, in: block).first
+            if let statusText { block = block.replacingOccurrences(of: statusText[0], with: "") }
+            var nested: [String: String] = [:]
+            for m in matches(#"(\w+): (0x[0-9A-Fa-f]+)"#, in: statusText?[1] ?? "") { nested[m[1]] = m[2] }
             var fields: [String: String] = [:]
             for m in matches(#"(\w+): (0x[0-9A-Fa-f]+|true|false|[0-9]+\.[0-9]+)"#, in: block) { fields[m[1]] = m[2] }
             XCTAssertNil(fields["onAccent"], "\(name): onAccent is computed, never stored")
+            if palette["statusText"] == nil { XCTAssertNil(statusText, "\(name): statusText is not in palettes.json") }
             for (key, value) in palette where key != "name" && key != "blurb" {
                 switch value {
+                case let text as [String: String] where key == "statusText":
+                    XCTAssertEqual(Set(nested.keys), Set(text.keys), "\(name).statusText keys")
+                    for (k, v) in text { XCTAssertEqual(nested[k].flatMap(hex), hex(v), "\(name).statusText.\(k)") }
                 case let s as String where s.hasPrefix("#"):
                     let swiftValue = fields[key] ?? defaults[key]
                     XCTAssertEqual(swiftValue.flatMap(hex), hex(s), "\(name).\(key)")

@@ -26,6 +26,7 @@ public enum SourceAdminCopy {
 
     /// "Healthy · 3 sources".
     public static func plexChipLabel(_ row: PlexWatchlistSummaryRow) -> String {
+        if row.state == "paused" && row.pausedByUser == true { return "Paused by user" }
         let base = plexChip(row.state).label
         return row.state == "healthy" && row.sourceCount > 1 ? "\(base) · \(row.sourceCount) sources" : base
     }

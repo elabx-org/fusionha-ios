@@ -9,6 +9,9 @@ struct SpreadRightPage: View {
 
     var body: some View {
         switch model.tab {
+        case .you:
+            // Account (S6, first part): Watchlists & lists or Sign-in methods.
+            AccountRightPage()
         default:
             SelectTitleHint()
         }

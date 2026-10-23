@@ -4,6 +4,8 @@
   "profile_error": "profile_not_found",
   "reason": null,
   "diary": {
+    "source_id": "letterboxd-diary",
+    "unmatched_count": 0,
     "enabled": true,
     "request_rewatches": false,
     "also_uhd": false,
@@ -23,6 +25,7 @@
       "queued": 0,
       "waiting": 0,
       "skipped": 0,
+      "unmatched": 0,
       "baseline": 0
     }
   },
@@ -34,11 +37,14 @@
     "last_checked_at": null,
     "last_error": null,
     "source_id": null,
+    "source_key": null,
+    "unmatched_count": 0,
     "truncated": false,
     "item_count": null,
     "next_check_at": null,
     "sync": null,
-    "counts": null
+    "counts": null,
+    "also_uhd": false
   },
   "can_link_lists": true,
   "max_linked_lists": 5,

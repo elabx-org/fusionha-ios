@@ -12,6 +12,8 @@ import FusionhaKit
 struct SignInMethodsSheet: View {
     var user: UserAccount? = nil
     var onChanged: (() async -> Void)? = nil
+    /// Shown as a page (the Spread's right page), not a sheet: no Done.
+    var embedded = false
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @State private var live: UserAccount?
@@ -38,7 +40,9 @@ struct SignInMethodsSheet: View {
                     .navigationTitle("\(subject.name) — sign-in methods")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
-                        ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
+                        if !embedded {
+                            ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
+                        }
                     }
                     .closeOnlyBars()
                     .sheet(item: $moving) { credential in

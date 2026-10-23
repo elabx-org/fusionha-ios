@@ -63,7 +63,7 @@ final class SyncProgressTests: XCTestCase {
         XCTAssertEqual(SyncProgress.percent(read.sync), 59)
         XCTAssertEqual(SyncProgress.line(read.sync, requested: read.counts?.requested ?? read.requestedTotal).plain,
                        "Checking 24 of 41 · 12 requested so far")
-        XCTAssertEqual(SyncProgress.cells(read.counts).map(\.value), [12, 2, 0, 2, 2])
+        XCTAssertEqual(SyncProgress.cells(read.counts).map(\.value), [12, 2, 0, 2, 1])
         XCTAssertEqual(SyncProgress.cells(read.counts).map(\.label), ["Requested", "In library", "Queued", "Waiting", "Skipped"])
         XCTAssertNil(SyncProgress.queuedHint(read.counts))
         XCTAssertEqual(read.lists.sources.first?.counts?.requested, 3)

@@ -6,6 +6,7 @@
   "sources": [
     {
       "source_id": 2,
+      "stable_id": "letterboxd-watchlist",
       "user_id": 2,
       "owner": "member",
       "kind": "LETTERBOXD_WATCHLIST",
@@ -20,6 +21,7 @@
         "queued": 0,
         "waiting": 0,
         "skipped": 0,
+        "unmatched": 0,
         "baseline": 1
       },
       "last_checked_at": "2026-10-09T20:40:00",
@@ -28,6 +30,7 @@
     },
     {
       "source_id": 7,
+      "stable_id": "letterboxd-diary",
       "user_id": 5,
       "owner": "lost",
       "kind": "LETTERBOXD_RSS",
@@ -42,6 +45,7 @@
         "queued": 0,
         "waiting": 0,
         "skipped": 0,
+        "unmatched": 0,
         "baseline": 0
       },
       "last_checked_at": "2026-10-05T21:20:00",
@@ -50,6 +54,7 @@
     },
     {
       "source_id": 4,
+      "stable_id": "list-4",
       "user_id": 2,
       "owner": "member",
       "kind": "LETTERBOXD_LIST",
@@ -64,6 +69,7 @@
         "queued": 1,
         "waiting": 0,
         "skipped": 0,
+        "unmatched": 0,
         "baseline": 0
       },
       "last_checked_at": "2026-10-09T06:20:00",
@@ -72,6 +78,7 @@
     },
     {
       "source_id": 1,
+      "stable_id": "letterboxd-diary",
       "user_id": 2,
       "owner": "member",
       "kind": "LETTERBOXD_RSS",
@@ -86,6 +93,7 @@
         "queued": 0,
         "waiting": 0,
         "skipped": 0,
+        "unmatched": 0,
         "baseline": 0
       },
       "last_checked_at": "2026-10-09T20:42:00",
@@ -94,6 +102,7 @@
     },
     {
       "source_id": 3,
+      "stable_id": "list-3",
       "user_id": 2,
       "owner": "member",
       "kind": "LETTERBOXD_LIST",
@@ -108,6 +117,7 @@
         "queued": 0,
         "waiting": 0,
         "skipped": 0,
+        "unmatched": 0,
         "baseline": 2
       },
       "last_checked_at": "2026-10-09T19:20:00",
@@ -116,6 +126,7 @@
     },
     {
       "source_id": 5,
+      "stable_id": "list-5",
       "user_id": 2,
       "owner": "member",
       "kind": "LETTERBOXD_WATCHLIST",
@@ -130,6 +141,7 @@
         "queued": 0,
         "waiting": 0,
         "skipped": 0,
+        "unmatched": 0,
         "baseline": 0
       },
       "last_checked_at": "2026-10-09T18:00:00",
@@ -138,6 +150,7 @@
     },
     {
       "source_id": 6,
+      "stable_id": "list-6",
       "user_id": 2,
       "owner": "member",
       "kind": "LETTERBOXD_WATCHLIST",
@@ -152,6 +165,7 @@
         "queued": 0,
         "waiting": 0,
         "skipped": 0,
+        "unmatched": 0,
         "baseline": 0
       },
       "last_checked_at": null,
@@ -163,6 +177,7 @@
     "requested": 3,
     "owned": 0,
     "skipped": 0,
+    "unmatched": 0,
     "errors": 1
   },
   "jobs": [

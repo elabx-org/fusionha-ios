@@ -80,6 +80,8 @@ public struct PlexWatchlistSummaryRow: Decodable, Sendable, Hashable {
     public let sourceCount: Int
     public let requestedCount: Int
     public let lastCheckedAt: String?
+    /// 0.4.226: the `paused` state is the person's own pause, not an admin's.
+    public let pausedByUser: Bool?
 }
 
 // MARK: Letterboxd

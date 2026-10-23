@@ -1,0 +1,15 @@
+{
+  "requested_last7d": 0,
+  "needs_review": 0,
+  "syncing": null,
+  "sources": [
+    {
+      "source_id": "letterboxd-diary",
+      "group": "letterboxd",
+      "state": "not_connected",
+      "needs_review": 0,
+      "paused": false
+    }
+  ],
+  "default_source_id": "letterboxd-diary"
+}

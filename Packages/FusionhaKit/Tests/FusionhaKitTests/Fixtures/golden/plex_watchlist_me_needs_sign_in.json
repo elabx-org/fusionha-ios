@@ -1,4 +1,6 @@
 {
+  "source_id": "plex-watchlist",
+  "unmatched_count": 0,
   "eligible": true,
   "granted": true,
   "reason": "needs_sign_in",
@@ -36,6 +38,7 @@
     "queued": 0,
     "waiting": 0,
     "skipped": 0,
+    "unmatched": 0,
     "baseline": 0
   }
 }

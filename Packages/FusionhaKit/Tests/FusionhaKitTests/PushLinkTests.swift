@@ -19,6 +19,9 @@ final class PushLinkTests: XCTestCase {
         XCTAssertNil(link("/activity?tab=nope"))
         XCTAssertNil(link("/settings/general"))
         XCTAssertNil(PushLink.deepLink(webPath: nil))
+        XCTAssertEqual(link("/account/lists"), "fusionha://account/lists")
+        XCTAssertEqual(link("/account/lists/list-38"), "fusionha://account/lists/list-38")
+        XCTAssertNil(link("/account"))
         XCTAssertEqual(link("/activity?tab=queue&focus=x&block=1"), "fusionha://activity/queue")   // no id, no block
     }
 

@@ -55,8 +55,8 @@ final class AppModel {
     var showingAdd = false
     /// The Account sheet (avatar menu → Account), owned by AccountView.swift.
     var showingAccount = false
-    /// Scroll Account to Automatic requests once it shows (`fusionha://account#watchlist`).
-    var focusAutomaticRequests = false
+    /// Watchlists & lists to open once Account shows (`fusionha://account/lists[/id]`).
+    var pendingLists: ListsLink?
     /// A search result to start the Add sheet with.
     var addPrefill: MediaSearchResult?
     /// Discover's session "Add as" provider for the next Add sheet (nil = none).

@@ -5,40 +5,48 @@ import FusionhaKit
 /// The web's Account panel (`AccountPanel` + `AccountContent`): the
 /// role-tinted avatar, the display name and role badge, then Requests made ·
 /// Sign-in methods · Active sessions · Reset cache & reload · Automatic
-/// requests (the Plex and Letterboxd cards, ruling S1) · Notifications · Sign
-/// out. The Account sheet and the requester's You tab both show it.
+/// requests · Notifications · Sign out. The Account sheet and the requester's
+/// You tab both show it. Automatic requests is one row (fusionha 0.4.226) that
+/// pushes Watchlists & lists.
 struct AccountView: View {
     @Environment(AppModel.self) private var model
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var requestCount: Int?
     @State private var showingMethods = false
     @State private var showingSessions = false
     @State private var resetting = false
     @State private var signingOut = false
     @State private var watchlists = WatchlistsStore()
+    @State private var showingLists = false
+    @State private var listsSource: String?
 
     var body: some View {
-        ScrollViewReader { proxy in
-            List {
-                if let me = model.me {
-                    content(me)
-                } else {
-                    Text("Loading account…")
-                        .foregroundStyle(Theme.mut)
-                        .listRowBackground(Color.clear)
-                }
+        List {
+            if let me = model.me {
+                content(me)
+            } else {
+                Text("Loading account…")
+                    .foregroundStyle(Theme.mut)
+                    .listRowBackground(Color.clear)
             }
-            .listStyle(.insetGrouped)
-            .scrollContentBackground(.hidden)
-            .tint(Theme.i2)
-            .refreshable {
-                await loadRequests()
-                await watchlists.load(model.client)
-            }
-            .onChange(of: focusReady, initial: true) { scrollToWatchlist(proxy) }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .tint(Theme.i2)
+        .refreshable {
+            await loadRequests()
+            await watchlists.load(model.client)
         }
         .task { await loadRequests() }
         .automaticRequestsLoading(watchlists, client: model.client)
+        .navigationDestination(isPresented: $showingLists) {
+            WatchlistsPage(store: watchlists, initialSource: listsSource)
+        }
+        // `fusionha://account/lists[/<source-id>]` and `account#watchlist`.
+        .onChange(of: model.pendingLists, initial: true) {
+            guard let link = model.pendingLists else { return }
+            model.pendingLists = nil
+            openLists(link.sourceId)
+        }
         .sheet(isPresented: $showingMethods) {
             SignInMethodsSheet()
                 .presentationDetents([.large])
@@ -76,7 +84,10 @@ struct AccountView: View {
         }
         .listRowBackground(AccountStyle.cell)
 
-        AutomaticRequestsSection(store: watchlists)
+        if me.hasCapability("request") {
+            AccountSectionHeading(AutomaticRequestsCopy.rowTitle)
+            AutomaticRequestsRow(store: watchlists) { openLists(nil) }
+        }
 
         AccountSectionHeading("Notifications")
         if model.requestScoped {
@@ -125,18 +136,12 @@ struct AccountView: View {
         .buttonStyle(AccountRowButtonStyle())
     }
 
-    // MARK: `#watchlist`
+    // MARK: Watchlists & lists
 
-    /// A deep link asked for Automatic requests and the cards are in.
-    private var focusReady: Bool {
-        model.focusAutomaticRequests && watchlists.loaded
-    }
-
-    private func scrollToWatchlist(_ proxy: ScrollViewProxy) {
-        guard focusReady else { return }
-        model.focusAutomaticRequests = false
-        guard AutomaticRequestsSection.visible(watchlists) else { return }
-        withAnimation(reduceMotion ? nil : .smooth) { proxy.scrollTo(AutomaticRequestsSection.anchor, anchor: .top) }
+    /// Pushes Watchlists & lists, opening `sourceId` when a link named one.
+    private func openLists(_ sourceId: String?) {
+        listsSource = sourceId
+        showingLists = true
     }
 
     // MARK: Actions
@@ -167,6 +172,9 @@ struct AccountView: View {
 /// The Account sheet the avatar's hub opens on the shell (RootView hook).
 struct AccountSheet: View {
     @Environment(\.dismiss) private var dismiss
+    /// The iPhone Duo is open: a page-sized sheet, so Watchlists & lists can
+    /// put its list and detail either side of the fold.
+    var duoOpen = false
 
     var body: some View {
         NavigationStack {
@@ -184,8 +192,19 @@ struct AccountSheet: View {
         // Sheets hide the shell's toasts.
         .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
         // Unfolded: a form sheet, near the web's ~520 panel (DC19). Centred,
-        // not trailing: see the D4 notes in the parity audit.
-        .formSheet()
+        // not trailing: see the D4 notes in the parity audit. Open Duo: page-sized.
+        .accountSheetSizing(duoOpen: duoOpen)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func accountSheetSizing(duoOpen: Bool) -> some View {
+        if duoOpen {
+            presentationSizing(.page)
+        } else {
+            formSheet()
+        }
     }
 }
 

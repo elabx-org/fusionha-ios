@@ -2,13 +2,13 @@ import SwiftUI
 import FusionhaKit
 
 /// "Your Letterboxd" (web `LetterboxdProfile`): the connect field, the
-/// connected row with Change / Disconnect, and the can't-read state. A good
-/// connect opens the diary choice (`diaryChoosing`).
+/// connected row with Change / Disconnect, and the can't-read state.
 struct LetterboxdProfileRows: View {
     @Environment(AppModel.self) private var model
     let store: WatchlistsStore
     let read: LetterboxdRead
-    @Binding var diaryChoosing: Bool
+    /// A good connect: the sheet closes.
+    var onConnected: () -> Void = {}
     @State private var editing = false
     @State private var typing = ""
     @State private var askingDisconnect = false
@@ -127,7 +127,7 @@ struct LetterboxdProfileRows: View {
             }
             editing = false
             model.toast("Profile found. Choose what the diary requests.")
-            if next.diary?.enabled != true { diaryChoosing = true }
+            onConnected()
         }
     }
 

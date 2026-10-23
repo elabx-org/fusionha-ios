@@ -53,9 +53,13 @@ public struct LetterboxdDiary: Decodable, Sendable, Hashable {
     /// 0.4.215: the running pass and the ledger counts (nil from older servers).
     public let sync: SourceSync?
     public let counts: SourceCounts?
+    /// 0.4.226: the stable id (`letterboxd-diary`) and the titles waiting for review.
+    public let sourceId: String?
+    public let unmatchedCount: Int
 
     enum CodingKeys: String, CodingKey {
         case enabled, requestRewatches, alsoUhd, requestedCount, lastCheckedAt, nextCheckAt, baseline, sync, counts
+        case sourceId, unmatchedCount
     }
 
     public init(from decoder: Decoder) throws {
@@ -69,6 +73,8 @@ public struct LetterboxdDiary: Decodable, Sendable, Hashable {
         baseline = c.lenient(.baseline)
         sync = c.lenient(.sync)
         counts = c.lenient(.counts)
+        sourceId = c.lenient(.sourceId)
+        unmatchedCount = c.orDefault(.unmatchedCount, 0)
     }
 }
 
@@ -79,7 +85,14 @@ public struct LetterboxdWatchlistFollow: Decodable, Sendable, Hashable {
     public let requestedCount: Int
     public let lastCheckedAt: String?
     public let lastError: String?
+    /// The integer row id (the phase 10a contract); the stable string is `sourceKey`.
     public let sourceId: Int?
+    /// 0.4.226: `letterboxd-watchlist` once the follow has a row.
+    public let sourceKey: String?
+    /// 0.4.226: the watchlist's own "Also request UHD·4K" (false until set; the
+    /// request-sources row carries the effective value).
+    public let alsoUhd: Bool
+    public let unmatchedCount: Int
     public let truncated: Bool
     public let itemCount: Int?
     public let nextCheckAt: String?
@@ -95,6 +108,9 @@ public struct LetterboxdWatchlistFollow: Decodable, Sendable, Hashable {
         lastCheckedAt = nil
         lastError = nil
         sourceId = nil
+        sourceKey = nil
+        alsoUhd = false
+        unmatchedCount = 0
         truncated = false
         itemCount = nil
         nextCheckAt = nil
@@ -104,7 +120,7 @@ public struct LetterboxdWatchlistFollow: Decodable, Sendable, Hashable {
 
     enum CodingKeys: String, CodingKey {
         case enabled, status, requestedCount, lastCheckedAt, lastError, sourceId, truncated, itemCount
-        case nextCheckAt, sync, counts
+        case nextCheckAt, sync, counts, sourceKey, alsoUhd, unmatchedCount
     }
 
     public init(from decoder: Decoder) throws {
@@ -115,6 +131,9 @@ public struct LetterboxdWatchlistFollow: Decodable, Sendable, Hashable {
         lastCheckedAt = c.lenient(.lastCheckedAt)
         lastError = c.lenient(.lastError)
         sourceId = c.lenient(.sourceId)
+        sourceKey = c.lenient(.sourceKey)
+        alsoUhd = c.orDefault(.alsoUhd, false)
+        unmatchedCount = c.orDefault(.unmatchedCount, 0)
         truncated = c.orDefault(.truncated, false)
         itemCount = c.lenient(.itemCount)
         nextCheckAt = c.lenient(.nextCheckAt)
@@ -147,11 +166,20 @@ public struct LbSource: Decodable, Sendable, Hashable, Identifiable {
     public let truncated: Bool
     public let sync: SourceSync?
     public let counts: SourceCounts?
+    /// 0.4.226: the stable id (`letterboxd-diary`, `letterboxd-watchlist`, `list-<id>`).
+    public let sourceId: String
+    public let unmatchedCount: Int
+    /// `options.also_uhd`: the effective value (a watchlist with no value of
+    /// its own follows the diary).
+    public let alsoUhd: Bool
 
     enum CodingKeys: String, CodingKey {
         case id, kind, label, url, owner, isSelf, enabled, status, lastCheckedAt, nextCheckAt, retryAt
         case lastError, viaFlaresolverr, requestedCount, itemCount, baseline, truncated, sync, counts
+        case sourceId, unmatchedCount, options
     }
+
+    private struct Options: Decodable { let alsoUhd: Bool? }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -174,6 +202,10 @@ public struct LbSource: Decodable, Sendable, Hashable, Identifiable {
         truncated = c.orDefault(.truncated, false)
         sync = c.lenient(.sync)
         counts = c.lenient(.counts)
+        sourceId = c.orDefault(.sourceId, "list-\(id)")
+        unmatchedCount = c.orDefault(.unmatchedCount, 0)
+        let options: Options? = c.lenient(.options)
+        alsoUhd = options?.alsoUhd ?? false
     }
 
     public var isList: Bool { kind == "LETTERBOXD_LIST" }

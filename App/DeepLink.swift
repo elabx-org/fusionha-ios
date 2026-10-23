@@ -4,7 +4,8 @@ import FusionhaKit
 /// `fusionha://` deep links from the widgets, the Live Activity and notifications:
 /// `activity`, `calendar`, `library`, `wanted`, `discover` switch tabs (with an
 /// optional sub-tab: `activity/indexers`, `discover/requests`), and `item/{id}`
-/// opens that title's detail sheet; `account#watchlist` opens Account at Automatic requests.
+/// opens that title's detail sheet; `account/lists` (and `account/lists/<source-id>`,
+/// the older `account#watchlist`) opens Account's Watchlists & lists.
 /// `activity/queue?focus={id}&block=1` (from a held-fake push) also opens
 /// "Block release group?" on that download; `activity/tasks?focus={runId}`
 /// opens that run's decision trail.
@@ -66,9 +67,12 @@ extension AppModel {
             guard let id = itemId(in: url), !requestScoped else { return }
             presentedItem = ItemRef(id: id)
         case "account":
-            // `account#watchlist` (the web's `/account#watchlist`) or `account/watchlist`.
-            if url.fragment == "watchlist" || path.first == "watchlist" {
-                openAutomaticRequests()
+            // `account/lists[/<source-id>]` (the web's `/account/lists`), and the
+            // older `account#watchlist` / `account/watchlist`.
+            if let source = WatchlistsRoute.parse(host: "account", path: path) {
+                openAutomaticRequests(source)
+            } else if url.fragment == "watchlist" || path.first == "watchlist" {
+                openAutomaticRequests(nil)
             } else if requestScoped {
                 tab = .you
             } else {
@@ -97,10 +101,10 @@ extension AppModel {
 }
 
 extension AppModel {
-    /// Account's Automatic requests (ruling S1: inline in Account, no sheet of
-    /// its own): the You tab for a requester, else the Account sheet.
-    func openAutomaticRequests() {
-        focusAutomaticRequests = true
+    /// Watchlists & lists (pushed from Account, fusionha 0.4.226): the You tab
+    /// for a requester, else the Account sheet; `sourceId` opens that source.
+    func openAutomaticRequests(_ sourceId: String?) {
+        pendingLists = ListsLink(sourceId: sourceId)
         if requestScoped {
             tab = .you
         } else {

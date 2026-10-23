@@ -4,6 +4,8 @@
   "profile_error": null,
   "reason": null,
   "diary": {
+    "source_id": "letterboxd-diary",
+    "unmatched_count": 0,
     "enabled": true,
     "request_rewatches": false,
     "also_uhd": false,
@@ -23,6 +25,7 @@
       "queued": 0,
       "waiting": 0,
       "skipped": 0,
+      "unmatched": 0,
       "baseline": 0
     }
   },
@@ -34,6 +37,8 @@
     "last_checked_at": "2026-10-09T20:40:00",
     "last_error": "Only the first 560 films are followed",
     "source_id": 2,
+    "source_key": "letterboxd-watchlist",
+    "unmatched_count": 0,
     "truncated": true,
     "item_count": 605,
     "next_check_at": "2026-10-10T08:20:00",
@@ -49,8 +54,10 @@
       "queued": 0,
       "waiting": 0,
       "skipped": 0,
+      "unmatched": 0,
       "baseline": 1
-    }
+    },
+    "also_uhd": false
   },
   "can_link_lists": true,
   "max_linked_lists": 5,

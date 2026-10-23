@@ -123,6 +123,10 @@ struct PaletteTokens: Sendable {
     var isMono = false
     /// Monochrome's tier chips (`--tier-chip-hd` / `--tier-chip-uhd`): two greys for HD and 4K.
     var tierChipHd: UInt32? = nil, tierChipUhd: UInt32? = nil
+    /// Status words as text on a washed card (`--*-text`, fusionha 0.4.226):
+    /// deeper shades where the hue itself is under 4.5:1 (Daylight). nil = the
+    /// hue itself (`dim` text = `mut`).
+    var statusText: PaletteStatusText? = nil
 
     static let graphite = PaletteTokens(
         isLight: false, bg: 0x0E0F13, panel: 0x16181E, panel2: 0x1D2028, line: 0xFFFFFF, lineOpacity: 0.08,
@@ -158,7 +162,8 @@ struct PaletteTokens: Sendable {
         isLight: true, bg: 0xF5F6F8, panel: 0xFFFFFF, panel2: 0xF0F1F4, line: 0x0F1115, lineOpacity: 0.10,
         txt: 0x14161D, mut: 0x55606F, dim: 0x656D79, i1: 0x4F46E5, i2: 0x4338CA,
         primaryFrom: 0x4F46E5, primaryTo: 0x6366F1, onPrimary: 0xFFFFFF,
-        done: 0x047857, grab: 0x0E7490, miss: 0xB45309, unaired: 0x1D4ED8, unmonitored: 0x6B7280, onair: 0xA16207, premiere: 0x4F46E5, stuck: 0xC2410C, edition: 0x6D28D9, anime: 0xBE185D, danger: 0xB91C1C)
+        done: 0x047857, grab: 0x0E7490, miss: 0xB45309, unaired: 0x1D4ED8, unmonitored: 0x6B7280, onair: 0xA16207, premiere: 0x4F46E5, stuck: 0xC2410C, edition: 0x6D28D9, anime: 0xBE185D, danger: 0xB91C1C,
+        statusText: PaletteStatusText(done: 0x065F46, grab: 0x155E75, miss: 0x92400E, stuck: 0x9A3412, danger: 0x991B1B, dim: 0x4B5563))
 
     static let monochrome = PaletteTokens(
         isLight: false, bg: 0x0A0A0A, panel: 0x141414, panel2: 0x1C1C1C, line: 0xFFFFFF, lineOpacity: 0.10,
@@ -172,6 +177,11 @@ struct PaletteTokens: Sendable {
         txt: 0xFFFFFF, mut: 0xC7C7C7, dim: 0x8A8A8A, i1: 0xFFFFFF, i2: 0xFFFFFF,
         primaryFrom: 0xFFFFFF, primaryTo: 0xFFFFFF, onPrimary: 0x000000,
         done: 0xB5E8CF, grab: 0xB3E7F1, miss: 0xF3D6A6, unaired: 0xB9CDF8, unmonitored: 0x8A8A8A, onair: 0xF5E0B0, premiere: 0xC8CCFC, stuck: 0xF6C8A8, edition: 0xDAD0FE, anime: 0xF6C6DD, danger: 0xF8BDBD)
+}
+
+/// `statusText` in `palettes.json`: the readable text shade of each status.
+struct PaletteStatusText: Sendable {
+    let done: UInt32, grab: UInt32, miss: UInt32, stuck: UInt32, danger: UInt32, dim: UInt32
 }
 
 extension PaletteTokens {

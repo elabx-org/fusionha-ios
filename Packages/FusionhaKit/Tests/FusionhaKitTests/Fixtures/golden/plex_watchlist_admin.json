@@ -1,4 +1,6 @@
 {
+  "source_id": "plex-watchlist",
+  "unmatched_count": 1,
   "eligible": true,
   "granted": true,
   "reason": null,
@@ -29,6 +31,8 @@
     "state": "ok",
     "sources": [
       {
+        "source_id": "list-2",
+        "unmatched_count": 0,
         "list_id": "list-a",
         "name": "Kids movies",
         "visibility": "FRIENDS",
@@ -51,10 +55,13 @@
           "queued": 0,
           "waiting": 0,
           "skipped": 0,
+          "unmatched": 0,
           "baseline": 0
         }
       },
       {
+        "source_id": "list-3",
+        "unmatched_count": 0,
         "list_id": "list-b",
         "name": "Rewatch someday",
         "visibility": "PRIVATE",
@@ -77,10 +84,13 @@
           "queued": 0,
           "waiting": 0,
           "skipped": 0,
+          "unmatched": 0,
           "baseline": 0
         }
       },
       {
+        "source_id": "list-4",
+        "unmatched_count": 0,
         "list_id": "list-c",
         "name": "Sci-fi to try",
         "visibility": "PLEX_USERS",
@@ -103,6 +113,7 @@
           "queued": 0,
           "waiting": 0,
           "skipped": 0,
+          "unmatched": 0,
           "baseline": 0
         }
       }
@@ -119,7 +130,8 @@
     "owned": 2,
     "queued": 0,
     "waiting": 2,
-    "skipped": 2,
+    "skipped": 1,
+    "unmatched": 1,
     "baseline": 23
   },
   "paused": false,
@@ -134,7 +146,8 @@
     "SKIPPED_POLICY": 1,
     "UNMATCHED": 1,
     "WITHDRAWN": 0,
-    "DECLINED": 0
+    "DECLINED": 0,
+    "IGNORED": 0
   },
   "recent": [
     {
