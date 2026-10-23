@@ -71,6 +71,12 @@ struct AccountView: View {
                 DeepLinkProbe.log("account lists hook cancelled=\(Task.isCancelled)")
                 guard !Task.isCancelled else { return }
                 openLists(ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_LISTS_SOURCE"])
+                Task.detached {
+                    for i in 0..<14 {
+                        try? await Task.sleep(for: .seconds(1))
+                        await MainActor.run { DeepLinkProbe.log("tick \(i)") }
+                    }
+                }
             }
             #endif
         }
