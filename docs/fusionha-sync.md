@@ -36,6 +36,17 @@ older server omits them. `ui_theme` is a plain string in the spec (no
 enum of names). `GET /api/v1/auth/providers` is still not in the spec (the
 app tolerates its absence). Re-pin again from the next tag you sync to.
 
+## Unified search (iOS, 2026-10-23; branch `duo-spread-s3-search`)
+
+Built client-side against endpoints already in the pinned spec: `GET /api/v1/search`
+(kind=all), `GET /api/v1/search/tvdb` (409 `tvdb_not_configured` = skip) and
+`GET /api/v1/search/by-id` (new `APIClient.searchById`, asked once per kind: movie +
+series for TMDB / IMDb ids, series for TVDB). Open with fusionha: web parity was
+proposed to the peer, and a server `GET /search/unified` (fan-out, dedupe, caching)
+may follow; when it lands, add one `UnifiedSearchSource` conformer
+(`Packages/FusionhaKit/Sources/FusionhaKit/UnifiedSearchSource.swift`), no UI change.
+The by-id route takes `kind` (default movie), so a `tt…` id costs two calls.
+
 ## Where the cloud session stopped (2026-10-18)
 
 Every fusionha message up to #42 is read and ACKed (by direct message from #32 on). Everything below is

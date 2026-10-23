@@ -9,6 +9,8 @@ struct SpreadRightPage: View {
 
     var body: some View {
         switch model.tab {
+        case .search:
+            SearchRightPageHint()
         default:
             SelectTitleHint()
         }
