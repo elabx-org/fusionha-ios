@@ -39,16 +39,17 @@ struct WatchlistsPage: View {
                 Theme.bg
             }
         }
+        // Measured on the page's full frame, never the split's own size: the
+        // list alone (folded column) and the pair sized differently, so the
+        // panes flipped on and off every layout pass and froze the page.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.bg)
         .onGeometryChange(for: FoldColumns.Panes?.self) { proxy in
             FoldInfo.verticalFold(proxy).flatMap { x in
                 FoldColumns.panes(width: Double(proxy.size.width), fold: Double(x.lowerBound)...Double(x.upperBound),
                                   minLead: 280, minTrail: 320)
             }
-        } action: {
-            DeepLinkProbe.log("lists panes \($0.map { "\($0.lead)" } ?? "nil")")
-            panes = $0
-        }
+        } action: { panes = $0 }
         .navigationTitle(AutomaticRequestsCopy.title)
         // Leading, as Settings' pushed panels: beside its detail it sits on the
         // left page, never on the fold. Constant: switching it with the panes
@@ -65,8 +66,6 @@ struct WatchlistsPage: View {
         .duoPageSheet(isPresented: $importing) {
             LetterboxdImportSheet { Task { await store.load(model.client) } }
         }
-        .onAppear { DeepLinkProbe.log("lists appear panes=\(panes != nil)") }
-        .onDisappear { DeepLinkProbe.log("lists disappear") }
         .task(id: admin) { if admin { await store.loadMatches(model.client) } }
         .onChange(of: store.summary != nil, initial: true) { openLinked() }
         // Unfolded with a source pushed (or a link opened before the fold was
@@ -146,7 +145,6 @@ struct WatchlistsPage: View {
             model.toast(AutomaticRequestsCopy.badSource, variant: .warning)
             return
         }
-        DeepLinkProbe.log("lists linked \(id) panes=\(panes != nil)")
         if panes != nil { splitId = id } else { pushed = id }
     }
 }

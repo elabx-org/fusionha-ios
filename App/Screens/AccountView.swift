@@ -41,9 +41,6 @@ struct AccountView: View {
         .navigationDestination(isPresented: $showingLists) {
             WatchlistsPage(store: watchlists, initialSource: listsSource)
         }
-        .onAppear { DeepLinkProbe.log("account appear") }
-        .onDisappear { DeepLinkProbe.log("account disappear") }
-        .onChange(of: showingLists) { DeepLinkProbe.log("account showingLists \(showingLists)") }
         // `fusionha://account/lists[/<source-id>]` and `account#watchlist`.
         .onChange(of: model.pendingLists, initial: true) {
             guard let link = model.pendingLists else { return }
@@ -68,15 +65,8 @@ struct AccountView: View {
             if ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_ACCOUNT"] == "lists" {
                 while model.me == nil && !Task.isCancelled { try? await Task.sleep(for: .milliseconds(200)) }
                 try? await Task.sleep(for: .seconds(1.5))
-                DeepLinkProbe.log("account lists hook cancelled=\(Task.isCancelled)")
                 guard !Task.isCancelled else { return }
                 openLists(ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_LISTS_SOURCE"])
-                Task.detached {
-                    for i in 0..<14 {
-                        try? await Task.sleep(for: .seconds(1))
-                        await MainActor.run { DeepLinkProbe.log("tick \(i)") }
-                    }
-                }
             }
             #endif
         }
@@ -208,7 +198,6 @@ struct AccountSheet: View {
                     }
                 }
                 .closeOnlyBars()
-                .onAppear { DeepLinkProbe.log("account sheet appear onPages=\(onPages)") }
         }
         // Sheets hide the shell's toasts.
         .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
