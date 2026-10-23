@@ -1,12 +1,30 @@
 import SwiftUI
 
-/// The Spread's right page on Search while no result is open: where the
-/// preview will appear, with the providers the search asks.
+/// The Spread's right page on Search while no result is open: the kind
+/// filter, then where the preview will appear, with the providers asked.
 struct SearchRightPageHint: View {
     @Environment(\.motionEnabled) private var motion
     @State private var shown = false
 
     var body: some View {
+        VStack(spacing: 0) {
+            SearchKindPicker()
+                .padding(.horizontal, Theme.pageGutter)
+                .padding(.top, 12)
+            hint.frame(maxHeight: .infinity)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.bg)
+        // The right page swings open from the fold (Duo motion): a slight
+        // settle from the leading edge, a crossfade under Reduce Motion.
+        .opacity(shown ? 1 : 0)
+        .scaleEffect(shown || !motion ? 1 : 0.97, anchor: .leading)
+        .onAppear {
+            withAnimation(motion ? .spring(duration: 0.35, bounce: 0) : .easeInOut(duration: 0.2)) { shown = true }
+        }
+    }
+
+    private var hint: some View {
         VStack(spacing: 12) {
             HStack(spacing: 6) {
                 TmdbLogo(size: 12, label: "TMDB")
@@ -21,14 +39,5 @@ struct SearchRightPageHint: View {
                 .multilineTextAlignment(.center)
         }
         .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.bg)
-        // The right page swings open from the fold (Duo motion): a slight
-        // settle from the leading edge, a crossfade under Reduce Motion.
-        .opacity(shown ? 1 : 0)
-        .scaleEffect(shown || !motion ? 1 : 0.97, anchor: .leading)
-        .onAppear {
-            withAnimation(motion ? .spring(duration: 0.35, bounce: 0) : .easeInOut(duration: 0.2)) { shown = true }
-        }
     }
 }

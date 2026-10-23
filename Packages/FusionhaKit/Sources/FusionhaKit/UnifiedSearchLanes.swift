@@ -11,6 +11,12 @@ import Foundation
 /// A metadata provider the unified search asks.
 public enum UnifiedSearchProvider: String, Sendable, CaseIterable, Hashable {
     case tmdb, tvdb
+
+    /// The providers asked for a kind filter: TheTVDB is series-only, so
+    /// Movies skips it.
+    public static func asked(for kind: SearchKind) -> Set<UnifiedSearchProvider> {
+        kind == .movie ? [.tmdb] : [.tmdb, .tvdb]
+    }
 }
 
 /// The add lane's source menu (All sources / TMDB / TheTVDB).

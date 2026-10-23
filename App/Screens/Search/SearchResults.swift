@@ -8,23 +8,25 @@ struct SearchResults: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     let term: String
+    let kind: SearchKind
     let search: UnifiedSearchModel
     @Binding var filter: UnifiedSearchSourceFilter
     let actions: SearchAddActions
 
     private var lanes: UnifiedSearchLanes { search.lanes }
     /// The lanes still show the previous term's answer while this one runs.
-    private var stale: Bool { !search.isCurrent(term) }
+    private var stale: Bool { !search.isCurrent(term, kind) }
     private var canAdd: Bool { model.me.map { $0.hasCapability("add") } ?? !model.requestScoped }
 
     var body: some View {
         let owned = ownedRows
         let hits = addHits
+        let exact = lanes.exact.filter(kind.matches)
         VStack(alignment: .leading, spacing: 0) {
-            if !lanes.exact.isEmpty && !stale {
-                SearchLaneLabel(text: "Exact match", count: lanes.exact.count)
+            if !exact.isEmpty && !stale {
+                SearchLaneLabel(text: "Exact match", count: exact.count)
                 SearchLaneCard {
-                    ForEach(Array(lanes.exact.enumerated()), id: \.element.id) { i, result in
+                    ForEach(Array(exact.enumerated()), id: \.element.id) { i, result in
                         SearchAddRow(hit: UnifiedAddHit(tmdb: result), actions: actions).searchStagger(i)
                     }
                 }
@@ -40,7 +42,8 @@ struct SearchResults: View {
     private var ownedRows: (rows: [MediaItem], total: Int) {
         guard !model.requestScoped else { return ([], 0) }
         let ids = stale ? [] : lanes.ownedTmdb.compactMap { model.libraryItemId(for: $0) } + lanes.ownedLibraryIds
-        return OwnedSearch.rows(model.library, term: term, providerOwned: ids)
+        let items = kind.bucket.map { bucket in model.library.filter { $0.kindBucket == bucket } } ?? model.library
+        return OwnedSearch.rows(items, term: term, providerOwned: ids)
     }
 
     @ViewBuilder
@@ -55,7 +58,7 @@ struct SearchResults: View {
             if owned.total > owned.rows.count { moreInLibrary(owned.total - owned.rows.count) }
         } else {
             SearchLaneLabel(text: "In your library", count: nil)
-            note("Nothing in your library for “\(term)”.")
+            note(kind.noun.map { "No \($0) in your library for “\(term)”." } ?? "Nothing in your library for “\(term)”.")
         }
     }
 
@@ -79,7 +82,7 @@ struct SearchResults: View {
     private var addHits: [UnifiedAddHit] {
         var hits = lanes.add
         // A requester can still ask for a title the server has (another version).
-        if model.requestScoped { hits += lanes.ownedTmdb.map { UnifiedAddHit(tmdb: $0) } }
+        if model.requestScoped { hits += lanes.ownedTmdb.filter(kind.matches).map { UnifiedAddHit(tmdb: $0) } }
         if !canAdd { hits.removeAll(where: \.isTvdbOnly) }
         return hits.filter { filter.includes($0.sources) }
     }

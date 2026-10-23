@@ -54,7 +54,7 @@ final class UnifiedSearchSourceTests: XCTestCase {
         ]
         var last = UnifiedSearchLanes()
         var updates = 0
-        for await lanes in ClientUnifiedSearchSource(client: client()).lanes(for: "tt15239678") {
+        for await lanes in ClientUnifiedSearchSource(client: client()).lanes(for: "tt15239678", kind: .all) {
             last = lanes
             updates += 1
         }
@@ -72,8 +72,42 @@ final class UnifiedSearchSourceTests: XCTestCase {
             "/api/v1/search/tvdb": (200, "[]"),
         ]
         var last = UnifiedSearchLanes()
-        for await lanes in ClientUnifiedSearchSource(client: client()).lanes(for: "dune") { last = lanes }
+        for await lanes in ClientUnifiedSearchSource(client: client()).lanes(for: "dune", kind: .all) { last = lanes }
         XCTAssertEqual(last.add.map(\.title), ["Dune: Part Two"])
         XCTAssertFalse(UnifiedSearchStubProtocol.seen.contains { $0.path.hasSuffix("by-id") })
+    }
+
+    func testMoviesSkipTheTvdbAndPassTheKind() async throws {
+        UnifiedSearchStubProtocol.routes = [
+            "/api/v1/search": (200, "[\(dune)]"),
+            "/api/v1/search/tvdb": (200, "[]"),
+        ]
+        var last = UnifiedSearchLanes()
+        for await lanes in ClientUnifiedSearchSource(client: client()).lanes(for: "dune", kind: .movie) { last = lanes }
+        XCTAssertTrue(last.isSettled)
+        XCTAssertEqual(last.answered, [.tmdb])
+        XCTAssertFalse(UnifiedSearchStubProtocol.seen.contains { $0.path == "/api/v1/search/tvdb" })
+        let search = try XCTUnwrap(UnifiedSearchStubProtocol.seen.first { $0.path == "/api/v1/search" })
+        let query = URLComponents(url: search, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        XCTAssertEqual(query.first { $0.name == "kind" }?.value, "movie")
+    }
+
+    func testSeriesStillAskTheTvdb() async {
+        UnifiedSearchStubProtocol.routes = [
+            "/api/v1/search": (200, "[]"),
+            "/api/v1/search/tvdb": (200, "[]"),
+        ]
+        for await _ in ClientUnifiedSearchSource(client: client()).lanes(for: "dune", kind: .series) {}
+        XCTAssertTrue(UnifiedSearchStubProtocol.seen.contains { $0.path == "/api/v1/search/tvdb" })
+    }
+
+    func testKindProviders() {
+        XCTAssertEqual(UnifiedSearchProvider.asked(for: .movie), [.tmdb])
+        XCTAssertEqual(UnifiedSearchProvider.asked(for: .all), [.tmdb, .tvdb])
+        XCTAssertEqual(UnifiedSearchProvider.asked(for: .anime), [.tmdb, .tvdb])
+        let tt = SearchIdQuery.parse("tt1")
+        XCTAssertEqual(ClientUnifiedSearchSource.idKinds(tt, kind: .movie).map { $0.1 }, [.movie])
+        XCTAssertEqual(ClientUnifiedSearchSource.idKinds(tt, kind: .all).map { $0.1 }, [.movie, .series])
+        XCTAssertTrue(ClientUnifiedSearchSource.idKinds(SearchIdQuery.parse("tvdb:5"), kind: .movie).isEmpty)
     }
 }

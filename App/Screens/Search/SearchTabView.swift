@@ -24,9 +24,16 @@ struct SearchTabView: View {
     /// A TheTVDB-only title's Add sheet.
     @State private var tvdbPick: TvdbSearchResult?
     @AppStorage("unifiedSearch.sources") private var sourcesRaw = UnifiedSearchSourceFilter.all.rawValue
+    @AppStorage(SearchKindPicker.storageKey) private var kindRaw = SearchKind.all.rawValue
+    @State private var recent = RecentSearches.load(from: .standard)
     @FocusState private var focused: Bool
 
     private var trimmed: String { model.searchQuery.trimmingCharacters(in: .whitespaces) }
+    private var kind: SearchKind { SearchKind(rawValue: kindRaw) ?? .all }
+    /// In a Spread with nothing open the kind filter sits on the right page.
+    private var pickerOnRightPage: Bool {
+        spread.isActive && model.spreadPreview == nil && model.presentedItem == nil
+    }
 
     private var filter: Binding<UnifiedSearchSourceFilter> {
         Binding { UnifiedSearchSourceFilter(rawValue: sourcesRaw) ?? .all } set: { sourcesRaw = $0.rawValue }
@@ -38,9 +45,13 @@ struct SearchTabView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 if trimmed.isEmpty {
-                    hint
+                    SearchBeforeTyping(kind: kind, search: search, recent: recent.terms,
+                                       run: { model.searchQuery = $0 }, forget: forget)
                 } else {
-                    SearchResults(term: trimmed, search: search, filter: filter, actions: actions)
+                    if !pickerOnRightPage {
+                        SearchKindPicker().padding(.horizontal, Theme.pageGutter).padding(.bottom, 2)
+                    }
+                    SearchResults(term: trimmed, kind: kind, search: search, filter: filter, actions: actions)
                 }
             }
             .padding(.top, 4)
@@ -64,9 +75,17 @@ struct SearchTabView: View {
         .keepsFocusAcrossResize($focused)
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
+        .onSubmit(of: .search) { remember() }
         .onChange(of: scope) { _, picked in
             if picked == .library { handToLibrary() }
         }
+        // Before you type, Trending spans both pages of a Spread.
+        .spreadSpansBothPages(.search, trimmed.isEmpty)
+        // A result picked: the words join the recent searches.
+        .onChange(of: store.preview) { if store.preview != nil { remember() } }
+        .onChange(of: store.requestPick) { if store.requestPick != nil { remember() } }
+        .onChange(of: tvdbPick) { if tvdbPick != nil { remember() } }
+        .onChange(of: model.presentedItem?.id) { if model.presentedItem != nil, model.tab == .search { remember() } }
         .environment(store)
         // A requester's pick: the request modal (web OmniResults → RequestModal).
         .duoPageSheet(item: $store.requestPick, placement: .twoPages) { pick in
@@ -85,8 +104,9 @@ struct SearchTabView: View {
         .task {
             if !model.libraryLoaded && !model.requestScoped { await model.loadLibrary() }
         }
-        .task(id: trimmed) {
-            await search.run(trimmed, source: model.client.map { ClientUnifiedSearchSource(client: $0) }, motion: motion)
+        .task(id: UnifiedSearchModel.key(trimmed, kind)) {
+            await search.run(trimmed, kind: kind, source: model.client.map { ClientUnifiedSearchSource(client: $0) },
+                             motion: motion)
         }
     }
 
@@ -105,16 +125,13 @@ struct SearchTabView: View {
         scope = .everything
     }
 
-    private var hint: some View {
-        Text(model.requestScoped
-             ? "Search for a movie or series to request."
-             : "One search for everything: your library answers instantly, and TMDB and TheTVDB answer as you type. Paste an IMDb or TVDB id, or a link, to jump straight to it.")
-            .font(.system(size: 15))
-            .foregroundStyle(Theme.mut)
-            .padding(.horizontal, Theme.pageGutter)
-            .padding(.top, 8)
-            .frame(maxWidth: .infinity, minHeight: 320, alignment: .topLeading)
-            .contentShape(Rectangle())
-            .onTapGesture { focused = true }
+    private func remember() {
+        recent.record(trimmed)
+        recent.save(to: .standard)
+    }
+
+    private func forget(_ term: String) {
+        recent.remove(term)
+        recent.save(to: .standard)
     }
 }

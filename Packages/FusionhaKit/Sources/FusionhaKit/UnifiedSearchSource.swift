@@ -9,10 +9,12 @@ import Foundation
 /// answered, was skipped or failed) and finishes when every provider settled.
 /// Stopping iteration (the term changed) cancels the in-flight calls.
 public protocol UnifiedSearchSource: Sendable {
-    func lanes(for term: String) -> AsyncStream<UnifiedSearchLanes>
+    /// `kind` is the page's kind filter (All / Movies / Series / Anime).
+    func lanes(for term: String, kind: SearchKind) -> AsyncStream<UnifiedSearchLanes>
 }
 
-/// The client-side fan-out: TMDB (`kind=all`) and TheTVDB run concurrently, and
+/// The client-side fan-out: TMDB (`/search` with the kind) and TheTVDB (not for
+/// Movies) run concurrently, and
 /// an id-shaped term also asks the id lookup. A provider without a key (409)
 /// is skipped silently; each provider's rows land as soon as it answers.
 public struct ClientUnifiedSearchSource: UnifiedSearchSource {
@@ -31,19 +33,20 @@ public struct ClientUnifiedSearchSource: UnifiedSearchSource {
         case none
     }
 
-    public func lanes(for term: String) -> AsyncStream<UnifiedSearchLanes> {
+    public func lanes(for term: String, kind: SearchKind) -> AsyncStream<UnifiedSearchLanes> {
         let client = self.client
-        let idQuery = SearchIdQuery.parse(term)
+        let idKinds = Self.idKinds(SearchIdQuery.parse(term), kind: kind)
+        let asked = UnifiedSearchProvider.asked(for: kind)
         return AsyncStream { continuation in
             let task = Task {
-                var acc = UnifiedSearchAccumulator()
+                var acc = UnifiedSearchAccumulator(pending: asked)
                 await withTaskGroup(of: Arrival.self) { group in
-                    group.addTask { await Self.tmdb(client, term) }
-                    group.addTask { await Self.tvdb(client, term) }
-                    if let idQuery {
-                        for kind in idQuery.kinds {
-                            group.addTask { await Self.byId(client, idQuery.id, kind) }
-                        }
+                    group.addTask { await Self.tmdb(client, term, kind) }
+                    if asked.contains(.tvdb) {
+                        group.addTask { await Self.tvdb(client, term) }
+                    }
+                    for (id, idKind) in idKinds {
+                        group.addTask { await Self.byId(client, id, idKind) }
                     }
                     for await arrival in group {
                         guard !Task.isCancelled else { break }
@@ -64,9 +67,17 @@ public struct ClientUnifiedSearchSource: UnifiedSearchSource {
         }
     }
 
-    private static func tmdb(_ client: APIClient, _ term: String) async -> Arrival {
+    /// The id lookups to make: each kind the id can be, narrowed to the filter.
+    static func idKinds(_ query: SearchIdQuery?, kind: SearchKind) -> [(String, SearchKind)] {
+        guard let query else { return [] }
+        let kinds = kind == .all ? query.kinds
+            : query.kinds.filter { $0 == (kind == .movie ? .movie : .series) }
+        return kinds.map { (query.id, kind == .anime ? .anime : $0) }
+    }
+
+    private static func tmdb(_ client: APIClient, _ term: String, _ kind: SearchKind) async -> Arrival {
         do {
-            return .tmdb(try await client.search(term: term, kind: .all))
+            return .tmdb(try await client.search(term: term, kind: kind))
         } catch {
             return isNotConfigured(error) ? .unavailable(.tmdb) : .failed(.tmdb)
         }
