@@ -22,7 +22,9 @@ struct SearchBeforeTyping: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if spread.spans {
-                FoldSpanRow { chips } trailing: { SearchKindPicker() }
+                // The leading slot always exists (even with no recent searches), so
+                // the kind filter stays on the right page.
+                FoldSpanRow { chips.frame(maxWidth: .infinity, minHeight: 1, alignment: .leading) } trailing: { SearchKindPicker() }
                     .padding(.horizontal, Theme.pageGutter)
             } else {
                 SearchKindPicker().padding(.horizontal, Theme.pageGutter)
