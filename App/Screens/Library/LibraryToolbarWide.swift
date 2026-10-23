@@ -7,7 +7,8 @@ import FusionhaKit
 /// segment and Display options (coverage rails). Everything the phone keeps in
 /// its Filters sheet is inline. When the row doesn't fit, the attention chip,
 /// Group and the sort wrap to a second line. The search stays the header's
-/// filter field (it is the type-to-filter target on both layouts).
+/// filter field (it is the type-to-filter target on both layouts). With the
+/// iPhone Duo's fold through it, the row is two pieces meeting at the gutter.
 struct LibraryToolbarWide: View {
     let derived: LibraryDerived
     @Environment(AppModel.self) private var model
@@ -24,41 +25,81 @@ struct LibraryToolbarWide: View {
 
     var body: some View {
         GlassEffectContainer(spacing: 8) {
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    leading
-                    Spacer(minLength: 8)
+            // The iPhone Duo's fold through the row (Web layout): Select and the
+            // segments before the gutter, the rest after it, wrapping there.
+            FoldSplit(piece: .toolbar) {
+                oneRow
+            } leading: {
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 8) { leading }
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            selectButton
+                            tierPills
+                        }
+                        recencyPills
+                    }
+                }
+            } trailing: {
+                LibraryWrap(spacing: 8) {
                     if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
                     groupToggle
                     sortMenu
                     trailing
                 }
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        leading
-                        Spacer(minLength: 8)
-                        trailing
-                    }
-                    HStack(spacing: 8) {
-                        if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
-                        Spacer(minLength: 0)
-                        groupToggle
-                        sortMenu
-                    }
+            }
+        }
+    }
+
+    /// The web's row; the attention chip, Group and the sort wrap to a second
+    /// line when it doesn't fit.
+    private var oneRow: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                leading
+                Spacer(minLength: 8)
+                if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
+                groupToggle
+                sortMenu
+                trailing
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    leading
+                    Spacer(minLength: 8)
+                    trailing
+                }
+                HStack(spacing: 8) {
+                    if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
+                    Spacer(minLength: 0)
+                    groupToggle
+                    sortMenu
                 }
             }
         }
     }
 
     @ViewBuilder private var leading: some View {
+        selectButton
+        tierPills
+        recencyPills
+    }
+
+    private var selectButton: some View {
         GlassIconButton(systemName: model.selectMode ? "checkmark.circle.fill" : "checkmark.circle",
                         label: model.selectMode ? "Done selecting" : "Select",
                         on: model.selectMode) {
             if model.selectMode { model.exitSelectMode() } else { model.selectMode = true }
         }
+    }
+
+    private var tierPills: some View {
         SegmentedPills(options: [(LibraryTier.all, "All"), (.hd, "HD"), (.uhd, "4K")], selection: $tier)
             .fixedSize()
             .accessibilityLabel("Filter by tier")
+    }
+
+    private var recencyPills: some View {
         SegmentedPills(options: [(LibraryRecency.all, "Any"), (.added, "Added"), (.released, "Released")],
                        selection: $recency)
             .fixedSize()

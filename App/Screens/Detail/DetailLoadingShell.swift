@@ -61,7 +61,7 @@ struct DetailLoadingShell: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            DetailHeroArt(url: TMDBImage.resized(seed?.posterUrl ?? seed?.backdropUrl, to: "original"))
+            DetailHeroArt(url: ItemDetailArt.hero(backdrop: seed?.backdropUrl, poster: seed?.posterUrl))
             VStack(alignment: .leading, spacing: 12) {
                 if let seed {
                     (Text(seed.title).foregroundColor(Theme.txt)

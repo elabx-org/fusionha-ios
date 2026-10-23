@@ -162,7 +162,8 @@ struct LibraryLetterHeader: View {
                 .foregroundStyle(Theme.txt)
                 .frame(width: 30, alignment: .leading)
                 .accessibilityHidden(true)
-            Rectangle().fill(Theme.line).frame(height: 1)
+            // Broken at the iPhone Duo's fold (Web layout), never across it.
+            Rectangle().fill(Theme.line).frame(height: 1).foldGapMask()
             Text("\(count)").font(.system(size: 12, design: .monospaced).monospacedDigit()).foregroundStyle(Theme.dim)
         }
         .padding(.vertical, 8)
@@ -189,6 +190,7 @@ struct StatusSectionHeader: View {
             Text("\(count)").font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.dim)
             LinearGradient(colors: [Theme.line, .clear], startPoint: .leading, endPoint: .trailing)
                 .frame(height: 1)
+                .foldGapMask()
         }
         .padding(.top, 4)
         .padding(.bottom, 22)
@@ -198,27 +200,45 @@ struct StatusSectionHeader: View {
 // MARK: - Skeleton
 
 /// LibraryGridSkeleton: 12 cells, 18 × 6 gaps, shimmering, in the same
-/// columns as the grid it stands in for (`PosterColumns`: three on a phone,
-/// more on a wide display), so the first load does not re-flow.
+/// columns and tracks as the grid it stands in for (`LibraryView.columns` and
+/// its fold tracks), so the first load does not re-flow and, on an open
+/// iPhone Duo, no cell sits on the fold.
 struct LibraryGridSkeleton: View {
+    var columns = 3
+    var tracks: [FoldColumns.Track]?
+
+    private var rows: Int { max(1, (12 + columns - 1) / max(columns, 1)) }
+
     var body: some View {
-        AdaptivePosterGrid(spacing: 18, columnSpacing: 6) {
-            ForEach(0..<12, id: \.self) { _ in
-                VStack(alignment: .leading, spacing: 7) {
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .fill(Theme.txt.opacity(0.06))
-                        .aspectRatio(2 / 3, contentMode: .fit)
-                        .shimmer()
-                        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-                    GeometryReader { geo in
-                        VStack(alignment: .leading, spacing: 6) {
-                            SkeletonBar(height: 13, radius: 6).frame(width: geo.size.width * 0.82)
-                            SkeletonBar(height: 11, radius: 6).frame(width: geo.size.width * 0.52)
-                        }
+        VStack(alignment: .leading, spacing: 18) {
+            ForEach(0..<rows, id: \.self) { _ in
+                if let tracks, tracks.count == columns {
+                    TrackRowLayout(tracks: tracks) {
+                        ForEach(0..<columns, id: \.self) { _ in cell }
                     }
-                    .frame(height: 30)
+                } else {
+                    HStack(alignment: .top, spacing: 6) {
+                        ForEach(0..<max(columns, 1), id: \.self) { _ in cell.frame(maxWidth: .infinity) }
+                    }
                 }
             }
+        }
+    }
+
+    private var cell: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(Theme.txt.opacity(0.06))
+                .aspectRatio(2 / 3, contentMode: .fit)
+                .shimmer()
+                .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+            GeometryReader { geo in
+                VStack(alignment: .leading, spacing: 6) {
+                    SkeletonBar(height: 13, radius: 6).frame(width: geo.size.width * 0.82)
+                    SkeletonBar(height: 11, radius: 6).frame(width: geo.size.width * 0.52)
+                }
+            }
+            .frame(height: 30)
         }
     }
 }
@@ -226,7 +246,8 @@ struct LibraryGridSkeleton: View {
 /// One poster row: `columns` cards, each row only as tall as its own tallest
 /// card (7f2b50c7), padded out with empty cells on the last row.
 struct LibraryGridRow: View {
-    static let spacing: Double = 6
+    /// Layout A: posters sit apart on their glows (the mock's ~12pt gap).
+    static let spacing: Double = 12
     let items: [MediaItem]
     let columns: Int
     /// With a fold through the grid: each poster's track, the fold in a gutter.
@@ -269,8 +290,8 @@ struct LibraryGridFold: Equatable {
     }
 }
 
-/// The Library scroll's measured width and fold (`FoldInfo.crossesMiddle`).
+/// The Library scroll's measured width. The fold is read where it matters,
+/// at its real x (`LibraryGridFold`), never assumed in the middle.
 struct LibraryPane: Equatable {
     var width: CGFloat = 0
-    var foldMiddle = false
 }

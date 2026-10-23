@@ -1,8 +1,12 @@
 import SwiftUI
 import FusionhaKit
 
-/// The hero art repeated behind everything: blurred, saturated and darkened,
-/// under a `--bg` scrim (MobileDetailFlyout `.ambient`). Content, not glass.
+/// The hero art repeated behind everything (MobileDetailFlyout `.ambient`):
+/// blurred and saturated under a `--bg` scrim (`AmbientWash`). Dark palettes
+/// use the web's 78 / 62 / 50 % and temper the art (`brightness(0.8)`); light
+/// palettes keep the body near-white (94 % easing to solid), a faint tint
+/// only, since the web's wash reads as tan fog on a light ground and drowns
+/// secondary text. Content, not glass.
 struct AmbientBackdrop: View {
     let url: String?
 
@@ -10,19 +14,17 @@ struct AmbientBackdrop: View {
         ZStack {
             Theme.bg
             if let url {
-                PosterImage(url: TMDBImage.resized(url, to: "w342"))
+                // SwiftUI-drawn art: the blur and colour effects reach it.
+                SoftArt(url: TMDBImage.resized(url, to: "w780"))
                     .scaleEffect(1.28)
                     .blur(radius: 72)
-                    .saturation(1.4)
-                    .brightness(-0.2)
+                    .saturation(Theme.isMono ? 0 : 1.4)
+                    .brightness(Theme.isLight ? 0 : -0.2)
                     .clipped()
             }
-            // The redesign's ground is a warm black: the art is only a glow under it.
-            LinearGradient(stops: [
-                .init(color: Theme.bg.opacity(0.9), location: 0),
-                .init(color: Theme.bg.opacity(0.84), location: 0.3),
-                .init(color: Theme.bg.opacity(0.8), location: 1),
-            ], startPoint: .top, endPoint: .bottom)
+            LinearGradient(stops: AmbientWash.stops(light: Theme.isLight).map {
+                Gradient.Stop(color: Theme.bg.opacity($0.opacity), location: $0.location)
+            }, startPoint: .top, endPoint: .bottom)
         }
         .ignoresSafeArea()
     }

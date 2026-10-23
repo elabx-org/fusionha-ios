@@ -31,6 +31,16 @@ struct RootView: View {
         return ShellSplit(fold: fold, hasItem: hasItem, spread: spreadContext(fold, hasItem: hasItem))
     }
 
+    /// The tabs' column runs across the Duo's fold (a Spread span, or the Web
+    /// layout with nothing open): the system-hosted downloads bar would sit on
+    /// the fold there, so it waits until a title takes the right page.
+    private var tabsCrossFold: Bool {
+        let split = split
+        let x = fold.vertical ?? fold.flatVertical
+        return SpreadGeometry.tabsCrossFold(tabsWidth: Double(split.shown ? split.primary : fold.size.width),
+                                            fold: x.map { Double($0.lowerBound)...Double($0.upperBound) })
+    }
+
     /// Whether an open title would be a column (not a sheet) in this geometry.
     private func splitsWithTitle(_ fold: FoldInfo) -> Bool {
         ShellSplit(fold: fold, hasItem: true, spread: spreadContext(fold, hasItem: true)).shown
@@ -131,9 +141,11 @@ struct RootView: View {
         // shell's size re-tints them after the bar changes axis.
         .tabBadgeTint(key: "\(model.requestsBadge)-\(model.queueTotal)-\(model.tab)-\(Int(fold.size.width))x\(Int(fold.size.height))-\(split.shown)")
         .tabBarMinimizeBehavior(.onScrollDown)
-        // The downloads bar (iOS-only): while the queue has items, off Activity.
+        // The downloads bar (iOS-only): while the queue has items, off Activity,
+        // and never across the iPhone Duo's fold (the Activity badge still counts).
         .modifier(DownloadsBarSlot(state: downloadsBar,
-                                   shown: !model.requestScoped && model.tab != .activity && downloadsBar.hasContent))
+                                   shown: !model.requestScoped && model.tab != .activity && downloadsBar.hasContent
+                                       && !tabsCrossFold))
         .onChange(of: model.queue, initial: true) { downloadsBar.update(model.queue) }
     }
 }

@@ -15,7 +15,7 @@ struct LearnEditionAliasButton: View {
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Theme.accentText)
                 .buttonStyle(.plain)
-                .sheet(isPresented: $open) {
+                .foldSafeSheet(isPresented: $open) {
                     LearnEditionAliasSheet(release: release, tracked: mismatch.tracked)
                 }
         }

@@ -1,14 +1,14 @@
 import SwiftUI
 import FusionhaKit
 
-/// The Library toolbar on phones (LibraryToolbar.tsx, mobile branch): Select,
-/// the tier segment, the "Needs attention · N" chip, then "Filters" with its
-/// badge and the grid / list segment. The row wraps the attention chip onto a
+/// The Library's second control row on phones (owner-approved layout A): the
+/// All | HD | 4K segment, the "Needs attention · N" chip when there is any,
+/// then "Filters" with its badge and one grid ⇄ list round button. Select
+/// moved to the bar. The row wraps the attention chip onto a
 /// second line when it does not fit, as the web's flex row does. "Filters"
 /// opens its panel as a popover when wide, a sheet on a phone (DC21).
 struct LibraryToolbar<Filters: View>: View {
     let derived: LibraryDerived
-    @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @Binding var tier: LibraryTier
     @Binding var status: LibraryStatus
@@ -42,18 +42,13 @@ struct LibraryToolbar<Filters: View>: View {
     }
 
     @ViewBuilder private var leading: some View {
-        GlassIconButton(systemName: model.selectMode ? "checkmark.circle.fill" : "checkmark.circle",
-                        label: model.selectMode ? "Done selecting" : "Select",
-                        on: model.selectMode) {
-            if model.selectMode { model.exitSelectMode() } else { model.selectMode = true }
-        }
         SegmentedPills(options: [(LibraryTier.all, "All"), (.hd, "HD"), (.uhd, "4K")], selection: $tier)
             .fixedSize()
     }
 
     @ViewBuilder private var trailing: some View {
         filtersChip
-        densitySegment
+        densityButton
     }
 
     // MARK: Filters
@@ -86,15 +81,15 @@ struct LibraryToolbar<Filters: View>: View {
 
     // MARK: Density
 
-    private var densitySegment: some View {
-        SegmentedIcons(options: [("grid", "square.grid.2x2", "Poster grid"), ("compact", "list.bullet", "Compact list")],
-                       selection: densityBinding)
-    }
-
-    private var densityBinding: Binding<String> {
-        Binding(get: { density }, set: { next in
-            withAnimation(motion ? Motion.indicator : nil) { density = next }
-        })
+    /// One round button that shows the other view: the list glyph on the
+    /// grid, the grid glyph on the list.
+    private var densityButton: some View {
+        let grid = density != "compact"
+        return GlassIconButton(systemName: grid ? "list.bullet" : "square.grid.2x2",
+                               label: grid ? "Show as list" : "Show as poster grid") {
+            withAnimation(motion ? Motion.indicator : nil) { density = grid ? "compact" : "grid" }
+        }
+        .sensoryFeedback(.selection, trigger: density)
     }
 }
 

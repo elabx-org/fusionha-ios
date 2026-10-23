@@ -8,6 +8,9 @@ import FusionhaKit
 struct PosterArtBadges: View {
     let badges: PosterBadges
     var showsMonitor = true
+    /// The content-first card shows the 4K flag only: its version chips
+    /// carry attention and the live download (owner's layout A).
+    var showsStatus = true
 
     var body: some View {
         ZStack {
@@ -31,13 +34,19 @@ struct PosterArtBadges: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .accessibilityLabel(badges.monitored ? "Monitored" : "Unmonitored")
             }
-            HStack(spacing: 6) {
-                if let attention = badges.attention { AttentionMark(attention: attention) }
-                if let live = badges.live { liveMark(live) }
+            if showsStatus {
+                statusMarks
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         }
         .padding(8)
+    }
+
+    private var statusMarks: some View {
+        HStack(spacing: 6) {
+            if let attention = badges.attention { AttentionMark(attention: attention) }
+            if let live = badges.live { liveMark(live) }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
     }
 
     private func plate<C: View>(@ViewBuilder _ content: () -> C) -> some View {
