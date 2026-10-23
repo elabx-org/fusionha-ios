@@ -47,8 +47,10 @@ struct WatchlistsPage: View {
             }
         } action: { panes = $0 }
         .navigationTitle(AutomaticRequestsCopy.title)
-        // Beside its detail the title sits on the left page, never on the fold.
-        .toolbarTitleDisplayMode(panes == nil ? .inline : .inlineLarge)
+        // Leading, as Settings' pushed panels: beside its detail it sits on the
+        // left page, never on the fold. Constant: switching it with the panes
+        // (which flip while the push slides the page in) stalled the push.
+        .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar { toolbar }
         .navigationDestination(item: $pushed) { id in
             SourceDetailView(store: store, sourceId: id) { pushed = nil }
