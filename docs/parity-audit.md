@@ -245,6 +245,7 @@ Open with a top-to-bottom fold (inner landscape, flat or Book), the app has two 
 | Tasks System 3-up | `TaskSystemSection.swift` | S5 | ☐ | ☐ | ☐ |
 | Wide queue card text | `QueueStateCard.swift` | S5 | ☐ | ☐ | ☐ |
 | Calendar tablet month | `CalendarMonthMobile.swift` | S5 | ☐ | ☐ | ☐ |
+| Watchlists & lists (0.4.226): list beside detail; You tab's right page | `Watchlists/WatchlistsPage.swift`, `WatchlistsSplit.swift`, `AccountRightPage.swift` | S6 | ✅ list and detail either side of the fold (`FoldColumns.panes`, 280/320 min); the You tab's right page is Watchlists & lists when something needs review, else Sign-in methods | ✅ same split; the Account sheet is page-sized while the Duo is open | ☐ **needs a Duo** (the harness doesn't open Account); the Account page itself is not yet split |
 | Settings split panel | `SettingsView.swift` | S6 | ☐ | ☐ | ☐ |
 | Manual Import table | `ManualImport/MITableRow.swift` | S6 | ☐ | ☐ | ☐ |
 

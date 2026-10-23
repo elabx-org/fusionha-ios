@@ -90,11 +90,17 @@ public struct AutoSummary: Decodable, Sendable, Hashable {
     /// The first source with titles to review, else the first listed.
     public let defaultSourceId: String?
 
-    enum CodingKeys: String, CodingKey { case requestedLast7d, needsReview, syncing, sources, defaultSourceId }
+    enum CodingKeys: String, CodingKey {
+        // `requested_last7d` through `.convertFromSnakeCase`: Foundation
+        // capitalises the letter after a digit, so the key reads `Last7D`.
+        case requestedLast7d = "requestedLast7D"
+        case requestedLast7dPlain = "requestedLast7d"
+        case needsReview, syncing, sources, defaultSourceId
+    }
 
     public init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        requestedLast7d = c.orDefault(.requestedLast7d, 0)
+        requestedLast7d = c.lenient(.requestedLast7d) ?? c.orDefault(.requestedLast7dPlain, 0)
         needsReview = c.orDefault(.needsReview, 0)
         syncing = c.lenient(.syncing)
         sources = c.orDefault(.sources, [AutoSource]())
