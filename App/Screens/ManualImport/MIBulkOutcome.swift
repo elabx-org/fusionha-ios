@@ -15,7 +15,8 @@ struct MIBulkOutcome: View {
             if let applying = session.applying {
                 MIApplyingLine(applying: applying, held: summary.held)
             } else {
-                MIOutcomeLines(summary: summary)
+                // Compact over the list: the Decide menu says why an action is off.
+                MIOutcomeLines(summary: summary, reasonLines: 2)
             }
             if let notice = session.notice {
                 HStack(alignment: .top) {
@@ -42,6 +43,8 @@ struct MIOutcomeLines: View {
     let summary: ManualImportBulkSummary
     /// Keep current's disposition (the panel's radios), else the pre-pick.
     var pick: FinishDisposition?
+    /// The reasons' line cap (the phone card), nil for all of them.
+    var reasonLines: Int?
 
     var body: some View {
         let outcome = summary.outcome(pick ?? summary.preferred)
@@ -52,10 +55,12 @@ struct MIOutcomeLines: View {
                     .foregroundStyle(i == 0 ? Theme.txt : Theme.mut)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            ForEach(summary.reasons.all + [summary.decidedNote].compactMap { $0 }, id: \.self) { line in
-                Text(line)
+            let reasons = summary.reasons.all + [summary.decidedNote].compactMap { $0 }
+            if !reasons.isEmpty {
+                Text(reasons.joined(separator: " "))
                     .font(.footnote)
                     .foregroundStyle(Theme.dim)
+                    .lineLimit(reasonLines)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

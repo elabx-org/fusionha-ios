@@ -39,8 +39,8 @@ struct ManualImportSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) { SheetCancelButton(title: "Close") { dismiss() } }
-                    if layout == .split && session.barShows && session.scan != nil {
-                        // The split's list column keeps Select all (the panel decides).
+                    if layout == .split && session.barShows && session.tickedCount > 0 {
+                        // While deciding the split's column keeps Select all (the footer's is gone).
                         ToolbarItem(placement: .primaryAction) { MISelectUndecidedButton() }
                     }
                     // Two system items, no ⋯ menu (D1): the key stays in the

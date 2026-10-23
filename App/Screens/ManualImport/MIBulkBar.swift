@@ -4,13 +4,13 @@ import FusionhaKit
 /// The bulk bar (owner-approved "bar in every scenario"): while files are
 /// ticked it replaces the import footer, in held, not-held and folder scans
 /// alike. A system bottom bar, so iOS can move it into the closed iPhone
-/// Duo's vertical bar (the Library's select bar does the same): Decide ▾,
-/// "N selected", Select all undecided (⌘A) and the prominent Import N. The
-/// outcome card above it is solid content, never glass.
+/// Duo's vertical bar (the Library's select bar does the same): Decide ▾
+/// (headed "N selected"), Select all undecided (⌘A) and the prominent
+/// Import N ("Import 1 of 4"). A phone bar has no room for a count label as
+/// well. The outcome card above it is solid content, never glass.
 struct MIBulkBar: ViewModifier {
     let active: Bool
     @Environment(ManualImportSession.self) private var session
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var editing = false
 
     func body(content: Content) -> some View {
@@ -23,9 +23,6 @@ struct MIBulkBar: ViewModifier {
                         Menu { MIDecideMenuItems(editing: $editing) } label: { Label("Decide", systemImage: "checklist") }
                             .disabled(busy)
                     }
-                    ToolbarSpacer(.flexible, placement: .bottomBar)
-                    ToolbarItem(placement: .bottomBar) { countLabel(s.n) }
-                        .sharedBackgroundVisibility(.hidden)
                     ToolbarSpacer(.flexible, placement: .bottomBar)
                     ToolbarItem(placement: .bottomBar) {
                         MISelectUndecidedButton()
@@ -41,17 +38,6 @@ struct MIBulkBar: ViewModifier {
             .duoPageSheet(isPresented: $editing) {
                 MIBulkSheet(title: "Edit \(s.open.count) selected", rows: s.open).environment(session)
             }
-    }
-
-    private func countLabel(_ count: Int) -> some View {
-        Text("\(count) selected")
-            .font(.subheadline.weight(.semibold))
-            .monospacedDigit()
-            .foregroundStyle(Theme.txt)
-            .lineLimit(1)
-            .fixedSize()
-            .contentTransition(.numericText(value: Double(count)))
-            .animation(reduceMotion ? nil : .snappy, value: count)
     }
 
     private func importButton(_ s: ManualImportBulkSummary, busy: Bool) -> some View {
@@ -76,7 +62,7 @@ struct MISelectUndecidedButton: View {
         let ids = ManualImportBulk.undecided(session.bulkContext).filter { !$0.committed }.map(\.rowId)
         let n = ids.count
         let all = n > 0 && session.selected.isSuperset(of: ids)
-        Button(showsCount ? "Select all undecided (\(n))" : "Select all undecided", systemImage: "checklist.checked") {
+        Button(showsCount ? "Select all undecided (\(n))" : "Select all undecided", systemImage: "checkmark.rectangle.stack") {
             session.selectAllUndecided()
         }
         .keyboardShortcut("a", modifiers: .command)

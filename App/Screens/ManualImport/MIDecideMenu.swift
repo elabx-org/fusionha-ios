@@ -13,7 +13,7 @@ struct MIDecideMenuItems: View {
     var body: some View {
         @Bindable var session = session
         let s = session.bulk
-        Section {
+        Section("\(s.n) selected") {
             keep(s)
             Button { run(.skip) } label: {
                 Label(s.skipLabel, systemImage: "forward")

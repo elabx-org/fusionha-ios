@@ -162,13 +162,13 @@ done
 shoot duo-harness-open-web-lists open $L $WEB $LISTS $SRC
 # Manual import bulk decide over the held Office S06 pack (download 77), E02,
 # E04, E06 and E07 ticked. Open: the list before the fold, the decision panel
-# after it. Closed: the phone's bulk bar (Decide, Select all, Import) and its outcome.
+# after it. Closed, the sheet is the system's and lands outside the harness
+# frame, so the phone shots (manual-import-bulk-*) stand in for it.
 MI="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=2,4,6,7"
 for theme in dark daylight; do
   T=""; SUF=""
   [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
   shoot duo-harness-open-spread-manual-import$SUF open $MI $SP $T
-  shoot duo-harness-folded-manual-import$SUF folded $MI $SP $T
 done
 shoot duo-harness-open-spread-manual-import-none open SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77 \
   SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0 $SP
