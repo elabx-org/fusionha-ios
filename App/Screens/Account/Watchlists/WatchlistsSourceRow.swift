@@ -10,17 +10,30 @@ struct WatchlistsSourceRow: View {
     var body: some View {
         HStack(spacing: 12) {
             ProviderTile(isPlex: view.isPlex)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(view.name).font(.body.weight(.semibold)).foregroundStyle(Theme.txt).lineLimit(1)
-                subtitle.font(.caption).lineLimit(1)
+            // The state beside the name; in a narrow column, under it.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    names.frame(minWidth: 150, idealWidth: 150, alignment: .leading)
+                    Spacer(minLength: 0)
+                    SourceStateLabel(state: view.state)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    names
+                    SourceStateLabel(state: view.state)
+                }
             }
-            Spacer(minLength: 8)
-            SourceStateLabel(state: view.state)
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private var names: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(view.name).font(.body.weight(.semibold)).foregroundStyle(Theme.txt).lineLimit(1)
+            subtitle.font(.caption).lineLimit(1)
+        }
     }
 
     private var subtitle: Text {

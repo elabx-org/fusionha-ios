@@ -76,14 +76,15 @@ struct WatchlistsSourceList: View {
     }
 
     private func header(_ group: AutoSourceGroup, _ rows: [AutoSourceView]) -> some View {
+        // One line: the group name whole, its meta truncating in a narrow column.
         HStack(spacing: 6) {
-            Text(AutomaticRequestsCopy.groupTitle(group))
+            Text(AutomaticRequestsCopy.groupTitle(group)).lineLimit(1).fixedSize()
             if let meta = AutoSourceViews.groupMeta(group, rows) {
-                Text("· \(meta)").textCase(nil).foregroundStyle(Theme.dim)
+                Text("· \(meta)").textCase(nil).foregroundStyle(Theme.dim).lineLimit(1)
             }
             Spacer(minLength: 8)
             if group == .letterboxd, rows.contains(where: { $0.owner != nil }) {
-                Button("Change", action: onProfile).textCase(nil).font(.footnote)
+                Button("Change", action: onProfile).textCase(nil).font(.footnote).fixedSize()
             }
         }
     }

@@ -62,6 +62,21 @@ struct WatchlistsPage: View {
         }
         .task(id: admin) { if admin { await store.loadMatches(model.client) } }
         .onChange(of: store.summary != nil, initial: true) { openLinked() }
+        // Unfolded with a source pushed (or a link opened before the fold was
+        // measured): it moves beside the list.
+        .onChange(of: panes) {
+            guard panes != nil, let id = pushed else { return }
+            splitId = id
+            pushed = nil
+        }
+        // Account is hidden under this page, so its re-read loop stops: run it here.
+        .task(id: store.anyRunning) {
+            while store.anyRunning {
+                try? await Task.sleep(for: .seconds(SyncProgress.runningPollSeconds))
+                if Task.isCancelled { return }
+                await store.refreshProgress(model.client)
+            }
+        }
     }
 
     @ToolbarContentBuilder

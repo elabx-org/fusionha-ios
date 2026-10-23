@@ -187,7 +187,8 @@ struct AccountSheet: View {
                 .foldLeadingColumn(onPages)
                 .background(Theme.bg.ignoresSafeArea())
                 .navigationTitle("Account")
-                .navigationBarTitleDisplayMode(.inline)
+                // Across both pages the title keeps to the left page, off the fold.
+                .toolbarTitleDisplayMode(onPages ? .inlineLarge : .inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         SheetDoneButton { dismiss() }

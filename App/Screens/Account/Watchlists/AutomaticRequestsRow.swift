@@ -81,7 +81,9 @@ extension View {
     /// every 2 s (web `syncPollMs`); the loop ends once all are idle and
     /// restarts when one runs again.
     func automaticRequestsLoading(_ store: WatchlistsStore, client: APIClient?) -> some View {
-        task { await store.load(client) }
+        // Unstructured: pushing Watchlists & lists hides Account and cancels
+        // its tasks, which must not cut the first load short.
+        task { await Task { await store.load(client) }.value }
             .task(id: store.anyRunning) {
                 while store.anyRunning {
                     try? await Task.sleep(for: .seconds(SyncProgress.runningPollSeconds))

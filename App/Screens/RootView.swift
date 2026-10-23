@@ -111,7 +111,8 @@ struct RootView: View {
                 .presentationBackground(Theme.bg)
         }
         .modifier(ShellPresentations(model: model, reduceMotion: reduceMotion, scenePhase: scenePhase,
-                                     duoOpen: fold.isDuoOpen, accountOnPages: fold.isDuoOpen && duoLayout == .spread))
+                                     duoOpen: fold.isDuoOpen, accountOnPages: fold.isDuoOpen && duoLayout == .spread,
+                                     measured: fold.size != .zero))
     }
 
     /// The tabs: the whole app when folded, the leading column when unfolded.
@@ -161,6 +162,16 @@ private struct ShellPresentations: ViewModifier {
     /// Open in a Spread: Account takes both pages (Watchlists & lists splits
     /// at the fold). The Web layout keeps the usual form sheet (owner default).
     let accountOnPages: Bool
+    /// The shell has been measured: Account waits for it, so a launch or a
+    /// link that opens it at once doesn't show the form sheet, then the pages.
+    let measured: Bool
+
+    /// Account's form sheet (`paged` false) or its pages (`paged` true). A
+    /// presentation the layout no longer picks never writes back.
+    private func account(paged: Bool) -> Binding<Bool> {
+        Binding(get: { measured && accountOnPages == paged && model.showingAccount },
+                set: { if measured && accountOnPages == paged { model.showingAccount = $0 } })
+    }
 
     func body(content: Content) -> some View {
         content
@@ -171,11 +182,11 @@ private struct ShellPresentations: ViewModifier {
                 .presentationCornerRadius(20)
                 .presentationBackground(Theme.panel)
         }
-        .sheet(isPresented: accountOnPages ? .constant(false) : $model.showingAccount,
+        .sheet(isPresented: account(paged: false),
                onDismiss: { model.avatar.openPending(model) }) {
             AccountSheet().presentationBackground(Theme.bg)
         }
-        .duoPageSheet(isPresented: accountOnPages ? $model.showingAccount : .constant(false),
+        .duoPageSheet(isPresented: account(paged: true),
                       placement: .twoPages, onPages: true) {
             AccountSheet(onPages: true)
         }
