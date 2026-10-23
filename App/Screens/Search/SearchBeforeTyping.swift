@@ -24,7 +24,14 @@ struct SearchBeforeTyping: View {
             if spread.spans {
                 // The leading slot always exists (even with no recent searches), so
                 // the kind filter stays on the right page.
-                FoldSpanRow { chips.frame(maxWidth: .infinity, minHeight: 1, alignment: .leading) } trailing: { SearchKindPicker() }
+                FoldSpanRow {
+                    ZStack(alignment: .leading) {
+                        Color.clear.frame(height: 1)
+                        chips
+                    }
+                } trailing: {
+                    SearchKindPicker()
+                }
                     .padding(.horizontal, Theme.pageGutter)
             } else {
                 SearchKindPicker().padding(.horizontal, Theme.pageGutter)
