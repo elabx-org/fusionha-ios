@@ -68,6 +68,8 @@ public struct UnifiedSearchLanes: Equatable, Sendable {
     public var ownedTmdb: [MediaSearchResult] = []
     /// TheTVDB hits you own, as library item ids.
     public var ownedLibraryIds: [Int] = []
+    /// Providers asked for this term (Movies skips TheTVDB).
+    public var asked: Set<UnifiedSearchProvider> = []
     /// Providers still answering.
     public var pending: Set<UnifiedSearchProvider> = []
     /// Providers with no API key (409 `*_not_configured`): silently skipped.
@@ -80,7 +82,9 @@ public struct UnifiedSearchLanes: Equatable, Sendable {
     public var isSettled: Bool { pending.isEmpty }
     /// The providers that answered (for the lane label's marks).
     public var answered: [UnifiedSearchProvider] {
-        UnifiedSearchProvider.allCases.filter { !pending.contains($0) && !unconfigured.contains($0) && !failed.contains($0) }
+        UnifiedSearchProvider.allCases.filter {
+            asked.contains($0) && !pending.contains($0) && !unconfigured.contains($0) && !failed.contains($0)
+        }
     }
 }
 
@@ -91,11 +95,13 @@ public struct UnifiedSearchAccumulator: Sendable {
     public private(set) var tvdb: [TvdbSearchResult] = []
     public private(set) var exact: [MediaSearchResult] = []
     public var pending: Set<UnifiedSearchProvider>
+    public let asked: Set<UnifiedSearchProvider>
     public var unconfigured: Set<UnifiedSearchProvider> = []
     public var failed: Set<UnifiedSearchProvider> = []
 
     public init(pending: Set<UnifiedSearchProvider> = Set(UnifiedSearchProvider.allCases)) {
         self.pending = pending
+        self.asked = pending
     }
 
     public mutating func receive(tmdb rows: [MediaSearchResult]) {
@@ -124,6 +130,7 @@ public struct UnifiedSearchAccumulator: Sendable {
 
     public var lanes: UnifiedSearchLanes {
         var lanes = UnifiedSearchLanes()
+        lanes.asked = asked
         lanes.pending = pending
         lanes.unconfigured = unconfigured
         lanes.failed = failed
