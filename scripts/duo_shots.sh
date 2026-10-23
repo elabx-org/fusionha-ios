@@ -16,6 +16,9 @@ mkdir -p "$OUT"
 S=http://127.0.0.1:8765
 HERE=$(cd "$(dirname "$0")" && pwd)
 LOG="$OUT/duo-poses.log"
+# Optional: only the shots whose name matches this regex (a quick check).
+ONLY=${DUO_ONLY:-}
+want() { [ -z "$ONLY" ] || echo "$1" | grep -qE "$ONLY"; }
 # Optional: a command run after each pose to publish what we have so far.
 PUBLISH=${DUO_PUBLISH:-true}
 
@@ -49,12 +52,12 @@ launch() {
 screens() {  # screens <pose> <display> [env…]
   local P=$1 D=$2; shift 2
   local B="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S"
-  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library "$@";  snap "duo-$P-library" "$D"
-  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8 "$@"; snap "duo-$P-detail" "$D"
-  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity "$@"; snap "duo-$P-activity" "$D"
-  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover "$@"; snap "duo-$P-discover" "$D"
-  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=list "$@"; snap "duo-$P-settings" "$D"
-  launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=week "$@"; snap "duo-$P-calendar-week" "$D"
+  want "duo-$P-library" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library "$@"; snap "duo-$P-library" "$D"; }
+  want "duo-$P-detail" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8 "$@"; snap "duo-$P-detail" "$D"; }
+  want "duo-$P-activity" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity "$@"; snap "duo-$P-activity" "$D"; }
+  want "duo-$P-discover" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover "$@"; snap "duo-$P-discover" "$D"; }
+  want "duo-$P-settings" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=list "$@"; snap "duo-$P-settings" "$D"; }
+  want "duo-$P-calendar-week" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=week "$@"; snap "duo-$P-calendar-week" "$D"; }
 }
 
 # Rotation: the Device Hub's Rotate Right button, else ask the app to rotate
