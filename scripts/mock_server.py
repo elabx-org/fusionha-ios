@@ -314,21 +314,13 @@ def threads_rows(query):
     return {"items": rows, "next_cursor": None}
 
 
-def discover():
-    return [{
-        "tmdb_id": item["tmdb_id"] or item["id"],
-        "title": item["title"],
-        "year": item["year"],
-        "kind": item["kind"],
-        "is_anime": item["is_anime"],
-        "overview": None,
-        "in_library": True,
-        "library_item_id": item["id"],
-        "poster_url": item["poster_url"],
-        "backdrop_url": item["backdrop_url"],
-        "date": None,
-        "vote_average": 8.1,
-    } for item in load("library.json")]
+def discover(query=None):
+    """`/api/v1/search`: the library titles matching the term (all of them when
+    none match), with the Discover fixtures' not-owned titles as add rows."""
+    term = ((query or {}).get("term", [""])[0] or "").lower()
+    items = load("library.json")
+    hits = [i for i in items if term and term in i["title"].lower()] or items
+    return [{**row(item), "date": None} for item in hits]
 
 
 # These settings fixtures were captured at CAPTURED; their timestamps are shifted
@@ -468,7 +460,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/v1/discover/watch-providers": lambda: [{"id": 8, "name": "Netflix", "logo_url": None},
                                                          {"id": 337, "name": "Disney Plus", "logo_url": None}],
             "/api/v1/collections": collections,
-            "/api/v1/search": discover,
+            "/api/v1/search": lambda: discover(query),
             "/api/v1/requests": lambda: requests_rows(query),
             "/api/v1/requests/offerable": lambda: {"editions": ["HD-1080p", "UHD-2160p"], "mode": "choose", "auto_editions": []},
             "/api/v1/issues": lambda: issues_rows(query),

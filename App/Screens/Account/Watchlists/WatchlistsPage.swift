@@ -54,9 +54,10 @@ struct WatchlistsPage: View {
             SourceDetailView(store: store, sourceId: id) { pushed = nil }
         }
         .navigationDestination(isPresented: $remembered) { RememberedMatchesView(store: store) }
-        .sheet(isPresented: $following) { FollowSheet(store: store) }
-        .sheet(isPresented: $profile) { LetterboxdProfileSheet(store: store) }
-        .sheet(isPresented: $importing) {
+        // On the open Duo these take the right page, never the fold (S3).
+        .duoPageSheet(isPresented: $following) { FollowSheet(store: store) }
+        .duoPageSheet(isPresented: $profile) { LetterboxdProfileSheet(store: store) }
+        .duoPageSheet(isPresented: $importing) {
             LetterboxdImportSheet { Task { await store.load(model.client) } }
         }
         .task(id: admin) { if admin { await store.loadMatches(model.client) } }

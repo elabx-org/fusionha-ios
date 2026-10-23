@@ -27,7 +27,7 @@ struct RootView: View {
     /// With room for two columns the open title is the trailing column, not a
     /// sheet; in a Spread the right page.
     private var split: ShellSplit {
-        let hasItem = model.presentedItem != nil
+        let hasItem = model.rightPageHasItem
         return ShellSplit(fold: fold, hasItem: hasItem, spread: spreadContext(fold, hasItem: hasItem))
     }
 
@@ -58,7 +58,7 @@ struct RootView: View {
 
     var body: some View {
         let split = split
-        let spread = spreadContext(fold, hasItem: model.presentedItem != nil)
+        let spread = spreadContext(fold, hasItem: model.rightPageHasItem)
         FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap) {
             tabs
             if split.shown {
@@ -80,6 +80,9 @@ struct RootView: View {
         // Spread <-> Web layout keeps the tab, its scroll and the open title (DC3):
         // the same split container, the title's store in the model.
         .onChange(of: duoLayout) { model.updateDetailHost(splitsWithTitle: splitsWithTitle(fold)) }
+        // A preview on the right page goes back to its tab's sheet when the
+        // Spread ends (`SpreadPreviewHost`); one left on another tab closes.
+        .onChange(of: spread.isActive) { _, active in if !active { model.settleSpreadPreview() } }
         .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: split)
         // Toasts: above the tab bar when folded; on the trailing column when
         // split, so they never straddle the fold (DC14); on the right page
@@ -108,7 +111,7 @@ struct RootView: View {
                 .presentationBackground(Theme.bg)
         }
         .modifier(ShellPresentations(model: model, reduceMotion: reduceMotion, scenePhase: scenePhase,
-                                     duoOpen: fold.isDuoOpen))
+                                     duoOpen: fold.isDuoOpen, accountOnPages: fold.isDuoOpen && duoLayout == .spread))
     }
 
     /// The tabs: the whole app when folded, the leading column when unfolded.
@@ -153,19 +156,36 @@ private struct ShellPresentations: ViewModifier {
     @Bindable var model: AppModel
     let reduceMotion: Bool
     let scenePhase: ScenePhase
-    /// The iPhone Duo is open: the Account sheet is page-sized (Watchlists & lists' split).
+    /// The iPhone Duo is open: the Add sheet goes on the right page.
     let duoOpen: Bool
+    /// Open in a Spread: Account takes both pages (Watchlists & lists splits
+    /// at the fold). The Web layout keeps the usual form sheet (owner default).
+    let accountOnPages: Bool
 
     func body(content: Content) -> some View {
         content
-        .sheet(isPresented: $model.showingAdd) {
+        // On the open Duo, the right page (S3): never a form sheet on the fold.
+        .duoPageSheet(isPresented: $model.showingAdd, onPages: duoOpen) {
             AddTitleSheet()
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(20)
                 .presentationBackground(Theme.panel)
         }
-        .sheet(isPresented: $model.showingAccount, onDismiss: { model.avatar.openPending(model) }) {
-            AccountSheet(duoOpen: duoOpen).presentationBackground(Theme.bg)
+        .sheet(isPresented: accountOnPages ? .constant(false) : $model.showingAccount,
+               onDismiss: { model.avatar.openPending(model) }) {
+            AccountSheet().presentationBackground(Theme.bg)
+        }
+        .duoPageSheet(isPresented: accountOnPages ? $model.showingAccount : .constant(false),
+                      placement: .twoPages, onPages: true) {
+            AccountSheet(onPages: true)
+        }
+        .onChange(of: model.showingAccount) {
+            // The page cover has no onDismiss: open what the hub queued once it is gone.
+            guard accountOnPages, !model.showingAccount else { return }
+            Task {
+                try? await Task.sleep(for: .milliseconds(500))
+                model.avatar.openPending(model)
+            }
         }
         .modifier(AvatarPresentations(avatar: model.avatar, model: model))
         .modifier(SecretsLockedToaster(model: model))

@@ -102,8 +102,12 @@ struct PosterCard: View {
     }
 
     private var art: some View {
-        PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w500"))
+        // A 2:3 box the art fills: art that isn't 2:3 (Attack on Titan's)
+        // reports its aspect-filled size, which made the card wider than its
+        // column and pushed it over its neighbour (or the fold's gutter).
+        Color.clear
             .aspectRatio(2 / 3, contentMode: .fit)
+            .overlay { PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w500")) }
             .saturation(monitored ? 1 : 0.75)
             .colorMultiply(monitored ? .white : Color(white: 0.82))
             .opacity(monitored ? 1 : 0.82)

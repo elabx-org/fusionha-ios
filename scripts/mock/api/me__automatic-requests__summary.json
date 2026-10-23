@@ -1,0 +1,50 @@
+{
+  "requested_last7d": 9,
+  "needs_review": 1,
+  "syncing": null,
+  "sources": [
+    {
+      "source_id": "letterboxd-diary",
+      "group": "letterboxd",
+      "state": "healthy",
+      "needs_review": 0,
+      "paused": false
+    },
+    {
+      "source_id": "letterboxd-watchlist",
+      "group": "letterboxd",
+      "state": "partly_working",
+      "needs_review": 1,
+      "paused": false
+    },
+    {
+      "source_id": "plex-watchlist",
+      "group": "plex",
+      "state": "healthy",
+      "needs_review": 0,
+      "paused": false
+    },
+    {
+      "source_id": "list-2",
+      "group": "plex",
+      "state": "healthy",
+      "needs_review": 0,
+      "paused": false
+    },
+    {
+      "source_id": "list-3",
+      "group": "lists",
+      "state": "healthy",
+      "needs_review": 0,
+      "paused": false
+    },
+    {
+      "source_id": "list-5",
+      "group": "lists",
+      "state": "paused",
+      "needs_review": 0,
+      "paused": true
+    }
+  ],
+  "default_source_id": "letterboxd-watchlist"
+}

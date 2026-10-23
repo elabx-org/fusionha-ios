@@ -20,7 +20,9 @@ struct WatchlistsSplit<Leading: View, Detail: View>: View {
                         .transition(reduceMotion ? .opacity : .move(edge: .trailing).combined(with: .opacity))
                 }
             } else {
-                list
+                // A fold through a page too narrow for both panes: the list
+                // keeps before its gutter.
+                list.foldLeadingColumn()
             }
         }
         .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: panes)

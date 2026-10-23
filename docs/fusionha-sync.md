@@ -78,10 +78,23 @@ Synced at `v0.4.226` (`57c6e464`) from `frontend/src/components/account/lists/`,
   paused this source, so only an admin can resume it."). Admins get "Remembered
   matches · N" with Forget, and Users' Plex chip reads "Paused by user".
 - **Duo:** the page splits list | detail at the fold when one runs through it (the
-  Account sheet is page-sized while the Duo is open); the You tab's Spread right page
+  Account takes both pages through `duoPageSheet` in a Spread, the list keeping
+  before the fold with `foldLeadingColumn`; the Web layout keeps the form sheet, the
+  owner's default while that decision is open); its sheets use `duoPageSheet`; the You tab's Spread right page
   is Watchlists & lists when something needs review, else Sign-in methods.
 - **Open:** slice 2 (MDBList, Trakt, other people's Plex lists, admin import lists);
   manual import decide (`POST /manualimport/decide`) waits for its own port.
+
+## Unified search (iOS, 2026-10-23; branch `duo-spread-s3-search`)
+
+Built client-side against endpoints already in the pinned spec: `GET /api/v1/search`
+(kind=all), `GET /api/v1/search/tvdb` (409 `tvdb_not_configured` = skip) and
+`GET /api/v1/search/by-id` (new `APIClient.searchById`, asked once per kind: movie +
+series for TMDB / IMDb ids, series for TVDB). Open with fusionha: web parity was
+proposed to the peer, and a server `GET /search/unified` (fan-out, dedupe, caching)
+may follow; when it lands, add one `UnifiedSearchSource` conformer
+(`Packages/FusionhaKit/Sources/FusionhaKit/UnifiedSearchSource.swift`), no UI change.
+The by-id route takes `kind` (default movie), so a `tt…` id costs two calls.
 
 ## Where the cloud session stopped (2026-10-18)
 

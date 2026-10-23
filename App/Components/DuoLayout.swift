@@ -143,6 +143,10 @@ struct ShellDetailColumn: View {
                         .environment(\.detailInColumn, true)
                 }
                 .id(ref.id)
+            } else if let route = model.spreadPreview, spread.isActive {
+                // A Discover or Search preview (S3): its add and request open on this page.
+                SpreadPreviewColumn(route: route)
+                    .id(route.id)
             } else if spread.isActive {
                 // The right page's default for the tab (S2–S6 fill it in).
                 SpreadRightPage()
@@ -162,43 +166,4 @@ extension EnvironmentValues {
     /// True while the Duo is half open with the fold top to bottom (Book pose):
     /// layouts that read across the whole width switch to one column (Q-DC5).
     @Entry var bookPose = false
-}
-
-/// Library / Discover poster columns for a content width: three on every
-/// phone (unchanged), two in a narrow column, more as the width grows (the
-/// web's `repeat(auto-fill, minmax(…))`).
-enum PosterColumns {
-    /// `evenForFold`: a fold crosses the grid's middle (`FoldInfo.crossesMiddle`),
-    /// so an odd count drops by one and the fold lands in the centre gutter.
-    static func count(for width: CGFloat, evenForFold: Bool = false) -> Int {
-        let count = baseCount(for: width)
-        return evenForFold && count % 2 == 1 ? max(2, count - 1) : count
-    }
-
-    private static func baseCount(for width: CGFloat) -> Int {
-        guard width > 0 else { return 3 }
-        if width < 300 { return 2 }
-        if width < 520 { return 3 }
-        return max(4, Int((width + 10) / 150))
-    }
-}
-
-/// A poster grid whose column count follows its own width (`PosterColumns`):
-/// three tracks on phones, more when unfolded, an even count when the fold
-/// crosses it. 22 × 10 gaps like the Library.
-struct AdaptivePosterGrid<Content: View>: View {
-    var spacing: CGFloat = 22
-    var columnSpacing: CGFloat = 10
-    @ViewBuilder var content: Content
-    @State private var columns = 3
-
-    var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: columnSpacing, alignment: .top), count: columns),
-                  alignment: .leading, spacing: spacing) {
-            content
-        }
-        .onGeometryChange(for: Int.self) { proxy in
-            PosterColumns.count(for: proxy.size.width, evenForFold: FoldInfo.crossesMiddle(proxy))
-        } action: { columns = $0 }
-    }
 }

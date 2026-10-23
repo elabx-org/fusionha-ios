@@ -33,7 +33,7 @@ struct LibraryHeader: View {
                 // The iPhone Duo's fold through the header (Web layout): the field
                 // ends at the gutter instead of running across it.
                 LibraryFilterField(shown: $searching)
-                    .foldLeadingPane()
+                    .foldLeadingColumn()
                     .transition(motion ? .opacity.combined(with: .offset(y: -8)) : .opacity)
             }
         }

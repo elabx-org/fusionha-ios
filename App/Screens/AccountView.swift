@@ -60,6 +60,11 @@ struct AccountView: View {
                 try? await Task.sleep(for: .seconds(1.5))
                 showingMethods = true
             }
+            // Watchlists & lists, and a source on it (`FUSIONHA_SCREENSHOT_LISTS_SOURCE`).
+            if ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_ACCOUNT"] == "lists" {
+                try? await Task.sleep(for: .seconds(1))
+                openLists(ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_LISTS_SOURCE"])
+            }
             #endif
         }
     }
@@ -172,13 +177,14 @@ struct AccountView: View {
 /// The Account sheet the avatar's hub opens on the shell (RootView hook).
 struct AccountSheet: View {
     @Environment(\.dismiss) private var dismiss
-    /// The iPhone Duo is open: a page-sized sheet, so Watchlists & lists can
-    /// put its list and detail either side of the fold.
-    var duoOpen = false
+    /// On both pages of the open Duo (a Spread): Account keeps to the left
+    /// page; Watchlists & lists, pushed, splits itself at the fold.
+    var onPages = false
 
     var body: some View {
         NavigationStack {
             AccountView()
+                .foldLeadingColumn(onPages)
                 .background(Theme.bg.ignoresSafeArea())
                 .navigationTitle("Account")
                 .navigationBarTitleDisplayMode(.inline)
@@ -192,19 +198,8 @@ struct AccountSheet: View {
         // Sheets hide the shell's toasts.
         .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
         // Unfolded: a form sheet, near the web's ~520 panel (DC19). Centred,
-        // not trailing: see the D4 notes in the parity audit. Open Duo: page-sized.
-        .accountSheetSizing(duoOpen: duoOpen)
-    }
-}
-
-private extension View {
-    @ViewBuilder
-    func accountSheetSizing(duoOpen: Bool) -> some View {
-        if duoOpen {
-            presentationSizing(.page)
-        } else {
-            formSheet()
-        }
+        // not trailing: see the D4 notes in the parity audit.
+        .formSheet(!onPages)
     }
 }
 

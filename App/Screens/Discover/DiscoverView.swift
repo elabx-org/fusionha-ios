@@ -11,6 +11,8 @@ enum DiscoverTab: String, Hashable {
 /// Requesters reach the same page from "My requests" with the Requests tab on.
 struct DiscoverView: View {
     @Environment(AppModel.self) private var model
+    /// iPhone Duo Spread (S3): with nothing picked, Browse spans both pages.
+    @Environment(\.spread) private var spread
     @State private var store = DiscoverStore()
     @State private var kind: SearchKind = .movie
     @State private var tab: DiscoverTab
@@ -32,6 +34,8 @@ struct DiscoverView: View {
     private var requestorSearching: Bool {
         !canAdd && canRequest && !query.trimmingCharacters(in: .whitespaces).isEmpty
     }
+    /// Browse spanning a Spread: the controls on the left page, the tabs on the right.
+    private var spansBrowse: Bool { spread.spans && tab == .browse }
 
     var body: some View {
         @Bindable var store = store
@@ -39,7 +43,11 @@ struct DiscoverView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        tabs
+                        if spansBrowse {
+                            FoldSpanRow { browseControls } trailing: { tabs }
+                        } else {
+                            tabs
+                        }
                         content
                     }
                     // Plex-app rhythm on phones: 16pt side margins, like Library.
@@ -69,19 +77,19 @@ struct DiscoverView: View {
         // Rails, Browse's controls and the filter fields follow the page's own width.
         .publishesPaneSize()
         .shellPage(title)
+        .spreadSpansBothPages(.discover, tab == .browse && !store.tmdbMissing)
         .toolbar { AddTitleToolbarItem(model: model) }
         .environment(store)
         .discoverToastOverlay()
-        .sheet(item: $store.preview) { route in
-            PreviewSheet(route: route, onOpenLibrary: { id in handOff { model.open(id) } })
-        }
-        .sheet(item: $store.requestPick) { pick in
+        // A preview opens on the Spread's right page (S3), else as a sheet.
+        .spreadPreviewHost(.discover, preview: $store.preview, onOpenLibrary: { id in handOff { model.open(id) } })
+        .duoPageSheet(item: $store.requestPick, placement: .twoPages) { pick in
             NavigationStack { RequestModal(pick: pick) { store.requestsVersion += 1 } }
         }
-        .sheet(item: $store.trailer) { trailer in
+        .duoPageSheet(item: $store.trailer) { trailer in
             TrailerSheet(title: trailer.title, key: trailer.trailerKey)
         }
-        .sheet(item: $store.collection) { collection in
+        .duoPageSheet(item: $store.collection) { collection in
             AddCollectionSheet(summary: collection) { store.collectionsVersion += 1 }
         }
         .task(id: "\(me?.id ?? -1)|\(store.requestsVersion)") {
@@ -147,9 +155,10 @@ struct DiscoverView: View {
         case .requests, .issues:
             RequestsPanel(approver: canApprove, issues: canManageIssues)
         case .browse:
-            DiscoverBrowseControls(kind: $kind, query: $query, canAdd: canAdd, canRequest: canRequest)
+            if !spansBrowse { browseControls }
             if store.tmdbMissing {
                 MetadataKeyNotice(provider: "tmdb", feature: "Discover")
+                    .foldLeadingColumn()
             } else if requestorSearching {
                 RequestorSearchResults(term: query.trimmingCharacters(in: .whitespaces), kind: kind,
                                        canAdd: canAdd, canRequest: canRequest)
@@ -157,6 +166,10 @@ struct DiscoverView: View {
                 rails
             }
         }
+    }
+
+    private var browseControls: some View {
+        DiscoverBrowseControls(kind: $kind, query: $query, canAdd: canAdd, canRequest: canRequest)
     }
 
     @ViewBuilder

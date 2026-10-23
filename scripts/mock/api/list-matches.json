@@ -1,0 +1,13 @@
+[
+  {
+    "provider": "LETTERBOXD",
+    "external_key": "primal-2019-1",
+    "entry_url": "https://letterboxd.com/film/primal-2019-1/",
+    "tmdb_id": 500916,
+    "kind": "movie",
+    "title": "Primal",
+    "year": 2019,
+    "resolved_by": "example_member",
+    "resolved_at": "2026-10-17T12:00:00"
+  }
+]

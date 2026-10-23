@@ -28,10 +28,19 @@ struct SourceDetailView: View {
         .background(Theme.bg)
         .tint(Theme.i2)
         .modifier(SourceDetailBar(store: store, view: view, shown: !inSplit))
-        .sheet(isPresented: $reviewing) {
+        .task {
+            #if DEBUG
+            // CI screenshots: Pick the right title over the source.
+            if ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_PICK"] != nil {
+                try? await Task.sleep(for: .seconds(2))
+                reviewing = true
+            }
+            #endif
+        }
+        .duoPageSheet(isPresented: $reviewing) {
             if let view { PickTitleSheet(store: store, view: view) }
         }
-        .sheet(item: Binding(get: { reconnect.authURL }, set: { reconnect.authURL = $0 })) { url in
+        .duoPageSheet(item: Binding(get: { reconnect.authURL }, set: { reconnect.authURL = $0 })) { url in
             SafariView(url: url).ignoresSafeArea()
         }
     }

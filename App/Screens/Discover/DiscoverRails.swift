@@ -4,7 +4,10 @@ import FusionhaKit
 // MARK: - Rails
 
 /// Rail chrome: heading, count, own-line toggle, then the state or the track.
+/// While Browse spans a Spread the heading is on the left page and the toggle
+/// on the right (Trending's Today / This Week, the owner's mock).
 struct RailSection<Icon: View, Toggle: View, Track: View>: View {
+    @Environment(\.spread) private var spread
     let title: String
     let count: String?
     @ViewBuilder var icon: Icon
@@ -13,23 +16,37 @@ struct RailSection<Icon: View, Toggle: View, Track: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    HStack(spacing: 8) {
-                        icon
-                        Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
-                    }
-                    if let count {
-                        Text(count).font(.system(size: 12)).foregroundStyle(Theme.dim)
+            Group {
+                if spread.spans {
+                    FoldSpanRow(spacing: 8) { heading } trailing: { toggleRow }
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        heading
+                        toggleRow
                     }
                 }
-                ScrollView(.horizontal, showsIndicators: false) { toggle }
-                    .scrollClipDisabled()
             }
             .padding(.bottom, 14)
             track
         }
         .padding(.bottom, 34)
+    }
+
+    private var heading: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            HStack(spacing: 8) {
+                icon
+                Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
+            }
+            if let count {
+                Text(count).font(.system(size: 12)).foregroundStyle(Theme.dim)
+            }
+        }
+    }
+
+    private var toggleRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) { toggle }
+            .scrollClipDisabled()
     }
 }
 
@@ -41,8 +58,16 @@ enum RailLoad<T> {
 struct DiscoverRail<Icon: View, Toggle: View>: View {
     @Environment(AppModel.self) private var model
     @Environment(\.paneSize) private var pane
-    /// The web's `.cell`: 116 on phones, 128 to 720, 158 on desktop.
-    private var cellWidth: CGFloat { CGFloat(DiscoverWidthRule.cellWidth(Double(pane.width))) }
+    @Environment(\.spread) private var spread
+    /// The web's `.cell`: 116 on phones, 128 to 720, 158 on desktop; a page's
+    /// while Browse spans a Spread.
+    private var cellWidth: CGFloat {
+        CGFloat(DiscoverFold.railCell(paneWidth: Double(pane.width), spanPage: spread.spanPageWidth))
+    }
+    /// Trending in a Spread: a grid, 6 across spanning both pages and the left
+    /// page's columns once a title is open (the owner's mock), so the tapped
+    /// title stays in view, outlined.
+    private var asGrid: Bool { trending && spread.isActive }
     @Environment(DiscoverStore.self) private var store
     let title: String
     /// Changes when the rail must refetch (kind, window, monetization).
@@ -61,11 +86,18 @@ struct DiscoverRail<Icon: View, Toggle: View>: View {
             case .loading: RailStateLine(text: "Loading…")
             case .failed: RailStateLine(text: "Could not load this rail.", error: true)
             case .loaded(let items) where items.isEmpty: RailStateLine(text: "No titles right now.")
-            case .loaded(let items):
-                RailTrack {
+            case .loaded(let items) where asGrid:
+                AdaptivePosterGrid {
                     ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                         DiscoverCard(result: item, trending: trending, canAdd: canAdd, canRequest: canRequest)
-                            .frame(width: cellWidth)
+                            .discoverReveal(index: index, step: 0.02)
+                    }
+                }
+            case .loaded(let items):
+                RailTrack(count: items.count, cell: cellWidth) {
+                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                        DiscoverCard(result: item, trending: trending, canAdd: canAdd, canRequest: canRequest)
+                            .railCell(cellWidth)
                             .discoverReveal(index: index)
                     }
                 }
@@ -102,23 +134,6 @@ extension DiscoverRail where Toggle == EmptyView {
          @ViewBuilder icon: () -> Icon, load: @escaping (APIClient) async throws -> [MediaSearchResult]) {
         self.init(title: title, key: key, trending: trending, canAdd: canAdd, canRequest: canRequest,
                   icon: icon, toggle: { EmptyView() }, load: load)
-    }
-}
-
-/// The horizontal track: gap 14, padding 2 2 12, snaps to cards.
-struct RailTrack<Content: View>: View {
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(alignment: .top, spacing: 14) { content }
-                .scrollTargetLayout()
-                .padding(.horizontal, 2)
-                .padding(.top, 2)
-                .padding(.bottom, 12)
-        }
-        .scrollTargetBehavior(.viewAligned(limitBehavior: .never))
-        .scrollClipDisabled()
     }
 }
 

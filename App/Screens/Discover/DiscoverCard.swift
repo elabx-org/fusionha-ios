@@ -8,6 +8,7 @@ import FusionhaKit
 struct DiscoverCard: View {
     @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
+    @Environment(\.spread) private var spread
     let result: MediaSearchResult
     var trending = false
     let canAdd: Bool
@@ -28,6 +29,8 @@ struct DiscoverCard: View {
     private var requestStatus: String? { store.statusByTmdb[result.tmdbId] }
     private var alreadyRequested: Bool { requestStatus == "pending" || requestStatus == "approved" }
     private var showsQuickAdd: Bool { canAdd && !inLibrary }
+    /// In a Spread, the title open on the right page is outlined in the grid.
+    private var picked: Bool { spread.isActive && result.isPicked(in: model, libraryId: libraryId) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -40,6 +43,7 @@ struct DiscoverCard: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(DiscoverPressStyle())
+            .accessibilityAddTraits(picked ? .isSelected : [])
             // R2 (fusionha #56): touch has no hover, so the ＋ stays on the
             // poster's corner, a sibling of the card's button, never inside it.
             .overlayPreferenceValue(DiscoverPosterBounds.self) { anchor in
@@ -71,7 +75,7 @@ struct DiscoverCard: View {
         Color.clear
             .aspectRatio(2 / 3, contentMode: .fit)
             .overlay { DiscoverArt(url: TMDBImage.resized(result.posterUrl, to: "w500")) }
-            .shelfPoster()
+            .shelfPoster(ring: picked ? Theme.primary : nil, ringWidth: picked ? 2.5 : 0.5)
     }
 
     /// In library / trending: a mark on the meta line, never on the art.
@@ -97,32 +101,50 @@ struct DiscoverCard: View {
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(Theme.txt)
                 .lineLimit(1)
-            HStack(spacing: 6) {
-                HStack(spacing: 0) {
-                    if let year = result.displayYear { Text(verbatim: "\(year) · ") }
-                    DiscoverKindGlyph(kind: result.kind, isAnime: result.isAnime)
+            // One line when it fits; in a narrow cell (a Spread page's grid,
+            // a phone rail) the marks and chip wrap under the year instead of
+            // pushing the card wider than its column.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 6) {
+                    yearKind
+                    Spacer(minLength: 0)
+                    marks
                 }
-                .lineLimit(1)
-                .fixedSize()
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.dim)
-                Spacer(minLength: 0)
-                providerException
-                statusMark
-                if demandView.watching {
-                    DiscoverCardChip(text: "Watching", systemImage: "eye", ink: Theme.accentText, wash: Theme.i1.opacity(0.14))
-                } else if !inLibrary, !demandView.hideRequested, let status = requestStatus, status == "pending" || status == "approved" {
-                    // Amber awaits a decision; approved is the accent (`RequestedChip`).
-                    if status == "pending" {
-                        DiscoverCardChip(text: "Requested", ink: Theme.miss, wash: Theme.miss.opacity(0.16))
-                    } else {
-                        DiscoverCardChip(text: "Approved", ink: Theme.accentText, wash: Theme.i1.opacity(0.14))
-                    }
+                VStack(alignment: .leading, spacing: 4) {
+                    yearKind
+                    HStack(spacing: 6) { marks }
                 }
             }
         }
         .padding(.top, 8)
         .padding(.horizontal, 1)
+    }
+
+    private var yearKind: some View {
+        HStack(spacing: 0) {
+            if let year = result.displayYear { Text(verbatim: "\(year) · ") }
+            DiscoverKindGlyph(kind: result.kind, isAnime: result.isAnime)
+        }
+        .lineLimit(1)
+        .fixedSize()
+        .font(.system(size: 13))
+        .foregroundStyle(Theme.dim)
+    }
+
+    @ViewBuilder
+    private var marks: some View {
+        providerException
+        statusMark
+        if demandView.watching {
+            DiscoverCardChip(text: "Watching", systemImage: "eye", ink: Theme.accentText, wash: Theme.i1.opacity(0.14))
+        } else if !inLibrary, !demandView.hideRequested, let status = requestStatus, status == "pending" || status == "approved" {
+            // Amber awaits a decision; approved is the accent (`RequestedChip`).
+            if status == "pending" {
+                DiscoverCardChip(text: "Requested", ink: Theme.miss, wash: Theme.miss.opacity(0.16))
+            } else {
+                DiscoverCardChip(text: "Approved", ink: Theme.accentText, wash: Theme.i1.opacity(0.14))
+            }
+        }
     }
 
     @ViewBuilder
@@ -237,49 +259,5 @@ struct DiscoverPosterBounds: PreferenceKey {
     static var defaultValue: Anchor<CGRect>? { nil }
     static func reduce(value: inout Anchor<CGRect>?, nextValue: () -> Anchor<CGRect>?) {
         value = value ?? nextValue()
-    }
-}
-
-/// A card's meta-line chip: Requested, Approved, Watching (a wash, no border).
-struct DiscoverCardChip: View {
-    let text: String
-    var systemImage: String?
-    let ink: Color
-    let wash: Color
-
-    var body: some View {
-        HStack(spacing: 4) {
-            if let systemImage { Image(systemName: systemImage) }
-            Text(text)
-        }
-        .font(.system(size: 11, weight: .semibold))
-        .foregroundStyle(ink)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
-        .background(wash, in: Capsule())
-        .lineLimit(1)
-        .fixedSize()
-    }
-}
-
-/// The persistent corner ＋ on an addable card (web `.addBtn` on coarse
-/// pointers): the accent disc, a 44pt target, the Add sheet on tap.
-struct DiscoverQuickAdd: View {
-    let title: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: "plus")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Theme.onAccent)
-                .frame(width: 30, height: 30)
-                .background(Theme.primary, in: Circle())
-                .shadow(color: Theme.shelfShadow.opacity(0.5), radius: 6, y: 3)
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(PressScaleStyle(scale: 0.9))
-        .accessibilityLabel("Add \(title)")
     }
 }

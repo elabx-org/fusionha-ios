@@ -14,31 +14,31 @@ struct DetailChildSheets: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .foldSafeSheet(item: presenter.item(\.interactive)) { target in
+            .duoPageSheet(item: presenter.item(\.interactive)) { target in
                 InteractiveSearchSheet(target: target)
                     .environment(store)
                     .environment(\.detailReduceMotion, reduceMotion)
             }
-            .foldSafeSheet(isPresented: presenter.flag(\.showingEdit)) {
+            .duoPageSheet(isPresented: presenter.flag(\.showingEdit)) {
                 if let detail = store.detail {
                     EditItemSheet(detail: detail)
                         .environment(store)
                 }
             }
-            .foldSafeSheet(item: presenter.item(\.addPreset)) { preset in
+            .duoPageSheet(item: presenter.item(\.addPreset)) { preset in
                 if let detail = store.detail {
                     AddEditionSheet(detail: detail, preset: preset)
                         .environment(store)
                 }
             }
-            .foldSafeSheet(item: presenter.item(\.seasonSheet)) { ref in
+            .duoPageSheet(item: presenter.item(\.seasonSheet)) { ref in
                 if let detail = store.detail, let season = detail.seasons?.first(where: { $0.seasonNumber == ref.number }) {
                     SeasonActionsSheet(detail: detail, season: season)
                         .environment(store)
                         .presentationDetents([.medium, .large])
                 }
             }
-            .foldSafeSheet(isPresented: presenter.flag(\.showingDelete)) {
+            .duoPageSheet(isPresented: presenter.flag(\.showingDelete)) {
                 if let detail = store.detail {
                     DeleteItemSheet(detail: detail)
                         .environment(store)
@@ -56,46 +56,46 @@ private struct DetailActionSheets: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .foldSafeSheet(item: presenter.item(\.renameScope)) { scope in
+            .duoPageSheet(item: presenter.item(\.renameScope)) { scope in
                 if let detail = store.detail {
                     RenameSheet(title: detail.title, scope: scope)
                         .environment(store)
                 }
             }
-            .foldSafeSheet(isPresented: presenter.flag(\.showingAliases)) {
+            .duoPageSheet(isPresented: presenter.flag(\.showingAliases)) {
                 if let detail = store.detail {
                     EditionAliasesSheet(detail: detail)
                         .environment(store)
                 }
             }
-            .foldSafeSheet(isPresented: presenter.flag(\.showingNumbering)) {
+            .duoPageSheet(isPresented: presenter.flag(\.showingNumbering)) {
                 if let detail = store.detail {
                     NumberingFixSheet(detail: detail)
                         .environment(store)
                 }
             }
-            .foldSafeSheet(item: presenter.item(\.manageFiles)) { target in
+            .duoPageSheet(item: presenter.item(\.manageFiles)) { target in
                 if let detail = store.detail {
                     ManageFilesSheet(detail: detail, target: target)
                         .environment(store)
                 }
             }
-            .foldSafeSheet(item: presenter.item(\.switchTarget)) { target in
+            .duoPageSheet(item: presenter.item(\.switchTarget)) { target in
                 if let detail = store.detail {
                     MetadataSwitchSheet(detail: detail, target: target.provider)
                         .environment(store)
                 }
             }
-            .foldSafeSheet(item: presenter.item(\.episodeSheet)) { target in
+            .duoPageSheet(item: presenter.item(\.episodeSheet)) { target in
                 EpisodeDetailSheet(target: target)
                     .environment(store)
             }
-            .foldSafeSheet(item: presenter.item(\.collectionAdd)) { target in
+            .duoPageSheet(item: presenter.item(\.collectionAdd)) { target in
                 AddCollectionSheet(summary: target.summary, preselect: target.tmdbIds) {
                     Task { await store.loadCollection() }
                 }
             }
-            .foldSafeSheet(isPresented: presenter.flag(\.showingIssue)) {
+            .duoPageSheet(isPresented: presenter.flag(\.showingIssue)) {
                 if let detail = store.detail {
                     IssueModal(mediaItemId: detail.id, title: detail.title, isSeries: detail.isSeries,
                                seasons: store.issueSeasons) { [store] message, failed in
