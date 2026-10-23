@@ -3,10 +3,10 @@ import FusionhaKit
 
 // MARK: - Poster card (PosterCard.tsx)
 
-/// A poster as a lit object on the shelf, with the web's art badges (4K flag,
-/// Monitor bookmark, attention and download state; ruling R1, no text but the
-/// 4K flag). Below: the title, year · kind, then one rail per version. In
-/// select mode a checkbox takes the bookmark's corner and a tap toggles.
+/// A poster as a lit object on the shelf, on a soft glow of its own art, with
+/// only the 4K flag on the art (owner-approved layout A). Below: the title,
+/// "year · kind", then one status chip per version (`EditionStatusChips`). In
+/// select mode a checkbox takes the top-left corner and a tap toggles.
 struct PosterCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
@@ -38,35 +38,24 @@ struct PosterCard: View {
                 // Press-and-hold feedback: the poster sinks and dims while held.
                 // A black wash, not `.brightness`: the art is a UIKit-backed view.
                 .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(.black.opacity(pressing ? 0.14 : 0))
                         .allowsHitTesting(false)
                 }
                 .scaleEffect(pressing ? 0.95 : 1)
                 .animation(motion ? .easeOut(duration: 0.18) : nil, value: pressing)
-            VStack(alignment: .leading, spacing: 2) {
-                // Phone rhythm (PosterCard.module.css ≤540): 14.5 medium / 12.5.
+            VStack(alignment: .leading, spacing: 1) {
+                // Layout A (owner, 2026-10-23): 14 semibold, then "2013 · Anime".
                 Text(item.title)
-                    .font(.system(size: 14.5, weight: .medium))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(monitored ? Theme.txt : Theme.mut)
                     .lineLimit(1)
-                HStack(spacing: 4) {
-                    // The year never truncates; anime shows its chip in place of the kind glyph.
-                    if let year = item.year {
-                        Text(String(year)).lineLimit(1).fixedSize().layoutPriority(2)
-                        Text("·")
-                    }
-                    if item.isAnime == true {
-                        AnimeChip().fixedSize().layoutPriority(1)
-                    } else {
-                        KindGlyph(kind: item.kind)
-                    }
-                    Spacer(minLength: 0)
-                }
-                .font(.system(size: 12.5))
-                .foregroundStyle(Theme.dim)
-                CoverageRails(item: item, spacing: 4)
-                    .padding(.top, 6)
+                Text(meta)
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Theme.mut)
+                    .lineLimit(1)
+                EditionStatusChips(item: item)
+                    .padding(.top, 5)
             }
             .padding(.top, 8)
             .padding(.horizontal, 1)
@@ -95,6 +84,12 @@ struct PosterCard: View {
         }
     }
 
+    /// `2013 · Anime` (the kind as a word; anime before the movie/series split).
+    private var meta: String {
+        let kind = item.isAnime == true ? "Anime" : item.kind == .movie ? "Movie" : "Series"
+        return [item.year.map(String.init), kind].compactMap { $0 }.joined(separator: " · ")
+    }
+
     private var ringColor: Color {
         if selecting && selected { return Theme.txt }
         if picked { return Theme.primary }
@@ -112,10 +107,12 @@ struct PosterCard: View {
             .saturation(monitored ? 1 : 0.75)
             .colorMultiply(monitored ? .white : Color(white: 0.82))
             .opacity(monitored ? 1 : 0.82)
-            .shelfPoster(ring: ringColor, ringWidth: ringWidth)
+            .shelfPoster(radius: 12, ring: ringColor, ringWidth: ringWidth)
             // Attention as a soft glow, never a coloured ring (web 0.4.222).
             .shadow(color: (attentionColor ?? .clear).opacity(0.55), radius: 7)
-            .overlay { PosterArtBadges(badges: PosterBadges(item), showsMonitor: !selecting) }
+            // Layout A: the 4K flag is the only mark on the art.
+            .overlay { PosterArtBadges(badges: PosterBadges(item), showsMonitor: false, showsStatus: false) }
+            .artGlow(TMDBImage.resized(item.posterUrl, to: "w92"), radius: 12)
             .overlay(alignment: .topLeading) {
                 if selecting { checkbox.padding(8) }
             }

@@ -69,6 +69,8 @@ struct LibraryDerived {
     var kindEditions: [LibraryKind: Int] = [:]
     var attentionCount = 0
     var pulse = PulseStats()
+    /// The Recently added shelf: the newest of what the filters left (layout A).
+    var recent: [MediaItem] = []
 }
 
 /// `computePulse` over the filtered set.

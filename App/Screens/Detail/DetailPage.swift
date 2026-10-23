@@ -1,8 +1,11 @@
 import SwiftUI
 import FusionhaKit
 
-/// The hero art repeated behind everything: blurred, saturated and darkened,
-/// under a `--bg` scrim (MobileDetailFlyout `.ambient`). Content, not glass.
+/// The hero art repeated behind everything (MobileDetailFlyout `.ambient`):
+/// blurred and saturated under a `--bg` scrim of the web's values, 78% at the
+/// top to 50% at the foot (hero-art.module.css), so the whole page carries a
+/// light tint of the art. Dark themes temper it (`brightness(0.8)`); Daylight
+/// keeps it bright, so it never reads as grey fog. Content, not glass.
 struct AmbientBackdrop: View {
     let url: String?
 
@@ -10,18 +13,18 @@ struct AmbientBackdrop: View {
         ZStack {
             Theme.bg
             if let url {
-                PosterImage(url: TMDBImage.resized(url, to: "w342"))
+                // SwiftUI-drawn art: the blur and colour effects reach it.
+                SoftArt(url: TMDBImage.resized(url, to: "w780"))
                     .scaleEffect(1.28)
                     .blur(radius: 72)
-                    .saturation(1.4)
-                    .brightness(-0.2)
+                    .saturation(Theme.isMono ? 0 : 1.4)
+                    .brightness(Theme.isLight ? 0 : -0.2)
                     .clipped()
             }
-            // The redesign's ground is a warm black: the art is only a glow under it.
             LinearGradient(stops: [
-                .init(color: Theme.bg.opacity(0.9), location: 0),
-                .init(color: Theme.bg.opacity(0.84), location: 0.3),
-                .init(color: Theme.bg.opacity(0.8), location: 1),
+                .init(color: Theme.bg.opacity(0.78), location: 0),
+                .init(color: Theme.bg.opacity(0.62), location: 0.3),
+                .init(color: Theme.bg.opacity(0.5), location: 1),
             ], startPoint: .top, endPoint: .bottom)
         }
         .ignoresSafeArea()

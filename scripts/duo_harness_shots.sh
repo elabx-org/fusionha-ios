@@ -90,5 +90,10 @@ shoot duo-harness-open-spread-activity open SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB
 # No top-to-bottom fold: Spread does not apply (inner portrait, folded).
 shoot duo-harness-portrait-library portrait $L $SP
 shoot duo-harness-folded-library folded $L $SP
+# Layout A and the title page closed (the outer display), dark and Daylight.
+shoot duo-harness-folded-library-daylight folded $L $SP $DAY
+shoot duo-harness-folded-title folded $L $SP $SERIES
+shoot duo-harness-folded-title-daylight folded $L $SP $SERIES $DAY
+shoot duo-harness-open-spread-library-series-daylight open $L $SP $SERIES $DAY
 xcrun simctl shutdown "$UDID" || true
 ls -l "$OUT"/duo-harness-* 2> /dev/null || true

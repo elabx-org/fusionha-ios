@@ -1,34 +1,29 @@
 import SwiftUI
 import FusionhaKit
 
-/// The full-bleed art hero (MobileDetailFlyout, redesign `.hero` + `.d-head`):
-/// the poster bleeds to the top edge and fades into the ground (Close is the
-/// system toolbar's, DC10); then the status chip, the display-face title + year,
-/// tagline, meta line and genre pills, rising over the faded art. Nothing is
-/// drawn on the art itself: the heading only starts where it has faded.
+/// The full-bleed art hero (owner-approved title page, 2026-10-23): the
+/// textless backdrop at full strength in every theme, and on its darkened
+/// bottom edge the status chip, the display-face title + year in white and
+/// the meta line (Close is the system toolbar's, DC10). Under the art, on the
+/// art-tinted page: tagline, genre pills and the requester.
 struct DetailHero: View {
     @Environment(\.detailReduceMotion) private var reduce
     let detail: ItemDetail
 
-    /// How far the heading rises over the bottom of the art.
-    private static let overlap: CGFloat = 132
-
-    private var artURL: URL? {
-        // Full-bleed on a @3x phone the poster is ~1200px wide, past w780;
-        // the pipeline decodes `original` down to the hero's own pixel size.
-        TMDBImage.resized(detail.posterUrl ?? detail.backdropUrl, to: "original")
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            DetailHeroArt(url: artURL)
-            heading
+            DetailHeroArt(url: ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl)) {
+                onArt
+                    .padding(.horizontal, Theme.pageGutter)
+                    .padding(.bottom, 18)
+            }
+            below
                 .padding(.horizontal, Theme.pageGutter)
-                .padding(.top, -Self.overlap)
         }
     }
 
-    private var heading: some View {
+    /// The block on the art's bottom edge: white on the scrim in every theme.
+    private var onArt: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let status = detail.status, !status.isEmpty {
                 HeroStatusChip(status: status)
@@ -36,16 +31,22 @@ struct DetailHero: View {
                     .detailReveal(delay: 0.05)
             }
             title.detailReveal(delay: 0.1)
+            HeroMetaLine(detail: detail, onArt: true)
+                .padding(.top, 8)
+                .detailReveal(delay: 0.16)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var below: some View {
+        VStack(alignment: .leading, spacing: 0) {
             if let tagline = detail.tagline, !tagline.isEmpty {
                 Text(tagline)
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.mut)
-                    .padding(.top, 10)
+                    .padding(.top, 14)
                     .detailReveal(delay: 0.13)
             }
-            HeroMetaLine(detail: detail)
-                .padding(.top, 10)
-                .detailReveal(delay: 0.16)
             if let genres = detail.genres, !genres.isEmpty {
                 FlowRow(spacing: 6) {
                     ForEach(genres, id: \.self) { genre in
@@ -57,7 +58,7 @@ struct DetailHero: View {
                             .overlay(Capsule().strokeBorder(Theme.line))
                     }
                 }
-                .padding(.top, 12)
+                .padding(.top, 14)
                 .detailReveal(delay: 0.2)
             }
             RequestedByPill()
@@ -67,17 +68,17 @@ struct DetailHero: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// `Andor 2022`: the display face, the year a quieter semibold.
+    /// `Andor 2022`: the display face in white, the year a quieter semibold.
     private var title: some View {
-        (Text(detail.title).foregroundColor(Theme.txt)
+        (Text(detail.title).foregroundColor(Theme.onScrim)
             + Text(verbatim: detail.year.map { " " + String($0) } ?? "")
                 .font(Theme.display(56, semibold: true))
-                .foregroundColor(Theme.dim))
+                .foregroundColor(Theme.onScrim.opacity(0.6)))
             .font(Theme.display(56))
             .tracking(Theme.displayTracking(56))
             .lineLimit(3)
             .minimumScaleFactor(0.6)
-            .shadow(color: .black.opacity(0.45), radius: 12, y: 4)
+            .shadow(color: Theme.scrim.opacity(0.45), radius: 12, y: 4)
             .fixedSize(horizontal: false, vertical: true)
             .accessibilityAddTraits(.isHeader)
     }
@@ -117,6 +118,10 @@ private struct HeroStatusChip: View {
 /// "Metadata via" credit sits at the foot of the page (`.credit`).
 private struct HeroMetaLine: View {
     let detail: ItemDetail
+    /// On the hero's darkened edge: white, whatever the theme.
+    var onArt = false
+    private var strong: Color { onArt ? Theme.onScrim : Theme.txt }
+    private var quiet: Color { onArt ? Theme.onScrim.opacity(0.78) : Theme.mut }
 
     private var kindLabel: String {
         if detail.isAnime == true { return detail.kind == .movie ? "Anime Movie" : "Anime" }
@@ -142,7 +147,7 @@ private struct HeroMetaLine: View {
                     Text(String(format: "%.1f", vote))
                 }
                 .fontWeight(.semibold)
-                .foregroundStyle(Theme.txt)
+                .foregroundStyle(strong)
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Rated \(String(format: "%.1f", vote))")
             }
@@ -152,16 +157,16 @@ private struct HeroMetaLine: View {
                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.line))
+                    .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(onArt ? Theme.plateLine : Theme.line))
                     .accessibilityLabel("Rated \(cert)")
             }
         }
         .font(.system(size: 15))
-        .foregroundStyle(Theme.mut)
+        .foregroundStyle(quiet)
     }
 
     private var dotSep: some View {
-        Text("·").foregroundStyle(Theme.dim)
+        Text("·").foregroundStyle(onArt ? Theme.onScrim.opacity(0.5) : Theme.dim)
     }
 }
 

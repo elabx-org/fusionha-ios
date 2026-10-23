@@ -1,11 +1,13 @@
 import SwiftUI
 
-/// Library's own filter, under the title (it used to be the top bar's pill):
-/// it filters the grid in place. While it has focus a "This library /
+/// Library's own filter, opened by Search in the bar (layout A keeps it off
+/// the page at rest): it filters the grid in place, takes focus as it opens,
+/// and closes again when it loses focus empty. While it has focus a "This library /
 /// Everything" switch shows under it; Everything hands the words to the
 /// Search tab.
 struct LibraryFilterField: View {
     @Environment(AppModel.self) private var model
+    @Binding var shown: Bool
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -26,6 +28,7 @@ struct LibraryFilterField: View {
                 if !model.searchText.isEmpty {
                     Button {
                         model.searchText = ""
+                        if !focused { shown = false }
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 17))
@@ -57,6 +60,11 @@ struct LibraryFilterField: View {
         }
         .animation(.snappy(duration: 0.2), value: focused)
         .onChange(of: model.chromeHidden) { if model.chromeHidden { focused = false } }
+        .onAppear { if shown && model.searchText.isEmpty { focused = true } }
+        .onChange(of: shown) { if shown { focused = true } }
+        .onChange(of: focused) {
+            if !focused && model.searchText.trimmingCharacters(in: .whitespaces).isEmpty { shown = false }
+        }
     }
 }
 

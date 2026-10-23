@@ -1,13 +1,17 @@
 import SwiftUI
 import FusionhaKit
 
-/// The Library page header: Add and "Library stats" as toolbar items (D1; the
-/// title is the system bar's), then a two-line caption. Line one counts titles and
-/// versions; line two (an iOS extra) links "N downloading" to Activity. The
-/// needs-attention filter is the toolbar's chip, as on the web.
+/// The Library page header (owner-approved layout A): Search, Select, "Library
+/// stats" and Add as toolbar items (D1; the large title is the system bar's),
+/// then one line, "14 titles · 19 versions · 4 downloading", the last in the
+/// grab colour and linked to Activity. Search opens the library filter under
+/// the line on demand (it left the page at rest). The needs-attention filter
+/// is the control row's chip, as on the web.
 struct LibraryHeader: View {
     let derived: LibraryDerived
     @Binding var status: LibraryStatus
+    /// The filter field is open (Search in the bar, or words still in it).
+    @Binding var searching: Bool
     /// Past 720 the pulse is inline and the status cluster holds In progress
     /// and Needs attention, so the stats item goes (as on the web's desktop).
     var wide = false
@@ -23,16 +27,31 @@ struct LibraryHeader: View {
     private var attention: Int { derived.attentionCount }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 12) {
             caption
-            // The iPhone Duo's fold through the header (Web layout): the field
-            // ends at the gutter instead of running across it.
-            LibraryFilterField().foldLeadingPane().padding(.top, 4)
+            if searching || !model.searchText.isEmpty {
+                // The iPhone Duo's fold through the header (Web layout): the field
+                // ends at the gutter instead of running across it.
+                LibraryFilterField(shown: $searching)
+                    .foldLeadingPane()
+                    .transition(motion ? .opacity.combined(with: .offset(y: -8)) : .opacity)
+            }
         }
+        .animation(motion ? .spring(duration: 0.35, bounce: 0) : .easeInOut(duration: 0.2), value: searching)
         .toolbar {
+            if !model.selectMode {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Search", systemImage: "magnifyingglass") { searching = true }
+                }
+                .barPriority(true)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Select", systemImage: "checkmark.circle") { model.selectMode = true }
+                }
+                .barPriority(false)
+            }
             AddTitleToolbarItem(model: model)
             if !wide {
-                ToolbarItem(placement: .secondaryAction) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
                         .badge(statsBadge)
                 }
@@ -78,17 +97,20 @@ struct LibraryHeader: View {
 
     private var caption: some View {
         let t = derived.titleCount, e = derived.editionCount
-        return VStack(alignment: .leading, spacing: 2) {
+        return HStack(spacing: 0) {
             (Text("\(t)").fontWeight(.semibold).foregroundColor(Theme.txt)
              + Text(" \(t == 1 ? "title" : "titles") · \(e) \(e == 1 ? "version" : "versions")"))
                 .contentTransition(.numericText())
             if downloading > 0 {
+                Text(" · ")
                 Button { model.tab = .activity } label: {
-                    Text("\(downloading) downloading").fontWeight(.semibold).foregroundStyle(Theme.grab)
+                    Text("\(downloading) downloading").foregroundStyle(Theme.grab)
                 }
                 .buttonStyle(.plain)
             }
         }
+        .lineLimit(1)
+        .minimumScaleFactor(0.85)
         .font(.system(size: 15).monospacedDigit())
         .foregroundStyle(Theme.mut)
     }

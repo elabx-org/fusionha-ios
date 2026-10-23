@@ -94,7 +94,7 @@ struct ItemDetailView: View {
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: compact)
         .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: store.toast)
-        .background { AmbientBackdrop(url: store.detail.flatMap { $0.posterUrl ?? $0.backdropUrl }) }
+        .background { AmbientBackdrop(url: store.detail.flatMap { $0.backdropUrl ?? $0.posterUrl }) }
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 SheetCancelButton(title: "Close detail", action: close)

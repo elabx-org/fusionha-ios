@@ -48,6 +48,7 @@ struct LibraryInputs: Equatable {
         next.titleCount = visible.count
         next.editionCount = visible.reduce(0) { $0 + $1.editions.count }
         next.columns = columns
+        next.recent = RecentShelf.pick(visible) { Format.timestamp($0) ?? Format.day($0) }
         if compact {
             next.rows = LibraryRowModel.table(compactSort.sorted(visible))
         } else if group {
