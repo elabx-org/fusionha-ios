@@ -108,12 +108,14 @@ public enum PosterTracks {
     }
 
     /// The tracks for `count` columns across `width` (the grid's own
-    /// coordinates) with the fold at `fold` in the same coordinates.
+    /// coordinates) with the fold at `fold` in the same coordinates. A span's
+    /// columns are one width on both pages.
     public static func tracks(count: Int, width: Double, fold: ClosedRange<Double>?, spans: Bool,
                               spacing: Double, gutter: Double = FoldColumns.gutter) -> [FoldColumns.Track]? {
         guard let fold else { return nil }
         let gap = FoldColumns.gap(around: fold, gutter: gutter)
+        // A span's two pages share one poster size (the narrower page's).
         return FoldColumns.split(count: count, width: width, spacing: spacing, gap: gap,
-                                 leading: spans ? count / 2 : nil)
+                                 leading: spans ? count / 2 : nil, equalGroups: spans)
     }
 }

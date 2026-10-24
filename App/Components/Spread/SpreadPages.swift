@@ -50,6 +50,8 @@ struct FoldSpanRow<Leading: View, Trailing: View>: View {
     /// Where the trailing piece sits in the row's height (the Library span's
     /// tools sit on the grid, the owner's mock: bottom).
     var trailingAlignment: VerticalAlignment = .top
+    /// Both pieces the narrower page's width (cards of one size on both pages).
+    var equalPanes = false
     @ViewBuilder var leading: Leading
     @ViewBuilder var trailing: Trailing
     @State private var panes: FoldColumns.Panes?
@@ -57,7 +59,8 @@ struct FoldSpanRow<Leading: View, Trailing: View>: View {
     var body: some View {
         Group {
             if let panes {
-                FoldPairLayout(lead: CGFloat(panes.lead), gap: CGFloat(panes.gap), trailingAlignment: trailingAlignment) {
+                FoldPairLayout(lead: CGFloat(panes.lead), gap: CGFloat(panes.gap), trailingAlignment: trailingAlignment,
+                               equalPanes: equalPanes) {
                     leading
                     trailing
                 }
@@ -87,10 +90,14 @@ struct FoldPairLayout: Layout {
     var gap: CGFloat
     var trailingAlignment: VerticalAlignment = .top
     var fillHeight = false
+    /// Both children the narrower side's width; the second still starts
+    /// after the gap (`FoldColumns.Panes.equalWidths`).
+    var equalPanes = false
 
     private func widths(_ total: CGFloat) -> (CGFloat, CGFloat) {
         let first = min(max(lead, 0), total)
-        return (first, max(total - first - gap, 0))
+        let second = max(total - first - gap, 0)
+        return equalPanes ? (min(first, second), min(first, second)) : (first, second)
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -111,7 +118,7 @@ struct FoldPairLayout: Layout {
                 let own = fillHeight ? bounds.height : subview.sizeThatFits(ProposedViewSize(width: b, height: nil)).height
                 let y = trailingAlignment == .bottom ? bounds.maxY - own
                     : trailingAlignment == .center ? bounds.midY - own / 2 : bounds.minY
-                subview.place(at: CGPoint(x: bounds.minX + a + gap, y: y),
+                subview.place(at: CGPoint(x: bounds.minX + min(max(lead, 0), bounds.width) + gap, y: y),
                               proposal: ProposedViewSize(width: b, height: height))
             default:
                 subview.place(at: bounds.origin, proposal: .zero)

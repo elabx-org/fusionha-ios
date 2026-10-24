@@ -34,6 +34,13 @@ public enum FoldColumns {
         public var lead: Double
         /// The fold and its gutter, between the panes.
         public var gap: Double
+
+        /// Both panes the narrower one's width, in a container `total` wide
+        /// (a Spread's pages laid out at one size).
+        public func equalWidths(total: Double) -> (lead: Double, trail: Double) {
+            let side = min(lead, max(total - lead - gap, 0))
+            return (side, side)
+        }
     }
 
     /// Two panes split at `fold` (its x-range in a container `width` wide).
@@ -52,15 +59,19 @@ public enum FoldColumns {
     /// fold splits five as 2 | 3 and seven as 3 | 4). `nil` when the gap isn't
     /// inside the container or a column would have no width: lay out as usual.
     /// `leading` forces how many go before the gap (a Spread's 3 a side).
+    /// `equalGroups` gives both groups the narrower side's column width (a
+    /// Spread's two pages show posters of one size: the right page loses room
+    /// to the status column); the leading group still starts at 0.
     public static func split(count: Int, width: Double, spacing: Double, gap: ClosedRange<Double>,
-                             leading: Int? = nil) -> [Track]? {
+                             leading: Int? = nil, equalGroups: Bool = false) -> [Track]? {
         guard count >= 2, gap.lowerBound > 0, gap.upperBound < width else { return nil }
         let lead = gap.lowerBound
         let trail = width - gap.upperBound
         let chosen = leading.map { min(max($0, 1), count - 1) }
         guard let k = chosen ?? leadingCount(count: count, lead: lead, trail: trail, spacing: spacing) else { return nil }
-        let leadWidth = groupWidth(lead, columns: k, spacing: spacing)
-        let trailWidth = groupWidth(trail, columns: count - k, spacing: spacing)
+        var leadWidth = groupWidth(lead, columns: k, spacing: spacing)
+        var trailWidth = groupWidth(trail, columns: count - k, spacing: spacing)
+        if equalGroups { leadWidth = min(leadWidth, trailWidth); trailWidth = leadWidth }
         guard leadWidth > 0, trailWidth > 0 else { return nil }
         var tracks: [Track] = []
         for i in 0..<k {

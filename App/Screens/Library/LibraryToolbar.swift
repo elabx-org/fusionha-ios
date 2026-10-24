@@ -22,22 +22,36 @@ struct LibraryToolbar<Filters: View>: View {
 
     var body: some View {
         GlassEffectContainer(spacing: 8) {
+            // One row whenever it can be (a Spread's right page lines up with
+            // the kind control on the left): the attention chip shortens to
+            // its glyph and count, then Filters to its glyph, before the chip
+            // wraps onto a second line.
             ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    leading
-                    if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
-                    Spacer(minLength: 0)
-                    trailing
+                row(compactChip: false, iconFilters: false)
+                if showsAttention {
+                    row(compactChip: true, iconFilters: false)
+                    row(compactChip: true, iconFilters: true)
                 }
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         leading
                         Spacer(minLength: 0)
-                        trailing
+                        trailing(iconFilters: false)
                     }
                     if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
                 }
             }
+        }
+    }
+
+    private func row(compactChip: Bool, iconFilters: Bool) -> some View {
+        HStack(spacing: 8) {
+            leading
+            if showsAttention {
+                LibraryAttentionChip(count: derived.attentionCount, status: $status, compact: compactChip)
+            }
+            Spacer(minLength: 0)
+            trailing(iconFilters: iconFilters)
         }
     }
 
@@ -46,20 +60,22 @@ struct LibraryToolbar<Filters: View>: View {
             .fixedSize()
     }
 
-    @ViewBuilder private var trailing: some View {
-        filtersChip
+    @ViewBuilder private func trailing(iconFilters: Bool) -> some View {
+        filtersChip(iconOnly: iconFilters)
         densityButton
     }
 
     // MARK: Filters
 
-    private var filtersChip: some View {
+    private func filtersChip(iconOnly: Bool) -> some View {
         Button { showingFilters = true } label: {
             HStack(spacing: 7) {
                 Image(systemName: "slider.horizontal.3")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(Theme.mut)
-                Text("Filters").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
+                if !iconOnly {
+                    Text("Filters").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
+                }
                 if filterBadge > 0 {
                     Text("\(filterBadge)")
                         .font(.system(size: 11, weight: .heavy))
@@ -75,6 +91,7 @@ struct LibraryToolbar<Filters: View>: View {
         .buttonStyle(.plain)
         .glassControl(on: filterBadge > 0)
         .fixedSize()
+        .accessibilityLabel("Filters")
         .accessibilityValue(filterBadge > 0 ? "\(filterBadge) active" : "")
         .sheetPopover(isPresented: $showingFilters, width: 380, height: 600, content: filters)
     }

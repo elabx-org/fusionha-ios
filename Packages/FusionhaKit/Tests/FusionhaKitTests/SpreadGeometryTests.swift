@@ -92,9 +92,34 @@ final class SpreadGeometryTests: XCTestCase {
         assertClear(tracks, of: gap)
         XCTAssertEqual(tracks.filter { $0.maxX <= gap.lowerBound + 1e-9 }.count, 3)
         XCTAssertEqual(tracks.filter { $0.x >= gap.upperBound - 1e-9 }.count, 3)
-        XCTAssertEqual(tracks[2].maxX, gap.lowerBound, accuracy: 1e-9)
+        // The right page is the narrower (the status column): it fills, and
+        // the left page uses its poster size, so the left group stops short.
+        XCTAssertLessThanOrEqual(tracks[2].maxX, gap.lowerBound + 1e-9)
+        XCTAssertEqual(tracks[0].x, 0, accuracy: 1e-9)
         XCTAssertEqual(tracks[3].x, gap.upperBound, accuracy: 1e-9)
         XCTAssertEqual(tracks[5].maxX, 817, accuracy: 1e-9)
+    }
+
+    /// Both pages of a span show one poster size, whichever page is narrower.
+    func testLibrarySpanPagesShareOnePosterSize() throws {
+        let fold = 435.5...435.5
+        let tracks = try XCTUnwrap(PosterTracks.tracks(count: 6, width: 817, fold: fold, spans: true, spacing: 12))
+        XCTAssertEqual(Set(tracks.map { ($0.width * 1e6).rounded() }).count, 1, "one width on both pages")
+        // A fold left of centre (the left page narrower): the left page sets the size.
+        let mirrored = try XCTUnwrap(PosterTracks.tracks(count: 6, width: 817, fold: 381.5...381.5, spans: true, spacing: 12))
+        XCTAssertEqual(Set(mirrored.map { ($0.width * 1e6).rounded() }).count, 1)
+        XCTAssertEqual(mirrored[2].maxX, FoldColumns.gap(around: 381.5...381.5).lowerBound, accuracy: 1e-9)
+        // The Web layout (no span) still fills both sides.
+        let web = try XCTUnwrap(PosterTracks.tracks(count: 6, width: 817, fold: fold, spans: false, spacing: 12))
+        XCTAssertGreaterThan(Set(web.map { ($0.width * 1e6).rounded() }).count, 1)
+    }
+
+    /// The Recently added pair: two equal panes the narrower page wide.
+    func testSpanShelfPanesAreEqual() throws {
+        let panes = try XCTUnwrap(FoldColumns.panes(width: 817, fold: 435.5...435.5, minLead: 120, minTrail: 120))
+        let equal = panes.equalWidths(total: 817)
+        XCTAssertEqual(equal.lead, equal.trail, accuracy: 1e-9)
+        XCTAssertEqual(equal.trail, 817 - 455.5, accuracy: 1e-9)
     }
 
     /// Library in the Web layout with the Duo flat open and no title: the

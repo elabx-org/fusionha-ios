@@ -184,6 +184,8 @@ struct LibraryToolbarWide: View {
 struct LibraryAttentionChip: View {
     let count: Int
     @Binding var status: LibraryStatus
+    /// The warning glyph and the count only (a narrow row keeps it on one line).
+    var compact = false
     @Environment(\.motionEnabled) private var motion
 
     private var on: Bool { status == .attention }
@@ -194,7 +196,7 @@ struct LibraryAttentionChip: View {
         } label: {
             HStack(spacing: 7) {
                 Image(systemName: "exclamationmark.triangle").font(.system(size: 12, weight: .semibold))
-                Text("Needs attention · \(count)")
+                Text(compact ? "\(count)" : "Needs attention · \(count)")
                     .font(.system(size: 13, weight: .bold).monospacedDigit())
                     .lineLimit(1)
             }

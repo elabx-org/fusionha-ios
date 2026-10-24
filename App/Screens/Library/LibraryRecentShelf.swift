@@ -64,7 +64,9 @@ struct LibraryRecentShelf: View {
     /// Open Duo: two a page, the fold in the gutter between the pages.
     private var spread: some View {
         let first = Array(items.prefix(2)), second = Array(items.dropFirst(2).prefix(2))
-        return FoldSpanRow {
+        // One card size on both pages: the right page loses room to the
+        // status column, so both pairs take its width.
+        return FoldSpanRow(equalPanes: true) {
             pair(first, offset: 0)
         } trailing: {
             pair(second, offset: 2)
