@@ -102,6 +102,11 @@ struct LibraryView: View {
                         // Folding or unfolding re-flows the grid: keep the same titles on screen.
                         if let row = onScreen.anchorRow(in: derived) { jump(to: row, proxy) }
                     }
+                    .onChange(of: model.duoGestures.swipedTo) { _, id in
+                        // A swipe across the art opened the next title: bring it into view.
+                        guard let id, let row = derived.rowId(holding: id), !onScreen.rowIds.contains(row) else { return }
+                        withAnimation(motion ? .smooth : nil) { proxy.scrollTo(row, anchor: .center) }
+                    }
                     .onChange(of: model.scrollToTopTick) {
                         withAnimation(motion ? .smooth : nil) { proxy.scrollTo("library-top", anchor: .top) }
                     }
@@ -128,6 +133,11 @@ struct LibraryView: View {
                 posterSheet = model.library.first { $0.id == id }
             }
             #endif
+        }
+        .onChange(of: derived.visibleIds, initial: true) { _, ids in model.duoGestures.libraryOrder = ids }
+        .onAppear {
+            let gestures = model.duoGestures
+            scrubber.onVisibility = { [weak gestures] shown in gestures?.edgeBusy = shown }
         }
         .onChange(of: inputs, initial: true) {
             derived = inputs.derive(from: model.library)

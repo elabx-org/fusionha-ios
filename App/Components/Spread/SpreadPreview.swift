@@ -71,9 +71,11 @@ struct SpreadPreviewColumn: View {
     @Environment(AppModel.self) private var model
     let route: PreviewRoute
     @State private var addPick: MediaSearchResult?
+    /// "More like this" pushes: while any are open the edge swipe is the system Back.
+    @State private var path: [PreviewRoute] = []
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             PreviewPage(route: route, onAdd: { addPick = $0 }, onOpenLibrary: { model.open($0) },
                         onClose: { model.spreadPreview = nil })
                 .duoListToggleToolbar()
@@ -81,6 +83,7 @@ struct SpreadPreviewColumn: View {
                     PreviewPage(route: next, onAdd: { addPick = $0 }, onOpenLibrary: { model.open($0) })
                 }
         }
+        .preference(key: DuoPageAtRoot.self, value: path.isEmpty)
         .duoPageSheet(item: $addPick) { pick in
             AddTitleSheet(initialPick: .tmdb(pick), hideViewDetails: true,
                           providerOverride: DiscoverSession.shared.providerOverride) { id in

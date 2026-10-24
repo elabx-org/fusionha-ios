@@ -17,6 +17,8 @@ struct DetailHero: View {
                     .padding(.horizontal, Theme.pageGutter)
                     .padding(.bottom, 18)
             }
+            // Open Duo: swipe across the art for the next / previous title.
+            .duoTitleSwipe(id: detail.id)
             below
                 .padding(.horizontal, Theme.pageGutter)
         }

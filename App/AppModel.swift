@@ -31,11 +31,19 @@ final class AppModel {
         didSet {
             detailSlot.keep(only: presentedItem?.id)
             if presentedItem != nil, spreadPreview != nil { spreadPreview = nil }
+            if let oldValue, presentedItem == nil { duoGestures.recordClosed(.title(oldValue), tab: tab) }
         }
     }
     /// A Discover or Search preview on the iPhone Duo Spread's right page; one
     /// right page, so opening a title closes it and the reverse (`SpreadPreview`).
-    var spreadPreview: PreviewRoute? { didSet { if spreadPreview != nil, presentedItem != nil { presentedItem = nil } } }
+    var spreadPreview: PreviewRoute? {
+        didSet {
+            if spreadPreview != nil, presentedItem != nil { presentedItem = nil }
+            if let oldValue, spreadPreview == nil { duoGestures.recordClosed(.preview(oldValue), tab: tab) }
+        }
+    }
+    /// The open Duo's gestures: the page last closed, the Library's order (`DuoGestureMemory`).
+    @ObservationIgnored let duoGestures = DuoGestureMemory()
     @ObservationIgnored var detailSlot = RetainedSlot<DetailStore>()
     @ObservationIgnored var detailGate = DetailHostGate()
     /// A `fusionha://` link waiting for the shell (`DeepLink.swift`). Each

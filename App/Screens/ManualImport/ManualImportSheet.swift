@@ -84,6 +84,10 @@ struct ManualImportSheet: View {
             dismiss()
         }
         .interactiveDismissDisabled(session.working || session.applying != nil)
+        // On the open Duo's pages: the pull-down waits while working, and asks with rows ticked.
+        .duoPageDismiss(session.working || session.applying != nil ? .busy
+                        : session.selected.isEmpty ? .allowed
+                        : .confirm("Close Manual Import? The rows you ticked stay undecided."))
         // Unfolded: the page size, so the file rows use the inner display's
         // width (DC22); `layout` then picks cards, the split or the table from it.
         .presentationSizing(.page)

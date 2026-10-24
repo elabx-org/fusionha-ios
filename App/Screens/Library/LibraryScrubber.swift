@@ -32,7 +32,9 @@ final class ScrubberState {
 
     /// Scroll progress (0–1): where the thumb sits on its track.
     var progress: CGFloat = 0
-    var visible = false
+    var visible = false { didSet { if visible != oldValue { onVisibility?(visible) } } }
+    /// Told when the thumb shows or hides (the Duo's trailing-edge swipe stands aside).
+    @ObservationIgnored var onVisibility: ((Bool) -> Void)?
     /// The letter in the bubble; nil hides it.
     var bubble: String?
     /// Bumped once per new letter while scrubbing: drives the haptic and the bubble's tick.

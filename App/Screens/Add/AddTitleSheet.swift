@@ -81,6 +81,8 @@ struct AddTitleSheet: View {
                 }
         }
         .presentationDetents([.fraction(0.88), .large], selection: $detent)
+        // On the open Duo's pages: a title picked from search and mid-setup asks before the pull-down closes it.
+        .duoPageDismiss(flow != nil && initialPick == nil ? .confirm("Discard this title's setup?") : .allowed)
         .onAppear(perform: start)
         .onChange(of: kind) { if kind == .movie { source = .tmdb } }
         .onChange(of: tvdbConfigured) { if !tvdbConfigured { source = .tmdb } }

@@ -138,6 +138,11 @@ struct ShellDetailColumn: View {
     @Environment(\.spread) private var spread
     @Environment(\.motionEnabled) private var motion
     @Environment(\.duoOpen) private var duoOpen
+    @Environment(\.duoListToggle) private var listToggle
+    /// The page following a swipe from its leading edge (`DuoPageEdge`).
+    @State private var dragOffset: CGFloat = 0
+    @State private var width: CGFloat = 0
+    @State private var atRoot = true
 
     /// Which page is up: a new title or preview swings in over the last one.
     private var pageKey: String {
@@ -151,10 +156,22 @@ struct ShellDetailColumn: View {
             page
                 .transition(duoOpen ? DuoPageMotion.transition(motion: motion) : .opacity)
         }
+        .modifier(DuoPageDragEffect(offset: dragOffset, width: width, motion: motion))
         .animation(duoOpen ? DuoPageMotion.animation(motion: motion) : nil, value: pageKey)
         .overlay(alignment: .leading) {
             Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea()
         }
+        // Gestures 1 and 2: swipe the page away, or the list off and back.
+        .overlay(alignment: .leading) {
+            if duoOpen && model.rightPageHasItem {
+                DuoPageEdge(width: width, canClose: atRoot, list: listToggle, offset: $dragOffset) {
+                    model.presentedItem = nil
+                    model.spreadPreview = nil
+                }
+            }
+        }
+        .onPreferenceChange(DuoPageAtRoot.self) { atRoot = $0 }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
     }
 
     @ViewBuilder

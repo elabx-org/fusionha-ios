@@ -72,6 +72,10 @@ private struct DuoPageCover<Content: View>: View {
     @Environment(\.dismiss) private var dismiss
     /// The cover's safe-area frame (the shell's) and the fold through it.
     @State private var measured = FoldInfo()
+    /// The page pulled down (gesture 5), its close policy, and the ask.
+    @State private var pull: CGFloat = 0
+    @State private var dismissGuard = DuoPageDismissGuard()
+    @State private var asking = false
 
     /// Book pose: the page after the fold; flat: the detail's two thirds.
     private var track: FoldColumns.Track? {
@@ -83,15 +87,20 @@ private struct DuoPageCover<Content: View>: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            Theme.scrim.opacity(0.45)
+            Theme.scrim.opacity(0.45 * (1 - progress))
                 .ignoresSafeArea()
                 .contentShape(Rectangle())
-                .onTapGesture { dismiss() }
+                .onTapGesture { attemptClose() }
                 .accessibilityLabel("Close")
                 .accessibilityAddTraits(.isButton)
             page
         }
         .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { measured = $0 }
+        .environment(dismissGuard)
+        .confirmationDialog(confirmText, isPresented: $asking, titleVisibility: .visible) {
+            Button("Discard", role: .destructive) { close() }
+            Button("Keep editing", role: .cancel) {}
+        }
         .presentationBackground(.clear)
         // Sheets this one opens stay on the pages too.
         .environment(\.duoOpen, true)
@@ -109,5 +118,41 @@ private struct DuoPageCover<Content: View>: View {
                 }
             }
             .offset(x: track.map { CGFloat($0.x) } ?? 0)
+            .offset(y: pull)
+            .modifier(DuoPagePull(pull: $pull, height: measured.size.height, attemptClose: attemptClose,
+                                  busy: dismissGuard.policy == .busy,
+                                  grabberOffset: placement == .twoPages ? measured.size.width / 4 : 0))
+    }
+
+    private var progress: Double {
+        measured.size.height > 0 ? min(1, max(0, Double(pull / measured.size.height))) : 0
+    }
+
+    private var confirmText: String {
+        if case .confirm(let text) = dismissGuard.policy { return text }
+        return "Close?"
+    }
+
+    /// The pull or the dim: busy stays, unsaved choices ask, else it closes.
+    private func attemptClose() {
+        switch dismissGuard.policy {
+        case .busy:
+            withAnimation(.spring(duration: 0.3, bounce: 0)) { pull = 0 }
+        case .confirm:
+            withAnimation(.spring(duration: 0.3, bounce: 0)) { pull = 0 }
+            asking = true
+        case .allowed:
+            close()
+        }
+    }
+
+    /// Slides the page off the bottom, then closes the cover without its own slide.
+    private func close() {
+        guard measured.size.height > 0 else { return dismiss() }
+        withAnimation(.spring(duration: 0.24, bounce: 0)) { pull = measured.size.height } completion: {
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) { dismiss() }
+        }
     }
 }

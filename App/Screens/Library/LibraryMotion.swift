@@ -80,3 +80,19 @@ extension View {
             .modifier(BrowseRow())
     }
 }
+
+// MARK: - The open Duo's title swipe (gesture 3)
+
+extension LibraryDerived {
+    /// The grid row holding title `id` (rows carry their first title in their id).
+    func rowId(holding id: Int) -> String? {
+        for row in rows {
+            switch row {
+            case .items(let items) where items.contains(where: { $0.id == id }): return row.id
+            case .tableRow(let item, _) where item.id == id: return row.id
+            default: continue
+            }
+        }
+        return nil
+    }
+}

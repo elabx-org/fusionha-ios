@@ -98,6 +98,10 @@ struct RootView: View {
                     .transition(detailTransition)
             }
         }
+        // Gesture 4: swipe in from the content's trailing edge for the page just closed.
+        .overlay(alignment: .trailing) {
+            if fold.isDuoOpen { DuoReopenEdge() }
+        }
         .background(Theme.bg)
         // Measured without the keyboard: typing in inner landscape must not
         // drop the height under the split rule and fold the title into a sheet.
