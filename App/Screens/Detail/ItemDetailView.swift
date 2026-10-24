@@ -59,6 +59,7 @@ struct ItemDetailView: View {
             }
             .scrollIndicators(.hidden)
             .scrollPosition($position)
+            .duoColumnPullSource()
             .ignoresSafeArea(.container, edges: .top)
             .onScrollGeometryChange(for: CGFloat.self) { geo in
                 geo.contentOffset.y + geo.contentInsets.top

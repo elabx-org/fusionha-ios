@@ -142,7 +142,12 @@ struct ShellDetailColumn: View {
     /// The page following a swipe from its leading edge (`DuoPageEdge`).
     @State private var dragOffset: CGFloat = 0
     @State private var width: CGFloat = 0
+    @State private var height: CGFloat = 0
     @State private var atRoot = true
+    /// The page pulled down past its scroll's top (`DuoColumnPull`), and how
+    /// far it has dropped once that closes it.
+    @State private var pull = DuoColumnPull()
+    @State private var drop: CGFloat = 0
 
     /// Which page is up: a new title or preview swings in over the last one.
     private var pageKey: String {
@@ -157,6 +162,13 @@ struct ShellDetailColumn: View {
                 .transition(duoOpen ? DuoPageMotion.transition(motion: motion) : .opacity)
         }
         .modifier(DuoPageDragEffect(offset: dragOffset, width: width, motion: motion))
+        .modifier(DuoColumnPullEffect(progress: pull.progress, drop: drop, motion: motion))
+        .environment(\.duoColumnPull, duoOpen && model.rightPageHasItem ? pull : nil)
+        // Gesture 6: pull the page down to close it, as its sheet does folded.
+        .overlay(alignment: .top) {
+            if duoOpen && model.rightPageHasItem { DuoColumnGrabber() }
+        }
+        .onChange(of: pull.closeRequests) { closeByPull() }
         .animation(duoOpen ? DuoPageMotion.animation(motion: motion) : nil, value: pageKey)
         .overlay(alignment: .leading) {
             Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea()
@@ -171,7 +183,19 @@ struct ShellDetailColumn: View {
             }
         }
         .onPreferenceChange(DuoPageAtRoot.self) { atRoot = $0 }
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { width = $0.width; height = $0.height }
+    }
+
+    private func closeByPull() {
+        withAnimation(.spring(duration: 0.28, bounce: 0)) { drop = height } completion: {
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) {
+                model.presentedItem = nil
+                model.spreadPreview = nil
+                drop = 0
+            }
+        }
     }
 
     @ViewBuilder

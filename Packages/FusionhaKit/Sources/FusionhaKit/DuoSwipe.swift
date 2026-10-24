@@ -14,11 +14,18 @@ import Foundation
 ///    comes back, for a few minutes.
 /// 5. Pull a page over the window down: it closes (unless it is busy, and
 ///    after asking when it holds unsaved choices).
+/// 6. Pull the right page (a title, a preview) down from the top of its
+///    scroll: it closes, as the title's sheet does on the phone (owner,
+///    2026-10-24: the same gesture folded and open).
 public enum DuoSwipe {
     /// The leading-edge and trailing-edge strips' width, in points.
     public static let edgeWidth = 20.0
     /// The strip that starts a pull-down on a page over the window.
     public static let pullZone = 84.0
+    /// How far the right page's scroll is pulled past its top before letting
+    /// go closes it (gesture 6). The scroll's rubber band halves the finger's
+    /// travel, so this is about a quarter of the page under the finger.
+    public static let pullClose = 80.0
     /// How long a closed page can be pulled back (gesture 4).
     public static let reopenWindow: TimeInterval = 5 * 60
 
@@ -29,6 +36,12 @@ public enum DuoSwipe {
                                share: Double = 0.3) -> Bool {
         guard extent > 0, translation > 0 else { return false }
         return translation >= extent * share || predicted >= extent * 0.5
+    }
+
+    /// How far toward closing a pull past the scroll's top is, 0...1 (gesture 6).
+    /// `overscroll`: points pulled past the top (positive = pulled down).
+    public static func pullProgress(overscroll: Double) -> Double {
+        min(1, max(0, overscroll / pullClose))
     }
 
     /// A drag that reads as horizontal: clearly more sideways than up or down.

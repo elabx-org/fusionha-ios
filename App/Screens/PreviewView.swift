@@ -76,6 +76,7 @@ struct PreviewPage: View {
                     .offset(y: entered || DiscoverMotion.reduced(reduceMotion) ? 0 : 24)
                 }
                 .scrollIndicators(.hidden)
+                .duoColumnPullSource()
                 .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y > 200 } action: { _, new in
                     withAnimation(DiscoverMotion.reduced(reduceMotion) ? nil : .easeOut(duration: 0.2)) { compact = new }
                 }

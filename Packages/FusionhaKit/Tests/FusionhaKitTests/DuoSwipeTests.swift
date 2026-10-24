@@ -11,6 +11,13 @@ final class DuoSwipeTests: XCTestCase {
         XCTAssertFalse(DuoSwipe.commits(translation: 10, predicted: 10, extent: 0))
     }
 
+    func testPullPastTheTopClosesAtTheThreshold() {
+        XCTAssertEqual(DuoSwipe.pullProgress(overscroll: -30), 0)
+        XCTAssertEqual(DuoSwipe.pullProgress(overscroll: 40), 0.5)
+        XCTAssertEqual(DuoSwipe.pullProgress(overscroll: DuoSwipe.pullClose), 1)
+        XCTAssertEqual(DuoSwipe.pullProgress(overscroll: 400), 1)
+    }
+
     func testHorizontalNeedsAClearSidewaysLead() {
         XCTAssertTrue(DuoSwipe.isHorizontal(dx: 40, dy: 10))
         XCTAssertTrue(DuoSwipe.isHorizontal(dx: -40, dy: 20))
