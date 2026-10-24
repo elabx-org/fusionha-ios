@@ -19,6 +19,7 @@ struct LibraryHeader: View {
     var kindCounts = false
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
+    @Environment(\.spread) private var spread
     @State private var showingStats = false
     /// "Manage" on the unavailable-indexers row: Settings › Indexers opens once the sheet is gone.
     @State private var pendingIndexerSettings = false
@@ -44,23 +45,38 @@ struct LibraryHeader: View {
         }
         .animation(motion ? .spring(duration: 0.35, bounce: 0) : .easeInOut(duration: 0.2), value: searching)
         .toolbar {
-            if !model.selectMode {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Search", systemImage: "magnifyingglass") { searching = true }
+            if overflowBar {
+                // A Spread's left page with a title open: Spread, Account and
+                // Search stay; Select, Library stats and Add share one menu, so
+                // the title never truncates (six glass buttons squeezed it to
+                // "Lib…" though Select and Stats had low visibility priority).
+                if !model.selectMode {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Search", systemImage: "magnifyingglass") { searching = true }
+                    }
+                    .barPriority(true)
+                    ToolbarItem(placement: .topBarTrailing) { overflowMenu.badge(statsBadge) }
+                        .barPriority(false)
                 }
-                .barPriority(true)
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Select", systemImage: "checkmark.circle") { model.selectMode = true }
+            } else {
+                if !model.selectMode {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Search", systemImage: "magnifyingglass") { searching = true }
+                    }
+                    .barPriority(true)
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Select", systemImage: "checkmark.circle") { model.selectMode = true }
+                    }
+                    .barPriority(false)
                 }
-                .barPriority(false)
-            }
-            AddTitleToolbarItem(model: model)
-            if !wide {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
-                        .badge(statsBadge)
+                AddTitleToolbarItem(model: model)
+                if !wide {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
+                            .badge(statsBadge)
+                    }
+                    .barPriority(false)
                 }
-                .barPriority(false)
             }
         }
         // Warm the stats sheet's In progress / Needs attention, so it opens filled.
@@ -90,6 +106,26 @@ struct LibraryHeader: View {
         .fullScreenCover(isPresented: $showingIndexerSettings) {
             SettingsView(client: model.client, initialPanel: "indexers")
         }
+    }
+
+    /// The bar is a Spread's left page beside an open title: too narrow for
+    /// the title and six items.
+    private var overflowBar: Bool { spread.isActive && !spread.spans }
+
+    private var canAdd: Bool { !model.requestScoped && model.me?.can("add") != false }
+
+    /// Select, Library stats and Add in one bar item (the overflow bar).
+    private var overflowMenu: some View {
+        Menu {
+            Button("Select", systemImage: "checkmark.circle") { model.selectMode = true }
+            Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
+            if canAdd {
+                Button("Add", systemImage: "plus") { model.showingAdd = true }
+            }
+        } label: {
+            Label("More", systemImage: "ellipsis")
+        }
+        .accessibilityLabel(statsBadge == nil ? "More" : "More, library needs attention")
     }
 
     /// The stats item's badge: titles needing attention, else missing ones
