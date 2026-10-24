@@ -88,6 +88,16 @@ final class DuoSplitTests: XCTestCase {
         XCTAssertFalse(SpreadGeometry.tabsCrossFold(tabsWidth: width, fold: nil))
     }
 
+    /// Manual Import (`duoPageSheet(.twoPages)`): halves at the fold in book
+    /// pose, its own split by size when flat, nothing when closed.
+    func testManualImportFollowsThePosture() throws {
+        let book = try XCTUnwrap(ManualImportLayout.duoPanes(width: width, fold: fold, posture: .book))
+        XCTAssertEqual(book, ManualImportLayout.foldPanes(width: width, fold: fold))
+        XCTAssertEqual(book.lead, 431.5)
+        XCTAssertNil(ManualImportLayout.duoPanes(width: width, fold: fold, posture: .flat))
+        XCTAssertNil(ManualImportLayout.duoPanes(width: width, fold: nil, posture: nil))
+    }
+
     // MARK: The sidebar button
 
     func testTheListHidesOnlyFlatAndBesideADetail() {

@@ -60,7 +60,12 @@ struct ManualImportSheet: View {
                 .miBulkBar(active: barActive)
                 .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
                 .onGeometryChange(for: FoldColumns.Panes?.self) { proxy in
-                    ManualImportLayout.foldPanes(width: Double(proxy.size.width), fold: GridFold(proxy).foldRange)
+                    // Option A: halves at the fold in book pose; flat, the usual split.
+                    let fold = FoldInfo(proxy)
+                    let x = fold.vertical ?? fold.flatVertical
+                    return ManualImportLayout.duoPanes(width: Double(proxy.size.width),
+                                                       fold: x.map { Double($0.lowerBound)...Double($0.upperBound) },
+                                                       posture: fold.posture)
                 } action: { foldPanes = $0 }
         }
         .environment(session)

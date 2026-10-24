@@ -77,6 +77,14 @@ public enum ManualImportLayout: String, Sendable, Equatable {
         return FoldColumns.panes(width: width, fold: fold, minLead: 300, minTrail: 320)
     }
 
+    /// Option A: book pose splits at the fold (`foldPanes`); flat open nothing
+    /// is reserved, so the sheet keeps its own list | file split by size, with
+    /// no fold gutter. `fold` is the open Duo's fold, active or not.
+    public static func duoPanes(width: Double, fold: ClosedRange<Double>?, posture: DuoPosture?) -> FoldColumns.Panes? {
+        guard posture?.reservesFold == true else { return nil }
+        return foldPanes(width: width, fold: fold)
+    }
+
     /// The table drops Audio and Group · service under 1100 (`COLUMNS_NARROW`).
     public static func tableIsNarrow(_ width: Double) -> Bool {
         width < 1100
