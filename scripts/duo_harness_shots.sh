@@ -158,6 +158,29 @@ if [ -z "$ONLY" ] || echo "duo-harness-big" | grep -qE "$ONLY"; then
   unset WAIT
   big 0
 fi
+# Option A (owner, 2026-10-24) on the owner's library: flat open, a third |
+# two thirds with no gutter, then the sidebar button's hidden list; book pose
+# (an active fake fold), equal pages at the fold; the Web layout flat.
+BOOK="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book"
+SHOWN="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LIST=shown"
+HIDDEN="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LIST=hidden"
+if [ -z "$ONLY" ] || echo "duo-harness-split-a" | grep -qE "$ONLY"; then
+  big 1
+  WAIT=14
+  shoot duo-harness-split-a-warmup open $L $SP $SHOWN && rm -f "$OUT/duo-harness-split-a-warmup.png"
+  for theme in dark daylight monochrome; do
+    T="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$theme"; SUF="-$theme"
+    [ "$theme" = dark ] && T="" && SUF=""
+    shoot duo-harness-split-a-flat-library$SUF open $L $SP $SHOWN $T
+    shoot duo-harness-split-a-flat-title$SUF open $L $SP $SHOWN $MOVIE $T
+    shoot duo-harness-split-a-flat-title-list-hidden$SUF open $L $SP $HIDDEN $MOVIE $T
+    shoot duo-harness-split-a-book-library$SUF open $L $SP $BOOK $SHOWN $T
+    shoot duo-harness-split-a-book-title$SUF open $L $SP $BOOK $SHOWN $MOVIE $T
+    shoot duo-harness-split-a-web-flat-title$SUF open $L $WEB $SHOWN $MOVIE $T
+  done
+  unset WAIT
+  big 0
+fi
 # Requests 10b: Account and Watchlists & lists (the list, a source, Pick the
 # right title). Open in a Spread, Account is the left page and Watchlists & lists
 # the right page (a source pushes there); the Web layout keeps the form sheet. Closed: the phone.

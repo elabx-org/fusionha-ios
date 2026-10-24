@@ -32,7 +32,7 @@ struct DuoOpenLayoutSection: View {
 
     var body: some View {
         SettingsSection("iPhone Duo, open",
-                        footer: "Only this iPhone, and only while an iPhone Duo is open. Spread puts the list on the left page and what you pick on the right, split at the fold. Web layout matches the web app's wide layout. The same switch is in the toolbar while the Duo is open.") {
+                        footer: "Only this iPhone, and only while an iPhone Duo is open. Spread puts the list on the left and what you pick on the right: a narrow list beside a wide page when the Duo lies flat, where the sidebar button can hide the list, and equal pages split at the fold when it is partly folded. Web layout matches the web app's wide layout. The same switch is in the toolbar while the Duo is open.") {
             Picker("iPhone Duo, open", selection: $layout) {
                 ForEach(DuoOpenLayout.allCases) { Text($0.title).tag($0) }
             }
