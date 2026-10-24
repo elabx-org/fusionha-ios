@@ -64,26 +64,36 @@ struct MIFindingChip: View {
     }
 }
 
-/// The recommended action (or Import this file) and Keep current ▾.
+/// The recommended action (or Import this file) and Keep current ▾. Labels
+/// never truncate: both on one line, else stacked, else stacked without
+/// their icons (the ▾ stays).
 struct MIRowActions: View {
     let row: ManualImportRow
     @Environment(ManualImportSession.self) private var session
 
     var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) { buttons(icons: true) }
+            VStack(alignment: .leading, spacing: 8) { buttons(icons: true) }
+            VStack(alignment: .leading, spacing: 8) { buttons(icons: false) }
+        }
+    }
+
+    @ViewBuilder private func buttons(icons: Bool) -> some View {
         let busy = session.busyRows.contains(row.rowId) || session.working
         let keepRec = ManualImportDecide.keepRecommended(row)
-        HStack(spacing: 8) {
-            if let action = ManualImportDecide.rowAction(row) {
-                let lead = (action.recommended && !keepRec) || row.existingFile == nil
-                ActAsyncButton(label: action.label, systemImage: icon(action.kind), kind: lead ? .primary : .subtle) {
-                    await session.importRow(row, action)
-                    return session.rowErrors[row.rowId] == nil
-                }
-                .disabled(busy)
+        if let action = ManualImportDecide.rowAction(row) {
+            let lead = (action.recommended && !keepRec) || row.existingFile == nil
+            ActAsyncButton(label: action.label, systemImage: icons ? icon(action.kind) : nil, kind: lead ? .primary : .subtle) {
+                await session.importRow(row, action)
+                return session.rowErrors[row.rowId] == nil
             }
-            MIKeepMenu(row: row, recommended: keepRec, menuOnly: row.existingFile == nil)
-                .disabled(busy)
+            .fixedSize()
+            .disabled(busy)
         }
+        MIKeepMenu(row: row, recommended: keepRec, menuOnly: row.existingFile == nil, icons: icons)
+            .fixedSize()
+            .disabled(busy)
     }
 
     private func icon(_ kind: ManualImportDecide.RowAction.Kind) -> String {
@@ -102,13 +112,15 @@ struct MIKeepMenu: View {
     let row: ManualImportRow
     let recommended: Bool
     var menuOnly = false
+    /// The keep button's icon (off when the row is too narrow for it).
+    var icons = true
     @Environment(ManualImportSession.self) private var session
 
     var body: some View {
         let choice = session.keepChoice(for: row)
         HStack(spacing: 2) {
             if !menuOnly {
-                ActAsyncButton(label: choice.verb, systemImage: "internaldrive", kind: recommended ? .primary : .subtle) {
+                ActAsyncButton(label: choice.verb, systemImage: icons ? "internaldrive" : nil, kind: recommended ? .primary : .subtle) {
                     await session.keepRow(row, choice.preferred)
                     return session.rowErrors[row.rowId] == nil
                 }

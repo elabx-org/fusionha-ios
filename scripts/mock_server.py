@@ -19,6 +19,7 @@ import mock_activity
 import mock_big_library
 import mock_add
 import mock_detail
+import mock_manual_import
 import mock_shell
 
 MOCK = Path(__file__).resolve().parent / "mock"
@@ -431,6 +432,8 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         path = url.path.rstrip("/")
         query = parse_qs(url.query)
+        if (mi := mock_manual_import.handle("GET", path)) is not None:
+            return self.send_json(mi)
         served, body = mock_add.get(path, query, preview, tvdb_search)
         if served:
             return self.send_json(body) if body is not None or "preview" not in path else self.send_json({"detail": "Not Found"}, 404)
@@ -518,6 +521,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         path = urlparse(self.path).path.rstrip("/")
+        if (mi := mock_manual_import.handle("POST", path)) is not None:
+            self.rfile.read(int(self.headers.get("Content-Length") or 0))
+            return self.send_json(mi)
         # Ahead of the activity routes, whose catch-all `/check-4k` has no counts.
         if path == "/api/v1/discover/check-4k":
             return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [1, 2],

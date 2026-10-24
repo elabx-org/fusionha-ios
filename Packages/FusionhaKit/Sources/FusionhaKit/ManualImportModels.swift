@@ -33,6 +33,13 @@ public struct ManualImportDownloadState: Decodable, Sendable, Hashable {
     public let rowsDecided: Int?
     public let finished: Bool?
     public let libraryLinked: Bool?
+    /// The effective Keep current pick over the download's kept rows (0.4.225):
+    /// `leave` when any row holds it, else the stored pick; nil when none.
+    public let disposition: String?
+    /// The first kept row holding a leave, else nil (0.4.225).
+    public let leaveRowId: Int?
+
+    public var finishDisposition: FinishDisposition? { disposition.flatMap(FinishDisposition.init(rawValue:)) }
 }
 
 /// One file of a scan.
@@ -87,6 +94,13 @@ public struct ManualImportRow: Decodable, Sendable, Hashable, Identifiable {
     public let finding: ManualImportFinding?
     /// Quieter chips beside it ("in library").
     public let badges: [ManualImportFinding]?
+    /// The Keep current pick stored on a kept rescue row (0.4.225), else nil.
+    public let finishDisposition: String?
+    /// The episodes `would_orphan` names (0.4.225).
+    public let orphanEpisodeIds: [Int]?
+    /// Other rows that, imported in the same commit, cover those orphaned
+    /// episodes: the joint span imports together (0.4.225). Nil when none.
+    public let jointRows: [Int]?
 
     public var id: Int { rowId }
 }
@@ -266,85 +280,4 @@ public struct ManualImportHeld: Decodable, Sendable, Hashable {
     public let downloadId: Int
     public let reason: String?
     public let detail: HeldDetail?
-}
-
-/// `POST /manualimport/commit`: one result per requested row.
-public struct ManualImportCommitResult: Decodable, Sendable {
-    public let results: [ManualImportCommitRow]
-    /// Downloads this commit finished with their `finish_disposition` (0.4.202).
-    public let finishes: [ManualImportCommitFinish]?
-    public let downloads: [ManualImportDownloadState]?
-}
-
-/// One download a commit tried to finish; `error` is `forbidden`, `rows_open`,
-/// `not_held`, `finish_busy` or `finish_failed` (the import itself still stands).
-public struct ManualImportCommitFinish: Decodable, Sendable, Hashable {
-    public let downloadId: Int
-    public let mode: String?
-    public let blocklisted: Bool?
-    public let deletedFiles: Int?
-    public let libraryLinked: Bool?
-    public let error: String?
-
-    public var result: FinishRescueResult? {
-        mode.map { FinishRescueResult(mode: $0, blocklisted: blocklisted, libraryLinked: libraryLinked) }
-    }
-}
-
-public struct ManualImportCommitRow: Decodable, Sendable, Hashable {
-    public let rowId: Int
-    public let mediaFileId: Int?
-    public let finalMode: String?
-    public let note: String?
-    public let replaced: Bool?
-    public let error: String?
-    /// Committed, but the file is not in place yet (the publish journal finishes it).
-    public let warning: String?
-    /// The file it replaced (e.g. a misfiled one), for the Done receipt.
-    public let replacedFile: String?
-    public let episodeIds: [Int]?
-}
-
-/// `POST /queue/{id}/finish-rescue`: the server decides removed vs finished.
-public struct FinishRescueResult: Decodable, Sendable, Hashable {
-    /// `removed`, `finished` (the library links into it, nothing deleted) or `left`.
-    public let mode: String
-    public let blocklisted: Bool?
-    public let libraryLinked: Bool?
-
-    public init(mode: String, blocklisted: Bool?, libraryLinked: Bool?) {
-        self.mode = mode
-        self.blocklisted = blocklisted
-        self.libraryLinked = libraryLinked
-    }
-}
-
-/// How a held download ends once its rows are decided (`finish-rescue`'s `disposition`).
-public enum FinishDisposition: String, Sendable, Hashable, CaseIterable {
-    case remove, removeBlocklist = "remove_blocklist", leave
-}
-
-/// The commit's import modes (`ManualImportCommitRequest.import_mode`).
-public enum ManualImportMode: String, CaseIterable, Sendable, Identifiable {
-    case auto = "AUTO", hardlink = "HARDLINK", symlink = "SYMLINK", copy = "COPY", move = "MOVE"
-
-    public var id: String { rawValue }
-    public var label: String {
-        switch self {
-        case .auto: return "Auto"
-        case .hardlink: return "Hardlink"
-        case .symlink: return "Symlink"
-        case .copy: return "Copy"
-        case .move: return "Move"
-        }
-    }
-    public var hint: String {
-        switch self {
-        case .auto: return "each file uses its root's mode"
-        case .hardlink: return "falls back to copy across filesystems"
-        case .symlink: return "debrid/rclone-safe"
-        case .copy: return "leave the source"
-        case .move: return "remove the source"
-        }
-    }
 }
