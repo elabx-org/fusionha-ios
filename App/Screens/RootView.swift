@@ -41,6 +41,15 @@ struct RootView: View {
                                             fold: x.map { Double($0.lowerBound)...Double($0.upperBound) })
     }
 
+    /// The title's column coming in: a short fade and 24 pt rise on the open
+    /// Duo (its own animation, as the split itself doesn't animate there), a
+    /// slide elsewhere, a plain fade under Reduce Motion.
+    private var detailTransition: AnyTransition {
+        if reduceMotion { return .opacity.animation(.easeOut(duration: 0.2)) }
+        guard fold.isDuoOpen else { return .move(edge: .trailing).combined(with: .opacity) }
+        return .opacity.combined(with: .offset(x: 24)).animation(.easeOut(duration: 0.22))
+    }
+
     /// Whether an open title would be a column (not a sheet) in this geometry.
     private func splitsWithTitle(_ fold: FoldInfo) -> Bool {
         ShellSplit(fold: fold, hasItem: true, spread: spreadContext(fold, hasItem: true)).shown
@@ -63,7 +72,7 @@ struct RootView: View {
             tabs
             if split.shown {
                 ShellDetailColumn()
-                    .transition(reduceMotion ? .opacity : .move(edge: .trailing).combined(with: .opacity))
+                    .transition(detailTransition)
             }
         }
         .background(Theme.bg)
@@ -83,7 +92,11 @@ struct RootView: View {
         // A preview on the right page goes back to its tab's sheet when the
         // Spread ends (`SpreadPreviewHost`); one left on another tab closes.
         .onChange(of: spread.isActive) { _, active in if !active { model.settleSpreadPreview() } }
-        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: split)
+        // On the open Duo the tabs' column jumps to its new width (a Spread
+        // span to the left page re-flows the whole Library grid, and animating
+        // that relayout stuttered); only the title's column animates, through
+        // its own transition. Elsewhere the split still slides.
+        .animation(reduceMotion || fold.isDuoOpen ? nil : .smooth(duration: 0.3), value: split)
         // Toasts: above the tab bar when folded; on the trailing column when
         // split, so they never straddle the fold (DC14); on the right page
         // while a Spread's tab spans both pages.

@@ -110,7 +110,6 @@ struct LibraryView: View {
         .toolbarVisibility(model.selectMode ? .hidden : .automatic, for: .tabBar)
         .librarySelectBar(active: model.selectMode, visibleIds: derived.visibleIds)
         .animation(motion ? .snappy(duration: 0.3) : nil, value: model.selectMode)
-        .animation(motion ? .smooth(duration: 0.3) : nil, value: wide)
         .environment(\.openPosterSheet, { posterSheet = $0 })
         .sheet(item: $posterSheet) { item in
             LibraryPosterSheet(item: item)
@@ -162,6 +161,11 @@ struct LibraryView: View {
                     .onGeometryChange(for: LibraryGridFold.self) { LibraryGridFold($0) } action: { gridFold = $0 }
                 content
             }
+            // A column change (a Spread span to the left page, the desktop
+            // layout to the phone one) re-flows thousands of rows: never
+            // animated, whatever transaction it arrives in.
+            .transaction(value: columns) { $0.animation = nil }
+            .transaction(value: wide) { $0.animation = nil }
             // Plex-app rhythm on phones: 16pt side margins.
             .padding(.horizontal, 16)
             .padding(.top, 20)
@@ -175,7 +179,7 @@ struct LibraryView: View {
             if wide && showsRail {
                 LibraryAlphaRail(present: Set(derived.alpha.letters), state: rail) { jump(toLetter: $0, proxy) }
                     .padding(.vertical, 14)
-                    .transition(.opacity)
+                    .transition(.opacity.animation(motion ? .easeOut(duration: 0.2) : nil))
             }
         }
         .refreshable { await model.loadLibrary() }
