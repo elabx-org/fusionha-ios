@@ -14,13 +14,9 @@ struct AmbientBackdrop: View {
         ZStack {
             Theme.bg
             if let url {
-                // SwiftUI-drawn art: the blur and colour effects reach it.
-                SoftArt(url: TMDBImage.resized(url, to: "w780"))
-                    .scaleEffect(1.28)
-                    .blur(radius: 72)
-                    .saturation(Theme.isMono ? 0 : 1.4)
-                    .brightness(Theme.isLight ? 0 : -0.2)
-                    .clipped()
+                // Blurred, saturated and dimmed once into a cached bitmap
+                // (`AmbientArt`), not a live blur(72) under the scrolling page.
+                AmbientArt(url: TMDBImage.resized(url, to: "w780"), kind: .detailAmbient)
             }
             LinearGradient(stops: AmbientWash.stops(light: Theme.isLight).map {
                 Gradient.Stop(color: Theme.bg.opacity($0.opacity), location: $0.location)

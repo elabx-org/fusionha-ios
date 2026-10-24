@@ -100,7 +100,7 @@ struct LibraryRecentCard: View {
                 PosterImage(url: art)
                     .aspectRatio(16 / 9, contentMode: .fit)
                     .shelfPoster(radius: 14)
-                    .artGlow(art, radius: 14)
+                    .artGlow(art, radius: 14, aspect: 16 / 9, referenceWidth: 240)
                     .padding(.bottom, 8)
                 Text(item.title)
                     .font(.system(size: 14, weight: .semibold))

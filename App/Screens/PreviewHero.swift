@@ -12,20 +12,14 @@ struct PreviewAmbient: View {
 
     var body: some View {
         if let art {
-            GeometryReader { geo in
-                DiscoverArt(url: TMDBImage.resized(art, to: "w342"))
-                    .frame(width: geo.size.width * 1.28, height: geo.size.height * 1.28)
-                    .offset(x: -geo.size.width * 0.14, y: -geo.size.height * 0.14)
-                    .blur(radius: 72)
-                    .saturation(1.4)
-                    .brightness(-0.12)
-                    .overlay {
-                        LinearGradient(stops: [.init(color: Theme.bg.opacity(0.78), location: 0),
-                                               .init(color: Theme.bg.opacity(0.62), location: 0.3),
-                                               .init(color: Theme.bg.opacity(0.5), location: 1)],
-                                       startPoint: .top, endPoint: .bottom)
-                    }
-            }
+            // Rendered once into a cached bitmap (`AmbientArt`), not a live blur(72).
+            AmbientArt(url: TMDBImage.resized(art, to: "w342"), kind: .previewAmbient, aspect: 2 / 3)
+                .overlay {
+                    LinearGradient(stops: [.init(color: Theme.bg.opacity(0.78), location: 0),
+                                           .init(color: Theme.bg.opacity(0.62), location: 0.3),
+                                           .init(color: Theme.bg.opacity(0.5), location: 1)],
+                                   startPoint: .top, endPoint: .bottom)
+                }
             .ignoresSafeArea()
             .allowsHitTesting(false)
             .accessibilityHidden(true)

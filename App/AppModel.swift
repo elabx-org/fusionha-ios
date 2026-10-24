@@ -383,6 +383,7 @@ final class AppModel {
     func resetCacheAndReload() async {
         URLCache.shared.removeAllCachedResponses()
         ImagePipeline.shared.removeAll()
+        ArtBlurCache.shared.removeAll()
         LibraryDiskCache.clear()
         ResponseDiskCache.clear()
         libraryLoaded = false

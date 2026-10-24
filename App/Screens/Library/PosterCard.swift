@@ -108,12 +108,13 @@ struct PosterCard: View {
         Color.clear
             .aspectRatio(2 / 3, contentMode: .fit)
             .overlay { PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w500")) }
-            .saturation(monitored ? 1 : 0.75)
-            .colorMultiply(monitored ? .white : Color(white: 0.82))
-            .opacity(monitored ? 1 : 0.82)
+            // Only an unmonitored poster pays for the dimming effects; a
+            // monitored one scrolls with none (identity effects still cost a pass).
+            .modifier(UnmonitoredDim(active: !monitored))
             .shelfPoster(radius: 12, ring: ringColor, ringWidth: ringWidth)
             // Attention as a soft glow, never a coloured ring (web 0.4.222).
-            .shadow(color: (attentionColor ?? .clear).opacity(0.55), radius: 7)
+            // Only flagged posters get the shadow pass.
+            .modifier(AttentionGlow(color: attentionColor))
             // Layout A: the 4K flag is the only mark on the art.
             .overlay { PosterArtBadges(badges: PosterBadges(item), showsMonitor: false, showsStatus: false) }
             .artGlow(TMDBImage.resized(item.posterUrl, to: "w92"), radius: 12)
@@ -139,6 +140,32 @@ struct PosterCard: View {
             .glassEffect(.regular, in: Circle())
             .animation(motion ? Motion.press : nil, value: selected)
             .accessibilityHidden(true)
+    }
+}
+
+/// An unmonitored poster: desaturated, dimmed and faded. Nothing when monitored.
+private struct UnmonitoredDim: ViewModifier {
+    let active: Bool
+
+    func body(content: Content) -> some View {
+        if active {
+            content.saturation(0.75).colorMultiply(Color(white: 0.82)).opacity(0.82)
+        } else {
+            content
+        }
+    }
+}
+
+/// Attention's soft glow around the poster; no shadow pass without one.
+private struct AttentionGlow: ViewModifier {
+    let color: Color?
+
+    func body(content: Content) -> some View {
+        if let color {
+            content.shadow(color: color.opacity(0.55), radius: 7)
+        } else {
+            content
+        }
     }
 }
 
