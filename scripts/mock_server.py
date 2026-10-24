@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import mock_activity
+import mock_big_library
 import mock_add
 import mock_detail
 import mock_shell
@@ -445,7 +446,7 @@ class Handler(BaseHTTPRequestHandler):
             "/health": lambda: {"status": "ok", "version": "mock"},
             "/api/v1/setup-status": lambda: load("setup-status.json"),
             "/api/v1/auth/me": lambda: load("me_requestor.json" if REQUESTOR else "me.json"),
-            "/api/v1/library": lambda: load("library.json"),
+            "/api/v1/library": lambda: mock_big_library.library(load("library.json")),
             "/api/v1/queue": queue,
             "/api/v1/history": lambda: load("history.json"),
             "/api/v1/blocklist": lambda: load("blocklist.json"),
@@ -496,7 +497,7 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/v1/library/setups":
             return self.send_json(mock_shell.setups() if SHELL else {"setups": [], "next_rss_at": None})
         if SHELL and path == "/api/v1/library":
-            return self.send_json(mock_shell.library(load("library.json")))
+            return self.send_json(mock_shell.library(mock_big_library.library(load("library.json"))))
         if SHELL and path == "/api/v1/setup-status":
             return self.send_json(mock_shell.setup_status(load("setup-status.json")))
         if path in SHELL_ROUTES:
@@ -522,6 +523,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [1, 2],
                                    "best_release_name": "Demo.2160p.WEB-DL.DV.HDR10", "message": None,
                                    "format_tags": [{"label": "DV", "kind": "hdr"}, {"label": "HDR10", "kind": "hdr"}]})
+        if path == "/__mock/big-library":
+            mock_big_library.ENABLED = parse_qs(urlparse(self.path).query).get("on", ["1"])[0] == "1"
+            return self.send_json({"big_library": mock_big_library.ENABLED})
         hit = self.activity("POST")
         if hit:
             return self.send_json(*hit)

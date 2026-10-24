@@ -140,6 +140,24 @@ shoot duo-harness-folded-library-daylight folded $L $SP $DAY
 shoot duo-harness-folded-title folded $L $SP $SERIES
 shoot duo-harness-folded-title-daylight folded $L $SP $SERIES $DAY
 shoot duo-harness-open-spread-library-series-daylight open $L $SP $SERIES $DAY
+# The owner's real library (scripts/mock_big_library.py): 3,785 titles in five
+# kinds. The kind control's fallback, both pages at one poster size, the bar
+# with a title open; open and closed, dark, Daylight and Monochrome.
+big() { curl -s -X POST "$S/__mock/big-library?on=$1" > /dev/null || true; }
+if [ -z "$ONLY" ] || echo "duo-harness-big" | grep -qE "$ONLY"; then
+  big 1
+  WAIT=14
+  shoot duo-harness-big-warmup open $L $SP && rm -f "$OUT/duo-harness-big-warmup.png"
+  for theme in dark daylight monochrome; do
+    T="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$theme"; SUF="-$theme"
+    [ "$theme" = dark ] && T="" && SUF=""
+    shoot duo-harness-big-open-spread-library$SUF open $L $SP $T
+    shoot duo-harness-big-open-spread-library-title$SUF open $L $SP $SERIES $T
+    shoot duo-harness-big-folded-library$SUF folded $L $SP $T
+  done
+  unset WAIT
+  big 0
+fi
 # Requests 10b: Account and Watchlists & lists (the list, a source, Pick the
 # right title). Open in a Spread, Account is the left page and Watchlists & lists
 # the right page (a source pushes there); the Web layout keeps the form sheet. Closed: the phone.
