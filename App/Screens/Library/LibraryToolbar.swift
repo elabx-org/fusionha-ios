@@ -31,12 +31,15 @@ struct LibraryToolbar<Filters: View>: View {
                 if showsAttention {
                     row(compactChip: true, iconFilters: false)
                     row(compactChip: true, iconFilters: true)
+                } else {
+                    // The flat Duo's third-wide list (option A): Filters as its glyph.
+                    row(compactChip: false, iconFilters: true)
                 }
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         leading
                         Spacer(minLength: 0)
-                        trailing(iconFilters: false)
+                        trailing(iconFilters: true)
                     }
                     if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
                 }

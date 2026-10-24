@@ -50,7 +50,11 @@ struct AdaptivePosterGrid<Content: View>: View {
 
     /// Spanning a Spread with the fold inside: 3 a side (the Library's span).
     private var spans: Bool { spread.spans && measured.fold != nil }
-    private var columns: Int { PosterTracks.count(base: PosterColumns.count(for: measured.width), spans: spans) }
+    /// A flat span (option A): six across the display, as in book pose, with
+    /// no gutter (an even count, so half folding never re-counts).
+    private var columns: Int {
+        PosterTracks.count(base: PosterColumns.count(for: measured.width), spans: spans || (spread.spans && measured.width >= 600))
+    }
     private var tracks: [FoldColumns.Track]? {
         PosterTracks.tracks(count: columns, width: Double(measured.width), fold: measured.foldRange,
                             spans: spans, spacing: Double(columnSpacing))

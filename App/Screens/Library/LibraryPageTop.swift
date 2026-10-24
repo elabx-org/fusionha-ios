@@ -57,6 +57,12 @@ struct LibraryPageTop: View {
         }
     }
 
+    /// The open Duo's list column beside a title, a third wide when flat
+    /// (option A): the kind control is one menu ("All · 3,785").
+    private var narrowList: Bool {
+        spread.isActive && !spread.spans && DuoSplit.isNarrowList(width: Double(paneWidth))
+    }
+
     /// Layout A's shelf: phone-sized pages with posters and something to show.
     private var showsShelf: Bool {
         !wide && !compact && !derived.recent.isEmpty && derived.titleCount > 0
@@ -84,9 +90,15 @@ struct LibraryPageTop: View {
         LibraryHeader(derived: derived, status: $status, searching: $searching, wide: false,
                       kindCounts: kindCountsInSummary)
             .reveal(0)
-        LibraryKindSegment(derived: derived, kind: $kind, countsInSummary: $kindCountsInSummary)
-            .padding(.top, 14)
-            .reveal(1)
+        Group {
+            if narrowList {
+                LibraryKindMenu(derived: derived, kind: $kind)
+            } else {
+                LibraryKindSegment(derived: derived, kind: $kind, countsInSummary: $kindCountsInSummary)
+            }
+        }
+        .padding(.top, 14)
+        .reveal(1)
         phoneToolbar
             .padding(.top, 12)
             .padding(.bottom, 22)

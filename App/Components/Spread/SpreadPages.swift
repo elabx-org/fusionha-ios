@@ -54,13 +54,27 @@ struct FoldSpanRow<Leading: View, Trailing: View>: View {
     var equalPanes = false
     @ViewBuilder var leading: Leading
     @ViewBuilder var trailing: Trailing
+    @Environment(\.spread) private var spread
     @State private var panes: FoldColumns.Panes?
+    @State private var width: CGFloat = 0
+    /// The gap between the halves of a flat span (nothing reserved there).
+    private static var flatGap: CGFloat { 24 }
+
+    /// A flat span (option A): the two pieces still side by side, as halves
+    /// with an ordinary gap, since the flat fold reserves nothing.
+    private var flatHalves: Bool { panes == nil && spread.spans && spread.posture == .flat && width > 0 }
 
     var body: some View {
         Group {
             if let panes {
                 FoldPairLayout(lead: CGFloat(panes.lead), gap: CGFloat(panes.gap), trailingAlignment: trailingAlignment,
                                equalPanes: equalPanes) {
+                    leading
+                    trailing
+                }
+            } else if flatHalves {
+                FoldPairLayout(lead: (width - Self.flatGap) / 2, gap: Self.flatGap,
+                               trailingAlignment: trailingAlignment) {
                     leading
                     trailing
                 }
@@ -78,6 +92,7 @@ struct FoldSpanRow<Leading: View, Trailing: View>: View {
                                   fold: Double(x.lowerBound)...Double(x.upperBound), minLead: 120, minTrail: 120)
             }
         } action: { panes = $0 }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
     }
 }
 
