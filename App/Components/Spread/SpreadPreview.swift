@@ -76,6 +76,7 @@ struct SpreadPreviewColumn: View {
         NavigationStack {
             PreviewPage(route: route, onAdd: { addPick = $0 }, onOpenLibrary: { model.open($0) },
                         onClose: { model.spreadPreview = nil })
+                .duoListToggleToolbar()
                 .navigationDestination(for: PreviewRoute.self) { next in
                     PreviewPage(route: next, onAdd: { addPick = $0 }, onOpenLibrary: { model.open($0) })
                 }

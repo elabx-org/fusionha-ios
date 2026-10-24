@@ -18,6 +18,8 @@ struct RootView: View {
     @AppStorage(DuoOpenLayout.storageKey) private var duoLayout: DuoOpenLayout = .standard
     @State private var spanRequests = SpreadSpanRequests()
     @State private var downloadsBar = DownloadsBarState()
+    /// The tabs whose list the sidebar button hid (`DuoListMemory`). Per device.
+    @AppStorage(DuoListMemory.storageKey) private var hiddenLists = ""
 
     /// The Spread, when the Duo is open and the setting says so (else `.off`).
     private func spreadContext(_ fold: FoldInfo, hasItem: Bool) -> SpreadContext {
@@ -28,17 +30,34 @@ struct RootView: View {
     /// sheet; in a Spread the right page.
     private var split: ShellSplit {
         let hasItem = model.rightPageHasItem
-        return ShellSplit(fold: fold, hasItem: hasItem, spread: spreadContext(fold, hasItem: hasItem))
+        var split = ShellSplit(fold: fold, hasItem: hasItem, spread: spreadContext(fold, hasItem: hasItem))
+        split.primaryHidden = split.axis == .horizontal && DuoSplit.hidesList(
+            remembered: DuoListMemory(raw: hiddenLists).isHidden(model.tab.listMemoryKey),
+            posture: fold.posture, detailShown: split.shown && hasItem)
+        return split
     }
 
-    /// The tabs' column runs across the Duo's fold (a Spread span, or the Web
-    /// layout with nothing open): the system-hosted downloads bar would sit on
-    /// the fold there, so it waits until a title takes the right page.
+    /// The sidebar button's action for the detail column: offered flat open
+    /// with a title or preview beside the list (`DuoSplit.hidesList`).
+    private func listToggle(_ split: ShellSplit) -> DuoListToggle? {
+        guard split.shown, split.axis == .horizontal, fold.posture?.canHideList == true,
+              model.rightPageHasItem else { return nil }
+        let key = model.tab.listMemoryKey
+        return DuoListToggle(hidden: split.primaryHidden) {
+            var memory = DuoListMemory(raw: hiddenLists)
+            memory.toggle(key)
+            hiddenLists = memory.raw
+        }
+    }
+
+    /// The tabs' column runs across the Duo's fold in book pose (a Spread
+    /// span, or the Web layout with nothing open): the system-hosted downloads
+    /// bar would sit on the fold there, so it waits until a title takes the
+    /// right page. Flat open nothing is reserved.
     private var tabsCrossFold: Bool {
         let split = split
-        let x = fold.vertical ?? fold.flatVertical
         return SpreadGeometry.tabsCrossFold(tabsWidth: Double(split.shown ? split.primary : fold.size.width),
-                                            fold: x.map { Double($0.lowerBound)...Double($0.upperBound) })
+                                            fold: fold.vertical.map { Double($0.lowerBound)...Double($0.upperBound) })
     }
 
     /// The title's column coming in: a short fade and 24 pt rise on the open
@@ -68,8 +87,11 @@ struct RootView: View {
     var body: some View {
         let split = split
         let spread = spreadContext(fold, hasItem: model.rightPageHasItem)
-        FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap) {
+        FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap, primaryHidden: split.primaryHidden) {
+            // Hidden (the sidebar button), the list keeps its width off screen.
             tabs
+                .allowsHitTesting(!split.primaryHidden)
+                .accessibilityHidden(split.primaryHidden)
             if split.shown {
                 ShellDetailColumn()
                     .transition(detailTransition)
@@ -95,7 +117,10 @@ struct RootView: View {
         // On the open Duo the tabs' column jumps to its new width (a Spread
         // span to the left page re-flows the whole Library grid, and animating
         // that relayout stuttered); only the title's column animates, through
-        // its own transition. Elsewhere the split still slides.
+        // its own transition. Elsewhere the split still slides. The sidebar
+        // button's hide / show slides (the inner modifier wins): the list
+        // keeps its width, so nothing in it re-flows.
+        .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: split.primaryHidden)
         .animation(reduceMotion || fold.isDuoOpen ? nil : .smooth(duration: 0.3), value: split)
         // Toasts: above the tab bar when folded; on the trailing column when
         // split, so they never straddle the fold (DC14); on the right page
@@ -106,6 +131,7 @@ struct RootView: View {
         }
         .environment(toastAnchor)
         .environment(\.spread, spread)
+        .environment(\.duoListToggle, listToggle(split))
         .environment(\.duoOpen, fold.isDuoOpen)
         .environment(\.spreadSpanRequests, spanRequests)
         .environment(\.bookPose, fold.vertical != nil)
@@ -161,98 +187,6 @@ struct RootView: View {
                                    shown: !model.requestScoped && model.tab != .activity && downloadsBar.hasContent
                                        && !tabsCrossFold))
         .onChange(of: model.queue, initial: true) { downloadsBar.update(model.queue) }
-    }
-}
-
-/// The shell's other sheets, deep links and polling, applied once around the
-/// whole (possibly two-column) shell.
-private struct ShellPresentations: ViewModifier {
-    @Bindable var model: AppModel
-    let reduceMotion: Bool
-    let scenePhase: ScenePhase
-    /// The iPhone Duo is open: the Add sheet goes on the right page.
-    let duoOpen: Bool
-    /// Open in a Spread: Account takes both pages (Watchlists & lists splits
-    /// at the fold). The Web layout keeps the usual form sheet (owner default).
-    let accountOnPages: Bool
-    /// The shell has been measured: Account waits for it, so a launch or a
-    /// link that opens it at once doesn't show the form sheet, then the pages.
-    let measured: Bool
-
-    /// Account's form sheet (`paged` false) or its pages (`paged` true). A
-    /// presentation the layout no longer picks never writes back.
-    private func account(paged: Bool) -> Binding<Bool> {
-        Binding(get: { measured && accountOnPages == paged && model.showingAccount },
-                set: { if measured && accountOnPages == paged { model.showingAccount = $0 } })
-    }
-
-    func body(content: Content) -> some View {
-        content
-        // On the open Duo, the right page (S3): never a form sheet on the fold.
-        .duoPageSheet(isPresented: $model.showingAdd, onPages: duoOpen) {
-            AddTitleSheet()
-                .presentationDragIndicator(.visible)
-                .presentationCornerRadius(20)
-                .presentationBackground(Theme.panel)
-        }
-        .sheet(isPresented: account(paged: false),
-               onDismiss: { model.avatar.openPending(model) }) {
-            AccountSheet().presentationBackground(Theme.bg)
-        }
-        .duoPageSheet(isPresented: account(paged: true),
-                      placement: .twoPages, onPages: true) {
-            AccountSpreadSheet()
-        }
-        .onChange(of: model.showingAccount) {
-            // The page cover has no onDismiss: open what the hub queued once it is gone.
-            guard accountOnPages, !model.showingAccount else { return }
-            Task {
-                try? await Task.sleep(for: .milliseconds(500))
-                model.avatar.openPending(model)
-            }
-        }
-        .modifier(AvatarPresentations(avatar: model.avatar, model: model))
-        .modifier(SecretsLockedToaster(model: model))
-        .sheet(item: $model.deleteTarget) { target in
-            DeleteTitleDialog(target: target)
-                .presentationDetents([.height(320)])
-                .presentationDragIndicator(.visible)
-                .presentationBackground(Theme.panel)
-        }
-        .onChange(of: model.pendingLink, initial: true) {
-            // fusionha://activity, calendar, item/{id}… from the widgets, the
-            // Live Activity and notifications (received in FusionhaApp).
-            Task { await model.applyPendingLink() }
-        }
-        .onChange(of: model.tab) {
-            model.searchText = ""
-            model.chromeHidden = false
-            if model.tab != .library { model.exitSelectMode() }
-        }
-        .task {
-            #if DEBUG
-            // CI screenshots: the folded iPhone Duo held sideways, when the
-            // simulator cannot rotate itself (`FUSIONHA_SCREENSHOT_ORIENTATION=landscape`).
-            if ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_ORIENTATION"] == "landscape",
-               let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight)) { _ in }
-            }
-            #endif
-            await model.loadMe()
-            await model.registerPushDevice()
-        }
-        .task(id: scenePhase) {
-            guard scenePhase == .active else { return }
-            await model.pollQueue()
-        }
-        .task(id: "\(scenePhase == .active)|\(model.me?.id ?? -1)") {
-            guard scenePhase == .active, model.me != nil else { return }
-            await model.pollShell()
-        }
-        .task(id: "setups|\(scenePhase == .active)|\(model.me?.id ?? -1)") {
-            guard scenePhase == .active, model.me != nil, !model.requestScoped else { return }
-            await model.pollSetups()
-        }
     }
 }
 

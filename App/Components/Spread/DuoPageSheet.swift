@@ -71,10 +71,14 @@ private struct DuoPageCover<Content: View>: View {
     @ViewBuilder var content: Content
     @Environment(\.dismiss) private var dismiss
     /// The cover's safe-area frame (the shell's) and the fold through it.
-    @State private var measured = GridFold()
+    @State private var measured = FoldInfo()
 
+    /// Book pose: the page after the fold; flat: the detail's two thirds.
     private var track: FoldColumns.Track? {
-        DiscoverFold.modalTrack(placement, width: Double(measured.width), fold: measured.foldRange)
+        let x = measured.vertical ?? measured.flatVertical
+        return DiscoverFold.modalTrack(placement, width: Double(measured.size.width),
+                                       fold: x.map { Double($0.lowerBound)...Double($0.upperBound) },
+                                       posture: measured.posture ?? .book)
     }
 
     var body: some View {
@@ -87,7 +91,7 @@ private struct DuoPageCover<Content: View>: View {
                 .accessibilityAddTraits(.isButton)
             page
         }
-        .onGeometryChange(for: GridFold.self) { GridFold($0) } action: { measured = $0 }
+        .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { measured = $0 }
         .presentationBackground(.clear)
         // Sheets this one opens stay on the pages too.
         .environment(\.duoOpen, true)
@@ -96,7 +100,7 @@ private struct DuoPageCover<Content: View>: View {
 
     private var page: some View {
         content
-            .frame(width: track.map { CGFloat($0.width) } ?? measured.width)
+            .frame(width: track.map { CGFloat($0.width) } ?? measured.size.width)
             .frame(maxHeight: .infinity)
             .background(Theme.panel.ignoresSafeArea(edges: .vertical))
             .overlay(alignment: .leading) {

@@ -49,7 +49,7 @@ public enum ShellSplitRule {
     }
 
     /// Where the split goes when a fold runs top to bottom through the
-    /// container, flat open included: `splits` still decides whether, this
+    /// container in book pose (flat open nothing is reserved, option A): `splits` still decides whether, this
     /// decides where.
     public struct FoldSplit: Equatable, Sendable {
         /// The tab's pane: it ends half a gutter before the fold.

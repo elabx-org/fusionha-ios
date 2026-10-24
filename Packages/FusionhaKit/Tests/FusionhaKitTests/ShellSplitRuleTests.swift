@@ -67,9 +67,11 @@ final class ShellSplitRuleTests: XCTestCase {
         XCTAssertEqual(ShellSplitRule.detailWidth(for: 1366), 620)
     }
 
-    /// Flat open, the Duo's fold (inactive, zero wide) still splits the shell:
-    /// the tabs end 20 before it, the title starts 20 after it.
-    func testAFlatFoldSplitsAtTheFoldWithAGutter() throws {
+    /// Book pose, a zero-wide active fold (the harness's) splits the shell:
+    /// the tabs end 20 before it, the title starts 20 after it. Flat open the
+    /// app passes no fold (option A: nothing reserved), so the Web layout keeps
+    /// the web's split (`DuoSplitTests`).
+    func testABookFoldSplitsAtTheFoldWithAGutter() throws {
         let split = try XCTUnwrap(ShellSplitRule.foldSplit(width: 951, fold: 475...475))
         XCTAssertEqual(split.primary, 455)
         XCTAssertEqual(split.gap, 40)

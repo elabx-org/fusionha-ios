@@ -31,6 +31,8 @@ extension View {
 ///
 ///   FUSIONHA_SCREENSHOT_DUO_FRAME=open|portrait|folded
 ///   FUSIONHA_SCREENSHOT_DUO_LAYOUT=spread|web   (the "iPhone Duo, open" setting)
+///   FUSIONHA_SCREENSHOT_DUO_POSE=flat|book      (an inactive or an active fold)
+///   FUSIONHA_SCREENSHOT_DUO_LIST=shown|hidden   (the sidebar button, every tab)
 ///
 /// Only read in DEBUG builds; the release app has no harness.
 enum DuoHarness {
@@ -76,11 +78,22 @@ enum DuoHarness {
     static let frame: Frame? = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_DUO_FRAME"]
         .flatMap(Frame.init(rawValue:))
 
+    /// `FUSIONHA_SCREENSHOT_DUO_POSE=book`: the fake fold is active (partially
+    /// folded, reserved); otherwise flat (inactive, nothing reserved).
+    static let bookPose = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_DUO_POSE"] == "book"
+
+    /// `FUSIONHA_SCREENSHOT_DUO_LIST=hidden`: every tab's list hidden (the sidebar button).
+    static let listHidden = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_DUO_LIST"] == "hidden"
+
     /// Applies the harness's launch settings before the first view reads them.
     static func prepare() {
         let env = ProcessInfo.processInfo.environment
         if let layout = env["FUSIONHA_SCREENSHOT_DUO_LAYOUT"].flatMap(DuoOpenLayout.init(rawValue:)) {
             UserDefaults.standard.set(layout.rawValue, forKey: DuoOpenLayout.storageKey)
+        }
+        if env["FUSIONHA_SCREENSHOT_DUO_LIST"] != nil {
+            UserDefaults.standard.set(listHidden ? "library,discover,search,calendar,activity,requests,you" : "",
+                                      forKey: DuoListMemory.storageKey)
         }
     }
 
@@ -123,8 +136,9 @@ private struct DuoHarnessFrame: ViewModifier {
     @ViewBuilder
     private var foldGuide: some View {
         if let x = frame.verticalFoldX {
+            // Faint when flat: nothing is reserved there, content may cross it.
             Rectangle()
-                .fill(Theme.danger.opacity(0.55))
+                .fill(Theme.danger.opacity(DuoHarness.bookPose ? 0.55 : 0.18))
                 .frame(width: 1, height: frame.size.height)
                 .offset(x: x - 0.5)
                 .allowsHitTesting(false)

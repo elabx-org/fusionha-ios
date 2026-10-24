@@ -15,10 +15,10 @@ import FusionhaKit
 // open (Book) the system reports the
 // fold as a reserved `.division` region; the split then lines up with the
 // fold so neither column runs across it, and nothing is drawn in the fold.
-// Flat open the fold is still there (an inactive, zero-wide `.division`):
-// whenever `ShellSplitRule` splits, the split sits on it too, with the 40 pt
-// fold gutter (`FoldColumns.gutter`) around it, instead of the web's 418 | 532.
-// Without a fold (an iPad, any other device) the web's split is unchanged.
+// Flat open the fold is inactive and zero wide, and nothing reserves it
+// (option A, HIG): the Web layout uses the web's 418 | 532 split and a
+// Spread a third | two thirds (`DuoSplit`). In either, flat, the sidebar
+// button can hide the list (`ShellSplit.primaryHidden`).
 //
 // Every size is container-relative (no screen sizes, idioms or orientation
 // checks). The open title lives in `AppModel.presentedItem` and its state in
@@ -34,6 +34,10 @@ struct FoldSplitLayout: Layout {
     var axis: Axis = .horizontal
     var primary: CGFloat
     var gap: CGFloat = 0
+    /// The sidebar button hid the first child (the list): it keeps its width
+    /// just off the leading edge (its grid never re-flows) and the second
+    /// child fills the container.
+    var primaryHidden = false
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         proposal.replacingUnspecifiedDimensions()
@@ -45,6 +49,11 @@ struct FoldSplitLayout: Layout {
             return
         }
         switch axis {
+        case .horizontal where primaryHidden:
+            let first = min(max(primary, 0), bounds.width)
+            subviews[0].place(at: CGPoint(x: bounds.minX - first - gap, y: bounds.minY),
+                              proposal: ProposedViewSize(width: first, height: bounds.height))
+            subviews[1].place(at: bounds.origin, proposal: ProposedViewSize(bounds.size))
         case .horizontal:
             let first = min(max(primary, 0), bounds.width)
             subviews[0].place(at: bounds.origin, proposal: ProposedViewSize(width: first, height: bounds.height))
@@ -71,6 +80,9 @@ struct ShellSplit: Equatable {
     var gap: CGFloat = 0
     /// Whether the trailing column shows at all.
     var shown = false
+    /// The list is hidden (the sidebar button, flat only): the trailing
+    /// column fills the container.
+    var primaryHidden = false
 
     /// The shell's split: a Spread's pages when `spread` is active, else the
     /// Web layout's (`init(fold:hasItem:)`).
@@ -109,20 +121,12 @@ struct ShellSplit: Equatable {
             primary = y.lowerBound
             gap = y.upperBound - y.lowerBound
         } else if ShellSplitRule.splits(width: Double(width), height: Double(fold.size.height), hasItem: hasItem) {
+            // No fold, or the Duo flat open (option A: flat, nothing is
+            // reserved): the web's list | detail, the detail a phone-width-plus column.
             shown = true
             axis = .horizontal
-            if let x = fold.flatVertical,
-               let atFold = ShellSplitRule.foldSplit(width: Double(width),
-                                                     fold: Double(x.lowerBound)...Double(x.upperBound)) {
-                // Flat open on the Duo: the same rule decides, but the split
-                // sits on the fold with a gutter, so the title never crosses it.
-                primary = CGFloat(atFold.primary)
-                gap = CGFloat(atFold.gap)
-            } else {
-                // No fold: the web's list | detail, the detail a phone-width-plus column.
-                primary = CGFloat(ShellSplitRule.primaryWidth(for: Double(width)))
-                gap = CGFloat(ShellSplitRule.divider)
-            }
+            primary = CGFloat(ShellSplitRule.primaryWidth(for: Double(width)))
+            gap = CGFloat(ShellSplitRule.divider)
         }
     }
 }
@@ -141,6 +145,7 @@ struct ShellDetailColumn: View {
                     // unfolding keeps the page, its child sheets and their drafts.
                     ItemDetailView(store: model.detailStore(for: ref.id), onClose: { model.presentedItem = nil })
                         .environment(\.detailInColumn, true)
+                        .duoListToggleToolbar()
                 }
                 .id(ref.id)
             } else if let route = model.spreadPreview, spread.isActive {

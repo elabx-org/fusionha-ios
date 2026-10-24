@@ -4,9 +4,12 @@ import FusionhaKit
 // MARK: - iPhone Duo Spread (S1 infrastructure)
 //
 // Open with a top-to-bottom fold (inner landscape, flat or Book) and the
-// "iPhone Duo, open" setting on Spread, the shell is two pages split at the
-// fold's real x with the 40 pt gutter (`SpreadGeometry` in FusionhaKit): the
-// tab on the left page, the picked item on the right (`SpreadRightPage`).
+// "iPhone Duo, open" setting on Spread, the shell is two pages: the tab on
+// the left page, the picked item on the right (`SpreadRightPage`). Option A
+// (owner, 2026-10-24; `DuoSplit` in FusionhaKit): in book pose the pages split
+// at the fold's real x with the 40 pt gutter; flat open the list takes a
+// third and the detail the rest, nothing reserved at the fold, and the
+// sidebar button (`DuoListToggle`) hides the list per tab.
 // The Web layout (the setting's other value) is the web-parity wide layout,
 // untouched.
 //
@@ -25,6 +28,9 @@ import FusionhaKit
 /// The shell's Spread state, handed to every screen as `\.spread`.
 struct SpreadContext: Equatable {
     var mode: SpreadGeometry.Mode = .off
+    /// The open Duo's posture (`nil` when not open): book splits at the fold,
+    /// flat is a third | two thirds with nothing reserved (option A).
+    var posture: DuoPosture?
 
     /// In a Spread (either mode): the screen should use its Spread layout.
     var isActive: Bool { mode != .off }
@@ -37,8 +43,11 @@ struct SpreadContext: Equatable {
 
     init(fold: FoldInfo, layout: DuoOpenLayout, spanRequested: Bool, hasItem: Bool) {
         let x = fold.vertical ?? fold.flatVertical
-        mode = SpreadGeometry.mode(layout: layout, width: Double(fold.size.width),
+        posture = fold.posture
+        // Flat: the Duo's own (inactive) fold only says it is open.
+        mode =SpreadGeometry.mode(layout: layout, width: Double(fold.size.width),
                                    fold: x.map { Double($0.lowerBound)...Double($0.upperBound) },
+                                   posture: fold.posture ?? .book,
                                    spanRequested: spanRequested, hasItem: hasItem)
     }
 }

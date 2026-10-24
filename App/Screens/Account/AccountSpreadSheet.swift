@@ -38,7 +38,7 @@ struct AccountSpreadSheet: View {
         .background(Theme.bg.ignoresSafeArea())
         .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
         .onGeometryChange(for: SpreadGeometry.Pages?.self) { proxy in
-            proxy.foldRange.flatMap { SpreadGeometry.pages(width: Double(proxy.size.width), fold: $0) }
+            proxy.duoPages
         } action: { pages = $0 }
     }
 

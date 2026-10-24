@@ -2,7 +2,8 @@ import XCTest
 @testable import FusionhaKit
 
 /// Spread S2: the Library and its downloads bar keep the fold clear in both
-/// "iPhone Duo, open" layouts. Duo numbers: an 849 pt shell with the fold at
+/// "iPhone Duo, open" layouts in book pose (option A: flat open the app passes
+/// no fold, nothing is reserved; see `DuoSplitTests`). Duo numbers: an 849 pt shell with the fold at
 /// 451.5; the Library's scroll insets its content 16 each side, so its content
 /// is 817 wide (783 beside the 34 pt A–Z rail) with the fold at 435.5.
 final class LibraryFoldTests: XCTestCase {

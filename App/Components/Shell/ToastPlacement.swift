@@ -78,7 +78,7 @@ enum ToastRegion {
         if spread.spans, let page = spread.pages?.right, size.height > 0 {
             return CGRect(x: CGFloat(page.x), y: 0, width: CGFloat(page.width), height: size.height)
         }
-        guard split.shown, size.width > 0, size.height > 0 else { return nil }
+        guard split.shown, !split.primaryHidden, size.width > 0, size.height > 0 else { return nil }
         let start = split.primary + split.gap
         switch split.axis {
         case .horizontal:

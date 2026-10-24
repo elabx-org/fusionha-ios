@@ -81,4 +81,12 @@ extension GeometryProxy {
     var foldRange: ClosedRange<Double>? {
         FoldInfo.verticalFold(self).map { Double($0.lowerBound)...Double($0.upperBound) }
     }
+
+    /// A window-sized container's two pages on the open Duo (`DuoSplit`):
+    /// book pose split at the fold, flat a third | two thirds. `nil` closed.
+    var duoPages: SpreadGeometry.Pages? {
+        guard let open = FoldInfo.openFold(self) else { return nil }
+        return DuoSplit.pages(width: Double(size.width), fold: Double(open.lowerBound)...Double(open.upperBound),
+                              posture: FoldInfo.isBookPose(self) ? .book : .flat)
+    }
 }

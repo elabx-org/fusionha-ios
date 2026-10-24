@@ -1,7 +1,9 @@
 import Foundation
 
-/// Column maths that keeps the iPhone Duo's fold in a gutter, flat open or
-/// half open, so no column (a Board stage, a month's weekday) straddles it.
+/// Column maths that keeps the iPhone Duo's fold in a gutter in book pose
+/// (half open), so no column (a Board stage, a month's weekday) straddles it.
+/// Option A: flat open the app passes no fold (nothing is reserved; the
+/// harness's zero-wide fake is an active, book-pose fold).
 ///
 /// The fold is a reserved `.division` region running top to bottom. Flat open
 /// it is inactive and zero wide; half open it is active and has a width. Either
