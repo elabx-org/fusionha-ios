@@ -183,6 +183,7 @@ struct PreviewPage: View {
                     .lineSpacing(14 * 0.55 - 3)
                     .foregroundStyle(Theme.txt.opacity(0.9))
                     .shadow(color: .black.opacity(0.4), radius: 6)
+                    .readableWidth()
                     .padding(.top, 8)
                     .padding(.bottom, 4)
             }

@@ -50,6 +50,7 @@ struct DetailPage: View {
                         .font(.system(size: 15))
                         .lineSpacing(15 * 0.45 - 3)
                         .foregroundStyle(Theme.txt)
+                        .readableWidth()
                         .padding(.top, 16)
                         .detailReveal(delay: 0.18)
                 }

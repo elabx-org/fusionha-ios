@@ -44,6 +44,7 @@ struct DetailHero: View {
                 Text(tagline)
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.mut)
+                    .readableWidth()
                     .padding(.top, 14)
                     .detailReveal(delay: 0.13)
             }

@@ -99,3 +99,16 @@ public struct DuoListMemory: Equatable, Sendable {
         set(!isHidden(tab), for: tab)
     }
 }
+
+/// The longest a line of reading text runs (overviews, taglines, section
+/// text): about 680 pt, leading-aligned, so a title filling the open Duo
+/// (list hidden) keeps lines near 90 characters instead of ~140. Art, heroes,
+/// bars and grids stay full width.
+public enum ReadableWidth {
+    public static let max = 680.0
+
+    /// The width a text block gets in a container `width` wide.
+    public static func width(in width: Double) -> Double {
+        Swift.min(width, max)
+    }
+}

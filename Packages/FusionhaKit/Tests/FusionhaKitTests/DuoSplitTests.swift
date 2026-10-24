@@ -98,6 +98,13 @@ final class DuoSplitTests: XCTestCase {
         XCTAssertNil(ManualImportLayout.duoPanes(width: width, fold: nil, posture: nil))
     }
 
+    /// List hidden, the detail is the whole display: reading text stops at ~680.
+    func testReadingTextIsCappedOnlyWhenWide() {
+        XCTAssertEqual(ReadableWidth.max, 680)
+        XCTAssertEqual(ReadableWidth.width(in: width - 32), 680)
+        XCTAssertEqual(ReadableWidth.width(in: 534), 534, "the two-thirds detail keeps its width")
+    }
+
     // MARK: The sidebar button
 
     func testTheListHidesOnlyFlatAndBesideADetail() {

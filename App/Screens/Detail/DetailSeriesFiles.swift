@@ -46,7 +46,7 @@ struct SeriesFilesTab: View {
                 .font(.system(size: 12))
                 .lineSpacing(3)
                 .foregroundStyle(Theme.dim)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .readableWidth()
             HStack {
                 Spacer()
                 if (model.me?.can("edit") ?? true) && !sections.isEmpty { DetailRenameFilesButton { store.openRename() } }

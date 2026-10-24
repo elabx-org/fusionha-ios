@@ -19,6 +19,7 @@ struct EpisodeDetailsPane: View {
                 .foregroundStyle(episode.overview?.isEmpty == false ? Theme.txt : Theme.dim)
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
+                .readableWidth()
             VStack(spacing: 0) {
                 row("Monitored") { Text(store.episodeMonitored(episode) ? "Yes" : "No") }
                 row("Runtime") { Text(episode.runtime.map { "\($0) min" } ?? "—") }

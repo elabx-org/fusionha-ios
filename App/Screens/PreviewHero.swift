@@ -118,6 +118,7 @@ struct PreviewHero: View {
                 .shadow(color: .black.opacity(0.6), radius: 10, y: 3)
             if let tagline, !tagline.isEmpty {
                 Text(tagline).font(.system(size: 13)).italic().foregroundStyle(Theme.txt.opacity(0.86))
+                    .readableWidth()
                     .padding(.top, 8)
             }
             metaLine.padding(.top, 12)
