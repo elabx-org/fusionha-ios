@@ -2,7 +2,8 @@ import SwiftUI
 import FusionhaKit
 
 /// The held download's reason strip (the web's `HeldStrip`): why it was held,
-/// and for a pack, Keep all current / Import all over the held downgrades.
+/// and for a pack, a pointer to the bulk bar (it replaced Keep all current /
+/// Import all).
 struct MIHeldStripView: View {
     let strip: ManualImportHeldStrip
     @Environment(ManualImportSession.self) private var session
@@ -19,13 +20,10 @@ struct MIHeldStripView: View {
                 Text(line).font(.footnote).foregroundStyle(Theme.mut).padding(.leading, 26)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            if strip.bulkEligible > 0 {
-                HStack(spacing: 8) {
-                    ActAsyncButton(label: "Keep all current", systemImage: "internaldrive") { await bulk("keep_current") }
-                    ActAsyncButton(label: "Import all", systemImage: "arrow.down") { await bulk("import") }
-                }
-                .disabled(session.bulkBusy || session.working)
-                .padding(.leading, 26)
+            if strip.bulkEligible > 0 && session.barShows {
+                // The bulk bar decides several at once (approved bulk-decide v3).
+                Text("Decide several together: tick them, then Decide.")
+                    .font(.footnote).foregroundStyle(Theme.mut).padding(.leading, 26)
             }
         }
         .padding(12)
@@ -33,12 +31,6 @@ struct MIHeldStripView: View {
         .actWash(Theme.miss, radius: Theme.radius, base: Theme.panel)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Held download")
-    }
-
-    /// Worked when no row the bulk touched came back with an error.
-    private func bulk(_ choice: String) async -> Bool {
-        await session.bulkHeld(choice)
-        return session.rows.allSatisfy { session.rowErrors[$0.rowId] == nil }
     }
 }
 
@@ -67,7 +59,13 @@ struct MIFooter: View {
                     .font(.footnote).foregroundStyle(Theme.mut)
             }
             HStack(spacing: 10) {
-                MISelectionMenu()
+                if session.barShows {
+                    // Nothing ticked (the bar takes over once something is).
+                    MISelectUndecidedButton(showsCount: true)
+                        .buttonStyle(ActButtonStyle(kind: .ghost))
+                } else {
+                    MISelectionMenu()
+                }
                 if plan.imports > 0 {
                     Menu {
                         Picker("Import mode", selection: $session.importMode) {
@@ -108,6 +106,7 @@ struct MIFooter: View {
 }
 
 /// "N selected · Actions" (the web's sticky-bar chip): opens the actions sheet.
+/// Folder scans only while `ManualImportFeatures.barEverywhere` is off.
 struct MISelectionMenu: View {
     @Environment(ManualImportSession.self) private var session
     @State private var open = false

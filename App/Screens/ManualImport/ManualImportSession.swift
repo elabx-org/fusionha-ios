@@ -26,6 +26,10 @@ final class ManualImportSession {
     /// Rows with an override in flight.
     private(set) var pendingRows: Set<Int> = []
     var bulkBusy = false
+    /// A bulk decide in flight (`ManualImportSession+BulkDecide`).
+    var applying: Applying?
+    /// The viewer may remove a held download (`system.admin`); else Keep current only leaves it.
+    var canRemove = true
     private(set) var probeStalled = false
     /// A folder scan in flight.
     private(set) var scanning = false
@@ -83,6 +87,12 @@ final class ManualImportSession {
             let fresh = try await client.manualImportRescue(downloadIds: rescueIds)
             scan = fresh
             selected = ManualImportRules.initialSelection(fresh)
+            #if DEBUG
+            // CI screenshots: `FUSIONHA_SCREENSHOT_MI_SELECT=2,4,6,7` ticks those rows.
+            if let ids = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_MI_SELECT"] {
+                selected = Set(ids.split(separator: ",").compactMap { Int($0) })
+            }
+            #endif
         } catch {
             loadError = ErrorCopy.message(for: error, fallback: "Couldn't open these files. Try again.")
         }
@@ -103,6 +113,12 @@ final class ManualImportSession {
             notice = nil
             scan = fresh
             selected = ManualImportRules.initialSelection(fresh)
+            #if DEBUG
+            // CI screenshots: `FUSIONHA_SCREENSHOT_MI_SELECT=2,4,6,7` ticks those rows.
+            if let ids = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_MI_SELECT"] {
+                selected = Set(ids.split(separator: ",").compactMap { Int($0) })
+            }
+            #endif
         } catch {
             loadError = ErrorCopy.message(for: error, fallback: "Couldn't scan that folder. Check the path and try again.")
         }
@@ -158,25 +174,9 @@ final class ManualImportSession {
             if importing { selected.insert(row.rowId) }
         } catch {
             if importing { await reload() }
-            rowErrors[row.rowId] = ErrorCopy.message(for: error, fallback: "Couldn't change this file. Try again.")
+            rowErrors[row.rowId] = ManualImportCopy.overrideError(error)
+                ?? ErrorCopy.message(for: error, fallback: "Couldn't change this file. Try again.")
         }
-    }
-
-    /// Keep all current / Import all: one override per held downgrade, each
-    /// with its own body; the selection follows each row's answer. Keep all
-    /// current then finishes what is fully decided, removing only (a bulk
-    /// choice never blocklists, and never replaces a row's own pick).
-    func bulkHeld(_ choice: String) async {
-        let targets = rows.filter { ManualImportHeldStrip.bulkEligible($0) && $0.replaceChoice != choice }
-        bulkBusy = true
-        defer { bulkBusy = false }
-        if choice == "keep_current" {
-            for id in Set(targets.compactMap { ManualImportDecide.downloadId($0, scan) }) where dispositions[id] == nil {
-                dispositions[id] = .remove
-            }
-        }
-        for row in targets { await patch(row, ["replace_choice": .string(choice)]) }
-        if choice == "keep_current" { await finishReady() }
     }
 
     func adopt(_ fresh: ManualImportScan) {

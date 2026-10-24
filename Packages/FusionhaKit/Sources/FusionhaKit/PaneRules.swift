@@ -69,6 +69,14 @@ public enum ManualImportLayout: String, Sendable, Equatable {
         return PaneRule.splitCapable(width: width, height: height) ? .split : .cards
     }
 
+    /// The open iPhone Duo: the split's list before the fold's gutter, the
+    /// file (or the decision panel) after it. `nil` without a fold inside, or
+    /// when a pane would be too narrow: the usual layout by size.
+    public static func foldPanes(width: Double, fold: ClosedRange<Double>?) -> FoldColumns.Panes? {
+        guard let fold else { return nil }
+        return FoldColumns.panes(width: width, fold: fold, minLead: 300, minTrail: 320)
+    }
+
     /// The table drops Audio and Group · service under 1100 (`COLUMNS_NARROW`).
     public static func tableIsNarrow(_ width: Double) -> Bool {
         width < 1100

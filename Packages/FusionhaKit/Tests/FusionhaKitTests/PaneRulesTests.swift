@@ -54,6 +54,15 @@ final class PaneRulesTests: XCTestCase {
         XCTAssertFalse(ManualImportLayout.tableIsNarrow(1133))
     }
 
+    func testManualImportMeetsTheFold() throws {
+        // The open Duo's off-centre fold: list | gutter | file or decision panel.
+        let panes = try XCTUnwrap(ManualImportLayout.foldPanes(width: 951, fold: 451.5...451.5))
+        XCTAssertEqual(panes.lead, 431.5)
+        XCTAssertEqual(panes.gap, 40)
+        XCTAssertNil(ManualImportLayout.foldPanes(width: 951, fold: nil), "no fold: the usual layout")
+        XCTAssertNil(ManualImportLayout.foldPanes(width: 600, fold: 300...300), "a pane would be too narrow")
+    }
+
     func testDiscoverWidths() {
         XCTAssertEqual(DiscoverWidthRule.cellWidth(402), 116)
         XCTAssertEqual(DiscoverWidthRule.cellWidth(669), 128)

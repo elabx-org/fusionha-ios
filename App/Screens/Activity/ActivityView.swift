@@ -184,7 +184,9 @@ struct ActivityView: View {
             // has no fusionha session and showed the sign-in page).
             FusionhaWebSheet(url: url)
         }
-        .sheet(item: $router.rescue) { request in
+        // On the open Duo it spans both pages: the list before the fold, the
+        // file or the decision panel after it (`MISplitBody`).
+        .duoPageSheet(item: $router.rescue, placement: .twoPages) { request in
             ManualImportSheet(downloadIds: request.downloadIds, client: model.client) {
                 // After the native sheet closes, open the web version of the same rescue.
                 Task { @MainActor in

@@ -48,35 +48,51 @@ struct MIScanList: View {
 }
 
 /// iPhone Duo with both screens open (web `SplitBody`, mock screen 6): the
-/// list and its import footer on the leading half, the chosen file's detail on
-/// the trailing half, a hairline between. Each pane scrolls on its own. The
-/// chosen file is the tapped one while it shows, else the first held file,
-/// else the first shown (`useSplitDetailRow`).
+/// list and its import footer on the leading pane, the chosen file's detail on
+/// the trailing one. Each pane scrolls on its own. With the fold through the
+/// sheet the panes meet at its gutter (`lead`, `gap`), else a hairline splits
+/// them. The chosen file is the tapped one while it shows, else the first held
+/// file, else the first shown (`useSplitDetailRow`). While files are ticked in
+/// a scan the bulk bar serves, the trailing pane is the decision panel instead
+/// (until a file is tapped) and the footer steps aside.
 struct MISplitBody: View {
     let scan: ManualImportScan
     @Binding var detailId: Int?
     @Binding var folded: Set<String>
+    var lead: CGFloat?
+    var gap: CGFloat = 0
     let onRetryProbes: () -> Void
     @Environment(ManualImportSession.self) private var session
+
+    private var deciding: Bool { session.barShows && session.tickedCount > 0 }
 
     var body: some View {
         let shown = scan.rows.filter(session.filter.matches)
         let row = shown.first { $0.rowId == detailId } ?? shown.first { $0.held != nil } ?? shown.first
+        let panel = deciding && detailId == nil
         HStack(spacing: 0) {
             VStack(spacing: 0) {
                 ScrollView {
-                    MIScanList(scan: scan, rowMode: .pick, openId: pickBinding(row), folded: $folded,
+                    MIScanList(scan: scan, rowMode: .pick, openId: pickBinding(panel ? nil : row), folded: $folded,
                                onRetryProbes: onRetryProbes)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 12)
                 }
                 .scrollDismissesKeyboard(.immediately)
-                MIFooter()
+                if !deciding { MIFooter() }
             }
-            .frame(maxWidth: .infinity)
-            Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea(edges: .bottom)
+            .frame(width: lead)
+            .frame(maxWidth: lead == nil ? .infinity : nil)
+            if lead == nil {
+                Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea(edges: .bottom)
+            } else {
+                Color.clear.frame(width: gap)
+            }
             ScrollView {
-                if let row {
+                if panel {
+                    MIDecidePanel()
+                } else if let row {
+                    if deciding { backToPanel }
                     MIDetailPane(row: row).id(row.rowId)
                 } else {
                     Text("Select a file")
@@ -92,6 +108,19 @@ struct MISplitBody: View {
             // A choice that fell out (imported, filtered away) is let go.
             if let id = detailId, !ids.contains(id) { detailId = nil }
         }
+        .onChange(of: session.selected) {
+            // A tick brings the decision panel back.
+            if session.barShows { detailId = nil }
+        }
+    }
+
+    private var backToPanel: some View {
+        Button("Back to \(session.tickedCount) selected", systemImage: "chevron.backward") { detailId = nil }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Theme.accentText)
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// The list marks the file the pane shows (the fallback included).

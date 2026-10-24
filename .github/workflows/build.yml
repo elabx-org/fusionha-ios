@@ -306,6 +306,11 @@ jobs:
             shoot bar-$P-downloading $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_BAR=downloading
             shoot bar-$P-done $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_BAR=done
           done
+          # Manual import's bulk bar over a held pack (E02, E04, E06, E07 ticked).
+          for P in aurora daylight monochrome; do
+            shoot manual-import-bulk-$P SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$P \
+              SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=2,4,6,7
+          done
           # A filtered run (shots_only) stops here: the rest are the full set and its checks.
           if [ -n "${ONLY:-}" ]; then ls -l shots; exit 0; fi
           shoot 01-login SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=
