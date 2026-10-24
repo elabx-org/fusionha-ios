@@ -109,9 +109,10 @@ public enum DiscoverFold {
     /// with the fold at `fold`: the right page (from the fold's gutter to the
     /// trailing edge) or the whole width. `nil` without room for two pages
     /// (present it as the usual sheet).
+    /// Flat (`posture`), the right page is the detail's two thirds (`DuoSplit`).
     public static func modalTrack(_ placement: ModalPlacement, width: Double,
-                                  fold: ClosedRange<Double>?) -> FoldColumns.Track? {
-        guard let fold, let pages = SpreadGeometry.pages(width: width, fold: fold) else { return nil }
+                                  fold: ClosedRange<Double>?, posture: DuoPosture = .book) -> FoldColumns.Track? {
+        guard let fold, let pages = DuoSplit.pages(width: width, fold: fold, posture: posture) else { return nil }
         switch placement {
         case .rightPage: return pages.right
         case .twoPages: return FoldColumns.Track(x: 0, width: width)

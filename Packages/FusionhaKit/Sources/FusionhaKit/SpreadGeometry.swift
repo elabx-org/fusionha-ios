@@ -85,12 +85,15 @@ public enum SpreadGeometry {
         }
     }
 
-    /// The shell's mode: Spread needs the setting, a top-to-bottom fold and
-    /// two pages of at least `minPage`; a span needs the tab to ask for it and
-    /// nothing picked (a pick moves the content to the left page).
+    /// The shell's mode: Spread needs the setting and a top-to-bottom fold;
+    /// in book pose two pages of at least `minPage` split at the fold, flat a
+    /// third | two thirds with no gutter (`DuoSplit`, option A). A span needs
+    /// the tab to ask for it and nothing picked (a pick moves the content to
+    /// the left page).
     public static func mode(layout: DuoOpenLayout, width: Double, fold: ClosedRange<Double>?,
-                            spanRequested: Bool, hasItem: Bool) -> Mode {
-        guard layout == .spread, let fold, let pages = pages(width: width, fold: fold) else { return .off }
+                            posture: DuoPosture = .book, spanRequested: Bool, hasItem: Bool) -> Mode {
+        guard layout == .spread, let fold,
+              let pages = DuoSplit.pages(width: width, fold: fold, posture: posture) else { return .off }
         return spanRequested && !hasItem ? .span(pages) : .pages(pages)
     }
 }
