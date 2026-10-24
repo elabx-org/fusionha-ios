@@ -39,6 +39,10 @@ final class ScrubberState {
     var tick = 0
     /// The grid's first row, in global coordinates: the track never starts above it.
     var gridTop: CGFloat = 0
+    /// The grid's trailing edge, in global coordinates: the thumb hugs the
+    /// page's side margin, whatever the safe area reports (on the open Duo the
+    /// system column was subtracted twice and the thumb sat over the posters).
+    var gridTrailing: CGFloat?
 
     /// The letter at the top of the grid (scroll-spy), shown when the thumb is grabbed.
     @ObservationIgnored var activeLetter: String?
@@ -54,6 +58,11 @@ final class ScrubberState {
         // under the finger would shift the finger → letter mapping mid-drag.
         guard !scrubbing, abs(y - gridTop) >= 0.5 else { return }
         gridTop = y
+    }
+
+    func setGridTrailing(_ x: CGFloat) {
+        guard !scrubbing, abs(x - (gridTrailing ?? -1)) >= 0.5 else { return }
+        gridTrailing = x
     }
 
     /// Any scroll (momentum included) shows the thumb at the page's progress and
@@ -182,9 +191,7 @@ struct ScrollScrubber: View {
                 track(height: height)
                     .frame(width: 110, height: height)
                     .coordinateSpace(.named(Self.space))
-                    // Inside the trailing safe area: a vertical system bar (iPhone
-                    // Duo) or the camera housing (landscape) can sit on that edge.
-                    .offset(x: geo.size.width - geo.safeAreaInsets.trailing - 110, y: top)
+                    .offset(x: trailingEdge(geo) - 110, y: top)
             }
             .sensoryFeedback(.selection, trigger: state.tick)
             .accessibilityHidden(true)
@@ -193,6 +200,16 @@ struct ScrollScrubber: View {
             #endif
             .overlay(alignment: .topTrailing) { voiceOverIndex }
         }
+    }
+
+    /// The track's trailing edge: the grid's edge plus its 16 pt side margin,
+    /// which the page already keeps clear of a vertical system bar (iPhone
+    /// Duo) or the camera housing. Before the grid is measured, inside the
+    /// trailing safe area.
+    private func trailingEdge(_ geo: GeometryProxy) -> CGFloat {
+        let fallback = geo.size.width - geo.safeAreaInsets.trailing
+        guard let grid = state.gridTrailing else { return fallback }
+        return min(geo.size.width, grid + 16 - geo.frame(in: .global).minX)
     }
 
     private func track(height: CGFloat) -> some View {

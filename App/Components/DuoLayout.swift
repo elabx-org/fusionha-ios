@@ -136,8 +136,29 @@ struct ShellSplit: Equatable {
 struct ShellDetailColumn: View {
     @Environment(AppModel.self) private var model
     @Environment(\.spread) private var spread
+    @Environment(\.motionEnabled) private var motion
+    @Environment(\.duoOpen) private var duoOpen
+
+    /// Which page is up: a new title or preview swings in over the last one.
+    private var pageKey: String {
+        if let ref = model.presentedItem { return "title-\(ref.id)" }
+        if let route = model.spreadPreview, spread.isActive { return "preview-\(route.id)" }
+        return spread.isActive ? "default" : "hint"
+    }
 
     var body: some View {
+        ZStack {
+            page
+                .transition(duoOpen ? DuoPageMotion.transition(motion: motion) : .opacity)
+        }
+        .animation(duoOpen ? DuoPageMotion.animation(motion: motion) : nil, value: pageKey)
+        .overlay(alignment: .leading) {
+            Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea()
+        }
+    }
+
+    @ViewBuilder
+    private var page: some View {
         Group {
             if let ref = model.presentedItem {
                 NavigationStack {
@@ -158,9 +179,6 @@ struct ShellDetailColumn: View {
             } else {
                 SelectTitleHint()
             }
-        }
-        .overlay(alignment: .leading) {
-            Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea()
         }
     }
 }

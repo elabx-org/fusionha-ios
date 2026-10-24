@@ -39,6 +39,8 @@ struct LibraryView: View {
     /// The grid rows on screen, kept (unobserved) so a fold/unfold that changes
     /// the column count can scroll back to the same titles.
     @State private var onScreen = LibraryOnScreen()
+    /// The first rows' rise when a new set of titles lands (`LibraryMotion`).
+    @State private var entrance = LibraryEntrance()
     /// The grid's own width and the fold through it (`LibraryGridFold`).
     @State private var gridFold = LibraryGridFold()
 
@@ -127,7 +129,23 @@ struct LibraryView: View {
             }
             #endif
         }
-        .onChange(of: inputs, initial: true) { derived = inputs.derive(from: model.library) }
+        .onChange(of: inputs, initial: true) {
+            derived = inputs.derive(from: model.library)
+            startEntrance()
+        }
+    }
+
+    /// The set's shape: a new kind, tier, filter or sort (or the first titles)
+    /// plays the entrance (`LibraryEntrance`); a refresh, a search keystroke or
+    /// a re-flow doesn't.
+    private func startEntrance() {
+        let key = "\(kindRaw)|\(tier)|\(status)|\(sort)|\(recency)|\(group)|\(compact)|\(derived.rows.isEmpty)"
+        guard entrance.update(key: key, rows: derived.rows) else { return }
+        let generation = entrance.generation
+        Task {
+            try? await Task.sleep(for: LibraryEntrance.window)
+            entrance.end(generation)
+        }
     }
 
     private func updateChrome(old: CGFloat, new: CGFloat) {
@@ -155,8 +173,9 @@ struct LibraryView: View {
                     withAnimation(motion ? .smooth : nil) { proxy.scrollTo("library-grid", anchor: .top) }
                 }
                 Color.clear.frame(height: 1)
-                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { y in
-                        scrubber.setGridTop(y)
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+                        scrubber.setGridTop(frame.minY)
+                        scrubber.setGridTrailing(frame.maxX)
                     }
                     .onGeometryChange(for: LibraryGridFold.self) { LibraryGridFold($0) } action: { gridFold = $0 }
                 content
@@ -255,6 +274,7 @@ struct LibraryView: View {
                     LibraryLetterHeader(letter: letter, count: count)
                 case .items(let items):
                     LibraryGridRow(items: items, columns: derived.columns, tracks: gridTracks)
+                        .libraryRowMotion(entrance, id: row.id)
                 case .tableHeader:
                     LibraryTableHeader(sort: compactSort, split: tableSplit) { column in
                         withAnimation(motion ? .snappy : nil) { compactSort = compactSort.tapped(column) }

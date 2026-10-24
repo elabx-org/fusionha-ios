@@ -60,13 +60,14 @@ struct RootView: View {
                                             fold: fold.vertical.map { Double($0.lowerBound)...Double($0.upperBound) })
     }
 
-    /// The title's column coming in: a short fade and 24 pt rise on the open
-    /// Duo (its own animation, as the split itself doesn't animate there), a
-    /// slide elsewhere, a plain fade under Reduce Motion.
+    /// The title's column coming in: on the open Duo the right page swings
+    /// open from the fold (`DuoPageMotion`, its own animation, as the split
+    /// itself doesn't animate there), a slide elsewhere, a plain fade under
+    /// Reduce Motion.
     private var detailTransition: AnyTransition {
+        if fold.isDuoOpen { return DuoPageMotion.transition(motion: !reduceMotion && model.animationsEnabled) }
         if reduceMotion { return .opacity.animation(.easeOut(duration: 0.2)) }
-        guard fold.isDuoOpen else { return .move(edge: .trailing).combined(with: .opacity) }
-        return .opacity.combined(with: .offset(x: 24)).animation(.easeOut(duration: 0.22))
+        return .move(edge: .trailing).combined(with: .opacity)
     }
 
     /// Whether an open title would be a column (not a sheet) in this geometry.
