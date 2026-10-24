@@ -45,7 +45,7 @@ struct SpreadContext: Equatable {
         let x = fold.vertical ?? fold.flatVertical
         posture = fold.posture
         // Flat: the Duo's own (inactive) fold only says it is open.
-        mode =SpreadGeometry.mode(layout: layout, width: Double(fold.size.width),
+        mode = SpreadGeometry.mode(layout: layout, width: Double(fold.size.width),
                                    fold: x.map { Double($0.lowerBound)...Double($0.upperBound) },
                                    posture: fold.posture ?? .book,
                                    spanRequested: spanRequested, hasItem: hasItem)

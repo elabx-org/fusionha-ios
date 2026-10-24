@@ -51,10 +51,13 @@ struct LibraryHeader: View {
                 // the title never truncates (six glass buttons squeezed it to
                 // "Lib…" though Select and Stats had low visibility priority).
                 if !model.selectMode {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Search", systemImage: "magnifyingglass") { searching = true }
+                    // Flat, the list is a third wide (option A): Search joins the menu too.
+                    if !searchInMenu {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Search", systemImage: "magnifyingglass") { searching = true }
+                        }
+                        .barPriority(true)
                     }
-                    .barPriority(true)
                     ToolbarItem(placement: .topBarTrailing) { overflowMenu.badge(statsBadge) }
                         .barPriority(false)
                 }
@@ -112,11 +115,17 @@ struct LibraryHeader: View {
     /// the title and six items.
     private var overflowBar: Bool { spread.isActive && !spread.spans }
 
+    /// The flat Duo's third-wide list beside a title: Search is in the menu.
+    private var searchInMenu: Bool { overflowBar && spread.posture == .flat }
+
     private var canAdd: Bool { !model.requestScoped && model.me?.can("add") != false }
 
     /// Select, Library stats and Add in one bar item (the overflow bar).
     private var overflowMenu: some View {
         Menu {
+            if searchInMenu {
+                Button("Search", systemImage: "magnifyingglass") { searching = true }
+            }
             Button("Select", systemImage: "checkmark.circle") { model.selectMode = true }
             Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
             if canAdd {
