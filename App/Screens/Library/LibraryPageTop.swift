@@ -26,6 +26,8 @@ struct LibraryPageTop: View {
     let toGrid: () -> Void
     @Environment(\.motionEnabled) private var motion
     @Environment(\.spread) private var spread
+    /// The kind control fell back to labels only: the counts join the summary line.
+    @State private var kindCountsInSummary = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -79,9 +81,10 @@ struct LibraryPageTop: View {
     /// control, then quality · Filters · grid ⇄ list on their own row.
     @ViewBuilder
     private var phoneTop: some View {
-        LibraryHeader(derived: derived, status: $status, searching: $searching, wide: false)
+        LibraryHeader(derived: derived, status: $status, searching: $searching, wide: false,
+                      kindCounts: kindCountsInSummary)
             .reveal(0)
-        LibraryKindSegment(derived: derived, kind: $kind)
+        LibraryKindSegment(derived: derived, kind: $kind, countsInSummary: $kindCountsInSummary)
             .padding(.top, 14)
             .reveal(1)
         phoneToolbar
@@ -95,9 +98,10 @@ struct LibraryPageTop: View {
     /// page and quality · Filters · grid ⇄ list on the right.
     private var spanTop: some View {
         VStack(alignment: .leading, spacing: 14) {
-            LibraryHeader(derived: derived, status: $status, searching: $searching, wide: false)
+            LibraryHeader(derived: derived, status: $status, searching: $searching, wide: false,
+                      kindCounts: kindCountsInSummary)
             FoldSpanRow(trailingAlignment: .center) {
-                LibraryKindSegment(derived: derived, kind: $kind)
+                LibraryKindSegment(derived: derived, kind: $kind, countsInSummary: $kindCountsInSummary)
             } trailing: {
                 phoneToolbar
             }

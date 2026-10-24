@@ -141,3 +141,46 @@ public enum KindMix {
         return counts.map { Double($0) / Double(total) }
     }
 }
+
+/// The Library's kind control (`LibraryKindSegment`): which kinds it shows,
+/// how it falls back when they don't fit, and where its make-up bar sits.
+public enum KindControl {
+    /// The kinds every library shows; Animation joins when it has titles.
+    public static let baseKinds: [LibraryKind] = [.movie, .series, .anime]
+
+    /// The control's kinds after All: Movies, Series, Anime, then Animation
+    /// when the library has some (or it is the active filter).
+    public static func kinds(titles: [LibraryKind: Int], active: LibraryKind?) -> [LibraryKind] {
+        baseKinds + ((titles[.animation] ?? 0) > 0 || active == .animation ? [.animation] : [])
+    }
+
+    /// The control's forms, widest first, in `ViewThatFits` order: the first
+    /// whose ideal width fits is used, so a label is never truncated. `counts`: every segment with its count.
+    /// `labels`: the segments without counts (the counts move to the summary
+    /// line). `scroll`: a sideways row of capsules with counts, no bar.
+    public enum Fit: CaseIterable, Sendable {
+        case counts, labels, scroll
+
+        /// The make-up bar runs under the segments; the capsule row has none.
+        public var showsBar: Bool { self != .scroll }
+        /// The counts are in the summary line instead of the control.
+        public var countsInSummary: Bool { self == .labels }
+    }
+
+    /// The make-up bar's span: from the first kind segment's leading edge to
+    /// the last one's trailing edge, `inset` in from each (segment frames in
+    /// the control's coordinates, All excluded). `nil` without segments.
+    public static func barSpan(segments: [(x: Double, width: Double)], inset: Double) -> (x: Double, width: Double)? {
+        guard let first = segments.first, let last = segments.last else { return nil }
+        let x = first.x + inset
+        return (x, max(last.x + last.width - inset - x, 0))
+    }
+
+    /// Each kind's piece of a bar `width` wide: its share of the titles
+    /// (`KindMix.shares`), with `gap` between pieces.
+    public static func barPieces(width: Double, counts: [Int], gap: Double) -> [Double] {
+        guard !counts.isEmpty else { return [] }
+        let free = max(width - Double(counts.count - 1) * gap, 0)
+        return KindMix.shares(counts).map { free * $0 }
+    }
+}

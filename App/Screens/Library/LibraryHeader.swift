@@ -15,6 +15,8 @@ struct LibraryHeader: View {
     /// Past 720 the pulse is inline and the status cluster holds In progress
     /// and Needs attention, so the stats item goes (as on the web's desktop).
     var wide = false
+    /// The kind control is showing labels only: the per-kind counts go here.
+    var kindCounts = false
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @State private var showingStats = false
@@ -28,7 +30,10 @@ struct LibraryHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            caption
+            VStack(alignment: .leading, spacing: 3) {
+                caption
+                if kindCounts { kindLine }
+            }
             if searching || !model.searchText.isEmpty {
                 // The iPhone Duo's fold through the header (Web layout): the field
                 // ends at the gutter instead of running across it.
@@ -113,5 +118,20 @@ struct LibraryHeader: View {
         .minimumScaleFactor(0.85)
         .font(.system(size: 15).monospacedDigit())
         .foregroundStyle(Theme.mut)
+    }
+
+    /// "2,629 movies · 734 series · 37 anime · 385 animation": the kind
+    /// control's counts when it has no room for them. Wraps, never truncates.
+    private var kindLine: some View {
+        let kinds = KindControl.kinds(titles: derived.kindTitles, active: nil)
+        let parts = kinds.map { k -> String in
+            let n = derived.kindTitles[k] ?? 0
+            return "\(n.formatted()) \(k.plural.lowercased())"
+        }
+        return Text(parts.joined(separator: " · "))
+            .font(.system(size: 13).monospacedDigit())
+            .foregroundStyle(Theme.mut)
+            .fixedSize(horizontal: false, vertical: true)
+            .contentTransition(.numericText())
     }
 }
