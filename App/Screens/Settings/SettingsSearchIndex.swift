@@ -130,6 +130,7 @@ let settingsFieldIndex: [SettingsField] = [
     SettingsField(panel: "general", label: "Playful voice", keywords: ["characterful", "microcopy", "neutral", "text", "tone", "wording"]),
     SettingsField(panel: "general", label: "Probe interval (seconds)", keywords: ["4k probe", "cadence", "discovery", "indexer ban", "seconds", "sweep frequency"]),
     SettingsField(panel: "general", label: "Re-grab cooldown", keywords: ["blocklist", "excluded", "re-grab", "removed release", "retry", "thrash"]),
+    SettingsField(panel: "general", label: "Download client add timeout", keywords: ["grab", "timeout", "pending", "slow client", "decypharr"]),
     SettingsField(panel: "general", label: "Real integrations", keywords: ["download client", "indexer", "live", "mock", "stub", "test mode"]),
     SettingsField(panel: "general", label: "RSS interval", keywords: ["cadence", "feed", "indexer ban", "poll", "rss sync", "sync frequency"]),
     SettingsField(panel: "general", label: "Search interval", keywords: ["backlog", "cadence", "cutoff", "missing search", "seconds", "sweep frequency", "unmet", "upgrade search", "wanted"]),

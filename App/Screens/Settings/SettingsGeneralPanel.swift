@@ -152,6 +152,9 @@ struct GeneralSettingsPanel: View {
                 SettingNumber(key: "regrab_cooldown_hours", label: "Re-grab cooldown",
                               description: "How long a removed/failed release stays excluded before it can be re-grabbed. 0 disables the cooldown.",
                               unit: "hrs", max: 168)
+                SettingNumber(key: "grab_client_call_timeout_seconds", label: "Download client add timeout",
+                              description: "Seconds (10–120) to wait for the download client to accept a grab. A slower add is kept as pending and reconciled, not failed.",
+                              unit: "sec", min: 10, max: 120)
             }
         }
     }

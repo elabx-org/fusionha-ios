@@ -298,7 +298,9 @@ public final class APIClient: @unchecked Sendable {
     /// search, 4K checks) routinely take longer than a page read, and the web
     /// waits for them; everything else fails fast.
     static func timeout(for path: String) -> TimeInterval {
-        let slow = ["/releases", "/search", "/check-4k", "/refresh"]
+        // A grab waits on the download client's add (up to 120 s, 0.4.227); a
+        // re-grab goes through the same grab, remove-and-regrab searches first.
+        let slow = ["/releases", "/search", "/check-4k", "/refresh", "/regrab", "/remove-and-regrab"]
         return slow.contains(where: { path.hasSuffix($0) || path.contains($0 + "/") }) ? 180 : 20
     }
 

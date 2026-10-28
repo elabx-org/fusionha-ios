@@ -23,8 +23,9 @@ instead of from scratch.
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
 
-`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.226`** (`57c6e464`;
-re-pinned 2026-10-23 for requests phase 10b slice 1, before that `v0.4.222`
+`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.227`** (`31fc0170`;
+re-pinned 2026-10-28 for the grab timeout, see the 0.4.227 section; before that
+`v0.4.226` (`57c6e464`, 2026-10-23) for requests phase 10b slice 1, and `v0.4.222`
 from 2026-10-20). The v0.4.222 → v0.4.226 diff is additive only (see the
 0.4.226 section). It is a
 reference only: the FusionhaKit models are hand-written and nothing generates
@@ -39,6 +40,19 @@ the old pin against the tagged schemas: `calendar_week_layout`
 older server omits them. `ui_theme` is a plain string in the spec (no
 enum of names). `GET /api/v1/auth/providers` is still not in the spec (the
 app tolerates its absence). Re-pin again from the next tag you sync to.
+
+## 0.4.227: grab fixes (download client add timeout)
+
+- **Spec diff v0.4.226 → v0.4.227 (additive):** `grab_client_call_timeout_seconds`
+  (int, 10–120, default 60) on `AppSettingsRead` / `AppSettingsUpdate`. Now in
+  Settings › General › advanced, under "Re-grab cooldown", with the web's label and
+  description ("Download client add timeout").
+- An interactive grab whose client add times out returns 200 with a queued
+  download (was 503); iOS reads only `grab_trigger`, so it shows as grabbed.
+- Grabs can wait up to the timeout: `/releases/grab` already had 180 s
+  (`APIClient.timeout(for:)`); `/history/{id}/regrab` (same grab coordinator) and
+  `/library/files/{id}/remove-and-regrab` (search + grab inline) now get 180 s too
+  (were 20 s).
 
 ## 0.4.226: Watchlists & lists (requests phase 10b, slice 1)
 
