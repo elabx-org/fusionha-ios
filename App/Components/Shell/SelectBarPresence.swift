@@ -8,20 +8,20 @@ import SwiftUI
 // "3 selected"). Every bulk-select bar publishes itself here while on screen,
 // and the shell drops the accessory until the last one goes.
 
-/// The bulk-select bars on screen, by bar, published to the shell.
+/// The bulk-select bars on screen, by bar, published to the shell. Counted,
+/// not a set: when a layout swaps one copy of a bar for another (the inbox's
+/// list for its wide panes), the new copy can appear before the old one
+/// disappears, and a set would then drop a bar that is still showing.
 @Observable
 final class SelectBarPresence {
-    private(set) var ids: Set<String> = []
+    private(set) var counts: [String: Int] = [:]
 
     /// True while any select mode's bar is showing.
-    var isShowing: Bool { !ids.isEmpty }
+    var isShowing: Bool { !counts.isEmpty }
 
     func set(_ id: String, shown: Bool) {
-        if shown {
-            if !ids.contains(id) { ids.insert(id) }
-        } else if ids.contains(id) {
-            ids.remove(id)
-        }
+        let next = (counts[id] ?? 0) + (shown ? 1 : -1)
+        counts[id] = next > 0 ? next : nil
     }
 }
 
@@ -38,6 +38,8 @@ private struct SelectBarWriter: ViewModifier {
     @Environment(\.motionEnabled) private var motion
     let id: String
     let active: Bool
+    /// Whether this copy of the bar has counted itself in.
+    @State private var registered = false
 
     func body(content: Content) -> some View {
         content
@@ -49,7 +51,8 @@ private struct SelectBarWriter: ViewModifier {
     /// The accessory comes and goes with the system's own animation; still
     /// under Reduce Motion.
     private func update(_ shown: Bool) {
-        guard let presence, presence.ids.contains(id) != shown else { return }
+        guard let presence, registered != shown else { return }
+        registered = shown
         withAnimation(motion ? .smooth(duration: 0.3) : nil) { presence.set(id, shown: shown) }
     }
 }
