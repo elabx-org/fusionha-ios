@@ -28,7 +28,8 @@ struct AmbientBackdrop: View {
 
 /// The scrolling page body (MobileDetailFlyout `.body`): setup strip,
 /// overview, Item actions + its "applies to" echo, Versions, the release
-/// timeline, the rails, the tabs and the metadata credit.
+/// timeline, the tabs (the rails live in their Overview tab) and the
+/// metadata credit.
 struct DetailPage: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
@@ -71,7 +72,6 @@ struct DetailPage: View {
                     DetailSection(title: "Release timeline")
                     ReleaseTimeline(detail: detail)
                 }
-                DetailRailStack(detail: detail)
 
                 DetailTabsView(detail: detail, openWeb: openWeb)
                     .id("tabs")

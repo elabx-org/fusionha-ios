@@ -63,11 +63,16 @@ struct MovieEditionsTab: View {
             }
             .scrollIndicators(.hidden)
             ForEach(editions) { edition in
-                if edition.movieFile != nil {
-                    DetailOwnedEditionCard(detail: detail, edition: edition)
-                } else {
-                    DetailWantedEditionCard(detail: detail, edition: edition)
+                Group {
+                    if edition.movieFile != nil {
+                        DetailOwnedEditionCard(detail: detail, edition: edition)
+                    } else {
+                        DetailWantedEditionCard(detail: detail, edition: edition)
+                    }
                 }
+                // The hero strip's scroll target and highlight.
+                .versionHighlight(edition)
+                .id("file-\(edition.id)")
             }
         }
     }

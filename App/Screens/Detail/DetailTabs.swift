@@ -2,8 +2,10 @@ import SwiftUI
 import FusionhaKit
 
 /// DetailTabs: the underlined tab row with the "showing {scope}" echo, then
-/// the active pane. Series: Seasons · Files · History · Searches. Movie:
-/// Versions · History · Searches · Collection (when it has one).
+/// the active pane (D5, owner-approved with the web session). Series:
+/// Seasons · Files · History · Searches · Overview. Movie: Files · History ·
+/// Searches · Overview · Collection (when it has one). The page lands on the
+/// first. Overview holds the trailer, collection, more like this and cast.
 struct DetailTabsView: View {
     @Environment(DetailStore.self) private var store
     @Environment(\.detailReduceMotion) private var reduce
@@ -13,14 +15,16 @@ struct DetailTabsView: View {
 
     private var tabs: [(DetailTab, String)] {
         if detail.isSeries {
-            return [(.seasons, "Seasons"), (.files, "Files"), (.history, "History"), (.searches, "Searches")]
+            return [(.seasons, "Seasons"), (.files, "Files"), (.history, "History"), (.searches, "Searches"),
+                    (.overview, "Overview")]
         }
-        var tabs: [(DetailTab, String)] = [(.files, "Versions"), (.history, "History"), (.searches, "Searches")]
+        var tabs: [(DetailTab, String)] = [(.files, "Files"), (.history, "History"), (.searches, "Searches"),
+                                           (.overview, "Overview")]
         if detail.collection != nil { tabs.append((.collection, "Collection")) }
         return tabs
     }
 
-    /// A movie has no Seasons tab: it opens on Versions.
+    /// A movie has no Seasons tab: it opens on Files.
     private var current: DetailTab {
         tabs.contains { $0.0 == store.tab } ? store.tab : tabs[0].0
     }
@@ -87,6 +91,7 @@ struct DetailTabsView: View {
             if detail.isSeries { SeriesFilesTab(detail: detail) } else { MovieEditionsTab(detail: detail) }
         case .history: HistoryTab(detail: detail)
         case .searches: SearchesTab()
+        case .overview: DetailOverviewTab(detail: detail)
         case .collection: CollectionTab(detail: detail)
         }
     }

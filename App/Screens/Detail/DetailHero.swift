@@ -5,7 +5,8 @@ import FusionhaKit
 /// textless backdrop at full strength in every theme, and on its darkened
 /// bottom edge the status chip, the display-face title + year in white and
 /// the meta line (Close is the system toolbar's, DC10). Under the art, on the
-/// art-tinted page: tagline, genre pills and the requester.
+/// art-tinted page: the version strip (D4), tagline, genre pills and the
+/// requester.
 struct DetailHero: View {
     @Environment(\.detailReduceMotion) private var reduce
     let detail: ItemDetail
@@ -42,6 +43,9 @@ struct DetailHero: View {
 
     private var below: some View {
         VStack(alignment: .leading, spacing: 0) {
+            DetailVersionStrip()
+                .padding(.top, 12)
+                .detailReveal(delay: 0.12)
             if let tagline = detail.tagline, !tagline.isEmpty {
                 Text(tagline)
                     .font(.system(size: 15))
