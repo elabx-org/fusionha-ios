@@ -61,14 +61,33 @@ private struct BrowseRow: ViewModifier {
 
     func body(content: Content) -> some View {
         if motion {
-            content.scrollTransition(topLeading: .identity, bottomTrailing: .interactive, axis: .vertical) { view, phase in
-                view
-                    .scaleEffect(phase.isIdentity ? 1 : 0.94, anchor: .top)
-                    .opacity(phase.isIdentity ? 1 : 0.4)
-            }
+            content
+                .scrollTransition(topLeading: .identity, bottomTrailing: .interactive, axis: .vertical) { view, phase in
+                    view.scaleEffect(phase.isIdentity ? 1 : 0.94, anchor: .top)
+                }
+                .overlay { BrowseVeil() }
         } else {
             content
         }
+    }
+}
+
+/// The browse effect's "brightens": a page-colour veil over the row that
+/// lifts as it comes fully into view (the look of the row at 0.4 opacity on
+/// the page). Not `.opacity` on the row itself: group opacity flattens the
+/// whole row into one offscreen layer, so a spinner, rail sweep or setup
+/// shimmer in a row parked at the bottom edge redrew every poster in it each
+/// frame, and the idle Library kept its main thread busy (the A–Z scrub hang
+/// check). The veil is one plain fill, so the row's own layers stay apart.
+private struct BrowseVeil: View {
+    var body: some View {
+        Rectangle()
+            .fill(Theme.bg)
+            .scrollTransition(topLeading: .identity, bottomTrailing: .interactive, axis: .vertical) { view, phase in
+                view.opacity(phase.isIdentity ? 0 : 0.6)
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 }
 
