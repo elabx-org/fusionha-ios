@@ -32,6 +32,7 @@ extension AppModel {
                 } else if let itemId = row.dismissItemId {
                     try await client.dismissScopeMismatch(itemId)
                 }
+                await refreshShell()
             } catch {
                 toast(row.runId != nil ? "Couldn't dismiss — the item is back. Try again." : "Couldn't dismiss — try again.",
                       variant: .error)

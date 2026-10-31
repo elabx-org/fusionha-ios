@@ -67,7 +67,10 @@ struct LibraryDerived {
     var editionCount = 0
     var kindTitles: [LibraryKind: Int] = [:]
     var kindEditions: [LibraryKind: Int] = [:]
+    /// Titles needing attention among the filtered titles (not the shell's
+    /// count of problems); `attentionInView` when filters narrowed the set.
     var attentionCount = 0
+    var attentionInView = false
     var pulse = PulseStats()
     /// The Recently added shelf: the newest of what the filters left (layout A).
     var recent: [MediaItem] = []

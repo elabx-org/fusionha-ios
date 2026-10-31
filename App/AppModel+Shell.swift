@@ -6,8 +6,9 @@ extension AppModel {
 
     func refreshShell() async {
         guard let client else { return }
+        let held = queue.filter { $0.status.lowercased() == "held" }.count
         await shell.refresh(client: client, requestScoped: requestScoped, canApproveRequests: canApproveRequests,
-                            canManageIssues: canManageIssues)
+                            canManageIssues: canManageIssues, held: held)
     }
 
     func pollShell() async {

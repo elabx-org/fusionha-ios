@@ -42,13 +42,17 @@ struct LibraryToolbarWide: View {
                 }
             } trailing: {
                 LibraryWrap(spacing: 8) {
-                    if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
+                    if showsAttention { attentionChip }
                     groupToggle
                     sortMenu
                     trailing
                 }
             }
         }
+    }
+
+    private var attentionChip: some View {
+        LibraryAttentionChip(count: derived.attentionCount, inView: derived.attentionInView, status: $status)
     }
 
     /// The web's row; the attention chip, Group and the sort wrap to a second
@@ -58,7 +62,7 @@ struct LibraryToolbarWide: View {
             HStack(spacing: 8) {
                 leading
                 Spacer(minLength: 8)
-                if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
+                if showsAttention { attentionChip }
                 groupToggle
                 sortMenu
                 trailing
@@ -70,7 +74,7 @@ struct LibraryToolbarWide: View {
                     trailing
                 }
                 HStack(spacing: 8) {
-                    if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
+                    if showsAttention { attentionChip }
                     Spacer(minLength: 0)
                     groupToggle
                     sortMenu
@@ -183,6 +187,8 @@ struct LibraryToolbarWide: View {
 /// titles (or the filter is on); toggles the `attention` status filter.
 struct LibraryAttentionChip: View {
     let count: Int
+    /// Filters narrowed the library, so the count is of the titles in view.
+    var inView = false
     @Binding var status: LibraryStatus
     /// The warning glyph and the count only (a narrow row keeps it on one line).
     var compact = false
@@ -196,7 +202,7 @@ struct LibraryAttentionChip: View {
         } label: {
             HStack(spacing: 7) {
                 Image(systemName: "exclamationmark.triangle").font(.system(size: 12, weight: .semibold))
-                Text(compact ? "\(count)" : "Needs attention · \(count)")
+                Text(compact ? "\(count)" : "Needs attention · \(count)\(inView ? " in view" : "")")
                     .font(.system(size: 13, weight: .bold).monospacedDigit())
                     .lineLimit(1)
             }
@@ -208,7 +214,7 @@ struct LibraryAttentionChip: View {
         .buttonStyle(.plain)
         .glassEffect(.regular.tint(Theme.miss.opacity(on ? 0.24 : 0.1)).interactive(), in: Capsule())
         .fixedSize()
-        .accessibilityLabel("Needs attention · \(count)")
+        .accessibilityLabel("Needs attention · \(count) \(count == 1 ? "title" : "titles")\(inView ? " in view" : "")")
         .accessibilityAddTraits(on ? .isSelected : [])
     }
 }

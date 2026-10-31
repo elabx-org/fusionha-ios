@@ -40,7 +40,8 @@ struct LibraryStatsSheet: View {
                     }
                 }
                 section("Needs attention", id: "needs-attention") {
-                    StatsAttentionList(indexers: feed.indexers, rows: feed.rows, manageIndexers: {
+                    StatsAttentionList(indexers: feed.indexers, rows: feed.rows, incomplete: feed.incomplete,
+                                       manageIndexers: {
                         manageIndexers()
                         dismiss()
                     }, openRow: { row in

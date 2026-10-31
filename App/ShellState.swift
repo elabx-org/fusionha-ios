@@ -10,6 +10,8 @@ import FusionhaKit
 @Observable
 final class ShellState {
     private(set) var attentionCount = 0
+    /// `attentionCount` came from a poll where every source answered.
+    @ObservationIgnored private var hasFullCount = false
     private(set) var pendingRequests = 0
     /// Issues an admin has to act on (`NEEDS_ADMIN`), for issue managers.
     private(set) var issuesNeedingAction = 0
@@ -18,7 +20,10 @@ final class ShellState {
     /// Quality-profile names for the compact list's subline.
     private(set) var profileNames: [Int: String] = [:]
 
-    func refresh(client: APIClient, requestScoped: Bool, canApproveRequests: Bool, canManageIssues: Bool = false) async {
+    /// `held` is the downloads held for a manual import on the app's queue,
+    /// the same rows the status cluster's popover lists.
+    func refresh(client: APIClient, requestScoped: Bool, canApproveRequests: Bool, canManageIssues: Bool = false,
+                 held: Int = 0) async {
         if let value = try? await client.shellSettings() { set(settings: value) }
         if profileNames.isEmpty, let profiles = try? await client.qualityProfiles() {
             profileNames = Dictionary(profiles.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
@@ -28,8 +33,16 @@ final class ShellState {
             async let runs = try? client.runAttention()
             async let indexers = try? client.indexersUnavailable()
             let (l, r, i) = await (library, runs, indexers)
-            let count = (l?.count ?? 0) + (r?.count ?? 0) + ((i?.count ?? 0) > 0 ? 1 : 0)
-            if attentionCount != count { attentionCount = count }
+            // The web's `useAttentionCount`: files + held imports + no-grab
+            // runs + the indexer group as one. A source that did not answer
+            // keeps the last full figure; with none yet, what did answer
+            // counts, so an endpoint that always fails can't hide the dot.
+            let complete = l != nil && r != nil && i != nil
+            if complete || !hasFullCount {
+                let count = (l?.count ?? 0) + held + (r?.count ?? 0) + ((i?.count ?? 0) > 0 ? 1 : 0)
+                if attentionCount != count { attentionCount = count }
+                if complete { hasFullCount = true }
+            }
             if let commands = try? await client.commands() {
                 let active = commands.contains { ["started", "queued", "running"].contains($0.status.lowercased()) }
                 if commandsActive != active { commandsActive = active }
@@ -61,6 +74,7 @@ final class ShellState {
     func reset() {
         settings = nil
         attentionCount = 0
+        hasFullCount = false
         pendingRequests = 0
         issuesNeedingAction = 0
     }

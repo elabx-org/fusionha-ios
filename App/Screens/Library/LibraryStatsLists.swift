@@ -86,6 +86,8 @@ private struct StatsOperationRow: View {
 struct StatsAttentionList: View {
     let indexers: [UnavailableIndexer]
     let rows: [StatsAttentionRow]
+    /// A source failed, so the rows shown may not be all of them.
+    var incomplete = false
     let manageIndexers: () -> Void
     let openRow: (StatsAttentionRow) -> Void
     let act: (StatsAttentionRow) -> Void
@@ -96,7 +98,7 @@ struct StatsAttentionList: View {
 
     var body: some View {
         if indexers.isEmpty && rows.isEmpty {
-            StatsEmptyLine(text: "Nothing needs attention right now.")
+            StatsEmptyLine(text: incomplete ? Self.incompleteNote : "Nothing needs attention right now.")
         } else {
             VStack(spacing: 0) {
                 if !indexers.isEmpty {
@@ -106,9 +108,19 @@ struct StatsAttentionList: View {
                     if i > 0 || !indexers.isEmpty { Rectangle().fill(Theme.line).frame(height: 1) }
                     attentionRow(row)
                 }
+                if incomplete {
+                    Rectangle().fill(Theme.line).frame(height: 1)
+                    Text(Self.incompleteNote)
+                        .font(.system(size: 11.5))
+                        .foregroundStyle(Theme.dim)
+                        .frame(maxWidth: .infinity)
+                        .padding(14)
+                }
             }
         }
     }
+
+    static let incompleteNote = "Couldn't check everything — some items may be missing."
 
     private var indexerGroup: some View {
         let tint = Theme.stuck

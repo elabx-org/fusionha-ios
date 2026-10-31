@@ -49,6 +49,7 @@ struct StatusClusterItems: ToolbarContent {
     @Binding var open: StatusClusterPanel?
 
     private var feed: ShellStatusFeed { .shared }
+    private var attention: Int? { StatsSheetFeed.shared.attentionCount }
 
     var body: some ToolbarContent {
         if shown {
@@ -62,7 +63,11 @@ struct StatusClusterItems: ToolbarContent {
                 Button { open = .attention } label: {
                     Label("Needs attention", systemImage: "exclamationmark.triangle")
                 }
-                .badge(model.attentionCount)
+                // The popover's own rows (StatsSheetFeed), never the shell's
+                // 30 s figure; no number until every source has been tried
+                // (a failed one leaves the rows that loaded, and says so).
+                .badge(attention ?? 0)
+                .accessibilityLabel((attention ?? 0) > 0 ? "Needs attention, \(attention ?? 0)" : "Needs attention")
                 .popover(isPresented: binding(.attention)) { StatusAttentionPanel(close: close) }
                 Button { open = .health } label: {
                     Label("Backend", systemImage: healthSymbol)
@@ -144,23 +149,35 @@ private struct StatusAttentionPanel: View {
     var body: some View {
         let feed = StatsSheetFeed.shared
         StatusPanelFrame(title: "Needs attention") {
-            StatsAttentionList(indexers: feed.indexers, rows: feed.rows, manageIndexers: {
-                close()
-                Task { @MainActor in
-                    // Let the popover go before the Settings cover comes up.
-                    try? await Task.sleep(for: .milliseconds(350))
-                    model.avatar.settingsPanel = "indexers"
-                    model.avatar.showingSettings = true
-                }
-            }, openRow: { row in
-                close()
-                model.statsOpenRow(row)
-            }, act: { row in
-                close()
-                model.statsAct(row)
-            }, dismissRow: { model.statsDismiss($0, feed: feed) })
-            .padding(.horizontal, -18)
+            if feed.attentionCount == nil {
+                Text("Checking what needs attention…")
+                    .font(.system(size: 12.5))
+                    .foregroundStyle(Theme.dim)
+                    .frame(maxWidth: .infinity)
+                    .padding(26)
+            } else {
+                list(feed)
+            }
         }
+    }
+
+    private func list(_ feed: StatsSheetFeed) -> some View {
+        StatsAttentionList(indexers: feed.indexers, rows: feed.rows, incomplete: feed.incomplete, manageIndexers: {
+            close()
+            Task { @MainActor in
+                // Let the popover go before the Settings cover comes up.
+                try? await Task.sleep(for: .milliseconds(350))
+                model.avatar.settingsPanel = "indexers"
+                model.avatar.showingSettings = true
+            }
+        }, openRow: { row in
+            close()
+            model.statsOpenRow(row)
+        }, act: { row in
+            close()
+            model.statsAct(row)
+        }, dismissRow: { model.statsDismiss($0, feed: feed) })
+        .padding(.horizontal, -18)
     }
 }
 

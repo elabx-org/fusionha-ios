@@ -41,7 +41,7 @@ struct LibraryToolbar<Filters: View>: View {
                         Spacer(minLength: 0)
                         trailing(iconFilters: true)
                     }
-                    if showsAttention { LibraryAttentionChip(count: derived.attentionCount, status: $status) }
+                    if showsAttention { attentionChip() }
                 }
             }
         }
@@ -51,11 +51,16 @@ struct LibraryToolbar<Filters: View>: View {
         HStack(spacing: 8) {
             leading
             if showsAttention {
-                LibraryAttentionChip(count: derived.attentionCount, status: $status, compact: compactChip)
+                attentionChip(compact: compactChip)
             }
             Spacer(minLength: 0)
             trailing(iconFilters: iconFilters)
         }
+    }
+
+    private func attentionChip(compact: Bool = false) -> some View {
+        LibraryAttentionChip(count: derived.attentionCount, inView: derived.attentionInView, status: $status,
+                             compact: compact)
     }
 
     @ViewBuilder private var leading: some View {
