@@ -176,9 +176,8 @@ struct CalendarView: View {
                     swipe: periodSwipe,
                     // Only the phone folds its toolbar away (`collapsible`).
                     collapsed: isPhone ? $collapsed : .constant(false),
-                    title: title,
+                    caption: subline,
                     onPrev: { step(-1) },
-                    onToday: goToday,
                     onNext: { step(1) })
             } else {
                 content.padding(.horizontal, Theme.pageGutter).padding(.top, 12)

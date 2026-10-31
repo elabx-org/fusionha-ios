@@ -135,7 +135,7 @@ The approver's Requests follow the joint **Final** mock (owner-approved 2026-10-
 
 ### Calendar (`/calendar`)
 - **Views:** a glass segmented picker **Month · Week · Forecast · Day · Agenda** (the web's five), opening on the view last chosen on this device, else the server's `calendar_default_view`; grids start on `first_day_of_week`.
-- **Week:** the web mobile `WeekMobile` pattern, a day strip with an agenda list below. The day strip is a glass bar that collapses as you scroll.
+- **Week:** the web mobile `WeekMobile` pattern, a day strip with an agenda list below. The day strip is a glass bar that collapses as you scroll. Once the toolbar folds away, the pinned slim bar shows the counts and ‹ › only: the week's range stays the system bar title and Today stays in the bar (the web's slim bar repeats the title and Today; the system bar already carries both).
 - **Month:** the web's grid: up to two event pills per day (kind strip, code, one unaired-aware dot per edition) and `+N more`. Tapping a pill opens the item; tapping a day's empty space opens that day in the **Day** view.
 - **Agenda / Forecast / Day:** the web's grouped timeline: a date rail, a "now" marker in today's group, rows with a coverage rail per edition, opening scrolled to today.
 - **Events:** poster thumb, SxxEyy (or absolute number), and one status colour per edition.
