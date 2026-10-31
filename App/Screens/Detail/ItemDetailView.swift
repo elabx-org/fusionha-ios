@@ -56,6 +56,10 @@ struct ItemDetailView: View {
                         DetailLoadingShell(seed: model.library.first { $0.id == itemId })
                     }
                 }
+                // Exactly the page's width: a row wider than the screen would
+                // otherwise widen the whole page, centred, cutting off both edges
+                // (the folded Duo, beside the system column).
+                .containerRelativeFrame(.horizontal)
             }
             .scrollIndicators(.hidden)
             .scrollPosition($position)
