@@ -3,8 +3,8 @@ import FusionhaKit
 
 // The Calendar toolbar (the mock's calendar head): the counts, the glass view
 // switcher, the glass bar (‹ ›, kind chips) and the status / release legends.
-// The title, Today, the iCal feed and the week card style are in the system
-// bar (`barItems`, D1). Every control here is glass; nothing in it is content.
+// The title, Today and Calendar options (iCal feed, week card style) are in
+// the system bar (`barItems`, D1). Every control here is glass; nothing in it is content.
 extension CalendarView {
     var toolbar: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -18,9 +18,10 @@ extension CalendarView {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The system bar's items: Today first (it stays when the bar runs out of
-    /// room); on a phone the filter menu (media type, iCal, week cards), else
-    /// the iCal feed and the week card style in the overflow.
+    /// The system bar's items, in column order (then the shell's, Account
+    /// last): Today (it stays when the bar runs out of room), the phone's
+    /// Filter menu (media type only), then Calendar options (iCal feed, week
+    /// cards), which goes to the overflow first.
     @ToolbarContentBuilder
     var barItems: some ToolbarContent {
         ToolbarItem(placement: .primaryAction) {
@@ -29,13 +30,10 @@ extension CalendarView {
         .barPriority(true)
         if isPhone {
             ToolbarItem(placement: .primaryAction) { filterMenu }
-        } else {
-            if model.me?.isAdmin == true {
-                ToolbarItem(placement: .secondaryAction) { icalMenu }
-            }
-            if view == .week {
-                ToolbarItem(placement: .secondaryAction) { weekStyleMenu }
-            }
+        }
+        if showsOptionsMenu {
+            ToolbarItem(placement: .primaryAction) { optionsMenu }
+                .barPriority(false)
         }
     }
 
@@ -74,30 +72,6 @@ extension CalendarView {
         .scrollIndicators(.hidden)
         .frame(maxWidth: .infinity)
         .sensoryFeedback(.selection, trigger: filter)
-    }
-
-    var icalMenu: some View {
-        Menu {
-            Button("Copy feed URL", systemImage: "doc.on.doc") { Task { await feedURL(subscribe: false) } }
-            Button("Subscribe in Calendar", systemImage: "calendar.badge.plus") { Task { await feedURL(subscribe: true) } }
-        } label: {
-            Label("iCal feed", systemImage: "dot.radiowaves.up.forward")
-        }
-        .disabled(copyingFeed)
-    }
-
-    var weekStyleMenu: some View {
-        Menu {
-            Picker("Week card style", selection: weekCardsBinding) {
-                Text("Phone cards").tag("phone")
-                ForEach(WeekCardStyle.allCases, id: \.self) { style in
-                    Text(style.label).tag(style.rawValue)
-                }
-            }
-            .pickerStyle(.inline)
-        } label: {
-            Label("Week card style", systemImage: "rectangle.stack")
-        }
     }
 
     // MARK: Legends (`.legend`)
