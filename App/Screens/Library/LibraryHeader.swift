@@ -49,9 +49,11 @@ struct LibraryHeader: View {
         .toolbar {
             if foldedDuo {
                 // The folded Duo's column (D1): Account, the prominent Add,
-                // Select, Library stats; every one stays, none overflows.
-                // Search leaves it (the Search tab does the job). The shell
-                // leaves Account to this page here (`accountInPageWhenFolded`).
+                // then one More menu (Select, Library stats). The portrait
+                // column holds three items above the tabs; a fourth made the
+                // system float its own overflow over the content. Search
+                // leaves it (the Search tab does the job). The shell leaves
+                // Account to this page here (`accountInPageWhenFolded`).
                 AccountToolbarItem(model: model)
                 if canAdd && !model.selectMode {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -62,11 +64,9 @@ struct LibraryHeader: View {
                     .barPriority(true)
                 }
                 if !model.selectMode {
-                    ToolbarItem(placement: .topBarTrailing) { selectButton }
+                    ToolbarItem(placement: .topBarTrailing) { foldedMenu.badge(statsBadge) }
                         .barPriority(true)
                 }
-                ToolbarItem(placement: .topBarTrailing) { statsButton }
-                    .barPriority(true)
             } else if overflowBar {
                 // A Spread's left page with a title open: Spread, Account and
                 // Search stay; Select, Library stats and Add share one menu, so
@@ -149,6 +149,17 @@ struct LibraryHeader: View {
     private var searchInMenu: Bool { overflowBar && spread.posture == .flat }
 
     private var canAdd: Bool { !model.requestScoped && model.me?.can("add") != false }
+
+    /// Select and Library stats in one item (the folded Duo's column).
+    private var foldedMenu: some View {
+        Menu {
+            Button("Select", systemImage: "checkmark.circle") { model.selectMode = true }
+            Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
+        } label: {
+            Label("More", systemImage: "ellipsis")
+        }
+        .accessibilityLabel(statsBadge == nil ? "More" : "More, library needs attention")
+    }
 
     /// Select, Library stats and Add in one bar item (the overflow bar).
     private var overflowMenu: some View {
