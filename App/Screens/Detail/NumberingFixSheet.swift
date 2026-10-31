@@ -39,8 +39,9 @@ struct NumberingFixSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button { Task { await apply() } } label: {
-                        ToolbarActionLabel(title: applying ? "Applying…" : "Confirm & apply", systemImage: "checkmark")
+                    ToolbarActionButton(title: applying ? "Applying…" : "Confirm & apply", systemImage: "checkmark",
+                                        busy: applying) {
+                        Task { await apply() }
                     }
                     .buttonStyle(.glassProminent)
                     .tint(Theme.indigo)

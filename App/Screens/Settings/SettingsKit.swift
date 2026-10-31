@@ -43,7 +43,7 @@ struct SettingsForm<Content: View>: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") { hideKeyboard() }
+                Button("Done", systemImage: "checkmark") { hideKeyboard() }
             }
         }
     }

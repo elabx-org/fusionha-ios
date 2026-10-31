@@ -174,7 +174,7 @@ struct StagedDialogSheet: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            Button(stale || refused ? "Close" : "Cancel") { dismiss() }
+            Button(stale || refused ? "Close" : "Cancel", systemImage: "xmark", role: .cancel) { dismiss() }
         }
         if refused {
             if error?.code != "swap_restore_refused", let report = route.report {
@@ -184,10 +184,12 @@ struct StagedDialogSheet: View {
             }
         } else if !stale {
             ToolbarItem(placement: .confirmationAction) {
-                Button { Task { await submit() } } label: { Text(working ? busyLabel : goLabel) }
-                    .buttonStyle(.glassProminent)
-                    .tint(route.kind == .discard ? Theme.danger : (route.kind == .use || route.kind == .resolve ? Theme.done : Theme.grab))
-                    .disabled(working || ((route.kind == .use || route.kind == .discard) && snap == nil))
+                ToolbarActionButton(title: working ? busyLabel : goLabel, systemImage: goSymbol, busy: working) {
+                    Task { await submit() }
+                }
+                .buttonStyle(.glassProminent)
+                .tint(route.kind == .discard ? Theme.danger : (route.kind == .use || route.kind == .resolve ? Theme.done : Theme.grab))
+                .disabled((route.kind == .use || route.kind == .discard) && snap == nil)
             }
         }
     }
@@ -198,6 +200,15 @@ struct StagedDialogSheet: View {
         case .discard: return "Discard new copy"
         case .regrab: return "Re-grab"
         case .resolve: return "Resolve"
+        }
+    }
+
+    private var goSymbol: String {
+        switch route.kind {
+        case .use: return "checkmark"
+        case .discard: return "trash"
+        case .regrab: return "arrow.down.circle"
+        case .resolve: return "checkmark.circle"
         }
     }
 

@@ -71,15 +71,13 @@ struct ApproveDialog: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button {
+                    ToolbarActionButton(title: sending ? "Approving…" : (enabledCount == 2 ? "Approve · 2 editions" : "Approve"),
+                                        systemImage: "checkmark", busy: sending) {
                         Task { await approve() }
-                    } label: {
-                        ToolbarActionLabel(title: sending ? "Approving…" : (enabledCount == 2 ? "Approve · 2 editions" : "Approve"),
-                                           systemImage: "checkmark")
                     }
                     .buttonStyle(.glassProminent)
                     .tint(Theme.indigo)
-                    .disabled(!loaded || sending || enabledCount == 0)
+                    .disabled(!loaded || enabledCount == 0)
                 }
             }
         }
@@ -165,13 +163,12 @@ struct RejectDialog: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button { Task { await submit() } } label: {
-                        ToolbarActionLabel(title: sending ? "Saving…" : (defer_ ? "Defer" : "Reject"),
-                                           systemImage: defer_ ? "clock" : "xmark.circle")
+                    ToolbarActionButton(title: sending ? "Saving…" : (defer_ ? "Defer" : "Reject"),
+                                        systemImage: defer_ ? "clock" : "xmark.circle", busy: sending) {
+                        Task { await submit() }
                     }
                     .buttonStyle(.glassProminent)
                     .tint(Theme.danger)
-                    .disabled(sending)
                 }
             }
         }

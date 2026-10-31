@@ -64,8 +64,10 @@ struct BlockReleaseGroupSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(scope == .release ? "Confirm" : "Block") { Task { await confirm() } }
-                        .disabled(working)
+                    ToolbarActionButton(title: scope == .release ? "Confirm" : "Block",
+                                        systemImage: scope == .release ? "checkmark" : "nosign", busy: working) {
+                        Task { await confirm() }
+                    }
                 }
             }
             .task { await loadEvidence() }

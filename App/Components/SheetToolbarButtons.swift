@@ -36,21 +36,35 @@ struct SheetDoneButton: View {
     }
 }
 
-/// The label of a prominent action whose words carry state ("Approve · 2
-/// editions", "Add 3 films", "Rename 4 files"): the icon and the words side by
-/// side, like the web's button. A plain `Label` would be cut to its icon by the
-/// toolbar (iOS 26 ignores `.labelStyle(.titleAndIcon)` there), losing the
-/// count, so this is drawn as its own content. Untested in a vertical bar.
-struct ToolbarActionLabel: View {
+/// A sheet's prominent action whose words carry state ("Approve · 2
+/// editions", "Add 3 films", "Rename 4 files"): a plain system item, title AND
+/// icon, so it joins the iPhone Duo's vertical bar with the rest (a custom
+/// label view stays horizontal and splits the bar). The bar shows the icon,
+/// the overflow menu and VoiceOver the words.
+///
+/// While `busy` it stays the same item, disabled, its icon pulsing (steady
+/// under Reduce Motion), so the bar never swaps it for a spinner and jumps.
+struct ToolbarActionButton: View {
     let title: String
     let systemImage: String
+    var role: ButtonRole?
+    var busy: Bool
+    let action: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    init(title: String, systemImage: String, role: ButtonRole? = nil, busy: Bool = false,
+         action: @escaping () -> Void) {
+        self.title = title
+        self.systemImage = systemImage
+        self.role = role
+        self.busy = busy
+        self.action = action
+    }
 
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: systemImage)
-            Text(title)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(title)
+        Button(title, systemImage: systemImage, role: role, action: action)
+            .symbolEffect(.pulse, options: .repeating, isActive: busy && !reduceMotion)
+            .disabled(busy)
+            .accessibilityValue(busy ? "In progress" : "")
     }
 }

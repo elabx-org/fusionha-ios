@@ -31,12 +31,13 @@ struct RenameSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button { Task { await apply() } } label: {
-                        ToolbarActionLabel(title: RenameCopy.applyLabel(count: split.movable.count), systemImage: "textformat")
+                    ToolbarActionButton(title: RenameCopy.applyLabel(count: split.movable.count), systemImage: "textformat",
+                                        busy: applying) {
+                        Task { await apply() }
                     }
                     .buttonStyle(.glassProminent)
                     .tint(Theme.indigo)
-                    .disabled(split.movable.isEmpty || applying)
+                    .disabled(split.movable.isEmpty)
                 }
             }
         }

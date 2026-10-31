@@ -17,7 +17,7 @@ struct QualityProfileLadderPage: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button(groupEdit ? "Done" : "Edit Groups") { groupEdit.toggle() }
+                Button(groupEdit ? "Done" : "Edit Groups", systemImage: groupEdit ? "checkmark" : "pencil") { groupEdit.toggle() }
             }
         }
     }

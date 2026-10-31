@@ -133,13 +133,11 @@ struct ManageFilesSheet: View {
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } }
         ToolbarItemGroup(placement: .primaryAction) {
-            Button {
+            ToolbarActionButton(title: "Re-scan", systemImage: "arrow.clockwise", busy: model.rescanning) {
                 Task { await model.rescan() }
-            } label: {
-                if model.rescanning { ProgressView() } else { Label("Re-scan", systemImage: "arrow.clockwise") }
             }
-            .disabled(model.rescanning || tab != 0)
-            Button(selecting ? "Cancel" : "Select") {
+            .disabled(tab != 0)
+            Button(selecting ? "Cancel" : "Select", systemImage: selecting ? "xmark" : "checkmark.circle") {
                 selecting.toggle()
                 if !selecting { model.selected = [] }
             }
