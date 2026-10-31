@@ -7,12 +7,16 @@ import FusionhaKit
 /// Shown while the queue has items, hidden on Activity (the Queue is already
 /// there). iOS before 26.1 has no way to hide an accessory, so it goes without.
 struct DownloadsBarSlot: ViewModifier {
+    @Environment(DownloadsPillSpace.self) private var space: DownloadsPillSpace?
     let state: DownloadsBarState
     let shown: Bool
 
     func body(content: Content) -> some View {
         if #available(iOS 26.1, *) {
-            content.tabViewBottomAccessory(isEnabled: shown) { DownloadsBarAccessory(state: state) }
+            content
+                .tabViewBottomAccessory(isEnabled: shown) { DownloadsBarAccessory(state: state) }
+                // The tabs reserve the pill's space while it shows (D3).
+                .onChange(of: shown, initial: true) { _, value in space?.shown = value }
         } else {
             content
         }
@@ -40,6 +44,7 @@ struct DownloadsBarAccessory: View {
             }
         }
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)
+        .publishesDownloadsPillFrame(inline: inline)
         .confirmationDialog("Pause fusionha's downloads?", isPresented: $confirmPause, titleVisibility: .visible) {
             Button("Pause downloads") { Task { await model.toggleQueuePause() } }
         } message: {

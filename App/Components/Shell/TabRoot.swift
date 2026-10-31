@@ -16,6 +16,8 @@ struct TabRoot<Content: View>: View {
     var body: some View {
         NavigationStack {
             content
+                // Room for the downloads pill where it floats over the tab (D3).
+                .reservesDownloadsPillSpace()
                 // The tab bar's top, for the shell's toasts (D3).
                 .publishesToastAnchor()
         }
