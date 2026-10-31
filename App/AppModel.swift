@@ -98,33 +98,8 @@ final class AppModel {
     /// Their auto-dismiss clocks, paused while a toast is held.
     let toastClock = ToastClock()
 
-    // Shell badges and settings (ShellState.swift).
+    // Shell badges and settings (ShellState.swift; read through in AppModel+Access.swift).
     let shell = ShellState()
-    var attentionCount: Int { shell.attentionCount }
-    var pendingRequests: Int { shell.pendingRequests }
-    /// The Requests badge (Proposal 2): pending requests plus issues needing
-    /// action, each counted only for someone who can act on it.
-    var requestsBadge: Int {
-        (canApproveRequests ? shell.pendingRequests : 0) + (canManageIssues ? shell.issuesNeedingAction : 0)
-    }
-    var canManageIssues: Bool {
-        guard let me else { return false }
-        return me.isAdmin || (me.permissions ?? []).contains("issues.manage")
-    }
-    var commandsActive: Bool { shell.commandsActive }
-    var settings: ShellSettings? { shell.settings }
-
-    func profileName(_ id: Int) -> String? { shell.profileNames[id] }
-    var railStyle: RailStyle { RailStyle(rawValue: settings?.libraryRailStyle ?? "") ?? .current }
-    var railConsolidate: Bool { settings?.libraryRailConsolidate ?? false }
-    var animationsEnabled: Bool { settings?.animationsEnabled ?? true }
-    var canApproveRequests: Bool {
-        guard let me else { return false }
-        return me.isAdmin || (me.permissions ?? []).contains("requests.approve")
-    }
-
-    /// Requester accounts get the web's reduced nav.
-    var requestScoped: Bool { me?.requestScoped == true }
 
     // The library list, shared by Library and the top-bar search.
     private(set) var library: [MediaItem] = [] {
@@ -223,19 +198,6 @@ final class AppModel {
         credentials?.client()
     }
 
-    // MARK: Native push (APNs)
-
-    /// Registers the APNs token whenever iOS issues one, and opens tapped notifications.
-    private func observePush() {
-        NotificationCenter.default.addObserver(forName: .apnsTokenChanged, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in await self?.registerPushDevice() }
-        }
-        NotificationCenter.default.addObserver(forName: .openNotificationLink, object: nil, queue: .main) { [weak self] note in
-            guard let url = note.object as? URL else { return }
-            Task { @MainActor in self?.receiveDeepLink(url) }
-        }
-    }
-
     // MARK: Account and library
 
     func loadMe() async {
@@ -283,18 +245,6 @@ final class AppModel {
     /// The web's `/preview/{kind}/{tmdb_id}`. Until a native Preview screen
     /// exists this opens the Add sheet on that title (Preview's own Add).
     var previewHandler: ((MediaSearchResult) -> Void)?
-
-    /// Log out: end the server session and revoke this device's token, then
-    /// forget the credentials.
-    func logOut() async {
-        if let client, let creds = credentials {
-            // Stop pushes to this phone for the account that is leaving.
-            await PushRegistration.unregister(with: client)
-            try? await client.logout()
-            if let tokenId = creds.tokenId { try? await client.revokeToken(id: tokenId) }
-        }
-        signOut()
-    }
 
     func signOut() {
         CredentialStore.clear()
