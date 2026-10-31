@@ -81,6 +81,10 @@ struct ItemDetailView: View {
                 store.scrollY = y
                 if compact != (y > 200) { compact = y > 200 }
             }
+            .onChange(of: store.versionReveal) { _, reveal in
+                guard let reveal else { return }
+                Task { await DetailRevealScroll.run(reveal, store: store, proxy: proxy, reduce: reduceMotion) }
+            }
             .onChange(of: store.revealRequests) {
                 if reduceMotion { proxy.scrollTo("requests", anchor: .center) } else {
                     withAnimation(.easeInOut(duration: 0.35)) { proxy.scrollTo("requests", anchor: .center) }

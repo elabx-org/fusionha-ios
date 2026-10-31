@@ -41,6 +41,8 @@ struct SeriesFilesTab: View {
 
     var body: some View {
         let sections = sections
+        // Each version's first section is the hero strip's scroll target.
+        let leads = Set(Dictionary(grouping: sections, by: \.edition.id).compactMap { $0.value.first?.id })
         VStack(alignment: .leading, spacing: 12) {
             Text("Grouped by season, split by version — each tier lives in its own root folder, so its files are listed separately. Tap a section to collapse it.")
                 .font(.system(size: 12))
@@ -89,6 +91,8 @@ struct SeriesFilesTab: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .detailCard()
+                .versionHighlight(section.edition, anchor: "file-\(section.edition.id)")
+                .id(leads.contains(section.id) ? "file-\(section.edition.id)" : "section-\(section.id)")
                 .detailAnimation(.easeInOut(duration: 0.2), value: isCollapsed)
             }
         }

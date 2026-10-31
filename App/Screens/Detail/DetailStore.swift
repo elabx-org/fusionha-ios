@@ -3,9 +3,10 @@ import Observation
 import SwiftUI
 import FusionhaKit
 
-/// The detail page's tabs (DetailTabs.tsx). `files` is "Versions" on a movie.
+/// The detail page's tabs (DetailTabs.tsx, D5): "Files" for both kinds;
+/// `overview` holds the trailer, collection, more like this and cast rails.
 enum DetailTab: String, Hashable {
-    case seasons, files, history, searches, collection
+    case seasons, files, history, searches, overview, collection
 }
 
 /// What the interactive-search sheet searches.
@@ -131,6 +132,11 @@ final class DetailStore {
     var requestRows: [ItemRequestRow] = []
     /// Bumped by the hero's "Requested by" pill: the page scrolls to the strip.
     var revealRequests = 0
+    /// Set by a version-strip chip: the page scrolls to that version's row.
+    var versionReveal: VersionReveal?
+    /// The anchor of the row the strip just revealed, lit briefly (only that
+    /// row: a Files card never lights the Versions panel row too).
+    var highlightedAnchor: String?
 
     /// What the child sheets had typed when their host went away (`retainsDraft`).
     @ObservationIgnored var drafts = DraftBag()

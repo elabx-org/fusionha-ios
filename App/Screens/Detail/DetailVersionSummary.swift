@@ -20,9 +20,12 @@ struct VersionSummary {
     let availability: MovieAvailabilityNote?
     let grabbedLabel: String
     let grabbedValue: String
+    /// The quality code the hero's version strip names (`VersionStrip.qualityCode`).
+    let qualityCode: String?
 
     init(detail: ItemDetail, edition: DetailEdition, activeQueue: Set<Int>, now: Date) {
         dot = detail.dot(for: edition, activeQueueEditionIds: activeQueue)
+        qualityCode = VersionStrip.qualityCode(detail, edition: edition)
         if detail.isSeries {
             var covers: [Int: Cover] = [:]
             var total = Cover()

@@ -29,11 +29,13 @@ struct DetailHeroArt<Overlay: View>: View {
             .overlay(alignment: .bottomLeading) { overlay }
     }
 
-    /// Half the container, at least 360 and at most 520, but the 360 floor
-    /// gives way to 60% of a short container (the Duo's outer display held
-    /// sideways, 466pt tall) so the heading and actions stay in view (D3).
+    /// 44% of the container, at least 330 and at most 480, so the version
+    /// strip (D4) and the start of the page sit above the fold on a regular
+    /// iPhone and the folded Duo. The 330 floor gives way to 55% of a short
+    /// container (the Duo's outer display held sideways, 466pt tall) so the
+    /// heading and actions stay in view (D3).
     static func height(for length: CGFloat) -> CGFloat {
-        min(max(length * 0.5, min(360, length * 0.6)), 520)
+        min(max(length * 0.44, min(330, length * 0.55)), 480)
     }
 
     @ViewBuilder

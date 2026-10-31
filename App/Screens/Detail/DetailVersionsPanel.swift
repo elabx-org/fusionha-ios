@@ -46,6 +46,9 @@ struct DetailVersionsPanel: View {
                                      onPickSeason: compareAllowed ? { (n: Int) in cmpSeason = n } : nil) {
                         toggle(edition, focused: focused)
                     }
+                    // The hero strip's target for a version with no files yet.
+                    .versionHighlight(edition, anchor: "version-\(edition.id)", radius: 0)
+                    .id("version-\(edition.id)")
                 }
                 ForEach(gaps) { gap in
                     if !visible.isEmpty || gap.id != gaps.first?.id { DetailHairline() }
