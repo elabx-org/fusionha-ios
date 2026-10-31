@@ -14,6 +14,8 @@ struct RootView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var fold = FoldInfo()
     @State private var toastAnchor = ToastAnchor()
+    /// Bulk-select bars on screen: the downloads bar steps aside for them.
+    @State private var selectBars = SelectBarPresence()
     /// iPhone Duo open: Spread (two pages at the fold) or the Web layout. Per device.
     @AppStorage(DuoOpenLayout.storageKey) private var duoLayout: DuoOpenLayout = .standard
     @State private var spanRequests = SpreadSpanRequests()
@@ -135,6 +137,7 @@ struct RootView: View {
                        clearsAbove: split.shown || spread.spans ? nil : toastAnchor.floor, gap: 16)
         }
         .environment(toastAnchor)
+        .environment(selectBars)
         .environment(\.spread, spread)
         .environment(\.duoListToggle, listToggle(split))
         .environment(\.duoOpen, fold.isDuoOpen)
@@ -187,10 +190,11 @@ struct RootView: View {
         .tabBadgeTint(key: "\(model.requestsBadge)-\(model.queueTotal)-\(model.tab)-\(Int(fold.size.width))x\(Int(fold.size.height))-\(split.shown)")
         .tabBarMinimizeBehavior(.onScrollDown)
         // The downloads bar (iOS-only): while the queue has items, off Activity,
-        // and never across the iPhone Duo's fold (the Activity badge still counts).
+        // never across the iPhone Duo's fold (the Activity badge still counts),
+        // and never over a select mode's bulk bar (`SelectBarPresence`).
         .modifier(DownloadsBarSlot(state: downloadsBar,
                                    shown: !model.requestScoped && model.tab != .activity && downloadsBar.hasContent
-                                       && !tabsCrossFold))
+                                       && !tabsCrossFold && !selectBars.isShowing))
         .onChange(of: model.queue, initial: true) { downloadsBar.update(model.queue) }
     }
 }

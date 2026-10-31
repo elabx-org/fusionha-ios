@@ -156,5 +156,6 @@ struct InboxBulkBar: View {
         .padding(12)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .onChange(of: inbox.selected) { spaceWarned = false }
+        .publishesSelectBar("requests.inbox.bulk")
     }
 }

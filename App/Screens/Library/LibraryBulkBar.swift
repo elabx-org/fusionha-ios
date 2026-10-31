@@ -34,6 +34,7 @@ struct LibrarySelectBar: ViewModifier {
                     }
                 }
             }
+            .publishesSelectBar("library.select", active: active)
             .task(id: active) {
                 if active && profiles.isEmpty { profiles = (try? await model.client?.qualityProfiles()) ?? [] }
             }
