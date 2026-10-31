@@ -16,9 +16,10 @@ struct WeekMobileView: View {
     /// Steps the week on a horizontal swipe over the agenda (not the strip).
     let swipe: HorizontalPanGesture
     @Binding var collapsed: Bool
-    let title: String
+    /// The counts line (`subline`). The week's title stays in the system bar
+    /// and Today in the toolbar (D1), so the slim bar never repeats them.
+    let caption: String
     let onPrev: () -> Void
-    let onToday: () -> Void
     let onNext: () -> Void
 
     @Environment(\.calMotionOff) private var motionOff
@@ -98,14 +99,12 @@ struct WeekMobileView: View {
         VStack(spacing: 0) {
             if collapsed {
                 HStack(spacing: 8) {
-                    Text(title)
-                        .font(Theme.display(26, relativeTo: .title2))
-                        .tracking(Theme.displayTracking(26))
-                        .foregroundStyle(Theme.txt)
+                    Text(caption)
+                        .font(.system(size: 15))
+                        .foregroundStyle(Theme.mut)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.7)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    CalNavButtons(noun: "week", onPrev: onPrev, onToday: onToday, onNext: onNext)
+                    CalNavButtons(noun: "week", onPrev: onPrev, onToday: nil, onNext: onNext)
                 }
                 .padding(.top, 8)
                 .padding(.horizontal, Theme.pageGutter)
