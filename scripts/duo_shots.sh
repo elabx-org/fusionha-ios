@@ -54,6 +54,10 @@ screens() {  # screens <pose> <display> [env…]
   local B="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S"
   want "duo-$P-library" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library "$@"; snap "duo-$P-library" "$D"; }
   want "duo-$P-detail" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8 "$@"; snap "duo-$P-detail" "$D"; }
+  # A movie's page scrolled to its versions and to the tabs: the page once
+  # shifted left after the lower content loaded (owner, build 633).
+  want "duo-$P-detail-movie-versions" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=3 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SCROLL=editions "$@"; snap "duo-$P-detail-movie-versions" "$D"; }
+  want "duo-$P-detail-movie-tabs" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=3 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SCROLL=tabs "$@"; snap "duo-$P-detail-movie-tabs" "$D"; }
   want "duo-$P-activity" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity "$@"; snap "duo-$P-activity" "$D"; }
   want "duo-$P-discover" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover "$@"; snap "duo-$P-discover" "$D"; }
   want "duo-$P-settings" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=list "$@"; snap "duo-$P-settings" "$D"; }
