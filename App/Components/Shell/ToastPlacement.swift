@@ -49,6 +49,8 @@ private struct BottomBarTopWriter: ViewModifier {
                 if anchor?.barTops[id] != top { anchor?.barTops[id] = top }
             }
             .onDisappear { anchor?.barTops[id] = nil }
+            // A bulk bar: the downloads bar steps aside while it shows.
+            .publishesSelectBar(id)
     }
 }
 

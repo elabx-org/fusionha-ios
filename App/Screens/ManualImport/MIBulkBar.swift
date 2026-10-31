@@ -35,6 +35,7 @@ struct MIBulkBar: ViewModifier {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 if active { MIBulkOutcome(summary: s).padding(.horizontal, 10).padding(.bottom, 6) }
             }
+            .publishesSelectBar("manual-import.bulk", active: active)
             .duoPageSheet(isPresented: $editing) {
                 MIBulkSheet(title: "Edit \(s.open.count) selected", rows: s.open).environment(session)
             }
