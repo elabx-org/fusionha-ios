@@ -10,6 +10,8 @@ struct IndexersPanel: View {
     @Environment(AppModel.self) private var model
     @State private var indexers: [SearchIndexerInfo] = []
     @State private var stats: IndexerStatsResponse?
+    /// The first stats answer (or failure) is in: the overview waits for it, not drawing zeros.
+    @State private var statsLoaded = false
     @State private var range: IndexerRange = .week
     @State private var loaded = false
     @State private var error: String?
@@ -48,8 +50,10 @@ struct IndexersPanel: View {
         let maxShare = max(1, all.map(\.share).max() ?? 1)
         let maxYield = max(1, all.map(\.yieldValue).max() ?? 1)
         FetchingPage(slug: "indexers", toaster: toaster, confirm: $confirm, refresh: load) {
-            IndexerFleetOverview(summary: stats?.summary, metrics: all, range: $range)
-                .padding(.bottom, 22)
+            if statsLoaded {
+                IndexerFleetOverview(summary: stats?.summary, metrics: all, range: $range)
+                    .padding(.bottom, 22)
+            }
 
             toolbar.padding(.bottom, 12)
 
@@ -132,6 +136,7 @@ struct IndexersPanel: View {
     private func loadStats() async {
         guard let client = model.client else { return }
         stats = try? await client.indexerStats(range: range.rawValue)
+        statsLoaded = true
     }
 
     private func toggle(_ indexer: SearchIndexerInfo, _ on: Bool) {

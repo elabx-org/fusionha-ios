@@ -17,7 +17,8 @@ struct WantedView: View {
     @State private var search = ""
     @State private var totals: WantedPage?
     @State private var totalsFailed = false
-    @State private var fourkCount = 0
+    /// nil until the 4K feed's count arrives (the chip shows no number, not 0).
+    @State private var fourkCount: Int?
     @State private var settings: ActivitySettings?
     @State private var searchingAll = false
     @State private var toaster = ActToaster()
@@ -41,7 +42,7 @@ struct WantedView: View {
         case .missing: return totals?.missingTitles ?? 0
         case .cutoff: return totals?.cutoffUnmetTitles ?? 0
         case .upcoming: return totals?.upcomingTitles ?? 0
-        case .fourk: return fourkCount
+        case .fourk: return fourkCount ?? 0
         }
     }
 
@@ -164,14 +165,17 @@ struct WantedView: View {
         summary.padding(.bottom, 4)
     }
 
+    /// Hidden until the totals arrive, so it never reads "0 wanted titles" first.
+    @ViewBuilder
     private var summary: some View {
-        let total = totals?.total ?? 0
-        return (Text(total == 1 ? "1 wanted title" : "\(total) wanted titles")
-         + Text(total > 0 ? " · \(count(.missing)) missing, \(count(.cutoff)) below cutoff, \(count(.upcoming)) upcoming\(fourkCount > 0 ? ", \(fourkCount) seen in 4K" : "")" : "")
-            .foregroundColor(Theme.dim))
-            .font(.system(size: 13))
-            .foregroundStyle(Theme.mut)
-            .fixedSize(horizontal: false, vertical: true)
+        if let total = totals?.total {
+            (Text(total == 1 ? "1 wanted title" : "\(total) wanted titles")
+             + Text(total > 0 ? " · \(count(.missing)) missing, \(count(.cutoff)) below cutoff, \(count(.upcoming)) upcoming\(count(.fourk) > 0 ? ", \(count(.fourk)) seen in 4K" : "")" : "")
+                .foregroundColor(Theme.dim))
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.mut)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private var overview: some View {
@@ -179,7 +183,7 @@ struct WantedView: View {
             .init(label: "Missing", value: count(.missing), color: Theme.miss, mono: WantedTab.missing.token),
             .init(label: "Below cutoff", value: count(.cutoff), color: Theme.edition, mono: WantedTab.cutoff.token),
             .init(label: "Upcoming", value: count(.upcoming), color: Theme.unaired, mono: WantedTab.upcoming.token),
-            .init(label: "4K available", value: fourkCount, color: QualityTier.uhd.color, mono: WantedTab.fourk.token),
+            .init(label: "4K available", value: count(.fourk), color: QualityTier.uhd.color, mono: WantedTab.fourk.token),
         ])
     }
 
@@ -189,7 +193,7 @@ struct WantedView: View {
         VStack(alignment: .leading, spacing: 8) {
             ActFlow(spacing: 8, lineSpacing: 8) {
                 ForEach(WantedTab.allCases, id: \.self) { t in
-                    ActChip(label: t.label, count: count(t), accent: t.accent, selected: tab == t, mono: t.token) {
+                    ActChip(label: t.label, count: t == .fourk ? fourkCount : count(t), accent: t.accent, selected: tab == t, mono: t.token) {
                         if reduce { tab = t } else { withAnimation(.snappy(duration: 0.25)) { tab = t } }
                     }
                 }

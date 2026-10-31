@@ -10,6 +10,8 @@ struct RootFoldersPanel: View {
     @State private var folders: [RootFolderInfo] = []
     @State private var defaults: [AddDefaultSlot]?
     @State private var loaded = false
+    /// The roots have come back once: until then the strip reads "—", not 0.
+    @State private var fetched = false
     @State private var error: String?
     @State private var savingDefault = false
     @State private var editing: RootFolderInfo?
@@ -43,7 +45,9 @@ struct RootFoldersPanel: View {
             }
             .padding(.bottom, 12)
 
-            FetchDashedAddButton(title: "+ Add a root folder") { adding = true }
+            if fetched {
+                FetchDashedAddButton(title: "+ Add a root folder") { adding = true }
+            }
         }
         .task { await load() }
         .sheet(isPresented: $adding) {
@@ -62,16 +66,17 @@ struct RootFoldersPanel: View {
         let tracked = folders.compactMap(\.trackedEditions).reduce(0, +)
         let trackedBytes = folders.compactMap(\.trackedSize).reduce(0, +)
         let defaultsSet = folders.reduce(0) { $0 + ($1.defaultFor?.count ?? 0) }
+        let known: (String) -> String = { fetched ? $0 : "—" }
         return LazyVGrid(columns: [GridItem(.flexible(), spacing: 11), GridItem(.flexible(), spacing: 11)], spacing: 11) {
-            RootStatTile(key: "Roots", value: "\(folders.count)", sub: "quality tiers", tint: Theme.grab)
+            RootStatTile(key: "Roots", value: known("\(folders.count)"), sub: "quality tiers", tint: Theme.grab)
                 .fetchReveal(0)
             RootStatTile(key: "Storage", value: total > 0 ? FetchFormat.bytes(total) : "—",
                          sub: free > 0 ? "\(FetchFormat.bytes(free)) free" : "unreported", tint: Theme.grab)
                 .fetchReveal(1)
-            RootStatTile(key: "Tracked here", value: FetchFormat.grouped(tracked),
-                         sub: "versions · \(FetchFormat.bytes(trackedBytes))", tint: Theme.grab)
+            RootStatTile(key: "Tracked here", value: known(FetchFormat.grouped(tracked)),
+                         sub: fetched ? "versions · \(FetchFormat.bytes(trackedBytes))" : "versions", tint: Theme.grab)
                 .fetchReveal(2)
-            RootStatTile(key: "Auto-op defaults", value: "\(defaultsSet) / 6", sub: "auto-op roots", tint: Theme.done)
+            RootStatTile(key: "Auto-op defaults", value: known("\(defaultsSet) / 6"), sub: "auto-op roots", tint: Theme.done)
                 .fetchReveal(3)
         }
     }
@@ -86,6 +91,7 @@ struct RootFoldersPanel: View {
             folders = try await roots
             defaults = await slots
             error = nil
+            fetched = true
         } catch {
             self.error = error.settingsMessage
         }

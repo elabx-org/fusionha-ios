@@ -80,7 +80,7 @@ struct PulseMeters: View {
                 .frame(height: 9)
                 .background(Theme.txt.opacity(0.06))
                 .clipShape(Capsule())
-            } value: { "\(pulse.healthPct)%" }
+            } value: { pulse.healthPct.map { "\($0)%" } ?? "—" }
             meter("4K coverage") {
                 GeometryReader { geo in
                     Capsule()

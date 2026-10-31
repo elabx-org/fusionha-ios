@@ -151,6 +151,8 @@ final class AppModel {
     // Live Activity and the Downloads widget.
     private(set) var queue: [QueueItem] = []
     private(set) var queueTotal = 0
+    /// The queue has been seen once (cache or poll): until then counts are unknown, not zero.
+    private(set) var queueLoaded = false
     /// Downloads held for a manual import (the Activity header caption).
     private(set) var queueHeld = 0
     /// fusionha's own downloads are paused (Activity › Pause, 0.4.205).
@@ -308,6 +310,7 @@ final class AppModel {
         tab = .library
         queue = []
         queueTotal = 0
+        queueLoaded = false
         queueHeld = 0
         queueHeldIds = []
         selectMode = false
@@ -324,6 +327,7 @@ final class AppModel {
         // wait for the first poll otherwise).
         if queue.isEmpty, let kept = await client?.cached({ try await $0.queue() }) {
             if queue.isEmpty {
+                queueLoaded = true
                 queue = kept.items
                 queueTotal = kept.total
                 queueHeldIds = kept.items.filter { $0.status.lowercased() == "held" }.map(\.id)
@@ -352,6 +356,7 @@ final class AppModel {
             if queueHeldIds != heldIds { queueHeldIds = heldIds }
             if queueHeld != heldIds.count { queueHeld = heldIds.count }
             if queueError != nil { queueError = nil }
+            if !queueLoaded { queueLoaded = true }
             if queuePaused != (page.paused == true) { queuePaused = page.paused == true }
             LiveActivityController.sync(with: items, paused: page.paused == true)
             let ids = items.map(\.id)

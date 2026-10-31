@@ -100,6 +100,7 @@ struct ActivityPageHeader: View {
     }
 
     private func caption(held: Int) -> String {
+        guard model.queueLoaded else { return "Loading…" }
         let downloading = max(0, model.queueTotal - held)
         var parts: [String] = []
         if downloading > 0 { parts.append("\(downloading) downloading · live") }

@@ -97,8 +97,9 @@ struct PulseStats {
         titles = items.count
     }
 
-    var healthPct: Int {
-        totalEditions > 0 ? Int((Double(counts[.complete] ?? 0) / Double(totalEditions) * 100).rounded()) : 0
+    /// nil with no editions in view (incl. before the library loads): "—", not 0%.
+    var healthPct: Int? {
+        totalEditions > 0 ? Int((Double(counts[.complete] ?? 0) / Double(totalEditions) * 100).rounded()) : nil
     }
 }
 
