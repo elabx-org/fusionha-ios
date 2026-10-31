@@ -20,6 +20,8 @@ struct RootView: View {
     @AppStorage(DuoOpenLayout.storageKey) private var duoLayout: DuoOpenLayout = .standard
     @State private var spanRequests = SpreadSpanRequests()
     @State private var downloadsBar = DownloadsBarState()
+    /// The downloads pill's frame, for the tabs' bottom reserve (D3).
+    @State private var pillSpace = DownloadsPillSpace()
     /// The tabs whose list the sidebar button hid (`DuoListMemory`). Per device.
     @AppStorage(DuoListMemory.storageKey) private var hiddenLists = ""
 
@@ -138,6 +140,7 @@ struct RootView: View {
         }
         .environment(toastAnchor)
         .environment(selectBars)
+        .environment(pillSpace)
         .environment(\.spread, spread)
         .environment(\.duoListToggle, listToggle(split))
         .environment(\.duoOpen, fold.isDuoOpen)
