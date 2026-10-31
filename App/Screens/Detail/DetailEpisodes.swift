@@ -106,7 +106,8 @@ private struct EpisodeCard: View {
     }
 
     /// Per-episode monitor toggle: the season toolbar's bookmark (filled =
-    /// monitored), its own tap target. A read-only visitor sees the dot.
+    /// monitored), its own tap target. A read-only visitor sees the same
+    /// bookmark, not tappable.
     @ViewBuilder
     private var monitorToggle: some View {
         let on = store.episodeMonitored(episode)
@@ -126,10 +127,10 @@ private struct EpisodeCard: View {
             .accessibilityLabel(on ? "Stop monitoring \(label)" : "Monitor \(label)")
             .accessibilityAddTraits(on ? .isSelected : [])
         } else {
-            Circle()
-                .fill(on ? Theme.txt : .clear)
-                .overlay(Circle().strokeBorder(Theme.mut, lineWidth: 1.5))
-                .frame(width: 9, height: 9)
+            Image(systemName: on ? "bookmark.fill" : "bookmark")
+                .font(.system(size: 15))
+                .foregroundStyle(on ? Theme.txt : Theme.dim)
+                .frame(width: 36, height: 44)
                 .accessibilityLabel(on ? "Monitored" : "Not monitored")
         }
     }
