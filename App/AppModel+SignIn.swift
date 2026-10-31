@@ -8,17 +8,6 @@ enum PlexSignInError: Error {
 }
 
 extension AppModel {
-    /// `POST /api/v1/notifications/apns/devices` for this install, when signed in
-    /// (not as the read-only demo, and never against the screenshot mock).
-    func registerPushDevice() async {
-        guard let client, credentials?.method != .demoCookie,
-              ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SERVER"] == nil else { return }
-        if let device = await PushRegistration.register(with: client) {
-            UserDefaults.standard.set(device.id, forKey: "apnsDeviceId")
-        }
-        LiveActivityPushTokens.start(client: client)
-    }
-
     // MARK: Sign-in
 
     /// Step 1: check the server is a reachable fusionha and see which sign-in
@@ -121,5 +110,19 @@ extension AppModel {
         // A token from an earlier session registers right away; a fresh one
         // arrives via `.apnsTokenChanged`.
         await registerPushDevice()
+    }
+
+    // MARK: Sign-out
+
+    /// Log out: end the server session and revoke this device's token, then
+    /// forget the credentials.
+    func logOut() async {
+        if let client, let creds = credentials {
+            // Stop pushes to this phone for the account that is leaving.
+            await PushRegistration.unregister(with: client)
+            try? await client.logout()
+            if let tokenId = creds.tokenId { try? await client.revokeToken(id: tokenId) }
+        }
+        signOut()
     }
 }
