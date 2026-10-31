@@ -73,15 +73,13 @@ struct AddCollectionSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button {
+                    ToolbarActionButton(title: sending ? "Adding…" : "Add \(selected.count) film\(selected.count == 1 ? "" : "s")",
+                                        systemImage: "plus", busy: sending) {
                         Task { await add() }
-                    } label: {
-                        ToolbarActionLabel(title: sending ? "Adding…" : "Add \(selected.count) film\(selected.count == 1 ? "" : "s")",
-                                           systemImage: "plus")
                     }
                     .buttonStyle(.glassProminent)
                     .tint(Theme.indigo)
-                    .disabled(sending || selected.isEmpty || ![hd, uhd].contains { $0.enabled })
+                    .disabled(selected.isEmpty || ![hd, uhd].contains { $0.enabled })
                 }
             }
         }

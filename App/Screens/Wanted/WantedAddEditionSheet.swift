@@ -64,12 +64,10 @@ struct WantedAddEditionSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton(action: onCancel) }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button {
+                    ToolbarActionButton(title: "Add version", systemImage: "plus", busy: saving) {
                         Task { await submit() }
-                    } label: {
-                        if saving { ProgressView() } else { Label("Add version", systemImage: "plus") }
                     }
-                    .disabled(saving || rootId == 0 || profileId == 0)
+                    .disabled(rootId == 0 || profileId == 0)
                 }
             }
         }

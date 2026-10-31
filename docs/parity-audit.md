@@ -608,7 +608,7 @@ web has no server step; iOS owns it.
 D1 notes (build 450):
 - **Requests:** the pane menu (view name ▾) stays in content above the summary. Requests is a segment of the
   Discover tab, so a `.toolbarTitleMenu` would hang the pane switch off the title "Discover". Filter (with its
-  count as a badge) and Inbox's Select / Done are toolbar items; Select stays horizontal (`axisBehavior`).
+  count as a badge) and Inbox's Select / Done are toolbar items; Select / Done carry a symbol and join the vertical bar.
 - **Calendar:** on a phone the filter menu (media type, iCal, week cards) is a toolbar item beside Today; wide
   layouts put iCal and week style in the overflow. Prev / next stay in content.
 - **Activity:** Pause / Resume (admins) joined Manual import in the bar, disabled while in flight.

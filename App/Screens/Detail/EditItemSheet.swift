@@ -90,12 +90,9 @@ struct EditItemSheet: View {
                     SheetCancelButton { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button {
+                    ToolbarActionButton(title: "Save changes", systemImage: "checkmark", busy: busy) {
                         Task { await save() }
-                    } label: {
-                        if busy { ProgressView() } else { Label("Save changes", systemImage: "checkmark") }
                     }
-                    .disabled(busy)
                 }
             }
             .confirmationDialog(removeTitle, isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }),

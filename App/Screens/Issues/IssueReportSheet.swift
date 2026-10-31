@@ -201,12 +201,12 @@ struct IssueModal: View {
         } else {
             ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
             ToolbarItem(placement: .confirmationAction) {
-                Button { Task { await submit() } } label: {
-                    ToolbarActionLabel(title: sending ? "Reporting…" : "Report", systemImage: "flag")
+                ToolbarActionButton(title: sending ? "Reporting…" : "Report", systemImage: "flag", busy: sending) {
+                    Task { await submit() }
                 }
                 .buttonStyle(.glassProminent)
                 .tint(Theme.primary)
-                .disabled(sending || !IssueFormat.scopeComplete(scope: isSeries ? scope : "item", season: season, episode: episode))
+                .disabled(!IssueFormat.scopeComplete(scope: isSeries ? scope : "item", season: season, episode: episode))
             }
         }
     }

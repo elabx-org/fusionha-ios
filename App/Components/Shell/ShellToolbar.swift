@@ -80,16 +80,6 @@ extension ToolbarContent {
             self
         }
     }
-
-    /// Items whose words carry state (Select / Done) stay in the horizontal bar.
-    @ToolbarContentBuilder
-    func horizontalOnly() -> some ToolbarContent {
-        if #available(iOS 27.1, *) {
-            axisBehavior(.horizontalOnly)
-        } else {
-            self
-        }
-    }
 }
 
 /// The Account item (Q-DC2, ruled in #60): the user's Plex photo, initials

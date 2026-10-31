@@ -113,16 +113,15 @@ struct TriageInboxView: View {
         }
         .toolbar {
             // Select belongs to the list (Proposal 2): cards decide one at a time.
-            // Like the system Edit button, its words swap, so it stays horizontal.
+            // Title and symbol, so it joins the iPhone Duo's vertical bar.
             // Wide, every queue row has its checkbox already (web `panes`).
             if nav.inboxList && !queue.isEmpty && !wide {
                 ToolbarItem(placement: .primaryAction) {
-                    Button(nav.selecting ? "Done" : "Select") {
+                    Button(nav.selecting ? "Done" : "Select", systemImage: nav.selecting ? "checkmark" : "checkmark.circle") {
                         nav.selecting.toggle()
                         if !nav.selecting { inbox.selected = [] }
                     }
                 }
-                .horizontalOnly()
             }
         }
     }

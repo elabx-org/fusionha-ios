@@ -126,10 +126,8 @@ struct AddEditionSheet: View {
                     SheetCancelButton { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button {
+                    ToolbarActionButton(title: "Add version", systemImage: "plus", busy: busy) {
                         Task { await submit() }
-                    } label: {
-                        if busy { ProgressView() } else { Label("Add version", systemImage: "plus") }
                     }
                     .disabled(!canSubmit)
                 }

@@ -72,12 +72,12 @@ struct PresetDeploySheet: View {
         if result == nil {
             ToolbarItem(placement: .confirmationAction) {
                 if readOnly {
-                    Button("Deploy…") { readOnly = false }
+                    Button("Deploy…", systemImage: "shippingbox") { readOnly = false }
                 } else {
-                    Button(working ? (willReplace ? "Rebuilding…" : "Deploying…") : (willReplace ? "Rebuild in place" : "Deploy to fusionha")) {
+                    ToolbarActionButton(title: working ? (willReplace ? "Rebuilding…" : "Deploying…") : (willReplace ? "Rebuild in place" : "Deploy to fusionha"),
+                                        systemImage: willReplace ? "arrow.triangle.2.circlepath" : "shippingbox", busy: working) {
                         Task { await deploy() }
                     }
-                    .disabled(working)
                 }
             }
         }

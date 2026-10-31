@@ -42,9 +42,9 @@ struct MIBulkBar: ViewModifier {
     }
 
     private func importButton(_ s: ManualImportBulkSummary, busy: Bool) -> some View {
-        Button { Task { await session.decide(.importFile) } } label: {
-            ToolbarActionLabel(title: MIBulkWords.importTitle(s, applying: session.applying),
-                               systemImage: "square.and.arrow.down")
+        ToolbarActionButton(title: MIBulkWords.importTitle(s, applying: session.applying),
+                            systemImage: "square.and.arrow.down", busy: session.applying?.action == .importFile) {
+            Task { await session.decide(.importFile) }
         }
         .buttonStyle(.glassProminent)
         .tint(Theme.i1)
