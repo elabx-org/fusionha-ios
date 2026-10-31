@@ -26,6 +26,7 @@ struct MetadataSwitchSheet: View {
     @State private var excluded: Set<Int> = []
     @State private var committing = false
     @State private var undone = false
+    @State private var loadGeneration = 0
 
     private var label: String { MetadataSwitchLogic.label(target) }
     private var isAdmin: Bool { model.me?.can("edit") ?? true }
@@ -155,13 +156,23 @@ struct MetadataSwitchSheet: View {
 
     private func load(targetId: Int?) async {
         guard let client = store.client else { return }
+        // A newer load (the sheet re-appearing, or "Use") owns the result:
+        // an older one that ends later must not overwrite it with its error.
+        loadGeneration += 1
+        let generation = loadGeneration
         failure = nil
         do {
             let p = try await client.metadataSwitchPreview(itemId: detail.id, target: target, targetId: targetId)
+            let next = try await client.numberingPlan(itemId: detail.id, target: target, intent: "switch",
+                                                      targetId: target == "hybrid" ? nil : p.matched?.id)
+            guard generation == loadGeneration else { return }
             preview = p
-            plan = try await client.numberingPlan(itemId: detail.id, target: target, intent: "switch",
-                                                  targetId: target == "hybrid" ? nil : p.matched?.id)
+            plan = next
+            failure = nil
         } catch {
+            // A load cancelled with its view is not an answer.
+            if generation != loadGeneration || Task.isCancelled || error is CancellationError
+                || (error as? URLError)?.code == .cancelled { return }
             failure = (error as? APIError)?.serverMessage ?? "Couldn't preview the switch."
         }
     }
