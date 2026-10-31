@@ -4,9 +4,9 @@ import FusionhaKit
 /// The web's mobile item detail (`MobileDetailFlyout`): a large sheet with the
 /// full-bleed art hero over a blurred ambient backdrop, the item actions rail,
 /// the Versions panel (opening a row scopes the page), the rails, and the
-/// Seasons / Files (Versions) / History / Searches tabs. Close, Refresh and
-/// Open in the web app are system toolbar items in the sheet and the column
-/// alike (DC10); the bar takes the title once the hero has scrolled away.
+/// Seasons / Files (Versions) / History / Searches tabs. The bar is
+/// `ItemDetailToolbar` (Close · Search all · Refresh · More) in the sheet and
+/// the column alike (D2); it takes the title once the hero has scrolled away.
 ///
 /// The store comes from `AppModel.detailStore(for:)`, so the sheet and the
 /// shell's column show the same one: a fold / unfold keeps the page, its
@@ -36,6 +36,8 @@ struct ItemDetailView: View {
         self.onClose = onClose
         _presentReady = State(initialValue: !store.hosted)
     }
+
+    private var canEdit: Bool { model.me?.can("edit") ?? true }
 
     private var reduceMotion: Bool {
         systemReduceMotion || store.settings?.animationsEnabled == false
@@ -106,16 +108,9 @@ struct ItemDetailView: View {
         .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: store.toast)
         .background { AmbientBackdrop(url: store.detail.flatMap { $0.backdropUrl ?? $0.posterUrl }) }
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                // In the shell's column it isn't a sheet: Escape stays with the page.
-                SheetCancelButton(title: "Close detail", escapeCloses: !inColumn, action: close)
-            }
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                // Reloads this page: not the page's server "Refresh metadata".
-                Button("Reload", systemImage: "arrow.circlepath") { Task { await store.load() } }
-                Button("Open in the web app", systemImage: "safari", action: openWeb)
-            }
-            .barPriority(false)
+            // In the shell's column it isn't a sheet: Escape stays with the page.
+            ItemDetailToolbar(store: store, canEdit: canEdit, canSearch: canEdit && (model.me?.can("search") ?? true),
+                              escapeCloses: !inColumn, close: close, openWeb: openWeb)
         }
         // The bar stays clear over the art; the title and the bar's ground
         // come in once the hero has scrolled away (the old compact bar).
@@ -215,10 +210,7 @@ struct ItemDetailView: View {
         guard let sheet = env["FUSIONHA_SCREENSHOT_DETAIL_SHEET"], store.detail != nil else { return }
         try? await Task.sleep(for: .seconds(1.2))
         switch sheet {
-        case "search":
-            let ids = store.scopedEditions.map(\.id)
-            store.interactive = InteractiveTarget(editionIds: ids, episodeId: nil, seasonNumber: nil,
-                                                  subtitle: store.actsOnLabel)
+        case "search": store.openInteractiveSearch()
         case "edit": store.showingEdit = true
         case "add": store.addPreset = AddEditionPreset()
         case "delete": store.showingDelete = true

@@ -15,6 +15,13 @@ extension DetailStore {
         renameScope = RenameScope(versionId: scopeEditionId, season: nil)
     }
 
+    /// Interactive search over the page's versions (every version, or the opened one).
+    func openInteractiveSearch() {
+        let ids = scopedEditions.map(\.id)
+        guard !ids.isEmpty else { return }
+        interactive = InteractiveTarget(editionIds: ids, subtitle: actsOnLabel)
+    }
+
     /// `checkOrOpenNumbering`: a flagged series opens the review sheet straight
     /// away; otherwise preview once, then open the sheet when the diff proposes
     /// a change, or toast "no change needed".
