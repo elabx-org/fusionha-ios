@@ -239,6 +239,16 @@ final class StatsSheetFeed {
     private(set) var rows: [StatsAttentionRow] = []
     private(set) var indexers: [UnavailableIndexer] = []
     private(set) var loaded = false
+    /// The attention sources that have answered at least once (library,
+    /// no-grab runs, indexers): until all three have, any count is partial.
+    private var answered: Set<String> = []
+
+    /// What the status cluster's badge shows: exactly the rows the popover
+    /// lists, the indexer group counted once (the web's `AttentionControl`
+    /// count). Nil while a source has yet to answer, so no partial number.
+    var attentionCount: Int? {
+        answered.count < 3 ? nil : rows.count + (indexers.isEmpty ? 0 : 1)
+    }
 
     private var commands: [OperationCommand] = []
     private var runs: [ActivityRun] = []
@@ -265,9 +275,15 @@ final class StatsSheetFeed {
 
     private func update(commands: [OperationCommand]) { self.commands = commands; recompute() }
     private func update(runs: [ActivityRun]) { self.runs = runs; recompute() }
-    private func update(library: [LibraryAttentionEntry]) { self.library = library; recompute() }
-    private func update(runAttention: [RunAttentionEntry]) { self.runAttention = runAttention; recompute() }
-    private func update(indexers: [UnavailableIndexer]) { if indexers != self.indexers { self.indexers = indexers } }
+    private func update(library: [LibraryAttentionEntry]) { self.library = library; mark("library"); recompute() }
+    private func update(runAttention: [RunAttentionEntry]) { self.runAttention = runAttention; mark("runs"); recompute() }
+    private func update(indexers: [UnavailableIndexer]) {
+        mark("indexers")
+        if indexers != self.indexers { self.indexers = indexers }
+    }
+
+    /// Assigned only once per source: every write would re-render the bar.
+    private func mark(_ source: String) { if !answered.contains(source) { answered.insert(source) } }
 
     private func recompute() {
         let ops = StatsSheetLogic.compose(commands: commands, queue: queue, runs: runs)

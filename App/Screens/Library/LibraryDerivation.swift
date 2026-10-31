@@ -43,6 +43,7 @@ struct LibraryInputs: Equatable {
         let base = LibraryView.sorted(kind.map { k in kindBase.filter { $0.libraryKind == k } } ?? kindBase, by: sort)
         next.pulse = PulseStats(base)
         next.attentionCount = base.filter { $0.hasAttention == true }.count
+        next.attentionInView = base.count != library.count
         let visible = status == .all ? base : base.filter(status.matches)
         next.visibleIds = visible.map(\.id)
         next.titleCount = visible.count
