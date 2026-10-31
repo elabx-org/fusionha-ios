@@ -81,7 +81,8 @@ struct VersionStripChipView: View {
 @MainActor
 enum DetailRevealScroll {
     static func run(_ reveal: VersionReveal, store: DetailStore, proxy: ScrollViewProxy, reduce: Bool) async {
-        try? await Task.sleep(for: .milliseconds(reduce ? 60 : 220))
+        // Past the 0.3s pane cross-fade, so the old pane no longer takes space.
+        try? await Task.sleep(for: .milliseconds(reduce ? 60 : 360))
         guard store.versionReveal?.id == reveal.id else { return }
         // Just under the bar, which floats over the top of the page.
         let anchor = UnitPoint(x: 0.5, y: 0.16)
@@ -90,28 +91,28 @@ enum DetailRevealScroll {
         } else {
             withAnimation(.easeInOut(duration: 0.4)) { proxy.scrollTo(reveal.anchor, anchor: anchor) }
         }
-        store.highlightedEditionId = reveal.editionId
+        store.highlightedAnchor = reveal.anchor
         try? await Task.sleep(for: .seconds(1.6))
-        if store.versionReveal?.id == reveal.id { store.highlightedEditionId = nil }
+        if store.versionReveal?.id == reveal.id { store.highlightedAnchor = nil }
     }
 }
 
 extension View {
     /// Lights a version's row while the strip reveals it: a ring and a faint
     /// wash in its tier colour (text colour under Monochrome).
-    func versionHighlight(_ edition: DetailEdition, radius: CGFloat = 20) -> some View {
-        modifier(VersionHighlight(editionId: edition.id, tier: edition.tier, radius: radius))
+    func versionHighlight(_ edition: DetailEdition, anchor: String, radius: CGFloat = 20) -> some View {
+        modifier(VersionHighlight(anchor: anchor, tier: edition.tier, radius: radius))
     }
 }
 
 private struct VersionHighlight: ViewModifier {
     @Environment(DetailStore.self) private var store
-    let editionId: Int
+    let anchor: String
     let tier: QualityTier
     let radius: CGFloat
 
     func body(content: Content) -> some View {
-        let lit = store.highlightedEditionId == editionId
+        let lit = store.highlightedAnchor == anchor
         let color = Theme.isMono ? Theme.txt : tier.color
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         content

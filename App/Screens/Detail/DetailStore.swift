@@ -134,8 +134,9 @@ final class DetailStore {
     var revealRequests = 0
     /// Set by a version-strip chip: the page scrolls to that version's row.
     var versionReveal: VersionReveal?
-    /// The row the strip just revealed, lit briefly.
-    var highlightedEditionId: Int?
+    /// The anchor of the row the strip just revealed, lit briefly (only that
+    /// row: a Files card never lights the Versions panel row too).
+    var highlightedAnchor: String?
 
     /// What the child sheets had typed when their host went away (`retainsDraft`).
     @ObservationIgnored var drafts = DraftBag()

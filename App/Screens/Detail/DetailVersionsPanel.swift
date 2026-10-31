@@ -47,7 +47,7 @@ struct DetailVersionsPanel: View {
                         toggle(edition, focused: focused)
                     }
                     // The hero strip's target for a version with no files yet.
-                    .versionHighlight(edition, radius: 0)
+                    .versionHighlight(edition, anchor: "version-\(edition.id)", radius: 0)
                     .id("version-\(edition.id)")
                 }
                 ForEach(gaps) { gap in

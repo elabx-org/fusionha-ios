@@ -71,7 +71,7 @@ struct MovieEditionsTab: View {
                     }
                 }
                 // The hero strip's scroll target and highlight.
-                .versionHighlight(edition)
+                .versionHighlight(edition, anchor: "file-\(edition.id)")
                 .id("file-\(edition.id)")
             }
         }

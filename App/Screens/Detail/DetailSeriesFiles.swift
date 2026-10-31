@@ -91,7 +91,7 @@ struct SeriesFilesTab: View {
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
                 .detailCard()
-                .versionHighlight(section.edition)
+                .versionHighlight(section.edition, anchor: "file-\(section.edition.id)")
                 .id(leads.contains(section.id) ? "file-\(section.edition.id)" : "section-\(section.id)")
                 .detailAnimation(.easeInOut(duration: 0.2), value: isCollapsed)
             }
