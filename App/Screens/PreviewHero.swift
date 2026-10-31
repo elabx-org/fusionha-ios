@@ -4,7 +4,7 @@ import FusionhaKit
 // The phone hero shared by the Preview page and the Add sheet's configure step
 // (the web's `MobileHero`, shared since 0.4.130): the crisp poster masked into
 // the page, status chip, title + year, tagline, a meta line and genre chips,
-// with the round close (and optional back) buttons over the art.
+// The art stays clean: Close, Back and Add are the page's system toolbar items.
 
 /// The ambient colour bleed behind the page: the art, blurred and dimmed.
 struct PreviewAmbient: View {
@@ -41,13 +41,6 @@ struct PreviewHero: View {
     let tagline: String?
     let meta: [Meta]
     let genres: [String]
-    var closeLabel = "Close"
-    /// nil when the page's system toolbar carries Close (the Add configure step).
-    var onClose: (() -> Void)?
-    var onBack: (() -> Void)?
-    var backLabel = "Back"
-    /// Escape presses ✕; off where the page isn't a sheet (the Spread's right page).
-    var escapeCloses = true
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -78,35 +71,6 @@ struct PreviewHero: View {
         // display sideways, 466pt tall), like the detail hero (D3).
         .containerRelativeFrame(.vertical) { height, _ in min(max(height * 0.62, min(430, height * 0.75)), 600) }
         .clipped()
-        .overlay(alignment: .topLeading) {
-            if let onClose {
-                HStack(spacing: 8) {
-                    roundButton("xmark", label: closeLabel, action: onClose)
-                        .closeOnEscape(escapeCloses)
-                    if let onBack { roundButton("chevron.left", label: backLabel, action: onBack) }
-                }
-                .padding(.leading, 12)
-                .padding(.top, 8)
-            }
-        }
-    }
-
-    private func roundButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 38, height: 38)
-                .background(Theme.scrim.opacity(0.5), in: Circle())
-                .background(.ultraThinMaterial, in: Circle())
-                .overlay(Circle().strokeBorder(Theme.line))
-                .contentShape(Circle())
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Rectangle())
-                .padding(.horizontal, -3).padding(.vertical, -3)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
     }
 
     private var overlay: some View {

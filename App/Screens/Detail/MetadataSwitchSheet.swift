@@ -64,11 +64,13 @@ struct MetadataSwitchSheet: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .cancellationAction) {
+        // Cancel first, then Back on Review, in one group so the order holds
+        // in the horizontal bar and the folded Duo's column.
+        ToolbarItemGroup(placement: .cancellationAction) {
             SheetCancelButton(title: step == .done ? "Close" : "Cancel") { dismiss() }
-        }
-        if step == .review {
-            ToolbarItem(placement: .topBarLeading) { Button("Back", systemImage: "chevron.left") { step = .match } }
+            if step == .review {
+                Button("Back", systemImage: "chevron.left") { step = .match }
+            }
         }
     }
 

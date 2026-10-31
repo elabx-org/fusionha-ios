@@ -99,7 +99,7 @@ struct AddTitleSheet: View {
         NavigationStack(path: $path) {
             root
                 // Close is a system toolbar item (DC10). The configure step
-                // adds Back to search beside its own Close (D4); the request
+                // has its own Close, then Back to search (D4); the request
                 // modal brings its own Close.
                 .toolbar {
                     if flow == nil && requestPick == nil {
@@ -239,9 +239,7 @@ struct AddTitleSheet: View {
         }, onOpenLibrary: { id in
             dismiss()
             model.open(id)
-        }, continueAdding: isCurrent(route), onClose: { dismiss() }, onBack: {
-            if !path.isEmpty { path.removeLast() }
-        })
+        }, continueAdding: isCurrent(route), onClose: { dismiss() })
     }
 
     func added(_ item: AddedTitle, flow: AddFlow) {
