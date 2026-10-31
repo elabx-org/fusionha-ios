@@ -10,6 +10,12 @@ final class APIClientTimeoutTests: XCTestCase {
         XCTAssertEqual(APIClient.timeout(for: "/api/v1/library/files/4/remove-and-regrab"), 180)
     }
 
+    func testMetadataSwitchPreviewWaitsForTheProviderTree() {
+        XCTAssertEqual(APIClient.timeout(for: "/api/v1/library/12/metadata-switch/preview"), 180)
+        XCTAssertEqual(APIClient.timeout(for: "/api/v1/library/12/numbering/plan"), 180)
+        XCTAssertEqual(APIClient.timeout(for: "/api/v1/library/12/metadata-switch/commit"), 20)
+    }
+
     func testOrdinaryCallsStayQuick() {
         XCTAssertEqual(APIClient.timeout(for: "/api/v1/library"), 20)
         XCTAssertEqual(APIClient.timeout(for: "/api/v1/settings"), 20)

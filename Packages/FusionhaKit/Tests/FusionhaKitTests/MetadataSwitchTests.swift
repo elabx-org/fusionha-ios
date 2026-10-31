@@ -48,4 +48,14 @@ final class MetadataSwitchTests: XCTestCase {
         XCTAssertEqual(MetadataSwitchLogic.numberingOptions("tvdb").map(\.0), ["tvdb", "tvmaze"])
         XCTAssertEqual(MetadataSwitchLogic.numberingOptions("tmdb").map(\.0), ["tmdb", "tvmaze", "tvdb"])
     }
+
+    func testPreviewFailureSaysWhy() {
+        XCTAssertEqual(MetadataSwitchLogic.previewFailure(URLError(.timedOut)),
+                       "The server took too long to build the preview. Try again.")
+        XCTAssertEqual(MetadataSwitchLogic.previewFailure(APIError.http(status: 409, body: #"{"detail":"Busy"}"#)), "Busy")
+        let decode = Result { try JSONDecoder().decode(NumberingPlan.self, from: Data("{}".utf8)) }
+        if case .failure(let error) = decode {
+            XCTAssertTrue(MetadataSwitchLogic.previewFailure(error).contains("planHash"))
+        } else { XCTFail("expected a decoding error") }
+    }
 }

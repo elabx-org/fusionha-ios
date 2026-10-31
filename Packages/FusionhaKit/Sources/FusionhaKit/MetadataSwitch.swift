@@ -119,6 +119,25 @@ public struct MetadataSwitchRun: Decodable, Sendable {
 public enum MetadataSwitchLogic {
     public static let providers = ["tmdb", "tvdb", "hybrid"]
 
+    /// The banner for a preview that failed: the server's words, a timeout in
+    /// plain words, or the cause appended, so a report says what went wrong.
+    public static func previewFailure(_ error: Error) -> String {
+        if let api = error as? APIError { return api.serverMessage }
+        if let url = error as? URLError, url.code == .timedOut {
+            return "The server took too long to build the preview. Try again."
+        }
+        if case DecodingError.keyNotFound(let key, let context) = error {
+            return "Couldn't preview the switch (missing \((context.codingPath + [key]).map(\.stringValue).joined(separator: ".")))."
+        }
+        if case DecodingError.typeMismatch(_, let context) = error {
+            return "Couldn't preview the switch (unexpected \(context.codingPath.map(\.stringValue).joined(separator: ".")))."
+        }
+        if case DecodingError.valueNotFound(_, let context) = error {
+            return "Couldn't preview the switch (empty \(context.codingPath.map(\.stringValue).joined(separator: ".")))."
+        }
+        return "Couldn't preview the switch: \(error.localizedDescription)"
+    }
+
     public static func label(_ provider: String) -> String {
         switch provider {
         case "tvdb": return "TheTVDB"

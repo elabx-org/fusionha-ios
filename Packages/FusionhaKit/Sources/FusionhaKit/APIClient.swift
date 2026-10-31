@@ -300,7 +300,10 @@ public final class APIClient: @unchecked Sendable {
     static func timeout(for path: String) -> TimeInterval {
         // A grab waits on the download client's add (up to 120 s, 0.4.227); a
         // re-grab goes through the same grab, remove-and-regrab searches first.
-        let slow = ["/releases", "/search", "/check-4k", "/refresh", "/regrab", "/remove-and-regrab"]
+        // A metadata switch's preview and plan re-fetch the target provider's
+        // whole series tree, which can take well past 20 s on a long show.
+        let slow = ["/releases", "/search", "/check-4k", "/refresh", "/regrab", "/remove-and-regrab",
+                    "/metadata-switch/preview", "/numbering/plan"]
         return slow.contains(where: { path.hasSuffix($0) || path.contains($0 + "/") }) ? 180 : 20
     }
 

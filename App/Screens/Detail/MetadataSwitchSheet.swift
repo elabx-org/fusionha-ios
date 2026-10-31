@@ -111,6 +111,9 @@ struct MetadataSwitchSheet: View {
             }
         } else if failure == nil {
             DialogNote("Matching on \(label)…")
+        } else {
+            Button("Try again", systemImage: "arrow.clockwise") { Task { await load(targetId: Int(manualId)) } }
+                .buttonStyle(.glass)
         }
     }
 
@@ -156,8 +159,8 @@ struct MetadataSwitchSheet: View {
 
     private func load(targetId: Int?) async {
         guard let client = store.client else { return }
-        // A newer load (the sheet re-appearing, or "Use") owns the result:
-        // an older one that ends later must not overwrite it with its error.
+        // Only the newest load reports: an older one that ends later must not
+        // overwrite its answer, and a load cancelled with its view says nothing.
         loadGeneration += 1
         let generation = loadGeneration
         failure = nil
@@ -170,10 +173,9 @@ struct MetadataSwitchSheet: View {
             plan = next
             failure = nil
         } catch {
-            // A load cancelled with its view is not an answer.
             if generation != loadGeneration || Task.isCancelled || error is CancellationError
                 || (error as? URLError)?.code == .cancelled { return }
-            failure = (error as? APIError)?.serverMessage ?? "Couldn't preview the switch."
+            failure = MetadataSwitchLogic.previewFailure(error)
         }
     }
 
