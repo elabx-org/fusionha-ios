@@ -3,8 +3,8 @@ import FusionhaKit
 
 // The phone Calendar header (web `CalendarHeaderMobile` + `CalendarFilterMenu`):
 // the subline beside ‹ ›, then the full-width view switch (labels shorten to
-// Mo/Wk/Fc/Day/Ag when narrow). The title, Today and the filter menu are in
-// the system bar (`barItems`, D1). No legends on a phone. Prev/next show only
+// Mo/Wk/Fc/Day/Ag when narrow). The title, Today, the filter menu and
+// Calendar options are in the system bar (`barItems`, D1). No legends on a phone. Prev/next show only
 // where a swipe also steps the period.
 extension CalendarView {
     var phoneToolbar: some View {
@@ -25,25 +25,14 @@ extension CalendarView {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// The media-type radios, then "Copy iCal feed URL" (shown as the web does).
-    /// Subscribe and the week card choice are recorded iOS extras.
+    /// The media-type radios only. The web's `CalendarFilterMenu` also holds
+    /// "Copy iCal feed URL"; here it is in Calendar options (`optionsMenu`, D2).
     var filterMenu: some View {
         Menu {
             Picker("Media type", selection: filterBinding) {
                 ForEach(CalendarMediaFilter.allCases, id: \.self) { Text($0.label).tag($0) }
             }
             .pickerStyle(.inline)
-            Divider()
-            Button("Copy iCal feed URL", systemImage: "dot.radiowaves.up.forward") {
-                Task { await feedURL(subscribe: false) }
-            }
-            .disabled(copyingFeed)
-            Button("Subscribe in Calendar", systemImage: "calendar.badge.plus") {
-                Task { await feedURL(subscribe: true) }
-            }
-            .disabled(copyingFeed)
-            Divider()
-            weekCardsMenu
         } label: {
             Label("Filter media type", systemImage: filter == .all ? "line.3.horizontal.decrease"
                                                                     : "line.3.horizontal.decrease.circle.fill")

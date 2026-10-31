@@ -139,7 +139,7 @@ The approver's Requests follow the joint **Final** mock (owner-approved 2026-10-
 - **Month:** the web's grid: up to two event pills per day (kind strip, code, one unaired-aware dot per edition) and `+N more`. Tapping a pill opens the item; tapping a day's empty space opens that day in the **Day** view.
 - **Agenda / Forecast / Day:** the web's grouped timeline: a date rail, a "now" marker in today's group, rows with a coverage rail per edition, opening scrolled to today.
 - **Events:** poster thumb, SxxEyy (or absolute number), and one status colour per edition.
-- **Toolbar:** the web's toolbar: All · Series · Movies · Anime glass chips, ‹ Today ›, **iCal feed** (admins only) and, in Week, the card-style menu (`PUT /api/v1/settings`), then the status and release-type legends.
+- **Toolbar:** the web's toolbar: All · Series · Movies · Anime glass chips, ‹ ›, then the status and release-type legends. **System bar (column order, D2):** Today · Filter (phone only: the media-type radios and nothing else) · **Calendar options** (`gearshape`: the iCal feed, for admins when wide and for everyone on a phone; the week card style, in Week when wide and always on a phone, `PUT /api/v1/settings`) · the shell's items, Account last. Calendar options is the lowest-priority item, so it goes to the overflow first when the bar is crowded. **Deviation:** the web's filter menu also holds "Copy iCal feed URL"; here the Filter menu only filters (`CalendarView+Options.swift`).
 - **iCal feed:** a menu with **Copy feed URL** (the web's action) and **Subscribe in Calendar**, which opens the `webcal://` form of `/api/v1/calendar/feed.ics?apikey=…` (the app API key from `GET /api/v1/settings/api-key`).
 - **API:** `GET /api/v1/calendar?start&end`.
 
