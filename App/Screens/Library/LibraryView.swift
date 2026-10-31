@@ -112,7 +112,7 @@ struct LibraryView: View {
                     }
             }
         }
-        .shellPage("Library")
+        .shellPage("Library", accountInPageWhenFolded: true)
         .spreadSpansBothPages(.library, !compact)
         .toolbarVisibility(model.selectMode ? .hidden : .automatic, for: .tabBar)
         .librarySelectBar(active: model.selectMode, visibleIds: derived.visibleIds)

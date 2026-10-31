@@ -12,9 +12,17 @@ struct ShellPage: ViewModifier {
     @Environment(\.duoOpen) private var duoOpen
     @AppStorage(DuoOpenLayout.storageKey) private var duoLayout: DuoOpenLayout = .standard
     let title: String
+    /// The folded Duo's column leads with Account: the page declares it
+    /// first itself (the Library), so the shell leaves it out there.
+    var accountInPageWhenFolded = false
+    @Environment(\.horizontalSizeClass) private var sizeClass
     /// The page's own width: past 900 the status cluster joins the bar (S3, as the web).
     @State private var width: CGFloat = 0
     @State private var clusterPanel: StatusClusterPanel?
+
+    private var accountInPage: Bool {
+        accountInPageWhenFolded && OuterDisplay.isFoldedDuo(sizeClass: sizeClass)
+    }
 
     private var showsCluster: Bool {
         StatusClusterRule.shows(width: Double(width), requestScoped: model.requestScoped)
@@ -28,7 +36,7 @@ struct ShellPage: ViewModifier {
             .toolbar {
                 StatusClusterItems(model: model, shown: showsCluster, open: $clusterPanel)
                 DuoLayoutToolbarItem(shown: duoOpen, layout: $duoLayout)
-                AccountToolbarItem(model: model)
+                if !accountInPage { AccountToolbarItem(model: model) }
             }
             .task(id: model.me?.id) { await AccountBarArt.shared.load(model.me, client: model.client) }
             .task(id: showsCluster) {
@@ -48,8 +56,10 @@ struct ShellPage: ViewModifier {
 // them the same way.
 extension View {
     /// The tab root's title and Account item in the system bar.
-    func shellPage(_ title: String) -> some View {
-        modifier(ShellPage(title: title))
+    /// `accountInPageWhenFolded`: on the folded Duo the page declares Account
+    /// itself, first in its items (the Library's column order).
+    func shellPage(_ title: String, accountInPageWhenFolded: Bool = false) -> some View {
+        modifier(ShellPage(title: title, accountInPageWhenFolded: accountInPageWhenFolded))
     }
 
     /// The same, with the page's own toolbar items placed before the shell's.

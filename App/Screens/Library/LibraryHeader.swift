@@ -2,7 +2,8 @@ import SwiftUI
 import FusionhaKit
 
 /// The Library page header (owner-approved layout A): Add, Search, Select and
-/// "Library stats" as toolbar items (D1; the large title is the system bar's),
+/// "Library stats" as toolbar items (D1; the large title is the system bar's;
+/// the folded Duo's column drops Search and leads with Account),
 /// then one line, "14 titles · 19 versions · 4 downloading", the last in the
 /// grab colour and linked to Activity. Search opens the library filter under
 /// the line on demand (it left the page at rest). The needs-attention filter
@@ -20,6 +21,7 @@ struct LibraryHeader: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @Environment(\.spread) private var spread
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var showingStats = false
     /// "Manage" on the unavailable-indexers row: Settings › Indexers opens once the sheet is gone.
     @State private var pendingIndexerSettings = false
@@ -45,7 +47,27 @@ struct LibraryHeader: View {
         }
         .animation(motion ? .spring(duration: 0.35, bounce: 0) : .easeInOut(duration: 0.2), value: searching)
         .toolbar {
-            if overflowBar {
+            if foldedDuo {
+                // The folded Duo's column (D1): Account, the prominent Add,
+                // Select, Library stats; every one stays, none overflows.
+                // Search leaves it (the Search tab does the job). The shell
+                // leaves Account to this page here (`accountInPageWhenFolded`).
+                AccountToolbarItem(model: model)
+                if canAdd && !model.selectMode {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Add", systemImage: "plus") { model.showingAdd = true }
+                            .buttonStyle(.glassProminent)
+                            .tint(Theme.indigo)
+                    }
+                    .barPriority(true)
+                }
+                if !model.selectMode {
+                    ToolbarItem(placement: .topBarTrailing) { selectButton }
+                        .barPriority(true)
+                }
+                ToolbarItem(placement: .topBarTrailing) { statsButton }
+                    .barPriority(true)
+            } else if overflowBar {
                 // A Spread's left page with a title open: Spread, Account and
                 // Search stay; Select, Library stats and Add share one menu, so
                 // the title never truncates (six glass buttons squeezed it to
@@ -69,17 +91,12 @@ struct LibraryHeader: View {
                         Button("Search", systemImage: "magnifyingglass") { searching = true }
                     }
                     .barPriority(true)
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Select", systemImage: "checkmark.circle") { model.selectMode = true }
-                    }
-                    .barPriority(false)
+                    ToolbarItem(placement: .topBarTrailing) { selectButton }
+                        .barPriority(false)
                 }
                 if !wide {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
-                            .badge(statsBadge)
-                    }
-                    .barPriority(false)
+                    ToolbarItem(placement: .topBarTrailing) { statsButton }
+                        .barPriority(false)
                 }
             }
         }
@@ -110,6 +127,18 @@ struct LibraryHeader: View {
         .fullScreenCover(isPresented: $showingIndexerSettings) {
             SettingsView(client: model.client, initialPanel: "indexers")
         }
+    }
+
+    /// The folded iPhone Duo: the bar is the outer display's vertical column.
+    private var foldedDuo: Bool { OuterDisplay.isFoldedDuo(sizeClass: sizeClass) }
+
+    private var selectButton: some View {
+        Button("Select", systemImage: "checkmark.circle") { model.selectMode = true }
+    }
+
+    private var statsButton: some View {
+        Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
+            .badge(statsBadge)
     }
 
     /// The bar is a Spread's left page beside an open title: too narrow for
