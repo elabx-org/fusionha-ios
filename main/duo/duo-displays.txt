@@ -1,11 +1,11 @@
 Port:
-    UUID: 9ED4C291-80B8-4AE1-8733-E1830A161C2F
+    UUID: 8C839B2C-41AD-4D55-8023-7E5CE327C089
     Class: Unknown
     Port Identifier: com.apple.display.captureservice
     Power state: On
 
 Port:
-    UUID: 689754CD-788B-4A9E-B849-7090D8B5B3F0
+    UUID: E88C2436-C815-48D1-82C2-AAAEDBD0E1F2
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -15,7 +15,7 @@ Port:
     Default pixel format: 'BGRA'
 
 Port:
-    UUID: B52A46EF-D2C8-4EAB-89F2-1B03828C024D
+    UUID: 768EF044-3F73-4CFA-918B-E5ABE862A052
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -25,7 +25,7 @@ Port:
     Default pixel format: 'BGRA'
 
 Port:
-    UUID: 7C744EAC-F37C-4676-BA32-687557E64245
+    UUID: 59EFE5F1-2630-4DF2-844F-BC84736C82B6
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -44,7 +44,7 @@ Port:
         Pixel size casting = Yes
 
 Port:
-    UUID: 0A9C301E-12DE-4CC3-9364-837BFAD40BCB
+    UUID: 0F79B619-8965-4843-9472-13D7C3FE4DA0
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -54,7 +54,7 @@ Port:
     Default pixel format: 'BGRA'
 
 Port:
-    UUID: D3895BDA-56A6-440F-90DE-08FFED143466
+    UUID: EA0B1E02-7A92-4D6D-BF9B-8892754F5388
     Class: Display
     Port Identifier: com.apple.framebuffer.display
     Power state: On
@@ -73,7 +73,7 @@ Port:
         Pixel size casting = Yes
 
 Port:
-    UUID: CB3D6A37-BD8E-4E08-8EBD-E6BD1022AB2A
+    UUID: D303CF48-C6BB-48AB-A4B6-D066811D5547
     Class: DisplayAdapter
     Port Identifier: com.apple.framebuffer.server
     Power state: On
@@ -82,7 +82,7 @@ Port:
     (1) LCD:
         Screen ID: 1
         Name: LCD
-        Unique ID: 18AFDDE8-AE92-413F-80C4-F13F9BB40E69
+        Unique ID: 6AAF2168-A57D-40B3-BF6D-4F583F097E46
         Device Name: primary
         Seed: 53
         Screen Type: Integrated
@@ -100,7 +100,7 @@ Port:
     (2) TVOut:
         Screen ID: 2
         Name: TVOut
-        Unique ID: C9FCAE63-7A6E-4085-BA36-3D9DEF87C941
+        Unique ID: DDD5B7B4-82CE-430F-B60F-11A694FCE1A2
         Device Name: external-0
         Seed: 54
         Screen Type: TVOut
@@ -118,7 +118,7 @@ Port:
     (3) LCD-1:
         Screen ID: 3
         Name: LCD-1
-        Unique ID: 16BEF0D1-4DC1-458E-A6F6-313F2B7E490B
+        Unique ID: 4F579137-6299-4403-BCE6-1A3B61664943
         Device Name: primary-1
         Seed: 55
         Screen Type: Integrated
@@ -136,7 +136,7 @@ Port:
     (4) Wireless:
         Screen ID: 4
         Name: Wireless
-        Unique ID: 326B514B-F3B3-49D4-B7D3-6EDB117B5701
+        Unique ID: 22347F65-B4D0-49BF-9023-74DBCEE16E91
         Device Name: wireless0
         Seed: 56
         Screen Type: CarPlay
@@ -154,7 +154,7 @@ Port:
     (5) Resizable:
         Screen ID: 5
         Name: Resizable
-        Unique ID: ADA7E976-CACF-4E9B-9167-8FC4073F5816
+        Unique ID: C28670C2-A3E4-4B52-9C22-7E4E0B1447B1
         Device Name: resizable
         Seed: 57
         Screen Type: Scene
@@ -171,40 +171,25 @@ Port:
         UI Orientation: Ambiguous
 
 Port:
-    UUID: 9B796924-A9A9-4B00-A358-2EBF128F4223
+    UUID: 4DB5B468-D947-4D0D-8967-E3909F4D3484
     Class: Accelerator
     Port Identifier: com.apple.accelerator.metal
     Power state: On
 
 Port:
-    UUID: 5D25F0F4-71F4-448C-998D-350AB7FCB11D
+    UUID: 894DDBE6-1C0C-4239-BAAA-EEA0B4013404
     Class: Accelerator
     Port Identifier: com.apple.accelerator.iosurface
     Power state: On
 
 Port:
-    UUID: 74BBD93D-2922-44CA-B0EA-C2E5379ECCF8
+    UUID: 1198A2D2-CA4F-4455-8DD2-AC745FF0528E
     Class: LegacyHID
     Port Identifier: com.apple.CoreSimulator.HID.LegacyHID
     Power state: On
 
 Port:
-    UUID: EFEB86AF-5BBD-4249-9F3A-A3DB0F6234BE
-    Class: StreamProcessor
-    Port Identifier: com.apple.SimStreamProcessor.default
-    Power state: On
-    Stream processor device
-    Specification:
-        SimStreamProcessorSpecificationPerformanceHint = SimStreamProcessorSpecificationPerformanceHint_MaximizePerformance
-        SimStreamProcessorSpecificationRendererHint = SimStreamProcessorSpecificationRendererHint_Metal
-        SimStreamProcessorSpecificationEmulationHint = SimStreamProcessorSpecificationEmulationHint_NoEmulation
-    Renderer private name: Apple Paravirtual device
-    Renderer version: 1.3
-    Denylisted: No
-    Memory regions:
-
-Port:
-    UUID: 0E5719F6-4A93-4B6E-AECA-26F19595A664
+    UUID: 0F892BC7-5E71-4D91-A80B-CF25DC63CEAF
     Class: StreamProcessor
     Port Identifier: com.apple.SimStreamProcessor.default
     Power state: On
@@ -219,25 +204,40 @@ Port:
     Memory regions:
 
 Port:
-    UUID: 88E22347-ECDF-4224-8321-37DF4C2BE343
+    UUID: E055B2C7-847F-4719-992D-2844F32E2ADD
+    Class: StreamProcessor
+    Port Identifier: com.apple.SimStreamProcessor.default
+    Power state: On
+    Stream processor device
+    Specification:
+        SimStreamProcessorSpecificationPerformanceHint = SimStreamProcessorSpecificationPerformanceHint_MaximizePerformance
+        SimStreamProcessorSpecificationRendererHint = SimStreamProcessorSpecificationRendererHint_Metal
+        SimStreamProcessorSpecificationEmulationHint = SimStreamProcessorSpecificationEmulationHint_NoEmulation
+    Renderer private name: Apple Paravirtual device
+    Renderer version: 1.3
+    Denylisted: No
+    Memory regions:
+
+Port:
+    UUID: 7AA1208D-429D-440B-88E9-612FAB7BD406
     Class: Audio
     Port Identifier: com.apple.CoreSimulator.Audio.HostRoute
     Power state: On
     Guest Audio Input -> Default Host Audio Device
     Guest Audio Output -> Default Host Audio Device
     Host Audio Devices:
-        AVIODevice: Microphone (2 In / 0 Out)
-        AVIODevice 2: Speakers (0 In / 2 Out)
+        AVIODevice: Speakers (0 In / 2 Out)
+        AVIODevice 2: Microphone (2 In / 0 Out)
         NullAudioDevice_UID: Data Source Item 0 (2 In / 2 Out)
 
 Port:
-    UUID: A77859BB-9AA7-41F4-87BB-28AFF672104E
+    UUID: C8F7955E-35CF-4AB5-9FD0-D0CEF4C9C6CF
     Class: Unknown
     Port Identifier: com.apple.gputools.service.simulator
     Power state: On
 
 Port:
-    UUID: FA98C055-96EA-4911-9205-DEF022FBCECB
+    UUID: C9E6205B-87C7-4746-B42E-1C728ABD1DE0
     Class: Unknown
     Port Identifier: com.apple.gputools.GPUToolsAgentService.simulator
     Power state: On
