@@ -45,6 +45,7 @@ struct MISourceBar: View {
                 path = picked
                 scan()
             }
+            .sheetEscapeRoot()
         }
     }
 

@@ -57,6 +57,7 @@ struct RequestCardView: View {
         .sheet(isPresented: $reporting) {
             if let id = request.mediaItemId {
                 IssueModal(mediaItemId: id, title: title, isSeries: request.kind == .series, seasons: nil, year: request.year, poster: request.poster)
+                    .sheetEscapeRoot()
             }
         }
     }

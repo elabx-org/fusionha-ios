@@ -117,6 +117,6 @@ struct MISelectionMenu: View {
             .buttonStyle(.plain)
             .disabled(session.working || session.bulkBusy)
             .accessibilityLabel("\(count) selected, actions")
-            .sheet(isPresented: $open) { MISelectionSheet().environment(session) }
+            .sheet(isPresented: $open) { MISelectionSheet().environment(session).sheetEscapeRoot() }
     }
 }

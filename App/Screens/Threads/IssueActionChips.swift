@@ -53,7 +53,7 @@ struct IssueActionChips: View {
                     }
                 }
             }
-            .sheet(item: $declining) { r in RejectDialog(request: r) { onChanged() } }
+            .sheet(item: $declining) { r in RejectDialog(request: r) { onChanged() }.sheetEscapeRoot() }
         }
     }
 

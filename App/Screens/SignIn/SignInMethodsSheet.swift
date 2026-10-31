@@ -47,6 +47,7 @@ struct SignInMethodsSheet: View {
                     .closeOnlyBars()
                     .sheet(item: $moving) { credential in
                         MoveCredentialSheet(subject: subject, credential: credential, candidates: others) { await refresh() }
+                            .sheetEscapeRoot()
                     }
             } else {
                 ProgressView()

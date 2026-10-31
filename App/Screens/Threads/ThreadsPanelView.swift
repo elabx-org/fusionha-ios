@@ -67,11 +67,14 @@ struct ThreadsPanelView: View {
             }
         }
         .sheet(item: Binding(get: { wide ? nil : open }, set: { open = $0 })) { item in
-            if item.type == "issue", let issue = item.issue {
-                IssuePaneSheet(seed: issue, linkedRequestId: item.linkedPendingRequestId)
-            } else if let request = item.request {
-                RequestThreadSheet(request: request) { Task { await load() } }
+            Group {
+                if item.type == "issue", let issue = item.issue {
+                    IssuePaneSheet(seed: issue, linkedRequestId: item.linkedPendingRequestId)
+                } else if let request = item.request {
+                    RequestThreadSheet(request: request) { Task { await load() } }
+                }
             }
+            .sheetEscapeRoot()
         }
     }
 

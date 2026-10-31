@@ -19,7 +19,7 @@ struct MyIssuesView: View {
                     try? await Task.sleep(for: .seconds(15))
                 }
             }
-            .sheet(item: $open) { issue in IssueThreadSheet(issueId: issue.id) }
+            .sheet(item: $open) { issue in IssueThreadSheet(issueId: issue.id).sheetEscapeRoot() }
     }
 
     @ViewBuilder

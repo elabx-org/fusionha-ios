@@ -54,9 +54,9 @@ struct TriageInboxView: View {
             .onChange(of: store.requestsVersion) { Task { await inbox.refresh() } }
             .onChange(of: model.me?.isAdmin) { inbox.viewerIsAdmin = model.me?.isAdmin == true }
             .inboxUndoHost(inbox, viewerId: viewerId, declining: $noting)
-            .sheet(item: $details) { request in detailsSheet(request) }
+            .sheet(item: $details) { request in detailsSheet(request).sheetEscapeRoot() }
             .sheet(item: $adjusting) { request in
-                ApproveDialog(request: request) { Task { await inbox.refresh() } }
+                ApproveDialog(request: request) { Task { await inbox.refresh() } }.sheetEscapeRoot()
             }
     }
 

@@ -63,7 +63,7 @@ struct MyRequestsView: View {
         }
         .task(id: "\(show.rawValue)-\(store.requestsVersion)-\(sourceKey)") { await poll() }
         .sheet(item: $thread) { request in
-            RequestThreadSheet(request: request) { Task { await refresh() } }
+            RequestThreadSheet(request: request) { Task { await refresh() } }.sheetEscapeRoot()
         }
     }
 

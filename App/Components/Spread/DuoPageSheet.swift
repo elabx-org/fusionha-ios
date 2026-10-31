@@ -58,7 +58,7 @@ private struct DuoPageSheet<Item: Identifiable, Sheet: View>: ViewModifier {
     func body(content: Content) -> some View {
         content
             // A sheet takes Escape itself again, even opened from a page cover.
-            .sheet(item: paged ? .constant(nil) : $item) { sheet($0).environment(\.escapeTakenByHost, false) }
+            .sheet(item: paged ? .constant(nil) : $item) { sheet($0).sheetEscapeRoot() }
             .fullScreenCover(item: paged ? $item : .constant(nil)) { value in
                 DuoPageCover(placement: placement) { sheet(value) }
             }

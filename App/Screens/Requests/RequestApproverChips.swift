@@ -34,7 +34,7 @@ struct RequestApproverChips: View {
             .accessibilityHint(hasUhd ? "Already has a UHD·4K version" : "")
         }
         .sheet(item: $reject) { mode in
-            RejectDialog(request: request, deferFirst: mode == .defer_, onDone: onDecided)
+            RejectDialog(request: request, deferFirst: mode == .defer_, onDone: onDecided).sheetEscapeRoot()
         }
     }
 

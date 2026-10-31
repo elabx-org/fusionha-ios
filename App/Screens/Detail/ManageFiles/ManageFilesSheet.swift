@@ -44,7 +44,7 @@ struct ManageFilesSheet: View {
             .navigationTitle(model.isSeries ? "Manage episodes" : "Manage files")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
-            .sheet(item: $editing) { t in ManageFileEditSheet(model: model, targets: t.items) }
+            .sheet(item: $editing) { t in ManageFileEditSheet(model: model, targets: t.items).sheetEscapeRoot() }
             .confirmationDialog(confirm?.title(model) ?? "", isPresented: Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } }),
                                 titleVisibility: .visible, presenting: confirm) { c in
                 confirmButtons(c)

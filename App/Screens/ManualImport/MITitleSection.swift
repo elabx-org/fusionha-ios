@@ -50,8 +50,9 @@ struct MITitleSection: View {
         .sheet(isPresented: $editAll) {
             MIBulkSheet(title: "Edit all · \(block.title)", rows: block.rows.filter { !$0.committed })
                 .environment(session)
+                .sheetEscapeRoot()
         }
-        .sheet(isPresented: $rematch) { MIItemMatchSheet(rows: block.rows).environment(session) }
+        .sheet(isPresented: $rematch) { MIItemMatchSheet(rows: block.rows).environment(session).sheetEscapeRoot() }
     }
 
     private var header: some View {

@@ -69,7 +69,7 @@ struct ManualImportSheet: View {
                 } action: { foldPanes = $0 }
         }
         .environment(session)
-        .sheet(isPresented: $showKey) { MIStatusKey() }
+        .sheet(isPresented: $showKey) { MIStatusKey().sheetEscapeRoot() }
         .task { await session.start() }
         .task(id: model.me?.id) { session.canRemove = model.me.map { $0.has("system.admin") } ?? true }
         .task(id: "\(session.scan?.scanId ?? 0)-\(pollRun)") { await session.pollProbes() }
