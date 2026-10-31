@@ -162,7 +162,7 @@ private struct SignInLocalLoginSheet: View {
             }
             .navigationTitle("fusionha sign-in")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } } }
             .closeOnlyBars()
             .signInDisableConfirm(isPresented: $confirming) { await onDisable() }
         }

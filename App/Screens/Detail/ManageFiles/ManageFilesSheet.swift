@@ -131,7 +131,7 @@ struct ManageFilesSheet: View {
     // MARK: Bars
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
+        ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } }
         ToolbarItemGroup(placement: .primaryAction) {
             Button {
                 Task { await model.rescan() }

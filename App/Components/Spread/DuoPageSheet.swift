@@ -57,7 +57,8 @@ private struct DuoPageSheet<Item: Identifiable, Sheet: View>: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .sheet(item: paged ? .constant(nil) : $item) { sheet($0) }
+            // A sheet takes Escape itself again, even opened from a page cover.
+            .sheet(item: paged ? .constant(nil) : $item) { sheet($0).environment(\.escapeTakenByHost, false) }
             .fullScreenCover(item: paged ? $item : .constant(nil)) { value in
                 DuoPageCover(placement: placement) { sheet(value) }
             }
@@ -95,6 +96,15 @@ private struct DuoPageCover<Content: View>: View {
                 .accessibilityAddTraits(.isButton)
             page
         }
+        // A hardware keyboard's Escape: the dim's close, through the same
+        // guard. The content's own Close gives Escape up to it (one per page).
+        .background {
+            Button("Close", action: attemptClose)
+                .keyboardShortcut(.cancelAction)
+                .opacity(0)
+                .accessibilityHidden(true)
+        }
+        .environment(\.escapeTakenByHost, true)
         .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { measured = $0 }
         .environment(dismissGuard)
         .confirmationDialog(confirmText, isPresented: $asking, titleVisibility: .visible) {

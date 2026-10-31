@@ -51,6 +51,8 @@ struct PreviewPage: View {
     /// Pushed inside the Add sheet: ✕ closes the sheet and ‹ goes back a step.
     var onClose: (() -> Void)?
     var onBack: (() -> Void)?
+    /// Escape presses ✕ (off on the Spread's right page, which isn't a sheet).
+    var escapeCloses = true
 
     @State private var detail: MediaPreviewDetail?
     @State private var failed = false
@@ -163,7 +165,7 @@ struct PreviewPage: View {
     private func hero(_ d: MediaPreviewDetail) -> some View {
         PreviewHero(art: d.posterUrl ?? d.backdropUrl, status: d.status, title: d.title, year: d.year,
                     tagline: d.tagline, meta: heroMeta(d), genres: d.genres ?? [], onClose: { (onClose ?? { dismiss() })() },
-                    onBack: onBack)
+                    onBack: onBack, escapeCloses: escapeCloses)
     }
 
     private func heroMeta(_ d: MediaPreviewDetail) -> [PreviewHero.Meta] {

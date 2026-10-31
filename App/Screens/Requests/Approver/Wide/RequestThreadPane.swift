@@ -49,7 +49,7 @@ struct RequestThreadPane: View {
                     .labelStyle(.iconOnly)
                     .font(.system(size: 14, weight: .semibold))
                     .buttonStyle(.glass)
-                    .keyboardShortcut(.cancelAction)
+                    .closeOnEscape()
             }
             .padding(.horizontal, 16)
             .frame(minHeight: 56)

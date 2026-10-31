@@ -44,7 +44,7 @@ struct AccountSessionsSheet: View {
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } } }
             .closeOnlyBars()
             .task { await load() }
             .refreshable { await load() }

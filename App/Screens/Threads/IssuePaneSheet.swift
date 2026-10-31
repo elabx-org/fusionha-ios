@@ -16,7 +16,7 @@ struct IssuePaneSheet: View {
                 .navigationTitle(seed.mediaTitle ?? "Issue")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
+                    ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } }
                     ToolbarItem(placement: .topBarLeading) {
                         Button { dismiss(); model.open(seed.mediaItemId) } label: { Image(systemName: "arrow.up.right.square") }
                             .accessibilityLabel("Open in library")

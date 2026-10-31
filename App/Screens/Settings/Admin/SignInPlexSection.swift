@@ -104,7 +104,7 @@ struct PlexSSOConfigSheet: View {
             }
             .navigationTitle("Plex SSO")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } } }
             .closeOnlyBars()
             .confirmationDialog("Remove ineligible Plex users?", isPresented: $pruneConfirming, titleVisibility: .visible) {
                 Button(pruning ? "Removing…" : "Remove ineligible now", role: .destructive) { Task { await prune() } }

@@ -46,6 +46,8 @@ struct PreviewHero: View {
     var onClose: (() -> Void)?
     var onBack: (() -> Void)?
     var backLabel = "Back"
+    /// Escape presses ✕; off where the page isn't a sheet (the Spread's right page).
+    var escapeCloses = true
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -80,6 +82,7 @@ struct PreviewHero: View {
             if let onClose {
                 HStack(spacing: 8) {
                     roundButton("xmark", label: closeLabel, action: onClose)
+                        .closeOnEscape(escapeCloses)
                     if let onBack { roundButton("chevron.left", label: backLabel, action: onBack) }
                 }
                 .padding(.leading, 12)

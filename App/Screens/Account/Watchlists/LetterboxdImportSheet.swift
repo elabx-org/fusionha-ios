@@ -36,7 +36,7 @@ struct LetterboxdImportSheet: View {
             .navigationTitle("One-time import")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } }
             }
             .closeOnlyBars()
             .fileImporter(isPresented: $picking, allowedContentTypes: [.commaSeparatedText, .zip, .plainText]) { result in

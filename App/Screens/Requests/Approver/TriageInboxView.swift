@@ -147,7 +147,7 @@ struct TriageInboxView: View {
             .background(Theme.bg)
             .navigationTitle("Decide")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { details = nil } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { details = nil } } }
             .closeOnlyBars()
         }
         .presentationDetents([.large])

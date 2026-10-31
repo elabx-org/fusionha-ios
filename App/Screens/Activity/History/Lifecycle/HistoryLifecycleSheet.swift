@@ -49,7 +49,7 @@ struct HistoryLifecycleSheet: View {
             .background(Theme.bg)
             .navigationTitle("Lifecycle")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } } }
             .closeOnlyBars()
             .task(id: activeVersionId) { await load() }
         }

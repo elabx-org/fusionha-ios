@@ -89,6 +89,7 @@ struct LibraryStatsSheet: View {
             .padding(.top, 14)
             .padding(.trailing, 14)
             .accessibilityLabel("Close")
+            .closeOnEscape()
         }
         .onAppear {
             withAnimation(motion ? Motion.reveal(1.1) : nil) { grown = true }

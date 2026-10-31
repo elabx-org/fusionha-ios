@@ -9,23 +9,30 @@ import SwiftUI
 // icon-only item has no title for the overflow menu. The title is also the
 // VoiceOver label.
 
-/// Cancel / Close: an ✕, placed first (`.cancellationAction`).
+/// Cancel / Close: an ✕, placed first (`.cancellationAction`). Escape
+/// presses it (`closeOnEscape`); `escapeCloses: false` where it isn't a
+/// sheet's (the detail as the shell's column).
 struct SheetCancelButton: View {
     var title = "Cancel"
+    var escapeCloses = true
     let action: () -> Void
 
     var body: some View {
         Button(title, systemImage: "xmark", role: .cancel, action: action)
+            .closeOnEscape(escapeCloses)
     }
 }
 
-/// Done / Save: a ✓ (`.confirmationAction`).
+/// Done / Save: a ✓ (`.confirmationAction`). `escapeCloses: true` only when
+/// it is the sheet's sole way out and just closes: Escape never saves.
 struct SheetDoneButton: View {
     var title = "Done"
+    var escapeCloses = false
     let action: () -> Void
 
     var body: some View {
         Button(title, systemImage: "checkmark", action: action)
+            .closeOnEscape(escapeCloses)
     }
 }
 

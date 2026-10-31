@@ -41,7 +41,7 @@ struct SignInMethodsSheet: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         if !embedded {
-                            ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
+                            ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } }
                         }
                     }
                     .closeOnlyBars()

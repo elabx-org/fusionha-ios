@@ -33,7 +33,7 @@ struct IssueThreadSheet: View {
             .background(Theme.bg)
             .navigationTitle(issue?.mediaTitle ?? "Report")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } } }
+            .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } } }
             .closeOnlyBars()
         }
         .presentationDetents([.large])

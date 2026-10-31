@@ -102,7 +102,7 @@ struct DemoConfigSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    SheetDoneButton { dismiss() }
+                    SheetDoneButton(escapeCloses: true) { dismiss() }
                 }
             }
             .closeOnlyBars()

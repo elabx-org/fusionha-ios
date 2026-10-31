@@ -128,6 +128,7 @@ struct FusionhaWebSheet: View {
             }
             HStack {
                 GlassIconButton(systemName: "xmark", label: "Close") { dismiss() }
+                    .closeOnEscape()
                 Spacer()
                 Link(destination: url) {
                     Image(systemName: "safari")

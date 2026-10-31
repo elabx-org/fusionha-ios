@@ -77,10 +77,10 @@ struct SpreadPreviewColumn: View {
     var body: some View {
         NavigationStack(path: $path) {
             PreviewPage(route: route, onAdd: { addPick = $0 }, onOpenLibrary: { model.open($0) },
-                        onClose: { model.spreadPreview = nil })
+                        onClose: { model.spreadPreview = nil }, escapeCloses: false)
                 .duoListToggleToolbar()
                 .navigationDestination(for: PreviewRoute.self) { next in
-                    PreviewPage(route: next, onAdd: { addPick = $0 }, onOpenLibrary: { model.open($0) })
+                    PreviewPage(route: next, onAdd: { addPick = $0 }, onOpenLibrary: { model.open($0) }, escapeCloses: false)
                 }
         }
         .preference(key: DuoPageAtRoot.self, value: path.isEmpty)
