@@ -7,7 +7,7 @@ struct ShellPresentations: ViewModifier {
     @Bindable var model: AppModel
     let reduceMotion: Bool
     let scenePhase: ScenePhase
-    /// The iPhone Duo is open: the Add sheet goes on the right page.
+    /// The iPhone Duo is open: the Add sheet spreads across both pages.
     let duoOpen: Bool
     /// Open in a Spread: Account takes both pages (Watchlists & lists splits
     /// at the fold). The Web layout keeps the usual form sheet (owner default).
@@ -25,8 +25,9 @@ struct ShellPresentations: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-        // On the open Duo, the right page (S3): never a form sheet on the fold.
-        .duoPageSheet(isPresented: $model.showingAdd, onPages: duoOpen) {
+        // On the open Duo, both pages (Duo Add, part A): Find on the left,
+        // the pick's setup on the right. Never a form sheet on the fold.
+        .duoPageSheet(isPresented: $model.showingAdd, placement: .twoPages, onPages: duoOpen) {
             AddTitleSheet()
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(20)

@@ -49,6 +49,13 @@ struct AddTitleSheet: View {
     @State var searchState: LoadState = .idle
     @State var searchMissingKey = false
     @State var trendingMissingKey = false
+    /// The open Duo's two pages (`AddTitleSheet+Spread`): Find on the left,
+    /// the pick's setup on the right. `nil`: one flow, search then configure.
+    @State var foldPanes: FoldColumns.Panes?
+    /// The right page shows the top result on its own, not a pick.
+    @State var autoPicked = false
+    /// A pick waiting on "Discard this title's setup?".
+    @State var pendingPick: AddPick?
 
     enum LoadState { case idle, loading, loaded, failed }
 
@@ -59,6 +66,36 @@ struct AddTitleSheet: View {
     var tvdbConfigured: Bool { settings?.tvdbConfigured != false }
 
     var body: some View {
+        Group {
+            if let foldPanes, initialPick == nil {
+                spread(foldPanes)
+            } else {
+                singleStack
+            }
+        }
+        .onGeometryChange(for: FoldColumns.Panes?.self) { proxy in
+            DiscoverFold.requestPanes(width: Double(proxy.size.width), fold: GridFold(proxy).foldRange)
+        } action: { foldPanes = $0 }
+        .presentationDetents([.fraction(0.88), .large], selection: $detent)
+        // On the open Duo's pages: a title picked from search and mid-setup asks before the pull-down closes it.
+        .duoPageDismiss(setupAtRisk ? .confirm("Discard this title's setup?") : .allowed)
+        .onAppear(perform: start)
+        .onChange(of: kind) { if kind == .movie { source = .tmdb } }
+        .onChange(of: tvdbConfigured) { if !tvdbConfigured { source = .tmdb } }
+        .task(id: kind) { await loadTrending() }
+        .task(id: "\(term)|\(kind.rawValue)|\(source == .tvdb)") { await search() }
+        .task(id: spreadCandidateKey) { await previewTopResult() }
+        .task { settings = try? await model.client?.addSettings() }
+    }
+
+    /// A setup that closing (or another pick) would throw away.
+    var setupAtRisk: Bool {
+        guard let flow, initialPick == nil else { return false }
+        return foldPanes == nil || flow.touched
+    }
+
+    /// Phone, folded and portrait: one stack, search then configure.
+    var singleStack: some View {
         NavigationStack(path: $path) {
             root
                 // Close is a system toolbar item (DC10). The configure step
@@ -80,15 +117,6 @@ struct AddTitleSheet: View {
                     previewPage(route)
                 }
         }
-        .presentationDetents([.fraction(0.88), .large], selection: $detent)
-        // On the open Duo's pages: a title picked from search and mid-setup asks before the pull-down closes it.
-        .duoPageDismiss(flow != nil && initialPick == nil ? .confirm("Discard this title's setup?") : .allowed)
-        .onAppear(perform: start)
-        .onChange(of: kind) { if kind == .movie { source = .tmdb } }
-        .onChange(of: tvdbConfigured) { if !tvdbConfigured { source = .tmdb } }
-        .task(id: kind) { await loadTrending() }
-        .task(id: "\(term)|\(kind.rawValue)|\(source == .tvdb)") { await search() }
-        .task { settings = try? await model.client?.addSettings() }
     }
 
     @ViewBuilder
@@ -104,20 +132,25 @@ struct AddTitleSheet: View {
             RequestModal(pick: requestPick, formSized: false) { Task { await model.refreshShell() } }
                 .id(requestPick.id)
         } else {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    searchStep
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 4)
-                .padding(.bottom, 30)
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .background(Theme.panel)
-            // Close alone: horizontal bars (Q-DC6). The configure step has
-            // Close and Back, so it keeps the system default.
-            .closeOnlyBars()
+            findPage
+                // Close alone: horizontal bars (Q-DC6). The configure step has
+                // Close and Back, so it keeps the system default.
+                .closeOnlyBars()
         }
+    }
+
+    /// Find: kinds, source, search and the results or trending grid.
+    var findPage: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                searchStep
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 4)
+            .padding(.bottom, 30)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .background(Theme.panel)
     }
 
     // MARK: Picks
@@ -138,7 +171,8 @@ struct AddTitleSheet: View {
         #endif
     }
 
-    func startFlow(_ pick: AddPick) {
+    func startFlow(_ pick: AddPick, auto: Bool = false) {
+        autoPicked = auto
         withAnimation(motion ? .snappy(duration: 0.3) : nil) {
             flow = AddFlow(pick: pick, client: model.client,
                            providerOverride: sessionProvider == "auto" ? nil : sessionProvider)
@@ -173,7 +207,7 @@ struct AddTitleSheet: View {
         } else if model.requestScoped {
             withAnimation(motion ? .snappy(duration: 0.3) : nil) { requestPick = result }
         } else {
-            startFlow(.tmdb(result))
+            choose(.tmdb(result))
         }
     }
 
@@ -182,7 +216,7 @@ struct AddTitleSheet: View {
             dismiss()
             model.open(id)
         } else {
-            startFlow(.tvdb(result))
+            choose(.tvdb(result))
         }
     }
 

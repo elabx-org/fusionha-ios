@@ -61,6 +61,9 @@ final class AddFlow {
     private var beforeLast: AddSnapshot?
 
     private(set) var isAdding = false
+    /// Any choice made by hand: a pick with none is safe to replace (the open
+    /// Duo's right page previews the top result until one is made).
+    private(set) var touched = false
     private(set) var error: AddFlowError?
 
     init(pick: AddPick, client: APIClient?, providerOverride: String?) {
@@ -140,6 +143,7 @@ final class AddFlow {
     // MARK: Edits
 
     func patchTier(_ tier: QualityTier, rootId: Int? = nil, profileId: Int? = nil) {
+        touched = true
         guard var state = versions?[tier] else { return }
         if let rootId { state.rootId = rootId }
         if let profileId { state.profileId = profileId }
@@ -149,6 +153,7 @@ final class AddFlow {
     /// Turn a version on/off. Fewer than two left on collapses any per-version
     /// override into the master, so what is posted is what is shown.
     func setTierOn(_ tier: QualityTier, _ on: Bool) {
+        touched = true
         guard var next = versions else { return }
         next[tier]?.on = on
         let stillOn = Self.tiers.filter { next[$0]?.on == true }
@@ -161,6 +166,7 @@ final class AddFlow {
     }
 
     func setEdition(_ tier: QualityTier, _ edition: String?) {
+        touched = true
         editions[tier] = AddVocab.isStandardEdition(edition) ? nil : edition
     }
 
@@ -174,18 +180,24 @@ final class AddFlow {
 
     /// The master monitor (a regular chip): also clears any custom seasons.
     func setMasterMonitor(_ mode: String) {
+        touched = true
         seasonFrom = [:]
         syncMonitor(mode)
     }
 
     func setTierMonitor(_ tier: QualityTier, _ mode: String) {
+        touched = true
         versions?[tier]?.monitor = mode
     }
 
-    func clearSeasonFrom() { seasonFrom = [:] }
+    func clearSeasonFrom() {
+        touched = true
+        seasonFrom = [:]
+    }
 
     /// One season's slider choice. Custom always builds on All.
     func setSeasonStart(_ seasonNumber: Int, _ fromEpisode: Int?) {
+        touched = true
         var base = seasonFrom
         if base.isEmpty, let seasons { base = SeasonSlider.materialise(seasons, mode: monitor) }
         base.updateValue(fromEpisode, forKey: seasonNumber)
@@ -202,11 +214,13 @@ final class AddFlow {
     }
 
     func setMinAvail(_ value: String) {
+        touched = true
         minAvailTouched = true
         minAvail = value
     }
 
     func setFolderName(_ value: String) {
+        touched = true
         folderName = value
         if error?.folder == true { error = nil }
     }
@@ -240,6 +254,7 @@ final class AddFlow {
     /// master monitor (series), minimum availability (movies) and series type.
     /// Never the folder name, editions or season rules.
     func applyLast() {
+        touched = true
         guard let last, var next = versions else { return }
         beforeLast = snapshot()
         let mode = isSeries ? (last.monitor ?? monitor) : monitor
