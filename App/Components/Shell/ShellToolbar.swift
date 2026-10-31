@@ -5,7 +5,7 @@ import FusionhaKit
 /// A tab root's system bar (D1, owner's pick (b)): the page title in the bar,
 /// large and on the same row as the toolbar items (`.inlineLarge`), and the
 /// Account item at the trailing end. The page adds its own items with
-/// `.toolbar`; iOS 27.1 can move all of them into the vertical bar on the
+/// `.shellPage(_:actions:)` (bar order below); iOS 27.1 can move all of them into the vertical bar on the
 /// iPhone Duo outer display.
 struct ShellPage: ViewModifier {
     @Environment(AppModel.self) private var model
@@ -40,10 +40,22 @@ struct ShellPage: ViewModifier {
     }
 }
 
+// Bar order (the iPhone Duo's vertical bar keeps it): the page's actions
+// first, Add leading where the page has it, then the shell's status cluster,
+// the Duo layout switch and Account last. The page's items always sit inside
+// `.shellPage` (pass them as `actions`, or declare them in the content, as the
+// Library's header does), never in a `.toolbar` after it, so every tab merges
+// them the same way.
 extension View {
     /// The tab root's title and Account item in the system bar.
     func shellPage(_ title: String) -> some View {
         modifier(ShellPage(title: title))
+    }
+
+    /// The same, with the page's own toolbar items placed before the shell's.
+    func shellPage<Actions: ToolbarContent>(_ title: String,
+                                            @ToolbarContentBuilder actions: () -> Actions) -> some View {
+        toolbar(content: actions).modifier(ShellPage(title: title))
     }
 
     /// Close-only sheets keep horizontal bars (ruling Q-DC6).

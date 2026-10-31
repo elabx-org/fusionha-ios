@@ -53,8 +53,7 @@ struct WantedView: View {
                 page
             } else {
                 Screen(showsAdd: true) { page }.publishesPaneSize()
-                    .shellPage("Wanted")
-                    .toolbar { AddTitleToolbarItem(model: model) }
+                    .shellPage("Wanted") { AddTitleToolbarItem(model: model) }
             }
         }
         // Toasts go to the shell's host (its placement keeps them off the hinge).

@@ -100,9 +100,8 @@ struct AccountHubSheet: View {
             .navigationTitle("Account")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close", systemImage: "xmark") { dismiss() }
-                        .closeOnEscape()
+                ToolbarItem(placement: .cancellationAction) {
+                    SheetCancelButton(title: "Close") { dismiss() }
                 }
             }
         }

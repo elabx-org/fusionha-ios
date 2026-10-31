@@ -17,9 +17,9 @@ struct IssuePaneSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } }
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button { dismiss(); model.open(seed.mediaItemId) } label: { Image(systemName: "arrow.up.right.square") }
-                            .accessibilityLabel("Open in library")
+                    // Titled, so the Duo's vertical bar can take it; after Done (the dismiss).
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Open in library", systemImage: "arrow.up.right.square") { dismiss(); model.open(seed.mediaItemId) }
                     }
                 }
         }

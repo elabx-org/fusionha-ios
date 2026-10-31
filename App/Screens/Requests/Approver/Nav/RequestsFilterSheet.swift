@@ -38,12 +38,13 @@ struct RequestsFilterSheet: View {
             .navigationTitle("Filter")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Reset", systemImage: "arrow.counterclockwise") { withAnimation(.snappy) { nav.filter.reset(pane) } }
-                        .disabled(nav.filter.activeCount(pane) == 0)
+                // Close heads the bar (and the Duo's vertical bar); Reset follows it.
+                ToolbarItem(placement: .cancellationAction) {
+                    SheetCancelButton(title: "Close") { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    SheetCancelButton(title: "Close") { dismiss() }
+                    Button("Reset", systemImage: "arrow.counterclockwise") { withAnimation(.snappy) { nav.filter.reset(pane) } }
+                        .disabled(nav.filter.activeCount(pane) == 0)
                 }
             }
         }

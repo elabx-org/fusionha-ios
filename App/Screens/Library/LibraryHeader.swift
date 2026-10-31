@@ -1,8 +1,8 @@
 import SwiftUI
 import FusionhaKit
 
-/// The Library page header (owner-approved layout A): Search, Select, "Library
-/// stats" and Add as toolbar items (D1; the large title is the system bar's),
+/// The Library page header (owner-approved layout A): Add, Search, Select and
+/// "Library stats" as toolbar items (D1; the large title is the system bar's),
 /// then one line, "14 titles · 19 versions · 4 downloading", the last in the
 /// grab colour and linked to Activity. Search opens the library filter under
 /// the line on demand (it left the page at rest). The needs-attention filter
@@ -62,6 +62,8 @@ struct LibraryHeader: View {
                         .barPriority(false)
                 }
             } else {
+                // Add leads the page's items (the shell's bar order, `ShellToolbar`).
+                AddTitleToolbarItem(model: model)
                 if !model.selectMode {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Search", systemImage: "magnifyingglass") { searching = true }
@@ -72,7 +74,6 @@ struct LibraryHeader: View {
                     }
                     .barPriority(false)
                 }
-                AddTitleToolbarItem(model: model)
                 if !wide {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }

@@ -156,8 +156,7 @@ struct ActivityView: View {
                 .publishesBottomBarTop("activity.bulk")
             }
         }
-        .shellPage("Activity")
-        .toolbar {
+        .shellPage("Activity") {
             ToolbarItem(placement: .primaryAction) {
                 Button("Manual import", systemImage: "square.and.arrow.down") { router.manualImport() }
             }

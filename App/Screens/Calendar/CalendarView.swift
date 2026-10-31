@@ -116,8 +116,7 @@ struct CalendarView: View {
             }
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         }
-        .shellPage(title)
-        .toolbar { barItems }
+        .shellPage(title) { barItems }
         .environment(\.calMotionOff, settings?.animationsEnabled == false)
         .task { await loadSettings() }
         .onChange(of: model.calendarTodayTick) { goToday() }
