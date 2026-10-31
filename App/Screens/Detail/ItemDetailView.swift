@@ -102,7 +102,8 @@ struct ItemDetailView: View {
                 SheetCancelButton(title: "Close detail", action: close)
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
-                Button("Refresh", systemImage: "arrow.clockwise") { Task { await store.load() } }
+                // Reloads this page: not the page's server "Refresh metadata".
+                Button("Reload", systemImage: "arrow.circlepath") { Task { await store.load() } }
                 Button("Open in the web app", systemImage: "safari", action: openWeb)
             }
             .barPriority(false)

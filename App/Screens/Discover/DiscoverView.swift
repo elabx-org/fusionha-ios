@@ -76,9 +76,8 @@ struct DiscoverView: View {
         }
         // Rails, Browse's controls and the filter fields follow the page's own width.
         .publishesPaneSize()
-        .shellPage(title)
+        .shellPage(title) { AddTitleToolbarItem(model: model) }
         .spreadSpansBothPages(.discover, tab == .browse && !store.tmdbMissing)
-        .toolbar { AddTitleToolbarItem(model: model) }
         .environment(store)
         .discoverToastOverlay()
         // A preview opens on the Spread's right page (S3), else as a sheet.
