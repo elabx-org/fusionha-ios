@@ -239,16 +239,21 @@ final class StatsSheetFeed {
     private(set) var rows: [StatsAttentionRow] = []
     private(set) var indexers: [UnavailableIndexer] = []
     private(set) var loaded = false
-    /// The attention sources that have answered at least once (library,
-    /// no-grab runs, indexers): until all three have, any count is partial.
-    private var answered: Set<String> = []
+    /// The attention sources tried at least once (library, no-grab runs,
+    /// indexers), answered or not, and those whose last try failed.
+    private var tried: Set<String> = []
+    private(set) var failed: Set<String> = []
 
     /// What the status cluster's badge shows: exactly the rows the popover
     /// lists, the indexer group counted once (the web's `AttentionControl`
-    /// count). Nil while a source has yet to answer, so no partial number.
+    /// count). Nil until every source has been tried; when one failed it is
+    /// the count of what loaded, and `incomplete` makes the popover say so.
     var attentionCount: Int? {
-        answered.count < 3 ? nil : rows.count + (indexers.isEmpty ? 0 : 1)
+        tried.count < 3 ? nil : rows.count + (indexers.isEmpty ? 0 : 1)
     }
+
+    /// A source failed on its last try, so the rows may be missing some.
+    var incomplete: Bool { tried.count == 3 && !failed.isEmpty }
 
     private var commands: [OperationCommand] = []
     private var runs: [ActivityRun] = []
@@ -262,12 +267,17 @@ final class StatsSheetFeed {
         await withTaskGroup(of: Void.self) { group in
             group.addTask { if let v = try? await client.operationCommands() { await self.update(commands: v) } }
             group.addTask { if let v = try? await client.systemRuns(page: 1, pageSize: 50) { await self.update(runs: v.items) } }
-            group.addTask { if let v = try? await client.libraryAttentionEntries() { await self.update(library: v) } }
-            group.addTask { if let v = try? await client.runAttentionEntries() { await self.update(runAttention: v) } }
             group.addTask {
-                if let v = try? await client.stoppedIndexers() {
-                    await self.update(indexers: v)
-                }
+                let v = try? await client.libraryAttentionEntries()
+                await self.update(library: v)
+            }
+            group.addTask {
+                let v = try? await client.runAttentionEntries()
+                await self.update(runAttention: v)
+            }
+            group.addTask {
+                let v = try? await client.stoppedIndexers()
+                await self.update(indexers: v)
             }
         }
         loaded = true
@@ -275,15 +285,26 @@ final class StatsSheetFeed {
 
     private func update(commands: [OperationCommand]) { self.commands = commands; recompute() }
     private func update(runs: [ActivityRun]) { self.runs = runs; recompute() }
-    private func update(library: [LibraryAttentionEntry]) { self.library = library; mark("library"); recompute() }
-    private func update(runAttention: [RunAttentionEntry]) { self.runAttention = runAttention; mark("runs"); recompute() }
-    private func update(indexers: [UnavailableIndexer]) {
-        mark("indexers")
-        if indexers != self.indexers { self.indexers = indexers }
+    /// A failed source (nil) keeps its last rows; it is only marked failed.
+    private func update(library: [LibraryAttentionEntry]?) {
+        mark("library", ok: library != nil)
+        if let library { self.library = library; recompute() }
+    }
+    private func update(runAttention: [RunAttentionEntry]?) {
+        mark("runs", ok: runAttention != nil)
+        if let runAttention { self.runAttention = runAttention; recompute() }
+    }
+    private func update(indexers: [UnavailableIndexer]?) {
+        mark("indexers", ok: indexers != nil)
+        if let indexers, indexers != self.indexers { self.indexers = indexers }
     }
 
-    /// Assigned only once per source: every write would re-render the bar.
-    private func mark(_ source: String) { if !answered.contains(source) { answered.insert(source) } }
+    /// Sets are written only on a change: every write would re-render the bar.
+    private func mark(_ source: String, ok: Bool) {
+        if !tried.contains(source) { tried.insert(source) }
+        if ok, failed.contains(source) { failed.remove(source) }
+        if !ok, !failed.contains(source) { failed.insert(source) }
+    }
 
     private func recompute() {
         let ops = StatsSheetLogic.compose(commands: commands, queue: queue, runs: runs)

@@ -64,7 +64,8 @@ struct StatusClusterItems: ToolbarContent {
                     Label("Needs attention", systemImage: "exclamationmark.triangle")
                 }
                 // The popover's own rows (StatsSheetFeed), never the shell's
-                // 30 s figure; no number until every source has answered.
+                // 30 s figure; no number until every source has been tried
+                // (a failed one leaves the rows that loaded, and says so).
                 .badge(attention ?? 0)
                 .accessibilityLabel((attention ?? 0) > 0 ? "Needs attention, \(attention ?? 0)" : "Needs attention")
                 .popover(isPresented: binding(.attention)) { StatusAttentionPanel(close: close) }
@@ -161,7 +162,7 @@ private struct StatusAttentionPanel: View {
     }
 
     private func list(_ feed: StatsSheetFeed) -> some View {
-        StatsAttentionList(indexers: feed.indexers, rows: feed.rows, manageIndexers: {
+        StatsAttentionList(indexers: feed.indexers, rows: feed.rows, incomplete: feed.incomplete, manageIndexers: {
             close()
             Task { @MainActor in
                 // Let the popover go before the Settings cover comes up.
