@@ -2,8 +2,8 @@ import SwiftUI
 import FusionhaKit
 
 /// The Add title v2 configure step (web `AddConfigPanel`, phone layout): the
-/// detail page's hero scrolling with the decisions, the "Search again" and
-/// "View details" links, Details · Versions · What to monitor (series) or
+/// detail page's hero scrolling with the decisions, the "View details" link
+/// (Back to search is the toolbar's, after Close), Details · Versions · What to monitor (series) or
 /// When to grab it (movies), and a sticky footer with the live sentence,
 /// Search now and the Add button.
 struct AddConfigView: View {
@@ -89,8 +89,7 @@ struct AddConfigView: View {
     private var hero: some View {
         let shown = TitleYear.display(flow.title, flow.year)
         let view = PreviewHero(art: poster ?? backdrop, status: flow.preview?.status, title: shown.title, year: shown.year,
-                               tagline: flow.preview?.tagline, meta: heroMeta, genres: flow.preview?.genres ?? [],
-                               onClose: nil)
+                               tagline: flow.preview?.tagline, meta: heroMeta, genres: flow.preview?.genres ?? [])
         if let zoom {
             view.matchedTransitionSource(id: zoom.id, in: zoom.namespace)
         } else {
@@ -98,34 +97,26 @@ struct AddConfigView: View {
         }
     }
 
-    @ToolbarContentBuilder
+    /// Close first, then Back to search, in one group so the order holds in
+    /// the horizontal bar and the folded Duo's column. The Add itself stays
+    /// in the footer with its live sentence.
     private var toolbarItems: some ToolbarContent {
-        ToolbarItem(placement: .cancellationAction) {
+        ToolbarItemGroup(placement: .cancellationAction) {
             SheetCancelButton(title: "Close", action: onClose)
-        }
-        if let onSearchAgain {
-            ToolbarItem(placement: .navigation) {
+            if let onSearchAgain {
                 Button("Back to search", systemImage: "chevron.left", action: onSearchAgain)
             }
         }
     }
 
+    /// "View details". "Not this one? Search again" did what the toolbar's
+    /// Back to search does, so it went.
     @ViewBuilder
     private var links: some View {
-        if onSearchAgain != nil || onViewDetails != nil {
-            HStack(spacing: 16) {
-                if let onSearchAgain {
-                    Button(action: onSearchAgain) {
-                        Label("Not this one? Search again", systemImage: "chevron.left")
-                            .labelStyle(LinkLabelStyle(leading: true))
-                    }
-                }
-                if let onViewDetails {
-                    Button(action: onViewDetails) {
-                        Label("View details", systemImage: "chevron.right")
-                            .labelStyle(LinkLabelStyle(leading: false))
-                    }
-                }
+        if let onViewDetails {
+            Button(action: onViewDetails) {
+                Label("View details", systemImage: "chevron.right")
+                    .labelStyle(LinkLabelStyle())
             }
             .buttonStyle(.plain)
             .font(.system(size: 12.5, weight: .semibold))
@@ -290,15 +281,12 @@ struct AddConfigView: View {
     #endif
 }
 
-/// A text link with its chevron before or after the title.
+/// A text link with its chevron after the title.
 private struct LinkLabelStyle: LabelStyle {
-    let leading: Bool
-
     func makeBody(configuration: Configuration) -> some View {
         HStack(spacing: 4) {
-            if leading { configuration.icon.font(.system(size: 11, weight: .bold)) }
             configuration.title
-            if !leading { configuration.icon.font(.system(size: 11, weight: .bold)) }
+            configuration.icon.font(.system(size: 11, weight: .bold))
         }
         .frame(minHeight: 44)
         .contentShape(Rectangle())

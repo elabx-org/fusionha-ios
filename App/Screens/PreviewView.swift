@@ -6,6 +6,7 @@ import FusionhaKit
 /// bottom-anchored hero, then overview, the add/request action, seasons,
 /// trailer, "More like this" (pushes another preview) and cast.
 struct PreviewSheet: View {
+    @Environment(\.dismiss) private var dismiss
     let route: PreviewRoute
     /// Closes the sheet and opens the library item.
     let onOpenLibrary: (Int) -> Void
@@ -17,7 +18,9 @@ struct PreviewSheet: View {
         NavigationStack {
             PreviewPage(route: route, onAdd: { addPick = $0 }, onOpenLibrary: onOpenLibrary)
                 .navigationDestination(for: PreviewRoute.self) { next in
-                    PreviewPage(route: next, onAdd: { addPick = $0 }, onOpenLibrary: onOpenLibrary)
+                    // Close shuts the sheet; the system Back pops this page.
+                    PreviewPage(route: next, onAdd: { addPick = $0 }, onOpenLibrary: onOpenLibrary,
+                                onClose: { dismiss() })
                 }
         }
         .presentationDragIndicator(.visible)
@@ -48,10 +51,11 @@ struct PreviewPage: View {
     /// The Add sheet's "View details" pushed this page for its current pick:
     /// the add button reads "Continue adding" and goes back to it.
     var continueAdding = false
-    /// Pushed inside the Add sheet: ✕ closes the sheet and ‹ goes back a step.
+    /// What Close does when it isn't `dismiss` (a pushed page closes its whole
+    /// sheet; the Spread's right page closes the page). A pushed page's Back
+    /// is the system one, so the edge swipe keeps working.
     var onClose: (() -> Void)?
-    var onBack: (() -> Void)?
-    /// Escape presses ✕ (off on the Spread's right page, which isn't a sheet).
+    /// Escape presses Close (off on the Spread's right page, which isn't a sheet).
     var escapeCloses = true
 
     @State private var detail: MediaPreviewDetail?
@@ -78,11 +82,14 @@ struct PreviewPage: View {
                     .offset(y: entered || DiscoverMotion.reduced(reduceMotion) ? 0 : 24)
                 }
                 .scrollIndicators(.hidden)
+                // The hero runs full-bleed under the clear system bar; the
+                // bar's edge effect only comes in once the title takes over.
+                .ignoresSafeArea(.container, edges: .top)
+                .scrollEdgeEffectHidden(!compact, for: .top)
                 .duoColumnPullSource()
                 .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y > 200 } action: { _, new in
                     withAnimation(DiscoverMotion.reduced(reduceMotion) ? nil : .easeOut(duration: 0.2)) { compact = new }
                 }
-                compactBar(detail)
             } else if failed {
                 VStack(spacing: 14) {
                     (Text("That title could not be found on TMDB. Head back to ")
@@ -101,7 +108,12 @@ struct PreviewPage: View {
             }
         }
         .background(Theme.bg)
-        .toolbar(.hidden, for: .navigationBar)
+        // The system bar, clear over the hero: Close, the system Back on a
+        // pushed page, then Add. Scrolled past the hero, it takes the title.
+        .navigationTitle(compact ? (detail?.title ?? "") : "")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
+        .toolbar { toolbarItems }
         .task(id: route) { await load() }
         // On the open Duo: the title on the left page, the options on the right.
         .duoPageSheet(item: $requestPick, placement: .twoPages) { pick in
@@ -126,46 +138,34 @@ struct PreviewPage: View {
         }
     }
 
-    // MARK: Ambient bleed + compact bar
+    // MARK: Ambient bleed + toolbar
 
     private var ambient: some View {
         PreviewAmbient(art: detail?.posterUrl ?? detail?.backdropUrl)
     }
 
-    private func compactBar(_ detail: MediaPreviewDetail) -> some View {
-        HStack(spacing: 10) {
-            Text(detail.title)
-                .font(.system(size: 14, weight: .heavy))
-                .foregroundStyle(Theme.txt)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-            Button { (onClose ?? { dismiss() })() } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Theme.mut)
-                    .frame(width: 40, height: 40)
-                    .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(Theme.line))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close")
+    private func close() { (onClose ?? { dismiss() })() }
+
+    @ToolbarContentBuilder
+    private var toolbarItems: some ToolbarContent {
+        ToolbarItem(placement: .cancellationAction) {
+            SheetCancelButton(title: "Close", escapeCloses: escapeCloses) { close() }
         }
-        .padding(.horizontal, 12)
-        .frame(height: 50)
-        .background(Theme.panel)
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
-        .opacity(compact ? 1 : 0)
-        .offset(y: compact ? 0 : -8)
-        .allowsHitTesting(compact)
-        .accessibilityHidden(!compact)
+        if let detail, !detail.inLibrary, canAdd {
+            ToolbarItem(placement: .confirmationAction) {
+                ToolbarActionButton(title: continueAdding ? "Continue adding" : "Add to library",
+                                    systemImage: "plus") { onAdd(detail.asSearchResult) }
+                    .buttonStyle(.glassProminent)
+                    .tint(Theme.indigo)
+            }
+        }
     }
 
     // MARK: Hero
 
     private func hero(_ d: MediaPreviewDetail) -> some View {
         PreviewHero(art: d.posterUrl ?? d.backdropUrl, status: d.status, title: d.title, year: d.year,
-                    tagline: d.tagline, meta: heroMeta(d), genres: d.genres ?? [], onClose: { (onClose ?? { dismiss() })() },
-                    onBack: onBack, escapeCloses: escapeCloses)
+                    tagline: d.tagline, meta: heroMeta(d), genres: d.genres ?? [])
     }
 
     private func heroMeta(_ d: MediaPreviewDetail) -> [PreviewHero.Meta] {

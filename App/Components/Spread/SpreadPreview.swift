@@ -80,7 +80,9 @@ struct SpreadPreviewColumn: View {
                         onClose: { model.spreadPreview = nil }, escapeCloses: false)
                 .duoListToggleToolbar()
                 .navigationDestination(for: PreviewRoute.self) { next in
-                    PreviewPage(route: next, onAdd: { addPick = $0 }, onOpenLibrary: { model.open($0) }, escapeCloses: false)
+                    // Close shuts the right page; the system Back pops this one.
+                    PreviewPage(route: next, onAdd: { addPick = $0 }, onOpenLibrary: { model.open($0) },
+                                onClose: { model.spreadPreview = nil }, escapeCloses: false)
                 }
         }
         .preference(key: DuoPageAtRoot.self, value: path.isEmpty)
