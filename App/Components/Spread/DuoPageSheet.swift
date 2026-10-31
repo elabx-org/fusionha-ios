@@ -121,7 +121,15 @@ private struct DuoPageCover<Content: View>: View {
             .offset(y: pull)
             .modifier(DuoPagePull(pull: $pull, height: measured.size.height, attemptClose: attemptClose,
                                   busy: dismissGuard.policy == .busy,
-                                  grabberOffset: placement == .twoPages ? measured.size.width / 4 : 0))
+                                  grabberOffset: grabberX))
+    }
+
+    /// The grabber is drawn in the page's frame before its offsets, so it is
+    /// moved by the page's x itself (else it sits on the fold), and off the
+    /// fold when the page spans both halves.
+    private var grabberX: CGFloat {
+        let x = track.map { CGFloat($0.x) } ?? 0
+        return placement == .twoPages ? x + measured.size.width / 4 : x
     }
 
     private var progress: Double {

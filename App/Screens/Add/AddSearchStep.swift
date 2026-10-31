@@ -57,7 +57,8 @@ extension AddTitleSheet {
         let active = source == value
         // Shown but unreachable without a TVDB key, so people learn it exists.
         let locked = value == .tvdb && !tvdbConfigured
-        let ring = value == .tmdb ? Theme.indigo.opacity(0.5) : Theme.brand(0x4FB862).opacity(0.55)
+        // The provider's own colour, like the web's source switch.
+        let tint = value == .tmdb ? Theme.brand(0x01B4E4) : Theme.brand(0x4FB862)
         return Button {
             withAnimation(motion ? Motion.indicator : nil) { source = value }
         } label: {
@@ -67,8 +68,8 @@ extension AddTitleSheet {
                 .background {
                     if active {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Theme.card)
-                            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(ring, lineWidth: 1.5))
+                            .fill(tint.opacity(0.12))
+                            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(tint.opacity(0.5), lineWidth: 1))
                     }
                 }
                 .contentShape(Rectangle())
@@ -218,7 +219,8 @@ extension AddTitleSheet {
     @ViewBuilder
     func tmdbList(_ list: [MediaSearchResult]) -> some View {
         if gridView {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .top), count: 3), spacing: 14) {
+            // Three across on a phone and the folded Duo, more on a wider page.
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 104, maximum: 150), spacing: 10, alignment: .top)], spacing: 14) {
                 ForEach(Array(list.enumerated()), id: \.element.id) { index, result in
                     AddTile(result: result, pick: { pick(result) }, preview: { preview(result) }, zoom: zoomSpace)
                         .reveal(index, y: 10, duration: 0.4)

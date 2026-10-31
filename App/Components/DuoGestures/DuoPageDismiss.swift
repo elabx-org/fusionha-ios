@@ -61,7 +61,7 @@ struct DuoPagePull: ViewModifier {
                 Capsule().fill(Theme.mut.opacity(0.5))
                     .frame(width: 36, height: 5)
                     .padding(.top, 6)
-                    .offset(x: grabberOffset)
+                    .offset(x: grabberOffset, y: pull)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
