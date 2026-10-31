@@ -26,6 +26,8 @@ struct ItemDetailView: View {
     /// host has left on a re-host (fold / unfold).
     @State private var presentReady: Bool
     @State private var position = ScrollPosition(idType: String.self)
+    /// The scroll view's visible width, inside its safe-area insets.
+    @State private var pageWidth: CGFloat = 0
 
     private var itemId: Int { store.itemId }
 
@@ -56,10 +58,16 @@ struct ItemDetailView: View {
                         DetailLoadingShell(seed: model.library.first { $0.id == itemId })
                     }
                 }
-                // Exactly the page's width: a row wider than the screen would
-                // otherwise widen the whole page, centred, cutting off both edges
-                // (the folded Duo, beside the system column).
-                .containerRelativeFrame(.horizontal)
+                // The visible width, leading-aligned: a row wider than the
+                // screen can only run off the trailing side, never shift the
+                // page left (the folded Duo, beside the system column).
+                .frame(width: pageWidth > 0 ? pageWidth : nil, alignment: .leading)
+            }
+            .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+            .onScrollGeometryChange(for: CGFloat.self) { geo in
+                geo.containerSize.width - geo.contentInsets.leading - geo.contentInsets.trailing
+            } action: { _, width in
+                if abs(width - pageWidth) > 0.5 { pageWidth = width }
             }
             .scrollIndicators(.hidden)
             .scrollPosition($position)
