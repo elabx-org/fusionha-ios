@@ -41,12 +41,13 @@ struct SignInMethodsSheet: View {
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         if !embedded {
-                            ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
+                            ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } }
                         }
                     }
                     .closeOnlyBars()
                     .sheet(item: $moving) { credential in
                         MoveCredentialSheet(subject: subject, credential: credential, candidates: others) { await refresh() }
+                            .sheetEscapeRoot()
                     }
             } else {
                 ProgressView()

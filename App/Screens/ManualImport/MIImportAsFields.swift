@@ -31,10 +31,13 @@ struct MIImportAsFields: View {
         .background(Theme.panel2, in: RoundedRectangle(cornerRadius: Theme.radiusSm, style: .continuous))
         .disabled(row.committed || session.pendingRows.contains(row.rowId))
         .sheet(item: $sheet) { which in
-            switch which {
-            case .episodes: MIEpisodeSheet(row: row)
-            case .languages: MILanguagesSheet(row: row)
+            Group {
+                switch which {
+                case .episodes: MIEpisodeSheet(row: row)
+                case .languages: MILanguagesSheet(row: row)
+                }
             }
+            .sheetEscapeRoot()
         }
     }
 

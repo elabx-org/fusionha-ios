@@ -32,7 +32,7 @@ struct SecurityRecoveryKeySheet: View {
                     }
                 }
                 if result != nil {
-                    ToolbarItem(placement: .confirmationAction) { SheetDoneButton { dismiss() } }
+                    ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } }
                 }
             }
             .task { await reauth.loadMethods(client: store.client) }

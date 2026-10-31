@@ -64,6 +64,7 @@ struct LibraryPosterSheet: View {
             .padding(.top, 10)
             .padding(.trailing, 12)
             .accessibilityLabel("Close")
+            .closeOnEscape()
         }
         .presentationDetents([.height(min(contentHeight + 124, 660)), .large])
         .presentationDragIndicator(.visible)

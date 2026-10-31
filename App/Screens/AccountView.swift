@@ -55,8 +55,9 @@ struct AccountView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Theme.panel)
+                .sheetEscapeRoot()
         }
-        .sheet(isPresented: $showingSessions) { AccountSessionsSheet() }
+        .sheet(isPresented: $showingSessions) { AccountSessionsSheet().sheetEscapeRoot() }
         .task {
             #if DEBUG
             if ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_ACCOUNT"] == "methods" {
@@ -197,7 +198,7 @@ struct AccountSheet: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        SheetDoneButton { dismiss() }
+                        SheetDoneButton(escapeCloses: true) { dismiss() }
                     }
                 }
                 .closeOnlyBars()

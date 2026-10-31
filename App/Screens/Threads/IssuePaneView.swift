@@ -47,6 +47,7 @@ struct IssuePaneView: View {
         .background(Theme.bg)
         .sheet(item: $dialog) { route in
             StagedDialogSheet(issueId: current.id, route: route, onSwitch: { dialog = $0 }) { tick += 1 }
+                .sheetEscapeRoot()
         }
         .task(id: tick) { await pollIssue() }
         .task { await pollLines() }

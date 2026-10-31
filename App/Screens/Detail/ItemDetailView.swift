@@ -99,7 +99,8 @@ struct ItemDetailView: View {
         .background { AmbientBackdrop(url: store.detail.flatMap { $0.backdropUrl ?? $0.posterUrl }) }
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                SheetCancelButton(title: "Close detail", action: close)
+                // In the shell's column it isn't a sheet: Escape stays with the page.
+                SheetCancelButton(title: "Close detail", escapeCloses: !inColumn, action: close)
             }
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button("Refresh", systemImage: "arrow.clockwise") { Task { await store.load() } }

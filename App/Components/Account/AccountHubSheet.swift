@@ -102,6 +102,7 @@ struct AccountHubSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Close", systemImage: "xmark") { dismiss() }
+                        .closeOnEscape()
                 }
             }
         }
