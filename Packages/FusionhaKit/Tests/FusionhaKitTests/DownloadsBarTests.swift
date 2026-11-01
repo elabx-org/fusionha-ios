@@ -56,8 +56,29 @@ final class DownloadsBarTests: XCTestCase {
         XCTAssertTrue(DownloadsBar.spoken(s).hasPrefix("Downloads, needs you: Import waiting, 2 downloading"))
         let alone = try XCTUnwrap(DownloadsBar.summary([try item(1, status: "held", progress: 100)]))
         XCTAssertEqual(DownloadsBar.detailLine(alone), "Import waiting")
+        XCTAssertEqual(DownloadsBar.spoken(alone), "Downloads, needs you: Import waiting. Title 1, HD.")
+        XCTAssertEqual(alone.needCount, 1)
+        XCTAssertEqual(alone.heldIds, [1])
         let display = try item(4, status: "held", extra: #","held":{"code":"x","short":"Not an upgrade","text":"Not an upgrade."}"#)
         XCTAssertEqual(DownloadsBar.summary([display])?.reason, "Not an upgrade")
+    }
+
+    func testSeveralNeedYou() throws {
+        let items = [try item(1, status: "held", progress: 100), try item(2), try item(3, status: "failed"),
+                     try item(4, status: "held", progress: 100)]
+        let s = try XCTUnwrap(DownloadsBar.summary(items))
+        XCTAssertEqual(s.leadId, 1)
+        XCTAssertEqual(s.needCount, 3)
+        XCTAssertEqual(s.heldIds, [1, 4])
+        XCTAssertEqual(DownloadsBar.detailLine(s), "Import waiting · 3 need you · +1 downloading")
+        XCTAssertEqual(DownloadsBar.inlineLine(s), "3 need you")
+        XCTAssertTrue(DownloadsBar.spoken(s).hasPrefix("Downloads, 3 need you: Import waiting, 1 downloading"))
+        let idle = try XCTUnwrap(DownloadsBar.summary([try item(1, status: "held"), try item(2, status: "held")]))
+        XCTAssertEqual(DownloadsBar.detailLine(idle), "Import waiting · 2 need you")
+        XCTAssertEqual(DownloadsBar.spoken(idle), "Downloads, 2 need you: Import waiting. Title 1, HD.")
+        let moving = try XCTUnwrap(DownloadsBar.summary([try item(1)]))
+        XCTAssertEqual(moving.needCount, 0)
+        XCTAssertEqual(moving.heldIds, [])
     }
 
     func testFinishedOnlyAfterAMovingLead() throws {

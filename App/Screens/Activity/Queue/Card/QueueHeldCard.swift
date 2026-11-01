@@ -84,7 +84,7 @@ struct QueueHeldCard: View {
             if item.heldDetail != nil { whyToggle }
             if showWhy, let detail = item.heldDetail {
                 HeldWhy(item: item, detail: detail, evidence: evidence, canBlockGroup: blockableGroup != nil,
-                        onImportAnyway: actions.manualImport, onBlockGroup: { _ in blocking = true })
+                        onReview: actions.manualImport, onBlockGroup: { _ in blocking = true })
                     .transition(.opacity)
                     .task { await loadEvidence() }
             }

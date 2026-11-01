@@ -27,6 +27,10 @@ public enum DownloadsBar {
         public let need: Need?
         /// The need in words: "Import waiting".
         public let reason: String?
+        /// Downloads that need the person (held, failed or stuck), the lead included.
+        public let needCount: Int
+        /// The held downloads, the lead first: the menu's "Review in Manual Import".
+        public let heldIds: [Int]
         /// Items still moving (everything that doesn't need the person).
         public let downloading: Int
         /// Overall progress of the moving items, 0–100.
@@ -87,6 +91,8 @@ public enum DownloadsBar {
         return Summary(leadId: lead.id, mediaItemId: lead.mediaItemId, title: lead.title,
                        episodeCode: episodeCode(lead.episodeLabel), posterUrl: lead.posterUrl,
                        leadTier: lead.tier, tiers: tiers, need: leadNeed, reason: leadNeed.map { reason($0, lead) },
+                       needCount: items.count - moving.count,
+                       heldIds: items.filter { need($0) == .held }.map(\.id),
                        downloading: moving.count, percent: percent, leadFraction: lead.fraction,
                        bytesDone: done, bytesTotal: total,
                        etaSeconds: moving.compactMap(\.etaSeconds).filter { $0 > 0 }.max())
@@ -110,10 +116,13 @@ public enum DownloadsBar {
     }
 
     /// Expanded second line: "3 downloading · 2.1 of 5.8 GB · 6 min", or for a
-    /// need, "Import waiting · +2 downloading".
+    /// need, "Import waiting · 3 need you · +2 downloading".
     public static func detailLine(_ s: Summary) -> String {
         if let reason = s.reason {
-            return s.downloading > 0 ? "\(reason) · +\(s.downloading) downloading" : reason
+            var parts = [reason]
+            if s.needCount > 1 { parts.append("\(s.needCount) need you") }
+            if s.downloading > 0 { parts.append("+\(s.downloading) downloading") }
+            return parts.joined(separator: " · ")
         }
         var parts = ["\(s.downloading) downloading"]
         if s.bytesTotal > 0 { parts.append(sizes(done: s.bytesDone, total: s.bytesTotal)) }
@@ -121,19 +130,23 @@ public enum DownloadsBar {
         return parts.joined(separator: " · ")
     }
 
-    /// Inline (minimised) line: "3 downloading", or the need's words.
+    /// Inline (minimised) line: "3 downloading", the need's words, or "3 need you".
     public static func inlineLine(_ s: Summary) -> String {
-        s.reason ?? "\(s.downloading) downloading"
+        guard let reason = s.reason else { return "\(s.downloading) downloading" }
+        return s.needCount > 1 ? "\(s.needCount) need you" : reason
     }
 
     public static let finishedLine = "Imported · ready in Plex"
 
     /// VoiceOver: "Downloads, 3 downloading, 42 percent. Severance season 2 episode 7, 4K."
+    /// A need leads ("2 need you: Import waiting"); nothing moving says nothing about progress.
     public static func spoken(_ s: Summary) -> String {
         var head = "Downloads"
-        if let reason = s.reason { head += ", needs you: \(reason)" }
-        head += ", \(s.downloading) downloading, \(s.percent) percent."
-        return "\(head) \(spokenTitle(s))."
+        if let reason = s.reason {
+            head += s.needCount > 1 ? ", \(s.needCount) need you: \(reason)" : ", needs you: \(reason)"
+        }
+        if s.reason == nil || s.downloading > 0 { head += ", \(s.downloading) downloading, \(s.percent) percent" }
+        return "\(head). \(spokenTitle(s))."
     }
 
     public static func spokenFinished(_ s: Summary) -> String {

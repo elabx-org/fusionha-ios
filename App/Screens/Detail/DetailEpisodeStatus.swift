@@ -28,7 +28,7 @@ struct EpisodeStatusChip: View {
                 }
             }
         case .downloading:
-            DownloadPill(download: episode.download(for: edition.id))
+            DownloadPill(download: episode.download(for: edition.id), editionId: edition.id, episodeId: episode.id)
         case .stuck:
             Text("⚠ STUCK")
                 .font(.system(size: 11, weight: .heavy))
@@ -70,6 +70,8 @@ struct EpisodeStatusChip: View {
 struct DownloadPill: View {
     @Environment(AppModel.self) private var model
     let download: EpisodeDownload?
+    let editionId: Int
+    let episodeId: Int
     @State private var showing = false
 
     var body: some View {
@@ -111,8 +113,7 @@ struct DownloadPill: View {
                 }
                 Button("Open in Activity") {
                     showing = false
-                    model.tab = .activity
-                    model.presentedItem = nil
+                    model.openInQueue(editionId: editionId, episodeId: episodeId)
                 }
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(Theme.i2)

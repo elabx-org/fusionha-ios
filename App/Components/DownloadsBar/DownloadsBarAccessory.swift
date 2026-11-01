@@ -86,6 +86,13 @@ struct DownloadsBarAccessory: View {
 
     @ViewBuilder
     private func menu(_ s: DownloadsBar.Summary) -> some View {
+        // The held downloads straight into Manual Import (the header's "Resolve all held").
+        if !s.heldIds.isEmpty {
+            Button("Review in Manual Import", systemImage: "square.and.arrow.down") {
+                model.pendingRescueIds = s.heldIds
+                model.tab = .activity
+            }
+        }
         Button("Open title", systemImage: "film") { model.presentedItem = ItemRef(id: s.mediaItemId) }
         // The Activity toolbar's own Pause (admins, 0.4.205).
         if model.me?.isAdmin == true {

@@ -49,6 +49,8 @@ struct StatsAttentionRow: Identifiable, Hashable {
     let itemId: Int?
     let runId: Int?
     let dismissItemId: Int?
+    /// A held import's download: its pill and row open Manual Import on it.
+    var downloadId: Int? = nil
 }
 
 enum StatsSheetLogic {
@@ -192,7 +194,7 @@ enum StatsSheetLogic {
         StatsAttentionRow(id: "op:\(op.id)", kind: .importHeld, kindChip: "Import", title: op.label, tier: op.tier,
                           variant: nil, reason: op.message ?? "", action: op.downloadId != nil ? .manualImport : .view,
                           actionLabel: op.downloadId != nil ? "Manual import" : "View", ghost: false,
-                          itemId: op.itemId, runId: nil, dismissItemId: nil)
+                          itemId: op.itemId, runId: nil, dismissItemId: nil, downloadId: op.downloadId)
     }
 
     static func row(_ r: RunAttentionEntry) -> StatsAttentionRow {

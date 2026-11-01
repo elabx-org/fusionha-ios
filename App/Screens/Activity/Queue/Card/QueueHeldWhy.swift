@@ -3,7 +3,7 @@ import FusionhaKit
 
 /// The open "Why it's held" panel (web `HeldWhyDetail`). A proven mislabel
 /// shows the facts grid, the block-group proof strip (only while the server
-/// says the prompt is due) and "Import anyway" / "Blocklist this release";
+/// says the prompt is due) and "Review in Manual Import" / "Blocklist this release";
 /// any other hold shows claimed vs on disk and the verdict.
 struct HeldWhy: View {
     let item: QueueItem
@@ -11,7 +11,7 @@ struct HeldWhy: View {
     /// The proof strip's evidence; nil until loaded or when not offered.
     let evidence: ReleaseGroupEvidence?
     let canBlockGroup: Bool
-    let onImportAnyway: () -> Void
+    let onReview: () -> Void
     let onBlockGroup: (String) -> Void
     @Environment(AppModel.self) private var model
     @Environment(ActToaster.self) private var toaster
@@ -59,7 +59,7 @@ struct HeldWhy: View {
     private var actionsRow: some View {
         let blocked = detail.releaseBlocklisted == true
         return ActFlow(spacing: 8, lineSpacing: 8) {
-            Button("Import anyway", action: onImportAnyway)
+            Button("Review in Manual Import", action: onReview)
                 .buttonStyle(ActButtonStyle(kind: .subtle))
             Button("Blocklist this release", systemImage: "nosign") {
                 blocklisting = true

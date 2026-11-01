@@ -7,9 +7,10 @@ import FusionhaKit
 extension AppModel {
     /// The row's action pill.
     func statsAct(_ row: StatsAttentionRow) {
+        if row.action == .manualImport { openHeldImport(row); return }
         guard let id = row.itemId else { tab = .activity; return }
         switch row.action {
-        case .manualImport: tab = .activity
+        case .manualImport: openHeldImport(row)
         case .replace(let tier): interactiveSearch(id, tier: tier)
         case .setType: edit(id)
         case .review, .view, .seeWhy: open(id)
@@ -18,7 +19,14 @@ extension AppModel {
 
     /// Tapping the row itself.
     func statsOpenRow(_ row: StatsAttentionRow) {
-        if row.kind == .importHeld { tab = .activity } else if let id = row.itemId { open(id) }
+        if row.kind == .importHeld { openHeldImport(row) } else if let id = row.itemId { open(id) }
+    }
+
+    /// A held import (web `/activity?tab=queue&rescue=<id>`): Manual Import on
+    /// its download, or the queue when the row names none.
+    private func openHeldImport(_ row: StatsAttentionRow) {
+        if let id = row.downloadId { pendingRescueIds = [id] } else { pendingActivityTab = .queue }
+        tab = .activity
     }
 
     /// The row's ✕: drop it at once, put it back if the server says no.

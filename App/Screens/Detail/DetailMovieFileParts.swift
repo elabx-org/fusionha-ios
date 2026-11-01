@@ -101,8 +101,7 @@ struct DetailDownloadPill: View {
             }
             Button {
                 open = false
-                model.tab = .activity
-                model.presentedItem = nil
+                model.openInQueue(editionId: edition.id)
             } label: {
                 Label("Open in Queue", systemImage: "arrow.right")
                     .font(.system(size: 13, weight: .semibold))
