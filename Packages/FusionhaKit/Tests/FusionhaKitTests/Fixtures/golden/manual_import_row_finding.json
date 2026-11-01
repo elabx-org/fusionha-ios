@@ -59,6 +59,8 @@
   "languages": [],
   "release_type": "unknown",
   "would_orphan": "Replacing would leave S06E05 without a file. Add E05 to this file's episodes or keep the current file.",
+  "orphan_episode_ids": null,
+  "joint_rows": null,
   "status": "needs_attention",
   "status_reason": null,
   "selected": false,
@@ -77,7 +79,9 @@
   "held": null,
   "title_check_dismissed": false,
   "corroboration": null,
+  "held_target": null,
   "replace_choice": null,
+  "finish_disposition": null,
   "title_check": {
     "status": "names_other",
     "says": "Mafia",

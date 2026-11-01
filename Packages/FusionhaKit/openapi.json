@@ -3,7 +3,7 @@
   "info": {
     "title": "fusionha",
     "description": "fusionha replaces both Sonarr and Radarr with a single app that adds\nfirst-class multi-quality tracking (e.g. 1080p *and* 4K per title) and\ntreats anime as a first-class citizen. It exposes **two API surfaces**:\n\n* **fusionha-native, `/api/v1/*`** -- the app's own REST API: library items\n  (with all their quality editions), settings, config resources (root\n  folders, quality profiles, custom formats, indexers, download clients),\n  history, queue, health, and blocklist. This is what the fusionha UI (and\n  any other fusionha-aware client) talks to.\n* **arr v3 mirrors, `/<instance-slug>/api/v3/*`** -- faithful Radarr/Sonarr\n  v3 API surfaces (`radarr-hd`, `radarr-4k`, `sonarr-hd`, `sonarr-4k`), each\n  its own virtual instance with its own `X-Api-Key`. Add these to\n  Overseerr/Seer (their native 4K-service slots map to the `-4k`\n  instances) or Prowlarr exactly as you would a real Radarr/Sonarr -- they\n  are externally indistinguishable. All virtual instances are views over\n  the SAME shared item store; there is no data duplication.\n\nAuthenticate against the arr surface with the `X-Api-Key` header (per\nvirtual instance); see the Authorize button above.",
-    "version": "0.4.233"
+    "version": "0.4.235"
   },
   "paths": {
     "/api/v1/setup-status": {
@@ -33612,6 +33612,10 @@
           "corroboration": {
             "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Corroboration"
+          },
+          "held_target": {
+            "anyOf": [{ "items": {}, "type": "array" }, { "type": "null" }],
+            "title": "Held Target"
           },
           "replace_choice": {
             "anyOf": [{ "type": "string", "enum": ["keep_current", "import"] }, { "type": "null" }],

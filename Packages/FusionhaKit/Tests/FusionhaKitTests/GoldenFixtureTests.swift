@@ -57,6 +57,15 @@ final class GoldenFixtureTests: XCTestCase {
         XCTAssertEqual(chips.last?.tone, .library)
     }
 
+    /// fusionha 0.4.234 declares `rows[].held_target` (the golden gained `"held_target": null`).
+    func testManualImportRowHeldTarget() throws {
+        XCTAssertNil(try decode(ManualImportRow.self, "manual_import_row_finding").heldTarget)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: load("manual_import_row_finding")) as? [String: Any])
+        json["held_target"] = [7, "HD", NSNull(), [601, 600]]
+        let row = try APIClient.decoder.decode(ManualImportRow.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertEqual(row.heldTarget, ManualImportHeldTarget(itemId: 7, tier: "HD", edition: nil, episodeIds: [601, 600]))
+    }
+
     func testHeldCopyRules() {
         let other = HeldDisplay(code: "other", short: "needs a look",
                                 text: "The imported file could not be put in place — held for review: a.mkv.")
