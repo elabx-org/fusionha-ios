@@ -169,6 +169,8 @@ final class AppModel {
                 tab = .activity
                 pendingRescueIds = [rescue]
             }
+            // Scrolls Activity's queue to a download (`=103`, the mock's held Interstellar).
+            if let scroll = env["FUSIONHA_SCREENSHOT_QUEUE_SCROLL"].flatMap(Int.init) { pendingQueueScroll = scroll }
             if env["FUSIONHA_SCREENSHOT_SELECT"] != nil {
                 selectMode = true
                 selection = [1, 3]

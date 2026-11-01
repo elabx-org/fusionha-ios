@@ -30,6 +30,7 @@ extension ActivityQueueTab {
         guard let id = model.pendingQueueScroll, store.loaded else { return }
         guard let item = store.items.first(where: { $0.id == id }) else {
             // Not in the loaded queue (finished, or on a later page): a quiet no-op.
+            DeepLinkProbe.log("queue-scroll: no download \(id) in the loaded queue")
             model.pendingQueueScroll = nil
             return
         }

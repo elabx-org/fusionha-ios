@@ -198,16 +198,45 @@ for theme in dark daylight; do
 done
 shoot duo-harness-open-web-lists open $L $WEB $LISTS $SRC
 # Manual import bulk decide over the held Office S06 pack (download 77), E02,
-# E04, E06 and E07 ticked. Open: the list before the fold, the decision panel
-# after it. Closed, the sheet is the system's and lands outside the harness
-# frame, so the phone shots (manual-import-bulk-*) stand in for it.
+# E04, E06 and E07 ticked. Open flat: the list in the leading third, the
+# decision panel in the rest (D2-A; the book-pose shots follow below).
+# Closed, the sheet is the system's and lands outside the harness frame, so
+# the phone shots (manual-import-bulk-*) stand in for it.
 MI="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=2,4,6,7"
 for theme in dark daylight; do
   T=""; SUF=""
   [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
   shoot duo-harness-open-spread-manual-import$SUF open $MI $SP $T
 done
-shoot duo-harness-open-spread-manual-import-none open SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77 \
-  SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0 $SP
+# Held downloads and Manual Import (UX pass): the held card's "Why it's held"
+# on the Activity spread and closed, scrolled to the held Interstellar (103).
+# A longer settle (F14): at 10s the compact tab pill was still mid-transition.
+H="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_WHY=1 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103"
+MI0="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0"
+WAIT=16
+for theme in dark daylight; do
+  T=""; SUF=""
+  [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
+  shoot duo-harness-open-spread-held-why$SUF open $H $SP $T
+  shoot duo-harness-folded-held-why$SUF folded $H $SP $T
+done
+unset WAIT
+# Manual Import on the open Duo (D2-A), flat and in book pose: flat, the list
+# a third and the file or decision panel the rest with a hairline; book, the
+# halves at the fold with nothing on it. A held row's decision and a kept
+# row's "Which file stays?" on the right page, the bulk decide panel, nothing
+# ticked ("Nothing selected"), and the Web layout's bulk decide.
+for pose in flat book; do
+  P=""; [ "$pose" = book ] && P=$BOOK
+  for theme in dark daylight; do
+    T=""; SUF=""
+    [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
+    shoot duo-harness-open-$pose-manual-import-row$SUF open $MI0 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_OPEN=2 $SP $P $T
+  done
+  shoot duo-harness-open-$pose-manual-import-stays open $MI0 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_OPEN=3 $SP $P
+  shoot duo-harness-open-$pose-manual-import-bulk open $MI $SP $P
+  shoot duo-harness-open-$pose-manual-import-none open $MI0 $SP $P
+done
+shoot duo-harness-open-web-manual-import open $MI $WEB
 xcrun simctl shutdown "$UDID" || true
 ls -l "$OUT"/duo-harness-* 2> /dev/null || true

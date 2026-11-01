@@ -17,7 +17,8 @@ instead of from scratch.
 | Last CI | build-362 on `2006eed`: green |
 | Living fusion moves | synced to **v0.4.224** (`49c6170b`, 2026-10-20), see the 0.4.224 section; the rest of 0.4.223–0.4.224 is not yet checked |
 | Watchlists & lists | requests phase 10b slice 1 synced to **v0.4.226** (`57c6e464`, 2026-10-23), see the 0.4.226 section (branch `requests-10b`) |
-| Manual Import safety | B1 batch synced to **v0.4.233** (`ad01ec6f`, 2026-11-01), see the 0.4.233 section (branch `mi-b1`) |
+| Manual Import safety | B1 batch synced to **v0.4.233** (`ad01ec6f`, 2026-11-01), see the 0.4.233 section (branch `mi-b1`); **shipped in build 657** |
+| Manual Import UX test | MI and held downloads checked against **v0.4.233** (`ad01ec6f`, 2026-11-01); owner decisions D1–D9 and batches B2–B8 on branch `mi-b2`, see the UX test section. 0.4.234–0.4.235 seen (the web adopted D1, D4, FW7, FW14), not yet re-pinned |
 | Manual Import bulk decide | held downloads synced to **0.4.225** (spec pinned `v0.4.226`), see its section (branch `mi-bulk-decide`); "bar in every scenario" built behind `ManualImportFeatures.barEverywhere` (off) |
 | Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
 
@@ -42,6 +43,47 @@ the old pin against the tagged schemas: `calendar_week_layout`
 older server omits them. `ui_theme` is a plain string in the spec (no
 enum of names). `GET /api/v1/auth/providers` is still not in the spec (the
 app tolerates its absence). Re-pin again from the next tag you sync to.
+
+## Manual Import UX test (B1–B8; branch `mi-b2`)
+
+A usability and UX test of Manual Import and held downloads (build 649, phone,
+folded and open iPhone Duo, web parity), checked against fusionha **v0.4.233**
+(`ad01ec6f`): its MI frontend (`routes/manual-import/`, the queue card's held
+parts) and the server's `held_copy`, `held_detail` and manual-import services.
+No API change was needed; every field iOS ignored is unused by the web too or
+already sent (`dv_compat_id`, now decoded). B1 (safety) shipped in build 657;
+B2–B8 are on `mi-b2`.
+
+**Owner decisions (2026-11-01, all as recommended):**
+- **D1-A:** the row's Keep current names its effect, "Keep current · remove
+  download"; remove options are `.destructive`. The web matched it in 0.4.235.
+- **D2-A:** open Duo, flat: list | file-or-decision split (list a third, at
+  least 300, no gap); book pose: halves at the fold; the table only on iPads.
+- **D3-B:** the MI footer stays a custom bar for web StickyBar parity (a
+  recorded exception to the D2 column plan), with no truncation and Daylight
+  contrast fixed.
+- **D4-A:** no "Keep all current" / "Import all" on held packs. The web
+  dropped them too in 0.4.235.
+- **D5-A:** the downloads bar says "· N need you" and its long-press menu has
+  "Review in Manual Import".
+- **D6:** A now (Open in Queue selects Queue and focuses the download); B (a
+  title-page "Review in Manual Import" for held versions) later, with the web.
+- **D7-A:** folded Duo Activity: inline title in compact height, one-line
+  Pipeline while something is held.
+- **D8-A:** Dynamic Type on Manual Import and held cards first (titles and
+  chips wrap), as the pattern for later screens.
+- **D9-A:** Re-grab uses `arrow.uturn.down` (`arrow.clockwise` stays refresh).
+
+**Open with the web or server:** D6-B (title-page Review, new on both sides);
+a candidate CF score in "Why it's held" shipped on the web in 0.4.234 and is
+not yet ported; `rows[].held_target` is in the read schema from 0.4.234
+(iOS already decodes it optionally). Re-pin `openapi.json` when 0.4.234–0.4.235
+are synced.
+
+**CI mock (B8):** the mock's held queue row is server-shaped (`held_reason` the
+raw `ImportHeld` reason, `held` = `held_copy`'s `{code, short, text}`,
+`held_detail` with `quality_full_label` labels and a real `upgrade_verdict`
+code), so the held shots show what a real server sends.
 
 ## 0.4.233: Manual Import safety (B1, B2, H3; branch `mi-b1`)
 

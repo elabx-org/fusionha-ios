@@ -51,12 +51,15 @@ struct ActivityPageHeader: View {
         }
     }
 
+    /// Stacked (phone, a Duo page) the caption wraps rather than clipping
+    /// "1 needs manual import" (F14); the desktop row keeps it to one line.
     private func captionText(held: Int) -> some View {
         Text(caption(held: held))
             .font(.system(size: 15))
             .foregroundStyle(Theme.mut)
-            .lineLimit(1)
+            .lineLimit(pane.isDesktopPane ? 1 : 3)
             .truncationMode(.tail)
+            .fixedSize(horizontal: false, vertical: !pane.isDesktopPane)
     }
 
     // "Review all N" is Needs you's own outline button now (0.4.198).

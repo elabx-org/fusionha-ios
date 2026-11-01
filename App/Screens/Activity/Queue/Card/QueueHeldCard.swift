@@ -21,7 +21,7 @@ struct QueueHeldCard: View {
     var bare = false
     @Environment(AppModel.self) private var model
     @Environment(\.actReduceMotion) private var reduce
-    @State private var showWhy = false
+    @State private var showWhy = Self.screenshotWhy
     @State private var blocking = false
     /// The group's mislabel evidence: gates the proof strip and the `block=1` link.
     @State private var evidence: ReleaseGroupEvidence?
@@ -32,6 +32,13 @@ struct QueueHeldCard: View {
               model.me?.can("integrations.manage") == true else { return nil }
         return group
     }
+
+    #if DEBUG
+    /// CI screenshots: `FUSIONHA_SCREENSHOT_HELD_WHY=1` opens "Why it's held".
+    private static let screenshotWhy = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_HELD_WHY"] != nil
+    #else
+    private static let screenshotWhy = false
+    #endif
 
     var body: some View {
         framed

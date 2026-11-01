@@ -79,7 +79,11 @@ struct ManualImportSheet: View {
         }
         .environment(session)
         .duoPageSheet(isPresented: $showKey) { MIStatusKey() }
-        .task { await session.start() }
+        .task {
+            await session.start()
+            // CI screenshots (DEBUG): `FUSIONHA_SCREENSHOT_MI_OPEN=2` opens that row.
+            if let id = MIScreenshot.openRow { openId = id }
+        }
         .task(id: model.me?.id) { session.canRemove = model.me.map { $0.has("system.admin") } ?? true }
         .task(id: "\(session.scan?.scanId ?? 0)-\(pollRun)") { await session.pollProbes() }
         .task(id: session.scan?.scanId) {
@@ -137,12 +141,15 @@ struct ManualImportSheet: View {
                 MISplitBody(scan: scan, detailId: $openId, folded: $folded,
                             lead: foldPanes.map { CGFloat($0.lead) }, gap: foldPanes.map { CGFloat($0.gap) } ?? 0) { pollRun += 1 }
             } else {
-                ScrollView {
-                    MIScanList(scan: scan, rowMode: rowMode, openId: $openId, folded: $folded) { pollRun += 1 }
-                        .padding(.horizontal, Theme.pageGutter)
-                        .padding(.vertical, 12)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        MIScanList(scan: scan, rowMode: rowMode, openId: $openId, folded: $folded) { pollRun += 1 }
+                            .padding(.horizontal, Theme.pageGutter)
+                            .padding(.vertical, 12)
+                    }
+                    .scrollDismissesKeyboard(.immediately)
+                    .modifier(MIScreenshotScroll(openId: openId, rowIds: scan.rows.map(\.rowId), proxy: proxy))
                 }
-                .scrollDismissesKeyboard(.immediately)
             }
         } else if let error = session.loadError {
             ContentUnavailableView {

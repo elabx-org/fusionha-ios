@@ -94,6 +94,7 @@ struct MITableRow: View {
         }
         .padding(.vertical, 2)
         .actWash(wash, radius: Theme.radius, base: Theme.panel)
+        .miScreenshotLaidOut(row.rowId)
     }
 
     private var cells: some View {

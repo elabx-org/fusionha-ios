@@ -39,6 +39,7 @@ struct MIRowView: View {
         .padding(.trailing, 12)
         .padding(.leading, 4)
         .actWash(wash, radius: Theme.radius, base: Theme.panel)
+        .miScreenshotLaidOut(row.rowId)
     }
 
     /// A status wash over the solid row (content stays solid, never glass). The

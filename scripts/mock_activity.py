@@ -60,6 +60,26 @@ def _queue_item(n, item, edition, **extra):
     return base
 
 
+def _held_not_an_upgrade():
+    """A not-an-upgrade hold shaped like the server's queue row (fusionha 0.4.235):
+    `held_reason` is the raw `ImportHeld` reason (`decision.reasons.not_an_upgrade`),
+    `held` the `held_copy` display copy (`{code, short, text}`; the app derives
+    `line`), and `held_detail` the gate's detail with `quality_full_label` labels
+    and a real `upgrade_verdict` code. Held rows carry no `warning`."""
+    reason = "Not an upgrade for the existing Bluray-1080p file"
+    return {
+        "held_reason": reason,
+        "held": {"code": "not_an_upgrade", "short": "not an upgrade", "text": f"{reason}."},
+        "held_detail": {
+            "kind": "not_an_upgrade", "claimed_quality": "Bluray-1080p", "probed_quality": "Bluray-1080p",
+            "probed_resolution": {"w": 1920, "h": 800}, "mislabeled": False, "candidate_cf": 150,
+            "current_quality": "Bluray-1080p", "current_cf": 1850, "current_group": "FraMeSToR",
+            "current_formats": ["HDR10", "DTS-HD MA"], "verdict": "equal_quality_no_cf_gain",
+            "release_group": "SPARKS", "claimed_resolution": 1080, "probed_resolution_bucket": 1080,
+        },
+    }
+
+
 def queue():
     lib = _library()
     items = [
@@ -73,12 +93,8 @@ def queue():
                     status="completed", sizeleft=0, progress=100.0, phase="importing", step="Linking files",
                     phase_percent=70, grab_trigger="interactive"),
         _queue_item(3, lib[5], lib[5]["editions"][0], release_title="Interstellar.2014.1080p.BluRay.x264-SPARKS",
-                    status="held", sizeleft=0, progress=100.0, held_reason="not_an_upgrade",
-                    warning="Not an upgrade over the existing file", has_downloaded_file=True,
-                    held_detail={"kind": "not_an_upgrade", "claimed_quality": "BLURAY_1080P",
-                                 "probed_quality": "WEBDL_1080P", "probed_resolution": {"w": 1920, "h": 800},
-                                 "mislabeled": False, "candidate_cf": 150, "current_quality": "BLURAY_1080P",
-                                 "current_cf": 1850, "current_group": "FraMeSToR", "verdict": "keep_current"}),
+                    status="held", sizeleft=0, progress=100.0, warning=None, has_downloaded_file=True,
+                    **_held_not_an_upgrade()),
         _queue_item(4, lib[11], lib[11]["editions"][0], episode_label="S04E02 · Vecna's Curse",
                     release_title="Stranger.Things.S04E02.1080p.WEB.H264-DEMO", status="queued", sizeleft=3.4e9,
                     size=3.4e9, progress=0.0),
