@@ -64,7 +64,7 @@ public struct ManualImportHeldStrip: Equatable, Sendable {
                 detail: detail.isEmpty || detail == reason ? nil : detail,
                 guardLine: Self.guardLine(scan.heldDetail?.currentGroup ?? row.existingFile?.releaseGroup,
                                           tier: row.target.tier, edition: row.target.edition),
-                cf: Self.cfCompareLine(scan.heldDetail?.candidateCf ?? row.incomingCf?.score,
+                cf: HeldCF.compareLine(scan.heldDetail?.candidateCf ?? row.incomingCf?.score,
                                        scan.heldDetail?.currentCf ?? row.existingFile?.cfScore)))
             return
         }
@@ -198,13 +198,6 @@ public struct ManualImportHeldStrip: Equatable, Sendable {
         let slot = short.map { "\($0) \(group)" } ?? group
         // Edition first, like the version label: "Extended · 4K FUZEER".
         return "would replace your \(edition.map { "\($0) · \(slot)" } ?? slot) copy"
-    }
-
-    /// "CF 4825 vs your 4875" (web `held-cf.ts`); nil without both scores.
-    static func cfCompareLine(_ candidate: Int?, _ current: Int?) -> String? {
-        guard let candidate, let current else { return nil }
-        let num: (Int) -> String = { $0 < 0 ? "−\(abs($0))" : String($0) }
-        return "CF \(num(candidate)) vs your \(num(current))"
     }
 
     static func uniformReason(_ scan: ManualImportScan, _ downs: [ManualImportRow]) -> String? {

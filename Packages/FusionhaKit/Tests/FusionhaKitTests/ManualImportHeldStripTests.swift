@@ -146,9 +146,4 @@ final class ManualImportHeldStripTests: XCTestCase {
     func testNoStripOutsideARescue() throws {
         XCTAssertNil(ManualImportHeldStrip(scan: try scan(["download_id": NSNull(), "held_reason": NSNull()])))
     }
-
-    func testCfLineWritesNegativesWithAMinus() {
-        XCTAssertEqual(ManualImportHeldStrip.cfCompareLine(-150, 0), "CF −150 vs your 0")
-        XCTAssertNil(ManualImportHeldStrip.cfCompareLine(nil, 10))
-    }
 }

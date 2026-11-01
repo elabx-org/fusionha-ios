@@ -65,8 +65,7 @@ struct HeldWhy: View {
                 blocklisting = true
                 Task {
                     // One tap like the web, with Undo on the toast (it is reversible).
-                    await ActActions.blocklist(model.client, toaster, BlocklistCreate(downloadId: item.id, search: false),
-                                               offerUndo: true)
+                    await ActActions.blocklist(model.client, toaster, BlocklistCreate(downloadId: item.id, search: false))
                     blocklisting = false
                 }
             }
@@ -86,6 +85,12 @@ struct HeldWhy: View {
             }
             if let current = detail.currentQuality {
                 line("On disk:", "\(current) (\(detail.currentGroup ?? "no group"), CF \(detail.currentCf.map(String.init) ?? "—"))")
+            }
+            if let cf = HeldCF.compareLine(detail.candidateCf, detail.currentCf) {
+                Text(cf)
+                    .font(.caption)
+                    .foregroundStyle(Theme.txt)
+                    .accessibilityIdentifier("queue-held-cf")
             }
             if detail.kind == "mislabeled_resolution" {
                 line("Verdict:", "the release name doesn’t match the file")
