@@ -41,6 +41,8 @@ final class ManualImportSession {
     // Decide one file at a time (the extension's state).
     /// Done receipts by row, worded from the server's answers.
     var receipts: [Int: ManualImportDecide.Receipt] = [:]
+    /// Rows whose import waits on "Replace your copy?": the one-line compare.
+    var confirming: [Int: String] = [:]
     /// Rows with a keep or import of their own in flight.
     var busyRows: Set<Int> = []
     /// Downloads this sheet finished.
@@ -173,7 +175,8 @@ final class ManualImportSession {
             rowErrors[row.rowId] = nil
             if importing { selected.insert(row.rowId) }
         } catch {
-            if importing { await reload() }
+            // A refused Import anyway, or a stored leave that stands: show the server's rows.
+            if importing || (error as? APIError)?.leaveStands != nil { await reload() }
             rowErrors[row.rowId] = ManualImportCopy.overrideError(error)
                 ?? ErrorCopy.message(for: error, fallback: "Couldn't change this file. Try again.")
         }
@@ -268,6 +271,7 @@ final class ManualImportSession {
             }
             return summary
         } catch {
+            _ = askReplace(error)  // refused over a copy that is not worse: those rows ask
             notice = (ManualImportCopy.commitError(error), true)
             return CommitSummary(ok: 0, failed: ids.count, warned: 0)
         }

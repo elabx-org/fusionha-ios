@@ -32,11 +32,22 @@ extension ManualImportSession {
         dispositions[downloadId] ?? tallies[downloadId]?.disposition
     }
 
+    /// What really happens to a held row's download when it is kept: a leave
+    /// that stands wins, else the pick, else the default (never "removed" by guess).
+    func keepTail(for row: ManualImportRow) -> String? {
+        guard let id = ManualImportDecide.downloadId(row, scan), let t = tallies[id], !t.finished else { return nil }
+        let mine = rows.filter { ManualImportDecide.downloadId($0, scan) == id }
+        let pick: FinishDisposition = t.leaveRowId != nil ? .leave
+            : savedDisposition(id) ?? ManualImportDecide.defaultDisposition(mine, scan)
+        return ManualImportDecide.keepTail(pick, linked: t.linked, finishesNow: plan.kind == .keep)
+    }
+
     // MARK: Row actions
 
     /// Keep current (or Skip this file) with a disposition; finishes the download once all its rows are decided.
     func keepRow(_ row: ManualImportRow, _ disposition: FinishDisposition) async {
         guard !busyRows.contains(row.rowId) else { return }
+        confirming[row.rowId] = nil
         busyRows.insert(row.rowId)
         defer { busyRows.remove(row.rowId) }
         if let id = ManualImportDecide.downloadId(row, scan) { dispositions[id] = disposition }
@@ -49,13 +60,36 @@ extension ManualImportSession {
     }
 
     /// The row's own action: its override first (episodes, a re-match, a title
-    /// dismissal), then a commit of just this row.
-    func importRow(_ row: ManualImportRow, _ action: ManualImportDecide.RowAction) async {
+    /// dismissal), then a commit of just this row. Re-match only re-targets
+    /// (0.4.233 B1). An import over a copy that is not worse asks first
+    /// ("Replace your copy?"); `confirmed` is the Replace, sent as Import anyway
+    /// bound to the copy the row showed.
+    func importRow(_ row: ManualImportRow, _ action: ManualImportDecide.RowAction, confirmed: Bool = false) async {
         guard !busyRows.contains(row.rowId), let client, let scanId = scan?.scanId else { return }
+        if let ask = action.confirm, !confirmed {
+            confirming[row.rowId] = ask
+            return
+        }
+        confirming[row.rowId] = nil
         busyRows.insert(row.rowId)
         defer { busyRows.remove(row.rowId) }
+        var current = row
         if let before = action.before {
             await patch(row, before)
+            guard rowErrors[row.rowId] == nil else { return }
+            current = rows.first { $0.rowId == row.rowId } ?? row
+        }
+        if !action.commits {
+            notice = (ManualImportDecide.rematchedNotice(current), false)
+            return
+        }
+        if action.before != nil, !confirmed, let ask = ManualImportDecide.replaceConfirm(current) {
+            confirming[row.rowId] = ask  // the new episodes hold a copy that is not worse: ask first
+            return
+        }
+        // Bound to the copy the confirm showed; a slot holding another file by now is refused.
+        if confirmed, current.existingFile != nil, current.replaceChoice != "import" {
+            await patch(row.existingFile != nil ? row : current, ["replace_choice": .string("import")])
             guard rowErrors[row.rowId] == nil else { return }
         }
         do {
@@ -80,8 +114,39 @@ extension ManualImportSession {
             // A row still being put in place keeps its download held: never finish over it.
             if result.warning == nil { await finishReady(skip: Set((res.finishes ?? []).map(\.downloadId))) }
         } catch {
+            if askReplace(error) { return }
             rowErrors[row.rowId] = ManualImportCopy.commitError(error)
         }
+    }
+
+    /// Replace on a row's "Replace your copy?": Import this file, confirmed.
+    func replaceRow(_ row: ManualImportRow) async {
+        guard let action = ManualImportDecide.importAction(row) ?? ManualImportDecide.rowAction(row) else { return }
+        await importRow(row, action, confirmed: true)
+    }
+
+    /// A refusal that only needs "Replace your copy?" (422 `invalid_rows` on a
+    /// replace verdict) puts the ask on each refused row; true when it did.
+    func askReplace(_ error: Error) -> Bool {
+        guard let api = error as? APIError else { return false }
+        let refused = api.replaceRefusals
+        guard !refused.isEmpty else { return false }
+        for r in refused {
+            let row = rows.first { $0.rowId == r.rowId }
+            confirming[r.rowId] = row.flatMap(ManualImportDecide.replaceConfirm) ?? r.reason
+            rowErrors[r.rowId] = nil
+        }
+        return refused.count == api.invalidRowCount
+    }
+
+    /// A 409 `leave_stands`: the stored leave wins, so drop this sheet's pick
+    /// for that download and reload so the rows show it. True when it was one.
+    func adoptStandingLeave(_ error: Error) async -> Bool {
+        guard let stands = (error as? APIError)?.leaveStands else { return false }
+        if let id = stands.downloadId { dispositions[id] = nil } else { dispositions.removeAll() }
+        notice = (stands.detail, true)
+        await reload()
+        return true
     }
 
     // MARK: Finishing
@@ -105,6 +170,7 @@ extension ManualImportSession {
             if let result = f.result, f.error == nil {
                 recordFinish(f.downloadId, result)
             } else {
+                if f.error == "leave_stands" { dispositions[f.downloadId] = nil }  // the stored leave wins
                 skipOnce.insert(f.downloadId)
                 notice = (ManualImportDecide.finishCodeMessage(f.error), true)
             }
@@ -135,6 +201,7 @@ extension ManualImportSession {
             recordFinish(id, res)
             await reload()
         } catch {
+            if await adoptStandingLeave(error) { return }
             notice = (ManualImportCopy.finishError(error), true)
         }
     }

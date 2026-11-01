@@ -52,6 +52,9 @@ extension ManualImportSession {
             markFinished((res.downloads ?? []).filter { $0.finished == true }.map(\.id))
             settle(res, ids: ids, action: action)
         } catch {
+            if await adoptStandingLeave(error) { return }
+            // Imports over a copy that is not worse: each refused row asks "Replace your copy?".
+            _ = askReplace(error)
             notice = (ManualImportCopy.decideError(error), true)
         }
     }

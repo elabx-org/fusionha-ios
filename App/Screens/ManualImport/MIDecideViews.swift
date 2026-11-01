@@ -23,7 +23,8 @@ struct MIFindingLine: View {
             let decided = ManualImportDecide.isDecided(row)
             let live = tally != nil && !decided && tally?.finished != true && !row.committed
             let waiting = tally.flatMap { decided && !$0.finished && $0.total > 1 ? $0 : nil }
-            if !chips.isEmpty || live || waiting != nil {
+            let ask = session.confirming[row.rowId]
+            if !chips.isEmpty || live || waiting != nil || ask != nil {
                 VStack(alignment: .leading, spacing: 8) {
                     if !chips.isEmpty || waiting != nil {
                         ActFlow(spacing: 6, lineSpacing: 6) {
@@ -34,7 +35,7 @@ struct MIFindingLine: View {
                             }
                         }
                     }
-                    if live { MIRowActions(row: row) }
+                    if let ask { MIReplaceConfirm(row: row, text: ask) } else if live { MIRowActions(row: row) }
                 }
             }
         }
@@ -128,7 +129,8 @@ struct MIKeepMenu: View {
             }
             Menu {
                 ForEach(choice.options) { option in
-                    Button {
+                    // Remove deletes the download (or blocklists it): marked destructive.
+                    Button(role: option.value == .leave ? nil : .destructive) {
                         Task { await session.keepRow(row, option.value) }
                     } label: {
                         Text(option.label + (option.recommended ? " · Recommended" : ""))
@@ -183,21 +185,30 @@ struct MIHeldDecision: View {
                 Label("Your library links into this download, so it is only cleared from the queue, never deleted.",
                       systemImage: "info.circle").font(.footnote).foregroundStyle(Theme.mut)
             }
-            ActFlow(spacing: 8, lineSpacing: 8) {
-                ActAsyncButton(label: choice.options.first { $0.value == sel }?.label ?? choice.verb, systemImage: "internaldrive",
-                               kind: .primary) {
-                    await session.keepRow(row, sel)
+            if let ask = session.confirming[row.rowId] {
+                MIReplaceConfirm(row: row, text: ask)
+            } else {
+                actions(choice, sel: sel, instead: instead)
+            }
+        }
+    }
+
+    private func actions(_ choice: ManualImportDecide.KeepChoice, sel: FinishDisposition,
+                         instead: ManualImportDecide.RowAction?) -> some View {
+        ActFlow(spacing: 8, lineSpacing: 8) {
+            ActAsyncButton(label: choice.options.first { $0.value == sel }?.label ?? choice.verb, systemImage: "internaldrive",
+                           kind: .primary) {
+                await session.keepRow(row, sel)
+                return session.rowErrors[row.rowId] == nil
+            }
+            if let instead {
+                ActAsyncButton(label: "\(instead.label) instead", kind: .subtle) {
+                    await session.importRow(row, instead)
                     return session.rowErrors[row.rowId] == nil
                 }
-                if let instead {
-                    ActAsyncButton(label: "\(instead.label) instead", kind: .subtle) {
-                        await session.importRow(row, instead)
-                        return session.rowErrors[row.rowId] == nil
-                    }
-                }
             }
-            .disabled(session.busyRows.contains(row.rowId) || session.working)
         }
+        .disabled(session.busyRows.contains(row.rowId) || session.working)
     }
 
     private func optionRow(_ o: ManualImportDecide.KeepOption, on: Bool) -> some View {
