@@ -6,7 +6,7 @@ import FusionhaKit
 /// zoom (not under Reduce Motion). Only its bottom edge darkens, so a white
 /// title reads on it; the page below starts on its own ground, tinted by the
 /// art (`AmbientBackdrop`), never a milky fade. On the open Duo the art runs
-/// on under the system column. Shared by the loaded hero and the loading shell.
+/// on under the system column, open or folded. Shared by the loaded hero and the loading shell.
 struct DetailHeroArt<Overlay: View>: View {
     @Environment(\.detailReduceMotion) private var reduce
     let url: URL?
@@ -19,13 +19,18 @@ struct DetailHeroArt<Overlay: View>: View {
             .containerRelativeFrame(.vertical) { length, _ in Self.height(for: length) }
             .frame(maxWidth: .infinity)
             .background {
+                // Clipped inside the extended frame, so the art keeps running
+                // under the system column (the folded Duo's glass bar floats
+                // over it) and only the zoom-in spill is cut. Clipping the
+                // hero's own frame stopped the art at the safe area and left
+                // the column black.
                 ZStack {
                     art
                     edge
                 }
+                .clipped()
                 .ignoresSafeArea(.container, edges: .horizontal)
             }
-            .clipped()
             .overlay(alignment: .bottomLeading) { overlay }
     }
 
