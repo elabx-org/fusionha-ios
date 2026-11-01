@@ -209,5 +209,19 @@ for theme in dark daylight; do
 done
 shoot duo-harness-open-spread-manual-import-none open SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77 \
   SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0 $SP
+# Held downloads and Manual Import (UX pass): the held card's "Why it's held"
+# on the Activity spread and closed; a held row's decision and a kept row's
+# "Which file stays?" on the right page; the Web layout's bulk decide.
+H="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_WHY=1"
+MI0="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0"
+for theme in dark daylight; do
+  T=""; SUF=""
+  [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
+  shoot duo-harness-open-spread-held-why$SUF open $H $SP $T
+  shoot duo-harness-folded-held-why$SUF folded $H $SP $T
+  shoot duo-harness-open-spread-manual-import-row$SUF open $MI0 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_OPEN=2 $SP $T
+done
+shoot duo-harness-open-spread-manual-import-stays open $MI0 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_OPEN=3 $SP
+shoot duo-harness-open-web-manual-import open $MI $WEB
 xcrun simctl shutdown "$UDID" || true
 ls -l "$OUT"/duo-harness-* 2> /dev/null || true

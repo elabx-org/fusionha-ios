@@ -70,7 +70,13 @@ struct ManualImportSheet: View {
         }
         .environment(session)
         .sheet(isPresented: $showKey) { MIStatusKey().sheetEscapeRoot() }
-        .task { await session.start() }
+        .task {
+            await session.start()
+            #if DEBUG
+            // CI screenshots: `FUSIONHA_SCREENSHOT_MI_OPEN=2` opens that row.
+            if let id = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_MI_OPEN"].flatMap(Int.init) { openId = id }
+            #endif
+        }
         .task(id: model.me?.id) { session.canRemove = model.me.map { $0.has("system.admin") } ?? true }
         .task(id: "\(session.scan?.scanId ?? 0)-\(pollRun)") { await session.pollProbes() }
         .task(id: session.scan?.scanId) {

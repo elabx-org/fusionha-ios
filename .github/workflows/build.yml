@@ -311,6 +311,17 @@ jobs:
             shoot manual-import-bulk-$P SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$P \
               SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=2,4,6,7
           done
+          # Held downloads and Manual Import: the held card with "Why it's held" open,
+          # Manual Import over the held pack with nothing ticked, a held row's
+          # decision (Which file stays? + Import as) and a kept row's picker.
+          for P in aurora daylight; do
+            B="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$P"
+            R="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0"
+            shoot held-$P-activity-why $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_WHY=1
+            shoot manual-import-none-$P $B $R
+            shoot manual-import-row-held-$P $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_OPEN=2
+            shoot manual-import-row-stays-$P $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_OPEN=3
+          done
           # A filtered run (shots_only) stops here: the rest are the full set and its checks.
           if [ -n "${ONLY:-}" ]; then ls -l shots; exit 0; fi
           shoot 01-login SIMCTL_CHILD_FUSIONHA_SCREENSHOT_LOGIN=

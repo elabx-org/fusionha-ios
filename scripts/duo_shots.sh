@@ -57,6 +57,16 @@ screens() {  # screens <pose> <display> [env…]
   want "duo-$P-activity" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity "$@"; snap "duo-$P-activity" "$D"; }
   want "duo-$P-discover" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover "$@"; snap "duo-$P-discover" "$D"; }
   want "duo-$P-settings" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=list "$@"; snap "duo-$P-settings" "$D"; }
+  # Held downloads and Manual Import over the held pack (download 77).
+  local H="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_WHY=1"
+  local R="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77"
+  local DAY="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight"
+  want "duo-$P-held-why" && { launch $B $H "$@"; snap "duo-$P-held-why" "$D"; }
+  want "duo-$P-held-why-daylight" && { launch $B $H $DAY "$@"; snap "duo-$P-held-why-daylight" "$D"; }
+  want "duo-$P-manual-import-none" && { launch $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0 "$@"; snap "duo-$P-manual-import-none" "$D"; }
+  want "duo-$P-manual-import-none-daylight" && { launch $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0 $DAY "$@"; snap "duo-$P-manual-import-none-daylight" "$D"; }
+  want "duo-$P-manual-import-row" && { launch $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_OPEN=2 "$@"; snap "duo-$P-manual-import-row" "$D"; }
+  want "duo-$P-manual-import-bulk" && { launch $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=2,4,6,7 "$@"; snap "duo-$P-manual-import-bulk" "$D"; }
   want "duo-$P-calendar-week" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=week "$@"; snap "duo-$P-calendar-week" "$D"; }
 }
 
