@@ -17,14 +17,16 @@ instead of from scratch.
 | Last CI | build-362 on `2006eed`: green |
 | Living fusion moves | synced to **v0.4.224** (`49c6170b`, 2026-10-20), see the 0.4.224 section; the rest of 0.4.223–0.4.224 is not yet checked |
 | Watchlists & lists | requests phase 10b slice 1 synced to **v0.4.226** (`57c6e464`, 2026-10-23), see the 0.4.226 section (branch `requests-10b`) |
+| Manual Import safety | B1 batch synced to **v0.4.233** (`ad01ec6f`, 2026-11-01), see the 0.4.233 section (branch `mi-b1`) |
 | Manual Import bulk decide | held downloads synced to **0.4.225** (spec pinned `v0.4.226`), see its section (branch `mi-bulk-decide`); "bar in every scenario" built behind `ManualImportFeatures.barEverywhere` (off) |
 | Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
 
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
 
-`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.227`** (`31fc0170`;
-re-pinned 2026-10-28 for the grab timeout, see the 0.4.227 section; before that
+`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.233`** (`ad01ec6f`;
+re-pinned 2026-11-01 for Manual Import safety, see the 0.4.233 section; before that
+`v0.4.227` (`31fc0170`, 2026-10-28) for the grab timeout; before that
 `v0.4.226` (`57c6e464`, 2026-10-23) for requests phase 10b slice 1, and `v0.4.222`
 from 2026-10-20). The v0.4.222 → v0.4.226 diff is additive only (see the
 0.4.226 section). It is a
@@ -40,6 +42,45 @@ the old pin against the tagged schemas: `calendar_week_layout`
 older server omits them. `ui_theme` is a plain string in the spec (no
 enum of names). `GET /api/v1/auth/providers` is still not in the spec (the
 app tolerates its absence). Re-pin again from the next tag you sync to.
+
+## 0.4.233: Manual Import safety (B1, B2, H3; branch `mi-b1`)
+
+Synced at `v0.4.233` (`ad01ec6f`) from `frontend/src/routes/manual-import/`
+(`decide/ReplaceConfirm.tsx`, `decide/row-action.ts`, `decide/useRescueDecide.ts`,
+`finish-receipt.ts`, `decide/keep-options.ts`) and the server's
+`services/manual_import/{held_target,review_gate,dispositions,decide}.py`.
+
+- **Spec diff v0.4.227 → v0.4.233:** the `info.version` and the finish-rescue
+  route's description only ("`remove_blocklist` still blocklists the release" in
+  `finished` mode). No schema changed. `rows[].held_target` is NOT in the spec
+  and not on the wire at v0.4.233: the server stamps it on the stored row, but
+  `ManualImportRowRead` doesn't declare it, so the response drops it. iOS
+  decodes it optionally (`ManualImportHeldTarget`, `[item, tier, edition,
+  episode ids]`) and `ManualImportDecide.onHeldSlot` mirrors `held_exempt`;
+  nothing in the UI depends on it yet. Open: the peer to add it to the read schema.
+- **B1 Replace your copy?** An import over a copy that is as good or better
+  asks inline on its row first (`MIReplaceConfirm`, the web's `ReplaceConfirm`:
+  "Replaces your WEBDL-1080p FLUX copy, which is as good as this file · CF 4875 →
+  4825", Replace / Keep it). Replace sends `replace_choice: "import"` with
+  `replace_against_media_file_id` (the copy shown) on the row override, then
+  commits. Re-match only re-targets now (no commit) and says so. The commit's
+  and the bulk decide's 422 `invalid_rows` whose reason ends "choose Keep
+  current file or Import anyway" (`APIError.replaceRefusals`) put the same ask on
+  each refused row.
+- **B2 stored leave:** a 409 `leave_stands` (finish, bulk decide, override,
+  a commit's `finishes[].error`) shows the server's sentence
+  (`APIError.leaveStands`), drops this sheet's pick for that download and
+  reloads, so the rows show the leave.
+- **H3:** `finished` + `blocklisted` reads "release blocklisted · download kept
+  because your library still links into it" (or "… download finished, nothing
+  deleted"); a linked remove + blocklist option says the download stays.
+- **H6** (the held strip leads with each download's reason) waits for B6, with
+  the held strip model port (UX report WP3).
+- UX report B1 bugs also in this branch: Close / Escape disabled while working,
+  the open Duo's Close through the cover's guard and the ticked-rows ask in a
+  sheet; remove options `.destructive`; the probe stall counts errors; the
+  Status key's Close and sizing; "Which file stays?" words the real
+  disposition; Why it's held blocklist gets Undo (the web runs it in one tap).
 
 ## 0.4.227: grab fixes (download client add timeout)
 
