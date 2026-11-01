@@ -8,9 +8,11 @@ final class LibraryShelfTests: XCTestCase {
         return try d.decode(MediaItem.self, from: Data(json.utf8))
     }
 
-    private func dated(_ id: Int, _ added: String?) throws -> MediaItem {
+    private func dated(_ id: Int, _ added: String?, have: Int = 1) throws -> MediaItem {
         let field = added.map { #", "added_at": "\#($0)""# } ?? ""
-        return try item(#"{"id": \#(id), "title": "T\#(id)", "kind": "movie"\#(field), "editions": []}"#)
+        let status = have > 0 ? "done" : "wanted"
+        let edition = #"{"id": \#(id), "tier": "HD-1080p", "monitored": true, "status": "\#(status)", "have": \#(have), "total": 1}"#
+        return try item(#"{"id": \#(id), "title": "T\#(id)", "kind": "movie"\#(field), "editions": [\#(edition)]}"#)
     }
 
     private func parse(_ s: String?) -> Date? {
@@ -63,6 +65,17 @@ final class LibraryShelfTests: XCTestCase {
         XCTAssertEqual(RecentShelf.pick(items, parse: parse, limit: 2).map(\.id), [3, 4])
         // A filter that leaves nothing empties (and so hides) the shelf.
         XCTAssertTrue(RecentShelf.pick([], parse: parse).isEmpty)
+    }
+
+    func testRecentShelfSkipsTitlesWithNothingOnDisk() throws {
+        // Newest, but only requested: nothing downloaded yet.
+        let wanted = try dated(5, "2026-10-30", have: 0)
+        // A series part-way through: episodes on disk count.
+        let series = try item(#"{"id": 6, "title": "S", "kind": "series", "added_at": "2026-10-29", "editions": [{"id": 6, "tier": "HD-1080p", "monitored": true, "status": "wanted", "have": 99, "total": 104}]}"#)
+        let items = [wanted, series, try dated(1, "2026-09-01")]
+        XCTAssertEqual(RecentShelf.pick(items, parse: parse).map(\.id), [6, 1])
+        XCTAssertFalse(RecentShelf.hasFiles(wanted))
+        XCTAssertTrue(RecentShelf.hasFiles(series))
     }
 
     func testAddedLine() throws {

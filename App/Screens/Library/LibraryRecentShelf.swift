@@ -99,8 +99,12 @@ struct LibraryRecentCard: View {
     var body: some View {
         Button { model.open(item.id) } label: {
             VStack(alignment: .leading, spacing: 1) {
-                PosterImage(url: art)
+                // The 16:9 box is laid out first and the art fills it: a title
+                // with no backdrop falls back to its 2:3 poster, whose
+                // aspect-filled image would otherwise size the card.
+                Color.clear
                     .aspectRatio(16 / 9, contentMode: .fit)
+                    .overlay { PosterImage(url: art) }
                     .shelfPoster(radius: 14)
                     .artGlow(art, radius: 14, aspect: 16 / 9, referenceWidth: 240)
                     .padding(.bottom, 8)

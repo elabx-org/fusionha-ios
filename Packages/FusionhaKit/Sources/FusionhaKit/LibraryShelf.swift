@@ -105,13 +105,19 @@ public enum RecentShelf {
     /// How many cards the shelf holds before "See all".
     public static let limit = 10
 
-    /// The newest titles of what the filters left, newest first; titles with
-    /// no `added_at` never join. Empty when the filters leave nothing (the
-    /// shelf then hides).
+    /// The newest titles of what the filters left, newest first. Only titles
+    /// with something on disk join (a just-added or requested title that has
+    /// downloaded nothing yet stays off), and titles with no `added_at` never
+    /// join. Empty when the filters leave nothing (the shelf then hides).
     public static func pick(_ items: [MediaItem], parse: (String?) -> Date?, limit: Int = RecentShelf.limit) -> [MediaItem] {
-        let dated = items.compactMap { item in parse(item.addedAt).map { (item, $0) } }
+        let dated = items.filter(hasFiles).compactMap { item in parse(item.addedAt).map { (item, $0) } }
         return dated.sorted { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0.id < $1.0.id }
             .prefix(limit).map(\.0)
+    }
+
+    /// Any version with a file: an episode or movie on disk, or bytes counted.
+    public static func hasFiles(_ item: MediaItem) -> Bool {
+        item.editions.contains { ($0.have ?? 0) > 0 || ($0.size ?? 0) > 0 }
     }
 
     /// "Added today", "Added yesterday", "Added 3 days ago", then the date.

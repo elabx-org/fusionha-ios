@@ -91,9 +91,11 @@ struct DetailRailStack: View {
                 Button {
                     if let url = URL(string: "https://www.youtube.com/watch?v=\(key)") { openURL(url) }
                 } label: {
-                    PosterImage(url: URL(string: "https://img.youtube.com/vi/\(key)/hqdefault.jpg"))
-                        .aspectRatio(16 / 9, contentMode: .fill)
+                    // The 16:9 box first; YouTube's 4:3 thumbnail fills it.
+                    Color.clear
+                        .aspectRatio(16 / 9, contentMode: .fit)
                         .frame(maxWidth: .infinity)
+                        .overlay { PosterImage(url: URL(string: "https://img.youtube.com/vi/\(key)/hqdefault.jpg")) }
                         .shelfPoster(radius: 12)
                         .overlay {
                             Image(systemName: "play.fill")
