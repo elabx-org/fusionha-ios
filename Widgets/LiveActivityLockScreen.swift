@@ -24,7 +24,7 @@ struct LiveActivityLockScreen: View {
             case .imported, .upgraded, .done: landed
             }
             if stale {
-                Text("updated \(Date(timeIntervalSince1970: state.updatedAt), style: .relative) ago")
+                Text("Updated \(Date(timeIntervalSince1970: state.updatedAt), style: .time)")
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.45))
             }
@@ -118,7 +118,7 @@ struct LiveActivityLockScreen: View {
                             LiveActivityHero(text: stalled ? "Stalled" : "Failed", size: 32, color: Theme.danger)
                             if stalled, let at = event.detail?.replacingOccurrences(of: "Stalled ", with: "") { meta(at) }
                         }
-                        titleLine(event.title, sub: nil, version: event.version)
+                        titleLine(event.title, sub: event.episode, version: event.version)
                         meta(problemLine(event, stalled: stalled), size: 12).lineLimit(1)
                     }
                     Spacer(minLength: 0)
@@ -177,8 +177,10 @@ struct LiveActivityLockScreen: View {
     // MARK: Parts
 
     private func titleLine(_ title: String, sub: String?, version: String) -> some View {
+        // The title keeps its room; the episode truncates first, so the line never
+        // pushes the card wider than the Lock Screen.
         HStack(spacing: 6) {
-            Text(title).font(.system(size: 14.5, weight: .bold)).lineLimit(1)
+            Text(title).font(.system(size: 14.5, weight: .bold)).lineLimit(1).layoutPriority(1)
             if let sub { meta(sub, size: 12).lineLimit(1) }
             EditionFillChip(label: LiveActivityTone.shortVersion(version), color: LiveActivityTone.version(version),
                             mono: LiveActivityTone.versionToken(version))

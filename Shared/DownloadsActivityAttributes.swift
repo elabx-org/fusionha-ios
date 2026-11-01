@@ -75,9 +75,11 @@ struct DownloadsActivityAttributes: ActivityAttributes {
             var version: String
             var detail: String?
             var line2: String?
+            /// The episode ("S01E01 · Title"), shown beside the title, never in the edition chip.
+            var episode: String? = nil
 
             enum CodingKeys: String, CodingKey {
-                case mediaItemId = "media_item_id", downloadId = "download_id", title, version, detail, line2
+                case mediaItemId = "media_item_id", downloadId = "download_id", title, version, detail, line2, episode
             }
         }
 

@@ -28,7 +28,9 @@ enum LiveActivityStateBuilder {
                           bps: moving.contains { !$0.isPhaseMode } ? bps : nil, etaSeconds: etas.min(),
                           rows: rows(moving), held: held(waiting), steps: nil, event: nil,
                           updatedAt: now.timeIntervalSince1970)
-        if let problem = moving.first(where: \.stalled) ?? counted.first(where: { $0.cockpitState == .stuck }) {
+        // A download at 100% with no progress is finished and waiting its turn to
+        // import, not stalled: it stays a moving row, with no "Search again".
+        if let problem = moving.first(where: { $0.stalled && $0.pct < 100 }) ?? counted.first(where: { $0.cockpitState == .stuck }) {
             state.mode = .problem
             state.event = problemEvent(problem)
         } else if moving.isEmpty {
@@ -116,7 +118,7 @@ enum LiveActivityStateBuilder {
     private static func problemEvent(_ item: QueueItem) -> State.Event {
         let detail = item.stalled ? "Stalled at \(item.pct)%" : "No release left to try"
         return State.Event(mediaItemId: item.mediaItemId, downloadId: item.id, title: item.title,
-                           version: [item.episodeLabel, QueueCardText.versionLabel(item)].compactMap { $0 }.joined(separator: " · "),
-                           detail: detail, line2: item.nextStep ?? item.warning)
+                           version: QueueCardText.versionLabel(item),
+                           detail: detail, line2: item.nextStep ?? item.warning, episode: item.episodeLabel)
     }
 }
