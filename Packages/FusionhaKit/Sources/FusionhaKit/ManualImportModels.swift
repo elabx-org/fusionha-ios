@@ -101,6 +101,8 @@ public struct ManualImportRow: Decodable, Sendable, Hashable, Identifiable {
     /// Other rows that, imported in the same commit, cover those orphaned
     /// episodes: the joint span imports together (0.4.225). Nil when none.
     public let jointRows: [Int]?
+    /// The slot the hold judged (0.4.233 B1); nil when not judged or not sent.
+    public let heldTarget: ManualImportHeldTarget?
 
     public var id: Int { rowId }
 }

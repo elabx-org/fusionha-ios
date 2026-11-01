@@ -132,7 +132,7 @@ public enum ManualImportCopy {
             switch (api.status, api.code) {
             case (503?, _): return "The database is busy. Try again in a moment."
             case (403?, _): return removeForbidden
-            case (409?, "leave_stands"): return leaveStands
+            case (409?, "leave_stands"): return api.leaveStands?.detail ?? leaveStands
             case (409?, "finish_in_progress"): return "A held download is being finished. Try the import again in a moment."
             case (409?, _): return "These files changed since the scan. Review the rows and try again."
             default: break
@@ -146,7 +146,7 @@ public enum ManualImportCopy {
         if let api = error as? APIError {
             switch (api.status, api.code) {
             case (409?, "rows_open"): return "Some files still need a choice. Pick Current or This file for each one."
-            case (409?, "leave_stands"): return leaveStands
+            case (409?, "leave_stands"): return api.leaveStands?.detail ?? leaveStands
             case (403?, _): return removeForbidden
             case (409?, _): return "This download isn't waiting on you any more. Refresh the queue."
             case (503?, _): return "The database is busy. Try again in a moment."
@@ -164,7 +164,7 @@ public enum ManualImportCopy {
             switch (api.status, api.code) {
             case (404?, _): return "This scan is gone. Close Manual import and open it again."
             case (403?, _): return removeForbidden
-            case (409?, "leave_stands"): return leaveStands
+            case (409?, "leave_stands"): return api.leaveStands?.detail ?? leaveStands
             case (409?, "finish_in_progress"): return "A held download is being finished. Try again in a moment."
             case (422?, "unknown_download"), (422?, "disposition_needs_keep"):
                 return "That choice no longer fits these files. Review the rows and try again."
@@ -180,7 +180,7 @@ public enum ManualImportCopy {
         guard let api = error as? APIError else { return nil }
         switch (api.status, api.code) {
         case (403?, _): return removeForbidden
-        case (409?, "leave_stands"): return leaveStands
+        case (409?, "leave_stands"): return api.leaveStands?.detail ?? leaveStands
         case (409?, "finish_in_progress"): return "This download is being finished. Try again in a moment."
         case (422?, "disposition_not_held"): return "This file isn't part of a held download, so there is no download to finish."
         case (422?, "disposition_needs_keep"): return "Pick Keep current for this file first."

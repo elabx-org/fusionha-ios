@@ -188,7 +188,9 @@ public enum ManualImportDecide {
                                   recommended: false)]
         if !guarded {
             options.append(KeepOption(value: .removeBlocklist, label: "\(verb) · remove + blocklist",
-                                      detail: why ?? "Removes the download and blocklists the release so it is not grabbed again.",
+                                      detail: why ?? (linked
+                                          ? "Blocklists the release so it is not grabbed again; the download stays while your library links into it."
+                                          : "Removes the download and blocklists the release so it is not grabbed again."),
                                       recommended: why != nil))
         }
         options.append(KeepOption(value: .leave, label: "\(verb) · leave the download",
@@ -218,16 +220,21 @@ public enum ManualImportDecide {
         /// The override sent first; then the row commits.
         public let before: [String: SettingsJSON]?
         public let recommended: Bool
+        /// False for Re-match: it only re-targets the row, which is then decided on its new slot (0.4.233 B1).
+        public var commits = true
+        /// Set when the import would replace a copy that is not worse: the row asks first.
+        public var confirm: String? = nil
     }
 
     /// "Import this file": a title naming another episode is dismissed first; never over a shared file.
     public static func importAction(_ row: ManualImportRow) -> RowAction? {
         guard !row.committed, row.match.itemId != nil else { return nil }
         if ManualImportRules.titleBlocked(row) {
-            return RowAction(kind: .importFile, label: "Import this file", before: ["dismiss_episode_title": .bool(true)], recommended: false)
+            return RowAction(kind: .importFile, label: "Import this file", before: ["dismiss_episode_title": .bool(true)],
+                             recommended: false, confirm: replaceConfirm(row))
         }
         if row.wouldOrphan != nil { return nil }
-        return RowAction(kind: .importFile, label: "Import this file", before: nil, recommended: false)
+        return RowAction(kind: .importFile, label: "Import this file", before: nil, recommended: false, confirm: replaceConfirm(row))
     }
 
     /// The chip line's leading action: Assign E04 + E05, Re-match to S06E06, else Import this file.
@@ -239,7 +246,8 @@ public enum ManualImportDecide {
         }
         if ManualImportRules.titleBlocked(row), let fields = ManualImportRules.rematchFields(row) {
             let code = row.titleCheck?.matchesEpisode?.code ?? ManualImportRules.episodeCode(row) ?? "the episode"
-            return RowAction(kind: .rematch, label: "Re-match to \(code)", before: fields, recommended: row.recommended == "rematch")
+            return RowAction(kind: .rematch, label: "Re-match to \(code)", before: fields, recommended: row.recommended == "rematch",
+                             commits: false)
         }
         return importAction(row)
     }
@@ -251,6 +259,7 @@ public enum ManualImportDecide {
         case "rows_open": return "Some files of this download still need a decision."
         case "not_held": return "This download isn't waiting on you any more."
         case "finish_busy": return "This download is being finished already. Try again in a moment."
+        case "leave_stands": return ManualImportCopy.leaveStands
         default: return "Imported, but the download couldn't be finished. Try Finish download."
         }
     }

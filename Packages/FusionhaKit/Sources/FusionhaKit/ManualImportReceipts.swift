@@ -17,7 +17,26 @@ extension ManualImportDecide {
         switch res.mode {
         case "left": return "download left as it is"
         case "removed": return res.blocklisted == true ? "download removed · release blocklisted" : "download removed"
+        // 0.4.233 H3: a blocklist pick still blocklists the release when the data has to stay.
+        case _ where res.blocklisted == true:
+            return res.libraryLinked == true ? "release blocklisted · download kept because your library still links into it"
+                : "release blocklisted · download finished, nothing deleted"
         default: return res.libraryLinked == true ? "download finished · nothing deleted, your library links into it" : "download finished · nothing deleted"
+        }
+    }
+
+    /// "Which file stays?"'s tail on a kept held row: what really happens to
+    /// its download, worded from the effective pick (a standing leave wins).
+    /// `finishesNow`: the footer's next step is the finish.
+    public static func keepTail(_ pick: FinishDisposition, linked: Bool, finishesNow: Bool) -> String {
+        let when = finishesNow ? "when you finish" : "when every row is decided"
+        switch pick {
+        case .leave: return "the download is left in the client"
+        case .remove:
+            return linked ? "the download is cleared from the queue \(when); nothing is deleted" : "the download is removed \(when)"
+        case .removeBlocklist:
+            return linked ? "the release is blocklisted \(when); the download stays while your library links into it"
+                : "the download is removed and blocklisted \(when)"
         }
     }
 
