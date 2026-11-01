@@ -86,7 +86,14 @@ public struct ManualImportFinishPlan: Equatable, Sendable {
     public let need: Int
     public let done: Int
     public let label: String
+    /// The narrow wording when `label` doesn't fit beside the other controls
+    /// ("3 need a decision"), the web's `shortLabel`. `label` stays the VoiceOver label.
+    public let shortLabel: String?
+    /// Under the primary's label: a folder scan's "2 need a decision" (the web's batch sub-line).
+    public let subline: String?
     public let disabled: Bool
+    /// A folder scan: the primary only imports, there is no download to finish.
+    public let folder: Bool
 
     /// A row that still blocks its download's finish (the footer's `need` and the strip's "to decide").
     public static func needsDecision(_ r: ManualImportRow, selected: Set<Int>, finished: (ManualImportRow) -> Bool = { _ in false }) -> Bool {
@@ -115,9 +122,43 @@ public struct ManualImportFinishPlan: Equatable, Sendable {
         kind = plan.0
         label = plan.1
         disabled = plan.2
+        shortLabel = plan.0 == .need ? "\(need) need a decision" : nil
+        subline = nil
+        folder = false
+    }
+
+    /// A folder scan (the web's batch `StickyBar`): "Import N" counts the ticked
+    /// rows that can import and is off until one can; ticked rows that can't yet
+    /// show as "K need a decision" under it. No plan: no Finish, no Done.
+    public static func folder(rows: [ManualImportRow], selected: Set<Int>) -> ManualImportFinishPlan {
+        let picked = rows.filter { !$0.committed && selected.contains($0.rowId) }
+        let imports = picked.filter(ManualImportRules.isImportable).count
+        let need = picked.filter { !ManualImportRules.isImportable($0) && $0.replaceChoice != "keep_current" }.count
+        return ManualImportFinishPlan(
+            kind: .importing, imports: imports,
+            kept: rows.filter { !$0.committed && $0.replaceChoice == "keep_current" }.count,
+            need: need, done: rows.filter(\.committed).count,
+            label: "Import \(imports)", shortLabel: nil,
+            subline: need > 0 ? "\(need) need\(need == 1 ? "s" : "") a decision" : nil,
+            disabled: imports == 0, folder: true)
+    }
+
+    private init(kind: Kind, imports: Int, kept: Int, need: Int, done: Int, label: String,
+                 shortLabel: String?, subline: String?, disabled: Bool, folder: Bool) {
+        self.kind = kind
+        self.imports = imports
+        self.kept = kept
+        self.need = need
+        self.done = done
+        self.label = label
+        self.shortLabel = shortLabel
+        self.subline = subline
+        self.disabled = disabled
+        self.folder = folder
     }
 
     public var hint: String? {
+        if folder { return nil }
         switch kind {
         case .need: return "Each download finishes as soon as its own rows are decided."
         case .keep: return "Every row is decided · a download still needs its finish."

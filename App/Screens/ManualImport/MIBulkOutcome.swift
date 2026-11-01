@@ -57,13 +57,53 @@ struct MIOutcomeLines: View {
             }
             let reasons = summary.reasons.all + [summary.decidedNote].compactMap { $0 }
             if !reasons.isEmpty {
-                Text(reasons.joined(separator: " "))
-                    .font(.footnote)
-                    .foregroundStyle(Theme.dim)
-                    .lineLimit(reasonLines)
-                    .fixedSize(horizontal: false, vertical: true)
+                MIReasonsText(text: reasons.joined(separator: " "), lines: reasonLines)
             }
         }
+    }
+}
+
+/// Why an action is off for some of the ticked files. On the phone card it is
+/// capped, with More to read the rest when it runs over (F9).
+struct MIReasonsText: View {
+    let text: String
+    /// The cap, nil for every line.
+    let lines: Int?
+    @State private var expanded = false
+    @State private var fullHeight: CGFloat = 0
+    @State private var shownHeight: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(text)
+                .font(.footnote)
+                .foregroundStyle(Theme.dim)
+                .lineLimit(expanded ? nil : lines)
+                .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { shownHeight = $0 }
+                .background(alignment: .topLeading) {
+                    // The uncapped height, to know whether the cap cut anything.
+                    if lines != nil {
+                        Text(text).font(.footnote)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .hidden()
+                            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { fullHeight = $0 }
+                    }
+                }
+            if lines != nil && (expanded || fullHeight > shownHeight + 1) {
+                Button(expanded ? "Less" : "More") {
+                    withAnimation(reduceMotion ? nil : .snappy) { expanded.toggle() }
+                }
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Theme.accentText)
+                .buttonStyle(.plain)
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
+                .accessibilityLabel(expanded ? "Show fewer reasons" : "Show all reasons")
+            }
+        }
+        .onChange(of: text) { expanded = false }
     }
 }
 

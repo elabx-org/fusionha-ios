@@ -22,7 +22,7 @@ struct MIHeldStripView: View {
             }
             if strip.bulkEligible > 0 && session.barShows {
                 // The bulk bar decides several at once (approved bulk-decide v3).
-                Text("Decide several together: tick them, then Decide.")
+                Text("Decide several together: tick them, then Import or Decide ▾.")
                     .font(.footnote).foregroundStyle(Theme.mut).padding(.leading, 26)
             }
         }
@@ -36,13 +36,17 @@ struct MIHeldStripView: View {
 
 /// The import bar (the web's `StickyBar` with the rescue plan, 0.4.202): the
 /// import mode, and the primary the plan names: N files need a decision, Force
-/// import N, Finish download (a retry), or Done. Each download finishes on its
-/// own as soon as its rows are decided, so there is no blocklist box here.
+/// import N, Finish download (a retry), or Done; a folder scan's is the web's
+/// batch "Import N" with "K need a decision" under it. Each download finishes
+/// on its own as soon as its rows are decided, so there is no blocklist box.
+/// It stays a custom bar for web parity (owner decision D3-B, an exception to
+/// the D2 column plan); when the controls don't fit one row, the primary takes
+/// a row of its own rather than truncating.
 struct MIFooter: View {
     @Environment(ManualImportSession.self) private var session
+    @Environment(\.verticalSizeClass) private var verticalSize
 
     var body: some View {
-        @Bindable var session = session
         let plan = session.plan
         VStack(alignment: .leading, spacing: 8) {
             if let notice = session.notice {
@@ -58,46 +62,61 @@ struct MIFooter: View {
                 Text("\(pendingTicked) file\(pendingTicked == 1 ? " is" : "s are") still being checked; the name-vs-file check hasn't run for \(pendingTicked == 1 ? "it" : "them") yet.")
                     .font(.footnote).foregroundStyle(Theme.mut)
             }
-            HStack(spacing: 10) {
-                if session.barShows {
-                    // Nothing ticked (the bar takes over once something is).
-                    MISelectUndecidedButton(showsCount: true)
-                        .buttonStyle(ActButtonStyle(kind: .ghost))
-                } else {
-                    MISelectionMenu()
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) { selection; mode(plan); Spacer(minLength: 0); MIFooterPrimary(plan: plan) }
+                // The plan's narrow wording, when it has one ("7 need a decision").
+                HStack(spacing: 10) { selection; mode(plan); Spacer(minLength: 0); MIFooterPrimary(plan: plan, short: true) }
+                VStack(alignment: .trailing, spacing: 8) {
+                    HStack(spacing: 10) { selection; mode(plan); Spacer(minLength: 0) }
+                    MIFooterPrimary(plan: plan)
                 }
-                if plan.imports > 0 {
-                    Menu {
-                        Picker("Import mode", selection: $session.importMode) {
-                            ForEach(ManualImportMode.allCases) { mode in
-                                Text("\(mode.label) · \(mode.hint)").tag(mode)
-                            }
-                        }
-                    } label: { GlassMenuLabel(title: session.importMode.label) }
-                    .accessibilityLabel("Import mode, \(session.importMode.label)")
+                VStack(alignment: .trailing, spacing: 8) {
+                    HStack { selection; Spacer(minLength: 0) }
+                    if plan.imports > 0 { HStack { mode(plan); Spacer(minLength: 0) } }
+                    MIFooterPrimary(plan: plan, short: true)
                 }
-                Spacer(minLength: 0)
-                ActAsyncButton(label: plan.label,
-                               systemImage: plan.kind == .keep ? "internaldrive" : plan.kind == .done ? nil : "square.and.arrow.down",
-                               kind: .primary, workingLabel: plan.kind == .keep ? "Working…" : "Importing…",
-                               externalWorking: session.working) {
-                    await session.runPrimary()
-                    return session.notice?.error != true
-                }
-                .disabled(plan.disabled || session.bulkBusy)
-                .opacity(plan.disabled ? 0.5 : 1)
             }
-            if let hint = plan.hint {
-                Text(hint).font(.footnote).foregroundStyle(Theme.mut)
-            } else {
-                Text("Imports in place, no re-download.").font(.footnote).foregroundStyle(Theme.dim)
+            // Landscape on a phone or the folded Duo: the bar keeps to its controls.
+            if verticalSize != .compact {
+                if let hint = plan.hint {
+                    Text(hint).font(.footnote).foregroundStyle(Theme.mut)
+                } else if !plan.folder {
+                    Text("Imports in place, no re-download.").font(.footnote).foregroundStyle(Theme.mut)
+                }
             }
         }
         .padding(.horizontal, 15)
-        .padding(.vertical, 12)
+        .padding(.vertical, verticalSize == .compact ? 8 : 12)
         .glassEffect(.regular, in: .rect(cornerRadius: 18))
         .padding(.horizontal, 10)
         .padding(.bottom, 6)
+    }
+
+    /// Nothing ticked: Select all undecided (the bar takes over once something
+    /// is); a folder scan's "N selected · Actions".
+    @ViewBuilder
+    private var selection: some View {
+        if session.barShows {
+            MISelectUndecidedButton(showsCount: true)
+                .buttonStyle(ActButtonStyle(kind: .ghost))
+        } else {
+            MISelectionMenu()
+        }
+    }
+
+    @ViewBuilder
+    private func mode(_ plan: ManualImportFinishPlan) -> some View {
+        @Bindable var session = session
+        if plan.imports > 0 {
+            Menu {
+                Picker("Import mode", selection: $session.importMode) {
+                    ForEach(ManualImportMode.allCases) { mode in
+                        Text("\(mode.label) · \(mode.hint)").tag(mode)
+                    }
+                }
+            } label: { GlassMenuLabel(title: session.importMode.label) }
+            .accessibilityLabel("Import mode, \(session.importMode.label)")
+        }
     }
 
     private var pendingTicked: Int {

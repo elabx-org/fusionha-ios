@@ -73,6 +73,8 @@ final class ManualImportSession {
     var rows: [ManualImportRow] { scan?.rows ?? [] }
     var tallies: [Int: ManualImportDecide.Tally] { ManualImportDecide.tallies(scan, finishedHere: finishedHere) }
     var plan: ManualImportFinishPlan {
+        // A folder scan has no download to finish: the web's batch "Import N".
+        if folderMode { return .folder(rows: rows, selected: selected) }
         let scan = scan, tallies = tallies
         return ManualImportFinishPlan(rows: rows, selected: selected,
                                       finished: { ManualImportDecide.rowFinished($0, scan, tallies) },
@@ -303,6 +305,8 @@ final class ManualImportSession {
         case .need: return
         case .done: closing = (closingText, false)
         case .keep: await finishReady()
+        case .importing where plan.folder:
+            await commitSelected()
         case .importing:
             // Finish only after a clean commit: a failed or still-being-placed row keeps its download held.
             guard let s = await commitSelected(), s.failed == 0, s.warned == 0 else { return }

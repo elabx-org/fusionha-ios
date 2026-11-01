@@ -51,7 +51,34 @@ final class ManualImportTests: XCTestCase {
         plan = ManualImportFinishPlan(rows: rows, selected: [])
         XCTAssertEqual(plan.kind, .need)
         XCTAssertEqual(plan.label, "3 files need a decision")
+        XCTAssertEqual(plan.shortLabel, "3 need a decision")
         XCTAssertTrue(plan.disabled)
+    }
+
+    func testFolderPlan() throws {
+        let rows = try scan().rows
+        // The web's batch bar: Import N, never a Finish or Done.
+        var plan = ManualImportFinishPlan.folder(rows: rows, selected: [2, 3])
+        XCTAssertTrue(plan.folder)
+        XCTAssertEqual(plan.kind, .importing)
+        XCTAssertEqual(plan.label, "Import 2")
+        XCTAssertNil(plan.subline)
+        XCTAssertNil(plan.hint)
+        XCTAssertFalse(plan.disabled)
+        // Nothing ticked: Import 0, off, and nothing counted as needing a decision.
+        plan = ManualImportFinishPlan.folder(rows: rows, selected: [])
+        XCTAssertEqual(plan.label, "Import 0")
+        XCTAssertTrue(plan.disabled)
+        XCTAssertNil(plan.subline)
+        // A ticked row that can't import yet is the sub-line, not the label.
+        plan = ManualImportFinishPlan.folder(rows: rows, selected: [1])
+        if ManualImportRules.isImportable(rows[0]) {
+            XCTAssertEqual(plan.label, "Import 1")
+        } else {
+            XCTAssertEqual(plan.label, "Import 0")
+            XCTAssertEqual(plan.subline, "1 needs a decision")
+            XCTAssertTrue(plan.disabled)
+        }
     }
 
     func testDecideTalliesAndPlan() throws {
