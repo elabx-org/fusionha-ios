@@ -65,7 +65,7 @@ public enum ManualImportCompare {
             if diffs["resolution"] != nil, let h = p.height { parts.append("\(h)p") }
             else if (row.match.itemId == nil || row.parsed.resolution == nil), let w = p.width, let h = p.height { parts.append("\(w)×\(h)") }
             let dr = dynamicRange(p)
-            if dr == "DV" { parts.append(p.dvProfile.map { "DV P\($0)" } ?? "DV") }
+            if dr == "DV" { parts.append(p.dvSubLabel.map { "DV \($0)" } ?? "DV") }
             if dr != "DV" || p.hdrFormat?.contains("hdr10") == true { parts.append(dr == "DV" ? "HDR10" : dr) }
             if let c = codecName(p.videoCodec) { parts.append(c) }
             if p.audioCodec != nil || p.audioLabel != nil { parts.append(audioText(p)) }
@@ -107,7 +107,7 @@ public enum ManualImportCompare {
                               file: "\(w)×\(h)\(cls)", bad: m?.mislabeled == true))
         }
         rows.append(.init(label: "Dynamic range", name: (row.parsed.dynamicRange ?? []).first,
-                          file: dynamicRange(p) + (p.dvProfile.map { " · profile \($0)" } ?? ""),
+                          file: dynamicRange(p),
                           bad: (row.nameVsFile ?? []).contains { $0.field == "hdr" }))
         if let c = codecName(p.videoCodec) {
             rows.append(.init(label: "Video", name: row.parsed.videoCodec.map { nameCodec[$0] ?? $0 },
@@ -117,6 +117,10 @@ public enum ManualImportCompare {
         if p.audioCodec != nil {
             rows.append(.init(label: "Audio", name: row.parsed.audioLabel, file: audioText(p),
                               bad: (row.nameVsFile ?? []).contains { $0.field == "audio" }))
+        }
+        if p.dvProfile != nil {
+            rows.append(.init(label: "Dolby Vision", name: (row.parsed.dynamicRange ?? []).contains("DV") ? "DV" : nil,
+                              file: p.dvProfileLabel, bad: false))
         }
         if let subsList = p.subtitleLanguages, !subsList.isEmpty {
             rows.append(.init(label: "Subtitles", name: nil, file: subs(subsList), bad: false))

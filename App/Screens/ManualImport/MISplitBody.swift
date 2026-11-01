@@ -23,7 +23,7 @@ struct MISplitBody: View {
     private var deciding: Bool { session.barShows && session.tickedCount > 0 }
 
     var body: some View {
-        let shown = scan.rows.filter(session.filter.matches)
+        let shown = scan.rows.filter(session.shows)
         let row = shown.first { $0.rowId == detailId } ?? shown.first { $0.held != nil } ?? shown.first
         let panel = deciding && detailId == nil
         let nothing = scan.isRescue && session.selected.isEmpty && detailId == nil && !shown.isEmpty

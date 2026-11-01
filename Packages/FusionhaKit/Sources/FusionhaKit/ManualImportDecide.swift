@@ -193,7 +193,7 @@ public enum ManualImportDecide {
                                           : "Removes the download and blocklists the release so it is not grabbed again."),
                                       recommended: why != nil))
         }
-        options.append(KeepOption(value: .leave, label: "\(verb) · leave the download",
+        options.append(KeepOption(value: .leave, label: "\(verb) · leave download",
                                   detail: "Only clears the hold. The files and the queue entry are untouched.", recommended: false))
         return KeepChoice(group: row.existingFile?.releaseGroup ?? d?.currentGroup, options: options,
                           preferred: saved.flatMap { s in options.contains { $0.value == s } ? s : nil }

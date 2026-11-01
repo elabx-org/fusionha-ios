@@ -15,6 +15,12 @@ extension ManualImportSession {
 
     func isFinished(_ row: ManualImportRow) -> Bool { tally(for: row)?.finished == true }
 
+    /// Decided, or its download is finished, so the verdict counts agree with the held strip.
+    func isDone(_ row: ManualImportRow) -> Bool { ManualImportDecide.isDecided(row) || isFinished(row) }
+
+    /// The verdict strip's filter shows this row.
+    func shows(_ row: ManualImportRow) -> Bool { filter.matches(row, isDone: isDone) }
+
     /// The row's receipt: exact from the server's answer, else rebuilt once its download finished.
     func receipt(for row: ManualImportRow) -> ManualImportDecide.Receipt? {
         if let stored = receipts[row.rowId] { return stored }

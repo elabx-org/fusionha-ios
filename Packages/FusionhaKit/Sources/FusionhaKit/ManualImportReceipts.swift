@@ -160,9 +160,10 @@ public struct ManualImportFinishPlan: Equatable, Sendable {
     public var hint: String? {
         if folder { return nil }
         switch kind {
-        case .need: return "Each download finishes as soon as its own rows are decided."
-        case .keep: return "Every row is decided · a download still needs its finish."
-        case .done: return "Every download is finished."
+        // The web's `FooterActions` words.
+        case .need: return "Tick files to decide them together · each download finishes once its own rows are decided"
+        case .keep: return "Every row is decided · a download still needs its finish"
+        case .done: return "Every download is finished"
         case .importing: return nil
         }
     }

@@ -9,11 +9,13 @@ struct MIVerdictStrip: View {
     @Binding var filter: ManualImportFilter
     let probing: Int
     let stalled: Bool
+    /// Decided, or its download is finished (so the counts agree with the held strip).
+    var isDone: (ManualImportRow) -> Bool = ManualImportDecide.isDecided
     let onRetry: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let c = ManualImportFilter.counts(rows)
+        let c = ManualImportFilter.counts(rows, isDone: isDone)
         VStack(alignment: .leading, spacing: 8) {
             line(c)
             bar(c)
@@ -24,11 +26,13 @@ struct MIVerdictStrip: View {
     private func line(_ c: [ManualImportFilter: Int]) -> some View {
         let all = c[.all] ?? 0
         let files: Text = Text("\(all)").bold() + Text(all == 1 ? " file · " : " files · ")
+        let decidedN = c[.decided] ?? 0
+        let decided: Text = decidedN > 0 ? count(decidedN, " decided", Theme.done.opacity(0.75)) + Text(" · ") : Text("")
         let ready: Text = count(c[.ready], " ready", Theme.done)
         let look: Text = count(c[.attention], " need a look", Theme.miss)
         let none: Text = count(c[.nomatch], " no match", Theme.danger)
         let dot = Text(" · ")
-        let text: Text = files + ready + dot + look + dot + none
+        let text: Text = files + decided + ready + dot + look + dot + none
         return ViewThatFits(in: .horizontal) {
             HStack(spacing: 6) { text; probe }
             VStack(alignment: .leading, spacing: 4) { text; probe }
@@ -55,9 +59,9 @@ struct MIVerdictStrip: View {
         }
     }
 
-    /// Solid segments, never a gradient: ready · need a look · no match.
+    /// Solid segments, never a gradient: decided · ready · need a look · no match.
     private func bar(_ c: [ManualImportFilter: Int]) -> some View {
-        let parts: [(Int, Color)] = [(c[.ready] ?? 0, Theme.done), (c[.attention] ?? 0, Theme.miss), (c[.nomatch] ?? 0, Theme.danger)]
+        let parts: [(Int, Color)] = [(c[.decided] ?? 0, Theme.done.opacity(0.55)), (c[.ready] ?? 0, Theme.done), (c[.attention] ?? 0, Theme.miss), (c[.nomatch] ?? 0, Theme.danger)]
         let total = max(1, parts.map(\.0).reduce(0, +))
         return GeometryReader { geo in
             HStack(spacing: 2) {
@@ -111,6 +115,7 @@ struct MIVerdictStrip: View {
     private func glyph(_ key: ManualImportFilter) -> String? {
         switch key {
         case .ready: return "checkmark"
+        case .decided: return "checkmark.circle"
         case .attention: return "exclamationmark.circle"
         case .nomatch: return "questionmark.circle"
         case .diff: return "notequal"
@@ -121,6 +126,7 @@ struct MIVerdictStrip: View {
     private func tint(_ key: ManualImportFilter) -> Color {
         switch key {
         case .ready: return Theme.done
+        case .decided: return Theme.done.opacity(0.75)
         case .attention, .diff: return Theme.miss
         case .nomatch: return Theme.danger
         case .all, .medium: return Theme.mut

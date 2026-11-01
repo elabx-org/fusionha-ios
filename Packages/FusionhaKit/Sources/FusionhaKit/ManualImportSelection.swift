@@ -6,36 +6,41 @@ import Foundation
 
 /// The verdict strip's filter chips (`medium` is the Review filter and has no chip).
 public enum ManualImportFilter: String, CaseIterable, Sendable, Hashable {
-    case all, ready, attention, nomatch, diff, medium
+    case all, ready, attention, decided, nomatch, diff, medium
 
-    /// The five chips, in the web's order.
-    public static let chips: [ManualImportFilter] = [.all, .ready, .attention, .nomatch, .diff]
+    /// The six chips, in the web's order.
+    public static let chips: [ManualImportFilter] = [.all, .ready, .attention, .decided, .nomatch, .diff]
 
     public var label: String {
         switch self {
         case .all: return "All"
         case .ready: return "Ready"
         case .attention: return "Needs attention"
+        case .decided: return "Decided"
         case .nomatch: return "No match"
         case .diff: return "Name ≠ file"
         case .medium: return "To confirm"
         }
     }
 
-    /// `diff` counts every advisory name-vs-file disagreement, Ready rows included.
-    public func matches(_ row: ManualImportRow) -> Bool {
+    /// `diff` counts every advisory name-vs-file disagreement, Ready rows included. A
+    /// decided row (`isDone`; the sheet widens it to rows of a finished download) leaves
+    /// Ready and Needs attention for Decided.
+    public func matches(_ row: ManualImportRow, isDone: (ManualImportRow) -> Bool = ManualImportDecide.isDecided) -> Bool {
         switch self {
         case .all: return true
-        case .ready: return row.status == "ready"
-        case .attention: return row.status == "needs_attention"
+        case .ready: return row.status == "ready" && !isDone(row)
+        case .attention: return row.status == "needs_attention" && !isDone(row)
+        case .decided: return isDone(row)
         case .nomatch: return row.status == "no_match"
         case .diff: return !(row.nameVsFile ?? []).isEmpty
         case .medium: return ManualImportBatch.confirmEligible(row)
         }
     }
 
-    public static func counts(_ rows: [ManualImportRow]) -> [ManualImportFilter: Int] {
-        Dictionary(uniqueKeysWithValues: allCases.map { key in (key, rows.filter(key.matches).count) })
+    public static func counts(_ rows: [ManualImportRow],
+                              isDone: (ManualImportRow) -> Bool = ManualImportDecide.isDecided) -> [ManualImportFilter: Int] {
+        Dictionary(uniqueKeysWithValues: allCases.map { key in (key, rows.filter { key.matches($0, isDone: isDone) }.count) })
     }
 }
 

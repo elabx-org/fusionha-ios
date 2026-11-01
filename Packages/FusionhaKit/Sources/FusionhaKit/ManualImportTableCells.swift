@@ -3,13 +3,13 @@ import Foundation
 /// The desktop table's cells (web `FileRow.tsx`: Video, Audio, Group · service),
 /// as text. The probe wins over the name when it read the file.
 public enum ManualImportTableCells {
-    /// "2160p · DV P8 · HEVC 10-bit" from the probe, else the name's range and codec.
+    /// "2160p · DV P8.1 · HEVC 10-bit" from the probe, else the name's range and codec.
     public static func video(_ row: ManualImportRow) -> String {
         if let p = row.probe, p.isOK {
             var parts: [String] = []
             if let h = p.height { parts.append("\(h)p") }
             let dr = ManualImportCompare.dynamicRange(p)
-            if dr == "DV" { parts.append(p.dvProfile.map { "DV P\($0)" } ?? "DV") } else if dr != "SDR" { parts.append(dr) }
+            if dr == "DV" { parts.append(p.dvSubLabel.map { "DV \($0)" } ?? "DV") } else if dr != "SDR" { parts.append(dr) }
             let codec = ManualImportCompare.video(p)
             if !codec.isEmpty { parts.append(codec) }
             return parts.isEmpty ? "—" : parts.joined(separator: " · ")

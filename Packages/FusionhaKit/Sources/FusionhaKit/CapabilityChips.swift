@@ -12,13 +12,16 @@ public struct ChipSegment: Sendable, Hashable {
     public enum Kind: Sendable, Hashable { case probed, named, differs, state }
     public let kind: Kind
     public let text: String
+    /// A small trailing note on the value ("P8.1" after "DV").
+    public let sub: String?
     /// The claimed value a `differs` segment replaces (drawn struck through).
     public let from: String?
     public let title: String
 
-    public init(_ kind: Kind, _ text: String, from: String? = nil, title: String) {
+    public init(_ kind: Kind, _ text: String, sub: String? = nil, from: String? = nil, title: String) {
         self.kind = kind
         self.text = text
+        self.sub = sub
         self.from = from
         self.title = title
     }
@@ -40,7 +43,7 @@ public struct ChipModel: Sendable, Hashable {
         tooltip = segments.map { s in
             switch s.kind {
             case .differs: return "\(s.from ?? "") → \(s.text) (\(s.title))"
-            case .probed: return "\(s.text) (probed)"
+            case .probed: return "\(s.text)\(s.sub.map { " \($0)" } ?? "") (probed)"
             case .named: return "\(s.text) (name)"
             case .state: return s.text
             }
@@ -49,7 +52,10 @@ public struct ChipModel: Sendable, Hashable {
 
     /// The chip's text as one line ("2560×1440 · DV · HDR · H.265").
     public var text: String {
-        segments.map { s in s.from.map { "\($0)→\(s.text)" } ?? s.text }.joined(separator: " · ")
+        segments.map { s in
+            let value = s.text + (s.sub.map { " \($0)" } ?? "")
+            return s.from.map { "\($0)→\(value)" } ?? value
+        }.joined(separator: " · ")
     }
 }
 
@@ -114,7 +120,8 @@ public enum CapabilityChips {
         }
         let hdr = p.hdrFormat?.lowercased()
         if hdr?.hasPrefix("dv") == true {
-            out.append(ChipSegment(.probed, "DV", title: p.dvProfile.map { "Dolby Vision profile \($0)" } ?? probedTitle))
+            let sub = p.dvSubLabel
+            out.append(ChipSegment(.probed, "DV", sub: sub, title: sub == nil ? probedTitle : p.dvChipTitle))
         }
         let hdrText: String? = hdr.map { h in
             h.contains("hdr10+") ? "HDR10+" : h.contains("hdr10") ? "HDR10" : h == "hlg" ? "HLG" : nil

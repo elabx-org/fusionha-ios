@@ -9,6 +9,7 @@ struct MIRowBody: View {
     var indent: CGFloat = 48
     @Environment(ManualImportSession.self) private var session
     @State private var matching = false
+    @State private var fullPath = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -68,8 +69,19 @@ struct MIRowBody: View {
                     .font(.footnote).foregroundStyle(Theme.danger)
             }
             if let note = row.retargetNote { Text(note).font(.footnote).foregroundStyle(Theme.mut) }
-            HStack(spacing: 8) {
-                Button("Copy path", systemImage: "doc.on.doc") { UIPasteboard.general.string = row.sourcePath }
+            if fullPath {
+                Text(row.sourcePath)
+                    .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(Theme.mut)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            ActFlow(spacing: 8, lineSpacing: 8) {
+                Button(fullPath ? "Hide full path" : "Show full path", systemImage: fullPath ? "eye.slash" : "eye") {
+                    fullPath.toggle()
+                }
+                .buttonStyle(ActButtonStyle(kind: .ghost))
+                Button("Copy path", systemImage: "doc.on.doc") { session.copyPath(row.sourcePath) }
                     .buttonStyle(ActButtonStyle(kind: .ghost))
                 if !row.committed {
                     Button(row.match.itemId == nil ? "Match to a title…" : "Match to another title…", systemImage: "magnifyingglass") { matching = true }
@@ -121,7 +133,7 @@ struct MIRowDecision: View {
                     Task { await session.patch(row, ["replace_choice": .string(choice)]) }
                 }
             } else if current != nil {
-                MICompareTable(row: row, title: "Compared with the current file")
+                MICompareTable(row: row, title: "Compared with current file")
             }
             if confirmable {
                 resolvePanel("Is \(row.match.title ?? "this title") the right match?") {

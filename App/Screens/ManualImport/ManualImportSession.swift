@@ -37,6 +37,8 @@ final class ManualImportSession {
     var notice: (text: String, error: Bool)?
     /// Set when the sheet should close; carries the receipt for the app toast.
     var closing: (text: String, warning: Bool)?
+    /// A short confirmation inside the sheet ("Path copied"), above the app's toasts.
+    var toast: CalToast?
 
     // Decide one file at a time (the extension's state).
     /// Done receipts by row, worded from the server's answers.

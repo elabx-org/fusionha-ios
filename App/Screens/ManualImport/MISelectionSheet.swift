@@ -10,7 +10,7 @@ struct MISelectionSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var editing = false
 
-    private var visible: [ManualImportRow] { session.rows.filter(session.filter.matches) }
+    private var visible: [ManualImportRow] { session.rows.filter(session.shows) }
     private var picked: [ManualImportRow] { session.rows.filter { session.selected.contains($0.rowId) } }
 
     var body: some View {

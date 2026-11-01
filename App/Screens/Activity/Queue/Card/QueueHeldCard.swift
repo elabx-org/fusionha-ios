@@ -103,8 +103,8 @@ struct QueueHeldCard: View {
     private func reviewRow(wide: Bool) -> some View {
         HStack(spacing: 6) {
             Button(action: actions.manualImport) {
-                // "Review" on a phone; the full words stay for VoiceOver (0.4.198).
-                Label("Review", systemImage: "square.and.arrow.down")
+                // "Review" on a phone, the full words when wide; VoiceOver always hears them (0.4.198).
+                Label(wide ? "Review in Manual Import" : "Review", systemImage: "square.and.arrow.down")
                     .frame(maxWidth: wide ? nil : .infinity)
             }
             .buttonStyle(ActButtonStyle(kind: .primary, small: false))

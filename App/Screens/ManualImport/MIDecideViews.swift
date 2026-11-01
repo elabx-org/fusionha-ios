@@ -111,9 +111,10 @@ struct MIRowActions: View {
     }
 }
 
-/// "Keep current ▾": the main half keeps with the preferred disposition; the
-/// menu offers remove / remove + blocklist / leave. An empty slot has only the
-/// menu ("More"), since Import leads there.
+/// "Keep current · remove download ▾": the main half names its effect (the
+/// web's `KeepCurrentMenu`, owner decision D1-A) and keeps with the preferred
+/// disposition; the menu offers remove / remove + blocklist / leave. An empty
+/// slot has only the menu ("More"), since Import leads there.
 struct MIKeepMenu: View {
     let row: ManualImportRow
     let recommended: Bool
@@ -126,11 +127,12 @@ struct MIKeepMenu: View {
         let choice = session.keepChoice(for: row)
         HStack(spacing: 2) {
             if !menuOnly {
-                ActAsyncButton(label: choice.verb, systemImage: icons ? "internaldrive" : nil, kind: recommended ? .primary : .subtle) {
+                let main = choice.preferredOption
+                ActAsyncButton(label: main.label, systemImage: icons ? "internaldrive" : nil, kind: recommended ? .primary : .subtle) {
                     await session.keepRow(row, choice.preferred)
                     return session.rowErrors[row.rowId] == nil
                 }
-                .accessibilityHint(choice.preferredOption.label)
+                .accessibilityHint(main.detail)
             }
             Menu {
                 ForEach(choice.options) { option in

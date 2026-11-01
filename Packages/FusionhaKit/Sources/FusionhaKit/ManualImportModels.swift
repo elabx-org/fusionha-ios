@@ -219,6 +219,8 @@ public struct ManualImportProbe: Decodable, Sendable, Hashable {
     public let bitDepth: Int?
     public let hdrFormat: String?
     public let dvProfile: Int?
+    /// The Dolby Vision compatibility id (0 = no HDR fallback; 1 = HDR10 base).
+    public let dvCompatId: Int?
     public let audioCodec: String?
     public let audioChannels: Int?
     public let audioLabel: String?

@@ -41,7 +41,7 @@ struct ManualImportSheet: View {
                 .background(Theme.bg.ignoresSafeArea())
                 // Named in every pose; in book pose leading (inline large),
                 // on the left page, since a centred title would sit on the fold.
-                .navigationTitle("Manual import")
+                .navigationTitle("Manual Import")
                 .toolbarTitleDisplayMode(bookFold ? .inlineLarge : .inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -67,6 +67,7 @@ struct ManualImportSheet: View {
                     if session.scan != nil && layout != .split && !barActive { MIFooter() }
                 }
                 .miBulkBar(active: barActive)
+                .calToast($session.toast)
                 .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
                 .onGeometryChange(for: FoldColumns.Panes?.self) { proxy in
                     // D2-A: halves at the fold in book pose; flat, a third | the rest.
@@ -92,7 +93,7 @@ struct ManualImportSheet: View {
         }
         .onChange(of: session.closing?.text) {
             guard let closing = session.closing else { return }
-            model.toast(closing.text, title: "Manual import", variant: closing.warning ? .warning : .success)
+            model.toast(closing.text, title: "Manual Import", variant: closing.warning ? .warning : .success)
             Task { await model.refreshQueue() }
             dismiss()
         }

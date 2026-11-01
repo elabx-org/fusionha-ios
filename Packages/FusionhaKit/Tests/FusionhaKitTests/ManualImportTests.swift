@@ -108,6 +108,10 @@ final class ManualImportTests: XCTestCase {
         XCTAssertEqual(keep.options.map(\.value), [.remove, .removeBlocklist, .leave])
         // No probe proof (`recommend_blocklist`): the main half only removes.
         XCTAssertEqual(keep.preferred, .remove)
+        // D1-A: the main half names its effect, in the web's `keep-options.ts` words.
+        XCTAssertEqual(keep.preferredOption.label, "Keep current · remove download")
+        XCTAssertEqual(keep.options.map(\.label),
+                       ["Keep current · remove download", "Keep current · remove + blocklist", "Keep current · leave download"])
         // Nothing on disk: Skip this file.
         XCTAssertEqual(ManualImportDecide.keepChoice(scan.rows[1], scan, linked: true).verb, "Skip this file")
         XCTAssertEqual(ManualImportDecide.keepChoice(scan.rows[1], scan, linked: true).options[0].detail,
@@ -127,13 +131,16 @@ final class ManualImportTests: XCTestCase {
 
     func testHeldStripForAPack() throws {
         let strip = try XCTUnwrap(ManualImportHeldStrip(scan: try scan()))
-        XCTAssertEqual(strip.line1, ["2 files would replace better copies", "0 upgrades", "1 new"])
-        XCTAssertEqual(strip.line2, "2 files measure 2560×1440, not the 2160p their names claim. 2 still to decide; open a row to compare.")
+        // Download 901's own reason leads (H6); the zero upgrades part is dropped.
+        XCTAssertEqual(strip.line1, ["Not an upgrade", "2 files would replace better copies", "1 new"])
+        XCTAssertEqual(strip.line2, "2 files measure 2560×1440, not the 2160p their names claim. "
+                       + "3 still to decide; decide on each row, or tick several and decide them together.")
         XCTAssertEqual(strip.bulkEligible, 2)
         // "To decide" follows the footer's count when it is passed.
         let plan = ManualImportFinishPlan(rows: try scan().rows, selected: [])
         let synced = try XCTUnwrap(ManualImportHeldStrip(scan: try scan(), decide: plan.need))
-        XCTAssertEqual(synced.line2, "2 files measure 2560×1440, not the 2160p their names claim. 3 still to decide; open a row to compare.")
+        XCTAssertEqual(synced.line2, "2 files measure 2560×1440, not the 2160p their names claim. "
+                       + "\(plan.need) still to decide; decide on each row, or tick several and decide them together.")
     }
 
     func testCompareAndSummary() throws {

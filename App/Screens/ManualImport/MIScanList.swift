@@ -18,26 +18,27 @@ struct MIScanList: View {
         @Bindable var session = session
         LazyVStack(alignment: .leading, spacing: 10) {
             if session.folderMode { MISourceBar() }
+            if !scan.sourcePath.isEmpty { MISourceLine(path: scan.sourcePath) }
             if scan.rows.isEmpty {
                 noVideos
             } else {
-                if let strip = ManualImportHeldStrip(scan: scan, decide: session.plan.need) { MIHeldStripView(strip: strip) }
+                if let strip = ManualImportHeldStrip(scan: scan, decide: session.plan.need, tallies: session.tallies) { MIHeldStripView(strip: strip) }
                 MIPackProgress()
                 MIVerdictStrip(rows: scan.rows, filter: $session.filter, probing: scan.probePending ?? 0,
-                               stalled: session.probeStalled) {
+                               stalled: session.probeStalled, isDone: session.isDone) {
                     session.retryProbes()
                     onRetryProbes()
                 }
                 let blocks = ManualImportBlock.group(scan.rows)
                 MIMatchBanner(blocks: blocks, filter: $session.filter)
                 ForEach(blocks) { block in
-                    let shown = block.rows.filter(session.filter.matches)
+                    let shown = block.rows.filter(session.shows)
                     if !shown.isEmpty {
                         MITitleSection(block: block, rows: shown, folded: foldBinding(block.key), openId: $openId,
                                        rowMode: rowMode)
                     }
                 }
-                if blocks.allSatisfy({ !$0.rows.contains(where: session.filter.matches) }) { filterEmpty }
+                if blocks.allSatisfy({ !$0.rows.contains(where: session.shows) }) { filterEmpty }
             }
         }
     }

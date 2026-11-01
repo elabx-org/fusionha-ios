@@ -72,7 +72,7 @@ struct QueueGroupCard: View {
                     Button {
                         router.manualImport(rescue: summary.heldIds)
                     } label: {
-                        Label(summary.heldIds.count == downloads.count ? "Review all \(summary.heldIds.count)" : "Review \(summary.heldIds.count)",
+                        Label(summary.heldIds.count == downloads.count ? "Review all \(summary.heldIds.count)" : "Review \(summary.heldIds.count) held",
                               systemImage: "square.and.arrow.down")
                             .frame(maxWidth: .infinity)
                     }

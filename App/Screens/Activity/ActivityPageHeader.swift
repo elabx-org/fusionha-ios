@@ -108,7 +108,7 @@ struct ActivityPageHeader: View {
         let downloading = max(0, model.queueTotal - held)
         var parts: [String] = []
         if downloading > 0 { parts.append("\(downloading) downloading · live") }
-        if held > 0 { parts.append("\(held) need manual import") }
+        if held > 0 { parts.append("\(held) \(held == 1 ? "needs" : "need") manual import") }
         return parts.isEmpty ? "No active downloads" : parts.joined(separator: " · ")
     }
 }

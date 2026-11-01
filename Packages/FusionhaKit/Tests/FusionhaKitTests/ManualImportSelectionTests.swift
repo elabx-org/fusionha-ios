@@ -29,11 +29,33 @@ final class ManualImportSelectionTests: XCTestCase {
         let r = try rows([[:], noMatch, medium, ["committed": true, "status": "ready", "name_vs_file": []]])
         let c = ManualImportFilter.counts(r)
         XCTAssertEqual(c[.all], 4)
-        XCTAssertEqual(c[.ready], 2)
+        XCTAssertEqual(c[.ready], 1, "the committed row counts as decided, not ready")
+        XCTAssertEqual(c[.decided], 1)
         XCTAssertEqual(c[.attention], 1)
         XCTAssertEqual(c[.nomatch], 1)
         XCTAssertEqual(c[.diff], 2, "fixture row and the no-match copy keep their name-vs-file list")
         XCTAssertEqual(c[.medium], 1)
+    }
+
+    /// `filters.test.ts`: a kept or committed row is decided, not ready or attention.
+    func testKeptOrCommittedRowsAreDecided() throws {
+        let r = try rows([["replace_choice": "keep_current"], ["committed": true, "status": "ready"], [:]])
+        let c = ManualImportFilter.counts(r)
+        XCTAssertEqual(c[.decided], 2)
+        XCTAssertEqual((c[.ready] ?? 0) + (c[.attention] ?? 0), 1)
+        XCTAssertFalse(ManualImportFilter.attention.matches(r[0]))
+        XCTAssertTrue(ManualImportFilter.decided.matches(r[0]))
+        XCTAssertFalse(ManualImportFilter.ready.matches(r[1]))
+        XCTAssertEqual(ManualImportFilter.chips.map(\.label), ["All", "Ready", "Needs attention", "Decided", "No match", "Name ≠ file"])
+    }
+
+    /// `isDone` widens decided (the sheet adds rows of a finished download).
+    func testIsDoneWidensDecided() throws {
+        let r = try rows([["status": "ready"], [:]])
+        let c = ManualImportFilter.counts(r, isDone: { $0.rowId == 1 })
+        XCTAssertEqual(c[.decided], 1)
+        XCTAssertEqual((c[.ready] ?? 0) + (c[.attention] ?? 0), 1)
+        XCTAssertFalse(ManualImportFilter.ready.matches(r[0], isDone: { _ in true }))
     }
 
     func testBlocksGroupAndUnmatchedLast() throws {

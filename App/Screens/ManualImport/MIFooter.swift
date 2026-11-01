@@ -2,21 +2,26 @@ import SwiftUI
 import FusionhaKit
 
 /// The held download's reason strip (the web's `HeldStrip`): why it was held,
-/// and for a pack, a pointer to the bulk bar (it replaced Keep all current /
-/// Import all).
+/// and for a pack, its live rows by what they would do and a pointer to the
+/// bulk bar (it replaced Keep all current / Import all). Once nothing is left
+/// to decide it reads Done on the imported wash.
 struct MIHeldStripView: View {
     let strip: ManualImportHeldStrip
     @Environment(ManualImportSession.self) private var session
+    @Environment(\.horizontalSizeClass) private var horizontalSize
 
     var body: some View {
+        let lines = strip.lines(compact: horizontalSize == .compact)
+        let done = strip.done
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Image(systemName: "exclamationmark.circle.fill").foregroundStyle(Theme.miss)
-                (Text("Held").bold() + Text(strip.line1.map { " · " + $0 }.joined()))
+                Image(systemName: done ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                    .foregroundStyle(done ? Theme.done : Theme.miss)
+                (Text(done ? "Done" : "Held").bold() + Text(lines.line1.map { " · " + $0 }.joined()))
                     .font(.subheadline).foregroundStyle(Theme.txt)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            ForEach([strip.line2, ManualImportRules.titleSummary(session.rows)].compactMap { $0 }, id: \.self) { line in
+            ForEach([lines.line2, ManualImportRules.titleSummary(session.rows)].compactMap { $0 }, id: \.self) { line in
                 Text(line).font(.footnote).foregroundStyle(Theme.mut).padding(.leading, 26)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -28,7 +33,7 @@ struct MIHeldStripView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .actWash(Theme.miss, radius: Theme.radius, base: Theme.panel)
+        .actWash(done ? Theme.done : Theme.miss, radius: Theme.radius, base: Theme.panel)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Held download")
     }
