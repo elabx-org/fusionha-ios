@@ -63,7 +63,7 @@ struct HistoryStoryRow: View {
             BlocklistReleaseDialog(release: story.releaseTitle ?? story.title,
                                    keepsCurrentFile: story.actionEntry.blocklistTarget?.keepsCurrentFile == true) { search, deleteFile in
                 blocklistDialog = false
-                Task { await blocklist(search: search, deleteFile: deleteFile, undo: false) }
+                Task { await blocklist(search: search, deleteFile: deleteFile) }
             } onCancel: { blocklistDialog = false }
         }
         .sheet(isPresented: $regrabConflict) {
@@ -177,7 +177,7 @@ struct HistoryStoryRow: View {
                 let target = entry.blocklistTarget
                 HStack(spacing: 0) {
                     ActIconButton(systemImage: "nosign", label: "Blocklist this release", busy: blocking) {
-                        Task { await blocklist(search: true, deleteFile: false, undo: true) }
+                        Task { await blocklist(search: true, deleteFile: false) }
                     }
                     .padding(.trailing, -10)
                     Button { blocklistDialog = true } label: {
@@ -225,11 +225,11 @@ struct HistoryStoryRow: View {
                                        message: "Searching again for \(story.title)") }
     }
 
-    private func blocklist(search: Bool, deleteFile: Bool, undo: Bool) async {
+    private func blocklist(search: Bool, deleteFile: Bool) async {
         guard let target = story.actionEntry.blocklistTarget else { return }
         blocking = true
         await ActActions.blocklist(model.client, toaster, target.body(search: search, deleteFile: deleteFile),
-                                   offerUndo: undo, done: onChanged)
+                                   done: onChanged)
         blocking = false
     }
 

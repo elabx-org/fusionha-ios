@@ -6,10 +6,11 @@ import FusionhaKit
 
 @MainActor
 enum ActActions {
-    /// `POST /api/v1/blocklist` with the web's toasts. `undo` offers an Undo that
-    /// lifts the new entry again.
+    /// `POST /api/v1/blocklist` with the web's toasts. A blocklist that created a
+    /// new entry and deleted no file offers Undo, which lifts exactly that entry
+    /// (web `useBlocklistAction`, 0.4.234: the one-tap and the dialog paths alike).
     static func blocklist(_ client: APIClient?, _ toaster: ActToaster, _ body: BlocklistCreate,
-                          offerUndo: Bool = false, done: @escaping () -> Void = {}) async {
+                          done: @escaping () -> Void = {}) async {
         guard let client else { return }
         do {
             let result = try await client.blocklistRelease(body)
@@ -23,7 +24,7 @@ enum ActActions {
                 message = searching ? "Already blocklisted — searching for a replacement" : "Already blocklisted"
             }
             let tone: ActToaster.Tone = result.created || searching ? .success : .warning
-            if offerUndo, result.created, let id = result.entry?.id {
+            if result.created, result.fileDeleted != true, let id = result.entry?.id {
                 toaster.show(message, tone: tone, undo: {
                     Task {
                         do {

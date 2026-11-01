@@ -16,8 +16,7 @@ extension ActivityQueueTab {
             interactive: { model.open(item.mediaItemId) },
             blocklist: { search in
                 // One tap with Undo on the toast (web `useBlocklistAction.quick`), searching or not.
-                Task { await ActActions.blocklist(model.client, toaster, BlocklistCreate(downloadId: item.id, search: search),
-                                                  offerUndo: true) {
+                Task { await ActActions.blocklist(model.client, toaster, BlocklistCreate(downloadId: item.id, search: search)) {
                     Task { await store.refresh(model.client) }
                 } }
             },
