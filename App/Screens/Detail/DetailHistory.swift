@@ -54,7 +54,7 @@ func triggerIcon(_ trigger: String?) -> String {
     case "interactive": return "person"
     case "forced": return "bolt"
     case "requested": return "tray"
-    case "regrab": return "arrow.triangle.2.circlepath"
+    case "regrab": return "arrow.uturn.down"
     default: return "magnifyingglass"
     }
 }
