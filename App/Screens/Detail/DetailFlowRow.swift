@@ -12,7 +12,7 @@ struct FlowRow: Layout {
         let rowGap = lineSpacing ?? spacing
         var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0, maxX: CGFloat = 0
         for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
+            let size = Self.measure(view, width: width)
             if x > 0 && x + size.width > width {
                 x = 0
                 y += rowHeight + rowGap
@@ -22,7 +22,17 @@ struct FlowRow: Layout {
             maxX = max(maxX, x - spacing)
             rowHeight = max(rowHeight, size.height)
         }
-        return CGSize(width: maxX, height: y + rowHeight)
+        return CGSize(width: width.isFinite ? min(maxX, width) : maxX, height: y + rowHeight)
+    }
+
+    /// An item's natural size, but never wider than the row: a long sentence
+    /// (a wanted version's "Released … · looking for …") wraps in place
+    /// instead of widening the row and pushing its card off the page.
+    private static func measure(_ view: LayoutSubview, width: CGFloat) -> CGSize {
+        let ideal = view.sizeThatFits(.unspecified)
+        guard width.isFinite, ideal.width > width else { return ideal }
+        let wrapped = view.sizeThatFits(ProposedViewSize(width: width, height: nil))
+        return CGSize(width: min(wrapped.width, width), height: wrapped.height)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
@@ -32,7 +42,7 @@ struct FlowRow: Layout {
         var rows: [[(Subviews.Element, CGSize)]] = [[]]
         var rowWidth: CGFloat = 0
         for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
+            let size = Self.measure(view, width: bounds.width)
             // A pixel of slack: layout rounds bounds to the pixel grid, which must not re-wrap a row that fit when sized.
             if rowWidth > 0 && rowWidth + size.width > bounds.width + 1 {
                 rows.append([])
