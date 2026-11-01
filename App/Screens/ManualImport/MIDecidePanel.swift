@@ -123,10 +123,10 @@ struct MIBreakdown: View {
             ForEach(lines) { line in
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Text(line.code)
-                        .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                        .font(.system(.caption, design: .monospaced).weight(.semibold))
                         .foregroundStyle(Theme.txt)
                         .frame(minWidth: 40, alignment: .leading)
-                    Text(line.text).font(.system(size: 13)).foregroundStyle(Theme.mut)
+                    Text(line.text).font(.footnote).foregroundStyle(Theme.mut)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .accessibilityElement(children: .combine)
@@ -148,12 +148,12 @@ struct MIDispositionRow: View {
                 Image(systemName: on ? "largecircle.fill.circle" : "circle").foregroundStyle(on ? Theme.i1 : Theme.dim)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(option.label).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
+                        Text(option.label).font(.footnote.weight(.semibold)).foregroundStyle(Theme.txt)
                         if option.recommended {
-                            Text("Recommended").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.done)
+                            Text("Recommended").font(.caption2.weight(.bold)).foregroundStyle(Theme.done)
                         }
                     }
-                    Text(option.off ?? option.detail).font(.system(size: 12)).foregroundStyle(Theme.mut)
+                    Text(option.off ?? option.detail).font(.caption).foregroundStyle(Theme.mut)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)

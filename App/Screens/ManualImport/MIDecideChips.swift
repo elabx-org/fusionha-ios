@@ -37,11 +37,11 @@ struct MIDecideChips: View {
     private func chip(_ title: String, _ icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: icon)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(Theme.txt)
                 .lineLimit(1)
                 .padding(.horizontal, 12)
-                .frame(height: 36)
+                .frame(minHeight: 36)
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

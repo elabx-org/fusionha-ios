@@ -56,7 +56,7 @@ struct LifecycleHeader: View {
                 }
             }
             if let grabbed {
-                ActIconButton(systemImage: "arrow.clockwise", label: "Re-grab this release", busy: regrabbing) {
+                ActIconButton(systemImage: "arrow.uturn.down", label: "Re-grab this release", busy: regrabbing) {
                     Task {
                         regrabbing = true
                         await ActActions.regrab(model.client, toaster, historyId: grabbed.id, done: onChanged)

@@ -14,6 +14,8 @@ struct MIWhichFileStays: View {
     var keepTail: String? = nil
     let onPick: (String) -> Void
     @State private var showAll = false
+    @ScaledMetric(relativeTo: .caption) private var labelWidth: CGFloat = 76
+    @ScaledMetric(relativeTo: .footnote) private var iconSize: CGFloat = 24
 
     private enum Column: String { case keep = "keep_current", take = "import" }
 
@@ -28,17 +30,18 @@ struct MIWhichFileStays: View {
         let changed = rows.filter(\.changed)
         let shown = showAll ? rows : changed
         VStack(alignment: .leading, spacing: 8) {
-            Text("WHICH FILE STAYS?").font(.system(size: 12, weight: .semibold)).tracking(0.7).foregroundStyle(Theme.dim)
+            Text("WHICH FILE STAYS?").font(.caption.weight(.semibold)).tracking(0.7).foregroundStyle(Theme.dim)
             Grid(alignment: .leading, horizontalSpacing: 8, verticalSpacing: 0) {
                 GridRow {
                     Color.clear.frame(width: 1, height: 1).gridCellUnsizedAxes([.horizontal, .vertical])
-                    head(.keep, last: shown.isEmpty)
-                    head(.take, last: shown.isEmpty)
+                    head(.keep, last: shown.isEmpty, values: rows)
+                    head(.take, last: shown.isEmpty, values: rows)
                 }
                 ForEach(Array(shown.enumerated()), id: \.element.label) { i, r in
                     GridRow {
-                        Text(r.label).font(.system(size: 12)).foregroundStyle(Theme.dim)
-                            .frame(minWidth: 76, alignment: .leading)
+                        Text(r.label).font(.caption).foregroundStyle(Theme.dim)
+                            .frame(minWidth: labelWidth, alignment: .leading)
+                            .accessibilityHidden(true)
                         cell(.keep, last: i == shown.count - 1) { Text(r.current).foregroundStyle(Theme.txt) }
                         cell(.take, last: i == shown.count - 1) { incoming(r) }
                     }
@@ -75,7 +78,21 @@ struct MIWhichFileStays: View {
         column == .keep ? Theme.txt : worse ? Theme.miss : Theme.done
     }
 
-    private func head(_ column: Column, last: Bool) -> some View {
+    /// What VoiceOver reads for a column: its name, then every compared value
+    /// (the cells themselves are hidden so the column is one element).
+    private func spoken(_ column: Column, _ values: [ManualImportCompare.WhichRow]) -> String {
+        let keep = column == .keep
+        let name = keep ? "Current file, \(current?.releaseGroup ?? "on disk")"
+                        : "This file, \(row.parsed.releaseGroup ?? "new"), \(worse ? "downgrade" : "upgrade")"
+        let parts = values.map { r -> String in
+            guard !keep else { return "\(r.label) \(r.current)" }
+            let dir = r.tone == .up ? ", better" : r.tone == .down ? ", worse" : ""
+            return "\(r.label) \(r.incoming)\(dir)"
+        }
+        return ([name] + parts).joined(separator: ". ")
+    }
+
+    private func head(_ column: Column, last: Bool, values: [ManualImportCompare.WhichRow]) -> some View {
         let on = selection == column
         let keep = column == .keep
         let shape = UnevenRoundedRectangle(topLeadingRadius: 12, bottomLeadingRadius: last ? 12 : 0,
@@ -83,16 +100,16 @@ struct MIWhichFileStays: View {
         return Button { pick(column) } label: {
             VStack(alignment: .leading, spacing: 2) {
                 Image(systemName: keep ? "internaldrive" : worse ? "arrow.down" : "arrow.up")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.footnote.weight(.semibold))
                     .foregroundStyle(keep ? Theme.dim : worse ? Theme.danger : Theme.done)
-                    .frame(width: 24, height: 24)
+                    .frame(width: iconSize, height: iconSize)
                     .background((keep ? Theme.dim : worse ? Theme.danger : Theme.done).opacity(0.14),
                                 in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                     .padding(.bottom, 3)
-                Text(keep ? "Current" : "This file").font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
+                Text(keep ? "Current" : "This file").font(.footnote.weight(.semibold)).foregroundStyle(Theme.txt)
                 Text(keep ? "\(current?.releaseGroup ?? "on disk") · on disk"
                           : "\(row.parsed.releaseGroup ?? "new") · \(worse ? "downgrade" : "upgrade")")
-                    .font(.system(size: 11)).foregroundStyle(Theme.dim).lineLimit(1)
+                    .font(.caption2).foregroundStyle(Theme.dim).lineLimit(2)
             }
             .padding(.horizontal, 8).padding(.top, 9).padding(.bottom, 8)
             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
@@ -101,7 +118,8 @@ struct MIWhichFileStays: View {
             .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(keep ? "Current file" : "This file")
+        .accessibilityLabel(spoken(column, values))
+        .accessibilityHint(on ? "" : keep ? "Keeps this file in your library" : "Imports this file instead")
         .accessibilityAddTraits(on ? [.isSelected] : [])
     }
 
@@ -109,7 +127,7 @@ struct MIWhichFileStays: View {
         let on = selection == column
         let shape = UnevenRoundedRectangle(bottomLeadingRadius: last ? 12 : 0, bottomTrailingRadius: last ? 12 : 0, style: .continuous)
         return content()
-            .font(.system(size: 12.5, design: .monospaced))
+            .font(.system(.caption, design: .monospaced))
             .padding(8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(on ? tint(column).opacity(column == .keep ? 0.07 : 0.12) : .clear, in: shape)
@@ -121,7 +139,7 @@ struct MIWhichFileStays: View {
     @ViewBuilder private func incoming(_ r: ManualImportCompare.WhichRow) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             if r.tone != .same {
-                Image(systemName: r.tone == .up ? "arrow.up" : "arrow.down").font(.system(size: 11, weight: .bold))
+                Image(systemName: r.tone == .up ? "arrow.up" : "arrow.down").font(.caption2.weight(.bold))
             }
             Text(r.incoming)
         }

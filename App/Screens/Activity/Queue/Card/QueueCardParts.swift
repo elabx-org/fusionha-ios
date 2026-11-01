@@ -13,21 +13,24 @@ struct QueueCardMeta: View {
     var fullDownload = false
 
     var body: some View {
+        // Each separator travels with the word after it, so a wrapped line never
+        // ends on a "·". The provenance chip draws its own capsule.
         ActFlow(spacing: 0, lineSpacing: 4) {
             let parts = words
             ForEach(Array(parts.enumerated()), id: \.offset) { index, part in
-                if index > 0 { dot }
-                part.text
+                HStack(spacing: 0) {
+                    if index > 0 { dot }
+                    part.text
+                }
             }
             if let trigger = item.grabTrigger, ActProvenance.meta(trigger) != nil {
-                dot
-                ActProvenance(trigger: trigger)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 4)
-                    .overlay(Capsule().strokeBorder(Theme.line))
+                HStack(spacing: 0) {
+                    dot
+                    ActProvenance(trigger: trigger)
+                }
             }
         }
-        .font(.system(size: 14))
+        .font(.subheadline)
         .foregroundStyle(Theme.mut)
     }
 
@@ -170,7 +173,7 @@ struct QueueCardActions: View {
     var body: some View {
         HStack(spacing: 0) {
             if let regrab = actions.regrab {
-                QueueIconSlot(icon: "arrow.clockwise", label: "Re-grab this release", action: regrab)
+                QueueIconSlot(icon: "arrow.uturn.down", label: "Re-grab this release", action: regrab)
             } else {
                 Color.clear.frame(width: QueueIconSlot.width, height: 44).accessibilityHidden(true)
             }

@@ -12,6 +12,7 @@ struct MIRowView: View {
     var picksDetail = false
     @Environment(ManualImportSession.self) private var session
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .body) private var tickSize: CGFloat = 20
 
     private var open: Bool { openId == row.rowId }
 
@@ -56,30 +57,29 @@ struct MIRowView: View {
         let on = session.selected.contains(row.rowId)
         return Button { session.toggle(row) } label: {
             Image(systemName: row.committed ? "checkmark.seal.fill" : on ? "checkmark.square.fill" : "square")
-                .font(.system(size: 20))
+                .font(.system(size: tickSize))
                 .foregroundStyle(row.committed ? Theme.done : on ? Theme.i1 : Theme.dim)
                 .frame(width: 44, height: 44)
         }
         .buttonStyle(.plain)
         .disabled(row.committed)
-        .accessibilityLabel("Select \(row.filename)")
+        .accessibilityLabel("Select \(MIRowTitle.spoken(row, session))")
         .accessibilityValue(on ? "Selected" : "Not selected")
+        .accessibilityHint(row.filename)
     }
 
     private var lines: some View {
         VStack(alignment: .leading, spacing: 4) {
             titleLine
-            HStack(spacing: 8) {
-                Text(DetailText.quality(row.quality ?? "UNKNOWN"))
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(row.quality == nil ? Theme.miss : Theme.txt)
-                if row.match.itemId != nil, let tier = QualityTier(rawValue: row.target.tier) { TierPill(tier: tier) }
-                Text(DetailText.bytes(row.size)).font(.system(size: 12.5)).foregroundStyle(Theme.mut)
-                Spacer(minLength: 0)
-                MIStatusBadge(row: row)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { meta; Spacer(minLength: 0); MIStatusBadge(row: row) }
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 8) { meta }
+                    MIStatusBadge(row: row)
+                }
             }
             Text(ManualImportCompare.summaryLine(row))
-                .font(.system(size: 11.5, design: .monospaced))
+                .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(Theme.dim)
                 .lineLimit(2)
         }
@@ -88,17 +88,27 @@ struct MIRowView: View {
         .contentShape(Rectangle())
     }
 
+    /// Quality, version and size: one line, which drops the status badge to its
+    /// own line at the larger accessibility sizes rather than truncating.
+    @ViewBuilder private var meta: some View {
+        Text(DetailText.quality(row.quality ?? "UNKNOWN"))
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(row.quality == nil ? Theme.miss : Theme.txt)
+        if row.match.itemId != nil, let tier = QualityTier(rawValue: row.target.tier) { TierPill(tier: tier) }
+        Text(DetailText.bytes(row.size)).font(.caption).foregroundStyle(Theme.mut)
+    }
+
     private var titleLine: some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             MIRowTitle(row: row)
             if !picksDetail {
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(Theme.dim)
                     .rotationEffect(.degrees(open ? 180 : 0))
             }
         }
-        .font(.system(size: 15, weight: .semibold))
+        .font(.subheadline.weight(.semibold))
         .foregroundStyle(Theme.txt)
     }
 
@@ -127,7 +137,7 @@ struct MIRowNotes: View {
         ].compactMap { $0 }
         ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
             Text(line.0)
-                .font(.system(size: 12.5))
+                .font(.caption)
                 .foregroundStyle(line.1)
                 .padding(.leading, indent)
                 .padding(.top, 4)

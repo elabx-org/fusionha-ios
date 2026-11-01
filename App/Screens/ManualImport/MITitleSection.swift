@@ -25,6 +25,7 @@ struct MITitleSection: View {
     var rowMode: MIRowMode = .cards
     @Environment(ManualImportSession.self) private var session
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var asking = false
     @State private var editAll = false
     @State private var rematch = false
@@ -60,12 +61,14 @@ struct MITitleSection: View {
             checkbox
             if !block.unmatched { ActPoster(url: block.posterUrl, title: block.title, size: .sm) }
             VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                // D8: the title wraps to two lines; at accessibility sizes the
+                // confidence chip drops under it instead of squeezing it.
+                titleLayout {
                     Text(block.title).font(Theme.display(20))
-                        .foregroundStyle(block.unmatched ? Theme.danger : Theme.txt).lineLimit(1)
+                        .foregroundStyle(block.unmatched ? Theme.danger : Theme.txt).lineLimit(2)
                     confidence
                 }
-                Text(meta).font(.system(size: 12)).foregroundStyle(Theme.mut).lineLimit(1)
+                Text(meta).font(.caption).foregroundStyle(Theme.mut).lineLimit(2)
             }
             Spacer(minLength: 0)
             if !block.unmatched {
@@ -73,21 +76,28 @@ struct MITitleSection: View {
                     if block.rows.count > 1 { editAll = true } else { toggleOpen(block.rows[0].rowId) }
                 }
                 .labelStyle(.iconOnly)
-                .font(.system(size: 15, weight: .medium))
+                .font(.subheadline.weight(.medium))
                 .foregroundStyle(Theme.txt)
                 .frame(width: 36, height: 36)
                 .glassControl()
+                .dynamicTypeSize(...DynamicTypeSize.xxLarge)
             }
             Button(folded ? "Show \(block.title)" : "Hide \(block.title)", systemImage: "chevron.down") { fold() }
                 .labelStyle(.iconOnly)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.mut)
                 .rotationEffect(.degrees(folded ? -90 : 0))
                 .frame(width: 36, height: 44)
+                .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         }
         .padding(.top, 8)
         .contentShape(Rectangle())
         .onTapGesture { fold() }
+    }
+
+    private var titleLayout: AnyLayout {
+        typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 2))
+                                     : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 6))
     }
 
     private var meta: String {
@@ -103,7 +113,7 @@ struct MITitleSection: View {
         if block.needsConfirm {
             Button { withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { asking.toggle() } } label: {
                 Label(block.confidence, systemImage: "questionmark.diamond")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.caption2.weight(.bold))
                     .foregroundStyle(Theme.miss)
                     .padding(.horizontal, 7).padding(.vertical, 2)
                     .actWash(Theme.miss, mono: .miss, radius: 6, base: Theme.panel)
@@ -111,7 +121,7 @@ struct MITitleSection: View {
             .buttonStyle(.plain)
             .accessibilityLabel("\(block.confidence) match, tap to confirm or re-match")
         } else if !block.unmatched {
-            Text(block.confidence).font(.system(size: 11, weight: .semibold))
+            Text(block.confidence).font(.caption2.weight(.semibold))
                 .foregroundStyle(block.confidence == "high" ? Theme.done : Theme.mut)
         }
     }
@@ -121,7 +131,7 @@ struct MITitleSection: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Image(systemName: "questionmark.diamond").foregroundStyle(Theme.miss)
-                Text("Right match?").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
+                Text("Right match?").font(.footnote.weight(.semibold)).foregroundStyle(Theme.txt)
                 Spacer(minLength: 0)
                 ActAsyncButton(label: "Yes", systemImage: "checkmark") {
                     await session.confirm(block.rows)
@@ -131,7 +141,7 @@ struct MITitleSection: View {
                 Button("Re-match") { asking = false; rematch = true }.buttonStyle(ActButtonStyle(kind: .ghost))
             }
             if let alt = block.alternativeLine {
-                Text(alt).font(.system(size: 12)).foregroundStyle(Theme.mut)
+                Text(alt).font(.caption).foregroundStyle(Theme.mut)
             }
         }
         .padding(10)
@@ -149,11 +159,12 @@ struct MITitleSection: View {
         return Button {
             session.selected = ManualImportBatch.toggleBlock(block.rows, selected: session.selected)
         } label: {
-            Image(systemName: glyph).font(.system(size: 20))
+            Image(systemName: glyph).font(.title3)
                 .foregroundStyle(state == .on || state == .mixed ? Theme.i1 : Theme.dim)
                 .frame(width: 40, height: 44)
         }
         .buttonStyle(.plain)
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .disabled(state == .none)
         .accessibilityLabel("Select all in \(block.title)")
         .accessibilityValue(state == .on ? "Selected" : state == .mixed ? "Some selected" : "Not selected")

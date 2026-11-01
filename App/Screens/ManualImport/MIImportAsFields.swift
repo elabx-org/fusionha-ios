@@ -123,9 +123,9 @@ struct MIImportAsFields: View {
         HStack(spacing: 10) {
             Text(label).foregroundStyle(Theme.mut).frame(width: 96, alignment: .leading)
             Text(value).foregroundStyle(Theme.txt).lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
-            Image(systemName: "chevron.up.chevron.down").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.dim)
+            Image(systemName: "chevron.up.chevron.down").font(.caption2.weight(.semibold)).foregroundStyle(Theme.dim)
         }
-        .font(.system(size: 13.5))
+        .font(.footnote)
         .padding(.horizontal, 12)
         .frame(minHeight: 44)
         .contentShape(Rectangle())

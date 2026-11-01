@@ -14,7 +14,7 @@ struct MIReplaceConfirm: View {
         let busy = session.busyRows.contains(row.rowId) || session.working
         VStack(alignment: .leading, spacing: 8) {
             Label(text, systemImage: "exclamationmark.triangle")
-                .font(.system(size: 13, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(Theme.txt)
                 .fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 8) {

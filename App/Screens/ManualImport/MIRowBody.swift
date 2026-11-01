@@ -29,7 +29,7 @@ struct MIRowBody: View {
     private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
-                .font(.system(size: 11, weight: .heavy))
+                .font(.caption2.weight(.heavy))
                 .tracking(0.6)
                 .foregroundStyle(Theme.dim)
             content()
@@ -43,7 +43,7 @@ struct MIRowBody: View {
                 Label("Name says", systemImage: "tag").foregroundStyle(Theme.dim)
                 Label("File says", systemImage: "waveform.path.ecg").foregroundStyle(Theme.dim)
             }
-            .font(.system(size: 11, weight: .semibold))
+            .font(.caption2.weight(.semibold))
             ForEach(ManualImportCompare.nameFileRows(row), id: \.label) { r in
                 GridRow {
                     Text(r.label).foregroundStyle(Theme.mut)
@@ -52,7 +52,7 @@ struct MIRowBody: View {
                         .foregroundStyle(r.bad ? Theme.miss : r.name == nil ? Theme.dim : Theme.txt)
                     Text(r.file).foregroundStyle(Theme.txt)
                 }
-                .font(.system(size: 12.5))
+                .font(.caption)
             }
         }
     }
@@ -60,7 +60,7 @@ struct MIRowBody: View {
     private var fileBlock: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(row.filename)
-                .font(.system(size: 12, design: .monospaced))
+                .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(Theme.txt)
                 .textSelection(.enabled)
             if row.probe?.state == "failed" || row.probe?.state == "unsupported" {

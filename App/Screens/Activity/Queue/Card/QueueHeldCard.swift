@@ -109,7 +109,7 @@ struct QueueHeldCard: View {
     private var nestedHead: some View {
         HStack(alignment: .center, spacing: 8) {
             Text(pairLane ? QueueCardText.versionLabel(item) : (QueueCardText.subtitle(item) ?? item.releaseTitle ?? item.title))
-                .font(.system(size: 16, weight: .bold))
+                .font(.callout.weight(.bold))
                 .foregroundStyle(Theme.txt)
                 .lineLimit(2)
             Spacer(minLength: 4)
@@ -123,10 +123,10 @@ struct QueueHeldCard: View {
         return VStack(alignment: .leading, spacing: 4) {
             (Text(r.lead).fontWeight(.semibold).foregroundColor(Theme.txt)
              + Text(r.guard.map { " · \($0)" } ?? "").foregroundColor(Theme.mut))
-                .font(.system(size: 15))
+                .font(.subheadline)
             // The server's full sentence, when no "Why it's held" panel explains it.
             if let text = r.text {
-                Text(text).font(.system(size: 13.5)).foregroundStyle(Theme.mut)
+                Text(text).font(.footnote).foregroundStyle(Theme.mut)
             }
         }
         .fixedSize(horizontal: false, vertical: true)
@@ -138,11 +138,11 @@ struct QueueHeldCard: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.caption.weight(.bold))
                     .rotationEffect(.degrees(showWhy ? 180 : 0))
                 Text(showWhy ? "Hide details" : "Why it's held")
             }
-            .font(.system(size: 14, weight: .semibold))
+            .font(.subheadline.weight(.semibold))
             .foregroundStyle(Theme.mut)
             .frame(minHeight: 32)
             .contentShape(Rectangle())

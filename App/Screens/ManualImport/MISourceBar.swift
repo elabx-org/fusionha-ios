@@ -20,7 +20,7 @@ struct MISourceBar: View {
                     HStack(spacing: 8) {
                         Image(systemName: "folder").foregroundStyle(Theme.mut)
                         TextField("/downloads/complete", text: $path)
-                            .font(.system(size: 14, design: .monospaced))
+                            .font(.system(.subheadline, design: .monospaced))
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                             .submitLabel(.search)
@@ -85,7 +85,7 @@ struct MIFolderBrowser: View {
                                 ForEach(Array(page.crumbs.enumerated()), id: \.element.path) { i, c in
                                     if i > 1 { Text("›").foregroundStyle(Theme.dim) }
                                     Button(c.name) { path = c.path }
-                                        .font(.system(size: 13, weight: c.path == page.path ? .bold : .regular, design: .monospaced))
+                                        .font(.system(.footnote, design: .monospaced).weight(c.path == page.path ? .bold : .regular))
                                         .buttonStyle(.borderless)
                                 }
                             }
@@ -122,7 +122,7 @@ struct MIFolderBrowser: View {
             }
             .safeAreaInset(edge: .bottom) {
                 Text(page?.path ?? path ?? "/")
-                    .font(.system(size: 12, design: .monospaced)).foregroundStyle(Theme.mut)
+                    .font(.system(.caption, design: .monospaced)).foregroundStyle(Theme.mut)
                     .lineLimit(1).truncationMode(.head)
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .frame(maxWidth: .infinity, alignment: .leading)

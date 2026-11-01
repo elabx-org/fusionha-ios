@@ -33,7 +33,7 @@ struct MIVerdictStrip: View {
             HStack(spacing: 6) { text; probe }
             VStack(alignment: .leading, spacing: 4) { text; probe }
         }
-        .font(.system(size: 13))
+        .font(.footnote)
         .foregroundStyle(Theme.mut)
     }
 
@@ -44,12 +44,12 @@ struct MIVerdictStrip: View {
     @ViewBuilder private var probe: some View {
         if probing > 0 && stalled {
             Button("Probing stalled — Retry", systemImage: "arrow.clockwise", action: onRetry)
-                .font(.system(size: 13, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(Theme.accentText)
                 .buttonStyle(.plain)
         } else if probing > 0 {
             Label("checking \(probing)", systemImage: "waveform.path.ecg")
-                .font(.system(size: 13))
+                .font(.footnote)
                 .foregroundStyle(Theme.mut)
                 .symbolEffect(.pulse, options: .repeating, isActive: !reduceMotion)
         }
@@ -90,16 +90,16 @@ struct MIVerdictStrip: View {
         return Button { filter = on && key != .all ? .all : key } label: {
             HStack(spacing: 5) {
                 if let glyph = glyph(key) {
-                    Image(systemName: glyph).font(.system(size: 12, weight: .semibold)).foregroundStyle(tint(key))
+                    Image(systemName: glyph).font(.caption.weight(.semibold)).foregroundStyle(tint(key))
                 } else {
                     Text(key.label)
                 }
                 Text("\(count)").bold().monospacedDigit()
             }
-            .font(.system(size: 13, weight: .semibold))
+            .font(.footnote.weight(.semibold))
             .foregroundStyle(on ? Theme.txt : Theme.mut)
             .padding(.horizontal, 12)
-            .frame(height: 32)
+            .frame(minHeight: 32)
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -142,7 +142,7 @@ struct MIMatchBanner: View {
             HStack(spacing: 8) {
                 Image(systemName: "questionmark.diamond").foregroundStyle(Theme.miss)
                 (Text("\(low.count) of \(blocks.count)").bold() + Text(" medium"))
-                    .font(.system(size: 13)).foregroundStyle(Theme.txt)
+                    .font(.footnote).foregroundStyle(Theme.txt)
                 Spacer(minLength: 0)
                 Button(reviewing ? "Show all" : "Review") { filter = reviewing ? .all : .medium }
                     .buttonStyle(ActButtonStyle(kind: .ghost))

@@ -72,7 +72,7 @@ struct IssueActionChips: View {
                 }
             case .regrab:
                 let why = StagedFacts.regrabReason(o.report, o.choice) ?? (reports.contains { $0.state == "FIXING" } ? "A fix is already running" : nil)
-                chip("Re-grab", "arrow.clockwise", off: why) { onDialog(StagedDialogRoute(kind: .regrab, report: o.report)) }
+                chip("Re-grab", "arrow.uturn.down", off: why) { onDialog(StagedDialogRoute(kind: .regrab, report: o.report)) }
             case .find:
                 chip("Find a release", "magnifyingglass", off: StagedFacts.findReason(o.choice)) { await act(o.report, "find_language_release") }
             }

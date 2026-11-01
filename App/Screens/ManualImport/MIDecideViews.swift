@@ -31,7 +31,7 @@ struct MIFindingLine: View {
                             ForEach(chips) { MIFindingChip(finding: $0) }
                             if let waiting {
                                 Text("\(row.committed ? "Imported" : "Kept current") · pack \(waiting.decided) of \(waiting.total) decided")
-                                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.mut)
+                                    .font(.caption.weight(.semibold)).foregroundStyle(Theme.mut)
                             }
                         }
                     }
@@ -43,23 +43,28 @@ struct MIFindingLine: View {
 }
 
 /// One amber finding chip: the short text shows, the full reason is its label.
+/// At accessibility sizes the text wraps inside a rounded chip (D8).
 struct MIFindingChip: View {
     let finding: ManualImportDecide.Finding
+    @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
         let lib = finding.tone == .library
-        HStack(spacing: 4) {
+        let wraps = typeSize.isAccessibilitySize
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
             if let icon = finding.icon {
                 Image(systemName: icon == .swap ? "arrow.left.arrow.right" : icon == .redirect ? "arrow.turn.down.right" : "exclamationmark.triangle")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.caption2.weight(.bold))
             }
-            Text(finding.text).lineLimit(1)
+            Text(finding.text).lineLimit(wraps ? nil : 1).fixedSize(horizontal: false, vertical: wraps)
         }
-        .font(.system(size: 12, weight: .semibold))
+        .font(.caption.weight(.semibold))
         .foregroundStyle(lib ? Theme.mut : Theme.miss)
         .padding(.horizontal, 9)
-        .frame(height: 24)
-        .background((lib ? Theme.txt.opacity(0.06) : Theme.miss.opacity(0.14)), in: Capsule())
+        .padding(.vertical, 4)
+        .frame(minHeight: 24)
+        .background((lib ? Theme.txt.opacity(0.06) : Theme.miss.opacity(0.14)),
+                    in: RoundedRectangle(cornerRadius: wraps ? 10 : 12, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(finding.sentence)
     }
@@ -140,9 +145,9 @@ struct MIKeepMenu: View {
             } label: {
                 HStack(spacing: 4) {
                     if menuOnly { Text("More") }
-                    Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
+                    Image(systemName: "chevron.down").font(.caption2.weight(.bold))
                 }
-                .font(.system(size: 13, weight: .semibold))
+                .font(.footnote.weight(.semibold))
                 .foregroundStyle(Theme.txt)
                 .padding(.horizontal, 12)
                 .frame(minWidth: 44, minHeight: 44)
@@ -217,12 +222,12 @@ struct MIHeldDecision: View {
                 Image(systemName: on ? "largecircle.fill.circle" : "circle").foregroundStyle(on ? Theme.i1 : Theme.dim)
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 6) {
-                        Text(o.label).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
+                        Text(o.label).font(.footnote.weight(.semibold)).foregroundStyle(Theme.txt)
                         if o.recommended {
-                            Text("Recommended").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.done)
+                            Text("Recommended").font(.caption2.weight(.bold)).foregroundStyle(Theme.done)
                         }
                     }
-                    Text(o.detail).font(.system(size: 12)).foregroundStyle(Theme.mut).fixedSize(horizontal: false, vertical: true)
+                    Text(o.detail).font(.caption).foregroundStyle(Theme.mut).fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
             }
@@ -245,7 +250,7 @@ struct MIReceiptView: View {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.done)
             (Text(receipt.title).bold().foregroundColor(Theme.txt)
              + Text(receipt.detail.map { " · \($0)" } ?? "").foregroundColor(Theme.mut))
-                .font(.system(size: 13))
+                .font(.footnote)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }

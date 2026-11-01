@@ -30,7 +30,7 @@ struct HeldWhy: View {
             }
             if let release = item.releaseTitle {
                 Text(release)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(.system(.caption2, design: .monospaced))
                     .foregroundStyle(Theme.dim)
                     .textSelection(.enabled)
             }
@@ -45,7 +45,7 @@ struct HeldWhy: View {
         return AnyView(
             VStack(alignment: .leading, spacing: 8) {
                 Text(MislabelFacts.proofSentence(group: group, count: evidence.mislabeledCount))
-                    .font(.system(size: 13)).foregroundStyle(Theme.txt)
+                    .font(.footnote).foregroundStyle(Theme.txt)
                     .fixedSize(horizontal: false, vertical: true)
                 Button("Block \(group)…", systemImage: "nosign") { onBlockGroup(group) }
                     .buttonStyle(ActButtonStyle(kind: .danger))
@@ -97,7 +97,7 @@ struct HeldWhy: View {
 
     private func line(_ k: String, _ v: String) -> some View {
         (Text(k + " ").foregroundColor(Theme.dim) + Text(v).foregroundColor(Theme.txt))
-            .font(.system(size: 12))
+            .font(.caption)
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -112,11 +112,11 @@ struct QueueMislabelFactsGrid: View {
             ForEach(MislabelFacts.rows(detail, indexer: indexer), id: \.label) { row in
                 GridRow {
                     Text(row.label)
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(Theme.dim)
                         .gridColumnAlignment(.leading)
                     Text(row.value)
-                        .font(.system(size: 12, weight: row.bad ? .semibold : .regular))
+                        .font(.caption.weight(row.bad ? .semibold : .regular))
                         .foregroundStyle(row.bad ? Theme.danger : Theme.txt)
                         .fixedSize(horizontal: false, vertical: true)
                 }

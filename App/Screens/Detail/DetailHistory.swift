@@ -188,7 +188,7 @@ struct TimelineRow: View {
                     Text(meta).font(.system(size: 11)).foregroundStyle(Theme.dim)
                 }
                 if entry.eventType == "GRABBED", model.me?.can("grab") ?? true {
-                    DetailRailButton(systemImage: "arrow.clockwise", label: "Regrab", size: 32, glyph: 15) {
+                    DetailRailButton(systemImage: "arrow.uturn.down", label: "Regrab", size: 32, glyph: 15) {
                         Task { await store.regrab(entry) }
                     }
                     .offset(x: -6)

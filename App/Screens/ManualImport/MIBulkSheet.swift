@@ -95,29 +95,49 @@ struct MIBulkSheet: View {
     }
 }
 
-/// Set languages for several files: each toggle sends the whole set, as the web does.
+/// Set languages for several files: each toggle sends the whole set, as the web
+/// does. The page starts on the set every file shares, or empty with a Mixed
+/// note when they differ, so the first tap never wipes a language silently.
 private struct MIBulkLanguages: View {
     let rows: [ManualImportRow]
     @Environment(ManualImportSession.self) private var session
-    @State private var picked: [String] = []
+    @State private var picked: [String]
+    private let mixed: Bool
+
+    init(rows: [ManualImportRow]) {
+        self.rows = rows
+        let shared = ManualImportBatch.sharedLanguages(rows)
+        _picked = State(initialValue: shared ?? [])
+        mixed = rows.count > 1 && shared == nil
+    }
 
     var body: some View {
-        List(ManualImportRules.languages, id: \.self) { lang in
-            let on = picked.contains(lang)
-            Button {
-                if on { picked.removeAll { $0 == lang } } else { picked.append(lang) }
-                let next = picked, targets = rows
-                Task { await session.bulkPatch(targets, ["languages": .array(next.map(SettingsJSON.string))]) }
-            } label: {
-                HStack {
-                    Text(lang).foregroundStyle(Theme.txt)
-                    Spacer()
-                    if on { Image(systemName: "checkmark").foregroundStyle(Theme.accentText) }
+        List {
+            Section {
+                ForEach(ManualImportRules.languages, id: \.self) { lang in
+                    toggle(lang)
                 }
+            } header: {
+                if mixed { Text("Mixed: the selected files have different languages") }
             }
-            .accessibilityAddTraits(on ? .isSelected : [])
         }
         .navigationTitle("Set languages")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func toggle(_ lang: String) -> some View {
+        let on = picked.contains(lang)
+        return Button {
+            if on { picked.removeAll { $0 == lang } } else { picked.append(lang) }
+            let next = picked, targets = rows
+            Task { await session.bulkPatch(targets, ["languages": .array(next.map(SettingsJSON.string))]) }
+        } label: {
+            HStack {
+                Text(lang).foregroundStyle(Theme.txt)
+                Spacer()
+                if on { Image(systemName: "checkmark").foregroundStyle(Theme.accentText) }
+            }
+        }
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 }

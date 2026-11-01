@@ -222,7 +222,7 @@ struct ActProvenance: View {
         case "upgrade": return ("Upgrade", "arrow.up", Theme.dim)
         case "interactive": return ("Interactive", "person", Theme.indigo)
         case "forced": return ("Forced", "bolt", Theme.indigo)
-        case "regrab": return ("Re-grabbed", "arrow.clockwise", Theme.indigo)
+        case "regrab": return ("Re-grabbed", "arrow.uturn.down", Theme.indigo)
         case "requested", "request": return ("Requested", "tray.and.arrow.down", Theme.edition)
         default: return nil
         }

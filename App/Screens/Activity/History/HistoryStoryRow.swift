@@ -167,7 +167,7 @@ struct HistoryStoryRow: View {
                 ActIconButton(systemImage: "point.topleft.down.to.point.bottomright.curvepath", label: "Lifecycle") { lifecycle = true }
             }
             if hasGrab {
-                ActIconButton(systemImage: "arrow.clockwise", label: "Re-grab this release", busy: regrabbing) {
+                ActIconButton(systemImage: "arrow.uturn.down", label: "Re-grab this release", busy: regrabbing) {
                     Task { await regrab(override: false) }
                 }
             }

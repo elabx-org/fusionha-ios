@@ -57,12 +57,14 @@ struct MIStatusBadge: View {
         let status = ManualImportRules.status(row)
         Button { showing = true } label: {
             Image(systemName: status.symbol)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(status.color)
-                .frame(minWidth: 28, minHeight: 28)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(ManualImportRules.statusLong(row))
+        .accessibilityHint("Shows what this status means")
         .popover(isPresented: $showing) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(ManualImportRules.statusLong(row)).font(.subheadline.weight(.semibold))

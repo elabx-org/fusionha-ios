@@ -98,10 +98,10 @@ struct MIDetailPane: View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 3) {
                 Text([ManualImportRules.episodeCode(row), row.match.title].compactMap { $0 }.joined(separator: " · "))
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(Theme.dim)
                 MIRowTitle(row: row)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.txt)
                 HStack(spacing: 10) {
                     Text(DetailText.quality(row.quality ?? "UNKNOWN"))
@@ -110,7 +110,7 @@ struct MIDetailPane: View {
                     MIStatusBadge(row: row)
                     Text(ManualImportRules.statusLong(row)).lineLimit(1)
                 }
-                .font(.system(size: 12.5))
+                .font(.caption)
                 .foregroundStyle(Theme.dim)
             }
             .padding(.horizontal, 14)

@@ -59,7 +59,7 @@ struct MIFooterPrimary: View {
 private struct MIFlatOffStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 13, weight: .semibold))
+            .font(.footnote.weight(.semibold))
             .lineLimit(1)
             .padding(.horizontal, 12)
             .frame(minHeight: 32)

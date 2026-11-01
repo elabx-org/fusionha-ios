@@ -110,7 +110,7 @@ struct QueueActionsView: View {
                     Button("Blocklist without removing", systemImage: "nosign") { actions.blocklist(false) }
                 }
                 if let regrab = actions.regrab {
-                    Button("Re-grab this release", systemImage: "arrow.clockwise", action: regrab)
+                    Button("Re-grab this release", systemImage: "arrow.uturn.down", action: regrab)
                 }
                 Button("Copy release name", systemImage: "doc.on.doc", action: actions.copy)
             }
