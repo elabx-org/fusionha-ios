@@ -58,7 +58,7 @@ screens() {  # screens <pose> <display> [env…]
   want "duo-$P-discover" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover "$@"; snap "duo-$P-discover" "$D"; }
   want "duo-$P-settings" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=list "$@"; snap "duo-$P-settings" "$D"; }
   # Held downloads and Manual Import over the held pack (download 77).
-  local H="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_WHY=1"
+  local H="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_WHY=1 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103"
   local R="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77"
   local DAY="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight"
   want "duo-$P-held-why" && { launch $B $H "$@"; snap "duo-$P-held-why" "$D"; }

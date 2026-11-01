@@ -115,12 +115,22 @@ struct ManualImportSheet: View {
                 MISplitBody(scan: scan, detailId: $openId, folded: $folded,
                             lead: foldPanes.map { CGFloat($0.lead) }, gap: foldPanes.map { CGFloat($0.gap) } ?? 0) { pollRun += 1 }
             } else {
-                ScrollView {
-                    MIScanList(scan: scan, rowMode: rowMode, openId: $openId, folded: $folded) { pollRun += 1 }
-                        .padding(.horizontal, Theme.pageGutter)
-                        .padding(.vertical, 12)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        MIScanList(scan: scan, rowMode: rowMode, openId: $openId, folded: $folded) { pollRun += 1 }
+                            .padding(.horizontal, Theme.pageGutter)
+                            .padding(.vertical, 12)
+                    }
+                    .scrollDismissesKeyboard(.immediately)
+                    #if DEBUG
+                    // CI screenshots: the row `FUSIONHA_SCREENSHOT_MI_OPEN` opened, at the top.
+                    .task(id: openId) {
+                        guard let id = openId, ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_MI_OPEN"] != nil else { return }
+                        try? await Task.sleep(for: .milliseconds(400))
+                        proxy.scrollTo(id, anchor: .top)
+                    }
+                    #endif
                 }
-                .scrollDismissesKeyboard(.immediately)
             }
         } else if let error = session.loadError {
             ContentUnavailableView {

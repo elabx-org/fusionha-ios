@@ -212,7 +212,7 @@ shoot duo-harness-open-spread-manual-import-none open SIMCTL_CHILD_FUSIONHA_SCRE
 # Held downloads and Manual Import (UX pass): the held card's "Why it's held"
 # on the Activity spread and closed; a held row's decision and a kept row's
 # "Which file stays?" on the right page; the Web layout's bulk decide.
-H="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_WHY=1"
+H="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_WHY=1 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103"
 MI0="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=77 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0"
 for theme in dark daylight; do
   T=""; SUF=""
