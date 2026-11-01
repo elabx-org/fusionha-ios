@@ -240,14 +240,23 @@ final class ManualImportBulkTests: XCTestCase {
         XCTAssertEqual(ManualImportBulk.shortCode(try scan(folder).rows[1]), "E02", "rows keep the bare code")
     }
 
-    // MARK: The gate (only held downloads are approved)
+    // MARK: The gate (bar in every scenario, owner-approved 2026-11-01)
 
-    func testBarOnlyOnHeldDownloadsByDefault() throws {
-        XCTAssertFalse(ManualImportFeatures.barEverywhere, "bar in every scenario ships off")
+    func testBarInEveryScenario() throws {
+        XCTAssertTrue(ManualImportFeatures.barEverywhere, "bar in every scenario ships on")
         XCTAssertTrue(ManualImportFeatures.bulkBar(try scan()), "a held download gets the bar")
-        XCTAssertFalse(ManualImportFeatures.bulkBar(try scan(folder)), "a folder scan keeps the selection sheet")
+        XCTAssertTrue(ManualImportFeatures.bulkBar(try scan(folder)), "a folder scan gets the bar too")
         XCTAssertFalse(ManualImportFeatures.bulkBar(nil))
-        XCTAssertTrue(ManualImportFeatures.bulkBar(try scan(folder), everywhere: true), "one switch turns it on")
+        XCTAssertFalse(ManualImportFeatures.bulkBar(try scan(folder), everywhere: false), "off: only held downloads")
+        XCTAssertTrue(ManualImportFeatures.bulkBar(try scan(), everywhere: false))
+    }
+
+    func testFolderKeepIsOneActionWithNoDisposition() throws {
+        let s = summary(try scan(folder), [2])
+        XCTAssertFalse(s.held, "a folder scan is not held")
+        XCTAssertTrue(s.dispositions.isEmpty, "Keep current has no disposition submenu")
+        XCTAssertEqual(s.keepOutcome(.removeBlocklist), "Keep current for 1 · nothing imported, your library file stays")
+        XCTAssertEqual(s.request(.keepCurrent, pick: .remove, mode: .auto)?.dispositions, [:], "no disposition is sent")
     }
 
     func testApplyingLine() {

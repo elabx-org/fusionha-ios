@@ -1,14 +1,14 @@
 import Foundation
 
-/// Manual Import parts built ahead of the owner's approval. Not user-visible:
-/// no setting, one line to turn on.
+/// Manual Import switches. Not user-visible: no setting, one line to change.
 public enum ManualImportFeatures {
-    /// "Bar in every scenario" (mock T6bWkYmLvaSBmbSMa2rw5m, not yet
-    /// approved): the bulk bar on folder scans and not-held downloads too,
-    /// Keep current with no disposition, and the "N selected · Actions" sheet
-    /// gone. Off: only held downloads (the approved v3 mock) get the bar, and
-    /// every other scan keeps the selection sheet as before.
-    public static let barEverywhere = false
+    /// "Bar in every scenario" (mock T6bWkYmLvaSBmbSMa2rw5m, owner-approved
+    /// 2026-11-01): the bulk bar on folder scans and not-held downloads too,
+    /// Keep current there a single action with no disposition ("Keep current
+    /// for N · nothing imported, your library file stays"), and the
+    /// "N selected · Actions" sheet gone. Off: only held downloads get the bar,
+    /// and every other scan keeps the selection sheet.
+    public static let barEverywhere = true
 
     /// The bulk bar replaces the selection sheet for this scan.
     public static func bulkBar(_ scan: ManualImportScan?, everywhere: Bool = barEverywhere) -> Bool {

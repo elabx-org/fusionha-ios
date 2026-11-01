@@ -8,8 +8,8 @@ import FusionhaKit
 /// finishes every download it fully decided; its answer carries the scan.
 extension ManualImportSession {
 
-    /// The bulk bar replaces the selection sheet here (held downloads, unless
-    /// `ManualImportFeatures.barEverywhere`).
+    /// The bulk bar replaces the selection sheet here: every scan while
+    /// `ManualImportFeatures.barEverywhere` is on, else held downloads only.
     var barShows: Bool { ManualImportFeatures.bulkBar(scan) }
 
     /// What the selection can take, and the words for it.
