@@ -27,9 +27,7 @@ struct MIEpisodeSheet: View {
                     }
                 }
                 Section("Episodes") {
-                    if episodes.isEmpty {
-                        Text(seasons.isEmpty ? "Loading episodes…" : "No episodes in this season.").foregroundStyle(Theme.mut)
-                    }
+                    if episodes.isEmpty { emptyEpisodes }
                     ForEach(episodes) { ep in
                         let on = selected.contains(ep.id)
                         Button { toggle(ep, selected: selected, in: episodes) } label: {
@@ -52,6 +50,27 @@ struct MIEpisodeSheet: View {
             .task { if let item = row.match.itemId { await session.loadSeasons(itemId: item) } }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    /// No episodes to list: still loading, the load failed, or there are none.
+    @ViewBuilder private var emptyEpisodes: some View {
+        if let item = row.match.itemId {
+            if session.seasonErrors.contains(item) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(ManualImportCopy.episodesError).foregroundStyle(Theme.danger)
+                    ActAsyncButton(label: "Try again") {
+                        await session.loadSeasons(itemId: item)
+                        return !session.seasonErrors.contains(item)
+                    }
+                }
+            } else if session.seasons[item] == nil {
+                Text("Loading episodes…").foregroundStyle(Theme.mut)
+            } else {
+                Text(seasons.isEmpty ? "No episodes." : "No episodes in this season.").foregroundStyle(Theme.mut)
+            }
+        } else {
+            Text("Match this file to a library title first.").foregroundStyle(Theme.mut)
+        }
     }
 
     private func pickSeason(_ n: Int) {

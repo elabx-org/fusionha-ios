@@ -139,7 +139,8 @@ struct ManualImportSheet: View {
             }
         } else if let error = session.loadError {
             ContentUnavailableView {
-                Label("Couldn't open the files", systemImage: "exclamationmark.triangle")
+                Label(downloadIds.count > 1 ? "Couldn't open these downloads" : "Couldn't open this download",
+                      systemImage: "exclamationmark.triangle")
             } description: { Text(error) } actions: {
                 ActAsyncButton(label: "Try again", kind: .primary) { await session.retryStart(); return session.loadError == nil }
                 Button("Open on the web") { dismiss(); onOpenWeb() }.buttonStyle(ActButtonStyle(kind: .ghost))
@@ -147,8 +148,11 @@ struct ManualImportSheet: View {
         } else {
             VStack(spacing: 12) {
                 ProgressView().controlSize(.large).tint(Theme.mut)
-                Text("Reading the files…").font(.subheadline).foregroundStyle(Theme.mut)
+                Text(ManualImportCopy.rescueLoading(count: downloadIds.count))
+                    .font(.subheadline).foregroundStyle(Theme.mut)
+                    .multilineTextAlignment(.center)
             }
+            .padding(.horizontal, Theme.pageGutter)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }

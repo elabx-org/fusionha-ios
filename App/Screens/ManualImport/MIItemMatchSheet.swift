@@ -37,9 +37,7 @@ struct MIItemMatchSheet: View {
                 } header: {
                     Text("Parsed as \(row.parsed.title ?? row.filename)\(row.parsed.year.map { " (\($0))" } ?? "")").textCase(nil)
                 } footer: {
-                    if matches.isEmpty {
-                        Text(model.libraryLoaded ? "No library title matches “\(term)”. Add the title first, then scan again." : "Loading your library…")
-                    }
+                    if matches.isEmpty { emptyNote }
                 }
             }
             .searchable(text: $term, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search your library")
@@ -49,6 +47,27 @@ struct MIItemMatchSheet: View {
             .closeOnlyBars()
         }
         .task { if !model.libraryLoaded { await model.loadLibrary() } }
+    }
+
+    /// Why nothing is listed: still loading, the library failed to load, it is
+    /// empty, or nothing matches the search (web `ItemMatchDialog`).
+    @ViewBuilder private var emptyNote: some View {
+        if !model.libraryLoaded {
+            Text(ManualImportCopy.libraryLoading)
+        } else if model.library.isEmpty, model.libraryError != nil {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(ManualImportCopy.libraryError).foregroundStyle(Theme.danger)
+                ActAsyncButton(label: "Try again") {
+                    await model.loadLibrary()
+                    return model.libraryError == nil
+                }
+            }
+            .textCase(nil)
+        } else if model.library.isEmpty {
+            Text(ManualImportCopy.libraryEmpty)
+        } else {
+            Text(ManualImportCopy.noLibraryMatch(term))
+        }
     }
 
     private func option(_ item: MediaItem) -> some View {

@@ -57,6 +57,8 @@ final class ManualImportSession {
     var importedCount = 0
     /// The matched shows' seasons, for the episode picker.
     private(set) var seasons: [Int: [Season]] = [:]
+    /// Shows whose seasons failed to load (the picker offers Try again).
+    private(set) var seasonErrors: Set<Int> = []
     /// The server's edition names, for a movie row's Edition.
     private(set) var editionNames: [String] = []
 
@@ -96,7 +98,7 @@ final class ManualImportSession {
             }
             #endif
         } catch {
-            loadError = ErrorCopy.message(for: error, fallback: "Couldn't open these files. Try again.")
+            loadError = ManualImportCopy.rescueError(count: rescueIds.count)
         }
     }
 
@@ -122,7 +124,7 @@ final class ManualImportSession {
             }
             #endif
         } catch {
-            loadError = ErrorCopy.message(for: error, fallback: "Couldn't scan that folder. Check the path and try again.")
+            loadError = ManualImportCopy.scanError
         }
     }
 
@@ -203,8 +205,15 @@ final class ManualImportSession {
     // MARK: Episodes
 
     func loadSeasons(itemId: Int) async {
-        guard seasons[itemId] == nil, let client, let item = try? await client.item(id: itemId) else { return }
-        seasons[itemId] = item.seasons ?? []
+        guard seasons[itemId] == nil, let client else { return }
+        seasonErrors.remove(itemId)
+        do {
+            seasons[itemId] = try await client.item(id: itemId).seasons ?? []
+        } catch {
+            // A fetch cancelled with its view is not an answer.
+            if Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled { return }
+            seasonErrors.insert(itemId)
+        }
     }
 
     func loadEditions() async {

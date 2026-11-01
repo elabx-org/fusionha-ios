@@ -18,27 +18,48 @@ struct MIScanList: View {
         @Bindable var session = session
         LazyVStack(alignment: .leading, spacing: 10) {
             if session.folderMode { MISourceBar() }
-            if let strip = ManualImportHeldStrip(scan: scan, decide: session.plan.need) { MIHeldStripView(strip: strip) }
-            MIPackProgress()
-            MIVerdictStrip(rows: scan.rows, filter: $session.filter, probing: scan.probePending ?? 0,
-                           stalled: session.probeStalled) {
-                session.retryProbes()
-                onRetryProbes()
-            }
-            let blocks = ManualImportBlock.group(scan.rows)
-            MIMatchBanner(blocks: blocks, filter: $session.filter)
-            ForEach(blocks) { block in
-                let shown = block.rows.filter(session.filter.matches)
-                if !shown.isEmpty {
-                    MITitleSection(block: block, rows: shown, folded: foldBinding(block.key), openId: $openId,
-                                   rowMode: rowMode)
+            if scan.rows.isEmpty {
+                noVideos
+            } else {
+                if let strip = ManualImportHeldStrip(scan: scan, decide: session.plan.need) { MIHeldStripView(strip: strip) }
+                MIPackProgress()
+                MIVerdictStrip(rows: scan.rows, filter: $session.filter, probing: scan.probePending ?? 0,
+                               stalled: session.probeStalled) {
+                    session.retryProbes()
+                    onRetryProbes()
                 }
-            }
-            if blocks.allSatisfy({ !$0.rows.contains(where: session.filter.matches) }) {
-                Button("No files match this filter. Show all") { session.filter = .all }
-                    .buttonStyle(ActButtonStyle(kind: .ghost))
+                let blocks = ManualImportBlock.group(scan.rows)
+                MIMatchBanner(blocks: blocks, filter: $session.filter)
+                ForEach(blocks) { block in
+                    let shown = block.rows.filter(session.filter.matches)
+                    if !shown.isEmpty {
+                        MITitleSection(block: block, rows: shown, folded: foldBinding(block.key), openId: $openId,
+                                       rowMode: rowMode)
+                    }
+                }
+                if blocks.allSatisfy({ !$0.rows.contains(where: session.filter.matches) }) { filterEmpty }
             }
         }
+    }
+
+    /// A scan that found no video files: say so, not "nothing matches this filter".
+    private var noVideos: some View {
+        ContentUnavailableView {
+            Label(ManualImportCopy.noVideos(folder: session.folderMode), systemImage: "film")
+        } description: {
+            if session.folderMode { Text("Pick another folder and scan again.") }
+        }
+    }
+
+    /// Rows exist but the filter shows none (web `manual-filter-empty`).
+    private var filterEmpty: some View {
+        HStack(spacing: 10) {
+            Text(ManualImportCopy.filterEmpty).font(.subheadline).foregroundStyle(Theme.mut)
+            Button("Show all") { session.filter = .all }
+                .buttonStyle(ActButtonStyle(kind: .ghost))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
     }
 
     private func foldBinding(_ key: String) -> Binding<Bool> {
