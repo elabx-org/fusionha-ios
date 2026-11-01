@@ -64,7 +64,9 @@ struct HeldWhy: View {
             Button("Blocklist this release", systemImage: "nosign") {
                 blocklisting = true
                 Task {
-                    await ActActions.blocklist(model.client, toaster, BlocklistCreate(downloadId: item.id, search: false))
+                    // One tap like the web, with Undo on the toast (it is reversible).
+                    await ActActions.blocklist(model.client, toaster, BlocklistCreate(downloadId: item.id, search: false),
+                                               offerUndo: true)
                     blocklisting = false
                 }
             }

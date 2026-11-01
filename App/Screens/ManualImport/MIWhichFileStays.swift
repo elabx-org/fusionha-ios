@@ -9,6 +9,9 @@ import FusionhaKit
 struct MIWhichFileStays: View {
     let row: ManualImportRow
     let pending: Bool
+    /// What really happens to the held download when this file is skipped
+    /// ("the download is removed when you finish"); nil outside a held download.
+    var keepTail: String? = nil
     let onPick: (String) -> Void
     @State private var showAll = false
 
@@ -62,7 +65,7 @@ struct MIWhichFileStays: View {
         let group = current?.releaseGroup ?? "current"
         switch selection {
         case .take: return worse ? "This file replaces your \(group) file, a downgrade on the rows marked with a down arrow." : "This file replaces your \(group) file."
-        case .keep: return "Your \(group) file stays. This one is skipped\(row.held != nil ? ", and the download is removed when you finish" : "")."
+        case .keep: return "Your \(group) file stays. This one is skipped\(keepTail.map { ", and \($0)" } ?? "")."
         case nil: return "Tap the file you want to keep in your library."
         }
     }

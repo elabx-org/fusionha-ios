@@ -107,6 +107,7 @@ private struct DuoPageCover<Content: View>: View {
         .environment(\.escapeTakenByHost, true)
         .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { measured = $0 }
         .environment(dismissGuard)
+        .onChange(of: dismissGuard.closeRequests) { attemptClose() }
         .confirmationDialog(confirmText, isPresented: $asking, titleVisibility: .visible) {
             Button("Discard", role: .destructive) { close() }
             Button("Keep editing", role: .cancel) {}

@@ -54,7 +54,7 @@ struct MIDecideMenuItems: View {
         if s.held && !s.dispositions.isEmpty {
             Menu {
                 ForEach(s.dispositions) { d in
-                    Button { run(.keepCurrent, pick: d.value) } label: {
+                    Button(role: d.value == .leave ? nil : .destructive) { run(.keepCurrent, pick: d.value) } label: {
                         Text(d.recommended ? "\(d.label) · Recommended" : d.label)
                         Text(d.off ?? d.detail)
                     }

@@ -77,6 +77,8 @@ struct MIStatusBadge: View {
 
 /// The status key (ⓘ in the toolbar).
 struct MIStatusKey: View {
+    @Environment(\.dismiss) private var dismiss
+
     var body: some View {
         NavigationStack {
             List(ManualImportStatus.allCases, id: \.self) { status in
@@ -91,7 +93,9 @@ struct MIStatusKey: View {
             }
             .navigationTitle("Status key")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { SheetCancelButton(title: "Close") { dismiss() } } }
+            .closeOnlyBars()
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.mediumFitting, .large])
     }
 }

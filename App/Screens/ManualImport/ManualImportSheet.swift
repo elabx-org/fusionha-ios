@@ -13,6 +13,9 @@ struct ManualImportSheet: View {
     let onOpenWeb: () -> Void
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+    /// Set on a page of the open Duo: Close goes through the cover's guard.
+    @Environment(DuoPageDismissGuard.self) private var pageGuard: DuoPageDismissGuard?
+    @State private var askingClose = false
     @State private var session: ManualImportSession
     @State private var openId: Int?
     @State private var showKey = false
@@ -38,7 +41,10 @@ struct ManualImportSheet: View {
                 .navigationTitle(foldPanes == nil ? "Manual import" : "")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { SheetCancelButton(title: "Close") { dismiss() } }
+                    ToolbarItem(placement: .cancellationAction) {
+                        // Never mid-commit (and so never Escape): it would lose the toast and the queue refresh.
+                        SheetCancelButton(title: "Close") { attemptClose() }.disabled(busy)
+                    }
                     if layout == .split && session.barShows && session.tickedCount > 0 {
                         // While deciding the split's column keeps Select all (the footer's is gone).
                         ToolbarItem(placement: .primaryAction) { MISelectUndecidedButton() }
@@ -83,14 +89,29 @@ struct ManualImportSheet: View {
             Task { await model.refreshQueue() }
             dismiss()
         }
-        .interactiveDismissDisabled(session.working || session.applying != nil)
+        .interactiveDismissDisabled(busy)
         // On the open Duo's pages: the pull-down waits while working, and asks with rows ticked.
-        .duoPageDismiss(session.working || session.applying != nil ? .busy
-                        : session.selected.isEmpty ? .allowed
-                        : .confirm("Close Manual Import? The rows you ticked stay undecided."))
+        .duoPageDismiss(busy ? .busy : session.selected.isEmpty ? .allowed : .confirm(Self.closeQuestion))
+        .confirmationDialog(Self.closeQuestion, isPresented: $askingClose, titleVisibility: .visible) {
+            Button("Discard", role: .destructive) { dismiss() }
+            Button("Keep editing", role: .cancel) {}
+        }
         // Unfolded: the page size, so the file rows use the inner display's
         // width (DC22); `layout` then picks cards, the split or the table from it.
         .presentationSizing(.page)
+    }
+
+    private static let closeQuestion = "Close Manual Import? The rows you ticked stay undecided."
+
+    /// A commit, finish or bulk decide in flight.
+    private var busy: Bool { session.working || session.applying != nil }
+
+    /// Close: on a Duo page through the cover's guard (its pull and dim use
+    /// the same); in a sheet, the same ask while rows are ticked.
+    private func attemptClose() {
+        if let pageGuard { return pageGuard.requestClose() }
+        guard !busy else { return }
+        if session.selected.isEmpty { dismiss() } else { askingClose = true }
     }
 
     @ViewBuilder private var content: some View {

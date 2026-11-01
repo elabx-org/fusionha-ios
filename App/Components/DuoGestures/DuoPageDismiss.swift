@@ -24,6 +24,11 @@ enum DuoPageDismissPolicy: Equatable {
 @Observable
 final class DuoPageDismissGuard {
     var policy: DuoPageDismissPolicy = .allowed
+    /// The page's own Close asks the cover to close through the same guard
+    /// (busy stays, unsaved choices ask) and its slide; bumped by `requestClose`.
+    private(set) var closeRequests = 0
+
+    func requestClose() { closeRequests += 1 }
 }
 
 extension View {

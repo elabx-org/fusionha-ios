@@ -116,7 +116,8 @@ struct MIRowDecision: View {
             if mislabel, let m = row.measured, let p = row.probe { mislabelPanel(m, p) }
             if let alt = titleCheck { titlePanel(alt) }
             if picker {
-                MIWhichFileStays(row: row, pending: session.pendingRows.contains(row.rowId)) { choice in
+                MIWhichFileStays(row: row, pending: session.pendingRows.contains(row.rowId),
+                                 keepTail: session.keepTail(for: row)) { choice in
                     Task { await session.patch(row, ["replace_choice": .string(choice)]) }
                 }
             } else if current != nil {

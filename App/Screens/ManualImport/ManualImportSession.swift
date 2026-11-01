@@ -221,6 +221,8 @@ final class ManualImportSession {
             let before = scan?.probePending ?? 0
             guard let fresh = try? await serially({ try await client.manualImportProbe(scanId: scanId) }) else {
                 noProgress += 1
+                since = since ?? .now  // errors count toward the stall too
+                if let since, Date.now.timeIntervalSince(since) >= 120 { probeStalled = true; return }
                 continue
             }
             adopt(fresh)
