@@ -15,13 +15,21 @@ struct ShellPage: ViewModifier {
     /// The folded Duo's column leads with Account: the page declares it
     /// first itself (the Library), so the shell leaves it out there.
     var accountInPageWhenFolded = false
+    /// D7-A: an inline title on the folded Duo and in compact height, so the
+    /// page's first card starts higher (Activity).
+    var inlineWhenCompact = false
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.verticalSizeClass) private var heightClass
     /// The page's own width: past 900 the status cluster joins the bar (S3, as the web).
     @State private var width: CGFloat = 0
     @State private var clusterPanel: StatusClusterPanel?
 
     private var accountInPage: Bool {
         accountInPageWhenFolded && OuterDisplay.isFoldedDuo(sizeClass: sizeClass)
+    }
+
+    private var inlineTitle: Bool {
+        inlineWhenCompact && OuterDisplay.wantsCompactChrome(sizeClass: sizeClass, heightClass: heightClass)
     }
 
     private var showsCluster: Bool {
@@ -32,7 +40,7 @@ struct ShellPage: ViewModifier {
         content
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             .navigationTitle(title)
-            .toolbarTitleDisplayMode(.inlineLarge)
+            .toolbarTitleDisplayMode(inlineTitle ? .inline : .inlineLarge)
             .toolbar {
                 StatusClusterItems(model: model, shown: showsCluster, open: $clusterPanel)
                 DuoLayoutToolbarItem(shown: duoOpen, layout: $duoLayout)
@@ -63,9 +71,10 @@ extension View {
     }
 
     /// The same, with the page's own toolbar items placed before the shell's.
-    func shellPage<Actions: ToolbarContent>(_ title: String,
+    /// `inlineWhenCompact`: an inline title on the folded Duo and in compact height (D7-A).
+    func shellPage<Actions: ToolbarContent>(_ title: String, inlineWhenCompact: Bool = false,
                                             @ToolbarContentBuilder actions: () -> Actions) -> some View {
-        toolbar(content: actions).modifier(ShellPage(title: title))
+        toolbar(content: actions).modifier(ShellPage(title: title, inlineWhenCompact: inlineWhenCompact))
     }
 
     /// Close-only sheets keep horizontal bars (ruling Q-DC6).

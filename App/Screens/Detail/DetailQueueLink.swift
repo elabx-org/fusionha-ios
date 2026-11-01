@@ -7,7 +7,12 @@ import FusionhaKit
 /// still opens.
 extension AppModel {
     func openInQueue(editionId: Int?, episodeId: Int? = nil) {
-        if let id = queueDownloadId(editionId: editionId, episodeId: episodeId) {
+        openInQueue(downloadId: queueDownloadId(editionId: editionId, episodeId: episodeId))
+    }
+
+    /// Activity › Queue with this download brought forward and flashed.
+    func openInQueue(downloadId: Int?) {
+        if let id = downloadId {
             pendingQueueFocus = (downloadId: id, block: false)
             pendingQueueScroll = id
         }

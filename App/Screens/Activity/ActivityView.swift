@@ -156,7 +156,8 @@ struct ActivityView: View {
                 .publishesBottomBarTop("activity.bulk")
             }
         }
-        .shellPage("Activity") {
+        // D7-A: inline on the folded Duo and in compact height, so Needs you starts on the first screen.
+        .shellPage("Activity", inlineWhenCompact: true) {
             ToolbarItem(placement: .primaryAction) {
                 Button("Manual import", systemImage: "square.and.arrow.down") { router.manualImport() }
             }

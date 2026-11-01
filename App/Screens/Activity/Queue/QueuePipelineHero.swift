@@ -12,6 +12,9 @@ struct PipelineHero: View {
     let hasPhaseWork: Bool
     /// "Last import …" for the idle line (0.4.189 `pipeline.last_import`).
     var lastImport: QueuePipeline.LastImport? = nil
+    /// D7-A: the header line only (no stage strip), never wrapping: the
+    /// folded Duo or compact height while something is held.
+    var oneLine = false
     @State private var width: CGFloat = 0
 
     var body: some View {
@@ -19,8 +22,12 @@ struct PipelineHero: View {
         let last = QueuePipelineModel.lastImportLine(lastImport)
         let narrow = width > 0 && width < 720
         VStack(alignment: .leading, spacing: 10) {
-            header(m, last: last, narrow: narrow)
-            if m.running {
+            if oneLine {
+                singleLine(m)
+            } else {
+                header(m, last: last, narrow: narrow)
+            }
+            if m.running && !oneLine {
                 HStack(alignment: .bottom, spacing: 6) {
                     ForEach(m.columns) { column($0, narrow: narrow) }
                 }
@@ -57,6 +64,24 @@ struct PipelineHero: View {
             if let right {
                 Text(right).font(.system(size: 12.5).monospacedDigit()).foregroundStyle(Theme.dim)
             }
+        }
+        .font(.system(size: 13))
+    }
+
+    /// "● Pipeline · 3 jobs · 1 failed at parsing" on one line, truncating.
+    private func singleLine(_ m: QueuePipelineModel) -> some View {
+        HStack(spacing: 8) {
+            if m.running {
+                ActPulseDot(color: Theme.grab, size: 8, spread: 6)
+            } else {
+                Circle().fill(Theme.dim).frame(width: 8, height: 8).accessibilityHidden(true)
+            }
+            (Text(m.running ? "Pipeline" : "Pipeline idle").fontWeight(.semibold).foregroundColor(Theme.txt)
+             + Text(" · \(m.jobs) job\(m.jobs == 1 ? "" : "s")\(m.failed.map { " · \($0)" } ?? "")")
+                .foregroundColor(Theme.mut))
+                .monospacedDigit()
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
         .font(.system(size: 13))
     }

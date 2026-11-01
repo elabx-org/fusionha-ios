@@ -68,7 +68,7 @@ struct MISelectionSheet: View {
                 MIBulkSheet(title: "Edit \(picked.count) selected", rows: picked.filter { !$0.committed }, embedded: true)
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.mediumFitting, .large])
     }
 
     private func decide(_ label: String, _ icon: String, _ rows: [ManualImportRow], choice: String) -> some View {

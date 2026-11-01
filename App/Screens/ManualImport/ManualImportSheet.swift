@@ -4,8 +4,10 @@ import FusionhaKit
 /// Manual Import for held downloads, native (the web's Manual Import modal in
 /// its rescue mode): the reason strip, one block per title, a row per file,
 /// and the footer that imports or finishes the download. Phone cards, the Duo
-/// split (list | file) or the desktop table, by the sheet's own size; with
-/// the open Duo's fold through it, always the split, meeting at the fold.
+/// split (list | file) or the desktop table, by the sheet's own size; on the
+/// open Duo always the split (D2-A): halves meeting at the fold in book pose,
+/// the list a third and the file the rest, no gap, flat. The table stays for
+/// iPads, which have no fold.
 /// With no held downloads it is the folder scan (source bar, Browse…, Scan);
 /// the system overflow also offers the web version as a fallback.
 struct ManualImportSheet: View {
@@ -23,8 +25,8 @@ struct ManualImportSheet: View {
     @State private var folded: Set<String> = []
     /// The sheet's measured size (`layout`).
     @State private var size: CGSize = .zero
-    /// The open iPhone Duo's fold through the sheet: the list before it, the
-    /// file or the decision panel after it (`MISplitBody`).
+    /// The open iPhone Duo's split: the list before the fold (book) or in the
+    /// leading third (flat), the file or the decision panel after it (`MISplitBody`).
     @State private var foldPanes: FoldColumns.Panes?
 
     init(downloadIds: [Int], client: APIClient?, onOpenWeb: @escaping () -> Void) {
@@ -37,9 +39,10 @@ struct ManualImportSheet: View {
         NavigationStack {
             content
                 .background(Theme.bg.ignoresSafeArea())
-                // On the fold the centred title would sit in the gutter.
-                .navigationTitle(foldPanes == nil ? "Manual import" : "")
-                .navigationBarTitleDisplayMode(.inline)
+                // Named in every pose; in book pose leading (inline large),
+                // on the left page, since a centred title would sit on the fold.
+                .navigationTitle("Manual import")
+                .toolbarTitleDisplayMode(bookFold ? .inlineLarge : .inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         // Never mid-commit (and so never Escape): it would lose the toast and the queue refresh.
@@ -66,7 +69,7 @@ struct ManualImportSheet: View {
                 .miBulkBar(active: barActive)
                 .onGeometryChange(for: CGSize.self) { $0.size } action: { size = $0 }
                 .onGeometryChange(for: FoldColumns.Panes?.self) { proxy in
-                    // Option A: halves at the fold in book pose; flat, the usual split.
+                    // D2-A: halves at the fold in book pose; flat, a third | the rest.
                     let fold = FoldInfo(proxy)
                     let x = fold.vertical ?? fold.flatVertical
                     return ManualImportLayout.duoPanes(width: Double(proxy.size.width),
@@ -75,7 +78,7 @@ struct ManualImportSheet: View {
                 } action: { foldPanes = $0 }
         }
         .environment(session)
-        .sheet(isPresented: $showKey) { MIStatusKey().sheetEscapeRoot() }
+        .duoPageSheet(isPresented: $showKey) { MIStatusKey() }
         .task { await session.start() }
         .task(id: model.me?.id) { session.canRemove = model.me.map { $0.has("system.admin") } ?? true }
         .task(id: "\(session.scan?.scanId ?? 0)-\(pollRun)") { await session.pollProbes() }
@@ -103,6 +106,9 @@ struct ManualImportSheet: View {
 
     private static let closeQuestion = "Close Manual Import? The rows you ticked stay undecided."
 
+    /// Book pose: the fold is reserved (the panes keep a gutter around it).
+    private var bookFold: Bool { (foldPanes?.gap ?? 0) > 0 }
+
     /// A commit, finish or bulk decide in flight.
     private var busy: Bool { session.working || session.applying != nil }
 
@@ -123,6 +129,7 @@ struct ManualImportSheet: View {
                 }
                 .padding(.horizontal, Theme.pageGutter)
                 .padding(.vertical, 12)
+                .modifier(MILeadPage(panes: foldPanes))
             }
             .scrollDismissesKeyboard(.immediately)
         } else if let scan = session.scan {
@@ -145,6 +152,7 @@ struct ManualImportSheet: View {
                 ActAsyncButton(label: "Try again", kind: .primary) { await session.retryStart(); return session.loadError == nil }
                 Button("Open on the web") { dismiss(); onOpenWeb() }.buttonStyle(ActButtonStyle(kind: .ghost))
             }
+            .modifier(MILeadPage(panes: foldPanes))
         } else {
             VStack(spacing: 12) {
                 ProgressView().controlSize(.large).tint(Theme.mut)
@@ -154,6 +162,7 @@ struct ManualImportSheet: View {
             }
             .padding(.horizontal, Theme.pageGutter)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .modifier(MILeadPage(panes: foldPanes))
         }
     }
 
@@ -188,5 +197,22 @@ struct ManualImportSheet: View {
 
     private var rowMode: MIRowMode {
         layout == .table ? .table(narrow: ManualImportLayout.tableIsNarrow(Double(size.width))) : .cards
+    }
+}
+
+/// In book pose, the content before the fold (DUO-MI-3, DUO-MI-4): the
+/// folder bar, the loading line and the error's buttons stay on the left
+/// page, never across the fold. Flat (no gap) and off the Duo, as is.
+struct MILeadPage: ViewModifier {
+    let panes: FoldColumns.Panes?
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if let panes, panes.gap > 0 {
+            content
+                .frame(width: CGFloat(panes.lead))
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            content
+        }
     }
 }

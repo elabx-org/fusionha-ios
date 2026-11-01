@@ -49,7 +49,7 @@ struct MIEpisodeSheet: View {
             .disabled(session.pendingRows.contains(row.rowId))
             .task { if let item = row.match.itemId { await session.loadSeasons(itemId: item) } }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.mediumFitting, .large])
     }
 
     /// No episodes to list: still loading, the load failed, or there are none.
@@ -123,6 +123,6 @@ struct MILanguagesSheet: View {
             }
             .onAppear { picked = row.languages ?? [] }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.mediumFitting, .large])
     }
 }

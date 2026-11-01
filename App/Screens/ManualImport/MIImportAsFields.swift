@@ -3,6 +3,9 @@ import FusionhaKit
 
 /// "Import as" (the web's `ImportAsFields`): every editable value once, one
 /// tap each. A change goes straight to the server and the row re-evaluates.
+/// While the row is set to Keep current the values aren't used, so the form
+/// dims under a line that says so (F15); it stays editable for a change of
+/// mind. Never wider than a form needs (the desktop table's opened row).
 struct MIImportAsFields: View {
     let row: ManualImportRow
     @Environment(ManualImportSession.self) private var session
@@ -12,8 +15,29 @@ struct MIImportAsFields: View {
 
     private var matched: Bool { row.match.itemId != nil }
     private var series: Bool { row.target.isSeries }
+    /// Keep current is chosen: nothing here will be imported.
+    private var keeping: Bool { row.replaceChoice == "keep_current" && !row.committed }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if keeping {
+                Text("Keeping your current file, so these aren't used.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.mut)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            fields.opacity(keeping ? 0.55 : 1)
+        }
+        .frame(maxWidth: 560, alignment: .leading)
+        .duoPageSheet(item: $sheet) { which in
+            switch which {
+            case .episodes: MIEpisodeSheet(row: row)
+            case .languages: MILanguagesSheet(row: row)
+            }
+        }
+    }
+
+    private var fields: some View {
         VStack(spacing: 0) {
             if matched && series {
                 field(row.target.coveredEpisodeIds.count > 1 ? "Episodes" : "Episode", episodeValue) { sheet = .episodes }
@@ -30,15 +54,6 @@ struct MIImportAsFields: View {
         }
         .background(Theme.panel2, in: RoundedRectangle(cornerRadius: Theme.radiusSm, style: .continuous))
         .disabled(row.committed || session.pendingRows.contains(row.rowId))
-        .sheet(item: $sheet) { which in
-            Group {
-                switch which {
-                case .episodes: MIEpisodeSheet(row: row)
-                case .languages: MILanguagesSheet(row: row)
-                }
-            }
-            .sheetEscapeRoot()
-        }
     }
 
     private func set(_ fields: [String: SettingsJSON]) {

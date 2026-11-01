@@ -72,7 +72,7 @@ struct BlockReleaseGroupSheet: View {
             }
             .task { await loadEvidence() }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.mediumFitting, .large])
     }
 
     private var canCustomFormat: Bool { model.me?.can("quality.manage") == true }

@@ -29,7 +29,7 @@ struct MIBulkSheet: View {
                     .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } } }
                     .closeOnlyBars()
             }
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.mediumFitting, .large])
         }
     }
 

@@ -32,6 +32,8 @@ struct ActivityQueueTab: View {
     /// across a rotation, shown only while the pane splits.
     @State var duoOpenKey: String?
     @Environment(\.paneSize) var pane
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.verticalSizeClass) private var heightClass
 
     var body: some View {
         let _ = PerfCount.hit("ActivityQueueTab.body")
@@ -142,8 +144,11 @@ struct ActivityQueueTab: View {
         let items = store.items
         let realBps = items.filter { !$0.isPhaseMode && [.downloading, .stalled, .awaiting].contains($0.cockpitState) }
             .reduce(0) { $0 + (store.telemetry[$1.id]?.bps ?? 0) }
+        // D7-A: on short chrome, one line while something is held, so its card shows first.
+        let oneLine = OuterDisplay.wantsCompactChrome(sizeClass: sizeClass, heightClass: heightClass)
+            && items.contains { $0.status.lowercased() == "held" }
         return PipelineHero(items: items, aggregateBps: realBps, hasPhaseWork: items.contains { $0.isPhaseMode },
-                            lastImport: store.lastImport)
+                            lastImport: store.lastImport, oneLine: oneLine)
     }
 }
 

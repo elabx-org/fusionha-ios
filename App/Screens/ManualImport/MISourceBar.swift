@@ -40,12 +40,13 @@ struct MISourceBar: View {
                 }
             }
         }
-        .sheet(isPresented: $browsing) {
+        // Off the Duo's fold (DUO-MI-3): never wider than a field needs.
+        .frame(maxWidth: 520, alignment: .leading)
+        .duoPageSheet(isPresented: $browsing) {
             MIFolderBrowser(start: path.isEmpty ? nil : path) { picked in
                 path = picked
                 scan()
             }
-            .sheetEscapeRoot()
         }
     }
 

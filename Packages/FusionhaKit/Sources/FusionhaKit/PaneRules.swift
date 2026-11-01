@@ -77,12 +77,23 @@ public enum ManualImportLayout: String, Sendable, Equatable {
         return FoldColumns.panes(width: width, fold: fold, minLead: 300, minTrail: 320)
     }
 
-    /// Option A: book pose splits at the fold (`foldPanes`); flat open nothing
-    /// is reserved, so the sheet keeps its own list | file split by size, with
-    /// no fold gutter. `fold` is the open Duo's fold, active or not.
+    /// The narrowest the list may be on the open Duo (`foldPanes` keeps it too).
+    public static let minDuoList = 300.0
+
+    /// The open Duo's split, the same list | file structure in both poses
+    /// (D2-A, option A): book pose halves at the fold with its gutter
+    /// (`foldPanes`); flat, the list about a third (`DuoSplit.flatPages`, at
+    /// least `minDuoList`) and the file or decision panel the rest, with no
+    /// gap, since nothing is reserved. `fold` is the open Duo's fold, active
+    /// or not; `nil` without it (the usual layout by size: an iPad keeps the
+    /// table).
     public static func duoPanes(width: Double, fold: ClosedRange<Double>?, posture: DuoPosture?) -> FoldColumns.Panes? {
-        guard posture?.reservesFold == true else { return nil }
-        return foldPanes(width: width, fold: fold)
+        guard let posture, let fold else { return nil }
+        if posture.reservesFold { return foldPanes(width: width, fold: fold) }
+        guard let pages = DuoSplit.pages(width: width, fold: fold, posture: .flat) else { return nil }
+        let lead = max(pages.left.width, minDuoList)
+        guard width - lead >= DuoSplit.minDetail else { return nil }
+        return FoldColumns.Panes(lead: lead, gap: 0)
     }
 
     /// The table drops Audio and Group · service under 1100 (`COLUMNS_NARROW`).

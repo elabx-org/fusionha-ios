@@ -47,12 +47,12 @@ struct MITitleSection: View {
                 }
             }
         }
-        .sheet(isPresented: $editAll) {
+        // On the open Duo these open on the right page, never centred on the fold.
+        .duoPageSheet(isPresented: $editAll) {
             MIBulkSheet(title: "Edit all · \(block.title)", rows: block.rows.filter { !$0.committed })
                 .environment(session)
-                .sheetEscapeRoot()
         }
-        .sheet(isPresented: $rematch) { MIItemMatchSheet(rows: block.rows).environment(session).sheetEscapeRoot() }
+        .duoPageSheet(isPresented: $rematch) { MIItemMatchSheet(rows: block.rows).environment(session) }
     }
 
     private var header: some View {

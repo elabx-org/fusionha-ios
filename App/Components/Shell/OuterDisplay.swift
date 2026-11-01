@@ -21,6 +21,14 @@ enum OuterDisplay {
         return isOuterDisplay(size)
     }
 
+    /// Short chrome (D7-A): the folded Duo, or any compact-height window
+    /// (a phone or the outer display held sideways). Pages that put their
+    /// first actionable card under a tall header use it to slim the header.
+    @MainActor
+    static func wantsCompactChrome(sizeClass: UserInterfaceSizeClass?, heightClass: UserInterfaceSizeClass?) -> Bool {
+        heightClass == .compact || isFoldedDuo(sizeClass: sizeClass)
+    }
+
     /// The outer display's screen, in either orientation.
     static func isOuterDisplay(_ size: CGSize) -> Bool {
         let short = min(size.width, size.height), long = max(size.width, size.height)

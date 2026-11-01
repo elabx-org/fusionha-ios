@@ -23,7 +23,7 @@ struct MIRowBody: View {
         }
         .padding(.leading, indent)
         .disabled(session.working)
-        .sheet(isPresented: $matching) { MIItemMatchSheet(row: row).environment(session).sheetEscapeRoot() }
+        .duoPageSheet(isPresented: $matching) { MIItemMatchSheet(row: row).environment(session) }
     }
 
     private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {

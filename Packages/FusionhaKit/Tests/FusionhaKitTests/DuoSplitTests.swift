@@ -88,14 +88,21 @@ final class DuoSplitTests: XCTestCase {
         XCTAssertFalse(SpreadGeometry.tabsCrossFold(tabsWidth: width, fold: nil))
     }
 
-    /// Manual Import (`duoPageSheet(.twoPages)`): halves at the fold in book
-    /// pose, its own split by size when flat, nothing when closed.
+    /// Manual Import (`duoPageSheet(.twoPages)`, D2-A): halves at the fold in
+    /// book pose; flat the same list | file split, the list a third (at least
+    /// 300) with no gap; nothing when closed (an iPad keeps the table).
     func testManualImportFollowsThePosture() throws {
         let book = try XCTUnwrap(ManualImportLayout.duoPanes(width: width, fold: fold, posture: .book))
         XCTAssertEqual(book, ManualImportLayout.foldPanes(width: width, fold: fold))
         XCTAssertEqual(book.lead, 431.5)
-        XCTAssertNil(ManualImportLayout.duoPanes(width: width, fold: fold, posture: .flat))
+        let flat = try XCTUnwrap(ManualImportLayout.duoPanes(width: width, fold: fold, posture: .flat))
+        XCTAssertEqual(flat.lead, 300, "a third of 849 is 283: the list keeps its 300 minimum")
+        XCTAssertEqual(flat.gap, 0, "flat reserves nothing")
+        let wide = try XCTUnwrap(ManualImportLayout.duoPanes(width: 1200, fold: 600...600, posture: .flat))
+        XCTAssertEqual(wide.lead, 400)
+        XCTAssertNil(ManualImportLayout.duoPanes(width: 600, fold: 300...300, posture: .flat), "the file would be too narrow")
         XCTAssertNil(ManualImportLayout.duoPanes(width: width, fold: nil, posture: nil))
+        XCTAssertNil(ManualImportLayout.duoPanes(width: width, fold: nil, posture: .flat))
     }
 
     /// List hidden, the detail is the whole display: reading text stops at ~680.
