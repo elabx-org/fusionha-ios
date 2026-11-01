@@ -18,15 +18,17 @@ instead of from scratch.
 | Living fusion moves | synced to **v0.4.224** (`49c6170b`, 2026-10-20), see the 0.4.224 section; the rest of 0.4.223–0.4.224 is not yet checked |
 | Watchlists & lists | requests phase 10b slice 1 synced to **v0.4.226** (`57c6e464`, 2026-10-23), see the 0.4.226 section (branch `requests-10b`) |
 | Manual Import safety | B1 batch synced to **v0.4.233** (`ad01ec6f`, 2026-11-01), see the 0.4.233 section (branch `mi-b1`); **shipped in build 657** |
-| Manual Import UX test | MI and held downloads checked against **v0.4.233** (`ad01ec6f`, 2026-11-01); owner decisions D1–D9 and batches B2–B8 on branch `mi-b2`, see the UX test section. 0.4.234–0.4.235 seen (the web adopted D1, D4, FW7, FW14), not yet re-pinned |
-| Manual Import bulk decide | held downloads synced to **0.4.225** (spec pinned `v0.4.226`), see its section (branch `mi-bulk-decide`); "bar in every scenario" built behind `ManualImportFeatures.barEverywhere` (off) |
+| Manual Import UX test | MI and held downloads checked against **v0.4.233** (`ad01ec6f`, 2026-11-01); owner decisions D1–D9 and batches B2–B8 shipped in build 660, see the UX test section |
+| Manual Import / held 0.4.234–0.4.235 | synced to **v0.4.235** (`7f4b1b2c`, 2026-11-01), spec re-pinned; see the 0.4.234–0.4.235 section (branch `api-0435`) |
+| Manual Import bulk decide | held downloads synced to **0.4.225** (spec pinned `v0.4.226`), see its section (branch `mi-bulk-decide`); "bar in every scenario" **on** (`ManualImportFeatures.barEverywhere = true`, owner-approved 2026-11-01; branch `api-0435`) |
 | Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
 
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
 
-`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.233`** (`ad01ec6f`;
-re-pinned 2026-11-01 for Manual Import safety, see the 0.4.233 section; before that
+`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.235`** (`7f4b1b2c`;
+re-pinned 2026-11-01 for `held_target`, see the 0.4.234–0.4.235 section; before that
+`v0.4.233` (`ad01ec6f`, 2026-11-01) for Manual Import safety; before that
 `v0.4.227` (`31fc0170`, 2026-10-28) for the grab timeout; before that
 `v0.4.226` (`57c6e464`, 2026-10-23) for requests phase 10b slice 1, and `v0.4.222`
 from 2026-10-20). The v0.4.222 → v0.4.226 diff is additive only (see the
@@ -74,16 +76,59 @@ B2–B8 are on `mi-b2`.
   chips wrap), as the pattern for later screens.
 - **D9-A:** Re-grab uses `arrow.uturn.down` (`arrow.clockwise` stays refresh).
 
-**Open with the web or server:** D6-B (title-page Review, new on both sides);
-a candidate CF score in "Why it's held" shipped on the web in 0.4.234 and is
-not yet ported; `rows[].held_target` is in the read schema from 0.4.234
-(iOS already decodes it optionally). Re-pin `openapi.json` when 0.4.234–0.4.235
-are synced.
+**Open with the web or server:** D6-B (title-page Review, new on both sides).
+The CF line and `rows[].held_target` are synced in the 0.4.234–0.4.235 section.
 
 **CI mock (B8):** the mock's held queue row is server-shaped (`held_reason` the
 raw `ImportHeld` reason, `held` = `held_copy`'s `{code, short, text}`,
 `held_detail` with `quality_full_label` labels and a real `upgrade_verdict`
 code), so the held shots show what a real server sends.
+
+## 0.4.234–0.4.235: held CF line, languages seed, blocklist Undo, bar everywhere (branch `api-0435`)
+
+Synced at `v0.4.235` (`7f4b1b2c`, 2026-11-01) from `git diff v0.4.233 v0.4.235 --
+frontend backend/fusionha/api`.
+
+- **Spec diff v0.4.233 → v0.4.235:** `info.version`, and `ManualImportRowRead`
+  gains `held_target` (`array | null`, items untyped). Nothing else changed.
+  The server's `[item_id, tier, movie_edition, sorted episode ids]` stamp now
+  reaches the wire; iOS already decoded it (`ManualImportHeldTarget`). The golden
+  `manual_import_row_finding.json` is re-copied (it gained `held_target: null`,
+  plus the 0.4.225 `orphan_episode_ids`, `joint_rows`, `finish_disposition`);
+  `GoldenFixtureTests.testManualImportRowHeldTarget` decodes null and a stamp.
+- **CF line** (web `lib/held-cf.ts`): `HeldCF.compareLine` in FusionhaKit, "CF 1075
+  vs your −9245" (true minus, nil when a score is unknown), tests mirror
+  `held-cf.test.ts`. Shown in the queue's plain "Why it's held" under On disk
+  (`QueueHeldWhy`, as `HeldWhyDetail`; a proven mislabel keeps its facts grid,
+  which already has Release CF), and in the MI held strip's single form (line one
+  on a wide screen, after the guard sentence on the phone). The strip had it
+  since B6; it now calls the shared helper.
+- **Bulk Set languages seed** (FW7, `bulk-languages-seed.test.tsx`): already in
+  B6 (`ManualImportBatch.sharedLanguages`, `MIBulkLanguages`: the shared set, or
+  empty with "Mixed: the selected files have different languages"). Verified.
+- **Blocklist Undo:** the web now offers Undo after every blocklist that created
+  a new entry, the dialog path included (not after a file delete, not on
+  "Already blocklisted"). `ActActions.blocklist` does the same for every caller
+  (queue card, held "Why it's held", History story row and its dialog, the
+  lifecycle sheet); the per-call `offerUndo` switch is gone. Undo is
+  `DELETE /api/v1/blocklist/{id}` (`deleteBlocklistEntry`), then "Blocklist cleared".
+- **Held strip simplified** (D4): no Keep all current / Import all, informational
+  only. iOS never had the buttons after B2; its "Decide several together" pointer
+  stays. **Keep current labels** (D1, "· leave download"): already in build 660.
+- **Bar everywhere** (owner-approved Final, mock T6bWkYmLvaSBmbSMa2rw5m):
+  `ManualImportFeatures.barEverywhere = true`. Folder and not-held scans get the
+  bulk bar (Import N · Decide ▾ with Keep current and Skip · k of n · reasons ·
+  outcome · Select all undecided ⌘A). Outside a held download Keep current is one
+  action with no disposition: "Keep current for N · nothing imported, your
+  library file stays", and the decide call sends no `dispositions`. The old
+  "N selected · Actions" sheet's items live on: Confirm N medium matches, Import
+  mode, Edit N selected… and Clear selection in Decide ▾; Select all undecided
+  replaces Select all / Select all ready; bulk Import anyway is dropped (an
+  iOS decision of the mock: import a worse file from its row). `MISelectionSheet`
+  stays in the code only for the flag's off position. The web (0.4.235) still
+  shows its bar only in held scans; this is ahead of it by owner decision.
+- **Not ported:** the page-park test and the MI docs page (web only); the CSS
+  wrap of the named Keep current split on phone cards (iOS already wraps, D8).
 
 ## 0.4.233: Manual Import safety (B1, B2, H3; branch `mi-b1`)
 
@@ -211,10 +256,9 @@ Ported from fusionha 0.4.225 `docs/API.md` and the web's `bulk-summary.ts`,
   (`duoPageSheet(.twoPages)`), list before the fold, the decision panel after it.
   Per-row Keep preselects the saved `finish_disposition`; joint rows say "Shared file
   with E05 · imports together".
-- **Gated (`ManualImportFeatures.barEverywhere = false`):** the "bar in every scenario"
-  mock (T6bWkYmLvaSBmbSMa2rw5m) is not approved yet. Folder scans keep the
-  "N selected · Actions" sheet (`MISelectionSheet`) with bulk Import anyway / Select
-  all ready; flipping the flag gives them the bar too.
+- **Bar in every scenario:** was gated (`ManualImportFeatures.barEverywhere = false`)
+  until the owner approved the Final on 2026-11-01; now on, see the 0.4.234–0.4.235
+  section.
 
 ## Unified search (iOS, 2026-10-23; branch `duo-spread-s3-search`)
 
