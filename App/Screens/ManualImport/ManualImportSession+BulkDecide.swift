@@ -80,7 +80,10 @@ extension ManualImportSession {
             rowWarnings[r.rowId] = r.warning
             if r.warning != nil { warned += 1 }
         }
-        for id in ids { rowErrors[id] = failed[id] }
+        for id in ids {
+            rowErrors[id] = failed[id]
+            if failed[id] == nil { confirming[id] = nil }
+        }
         selected.subtract(ids.filter { failed[$0] == nil })
         guard action == .importFile else { return }
         importedCount += ok

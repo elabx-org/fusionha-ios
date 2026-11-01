@@ -182,7 +182,14 @@ final class ManualImportSession {
         }
     }
 
+    /// Takes the server's rows. A "Replace your copy?" ask goes once its row is
+    /// imported, gone, or decided another way (its replace choice changed).
     func adopt(_ fresh: ManualImportScan) {
+        let before = Dictionary(rows.map { ($0.rowId, $0.replaceChoice) }, uniquingKeysWith: { a, _ in a })
+        confirming = confirming.filter { id, _ in
+            guard let row = fresh.rows.first(where: { $0.rowId == id }) else { return false }
+            return !row.committed && row.replaceChoice != "import" && row.replaceChoice == before[id] ?? nil
+        }
         scan = fresh
         let open = Set(fresh.rows.filter { !$0.committed }.map(\.rowId))
         selected.formIntersection(open)
