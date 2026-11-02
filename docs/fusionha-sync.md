@@ -19,6 +19,7 @@ instead of from scratch.
 | Watchlists & lists | requests phase 10b slice 1 synced to **v0.4.226** (`57c6e464`, 2026-10-23), see the 0.4.226 section (branch `requests-10b`) |
 | Manual Import safety | B1 batch synced to **v0.4.233** (`ad01ec6f`, 2026-11-01), see the 0.4.233 section (branch `mi-b1`); **shipped in build 657** |
 | Manual Import UX test | MI and held downloads checked against **v0.4.233** (`ad01ec6f`, 2026-11-01); owner decisions D1–D9 and batches B2–B8 shipped in build 660, see the UX test section |
+| Watchlists & lists 10b slices 2–3 | synced to **v0.4.237** (`473dd68b`, 2026-11-02): follow MDBList / Trakt / Letterboxd lists by address, admin Import lists; see the 0.4.237 section (branch `requests-10b-lists`) |
 | 0.4.236 | synced to **v0.4.236** (`0322d9b6`, 2026-11-02): spec and palettes re-pinned, `/search/unified`, file probe facts, stalled at 100%; see the 0.4.236 section (branch `api-0436`) |
 | Manual Import / held 0.4.234–0.4.235 | synced to **v0.4.235** (`7f4b1b2c`, 2026-11-01), spec re-pinned; see the 0.4.234–0.4.235 section (branch `api-0435`) |
 | Manual Import bulk decide | held downloads synced to **0.4.225** (spec pinned `v0.4.226`), see its section (branch `mi-bulk-decide`); "bar in every scenario" **on** (`ManualImportFeatures.barEverywhere = true`, owner-approved 2026-11-01; branch `api-0435`) |
@@ -27,8 +28,9 @@ instead of from scratch.
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
 
-`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.236`** (`0322d9b6`;
-re-pinned 2026-11-02 for `/search/unified` and the file probe facts, see the 0.4.236
+`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.237`** (`473dd68b`;
+re-pinned 2026-11-02 for requests phase 10b slices 2–3, see the 0.4.237 section;
+before that `v0.4.236` (`0322d9b6`, 2026-11-02) for `/search/unified` and the file probe facts, see the 0.4.236
 section; before that `v0.4.235` (`7f4b1b2c`, 2026-11-01) for `held_target`; before that
 `v0.4.233` (`ad01ec6f`, 2026-11-01) for Manual Import safety; before that
 `v0.4.227` (`31fc0170`, 2026-10-28) for the grab timeout; before that
@@ -47,6 +49,40 @@ the old pin against the tagged schemas: `calendar_week_layout`
 older server omits them. `ui_theme` is a plain string in the spec (no
 enum of names). `GET /api/v1/auth/providers` is still not in the spec (the
 app tolerates its absence). Re-pin again from the next tag you sync to.
+
+## 0.4.237 (synced at `v0.4.237`, `473dd68b`, 2026-11-02; branch `requests-10b-lists`)
+
+- **Re-pinned** `Packages/FusionhaKit/openapi.json` from the tag. `Shared/palettes.json`
+  is unchanged at the tag. Golden fixtures (`letterboxd_admin`, `request_source_preview`,
+  `request_sources_me`, `request_sources_me_syncing`, `request_sources_summary`) refreshed
+  from fusionha `docs/fixtures/` at the tag.
+- **Slice 2, follow a list by address** (web `FollowSheet` / `FollowBody`): the Follow sheet
+  now starts on the address flow (any public MDBList, Trakt or Letterboxd list), with
+  "Someone’s Letterboxd watchlist instead" switching to the username flow.
+  `POST /me/request-sources/preview {url}` returns `provider`, `kind`, `mix`,
+  `in_library_count` and `kind`/`tmdb_id`/`poster_url` per item (`LbSourcePreview`,
+  `RequestSourcePreviewModels.swift`); `POST /me/request-sources {kind: "feed", url,
+  request_existing, also_uhd, enabled}` follows it (`APIClient.followBody`). `LIST_FEED`
+  rows carry `provider` and `options.also_uhd` (PATCH `{also_uhd}`); they share the linked
+  list limit. New source state `unavailable` ("Unavailable", miss tone). Refusals use the
+  web's words from `detail.code` (`unsupported_site` with host + IMDb tip,
+  `provider_unavailable`, `coming_later`, `unavailable` with provider, `not_allowed`,
+  `limit_reached`, `blocked`; `FeedFollowLogic.message`). Admin Trakt app id:
+  `PUT/DELETE /api/v1/settings/trakt-client-id` (write-only, shown as Set / Not set) in
+  Settings › Indexers under the Cloudflare solver (`ListSitesCard`).
+- **Slice 3, admin Import lists** (web `/settings/import-lists`, `integrations.manage`):
+  `GET/POST /import-lists`, `PATCH/DELETE /import-lists/{id}`, `POST /{id}/sync`,
+  `POST /import-lists/preview`, `GET /{id}/runs`, `/runs/{run}/items`, `/{id}/unmatched`,
+  `POST /items/{id}/resolve|ignore`, `GET/POST/DELETE /import-lists/exclusions`,
+  `GET /import-lists/summary`; app setting `import_list_max_add_per_sync`. Models in
+  `ImportListModels.swift` / `ImportListLedgerModels.swift`, bodies in `ImportListDraft`
+  (versions `[{tier, root_folder_id, quality_profile_id}]`, Letterboxd 12 h minimum),
+  words in `ImportListCopy`. Activity › Tasks › System gains the Import lists card
+  (`import-list-sync` job), admin only, hidden while there are no lists.
+- **Not verified live:** the live server had no import lists or followed feeds, so the
+  list/feed decoders are checked against the spec, the web's types and hand-written
+  fixtures only; every POST/PATCH/DELETE above is covered by request-body tests, not by a
+  live call.
 
 ## 0.4.236 (synced at `v0.4.236`, `0322d9b6`, 2026-11-02; branch `api-0436`)
 
