@@ -4,7 +4,7 @@ import FusionhaKit
 /// Every sheet the item detail opens: interactive search, Edit, Add version,
 /// season actions and Delete, plus the item actions rail's (ItemDetail.tsx
 /// `modals`) Rename files, Edition aliases, Fix episode numbering, Manage
-/// files, Switch metadata source, the episode sheet, Add collection and
+/// files, Switch metadata source, the episode sheet, the file sheet, Add collection and
 /// Report an issue. Presented through `DetailPresenter`, so a fold /
 /// unfold re-presents whichever was up on the new host.
 struct DetailChildSheets: ViewModifier {
@@ -88,6 +88,10 @@ private struct DetailActionSheets: ViewModifier {
             }
             .duoPageSheet(item: presenter.item(\.episodeSheet)) { target in
                 EpisodeDetailSheet(target: target)
+                    .environment(store)
+            }
+            .duoPageSheet(item: presenter.item(\.fileSheet)) { target in
+                EpisodeFileSheet(target: target)
                     .environment(store)
             }
             .duoPageSheet(item: presenter.item(\.collectionAdd)) { target in

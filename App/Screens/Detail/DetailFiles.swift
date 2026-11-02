@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import FusionhaKit
 
-// Parts the series Files tab (DetailSeriesFiles) and the movie Versions tab
+// Parts the series Files tab (Files/SeriesFilesTab) and the movie Versions tab
 // (DetailMovieEditions) share: Rename files, the tier chip,
 // the analysis badge and the probe formatters.
 
