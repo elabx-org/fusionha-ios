@@ -12,10 +12,10 @@ struct EditionStatusChips: View {
 
     var body: some View {
         let _ = PerfCount.hit("EditionStatusChips.body")
-        let queue = model.queue
-        let chips = EditionChipLabel.chips(for: item) { edition in
-            queue.first { $0.editionId == edition.id }.map(QueueProgress.init)
-        }
+        // Only this title's versions: a poll that moves another download
+        // leaves the chips alone (`QueueSlots`).
+        let slots = model.queueSlots
+        let chips = EditionChipLabel.chips(for: item) { slots.slot(for: $0.id).progress }
         FlowRow(spacing: 5, lineSpacing: 5) {
             ForEach(chips.indices, id: \.self) { i in
                 EditionStatusChip(chip: chips[i])

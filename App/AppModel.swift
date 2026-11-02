@@ -29,6 +29,7 @@ final class AppModel {
     /// The open title. Its store is kept while it stays open (AppModel+Detail.swift).
     var presentedItem: ItemRef? {
         didSet {
+            cardFlags.pick(presentedItem?.id)
             detailSlot.keep(only: presentedItem?.id)
             if presentedItem != nil, spreadPreview != nil { spreadPreview = nil }
             if let oldValue, presentedItem == nil { duoGestures.recordClosed(.title(oldValue), tab: tab) }
@@ -91,7 +92,9 @@ final class AppModel {
 
     // Library select mode + bulk bar.
     var selectMode = false
-    var selection: Set<Int> = []
+    var selection: Set<Int> = [] { didSet { cardFlags.select(selection) } }
+    /// Per-card views of `presentedItem` and `selection` (`CardFlags`).
+    @ObservationIgnored let cardFlags = CardFlags()
 
     /// App-wide toasts (components/ui/Toast). Call `toast(...)` from any screen.
     private(set) var toasts: [ToastMessage] = []
@@ -124,7 +127,9 @@ final class AppModel {
 
     // Queue state drives the Activity tab, the downloads accessory, the
     // Live Activity and the Downloads widget.
-    private(set) var queue: [QueueItem] = []
+    private(set) var queue: [QueueItem] = [] { didSet { queueSlots.update(queue) } }
+    /// Per-version views of `queue` for the Library's version chips (`QueueSlots`).
+    @ObservationIgnored let queueSlots = QueueSlots()
     private(set) var queueTotal = 0
     /// The queue has been seen once (cache or poll): until then counts are unknown, not zero.
     private(set) var queueLoaded = false
@@ -187,6 +192,9 @@ final class AppModel {
             credentials = nil
         }
         #endif
+        // Observers don't run for the initializer's own assignments.
+        cardFlags.pick(presentedItem?.id)
+        cardFlags.select(selection)
         observePush()
         // Re-save on launch so sign-ins from older builds also land in the
         // keychain record the widgets read, then let the widgets refresh.

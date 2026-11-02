@@ -18,17 +18,34 @@ enum PosterWashRenderer {
         let wash = PaletteStore.shared.posterWash
         guard wash != .colour else { return image }
         if let hit = attached(image, wash) { return hit }
-        guard let input = CIImage(image: image) else { return image }
+        guard let source = image.cgImage, let cg = render(source, wash) else { return image }
+        let result = UIImage(cgImage: cg, scale: image.scale, orientation: image.imageOrientation)
+        attach(result, to: image, wash)
+        return result
+    }
+
+    /// Renders `image`'s wash off the main thread and attaches it, so a later
+    /// `washed` (a poster's body) only picks it up: a scroll through a
+    /// Monochrome library ran one Core Image render per new poster in body.
+    @MainActor
+    static func prewash(_ image: UIImage) async {
+        guard Theme.isMono else { return }
+        let wash = PaletteStore.shared.posterWash
+        guard wash != .colour, attached(image, wash) == nil, let source = image.cgImage else { return }
+        guard let cg = await Task.detached(priority: .userInitiated, operation: { render(source, wash) }).value,
+              attached(image, wash) == nil else { return }
+        attach(UIImage(cgImage: cg, scale: image.scale, orientation: image.imageOrientation), to: image, wash)
+    }
+
+    nonisolated private static func render(_ source: CGImage, _ wash: PosterWash) -> CGImage? {
+        let input = CIImage(cgImage: source)
         let filter = CIFilter(name: "CIColorControls")
         filter?.setValue(input, forKey: kCIInputImageKey)
         filter?.setValue(wash == .greyscale ? 0 : 0.35, forKey: kCIInputSaturationKey)
         filter?.setValue(wash == .greyscale ? 1.06 : 1.0, forKey: kCIInputContrastKey)
         filter?.setValue(wash == .greyscale ? 0 : -0.04, forKey: kCIInputBrightnessKey)
-        guard let output = filter?.outputImage,
-              let cg = context.createCGImage(output, from: input.extent) else { return image }
-        let result = UIImage(cgImage: cg, scale: image.scale, orientation: image.imageOrientation)
-        attach(result, to: image, wash)
-        return result
+        guard let output = filter?.outputImage else { return nil }
+        return context.createCGImage(output, from: input.extent)
     }
 
     private static func attached(_ image: UIImage, _ wash: PosterWash) -> UIImage? {

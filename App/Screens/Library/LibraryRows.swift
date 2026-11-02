@@ -275,24 +275,3 @@ struct LibraryGridRow: View {
         .padding(.bottom, 18)
     }
 }
-
-/// The Library grid's own width and the top-to-bottom fold through it, in
-/// its coordinates (`FoldInfo.verticalFold`): the real fold x, so the Duo's
-/// off-centre fold lands in a gutter (the old `crossesMiddle` missed it).
-struct LibraryGridFold: Equatable {
-    var width: CGFloat = 0
-    var fold: ClosedRange<CGFloat>?
-
-    init() {}
-
-    init(_ proxy: GeometryProxy) {
-        width = proxy.size.width
-        fold = FoldInfo.verticalFold(proxy)
-    }
-}
-
-/// The Library scroll's measured width. The fold is read where it matters,
-/// at its real x (`LibraryGridFold`), never assumed in the middle.
-struct LibraryPane: Equatable {
-    var width: CGFloat = 0
-}

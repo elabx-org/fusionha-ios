@@ -218,7 +218,7 @@ struct RootView: View {
         .modifier(DownloadsBarSlot(state: downloadsBar,
                                    shown: !model.requestScoped && model.tab != .activity && downloadsBar.hasContent
                                        && !tabsCrossFold && !selectBars.isShowing))
-        .onChange(of: model.queue, initial: true) { downloadsBar.update(model.queue) }
+        .onQueueChange(model, initial: true) { [downloadsBar] in downloadsBar.update($0) }
     }
 }
 

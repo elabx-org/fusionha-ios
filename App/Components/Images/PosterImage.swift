@@ -53,12 +53,15 @@ struct PosterImage: View {
         guard request.hasFrame else { return }
         let pipeline = ImagePipeline.shared
         if let cached = pipeline.cached(url, fill: request.pixels) {
+            await PosterWashRenderer.prewash(cached)
             if image !== cached { fade = false; image = cached; shownURL = url }
             return
         }
         if shownURL != url { image = nil }
         let loaded = await pipeline.image(for: url, fill: request.pixels, scale: request.scale)
         guard !Task.isCancelled, let loaded else { return }
+        await PosterWashRenderer.prewash(loaded)
+        guard !Task.isCancelled else { return }
         fade = shownURL != url
         image = loaded
         shownURL = url

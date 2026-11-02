@@ -80,7 +80,7 @@ struct ItemDetailView: View {
             .presentationCornerRadius(34)
             .task {
                 store.client = model.client
-                store.queue = model.queue
+                store.queue = model.queue.filter { $0.mediaItemId == store.itemId }
                 applyScreenshotEnvironment()
                 applyPendingTab()
                 await store.load()
@@ -91,7 +91,11 @@ struct ItemDetailView: View {
             .onAppear { store.hosted = true }
             .task { await rehost() }
             .onChange(of: model.pendingDetailTab) { applyPendingTab() }
-            .onChange(of: model.queue) { store.queue = model.queue }
+            // Only this title's rows: another download's progress leaves the page alone.
+            .onQueueChange(model) { [store] queue in
+                let mine = queue.filter { $0.mediaItemId == store.itemId }
+                if store.queue != mine { store.queue = mine }
+            }
             .onChange(of: store.deleted) {
                 guard store.deleted else { return }
                 Task { await model.loadLibrary() }

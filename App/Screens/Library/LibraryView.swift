@@ -16,6 +16,7 @@ struct LibraryView: View {
     @Environment(\.motionEnabled) private var motion
     /// iPhone Duo Spread: with nothing picked the grid spans both pages.
     @Environment(\.spread) private var spread
+    @Environment(\.bookPose) private var bookPose
     // Every filter persists, so the Library reopens exactly as it was left
     // (the web keeps them all in the URL); only the search box is transient.
     @AppStorage("library.kind") private var kindRaw = "all"
@@ -118,7 +119,7 @@ struct LibraryView: View {
         .toolbarVisibility(model.selectMode ? .hidden : .automatic, for: .tabBar)
         .librarySelectBar(active: model.selectMode, visibleIds: derived.visibleIds)
         .animation(motion ? .snappy(duration: 0.3) : nil, value: model.selectMode)
-        .environment(\.openPosterSheet, { posterSheet = $0 })
+        .environment(\.openPosterSheet, OpenPosterSheet { posterSheet = $0 })
         .sheet(item: $posterSheet) { item in
             LibraryPosterSheet(item: item)
         }
@@ -159,17 +160,6 @@ struct LibraryView: View {
         }
     }
 
-    private func updateChrome(old: CGFloat, new: CGFloat) {
-        let delta = new - old
-        if new <= 90 {
-            if model.chromeHidden { model.chromeHidden = false }
-        } else if delta > 4 {
-            if !model.chromeHidden { model.chromeHidden = true }
-        } else if delta < -4 {
-            if model.chromeHidden { model.chromeHidden = false }
-        }
-    }
-
     // MARK: Scroll
 
     private func scroll(_ proxy: ScrollViewProxy) -> some View {
@@ -188,7 +178,9 @@ struct LibraryView: View {
                         scrubber.setGridTop(frame.minY)
                         scrubber.setGridTrailing(frame.maxX)
                     }
-                    .onGeometryChange(for: LibraryGridFold.self) { LibraryGridFold($0) } action: { gridFold = $0 }
+                    .onGeometryChange(for: LibraryGridFold.self) { [bookPose] in
+                        LibraryGridFold.measured($0, bookPose: bookPose)
+                    } action: { gridFold = $0 }
                 content
             }
             // A column change (a Spread span to the left page, the desktop
@@ -216,12 +208,13 @@ struct LibraryView: View {
         .onScrollGeometryChange(for: CGFloat.self) { geo in
             geo.contentOffset.y + geo.contentInsets.top
         } action: { old, new in
-            updateChrome(old: old, new: new)
+            model.updateChrome(old: old, new: new)
         }
         .onScrollGeometryChange(for: ScrubberState.Metrics.self) { geo in
             ScrubberState.Metrics(geo)
         } action: { _, metrics in
-            if showsRail && !wide { scrubber.scrolled(metrics) }
+            // Only where the thumb shows (not on a Spread's left page).
+            if showsRail && !wide && !(spread.isActive && !spread.spans) { scrubber.scrolled(metrics) }
         }
         .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.5) { ids in
             onScreen.rowIds = ids
