@@ -63,11 +63,8 @@ app tolerates its absence). Re-pin again from the next tag you sync to.
   TheTVDB and the id lookup still run beside it on the device (the server has
   neither). A 404 (an older server) falls back to `/search`. Typing is debounced
   300 ms as before.
-  - The Search tab sends `tmdb=auto`: when the library matches, TMDB is `skipped`
-    and the add lane shows "Found in your library, so TMDB wasn't searched." with
-    **Search to add**, which re-runs at once with `tmdb=always`. This brings back
-    the web palette's "Search to add" step that the 2026-10-23 iOS spec had
-    dropped (see `docs/ui-plan.md`).
+  - The Search tab sends `tmdb=always`, so every provider is searched as you
+    type, as in the owner-approved 2026-10-23 spec (no "Search to add" step).
   - `timeout` with rows shows them with "TMDB was slow — showing what answered in
     time."; with none, "TMDB took too long to answer — try again." `not_configured`
     keeps the TMDB key note; `forbidden` hides the library lane.
