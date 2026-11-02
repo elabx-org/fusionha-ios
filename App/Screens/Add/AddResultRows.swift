@@ -152,7 +152,7 @@ struct AddListRow: View {
             .buttonStyle(PressScaleStyle())
         }
         .padding(8)
-        .panel(Theme.card, radius: 12)
+        .cardSurface(radius: 12, lift: false)
         .contentShape(Rectangle())
         .onTapGesture(perform: pick)
     }
@@ -195,6 +195,6 @@ struct TvdbRow: View {
             .buttonStyle(PressScaleStyle())
         }
         .padding(8)
-        .panel(Theme.card, radius: 12)
+        .cardSurface(radius: 12, lift: false)
     }
 }

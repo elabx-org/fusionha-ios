@@ -89,16 +89,11 @@ struct DetailMonoHeading: View {
 
 extension View {
     /// A shelf object (`.obj`): version cards, edition cards, comparison
-    /// panels. Solid content, never glass: a warm top-lit fill, a faint
-    /// hairline and a soft falloff shadow.
+    /// panels. Solid content, never glass. Lifted in dark palettes (raised
+    /// fill, top-lit edge, soft shadow); in Daylight and Noir a faint hairline
+    /// and, with `shadow`, the soft falloff shadow (`cardSurface`).
     func detailCard(radius: CGFloat = 20, shadow: Bool = true) -> some View {
-        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
-        return background {
-            shape
-                .fill(Theme.card)
-                .shadow(color: .black.opacity(shadow ? 0.55 : 0), radius: shadow ? 14 : 0, y: shadow ? 10 : 0)
-        }
-        .overlay(shape.strokeBorder(Theme.txt.opacity(0.06), lineWidth: 0.5))
+        cardSurface(radius: radius, lift: true, flatShadow: shadow, flatEdge: .faint)
     }
 }
 

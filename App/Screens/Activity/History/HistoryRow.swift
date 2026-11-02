@@ -59,7 +59,7 @@ struct HistoryRow: View {
             }
         }
         .padding(12)
-        .panel(Theme.card, radius: 14)
+        .cardSurface(radius: 14, lift: false)
         .contentShape(Rectangle())
     }
 }

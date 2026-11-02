@@ -79,9 +79,8 @@ struct ReleaseCard: View {
         }
         .padding(.vertical, 11)
         .padding(.horizontal, 12)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous)
-            .strokeBorder(Theme.line))
+        // A long lazy list: the lit edge, no shadow.
+        .cardSurface(radius: Theme.radius, lift: false)
         .opacity(rejected ? 0.72 : 1)
     }
 

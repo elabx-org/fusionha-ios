@@ -261,8 +261,7 @@ private struct HistoryLifecycle: View {
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 11))
-                .overlay(RoundedRectangle(cornerRadius: 11).strokeBorder(Theme.line))
+                .cardSurface(radius: 11, flatFill: Theme.panel2)
             }
         }
     }

@@ -20,7 +20,11 @@ enum Theme {
     static var bg: Color { Color(hex: palette.bg) }
     static var panel: Color { Color(hex: palette.panel) }
     static var panel2: Color { Color(hex: palette.panel2) }
-    static var card: Color { Color(hex: palette.panel) }
+    /// A card's fill: the palette's raised `card` tone, else `panel`.
+    static var card: Color { Color(hex: palette.card ?? palette.panel) }
+    /// Dark palettes with a raised card tone lift their cards: a top-lit
+    /// edge and a soft shadow (`cardSurface`). Daylight and Noir stay flat.
+    static var liftsCards: Bool { palette.card != nil }
     static var line: Color { Color(hex: palette.line).opacity(palette.lineOpacity) }
     static var txt: Color { Color(hex: palette.txt) }
     static var mut: Color { Color(hex: palette.mut) }

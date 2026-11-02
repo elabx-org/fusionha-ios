@@ -45,7 +45,7 @@ struct AddCollectionSheet: View {
                                     Spacer(minLength: 0)
                                 }
                                 .padding(12)
-                                .panel(Theme.card, radius: 11)
+                                .cardSurface(radius: 11, lift: false)
                                 .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)

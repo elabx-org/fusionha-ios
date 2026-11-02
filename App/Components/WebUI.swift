@@ -104,7 +104,7 @@ struct EmptyBox: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 46)
         .padding(.horizontal, 34)
-        .panel(Theme.card, radius: Theme.radiusLg)
+        .cardSurface(radius: Theme.radiusLg)
     }
 }
 

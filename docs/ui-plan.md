@@ -11,6 +11,8 @@ Status: in progress (updated 2026-10-05). The app shell, screens and login now f
 5. **Native controls replace custom web controls.** The web rule "no native form controls" exists because browser controls look bad. On iOS the native `Picker`, `Toggle`, `Menu` and `Form` are the point, and they pick up Liquid Glass automatically. This is a deliberate deviation.
 6. **Motion maps onto system transitions.** The web's poster-to-hero morph becomes the iOS zoom transition. The web's "alive" cyan downloading pulse becomes `symbolEffect(.pulse)` plus a shimmer on progress bars. Both respect Reduce Motion and the server's `animations_enabled` setting.
 
+7. **Cards lift in dark palettes ("A · Lifted", owner-approved 2026-11-02, mock https://claude.ai/artifact/HyiTNwCGzZxoLrby9vmik7).** Each dark palette but Noir has a raised `card` tone a step above `panel` (`palettes.json` / `PaletteTokens.card`, read by `Theme.card`); cards (`cardSurface`, `detailCard`) get a top-lit hairline (the line colour, 20% to 5% top to bottom) and one soft shadow (black 50%, radius 13, y 7). Cards in long lazy lists (release results, Add results, Activity history) keep the edge without the shadow; rows, chips, pills and glass never get either. Daylight and Noir stay flat.
+
 Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`glassEffect`, `GlassEffectContainer`, `.buttonStyle(.glass/.glassProminent)`, `tabViewBottomAccessory`, `tabBarMinimizeBehavior`, `backgroundExtensionEffect`, `ToolbarSpacer`).
 
 ## 2. App shell

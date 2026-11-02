@@ -46,6 +46,12 @@ older server omits them. `ui_theme` is a plain string in the spec (no
 enum of names). `GET /api/v1/auth/providers` is still not in the spec (the
 app tolerates its absence). Re-pin again from the next tag you sync to.
 
+## iOS-only: `card` in `palettes.json` (2026-11-02; branch `card-depth`)
+
+`Shared/palettes.json` gained a `card` hex (the raised card surface) on every dark
+palette except Noir; it is not in fusionha's `design/palettes.json` yet. Offer it
+upstream (the web can fall back to `panel` when absent) and keep it when re-pinning.
+
 ## Manual Import UX test (B1–B8; branch `mi-b2`)
 
 A usability and UX test of Manual Import and held downloads (build 649, phone,

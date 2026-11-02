@@ -118,7 +118,7 @@ struct ApproveEditionCard: View {
             }
         }
         .padding(13)
-        .panel(Theme.card, radius: 14)
+        .cardSurface(radius: 14)
         .opacity(config.enabled ? 1 : 0.72)
         .animation(.easeOut(duration: 0.18), value: config.enabled)
     }
