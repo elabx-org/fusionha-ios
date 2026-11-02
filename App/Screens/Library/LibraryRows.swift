@@ -252,19 +252,29 @@ struct LibraryGridRow: View {
     let columns: Int
     /// With a fold through the grid: each poster's track, the fold in a gutter.
     var tracks: [FoldColumns.Track]?
+    /// The grid's width (0 before it is measured): each card's width is known
+    /// up front, so its art and plates need no measuring pass of their own.
+    var width: CGFloat = 0
+
+    private var cellWidth: CGFloat? {
+        guard width > 0, columns > 0 else { return nil }
+        return (width - CGFloat(Self.spacing) * CGFloat(columns - 1)) / CGFloat(columns)
+    }
 
     var body: some View {
         let _ = PerfCount.hit("LibraryGridRow.body")
         Group {
             if let tracks, tracks.count == columns {
                 TrackRowLayout(tracks: tracks) {
-                    ForEach(items) { PosterCard(item: $0) }
+                    ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
+                        PosterCard(item: item, artWidth: width > 0 ? CGFloat(tracks[i].width) : nil)
+                    }
                 }
             } else {
                 HStack(alignment: .top, spacing: CGFloat(Self.spacing)) {
                     ForEach(0..<max(columns, items.count), id: \.self) { i in
                         if i < items.count {
-                            PosterCard(item: items[i]).frame(maxWidth: .infinity, alignment: .top)
+                            PosterCard(item: items[i], artWidth: cellWidth).frame(maxWidth: .infinity, alignment: .top)
                         } else {
                             Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
                         }

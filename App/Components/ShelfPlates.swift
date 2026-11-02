@@ -74,10 +74,11 @@ enum ShelfPlates {
 extension View {
     /// `shelfPoster` for the Library grid's cards, with its edge strokes and
     /// shadow as pre-rendered plates (`ShelfPlates`): the same look, and no
-    /// Core Graphics drawing as cards scroll in. For fixed-size cards only:
-    /// a size that animates would render a plate per frame.
-    func shelfPosterPlated(radius: CGFloat, ring: Color? = nil, ringWidth: CGFloat = 0.5) -> some View {
-        modifier(ShelfPlated(radius: radius, ring: ring ?? Theme.txt.opacity(0.07), ringWidth: ringWidth))
+    /// Core Graphics drawing as cards scroll in. `size` (when the grid knows
+    /// it) spares each card a measuring pass. For fixed-size cards only: a
+    /// size that animates would render a plate per frame.
+    func shelfPosterPlated(radius: CGFloat, ring: Color? = nil, ringWidth: CGFloat = 0.5, size: CGSize? = nil) -> some View {
+        modifier(ShelfPlated(radius: radius, ring: ring ?? Theme.txt.opacity(0.07), ringWidth: ringWidth, size: size))
     }
 }
 
@@ -85,6 +86,7 @@ private struct ShelfPlated: ViewModifier {
     let radius: CGFloat
     let ring: Color
     let ringWidth: CGFloat
+    let size: CGSize?
     @Environment(\.displayScale) private var scale
 
     func body(content: Content) -> some View {
@@ -92,26 +94,40 @@ private struct ShelfPlated: ViewModifier {
             .background(Theme.card)
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay {
-                GeometryReader { proxy in
-                    if let edge = ShelfPlates.edge(size: proxy.size, radius: radius, ring: ring,
-                                                   ringWidth: ringWidth, scale: scale) {
-                        Image(uiImage: edge).resizable()
-                    }
+                if let size {
+                    edge(size)
+                } else {
+                    GeometryReader { edge($0.size) }
                 }
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
             }
             .background {
-                GeometryReader { proxy in
-                    if let made = ShelfPlates.shadow(size: proxy.size, radius: radius) {
-                        Image(uiImage: made.image)
-                            .resizable()
-                            .frame(width: proxy.size.width + made.bleed * 2, height: proxy.size.height + made.bleed * 2)
-                            .offset(x: -made.bleed, y: -made.bleed + 12)
-                    }
+                if let size {
+                    shadow(size)
+                } else {
+                    GeometryReader { shadow($0.size).frame(width: $0.size.width, height: $0.size.height) }
                 }
+            }
+    }
+
+    @ViewBuilder
+    private func edge(_ size: CGSize) -> some View {
+        if let edge = ShelfPlates.edge(size: size, radius: radius, ring: ring, ringWidth: ringWidth, scale: scale) {
+            Image(uiImage: edge).resizable()
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
-            }
+        }
+    }
+
+    /// Centred on the card, `bleed` out on every side, dropped 12.
+    @ViewBuilder
+    private func shadow(_ size: CGSize) -> some View {
+        if let made = ShelfPlates.shadow(size: size, radius: radius) {
+            Image(uiImage: made.image)
+                .resizable()
+                .frame(width: size.width + made.bleed * 2, height: size.height + made.bleed * 2)
+                .offset(y: 12)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
     }
 }

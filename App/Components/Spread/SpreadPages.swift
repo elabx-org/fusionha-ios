@@ -118,14 +118,31 @@ struct FoldPairLayout: Layout {
         return equalPanes ? (min(first, second), min(first, second)) : (first, second)
     }
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let total = proposal.width ?? lead * 2 + gap
-        let (a, b) = widths(total)
-        let heights = zip(subviews, [a, b]).map { $0.sizeThatFits(ProposedViewSize(width: $1, height: nil)).height }
-        return CGSize(width: total, height: heights.max() ?? 0)
+    /// The children's heights for the last width measured. SwiftUI makes a
+    /// fresh cache whenever the children change, so this only spares the
+    /// repeat measurements of one unchanged row (the Library's span header
+    /// was re-measured each time the grid under it grew while scrolling).
+    struct Cache {
+        var width: CGFloat?
+        var heights: [CGFloat] = []
     }
 
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+    func makeCache(subviews: Subviews) -> Cache { Cache() }
+
+    private func heights(_ total: CGFloat, _ subviews: Subviews, _ cache: inout Cache) -> [CGFloat] {
+        if cache.width == total, cache.heights.count == min(subviews.count, 2) { return cache.heights }
+        let (a, b) = widths(total)
+        let heights = zip(subviews, [a, b]).map { $0.sizeThatFits(ProposedViewSize(width: $1, height: nil)).height }
+        cache = Cache(width: total, heights: heights)
+        return heights
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) -> CGSize {
+        let total = proposal.width ?? lead * 2 + gap
+        return CGSize(width: total, height: heights(total, subviews, &cache).max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) {
         let (a, b) = widths(bounds.width)
         let height: CGFloat? = fillHeight ? bounds.height : nil
         for (index, subview) in subviews.enumerated() {
@@ -133,7 +150,9 @@ struct FoldPairLayout: Layout {
             case 0:
                 subview.place(at: bounds.origin, proposal: ProposedViewSize(width: a, height: height))
             case 1:
-                let own = fillHeight ? bounds.height : subview.sizeThatFits(ProposedViewSize(width: b, height: nil)).height
+                let measured = heights(bounds.width, subviews, &cache)
+                let own = fillHeight ? bounds.height
+                    : measured.count > 1 ? measured[1] : subview.sizeThatFits(ProposedViewSize(width: b, height: nil)).height
                 let y = trailingAlignment == .bottom ? bounds.maxY - own
                     : trailingAlignment == .center ? bounds.midY - own / 2 : bounds.minY
                 subview.place(at: CGPoint(x: bounds.minX + min(max(lead, 0), bounds.width) + gap, y: y),

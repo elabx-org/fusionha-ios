@@ -277,7 +277,7 @@ struct LibraryView: View {
                 case .letter(let letter, let count):
                     LibraryLetterHeader(letter: letter, count: count)
                 case .items(let items):
-                    LibraryGridRow(items: items, columns: derived.columns, tracks: gridTracks)
+                    LibraryGridRow(items: items, columns: derived.columns, tracks: gridTracks, width: gridFold.width)
                         .libraryRowMotion(entrance, id: row.id)
                 case .tableHeader:
                     LibraryTableHeader(sort: compactSort, split: tableSplit) { column in
