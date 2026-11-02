@@ -133,12 +133,12 @@ final class ServerUnifiedSearchTests: XCTestCase {
         XCTAssertEqual(last.library?.total, 9)
     }
 
-    func testAllSendsNoKindsAndAutoByDefault() async throws {
+    func testAllSendsNoKindsAndAlwaysByDefault() async throws {
         UnifiedSearchStubProtocol.routes = ["/api/v1/search/unified": (200, String(data: try fixture(), encoding: .utf8)!),
                                             "/api/v1/search/tvdb": (200, "[]")]
         for await _ in ServerUnifiedSearchSource(client: client()).lanes(for: "dune", kind: .all) {}
         let q = try query("/api/v1/search/unified")
-        XCTAssertEqual(q.first { $0.name == "tmdb" }?.value, "auto")
+        XCTAssertEqual(q.first { $0.name == "tmdb" }?.value, "always")
         XCTAssertTrue(q.filter { $0.name == "kinds" }.isEmpty)
     }
 

@@ -23,6 +23,8 @@ final class UnifiedSearchModel {
     /// 409 `tmdb_not_configured`: the KeyMissing notice instead of Trending.
     private(set) var trendingMissingKey = false
 
+    var searching: Bool { !lanes.isSettled }
+
     static func key(_ term: String, _ kind: SearchKind) -> String { "\(kind.rawValue)|\(term)" }
 
     /// Runs one term to completion (call from `.task(id:)`; cancelling the
