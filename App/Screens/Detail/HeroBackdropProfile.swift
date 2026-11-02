@@ -29,8 +29,9 @@ struct HeroBackdropProfile {
     private var edge: CGFloat { layout.edge }
     private var sharpEnd: CGFloat { min(artBottom, max(foot, edge + 24)) }
     private var sharpStart: CGFloat { max(sharpEnd - 72, -top) }
-    /// The art's lower third, never above the sharp art's end.
-    private var fadeStart: CGFloat { max(sharpEnd, foot - (foot + top) / 3) }
+    /// The art's lower third, never above the sharp art's own fade and never
+    /// shorter than 48 pt (the sharp art can end at the foot itself).
+    private var fadeStart: CGFloat { min(max(sharpStart, foot - (foot + top) / 3), foot - 48) }
 
     func sharpMask() -> LinearGradient {
         vertical(.black, [(sharpStart, 1)] + Self.ease(sharpStart, 1, sharpEnd, 0))
