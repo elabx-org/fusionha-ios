@@ -11,6 +11,8 @@ struct EpisodeFileFacts {
     let group: String?
     let size: String
     let length: String?
+    /// The file's resolution (`720p`), from the server's quality or the name.
+    let resolution: String?
     /// Below its version's tier (a 720p file in the 1080p version).
     let belowTier: Bool
     let deadLink: Bool
@@ -37,7 +39,8 @@ struct EpisodeFileFacts {
         group = serverGroup ?? name.releaseGroup
         size = DetailText.bytes(file.size)
         length = Self.minutes(probe?.runtimeSeconds)
-        belowTier = FileNameFacts.isBelow(resolution: DetailText.resolution(file.quality) ?? name.resolution, tier: tier)
+        resolution = DetailText.resolution(file.quality) ?? name.resolution
+        belowTier = FileNameFacts.isBelow(resolution: resolution, tier: tier)
         deadLink = file.linkUnresolved == true
         analysing = file.analysis == "pending"
     }
@@ -46,6 +49,19 @@ struct EpisodeFileFacts {
     /// without the quality (the row tints it on its own).
     var rest: String {
         [video, audio, group].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// `720p, below this version's 1080p`, when the file is under its tier.
+    func belowTierNote(_ tier: QualityTier) -> String? {
+        guard belowTier, let resolution else { return nil }
+        return "\(resolution), below this version's \(tier.shortLabel)"
+    }
+
+    /// `Imported · symlink`, or the dead link (shown in the stuck colour).
+    func onDisk(_ file: MovieFile) -> String {
+        if deadLink { return "Dead link · target gone from disk" }
+        guard let mode = file.mediaInfo?.finalMode, !mode.isEmpty else { return "Imported" }
+        return "Imported · \(mode.lowercased())"
     }
 
     /// The sheet's audio cell: `AAC 2.0 · English`.

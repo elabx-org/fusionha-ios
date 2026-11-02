@@ -31,17 +31,27 @@ struct AmbientBackdrop: View {
 /// timeline, the tabs (the rails live in their Overview tab) and the
 /// metadata credit. On the folded Duo / phone (`detailCompact`) the item
 /// actions live in the bar's More menu, and the Overview rails follow the
-/// tabs in the page.
+/// tabs in the page. On the open Duo's split title (`infoPage`, the left
+/// page) the art is the band across both pages and the tabs are the right
+/// page, so it is the facts, versions and the Overview rails.
 struct DetailPage: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     @Environment(\.detailCompact) private var compact
     let detail: ItemDetail
     let openWeb: () -> Void
+    var infoPage = false
+
+    private var gutter: CGFloat { infoPage ? 20 : Theme.pageGutter }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            DetailHero(detail: detail)
+            if infoPage {
+                DetailHeroFacts(detail: detail)
+                    .padding(.horizontal, gutter)
+            } else {
+                DetailHero(detail: detail)
+            }
 
             VStack(alignment: .leading, spacing: 0) {
                 if let setup = model.setupProgress.activeSetup(for: detail.id) {
@@ -78,11 +88,13 @@ struct DetailPage: View {
                     ReleaseTimeline(detail: detail)
                 }
 
-                DetailTabsView(detail: detail, openWeb: openWeb)
-                    .id("tabs")
-                    .padding(.top, 6)
+                if !infoPage {
+                    DetailTabsView(detail: detail, openWeb: openWeb)
+                        .id("tabs")
+                        .padding(.top, 6)
+                }
 
-                if compact {
+                if compact || infoPage {
                     DetailRailStack(detail: detail)
                         .id("overview")
                 }
@@ -92,7 +104,7 @@ struct DetailPage: View {
                     .foregroundStyle(Theme.dim)
                     .padding(.top, 32)
             }
-            .padding(.horizontal, Theme.pageGutter)
+            .padding(.horizontal, gutter)
             .padding(.bottom, 32)
         }
     }

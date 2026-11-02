@@ -139,6 +139,7 @@ struct ShellDetailColumn: View {
     @Environment(\.motionEnabled) private var motion
     @Environment(\.duoOpen) private var duoOpen
     @Environment(\.duoListToggle) private var listToggle
+    @Environment(\.titleSpread) private var titleSpread
     /// The page following a swipe from its leading edge (`DuoPageEdge`).
     @State private var dragOffset: CGFloat = 0
     @State private var width: CGFloat = 0
@@ -165,8 +166,9 @@ struct ShellDetailColumn: View {
         .modifier(DuoColumnPullEffect(progress: pull.progress, drop: drop, motion: motion))
         .environment(\.duoColumnPull, duoOpen && model.rightPageHasItem ? pull : nil)
         // Gesture 6: pull the page down to close it, as its sheet does folded.
+        // Not on a title split at the fold: the column's middle is the fold.
         .overlay(alignment: .top) {
-            if duoOpen && model.rightPageHasItem { DuoColumnGrabber() }
+            if duoOpen && model.rightPageHasItem && titleSpread?.fillsDisplay != true { DuoColumnGrabber() }
         }
         .onChange(of: pull.closeRequests) { closeByPull() }
         .animation(duoOpen ? DuoPageMotion.animation(motion: motion) : nil, value: pageKey)
@@ -177,8 +179,7 @@ struct ShellDetailColumn: View {
         .overlay(alignment: .leading) {
             if duoOpen && model.rightPageHasItem {
                 DuoPageEdge(width: width, canClose: atRoot, list: listToggle, offset: $dragOffset) {
-                    model.presentedItem = nil
-                    model.spreadPreview = nil
+                    closePage()
                 }
             }
         }
@@ -186,7 +187,29 @@ struct ShellDetailColumn: View {
         .onGeometryChange(for: CGSize.self) { $0.size } action: { width = $0.width; height = $0.height }
     }
 
+    /// The title's episode while it is open on the right page beside it.
+    private var besideEpisode: DetailStore? {
+        guard titleSpread != nil, let ref = model.presentedItem else { return nil }
+        let store = model.detailStore(for: ref.id)
+        return store.episodeSheet == nil ? nil : store
+    }
+
+    /// Close, the edge swipe and the pull: an episode beside its title
+    /// closes first (the title returns to its place), then the title.
+    private func closePage() {
+        if let store = besideEpisode {
+            store.episodeSheet = nil
+            return
+        }
+        model.presentedItem = nil
+        model.spreadPreview = nil
+    }
+
     private func closeByPull() {
+        if let store = besideEpisode {
+            store.episodeSheet = nil
+            return
+        }
         withAnimation(.spring(duration: 0.28, bounce: 0)) { drop = height } completion: {
             var instant = Transaction()
             instant.disablesAnimations = true
@@ -205,7 +228,7 @@ struct ShellDetailColumn: View {
                 NavigationStack {
                     // The same store the sheet showed (`AppModel.detailStore`), so
                     // unfolding keeps the page, its child sheets and their drafts.
-                    ItemDetailView(store: model.detailStore(for: ref.id), onClose: { model.presentedItem = nil })
+                    ItemDetailView(store: model.detailStore(for: ref.id), onClose: { closePage() })
                         .environment(\.detailInColumn, true)
                         .duoListToggleToolbar()
                 }

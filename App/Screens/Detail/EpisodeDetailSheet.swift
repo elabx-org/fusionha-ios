@@ -15,16 +15,23 @@ struct EpisodeSheetTarget: Identifiable {
     var tab: EpisodeSheetTab = .details
 }
 
-/// The episode dialog as a sheet (EpisodeDetailDialog.tsx, ruling L8):
-/// Details (overview, monitored, runtime, per-version status and each owned
-/// file), History (this episode's events) and Search (interactive search for
-/// this one episode), with Auto search in the footer.
+/// The episode dialog (EpisodeDetailDialog.tsx, ruling L8): Details
+/// (overview, Monitored, each version's status and owned file), History (this
+/// episode's events) and Search (interactive search for this one episode).
+/// The heading is the episode's own title with the air date and runtime;
+/// Auto search is in the bar.
+///
+/// A sheet folded, on a phone and in the Web layout; on the open Duo in a
+/// Spread it is the right page beside its title (`inline`, `DetailSpreadBody`):
+/// no stack, grabber or sheet ground, the code and Auto search in the page's
+/// own bar, and the title column's Close closes it.
 struct EpisodeDetailSheet: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @Environment(\.detailReduceMotion) private var reduce
     let target: EpisodeSheetTarget
+    var inline = false
     @State private var tab: EpisodeSheetTab = .details
     @State private var search: InteractiveSearchModel?
 
@@ -35,42 +42,82 @@ struct EpisodeDetailSheet: View {
     private var code: String {
         EpisodeCode.episode(season: target.seasonNumber, episode: episode?.episodeNumber ?? 0, separator: "")
     }
+    /// 20 pt from a page's edges, the sheet's usual 16.
+    private var gutter: CGFloat { inline ? 20 : 16 }
+    private var canSearch: Bool { episode != nil && (model.me?.can("search") ?? true) }
+    private var searchLabel: String { "\(detail?.title ?? "") — \(code)" }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                if let detail, let episode {
-                    heading(detail, episode)
-                    Picker("Episode detail", selection: $tab) {
-                        ForEach(EpisodeSheetTab.allCases, id: \.self) { Text($0.title).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 10)
-                    pane(detail, episode)
-                        .id(tab)
-                        .transition(.opacity)
-                } else {
-                    EmptyBox(message: "This episode is no longer in the library.").padding(16)
-                    Spacer()
-                }
-            }
-            .detailAnimation(.easeInOut(duration: 0.18), value: tab)
-            .background(Theme.panel)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { SheetCancelButton(title: "Close") { dismiss() } }
-            }
-            .closeOnlyBars()
-            .safeAreaInset(edge: .bottom) { footer }
+        Group {
+            if inline { content } else { sheet }
         }
-        .presentationDragIndicator(.visible)
-        .sheetBackground(Theme.panel)
         .onAppear(perform: restore)
         .onDisappear(perform: park)
         .onChange(of: tab, initial: true) { _, new in
             if new == .search && search == nil, let detail, let episode { search = makeSearch(detail, episode) }
         }
+    }
+
+    private var sheet: some View {
+        NavigationStack {
+            content
+                .background(Theme.panel)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { SheetCancelButton(title: "Close") { dismiss() } }
+                    ToolbarItem(placement: .principal) { EpisodeCodeLabel(code: code) }
+                    if canSearch {
+                        ToolbarItem(placement: .primaryAction) {
+                            EpisodeAutoSearchItem(label: searchLabel, code: code, editionId: store.scopeEditionId,
+                                                  episodeId: target.episodeId)
+                        }
+                    }
+                }
+        }
+        .presentationDragIndicator(.visible)
+        .sheetBackground(Theme.panel)
+    }
+
+    private var content: some View {
+        VStack(spacing: 0) {
+            if let detail, let episode {
+                if inline { pageBar }
+                EpisodeHeading(episode: episode)
+                    .padding(.horizontal, gutter)
+                    .padding(.top, inline ? 4 : 8)
+                    .padding(.bottom, 14)
+                Picker("Episode detail", selection: $tab) {
+                    ForEach(EpisodeSheetTab.allCases, id: \.self) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal, gutter)
+                .padding(.bottom, 10)
+                pane(detail, episode)
+                    .id(tab)
+                    .transition(.opacity)
+            } else {
+                EmptyBox(message: "This episode is no longer in the library.").padding(gutter)
+                Spacer()
+            }
+        }
+        .detailAnimation(.easeInOut(duration: 0.18), value: tab)
+    }
+
+    /// The right page's bar: the code, then Auto search (no Close: the
+    /// title column's closes the episode first).
+    private var pageBar: some View {
+        HStack(spacing: 12) {
+            EpisodeCodeLabel(code: code)
+            Spacer(minLength: 8)
+            if canSearch {
+                SearchActionButton(label: searchLabel, editionId: store.scopeEditionId, episodeId: target.episodeId,
+                                   accessibility: "Auto search \(code)", title: "Auto search")
+            }
+        }
+        .frame(minHeight: 44)
+        .padding(.horizontal, gutter)
+        .padding(.top, 12)
+        .padding(.bottom, 6)
     }
 
     // MARK: Fold / unfold (DC3)
@@ -93,47 +140,23 @@ struct EpisodeDetailSheet: View {
         tab = store.drafts.value("episode.tab", as: EpisodeSheetTab.self) ?? target.tab
     }
 
-    private func heading(_ detail: ItemDetail, _ episode: Episode) -> some View {
-        var sub: [String] = []
-        if let instant = episode.airInstant {
-            sub.append("\(episode.hasAired() ? "Aired" : "Airs") \(instant.formatted(date: .abbreviated, time: .omitted))")
-        }
-        return DialogHeading(symbol: "tv", title: "\(detail.title) — \(code) · \(episode.title ?? "Episode \(episode.episodeNumber)")",
-                             subtitle: sub.joined(separator: " · "))
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            .padding(.bottom, 12)
-    }
-
     @ViewBuilder
     private func pane(_ detail: ItemDetail, _ episode: Episode) -> some View {
         switch tab {
         case .details:
             ScrollView {
                 EpisodeDetailsPane(detail: detail, episode: episode, seasonNumber: target.seasonNumber)
-                    .padding(16)
+                    .padding(gutter)
             }
+            .pullClosesPage(inline)
         case .history:
             ScrollView {
                 EpisodeHistoryPane(detail: detail, episode: episode, seasonNumber: target.seasonNumber)
-                    .padding(16)
+                    .padding(gutter)
             }
+            .pullClosesPage(inline)
         case .search:
             if let search { InteractiveSearchPane(model: search) } else { Spacer() }
-        }
-    }
-
-    @ViewBuilder
-    private var footer: some View {
-        if tab != .search, episode != nil, model.me?.can("search") ?? true {
-            HStack {
-                Spacer()
-                SearchActionButton(label: "\(detail?.title ?? "") — \(code)", editionId: store.scopeEditionId,
-                                   episodeId: target.episodeId, accessibility: "Auto search \(code)",
-                                   title: "Auto search")
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
         }
     }
 

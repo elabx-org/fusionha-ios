@@ -18,6 +18,7 @@ struct EpisodeList: View {
             ForEach(episodes) { episode in
                 EpisodeCard(detail: detail, season: season, episode: episode,
                             separated: episode.id != episodes.first?.id)
+                    .id(EpisodeRowID.make(episode.id))
             }
         }
         .padding(.bottom, 4)
@@ -26,6 +27,7 @@ struct EpisodeList: View {
 
 private struct EpisodeCard: View {
     @Environment(DetailStore.self) private var store
+    @Environment(\.titleSpread) private var titleSpread
     @Environment(AppModel.self) private var model
     let detail: ItemDetail
     let season: Season
@@ -88,8 +90,14 @@ private struct EpisodeCard: View {
             }
         }
         .background {
-            if failed { Theme.miss.opacity(0.08) }
+            if isOpen { Theme.i1.opacity(0.14) } else if failed { Theme.miss.opacity(0.08) }
         }
+        // The episode open beside its title on the open Duo: a tint and a
+        // leading accent bar mark its row.
+        .overlay(alignment: .leading) {
+            if isOpen { Rectangle().fill(Theme.i1).frame(width: 3).accessibilityHidden(true) }
+        }
+        .accessibilityAddTraits(isOpen ? .isSelected : [])
         .overlay(alignment: .top) {
             if separated {
                 Rectangle().fill(Theme.line).frame(height: 1).padding(.leading, Self.separatorInset)
@@ -152,6 +160,10 @@ private struct EpisodeCard: View {
                 .accessibilityLabel(on ? "Monitored" : "Not monitored")
         }
     }
+
+    /// Only beside its title on the open Duo (`TitleSpread`): folded, on a
+    /// phone or in the Web layout the episode is a sheet over the row.
+    private var isOpen: Bool { titleSpread != nil && store.episodeSheet?.episodeId == episode.id }
 
     private func openSheet(_ tab: EpisodeSheetTab) {
         store.episodeSheet = EpisodeSheetTarget(episodeId: episode.id, seasonNumber: season.seasonNumber, tab: tab)

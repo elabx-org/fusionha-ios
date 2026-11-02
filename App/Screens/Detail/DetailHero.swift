@@ -20,7 +20,7 @@ struct DetailHero: View {
             }
             // Open Duo: swipe across the art for the next / previous title.
             .duoTitleSwipe(id: detail.id)
-            below
+            DetailHeroFacts(detail: detail)
                 .padding(.horizontal, Theme.pageGutter)
         }
     }
@@ -41,7 +41,18 @@ struct DetailHero: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var below: some View {
+    /// `Andor 2022`: the display face in white, the year a quieter semibold.
+    private var title: some View {
+        DetailHeroTitle(detail: detail, size: 56)
+    }
+}
+
+/// Under the art, on the art-tinted page: the version strip (D4), tagline,
+/// genre pills and the requester. The split title's left page starts here.
+struct DetailHeroFacts: View {
+    let detail: ItemDetail
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             DetailVersionStrip()
                 .padding(.top, 12)
@@ -74,16 +85,23 @@ struct DetailHero: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
+}
 
-    /// `Andor 2022`: the display face in white, the year a quieter semibold.
-    private var title: some View {
+/// `Andor 2022` on the art: the display face in white, the year a quieter
+/// semibold. The hero's at 56, the split title's band smaller.
+struct DetailHeroTitle: View {
+    let detail: ItemDetail
+    let size: CGFloat
+    var lines = 3
+
+    var body: some View {
         (Text(detail.title).foregroundColor(Theme.onScrim)
             + Text(verbatim: detail.year.map { " " + String($0) } ?? "")
-                .font(Theme.display(56, semibold: true))
+                .font(Theme.display(size, semibold: true))
                 .foregroundColor(Theme.onScrim.opacity(0.6)))
-            .font(Theme.display(56))
-            .tracking(Theme.displayTracking(56))
-            .lineLimit(3)
+            .font(Theme.display(size))
+            .tracking(Theme.displayTracking(size))
+            .lineLimit(lines)
             .minimumScaleFactor(0.6)
             .shadow(color: Theme.scrim.opacity(0.45), radius: 12, y: 4)
             .fixedSize(horizontal: false, vertical: true)
@@ -123,7 +141,7 @@ private struct HeroStatusChip: View {
 
 /// `Series · 2 versions · 47 min · ★ 8.4 · TV-14` (`.d-meta`). The
 /// "Metadata via" credit sits at the foot of the page (`.credit`).
-private struct HeroMetaLine: View {
+struct HeroMetaLine: View {
     let detail: ItemDetail
     /// On the hero's darkened edge: white, whatever the theme.
     var onArt = false

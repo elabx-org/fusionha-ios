@@ -6,8 +6,21 @@ import FusionhaKit
 struct EpisodeFileFactsCard: View {
     let facts: EpisodeFileFacts
     let onDisk: String
+    /// Its own lifted card (the file sheet), or bare inside another card.
+    var framed = true
 
     var body: some View {
+        if framed {
+            grid
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .panel(Theme.card, radius: 16)
+        } else {
+            grid.frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private var grid: some View {
         Grid(alignment: .topLeading, horizontalSpacing: 16, verticalSpacing: 14) {
             GridRow {
                 cell("Quality", facts.quality,
@@ -23,9 +36,6 @@ struct EpisodeFileFactsCard: View {
                 cell("On disk", onDisk, tint: facts.deadLink ? Theme.stuck : Theme.done)
             }
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .panel(Theme.card, radius: 16)
     }
 
     private func cell(_ label: String, _ value: String?, tint: Color = Theme.txt) -> some View {

@@ -19,6 +19,8 @@ struct ItemDetailView: View {
     /// True when this is the shell's trailing column (unfolded) rather than a sheet.
     @Environment(\.detailInColumn) private var inColumn
     @Environment(\.horizontalSizeClass) private var sizeClass
+    /// The open Duo's halves while this title is a Spread's right page.
+    @Environment(\.titleSpread) private var titleSpread
     let store: DetailStore
     /// Closes the column; a sheet dismisses itself.
     var onClose: (() -> Void)?
@@ -27,6 +29,9 @@ struct ItemDetailView: View {
     /// host has left on a re-host (fold / unfold).
     @State private var presentReady: Bool
     @State private var position = ScrollPosition(idType: String.self)
+    /// The single column's offset when the title split at the fold, so it
+    /// comes back to the same place.
+    @State private var savedY: CGFloat = 0
 
     private var itemId: Int { store.itemId }
 
@@ -45,12 +50,73 @@ struct ItemDetailView: View {
         systemReduceMotion || store.settings?.animationsEnabled == false
     }
 
+    /// The title fills the open display in a Spread: it splits at the fold.
+    private var splitPages: SpreadGeometry.Pages? {
+        guard inColumn, let titleSpread, titleSpread.fillsDisplay else { return nil }
+        return titleSpread.pages
+    }
+
+    /// A Spread's right page: an episode opens beside the title, not as a cover.
+    private var episodesInline: Bool { inColumn && titleSpread != nil }
+
     private var presenter: DetailPresenter {
         let host: DetailHost = inColumn ? .column : .sheet
         return DetailPresenter(store: store, ready: presentReady) { [model] in model.detailHostAccepts(host) }
     }
 
     var body: some View {
+        page
+            .modifier(DetailPageChrome(store: store, compact: compact && splitPages == nil, reduceMotion: reduceMotion))
+            .toolbar {
+                // In the shell's column it isn't a sheet: Escape stays with the page.
+                ItemDetailToolbar(store: store, canEdit: canEdit, canSearch: canEdit && (model.me?.can("search") ?? true),
+                                  compact: compactLayout, escapeCloses: !inColumn, close: close, openWeb: openWeb)
+            }
+            .environment(store)
+            .environment(\.detailReduceMotion, reduceMotion)
+            .environment(\.detailCompact, compactLayout)
+            .presentationDetents([.large])
+            .presentationCornerRadius(34)
+            .task {
+                store.client = model.client
+                store.queue = model.queue
+                applyScreenshotEnvironment()
+                applyPendingTab()
+                await store.load()
+            }
+            .task(id: store.detail == nil) {
+                if store.detail != nil { applyIntent() }
+            }
+            .onAppear { store.hosted = true }
+            .task { await rehost() }
+            .onChange(of: model.pendingDetailTab) { applyPendingTab() }
+            .onChange(of: model.queue) { store.queue = model.queue }
+            .onChange(of: store.deleted) {
+                guard store.deleted else { return }
+                Task { await model.loadLibrary() }
+                // The column's Close closes an open episode first: the title goes.
+                store.episodeSheet = nil
+                close()
+            }
+            .onChange(of: splitPages == nil) { _, single in
+                if single { restoreSingleColumn() } else { savedY = store.scrollY }
+            }
+            // On the open Duo its sheets open on the right page (`duoPageSheet`);
+            // in a Spread the episode is the right page itself (`DetailSpreadBody`).
+            .modifier(DetailChildSheets(presenter: presenter, reduceMotion: reduceMotion, episodeInline: episodesInline))
+    }
+
+    /// One scrolling column, or the title split at the fold (`DetailSpreadBody`).
+    @ViewBuilder
+    private var page: some View {
+        if let pages = splitPages, let detail = store.detail {
+            DetailSpreadBody(detail: detail, pages: pages, episodeReady: presentReady, openWeb: openWeb)
+        } else {
+            singleColumn
+        }
+    }
+
+    private var singleColumn: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 Group {
@@ -98,58 +164,19 @@ struct ItemDetailView: View {
             }
             .task(id: store.detail == nil) {
                 guard store.detail != nil else { return }
-                applyIntent()
                 await screenshotScroll(proxy)
             }
         }
-        .overlay(alignment: .bottom) {
-            if let toast = store.toast {
-                DetailToastView(toast: toast) { store.toast = nil }
-                    .padding(.bottom, 12)
-                    .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-                    .id(toast.id)
-                    .task(id: toast.id) {
-                        try? await Task.sleep(for: .seconds(toast.action == nil ? 3.5 : 6))
-                        if store.toast?.id == toast.id { store.toast = nil }
-                    }
-            }
+    }
+
+    /// Back from the split: the single column at the offset it had.
+    private func restoreSingleColumn() {
+        let y = savedY
+        guard y > 0 else { return }
+        Task {
+            try? await Task.sleep(for: .milliseconds(80))
+            position.scrollTo(y: y)
         }
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: compact)
-        .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: store.toast)
-        .background { AmbientBackdrop(url: store.detail.flatMap { $0.backdropUrl ?? $0.posterUrl }) }
-        .toolbar {
-            // In the shell's column it isn't a sheet: Escape stays with the page.
-            ItemDetailToolbar(store: store, canEdit: canEdit, canSearch: canEdit && (model.me?.can("search") ?? true),
-                              compact: compactLayout, escapeCloses: !inColumn, close: close, openWeb: openWeb)
-        }
-        // The bar stays clear over the art; the title and the bar's ground
-        // come in once the hero has scrolled away (the old compact bar).
-        .navigationTitle(compact ? (store.detail?.title ?? "") : "")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackgroundVisibility(compact ? .visible : .hidden, for: .navigationBar)
-        .environment(store)
-        .environment(\.detailReduceMotion, reduceMotion)
-        .environment(\.detailCompact, compactLayout)
-        .presentationDetents([.large])
-        .presentationCornerRadius(34)
-        .task {
-            store.client = model.client
-            store.queue = model.queue
-            applyScreenshotEnvironment()
-            applyPendingTab()
-            await store.load()
-        }
-        .onAppear { store.hosted = true }
-        .task { await rehost() }
-        .onChange(of: model.pendingDetailTab) { applyPendingTab() }
-        .onChange(of: model.queue) { store.queue = model.queue }
-        .onChange(of: store.deleted) {
-            guard store.deleted else { return }
-            Task { await model.loadLibrary() }
-            close()
-        }
-        // On the open Duo its sheets open on the right page (`duoPageSheet`).
-        .modifier(DetailChildSheets(presenter: presenter, reduceMotion: reduceMotion))
     }
 
     /// After a fold / unfold: back to the same scroll offset, then (once the

@@ -52,7 +52,7 @@ struct EpisodeFileSheet: View {
         let facts = EpisodeFileFacts(file: file, tier: edition.tier)
         return VStack(alignment: .leading, spacing: 16) {
             heading(row: row, edition: edition)
-            EpisodeFileFactsCard(facts: facts, onDisk: onDisk(file, facts: facts))
+            EpisodeFileFactsCard(facts: facts, onDisk: facts.onDisk(file))
             EpisodeFilePathBox(path: file.relativePath ?? "") {
                 UIPasteboard.general.string = file.relativePath
                 store.show("Path copied", variant: .success)
@@ -82,13 +82,6 @@ struct EpisodeFileSheet: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
         }
-    }
-
-    /// `Imported · symlink`, or the dead link in the stuck colour.
-    private func onDisk(_ file: MovieFile, facts: EpisodeFileFacts) -> String {
-        if facts.deadLink { return "Dead link · target gone from disk" }
-        guard let mode = file.mediaInfo?.finalMode, !mode.isEmpty else { return "Imported" }
-        return "Imported · \(mode.lowercased())"
     }
 
     @ViewBuilder

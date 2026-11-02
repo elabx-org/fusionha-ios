@@ -14,12 +14,14 @@ struct DetailTabsView: View {
     @Environment(DetailStore.self) private var store
     @Environment(\.detailReduceMotion) private var reduce
     @Environment(\.detailCompact) private var compact
+    /// The open Duo's split title: Overview's rails are on the left page.
+    @Environment(\.detailTabsOmitOverview) private var omitOverview
     let detail: ItemDetail
     let openWeb: () -> Void
     @Namespace private var underline
 
     private var tabs: [(DetailTab, String)] {
-        compact ? allTabs.filter { $0.0 != .overview } : allTabs
+        compact || omitOverview ? allTabs.filter { $0.0 != .overview } : allTabs
     }
 
     private var allTabs: [(DetailTab, String)] {

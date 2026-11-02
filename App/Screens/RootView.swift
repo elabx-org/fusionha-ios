@@ -34,18 +34,36 @@ struct RootView: View {
     /// sheet; in a Spread the right page.
     private var split: ShellSplit {
         let hasItem = model.rightPageHasItem
-        var split = ShellSplit(fold: fold, hasItem: hasItem, spread: spreadContext(fold, hasItem: hasItem))
-        split.primaryHidden = split.axis == .horizontal && DuoSplit.hidesList(
+        let spread = spreadContext(fold, hasItem: hasItem)
+        var split = ShellSplit(fold: fold, hasItem: hasItem, spread: spread)
+        // An episode open beside its title takes the list's place (`TitleSpread`).
+        split.primaryHidden = split.axis == .horizontal && (episodeBeside(split, spread: spread) || DuoSplit.hidesList(
             remembered: DuoListMemory(raw: hiddenLists).isHidden(model.tab.listMemoryKey),
-            posture: fold.posture, detailShown: split.shown && hasItem)
+            posture: fold.posture, detailShown: split.shown && hasItem))
         return split
+    }
+
+    /// A Spread with an episode open from the title: the title's tabs on the
+    /// left page, the episode on the right, the list hidden until it closes.
+    private func episodeBeside(_ split: ShellSplit, spread: SpreadContext) -> Bool {
+        guard split.shown, let ref = model.presentedItem,
+              TitleSpread.pages(fold: fold, spread: spread) != nil else { return false }
+        return model.detailStore(for: ref.id).episodeSheet != nil
+    }
+
+    /// The title's halves for its column (`TitleSpread`).
+    private func titleSpread(_ split: ShellSplit, spread: SpreadContext) -> TitleSpread? {
+        guard split.shown, split.axis == .horizontal, model.presentedItem != nil,
+              let pages = TitleSpread.pages(fold: fold, spread: spread) else { return nil }
+        return TitleSpread(pages: pages, fillsDisplay: split.primaryHidden)
     }
 
     /// The sidebar button's action for the detail column: offered flat open
     /// with a title or preview beside the list (`DuoSplit.hidesList`).
     private func listToggle(_ split: ShellSplit) -> DuoListToggle? {
         guard split.shown, split.axis == .horizontal, fold.posture?.canHideList == true,
-              model.rightPageHasItem else { return nil }
+              model.rightPageHasItem,
+              !episodeBeside(split, spread: spreadContext(fold, hasItem: true)) else { return nil }
         let key = model.tab.listMemoryKey
         return DuoListToggle(hidden: split.primaryHidden) {
             var memory = DuoListMemory(raw: hiddenLists)
@@ -143,6 +161,7 @@ struct RootView: View {
         .environment(pillSpace)
         .environment(\.spread, spread)
         .environment(\.duoListToggle, listToggle(split))
+        .environment(\.titleSpread, titleSpread(split, spread: spread))
         .environment(\.duoOpen, fold.isDuoOpen)
         .environment(\.spreadSpanRequests, spanRequests)
         .environment(\.bookPose, fold.vertical != nil)

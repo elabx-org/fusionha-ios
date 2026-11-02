@@ -10,6 +10,8 @@ import FusionhaKit
 struct DetailChildSheets: ViewModifier {
     let presenter: DetailPresenter
     let reduceMotion: Bool
+    /// A Spread's right page shows the episode itself (`DetailSpreadBody`).
+    var episodeInline = false
     private var store: DetailStore { presenter.store }
 
     func body(content: Content) -> some View {
@@ -45,13 +47,14 @@ struct DetailChildSheets: ViewModifier {
                         .presentationDetents([.height(300)])
                 }
             }
-            .modifier(DetailActionSheets(presenter: presenter))
+            .modifier(DetailActionSheets(presenter: presenter, episodeInline: episodeInline))
     }
 }
 
 /// The item actions rail's sheets.
 private struct DetailActionSheets: ViewModifier {
     let presenter: DetailPresenter
+    let episodeInline: Bool
     private var store: DetailStore { presenter.store }
 
     func body(content: Content) -> some View {
@@ -86,7 +89,7 @@ private struct DetailActionSheets: ViewModifier {
                         .environment(store)
                 }
             }
-            .duoPageSheet(item: presenter.item(\.episodeSheet)) { target in
+            .duoPageSheet(item: episodeInline ? .constant(nil) : presenter.item(\.episodeSheet)) { target in
                 EpisodeDetailSheet(target: target)
                     .environment(store)
             }
