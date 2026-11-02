@@ -12,7 +12,11 @@ import FusionhaKit
 /// - Otherwise (the list hidden with the sidebar button): the facts,
 ///   versions and Overview rails on the left page, the tabs on the right.
 ///
-/// Both pages sit on the art ground with the cards' colour bleed.
+/// Both pages sit on the art ground with the cards' colour bleed. The hero
+/// art (`DetailHeroBackdrop`) runs behind the band across both pages; on the
+/// left page it carries on behind the facts and fades out where Versions
+/// start, on a wash of the ground behind the text; on the right page it lets
+/// go just under the band, where the tabs begin.
 struct DetailSpreadBody: View {
     @Environment(DetailStore.self) private var store
     @Environment(\.motionEnabled) private var motion
@@ -23,10 +27,14 @@ struct DetailSpreadBody: View {
     let openWeb: () -> Void
 
     private static let margin: CGFloat = 20
+    @State private var bandHeight: CGFloat = 130
+    /// The left page's header (facts to the top of Versions); 0 beside an episode.
+    @State private var headerHeight: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
             DetailSpreadBand(detail: detail)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bandHeight = $0 }
             if let target = store.episodeSheet {
                 FoldSplitLayout(primary: CGFloat(pages.left.width), gap: CGFloat(pages.gap)) {
                     tabsPage(marking: target.episodeId)
@@ -39,14 +47,25 @@ struct DetailSpreadBody: View {
                 }
             }
         }
+        .background(alignment: .top) { backdrop }
         .environment(\.cardBleed, true)
+    }
+
+    private var backdrop: some View {
+        let header = store.episodeSheet == nil ? headerHeight : 0
+        return DetailHeroBackdrop(
+            url: ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl),
+            layout: HeroBackdropLayout(style: .band, edge: bandHeight,
+                                       end: header > 0 ? bandHeight + header : bandHeight + 28,
+                                       column: CGFloat(pages.left.width)),
+            underBar: true)
     }
 
     /// The left page without an episode: the hero's facts, overview, item
     /// actions, versions and the Overview rails. Pulling it down closes the title.
     private var infoPage: some View {
         ScrollView {
-            DetailPage(detail: detail, openWeb: openWeb, infoPage: true)
+            DetailPage(detail: detail, openWeb: openWeb, infoPage: true) { headerHeight = $0 }
                 .pinnedToProposedWidth()
         }
         .scrollIndicators(.hidden)

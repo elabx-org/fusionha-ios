@@ -6,7 +6,8 @@ import FusionhaKit
 /// zoom (not under Reduce Motion). Only its bottom edge darkens, so a white
 /// title reads on it; the page below starts on its own ground, tinted by the
 /// art (`AmbientBackdrop`), never a milky fade. On the open Duo the art runs
-/// on under the system column, open or folded. Shared by the loaded hero and the loading shell.
+/// on under the system column, open or folded. The loading shell's art and the
+/// hero's height; the loaded hero draws `DetailHeroBackdrop` at this height.
 struct DetailHeroArt<Overlay: View>: View {
     @Environment(\.detailReduceMotion) private var reduce
     let url: URL?

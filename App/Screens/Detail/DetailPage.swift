@@ -41,6 +41,9 @@ struct DetailPage: View {
     let detail: ItemDetail
     let openWeb: () -> Void
     var infoPage = false
+    /// The split title's left page: how far its header runs (to the top of
+    /// Versions), where the hero art fades out behind it.
+    var onHeaderHeight: ((CGFloat) -> Void)?
 
     private var gutter: CGFloat { infoPage ? 20 : Theme.pageGutter }
 
@@ -82,6 +85,9 @@ struct DetailPage: View {
 
                 DetailVersionsPanel(detail: detail, openWeb: openWeb)
                     .id("editions")
+                    .onGeometryChange(for: CGFloat.self) {
+                        $0.frame(in: .named(Self.space)).minY
+                    } action: { onHeaderHeight?($0) }
 
                 if detail.kind == .movie, ReleaseTimeline.hasData(detail) {
                     DetailSection(title: "Release timeline")
@@ -107,7 +113,10 @@ struct DetailPage: View {
             .padding(.horizontal, gutter)
             .padding(.bottom, 32)
         }
+        .coordinateSpace(.named(Self.space))
     }
+
+    private static let space = "detailPage"
 
     /// The rail's caption (`.applies`): "Item actions · applies to {all
     /// versions | tier}", echoing the page scope the actions act on.
