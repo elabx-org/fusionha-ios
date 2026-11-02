@@ -65,7 +65,7 @@ struct EpisodeDetailSheet: View {
             .safeAreaInset(edge: .bottom) { footer }
         }
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.panel)
+        .sheetBackground(Theme.panel)
         .onAppear(perform: restore)
         .onDisappear(perform: park)
         .onChange(of: tab, initial: true) { _, new in

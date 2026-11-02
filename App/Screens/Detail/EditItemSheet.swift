@@ -105,7 +105,7 @@ struct EditItemSheet: View {
             }
         }
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.bg)
+        .sheetBackground(Theme.bg)
         .task { await seed() }
         // Survives a fold / unfold (data safety): `seeded` keeps seed() from overwriting it.
         .retainsDraft("edit.seeded", $seeded)

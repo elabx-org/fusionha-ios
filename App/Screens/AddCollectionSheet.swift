@@ -84,7 +84,7 @@ struct AddCollectionSheet: View {
             }
         }
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.panel)
+        .sheetBackground(Theme.panel)
         .task { await load() }
     }
 

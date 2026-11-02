@@ -24,9 +24,11 @@ extension View {
     }
 
     /// The root of a sheet's content: Escape belongs to this presentation
-    /// again, even when it was opened from inside a Duo page cover.
+    /// again, even when it was opened from inside a Duo page cover, and its
+    /// `sheetBackground` is drawn again (it is a sheet, not a page).
     func sheetEscapeRoot() -> some View {
         environment(\.escapeTakenByHost, false)
+            .environment(\.onDuoPage, false)
     }
 }
 

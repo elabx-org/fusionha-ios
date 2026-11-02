@@ -57,7 +57,7 @@ struct EditionAliasesSheet: View {
             .closeOnlyBars()
         }
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.bg)
+        .sheetBackground(Theme.bg)
         .task { await load() }
         .retainsDraft("aliases.term", $term)
         .retainsDraft("aliases.edition", $edition)

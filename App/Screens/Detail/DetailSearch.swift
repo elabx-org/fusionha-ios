@@ -31,7 +31,7 @@ struct InteractiveSearchSheet: View {
             }
         }
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.panel)
+        .sheetBackground(Theme.panel)
         .onAppear {
             guard model == nil else { return }
             let parked = store.drafts.value(Self.modelKey, as: InteractiveSearchModel.self)

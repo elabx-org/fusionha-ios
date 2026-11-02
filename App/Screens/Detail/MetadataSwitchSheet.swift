@@ -57,7 +57,7 @@ struct MetadataSwitchSheet: View {
             .safeAreaInset(edge: .bottom) { footer }
         }
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.bg)
+        .sheetBackground(Theme.bg)
         .interactiveDismissDisabled(committing)
         .task { await load(targetId: nil) }
     }

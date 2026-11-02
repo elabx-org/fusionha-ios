@@ -24,7 +24,7 @@ struct PreviewSheet: View {
                 }
         }
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.bg)
+        .sheetBackground(Theme.bg)
         .presentationCornerRadius(14)
         // Sheets hide the shell's toasts.
         .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
@@ -36,7 +36,7 @@ struct PreviewSheet: View {
             }
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(20)
-            .presentationBackground(Theme.panel)
+            .sheetBackground(Theme.panel)
         }
     }
 }

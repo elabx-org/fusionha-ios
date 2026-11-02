@@ -34,6 +34,6 @@ struct LetterboxdProfileSheet: View {
         }
         .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.bg)
+        .sheetBackground(Theme.bg)
     }
 }

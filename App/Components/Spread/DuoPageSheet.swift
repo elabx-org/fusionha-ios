@@ -105,6 +105,8 @@ private struct DuoPageCover<Content: View>: View {
                 .accessibilityHidden(true)
         }
         .environment(\.escapeTakenByHost, true)
+        // The content's own sheet background steps aside (`sheetBackground`).
+        .environment(\.onDuoPage, true)
         .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { measured = $0 }
         .environment(dismissGuard)
         .onChange(of: dismissGuard.closeRequests) { attemptClose() }

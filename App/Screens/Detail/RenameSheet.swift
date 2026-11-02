@@ -42,7 +42,7 @@ struct RenameSheet: View {
             }
         }
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.bg)
+        .sheetBackground(Theme.bg)
         .task { await load() }
     }
 

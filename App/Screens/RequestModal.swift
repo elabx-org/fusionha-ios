@@ -89,7 +89,7 @@ struct RequestModal: View {
         .toolbarBackgroundVisibility(.hidden, for: .navigationBar)
         .closeOnlyBars()
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.panel)
+        .sheetBackground(Theme.panel)
         .presentationCornerRadius(14)
         // A form sheet on the Duo; page-sized when the window is desktop-wide,
         // so the art | options panes show as on the web's desktop modal.

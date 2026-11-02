@@ -31,7 +31,7 @@ struct ShellPresentations: ViewModifier {
             AddTitleSheet()
                 .presentationDragIndicator(.visible)
                 .presentationCornerRadius(20)
-                .presentationBackground(Theme.panel)
+                .sheetBackground(Theme.panel)
         }
         .sheet(isPresented: account(paged: false),
                onDismiss: { model.avatar.openPending(model) }) {

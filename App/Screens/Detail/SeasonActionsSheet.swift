@@ -63,7 +63,7 @@ struct SeasonActionsSheet: View {
             .padding(20)
         }
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.panel)
+        .sheetBackground(Theme.panel)
     }
 
     private func group(_ title: String) -> some View {

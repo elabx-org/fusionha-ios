@@ -59,7 +59,7 @@ struct PickTitleSheet: View {
         .onDisappear { Task { await store.refreshProgress(model.client) } }
         .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
         .presentationDragIndicator(.visible)
-        .presentationBackground(Theme.bg)
+        .sheetBackground(Theme.bg)
     }
 
     private func itemSection(_ item: UnmatchedItem) -> some View {
