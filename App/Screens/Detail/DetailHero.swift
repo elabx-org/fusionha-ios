@@ -17,7 +17,7 @@ struct DetailHero: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear
-                .containerRelativeFrame(.vertical) { length, _ in DetailHeroArt.height(for: length) }
+                .containerRelativeFrame(.vertical) { length, _ in DetailHeroArt<EmptyView>.height(for: length) }
                 .frame(maxWidth: .infinity)
                 .overlay(alignment: .bottomLeading) {
                     onArt
