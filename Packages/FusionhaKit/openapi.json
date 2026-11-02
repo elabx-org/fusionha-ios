@@ -3,7 +3,7 @@
   "info": {
     "title": "fusionha",
     "description": "fusionha replaces both Sonarr and Radarr with a single app that adds\nfirst-class multi-quality tracking (e.g. 1080p *and* 4K per title) and\ntreats anime as a first-class citizen. It exposes **two API surfaces**:\n\n* **fusionha-native, `/api/v1/*`** -- the app's own REST API: library items\n  (with all their quality editions), settings, config resources (root\n  folders, quality profiles, custom formats, indexers, download clients),\n  history, queue, health, and blocklist. This is what the fusionha UI (and\n  any other fusionha-aware client) talks to.\n* **arr v3 mirrors, `/<instance-slug>/api/v3/*`** -- faithful Radarr/Sonarr\n  v3 API surfaces (`radarr-hd`, `radarr-4k`, `sonarr-hd`, `sonarr-4k`), each\n  its own virtual instance with its own `X-Api-Key`. Add these to\n  Overseerr/Seer (their native 4K-service slots map to the `-4k`\n  instances) or Prowlarr exactly as you would a real Radarr/Sonarr -- they\n  are externally indistinguishable. All virtual instances are views over\n  the SAME shared item store; there is no data duplication.\n\nAuthenticate against the arr surface with the `X-Api-Key` header (per\nvirtual instance); see the Authorize button above.",
-    "version": "0.4.236"
+    "version": "0.4.237"
   },
   "paths": {
     "/api/v1/setup-status": {
@@ -820,6 +820,15 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/settings/trakt-client-id": {
+      "delete": {
+        "tags": ["Settings"],
+        "summary": "Clear Trakt Client Id",
+        "description": "Trakt addresses then say \"Trakt isn't set up on this server\"; followed\nTrakt lists stay, marked not available, and nothing already requested changes.",
+        "operationId": "clear_trakt_client_id_api_v1_settings_trakt_client_id_delete",
+        "responses": { "204": { "description": "Successful Response" } }
       }
     },
     "/api/v1/settings/anime": {
@@ -5985,7 +5994,7 @@
       "post": {
         "tags": ["Requests"],
         "summary": "Add Request Source",
-        "description": "Link a public list (by URL) or someone's public watchlist (by username).\n409 ``limit_reached`` / ``already_linked`` / ``use_watchlist_follow``;\n422 ``invalid_list_url`` / ``invalid_username``; 403 ``not_allowed``. The\nfirst check starts at once.",
+        "description": "Link a public list (by URL) or someone's public watchlist (by username), or\n(10b, ``kind: feed``) follow any public list: MDBList / Trakt become a\n``LIST_FEED``, a Letterboxd address a Letterboxd list. 409 ``limit_reached``\n(shared limit) / ``already_linked`` / ``use_watchlist_follow`` /\n``provider_unavailable`` / ``policy``; 422 ``invalid_list_url`` /\n``invalid_username`` / ``unsupported_site`` / ``coming_later``; 403\n``not_allowed``. The first check starts at once.",
         "operationId": "add_request_source_api_v1_me_request_sources_post",
         "requestBody": {
           "content": {
@@ -6015,7 +6024,7 @@
       "post": {
         "tags": ["Requests"],
         "summary": "Preview Request Source",
-        "description": "A sample of 25 films from one page (no film-page walk). Once per 30 s\n(429 ``rate_limited`` with ``retry_after``, also when no Letterboxd slot is\nfree within 10 s). 422 ``invalid_list_url`` /\n``invalid_username`` before any fetch; 422 ``source_unreadable``; 503\n``blocked`` / ``unavailable``; 403 ``not_allowed``.",
+        "description": "A sample of 25 titles from one read (no film-page walk). Once per 30 s\n(429 ``rate_limited`` with ``retry_after``, also when no Letterboxd slot is\nfree within 10 s). 422 ``invalid_list_url`` / ``invalid_username`` /\n(10b) ``unsupported_site`` / ``coming_later`` before any fetch; 422\n``source_unreadable``; 409 ``provider_unavailable`` (Trakt with no app id);\n503 ``blocked`` / ``unavailable``; 403 ``not_allowed``. ``kind`` may be left\nout: the site is recognised from ``url`` (MDBList, Trakt, Letterboxd).",
         "operationId": "preview_request_source_api_v1_me_request_sources_preview_post",
         "requestBody": {
           "content": {
@@ -6045,7 +6054,7 @@
       "patch": {
         "tags": ["Requests"],
         "summary": "Patch Request Source",
-        "description": "Switch a linked source on or off, or rename a list (``label``; empty =\nthe list's own name again). Owner only (404).",
+        "description": "Switch a linked source on or off, rename a list (``label``; empty = the\nlist's own name again), or (a followed feed) set its own ``also_uhd`` (409\n``policy`` without UHD\u00b74K access). Owner only (404).",
         "operationId": "patch_request_source_api_v1_me_request_sources__source_id__patch",
         "parameters": [
           {
@@ -6574,6 +6583,534 @@
         },
         "responses": {
           "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import-lists/exclusions": {
+      "get": {
+        "tags": ["Import lists"],
+        "summary": "List Import List Exclusions",
+        "description": "Every-list exclusions (``scope: all``, ids ``all-<n>``) then per-list ones\n(``scope: list``, ids ``list-<n>``; only ``list_id``'s when given).",
+        "operationId": "list_import_list_exclusions_api_v1_import_lists_exclusions_get",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "query",
+            "required": false,
+            "schema": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "List Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ImportListExclusionRead" },
+                  "title": "Response List Import List Exclusions Api V1 Import Lists Exclusions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Import lists"],
+        "summary": "Add Import List Exclusion",
+        "description": "Never add this title: from every list (``list_id`` null; also what the arr\nAPI's import-list exclusions hold) or from one list.",
+        "operationId": "add_import_list_exclusion_api_v1_import_lists_exclusions_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ImportListExclusionCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImportListExclusionRead" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import-lists/exclusions/{exclusion_id}": {
+      "delete": {
+        "tags": ["Import lists"],
+        "summary": "Delete Import List Exclusion",
+        "description": "Allow the title again; the next sync decides it.",
+        "operationId": "delete_import_list_exclusion_api_v1_import_lists_exclusions__exclusion_id__delete",
+        "parameters": [
+          {
+            "name": "exclusion_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Exclusion Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import-lists/runs/{run_id}/items": {
+      "get": {
+        "tags": ["Import lists"],
+        "summary": "Import List Run Items",
+        "description": "What one run decided (the titles it read and their outcomes).",
+        "operationId": "import_list_run_items_api_v1_import_lists_runs__run_id__items_get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Run Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ImportListItemRead" },
+                  "title": "Response Import List Run Items Api V1 Import Lists Runs  Run Id  Items Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import-lists/{list_id}/runs": {
+      "get": {
+        "tags": ["Import lists"],
+        "summary": "Import List Runs",
+        "description": "The last 30 syncs, newest first.",
+        "operationId": "import_list_runs_api_v1_import_lists__list_id__runs_get",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "List Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ImportListRunRead" },
+                  "title": "Response Import List Runs Api V1 Import Lists  List Id  Runs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import-lists/{list_id}/unmatched": {
+      "get": {
+        "tags": ["Import lists"],
+        "summary": "Import List Unmatched",
+        "operationId": "import_list_unmatched_api_v1_import_lists__list_id__unmatched_get",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "List Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ImportListItemRead" },
+                  "title": "Response Import List Unmatched Api V1 Import Lists  List Id  Unmatched Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import-lists/{list_id}/items/{item_id}/resolve": {
+      "post": {
+        "tags": ["Import lists"],
+        "summary": "Resolve Import List Item",
+        "description": "\"Add it\": point the title at a TMDB match; it is QUEUED and the sync adds it\nat once. 409 ``already_decided``; 422 ``wrong_kind``.",
+        "operationId": "resolve_import_list_item_api_v1_import_lists__list_id__items__item_id__resolve_post",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "List Id" }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Item Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ImportListResolve" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImportListItemRead" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import-lists/{list_id}/items/{item_id}/ignore": {
+      "post": {
+        "tags": ["Import lists"],
+        "summary": "Ignore Import List Item",
+        "description": "Ignore on this list, or (``everywhere``) exclude it from every list.\n422 ``needs_match`` when ``everywhere`` and the title has no TMDB match.",
+        "operationId": "ignore_import_list_item_api_v1_import_lists__list_id__items__item_id__ignore_post",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "List Id" }
+          },
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "Item Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ImportListIgnore" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImportListItemRead" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/system/import-lists/summary": {
+      "get": {
+        "tags": ["Import lists", "Health"],
+        "summary": "Import Lists Summary",
+        "description": "The Tasks tab's \"Import lists\" card: each enabled list's state and last-run\ncounts, today's totals, and ``import-list-sync``'s last / next run.",
+        "operationId": "import_lists_summary_api_v1_system_import_lists_summary_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImportListsSummaryRead" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import-lists": {
+      "get": {
+        "tags": ["Import lists"],
+        "summary": "List Import Lists",
+        "description": "Every import list with its counts and last run.",
+        "operationId": "list_import_lists_api_v1_import_lists_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": { "$ref": "#/components/schemas/ImportListRead" },
+                  "type": "array",
+                  "title": "Response List Import Lists Api V1 Import Lists Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Import lists"],
+        "summary": "Create Import List",
+        "description": "Import a public list. 409 ``already_exists`` / ``provider_unavailable``;\n422 ``unsupported_site`` / ``coming_later`` / ``duplicate_tier`` /\n``invalid_root_folder`` / ``invalid_quality_profile`` / ``interval_too_short``\n(``min_hours``: Letterboxd 12). The first sync starts at once.",
+        "operationId": "create_import_list_api_v1_import_lists_post",
+        "requestBody": {
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ImportListCreate" } }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ImportListRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import-lists/preview": {
+      "post": {
+        "tags": ["Import lists"],
+        "summary": "Preview Import List",
+        "description": "The Add / Edit preview: the list's title, mix, what is already in the\nlibrary or excluded, and how many titles the first sync adds (capped by\n``import_list_max_add_per_sync``). 422 ``unsupported_site`` / ``coming_later``\nbefore any fetch; 409 ``provider_unavailable``; 422 ``source_unreadable``;\n503 ``unavailable``; 429 ``rate_limited`` (``retry_after``).",
+        "operationId": "preview_import_list_api_v1_import_lists_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ImportListPreviewRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImportListPreviewRead" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import-lists/{list_id}": {
+      "get": {
+        "tags": ["Import lists"],
+        "summary": "Get Import List",
+        "operationId": "get_import_list_api_v1_import_lists__list_id__get",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "List Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ImportListRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Import lists"],
+        "summary": "Patch Import List",
+        "description": "Change the name, versions, monitoring, search on add, interval or on/off.\nTitles already added are never changed.",
+        "operationId": "patch_import_list_api_v1_import_lists__list_id__patch",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "List Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ImportListPatch" } }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ImportListRead" } }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Import lists"],
+        "summary": "Delete Import List",
+        "description": "Stop importing; the ledger and runs go, every added title stays.",
+        "operationId": "delete_import_list_api_v1_import_lists__list_id__delete",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "List Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/import-lists/{list_id}/sync": {
+      "post": {
+        "tags": ["Import lists"],
+        "summary": "Sync Import List",
+        "description": "Sync now (once a minute per list: 429 ``rate_limited`` with\n``sync_available_at``); 409 ``disabled`` when the list is off.",
+        "operationId": "sync_import_list_api_v1_import_lists__list_id__sync_post",
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "title": "List Id" }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/ImportListRead" } }
+            }
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -24832,6 +25369,16 @@
             "title": "Flaresolverr Configured",
             "default": false
           },
+          "trakt_client_id_set": {
+            "type": "boolean",
+            "title": "Trakt Client Id Set",
+            "default": false
+          },
+          "import_list_max_add_per_sync": {
+            "type": "integer",
+            "title": "Import List Max Add Per Sync",
+            "default": 25
+          },
           "apns_enabled": { "type": "boolean", "title": "Apns Enabled", "default": true },
           "apns_key_id": { "type": "string", "title": "Apns Key Id", "default": "" },
           "apns_team_id": { "type": "string", "title": "Apns Team Id", "default": "" },
@@ -25568,6 +26115,14 @@
             "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Flaresolverr Url"
           },
+          "trakt_client_id": {
+            "anyOf": [{ "type": "string", "maxLength": 200 }, { "type": "null" }],
+            "title": "Trakt Client Id"
+          },
+          "import_list_max_add_per_sync": {
+            "anyOf": [{ "type": "integer", "maximum": 200.0, "minimum": 1.0 }, { "type": "null" }],
+            "title": "Import List Max Add Per Sync"
+          },
           "plex_server_url": {
             "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Plex Server Url"
@@ -26189,6 +26744,7 @@
               "partly_working",
               "not_public",
               "blocked",
+              "unavailable",
               "retrying",
               "needs_sign_in",
               "not_allowed",
@@ -30494,6 +31050,404 @@
         "required": ["tier", "root_folder_id", "quality_profile_id", "folder"],
         "title": "ImportCommitVersionRequest"
       },
+      "ImportListCreate": {
+        "properties": {
+          "name": {
+            "anyOf": [{ "type": "string", "maxLength": 200 }, { "type": "null" }],
+            "title": "Name"
+          },
+          "url": { "type": "string", "maxLength": 500, "title": "Url" },
+          "media_kind": {
+            "type": "string",
+            "enum": ["movie", "series", "anime"],
+            "title": "Media Kind"
+          },
+          "versions": {
+            "items": { "$ref": "#/components/schemas/ImportListVersion" },
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Versions"
+          },
+          "monitored": { "type": "boolean", "title": "Monitored", "default": true },
+          "search_on_add": { "type": "boolean", "title": "Search On Add", "default": false },
+          "interval_hours": {
+            "type": "integer",
+            "maximum": 168.0,
+            "minimum": 1.0,
+            "title": "Interval Hours",
+            "default": 6
+          },
+          "enabled": { "type": "boolean", "title": "Enabled", "default": true }
+        },
+        "type": "object",
+        "required": ["url", "media_kind"],
+        "title": "ImportListCreate"
+      },
+      "ImportListExclusionCreate": {
+        "properties": {
+          "tmdb_id": { "type": "integer", "minimum": 1.0, "title": "Tmdb Id" },
+          "kind": { "type": "string", "enum": ["movie", "series"], "title": "Kind" },
+          "title": {
+            "anyOf": [{ "type": "string", "maxLength": 300 }, { "type": "null" }],
+            "title": "Title"
+          },
+          "year": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Year" },
+          "list_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "List Id" }
+        },
+        "type": "object",
+        "required": ["tmdb_id", "kind"],
+        "title": "ImportListExclusionCreate"
+      },
+      "ImportListExclusionRead": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "scope": { "type": "string", "enum": ["all", "list"], "title": "Scope" },
+          "list_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "List Id" },
+          "tmdb_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Tmdb Id" },
+          "kind": { "type": "string", "title": "Kind" },
+          "title": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Title" },
+          "year": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Year" },
+          "created_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": ["id", "scope", "kind"],
+        "title": "ImportListExclusionRead"
+      },
+      "ImportListIgnore": {
+        "properties": {
+          "everywhere": { "type": "boolean", "title": "Everywhere", "default": false }
+        },
+        "type": "object",
+        "title": "ImportListIgnore"
+      },
+      "ImportListItemRead": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "list_id": { "type": "integer", "title": "List Id" },
+          "external_key": { "type": "string", "title": "External Key" },
+          "tmdb_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Tmdb Id" },
+          "kind": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Kind" },
+          "title": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Title" },
+          "year": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Year" },
+          "outcome": { "type": "string", "title": "Outcome" },
+          "unmatched_reason": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Unmatched Reason"
+          },
+          "media_item_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Media Item Id"
+          },
+          "first_seen_at": { "type": "string", "format": "date-time", "title": "First Seen At" },
+          "last_seen_at": { "type": "string", "format": "date-time", "title": "Last Seen At" },
+          "decided_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Decided At"
+          }
+        },
+        "type": "object",
+        "required": ["id", "list_id", "external_key", "outcome", "first_seen_at", "last_seen_at"],
+        "title": "ImportListItemRead"
+      },
+      "ImportListPatch": {
+        "properties": {
+          "name": {
+            "anyOf": [{ "type": "string", "maxLength": 200, "minLength": 1 }, { "type": "null" }],
+            "title": "Name"
+          },
+          "versions": {
+            "anyOf": [
+              {
+                "items": { "$ref": "#/components/schemas/ImportListVersion" },
+                "type": "array",
+                "maxItems": 2,
+                "minItems": 1
+              },
+              { "type": "null" }
+            ],
+            "title": "Versions"
+          },
+          "monitored": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Monitored"
+          },
+          "search_on_add": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Search On Add"
+          },
+          "interval_hours": {
+            "anyOf": [{ "type": "integer", "maximum": 168.0, "minimum": 1.0 }, { "type": "null" }],
+            "title": "Interval Hours"
+          },
+          "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }], "title": "Enabled" }
+        },
+        "type": "object",
+        "title": "ImportListPatch"
+      },
+      "ImportListPreviewItem": {
+        "properties": {
+          "title": { "type": "string", "title": "Title" },
+          "year": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Year" },
+          "kind": { "type": "string", "enum": ["movie", "series"], "title": "Kind" },
+          "tmdb_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Tmdb Id" },
+          "in_library": { "type": "boolean", "title": "In Library", "default": false },
+          "excluded": { "type": "boolean", "title": "Excluded", "default": false },
+          "poster_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Poster Url"
+          }
+        },
+        "type": "object",
+        "required": ["title", "kind"],
+        "title": "ImportListPreviewItem"
+      },
+      "ImportListPreviewMix": {
+        "properties": {
+          "movies": { "type": "integer", "title": "Movies" },
+          "series": { "type": "integer", "title": "Series" }
+        },
+        "type": "object",
+        "required": ["movies", "series"],
+        "title": "ImportListPreviewMix"
+      },
+      "ImportListPreviewRead": {
+        "properties": {
+          "provider": { "type": "string", "title": "Provider" },
+          "kind": { "type": "string", "title": "Kind" },
+          "title": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Title" },
+          "owner": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Owner" },
+          "item_count": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Item Count"
+          },
+          "mix": { "$ref": "#/components/schemas/ImportListPreviewMix" },
+          "in_library_count": { "type": "integer", "title": "In Library Count" },
+          "excluded_count": { "type": "integer", "title": "Excluded Count" },
+          "would_add": { "type": "integer", "title": "Would Add" },
+          "first_sync_adds": { "type": "integer", "title": "First Sync Adds" },
+          "items": {
+            "items": { "$ref": "#/components/schemas/ImportListPreviewItem" },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "kind",
+          "mix",
+          "in_library_count",
+          "excluded_count",
+          "would_add",
+          "first_sync_adds",
+          "items"
+        ],
+        "title": "ImportListPreviewRead"
+      },
+      "ImportListPreviewRequest": {
+        "properties": {
+          "url": { "type": "string", "maxLength": 500, "title": "Url" },
+          "media_kind": {
+            "type": "string",
+            "enum": ["movie", "series", "anime"],
+            "title": "Media Kind"
+          }
+        },
+        "type": "object",
+        "required": ["url", "media_kind"],
+        "title": "ImportListPreviewRequest"
+      },
+      "ImportListRead": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "name": { "type": "string", "title": "Name" },
+          "provider": { "type": "string", "title": "Provider" },
+          "url": { "type": "string", "title": "Url" },
+          "owner": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Owner" },
+          "list_kind": { "type": "string", "title": "List Kind" },
+          "media_kind": {
+            "type": "string",
+            "enum": ["movie", "series", "anime"],
+            "title": "Media Kind"
+          },
+          "versions": {
+            "items": { "$ref": "#/components/schemas/ImportListVersion" },
+            "type": "array",
+            "title": "Versions"
+          },
+          "monitored": { "type": "boolean", "title": "Monitored" },
+          "search_on_add": { "type": "boolean", "title": "Search On Add" },
+          "interval_hours": { "type": "integer", "title": "Interval Hours" },
+          "enabled": { "type": "boolean", "title": "Enabled" },
+          "status": { "type": "string", "title": "Status" },
+          "last_error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Last Error"
+          },
+          "item_count": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Item Count"
+          },
+          "added_count": { "type": "integer", "title": "Added Count", "default": 0 },
+          "unmatched_count": { "type": "integer", "title": "Unmatched Count", "default": 0 },
+          "queued_count": { "type": "integer", "title": "Queued Count", "default": 0 },
+          "last_checked_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Last Checked At"
+          },
+          "next_check_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Next Check At"
+          },
+          "sync_requested_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Sync Requested At"
+          },
+          "last_run": {
+            "anyOf": [{ "$ref": "#/components/schemas/ImportListRunRead" }, { "type": "null" }]
+          },
+          "created_at": { "type": "string", "format": "date-time", "title": "Created At" }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "provider",
+          "url",
+          "list_kind",
+          "media_kind",
+          "versions",
+          "monitored",
+          "search_on_add",
+          "interval_hours",
+          "enabled",
+          "status",
+          "created_at"
+        ],
+        "title": "ImportListRead"
+      },
+      "ImportListResolve": {
+        "properties": {
+          "tmdb_id": { "type": "integer", "minimum": 1.0, "title": "Tmdb Id" },
+          "kind": { "type": "string", "enum": ["movie", "series"], "title": "Kind" }
+        },
+        "type": "object",
+        "required": ["tmdb_id", "kind"],
+        "title": "ImportListResolve"
+      },
+      "ImportListRunCounts": {
+        "properties": {
+          "added": { "type": "integer", "title": "Added", "default": 0 },
+          "owned": { "type": "integer", "title": "Owned", "default": 0 },
+          "excluded": { "type": "integer", "title": "Excluded", "default": 0 },
+          "unmatched": { "type": "integer", "title": "Unmatched", "default": 0 },
+          "skipped_kind": { "type": "integer", "title": "Skipped Kind", "default": 0 },
+          "queued": { "type": "integer", "title": "Queued", "default": 0 }
+        },
+        "type": "object",
+        "title": "ImportListRunCounts"
+      },
+      "ImportListRunRead": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "list_id": { "type": "integer", "title": "List Id" },
+          "started_at": { "type": "string", "format": "date-time", "title": "Started At" },
+          "finished_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Finished At"
+          },
+          "counts": { "$ref": "#/components/schemas/ImportListRunCounts" },
+          "error": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Error" }
+        },
+        "type": "object",
+        "required": ["id", "list_id", "started_at", "counts"],
+        "title": "ImportListRunRead"
+      },
+      "ImportListVersion": {
+        "properties": {
+          "tier": { "type": "string", "enum": ["HD_1080P", "UHD_2160P"], "title": "Tier" },
+          "root_folder_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Root Folder Id"
+          },
+          "quality_profile_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Quality Profile Id"
+          }
+        },
+        "type": "object",
+        "required": ["tier"],
+        "title": "ImportListVersion",
+        "description": "One tier the list adds; a null id = that slot of Default Profiles."
+      },
+      "ImportListsSummaryList": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "name": { "type": "string", "title": "Name" },
+          "provider": { "type": "string", "title": "Provider" },
+          "media_kind": { "type": "string", "title": "Media Kind" },
+          "state": { "type": "string", "enum": ["running", "error", "idle"], "title": "State" },
+          "counts": { "$ref": "#/components/schemas/ImportListRunCounts" },
+          "item_count": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Item Count"
+          },
+          "last_checked_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Last Checked At"
+          },
+          "next_check_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Next Check At"
+          },
+          "last_error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Last Error"
+          }
+        },
+        "type": "object",
+        "required": ["id", "name", "provider", "media_kind", "state", "counts"],
+        "title": "ImportListsSummaryList"
+      },
+      "ImportListsSummaryRead": {
+        "properties": {
+          "running": { "type": "boolean", "title": "Running" },
+          "checked": { "type": "integer", "title": "Checked" },
+          "total": { "type": "integer", "title": "Total" },
+          "next_run_at": {
+            "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }],
+            "title": "Next Run At"
+          },
+          "lists": {
+            "items": { "$ref": "#/components/schemas/ImportListsSummaryList" },
+            "type": "array",
+            "title": "Lists"
+          },
+          "today": { "$ref": "#/components/schemas/ImportListsTodayRead" },
+          "jobs": {
+            "items": { "$ref": "#/components/schemas/SummaryJobRead" },
+            "type": "array",
+            "title": "Jobs"
+          }
+        },
+        "type": "object",
+        "required": ["running", "checked", "total", "lists", "today", "jobs"],
+        "title": "ImportListsSummaryRead"
+      },
+      "ImportListsTodayRead": {
+        "properties": {
+          "added": { "type": "integer", "title": "Added", "default": 0 },
+          "owned": { "type": "integer", "title": "Owned", "default": 0 },
+          "excluded": { "type": "integer", "title": "Excluded", "default": 0 },
+          "errors": { "type": "integer", "title": "Errors", "default": 0 }
+        },
+        "type": "object",
+        "title": "ImportListsTodayRead"
+      },
       "ImportMode": {
         "type": "string",
         "enum": ["HARDLINK", "SYMLINK", "COPY", "MOVE"],
@@ -32179,6 +33133,7 @@
           "kind": { "type": "string", "title": "Kind" },
           "label": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Label" },
           "url": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Url" },
+          "provider": { "type": "string", "title": "Provider", "default": "LETTERBOXD" },
           "owner": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Owner" },
           "is_self": { "type": "boolean", "title": "Is Self" },
           "enabled": { "type": "boolean", "title": "Enabled" },
@@ -32260,6 +33215,7 @@
           "kind": { "type": "string", "title": "Kind" },
           "label": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Label" },
           "url": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Url" },
+          "provider": { "type": "string", "title": "Provider", "default": "LETTERBOXD" },
           "owner": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Owner" },
           "is_self": { "type": "boolean", "title": "Is Self" },
           "enabled": { "type": "boolean", "title": "Enabled" },
@@ -37104,11 +38060,28 @@
         "properties": {
           "title": { "type": "string", "title": "Title" },
           "year": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Year" },
-          "in_library": { "type": "boolean", "title": "In Library" }
+          "in_library": { "type": "boolean", "title": "In Library" },
+          "kind": {
+            "anyOf": [{ "type": "string", "enum": ["movie", "series"] }, { "type": "null" }],
+            "title": "Kind"
+          },
+          "tmdb_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Tmdb Id" },
+          "poster_url": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Poster Url"
+          }
         },
         "type": "object",
         "required": ["title", "year", "in_library"],
         "title": "PreviewItemRead"
+      },
+      "PreviewMixRead": {
+        "properties": {
+          "movies": { "type": "integer", "title": "Movies", "default": 0 },
+          "series": { "type": "integer", "title": "Series", "default": 0 }
+        },
+        "type": "object",
+        "title": "PreviewMixRead"
       },
       "PreviewRead": {
         "properties": {
@@ -37122,6 +38095,15 @@
             "items": { "$ref": "#/components/schemas/PreviewItemRead" },
             "type": "array",
             "title": "Items"
+          },
+          "provider": { "type": "string", "title": "Provider", "default": "LETTERBOXD" },
+          "kind": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Kind" },
+          "mix": {
+            "anyOf": [{ "$ref": "#/components/schemas/PreviewMixRead" }, { "type": "null" }]
+          },
+          "in_library_count": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "In Library Count"
           }
         },
         "type": "object",
@@ -37141,7 +38123,10 @@
       },
       "PreviewRequest": {
         "properties": {
-          "kind": { "type": "string", "enum": ["list", "watchlist"], "title": "Kind" },
+          "kind": {
+            "anyOf": [{ "type": "string", "enum": ["list", "watchlist"] }, { "type": "null" }],
+            "title": "Kind"
+          },
           "url": {
             "anyOf": [{ "type": "string", "maxLength": 500 }, { "type": "null" }],
             "title": "Url"
@@ -37153,8 +38138,8 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["kind"],
-        "title": "PreviewRequest"
+        "title": "PreviewRequest",
+        "description": "``kind`` may be left out (10b): the site is recognised from ``url``."
       },
       "PreviewSeason": {
         "properties": {
@@ -41150,7 +42135,7 @@
       },
       "SourceCreate": {
         "properties": {
-          "kind": { "type": "string", "enum": ["list", "watchlist"], "title": "Kind" },
+          "kind": { "type": "string", "enum": ["list", "watchlist", "feed"], "title": "Kind" },
           "url": {
             "anyOf": [{ "type": "string", "maxLength": 500 }, { "type": "null" }],
             "title": "Url"
@@ -41164,13 +42149,14 @@
             "title": "Label"
           },
           "enabled": { "type": "boolean", "title": "Enabled", "default": true },
-          "request_existing": { "type": "boolean", "title": "Request Existing", "default": false }
+          "request_existing": { "type": "boolean", "title": "Request Existing", "default": false },
+          "also_uhd": { "type": "boolean", "title": "Also Uhd", "default": false }
         },
         "additionalProperties": false,
         "type": "object",
         "required": ["kind"],
         "title": "SourceCreate",
-        "description": "``POST /me/request-sources``: a list by URL or a watchlist by username."
+        "description": "``POST /me/request-sources``: a Letterboxd list by URL, a watchlist by\nusername, or (10b) ``feed``: any public list address -- MDBList / Trakt become a\nfollowed feed, a Letterboxd address a Letterboxd list. ``also_uhd`` is a\nfeed's own UHD\u00b74K choice (Letterboxd sources use the diary's)."
       },
       "SourceOptionsRead": {
         "properties": {
@@ -41190,7 +42176,8 @@
           "label": {
             "anyOf": [{ "type": "string", "maxLength": 200 }, { "type": "null" }],
             "title": "Label"
-          }
+          },
+          "also_uhd": { "anyOf": [{ "type": "boolean" }, { "type": "null" }], "title": "Also Uhd" }
         },
         "additionalProperties": false,
         "type": "object",
@@ -41371,6 +42358,7 @@
           "user_id": { "type": "integer", "title": "User Id" },
           "owner": { "type": "string", "title": "Owner" },
           "kind": { "type": "string", "title": "Kind" },
+          "provider": { "type": "string", "title": "Provider", "default": "LETTERBOXD" },
           "label": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Label" },
           "state": { "type": "string", "enum": ["idle", "running", "error"], "title": "State" },
           "checked": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Checked" },
