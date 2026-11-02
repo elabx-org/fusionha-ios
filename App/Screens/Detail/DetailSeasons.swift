@@ -2,8 +2,8 @@ import SwiftUI
 import FusionhaKit
 
 // The Seasons tab (SeasonsAccordion + MobileEpisodeList, redesign `.season`):
-// season sections on the ground with a striped progress bar and a glass ⋮
-// sheet, then the episode rows (DetailEpisodes).
+// one card per season (SeasonCard) with a striped progress bar and a glass ⋯
+// sheet, then the episode rows (DetailEpisodes) inside the card.
 
 struct SeasonsTab: View {
     @Environment(DetailStore.self) private var store
@@ -154,136 +154,5 @@ private struct AnalysisPill: View {
             .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Theme.indigo.opacity(0.4)))
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Season card
-
-struct SeasonCard: View {
-    @Environment(DetailStore.self) private var store
-    let detail: ItemDetail
-    let season: Season
-    let isOpen: Bool
-    let toggle: () -> Void
-
-    var body: some View {
-        let editions = store.scopedEditions
-        let ids = editions.map(\.id)
-        let c = season.completion(editionIds: ids)
-        let paused = pausedCount(ids)
-        VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: 9) {
-                HStack(spacing: 8) {
-                    Button(action: toggle) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Theme.mut)
-                                .rotationEffect(.degrees(isOpen ? 90 : 0))
-                                .detailAnimation(.easeInOut(duration: 0.2), value: isOpen)
-                            Text(season.title)
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundStyle(Theme.txt)
-                                .lineLimit(1)
-                                .fixedSize()
-                            Text("\(c.done)/\(c.total)").font(.system(size: 13).monospacedDigit()).foregroundStyle(Theme.mut)
-                                .contentTransition(.numericText(value: Double(c.done)))
-                                .detailAnimation(.easeOut(duration: 0.4), value: c.done)
-                            Spacer(minLength: 4)
-                            Text(DetailText.bytes(season.bytes(editionIds: ids)))
-                                .font(.system(size: 13)).foregroundStyle(Theme.mut)
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(season.title), \(c.done) of \(c.total)")
-                    Button {
-                        store.seasonSheet = SeasonRef(number: season.seasonNumber)
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .rotationEffect(.degrees(90))
-                            .foregroundStyle(Theme.txt)
-                            .frame(width: 40, height: 40)
-                            .contentShape(Circle())
-                            .frame(minWidth: 44, minHeight: 44)
-                            .contentShape(Rectangle())
-                            .padding(.horizontal, -2).padding(.vertical, -2)
-                    }
-                    .buttonStyle(DetailPressStyle())
-                    .glassEffect(.regular.interactive(), in: .circle)
-                    .accessibilityLabel("\(season.title) actions")
-                }
-                SeasonBar(total: c.total, done: c.done, downloading: c.downloading, attention: c.attention)
-                if paused > 0 {
-                    Text("\(paused) cooling down")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Theme.stuck)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(Theme.stuck.opacity(0.12), in: Capsule())
-                        .detailPulse(low: 0.35, high: 1, period: 2.4)
-                        .accessibilityHint("Cooling down after failed downloads · a manual search runs now and ignores the cooldown")
-                }
-            }
-            .padding(.vertical, 10)
-            .background(season.seasonNumber == 0 ? Theme.miss.opacity(0.06) : .clear)
-
-            if isOpen {
-                Rectangle().fill(Theme.line).frame(height: 1)
-                EpisodeList(detail: detail, season: season)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-        .padding(.bottom, 16)
-        .detailAnimation(.timingCurve(0.52, 0.01, 0.16, 1, duration: 0.42), value: isOpen)
-    }
-
-    private func pausedCount(_ ids: [Int]) -> Int {
-        let now = DetailText.instant(store.pauses?.now) ?? Date()
-        let episodeIds = Set(season.episodes.map(\.id))
-        let paused = (store.pauses?.episodes ?? []).filter { p in
-            guard let e = p.episodeId, episodeIds.contains(e), let ed = p.editionId, ids.contains(ed),
-                  let until = DetailText.instant(p.cooldownUntil) else { return false }
-            return until > now
-        }
-        return Set(paused.compactMap(\.episodeId)).count
-    }
-}
-
-/// The 6pt season bar: present (with a stuck-coloured attention tail) then a
-/// striped downloading segment over a miss-tinted track.
-private struct SeasonBar: View {
-    let total: Int
-    let done: Int
-    let downloading: Int
-    let attention: Int
-    @State private var shown = false
-
-    var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            let doneW = total > 0 ? w * CGFloat(done) / CGFloat(total) : 0
-            let dlW = total > 0 ? w * CGFloat(downloading) / CGFloat(total) : 0
-            let attentionShare = done > 0 ? Double(attention) / Double(done) : 0
-            HStack(spacing: 0) {
-                // Done, then the share that needs attention, as solid segments.
-                HStack(spacing: 0) {
-                    Theme.done.frame(width: (shown ? doneW : 0) * (1 - attentionShare))
-                    Theme.stuck.frame(width: (shown ? doneW : 0) * attentionShare)
-                }
-                .frame(width: shown ? doneW : 0)
-                if downloading > 0 {
-                    Theme.grab
-                        .overlay(DetailStripes())
-                        .frame(width: shown ? dlW : 0)
-                }
-                Spacer(minLength: 0)
-            }
-            .background(Theme.miss.mix(0.3, Theme.bg))
-            .clipShape(Capsule())
-        }
-        .frame(height: 6)
-        .detailAnimation(DetailMotion.barFill, value: shown)
-        .onAppear { shown = true }
     }
 }

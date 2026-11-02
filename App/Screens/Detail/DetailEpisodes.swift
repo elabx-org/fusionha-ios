@@ -1,9 +1,9 @@
 import SwiftUI
 import FusionhaKit
 
-// The Seasons tab's episode list (MobileEpisodeList, redesign `.ep`): episode
-// rows on the ground, split by hairlines, with one status chip per scoped
-// version. A tap opens the episode sheet; the chevron peeks the per-version
+// The Seasons tab's episode list (MobileEpisodeList, redesign `.ep`): plain
+// rows inside the season card, split by inset hairlines, with one status chip
+// per scoped version. A tap opens the episode sheet; the chevron peeks the per-version
 // facts + actions inline.
 
 struct EpisodeList: View {
@@ -16,10 +16,11 @@ struct EpisodeList: View {
         let episodes = season.episodes.sorted { oldest ? $0.episodeNumber < $1.episodeNumber : $0.episodeNumber > $1.episodeNumber }
         LazyVStack(spacing: 0) {
             ForEach(episodes) { episode in
-                EpisodeCard(detail: detail, season: season, episode: episode)
+                EpisodeCard(detail: detail, season: season, episode: episode,
+                            separated: episode.id != episodes.first?.id)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.bottom, 4)
     }
 }
 
@@ -29,7 +30,12 @@ private struct EpisodeCard: View {
     let detail: ItemDetail
     let season: Season
     let episode: Episode
+    /// A hairline above the row (every row but the first).
+    let separated: Bool
     @State private var expanded = false
+
+    /// Where the hairline starts: past the bookmark, under the text.
+    private static let separatorInset: CGFloat = 50
 
     private var code: String {
         EpisodeCode.episode(season: season.seasonNumber, episode: episode.episodeNumber, separator: "")
@@ -41,38 +47,19 @@ private struct EpisodeCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 10) {
                 monitorToggle
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 10) {
-                        Text(numberText)
-                            .font(.system(size: 15, weight: .semibold).monospacedDigit())
-                            .foregroundStyle(Theme.mut)
-                            .fixedSize()
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(numberText)
+                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .foregroundStyle(Theme.mut)
+                        .fixedSize()
+                        .frame(minWidth: 26, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 2) {
                         Text(episode.title ?? "TBA")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(size: 15, weight: .medium))
                             .foregroundStyle(Theme.txt)
                             .lineLimit(1)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    HStack(alignment: .center, spacing: 10) {
-                        AirTimeText(episode: episode)
-                        Spacer(minLength: 4)
-                        FlowRow(spacing: 6, lineSpacing: 4) {
-                            ForEach(editions) { edition in
-                                EpisodeStatusChip(episode: episode, edition: edition)
-                            }
-                            if editions.contains(where: { episode.file(for: $0.id)?.unresolved == true }) || failed {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(Theme.stuck)
-                            }
-                            if isPaused(editions) {
-                                Image(systemName: "pause.circle.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(Theme.stuck)
-                                    .detailPulse(low: 0.35, high: 1, period: 2.4)
-                            }
-                        }
-                        .layoutPriority(1)
+                        statusLine(editions, failed: failed)
                     }
                 }
                 .contentShape(Rectangle())
@@ -89,20 +76,51 @@ private struct EpisodeCard: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(expanded ? "Collapse \(code)" : "Expand \(code)")
             }
-            .padding(.trailing, -8)
-            .padding(.vertical, 7)
+            .padding(.leading, 4)
+            .padding(.trailing, 2)
+            .padding(.vertical, 6)
             .frame(minHeight: 44)
 
             if expanded {
                 EpisodeBody(detail: detail, season: season, episode: episode, code: code)
+                    .padding(.horizontal, 14)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .background {
             if failed { Theme.miss.opacity(0.08) }
         }
-        .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
+        .overlay(alignment: .top) {
+            if separated {
+                Rectangle().fill(Theme.line).frame(height: 1).padding(.leading, Self.separatorInset)
+            }
+        }
         .detailAnimation(.easeInOut(duration: 0.2), value: expanded)
+    }
+
+    /// The second line: the air date, then one status chip per scoped version.
+    private func statusLine(_ editions: [DetailEdition], failed: Bool) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            AirTimeText(episode: episode)
+            Spacer(minLength: 4)
+            FlowRow(spacing: 6, lineSpacing: 4) {
+                ForEach(editions) { edition in
+                    EpisodeStatusChip(episode: episode, edition: edition)
+                }
+                if editions.contains(where: { episode.file(for: $0.id)?.unresolved == true }) || failed {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.stuck)
+                }
+                if isPaused(editions) {
+                    Image(systemName: "pause.circle.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.stuck)
+                        .detailPulse(low: 0.35, high: 1, period: 2.4)
+                }
+            }
+            .layoutPriority(1)
+        }
     }
 
     /// Per-episode monitor toggle: the season toolbar's bookmark (filled =
@@ -176,117 +194,8 @@ private struct AirTimeText: View {
             }
         }
         .font(.system(size: 13))
-        .foregroundStyle(Theme.dim)
+        .foregroundStyle(Theme.mut)
         .lineLimit(1)
         .fixedSize()
-    }
-}
-
-/// The expanded body: one facts block per scoped edition, then the actions.
-private struct EpisodeBody: View {
-    @Environment(DetailStore.self) private var store
-    @Environment(AppModel.self) private var model
-    let detail: ItemDetail
-    let season: Season
-    let episode: Episode
-    let code: String
-
-    var body: some View {
-        let editions = store.scopedEditions
-        VStack(alignment: .leading, spacing: 12) {
-            ForEach(editions) { edition in
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 8) {
-                        Text(edition.label).font(.system(size: 11, weight: .heavy)).foregroundStyle(DetailTokens.tier(edition.tier))
-                        Spacer(minLength: 0)
-                        EpisodeStatusChip(episode: episode, edition: edition)
-                    }
-                    if let file = episode.file(for: edition.id) {
-                        facts(file)
-                    } else {
-                        Text("No file for this version.").font(.system(size: 12.5)).foregroundStyle(Theme.mut)
-                    }
-                }
-                .padding(14)
-                .detailCard(radius: 16, shadow: false)
-            }
-            if model.me?.can("search") ?? true {
-                HStack(spacing: 8) {
-                    SearchActionButton(label: code, editionId: store.scopeEditionId, episodeId: episode.id,
-                                       size: 44, glyph: 16, bordered: true)
-                    interactive(editions)
-                }
-            }
-        }
-        .padding(.top, 4)
-        .padding(.bottom, 14)
-    }
-
-    private func facts(_ file: MovieFile) -> some View {
-        let probe = file.mediaInfo?.probe
-        var rows: [(String, String)] = [("Quality", DetailText.quality(file.quality)), ("Size", DetailText.bytes(file.size))]
-        if let v = DetailMediaFacts.audio(probe) { rows.append(("Audio", v)) }
-        if let v = DetailMediaFacts.codec(probe) { rows.append(("Codec", v)) }
-        if let v = DetailMediaFacts.range(probe) { rows.append(("Range", v)) }
-        if let v = file.releaseGroup, !v.isEmpty { rows.append(("Group", v)) }
-        if let v = file.cfScore { rows.append(("CF", v >= 0 ? "+\(v)" : "\(v)")) }
-        if let v = file.languages, !v.isEmpty { rows.append(("Languages", v.joined(separator: ", "))) }
-        if let v = file.releaseType, !v.isEmpty, v != "unknown" { rows.append(("Release Type", v)) }
-        return LazyVGrid(columns: [GridItem(.flexible(), alignment: .topLeading), GridItem(.flexible(), alignment: .topLeading)],
-                         alignment: .leading, spacing: 10) {
-            ForEach(rows.indices, id: \.self) { i in
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(rows[i].0).font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.dim)
-                    Text(rows[i].1)
-                        .font(.system(size: 12.5, design: rows[i].0 == "Size" ? Font.Design.monospaced : Font.Design.default))
-                        .foregroundStyle(rows[i].0 == "Size" ? Theme.mut : Theme.txt)
-                        .lineLimit(2)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-
-    /// ManualSearchTrigger: direct with one version, else "Search which version?".
-    @ViewBuilder
-    private func interactive(_ editions: [DetailEdition]) -> some View {
-        let all = detail.orderedEditions
-        if all.count == 1, let only = all.first {
-            DetailSquareAction(systemImage: "person", label: "Interactive search") {
-                store.interactive = InteractiveTarget(editionIds: [only.id], episodeId: episode.id,
-                                                      subtitle: "S\(season.seasonNumber)·E\(episode.episodeNumber)")
-            }
-        } else {
-            Menu {
-                Section("Search which version?") {
-                    ForEach(all) { edition in
-                        Button {
-                            store.interactive = InteractiveTarget(editionIds: [edition.id], episodeId: episode.id,
-                                                                  subtitle: "S\(season.seasonNumber)·E\(episode.episodeNumber)")
-                        } label: {
-                            Text(edition.label)
-                            Text(episode.file(for: edition.id) == nil
-                                 ? "missing — most likely what you want · 1 query"
-                                 : "has a file · re-search for an upgrade · 1 query")
-                        }
-                    }
-                    Button {
-                        store.interactive = InteractiveTarget(editionIds: all.map(\.id), episodeId: episode.id,
-                                                              subtitle: "S\(season.seasonNumber)·E\(episode.episodeNumber)")
-                    } label: {
-                        Text("All versions")
-                        Text("search every version · tiers × versions · \(all.count) queries")
-                    }
-                }
-            } label: {
-                Image(systemName: "person")
-                    .font(.system(size: 16))
-                    .foregroundStyle(Theme.txt)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Circle())
-                    .glassEffect(.regular.interactive(), in: .circle)
-            }
-            .accessibilityLabel("Interactive search")
-        }
     }
 }

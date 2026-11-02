@@ -68,6 +68,9 @@ struct ItemDetailView: View {
                 // system column). Measuring the scroll geometry instead
                 // counted the column's inset twice and narrowed the page.
                 .pinnedToProposedWidth()
+                // The art ground (`AmbientBackdrop`) is behind every card on
+                // this page: lifted cards let its colour bleed through.
+                .environment(\.cardBleed, true)
             }
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             .scrollIndicators(.hidden)
