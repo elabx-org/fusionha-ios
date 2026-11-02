@@ -10,6 +10,10 @@ import UIKit
 /// scrolling list was fading in, which was most of a fast scroll.
 struct PosterImage: View {
     let url: URL?
+    /// The frame, when the caller knows it (a Library grid card): the art
+    /// loads from the first pass and a cached copy shows at once, with no
+    /// measuring pass first.
+    var size: CGSize?
     @Environment(\.displayScale) private var displayScale
     @State private var image: UIImage?
     @State private var shownURL: URL?
@@ -17,22 +21,34 @@ struct PosterImage: View {
     /// The laid-out frame, in points: the art is decoded for exactly this.
     @State private var box: CGSize = .zero
 
+    /// The gradient as a pre-rendered plate (`ShelfPlates`): a live
+    /// `LinearGradient` was rasterized on the main thread for every poster
+    /// that scrolled in.
+    @ViewBuilder
     private var placeholder: some View {
-        LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
+        let frame = size ?? box
+        let aspect = frame.height > 0 ? frame.width / frame.height : 2 / 3
+        if let plate = ShelfPlates.placeholder(aspect: aspect) {
+            Image(uiImage: plate).resizable()
+        } else {
+            LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
     }
 
     var body: some View {
         let _ = PerfCount.hit("PosterImage.body")
-        let request = ArtRequest(url: url, points: box, scale: displayScale)
+        let request = ArtRequest(url: url, points: size ?? box, scale: displayScale)
+        // A cached copy draws on the first frame (no placeholder, then a swap).
+        let shown = image ?? (size != nil ? request.url.flatMap { ImagePipeline.shared.cached($0, fill: request.pixels) } : nil)
         // The placeholder stays underneath, so the fade reads as the old
         // crossfade. Layout is still done by the same resizable, aspect-filled
         // SwiftUI `Image` as before (kept invisible), and the art is drawn over
         // exactly its frame, so every caller sizes the poster as it always has.
         Group {
-            if let image {
-                Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
+            if let shown {
+                Image(uiImage: shown).resizable().aspectRatio(contentMode: .fill)
                     .hidden()
-                    .overlay { PosterArt(image: PosterWashRenderer.washed(image), fade: fade) }
+                    .overlay { PosterArt(image: PosterWashRenderer.washed(shown), fade: fade) }
                     .background { placeholder }
             } else {
                 placeholder
@@ -41,7 +57,7 @@ struct PosterImage: View {
         // The aspect-filled image reports a size larger than its frame, and
         // `.clipped()` doesn't clip hit testing: art never takes taps itself.
         .allowsHitTesting(false)
-        .onGeometryChange(for: CGSize.self) { $0.size } action: { box = $0 }
+        .modifier(MeasureBox(active: size == nil, box: $box))
         .task(id: request) { await load(request) }
     }
 
@@ -53,12 +69,15 @@ struct PosterImage: View {
         guard request.hasFrame else { return }
         let pipeline = ImagePipeline.shared
         if let cached = pipeline.cached(url, fill: request.pixels) {
+            await PosterWashRenderer.prewash(cached)
             if image !== cached { fade = false; image = cached; shownURL = url }
             return
         }
         if shownURL != url { image = nil }
         let loaded = await pipeline.image(for: url, fill: request.pixels, scale: request.scale)
         guard !Task.isCancelled, let loaded else { return }
+        await PosterWashRenderer.prewash(loaded)
+        guard !Task.isCancelled else { return }
         fade = shownURL != url
         image = loaded
         shownURL = url
@@ -100,5 +119,19 @@ private struct PosterArt: UIViewRepresentable {
     /// Fills whatever frame the overlay offers (the hidden `Image`'s frame).
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UIImageView, context: Context) -> CGSize? {
         proposal.replacingUnspecifiedDimensions(by: image.size)
+    }
+}
+
+/// Measures a poster's frame only for callers that don't pass its size.
+private struct MeasureBox: ViewModifier {
+    let active: Bool
+    @Binding var box: CGSize
+
+    func body(content: Content) -> some View {
+        if active {
+            content.onGeometryChange(for: CGSize.self) { $0.size } action: { box = $0 }
+        } else {
+            content
+        }
     }
 }

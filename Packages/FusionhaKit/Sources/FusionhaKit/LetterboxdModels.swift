@@ -145,8 +145,11 @@ public struct LetterboxdWatchlistFollow: Decodable, Sendable, Hashable {
 /// `GET /api/v1/me/request-sources` rows (`LbSourceRead`).
 public struct LbSource: Decodable, Sendable, Hashable, Identifiable {
     public let id: Int
-    /// `LETTERBOXD_RSS`, `LETTERBOXD_WATCHLIST`, `LETTERBOXD_LIST`, `LETTERBOXD_CSV`.
+    /// `LETTERBOXD_RSS`, `LETTERBOXD_WATCHLIST`, `LETTERBOXD_LIST`,
+    /// `LETTERBOXD_CSV`, and (0.4.237) `LIST_FEED` for a followed MDBList / Trakt list.
     public let kind: String
+    /// 0.4.237: `LETTERBOXD`, `MDBLIST` or `TRAKT` (`PLEX` on Plex rows).
+    public let provider: String?
     public let label: String?
     public let url: String?
     /// The Letterboxd username of the list or watchlist.
@@ -176,7 +179,7 @@ public struct LbSource: Decodable, Sendable, Hashable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, kind, label, url, owner, isSelf, enabled, status, lastCheckedAt, nextCheckAt, retryAt
         case lastError, viaFlaresolverr, requestedCount, itemCount, baseline, truncated, sync, counts
-        case sourceId, unmatchedCount, options
+        case sourceId, unmatchedCount, options, provider
     }
 
     private struct Options: Decodable { let alsoUhd: Bool? }
@@ -185,6 +188,7 @@ public struct LbSource: Decodable, Sendable, Hashable, Identifiable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decode(Int.self, forKey: .id)
         kind = c.orDefault(.kind, "")
+        provider = c.lenient(.provider)
         label = c.lenient(.label)
         url = c.lenient(.url)
         owner = c.lenient(.owner)
@@ -210,8 +214,11 @@ public struct LbSource: Decodable, Sendable, Hashable, Identifiable {
 
     public var isList: Bool { kind == "LETTERBOXD_LIST" }
 
+    /// A followed MDBList / Trakt list (10b slice 2).
+    public var isFeed: Bool { kind == "LIST_FEED" }
+
     /// A list, or someone else's watchlist: these count toward `max_linked_lists`.
-    public var isLinked: Bool { isList || (kind == "LETTERBOXD_WATCHLIST" && !isSelf) }
+    public var isLinked: Bool { isList || isFeed || (kind == "LETTERBOXD_WATCHLIST" && !isSelf) }
 
     /// `@owner · List name` or `@owner · watchlist` (web `sourceTitle`).
     public var title: String {
@@ -224,40 +231,6 @@ public struct LbSource: Decodable, Sendable, Hashable, Identifiable {
 public struct LbSyncResult: Decodable, Sendable {
     public let queued: [Int]?
     public let syncAvailableAt: String?
-}
-
-/// `POST /me/request-sources/preview`: the first page of a list or watchlist.
-public struct LbSourcePreview: Decodable, Sendable, Hashable {
-    public let title: String?
-    public let owner: String?
-    public let itemCount: Int?
-    /// At most 25.
-    public let items: [LbPreviewItem]
-
-    enum CodingKeys: String, CodingKey { case title, owner, itemCount, items }
-
-    public init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        title = c.lenient(.title)
-        owner = c.lenient(.owner)
-        itemCount = c.lenient(.itemCount)
-        items = c.orDefault(.items, [LbPreviewItem]())
-    }
-}
-
-public struct LbPreviewItem: Decodable, Sendable, Hashable {
-    public let title: String
-    public let year: Int?
-    public let inLibrary: Bool
-
-    enum CodingKeys: String, CodingKey { case title, year, inLibrary }
-
-    public init(from decoder: Decoder) throws {
-        let c = try decoder.container(keyedBy: CodingKeys.self)
-        title = c.orDefault(.title, "")
-        year = c.lenient(.year)
-        inLibrary = c.orDefault(.inLibrary, false)
-    }
 }
 
 /// What to add: a list by address, or someone's watchlist by username.

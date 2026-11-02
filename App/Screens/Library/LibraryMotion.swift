@@ -36,7 +36,15 @@ private struct EntranceRow: ViewModifier {
     let index: Int?
     let generation: Int
     @Environment(\.motionEnabled) private var motion
-    @State private var seen = -1
+    /// A row outside the entrance starts settled: rows the scroll creates
+    /// write no state as they appear.
+    @State private var seen: Int
+
+    init(index: Int?, generation: Int) {
+        self.index = index
+        self.generation = generation
+        _seen = State(initialValue: index == nil ? generation : -1)
+    }
 
     private var hidden: Bool { motion && index != nil && seen != generation }
 
@@ -48,7 +56,10 @@ private struct EntranceRow: ViewModifier {
     }
 
     private func settle() {
-        guard let index, motion else { seen = generation; return }
+        guard let index, motion else {
+            if seen != generation { seen = generation }
+            return
+        }
         withAnimation(.spring(duration: 0.35, bounce: 0).delay(Double(index) * 0.05)) { seen = generation }
     }
 }

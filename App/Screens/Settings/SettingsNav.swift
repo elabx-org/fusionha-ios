@@ -40,6 +40,10 @@ enum SettingsNav {
         .init(id: "filemanagement", label: "File Management", title: "File Management",
               subtitle: "Propers/repacks, recycle bin, extra files, analysis, and the free-space guard.",
               icon: "slider.horizontal.3"),
+        // 0.4.237 (10b slice 3): admin lists that add titles straight to the library.
+        .init(id: "importlists", label: "Import lists", title: "Import lists",
+              subtitle: "Lists that add titles straight to your library. No requests, no quota.",
+              icon: "list.bullet"),
         .init(id: "import", label: "Import Library", title: "Import Library",
               subtitle: "Scan a root folder and match existing subfolders to TMDB — override any match before importing.",
               icon: "square.and.arrow.down", action: true),
@@ -125,7 +129,7 @@ enum SettingsNav {
 
     static let groups: [SettingsGroupInfo] = [
         .init(id: "media", label: "Media Management", icon: "folder",
-              children: ["roots", "naming", "filemanagement", "import"]),
+              children: ["roots", "naming", "filemanagement", "importlists", "import"]),
         .init(id: "quality", label: "Quality", icon: "clock",
               children: ["qualitydefinitions", "formats", "releasefilters", "blocklist", "profiles", "defaultprofiles", "trash"]),
         .init(id: "access", label: "Access", icon: "checkmark.shield",

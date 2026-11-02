@@ -105,7 +105,7 @@ struct LibraryRecentCard: View {
                 Color.clear
                     .aspectRatio(16 / 9, contentMode: .fit)
                     .overlay { PosterImage(url: art) }
-                    .shelfPoster(radius: 14)
+                    .shelfPosterPlated(radius: 14)
                     .artGlow(art, radius: 14, aspect: 16 / 9, referenceWidth: 240)
                     .padding(.bottom, 8)
                 Text(item.title)

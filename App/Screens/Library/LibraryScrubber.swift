@@ -56,6 +56,10 @@ final class ScrubberState {
     @ObservationIgnored private var pending: String?
 
     func setGridTop(_ y: CGFloat) {
+        // Above the window's top the track starts at the safe area whatever
+        // the grid's y: clamped, scrolling past stops writing it every frame
+        // (each write re-ran the thumb's whole body).
+        let y = max(y, 0)
         // Frozen while scrubbing: a jump scrolls the page, and moving the track
         // under the finger would shift the finger → letter mapping mid-drag.
         guard !scrubbing, abs(y - gridTop) >= 0.5 else { return }
@@ -72,7 +76,10 @@ final class ScrubberState {
     func scrolled(_ m: Metrics) {
         guard !scrubbing, m.maxOffset >= m.viewport * 0.5 else { return }
         let p = min(1, max(0, m.offset / max(m.maxOffset, 1)))
-        if abs(p - progress) > 0.0005 { progress = p }
+        // About half a point of thumb travel (the track is shorter than the
+        // viewport): a long library moves the thumb a fraction of a point per
+        // frame, and every write re-renders it.
+        if abs(p - progress) >= 0.5 / max(m.viewport, 1) || p == 0 || p == 1, p != progress { progress = p }
         if !visible { visible = true }
         lastScroll = Date()
         scheduleHide()
@@ -177,20 +184,20 @@ struct ScrollScrubber: View {
     let letters: [String]
     let jump: (String) -> Void
 
-    @Environment(\.motionEnabled) private var motion
-    @State private var touchStart: CGFloat?
-    @State private var holdTask: Task<Void, Never>?
-
-    private static let space = "scroll-scrubber-track"
+    static let space = "scroll-scrubber-track"
 
     var body: some View {
+        let _ = PerfCount.hit("ScrollScrubber.body")
         if !letters.isEmpty {
             GeometryReader { geo in
+                let _ = PerfCount.hit("ScrollScrubber.reader")
                 let origin = geo.frame(in: .global).minY
                 let top = max(geo.safeAreaInsets.top + 12, state.gridTop - origin)
                 let bottom = geo.size.height - geo.safeAreaInsets.bottom - 12
                 let height = max(bottom - top, ScrubberState.thumbHeight * 2)
-                track(height: height)
+                // Its own view: a scroll moves the thumb (`progress`) without
+                // re-running this reader.
+                ScrubberTrack(state: state, letters: letters, height: height, jump: jump)
                     .frame(width: 110, height: height)
                     .coordinateSpace(.named(Self.space))
                     .offset(x: trailingEdge(geo) - 110, y: top)
@@ -212,65 +219,6 @@ struct ScrollScrubber: View {
         let fallback = geo.size.width - geo.safeAreaInsets.trailing
         guard let grid = state.gridTrailing else { return fallback }
         return min(geo.size.width, grid + 16 - geo.frame(in: .global).minX)
-    }
-
-    private func track(height: CGFloat) -> some View {
-        let y = state.progress * (height - ScrubberState.thumbHeight)
-        return ZStack(alignment: .topTrailing) {
-            ScrubberBubble(letter: state.bubble, tick: state.tick)
-                .offset(x: -48, y: y - 4)
-            thumb(height: height)
-                .offset(y: y)
-        }
-        .frame(width: 110, height: height, alignment: .topTrailing)
-    }
-
-    private func thumb(height: CGFloat) -> some View {
-        let shape = UnevenRoundedRectangle(topLeadingRadius: 24, bottomLeadingRadius: 24, style: .continuous)
-        let grabbed = state.bubble != nil
-        return ThumbArrows()
-            .fill(.white)
-            .frame(width: 12, height: 22)
-            .frame(width: 34, height: ScrubberState.thumbHeight)
-            // A control, so glass: tinted with the web's `--mut` 72% (92% while grabbed).
-            .glassEffect(.regular.tint(Theme.mut.opacity(grabbed ? 0.92 : 0.72)).interactive(), in: shape)
-            .shadow(color: .black.opacity(0.35), radius: 7, y: 4)
-            .contentShape(shape)
-            .opacity(state.visible ? 1 : 0)
-            .offset(x: state.visible ? 0 : 14)
-            .animation(motion ? .easeOut(duration: 0.22) : nil, value: state.visible)
-            .animation(motion ? .easeOut(duration: 0.12) : nil, value: grabbed)
-            .allowsHitTesting(state.visible)
-            .gesture(drag(height: height))
-    }
-
-    private func drag(height: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space))
-            .onChanged { value in
-                let y = value.location.y
-                guard let start = touchStart else {
-                    touchStart = y
-                    holdTask?.cancel()
-                    holdTask = Task {
-                        try? await Task.sleep(for: ScrubberState.holdTime)
-                        guard !Task.isCancelled else { return }
-                        state.engage(at: y, height: height, letters: letters)
-                    }
-                    return
-                }
-                if !state.scrubbing {
-                    guard abs(y - start) >= ScrubberState.engageDistance else { return }
-                    holdTask?.cancel()
-                    state.engage(at: start, height: height, letters: letters)
-                }
-                state.scrub(to: y, height: height, letters: letters, jump: jump)
-            }
-            .onEnded { _ in
-                holdTask?.cancel()
-                holdTask = nil
-                touchStart = nil
-                state.end(jump: jump)
-            }
     }
 
     #if DEBUG
@@ -307,17 +255,5 @@ struct ScrollScrubber: View {
                 state.activeLetter = letters[next]
                 jump(letters[next])
             }
-    }
-}
-
-/// The thumb's up/down chevron pair (`M6 1 11 8H1zM6 21 1 14h10z` in a 12×22 box).
-private struct ThumbArrows: Shape {
-    func path(in rect: CGRect) -> Path {
-        let sx = rect.width / 12, sy = rect.height / 22
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * sx, y: rect.minY + y * sy) }
-        var path = Path()
-        path.move(to: p(6, 1)); path.addLine(to: p(11, 8)); path.addLine(to: p(1, 8)); path.closeSubpath()
-        path.move(to: p(6, 21)); path.addLine(to: p(1, 14)); path.addLine(to: p(11, 14)); path.closeSubpath()
-        return path
     }
 }

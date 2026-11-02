@@ -3,7 +3,18 @@ import FusionhaKit
 
 extension EnvironmentValues {
     /// Press-and-hold on a Library poster opens its quick-actions sheet.
-    @Entry var openPosterSheet: ((MediaItem) -> Void)?
+    @Entry var openPosterSheet: OpenPosterSheet?
+}
+
+/// The Library's "open this poster's sheet". Always equal: the Library hands
+/// down the same sheet on every pass, and a fresh closure each time made the
+/// environment differ, so every Library pass re-rendered every card.
+struct OpenPosterSheet: Equatable {
+    let action: (MediaItem) -> Void
+
+    func callAsFunction(_ item: MediaItem) { action(item) }
+
+    static func == (lhs: Self, rhs: Self) -> Bool { true }
 }
 
 // MARK: - Interactive search scoping (components/library/poster-sheet-model.ts)

@@ -6,127 +6,209 @@
     {
       "title": "Fargo",
       "year": 1996,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "The Long Goodbye",
       "year": 1973,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "PlayTime",
       "year": 1967,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "To Be or Not to Be",
       "year": 1942,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Memories of Murder",
       "year": 2003,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "No Country for Old Men",
       "year": 2007,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Hud",
       "year": 1963,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Brazil",
       "year": 1985,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "The Big Lebowski",
       "year": 1998,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Inside Llewyn Davis",
       "year": 2013,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "One Battle After Another",
       "year": 2025,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Red Rooms",
       "year": 2023,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Happy Together",
       "year": 1997,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Asako I & II",
       "year": 2018,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "The Verdict",
       "year": 1982,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Butch Cassidy and the Sundance Kid",
       "year": 1969,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Close Encounters of the Third Kind",
       "year": 1977,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Killer of Sheep",
       "year": 1978,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "The Man Who Wasn't There",
       "year": 2001,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Body Double",
       "year": 1984,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Nights of Cabiria",
       "year": 1957,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Blue Heron",
       "year": 2025,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Club Kid",
       "year": 2026,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Leviathan",
       "year": 2014,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     },
     {
       "title": "Police Story",
       "year": 1985,
-      "in_library": false
+      "in_library": false,
+      "kind": "movie",
+      "tmdb_id": null,
+      "poster_url": null
     }
-  ]
+  ],
+  "provider": "LETTERBOXD",
+  "kind": "list",
+  "mix": {
+    "movies": 25,
+    "series": 0
+  },
+  "in_library_count": 0
 }

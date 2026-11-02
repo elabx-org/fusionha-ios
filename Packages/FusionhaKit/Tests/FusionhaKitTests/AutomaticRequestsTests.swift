@@ -188,8 +188,9 @@ final class AutomaticRequestsTests: XCTestCase {
         let plex = try decode(PlexWatchlistRead.self, "plex_watchlist_me_on")
         let views = AutoSourceViews.build(summary, letterboxd: lb, sources: rows, plex: plex)
         XCTAssertEqual(views.map(\.name), ["Diary", "My watchlist", "Plex watchlist", "Kids movies", "Best of 2026",
-                                           "@example_friend’s watchlist", "Letterboxd list"])
-        XCTAssertEqual(views.map(\.kind), [.diary, .ownWatchlist, .plexWatchlist, .plexList, .list, .watchlist, .list])
+                                           "@example_friend’s watchlist", "Followed list"])
+        // 0.4.237: an unread row in the lists group is a followed list (web `core`).
+        XCTAssertEqual(views.map(\.kind), [.diary, .ownWatchlist, .plexWatchlist, .plexList, .list, .watchlist, .feed])
         XCTAssertEqual(views[0].subtitle, "@example_member · 7 requested")
         XCTAssertEqual(views[1].rowId, 2)
         XCTAssertEqual(views[2].subtitle, "12 requested")

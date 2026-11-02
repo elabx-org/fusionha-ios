@@ -13,14 +13,20 @@ struct PosterCard: View {
     @Environment(\.openPosterSheet) private var openSheet
     @Environment(\.spread) private var spread
     let item: MediaItem
+    /// The card's width when the grid knows it (`LibraryGridRow`).
+    var artWidth: CGFloat?
     @State private var pressing = false
+    @State private var pressDelay: Task<Void, Never>?
     @State private var longPresses = 0
 
     private var monitored: Bool { item.monitored ?? true }
     private var selecting: Bool { model.selectMode }
-    private var selected: Bool { model.selection.contains(item.id) }
+    /// This card's own flags (`CardFlags`): another title opening or being
+    /// ticked leaves this card alone.
+    private var flags: CardFlag { model.cardFlags.slot(for: item.id) }
+    private var selected: Bool { flags.selected }
     /// In a Spread, the title open on the right page is outlined in the grid.
-    private var picked: Bool { spread.isActive && !selecting && model.presentedItem?.id == item.id }
+    private var picked: Bool { spread.isActive && !selecting && flags.picked }
 
     /// Attention glows softly around the poster; the rail says what is wrong.
     private var attentionColor: Color? {
@@ -33,6 +39,7 @@ struct PosterCard: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("PosterCard.body")
         VStack(alignment: .leading, spacing: 0) {
             art
                 // Press-and-hold feedback: the poster sinks and dims while held.
@@ -74,13 +81,29 @@ struct PosterCard: View {
             guard !selecting, let openSheet else { return }
             longPresses += 1
             openSheet(item)
-        } onPressingChanged: { pressing = $0 && !selecting && openSheet != nil }
+        } onPressingChanged: { pressChanged($0) }
         .sensoryFeedback(.selection, trigger: selected)
         .sensoryFeedback(.selection, trigger: longPresses)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits((selecting && selected) || picked ? [.isButton, .isSelected] : [.isButton])
         .accessibilityAction(named: "Actions") {
-            if !selecting { openSheet?(item) }
+            if !selecting, let openSheet { openSheet(item) }
+        }
+    }
+
+    /// The poster sinks only once a touch has stayed put for a moment: a
+    /// scroll starts on a poster almost every time, and flipping (and
+    /// animating) the press at touch-down cost the scroll its first frames.
+    private func pressChanged(_ down: Bool) {
+        pressDelay?.cancel()
+        pressDelay = nil
+        guard down, !selecting, openSheet != nil else {
+            if pressing { pressing = false }
+            return
+        }
+        pressDelay = Task {
+            try? await Task.sleep(for: .milliseconds(120))
+            if !Task.isCancelled { pressing = true }
         }
     }
 
@@ -101,17 +124,20 @@ struct PosterCard: View {
         return picked ? 2.5 : 0.5
     }
 
+    /// The 2:3 art box, when the grid knows the card's width.
+    private var artSize: CGSize? { artWidth.map { CGSize(width: $0, height: $0 * 3 / 2) } }
+
     private var art: some View {
         // A 2:3 box the art fills: art that isn't 2:3 (Attack on Titan's)
         // reports its aspect-filled size, which made the card wider than its
         // column and pushed it over its neighbour (or the fold's gutter).
         Color.clear
             .aspectRatio(2 / 3, contentMode: .fit)
-            .overlay { PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w500")) }
+            .overlay { PosterImage(url: TMDBImage.resized(item.posterUrl, to: "w500"), size: artSize) }
             // Only an unmonitored poster pays for the dimming effects; a
             // monitored one scrolls with none (identity effects still cost a pass).
             .modifier(UnmonitoredDim(active: !monitored))
-            .shelfPoster(radius: 12, ring: ringColor, ringWidth: ringWidth)
+            .shelfPosterPlated(radius: 12, ring: ringColor, ringWidth: ringWidth, size: artSize)
             // Attention as a soft glow, never a coloured ring (web 0.4.222).
             // Only flagged posters get the shadow pass.
             .modifier(AttentionGlow(color: attentionColor))

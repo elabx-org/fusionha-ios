@@ -28,7 +28,12 @@ enum ImageDownsampler {
             kCGImageSourceThumbnailMaxPixelSize: maxPixel,
         ] as CFDictionary
         guard let cg = CGImageSourceCreateThumbnailAtIndex(source, 0, thumb) else { return nil }
-        let image = UIImage(cgImage: cg, scale: max(scale, 1), orientation: .up)
+        let decoded = UIImage(cgImage: cg, scale: max(scale, 1), orientation: .up)
+        // In the display's own pixel format here, off the main thread, so the
+        // first frame that shows it doesn't convert it.
+        // (The glow blurs its `cgImage`: keep the plain decode if there's none.)
+        let prepared = decoded.preparingForDisplay()
+        let image = prepared?.cgImage != nil ? prepared ?? decoded : decoded
         return Decoded(image: image, isFull: sourceLong > 0 && CGFloat(max(cg.width, cg.height)) >= sourceLong)
     }
 

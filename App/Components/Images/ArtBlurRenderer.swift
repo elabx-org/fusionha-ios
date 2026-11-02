@@ -62,14 +62,22 @@ enum ArtBlurRenderer {
     /// bitmap serves every card size. `bleed` points of shadow lie outside
     /// the card on each side.
     static func shadow(radius: CGFloat, blur: CGFloat, opacity: Double, scale: CGFloat) -> (image: UIImage, bleed: CGFloat) {
-        let bleed = ceil(blur * 3)
         let inner = radius * 2 + 4
-        let side = bleed * 2 + inner
-        let px = Int(side * scale)
-        guard let ctx = CGContext(data: nil, width: px, height: px, bitsPerComponent: 8, bytesPerRow: 0,
+        return shadow(size: CGSize(width: inner, height: inner), radius: radius, blur: blur, opacity: opacity, scale: scale)
+    }
+
+    static func shadowBleed(blur: CGFloat) -> CGFloat { ceil(blur * 3) }
+
+    /// The same shadow drawn whole under a card of `size` points (`bleed`
+    /// points of it outside the card on each side).
+    static func shadow(size: CGSize, radius: CGFloat, blur: CGFloat, opacity: Double,
+                       scale: CGFloat) -> (image: UIImage, bleed: CGFloat) {
+        let bleed = shadowBleed(blur: blur)
+        let pw = Int(((bleed * 2 + size.width) * scale).rounded()), ph = Int(((bleed * 2 + size.height) * scale).rounded())
+        guard let ctx = CGContext(data: nil, width: pw, height: ph, bitsPerComponent: 8, bytesPerRow: 0,
                                   space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         else { return (UIImage(), 0) }
-        let card = CGRect(x: bleed * scale, y: bleed * scale, width: inner * scale, height: inner * scale)
+        let card = CGRect(x: bleed * scale, y: bleed * scale, width: size.width * scale, height: size.height * scale)
         ctx.addPath(CGPath(roundedRect: card, cornerWidth: radius * scale, cornerHeight: radius * scale, transform: nil))
         ctx.setFillColor(UIColor.black.withAlphaComponent(opacity).cgColor)
         ctx.fillPath()
@@ -108,6 +116,7 @@ final class ArtBlurCache {
         let key = spec.key(for: url.absoluteString)
         if let hit = cached(key) { return hit }
         if let running = inflight[key] { return await running.value }
+        PerfCount.hit("ArtBlurCache.render")
         let task = Task<UIImage?, Never> {
             let fill = CGSize(width: spec.sourceWidth, height: spec.sourceHeight)
             guard let source = await ImagePipeline.shared.image(for: url, fill: fill, scale: 1)?.cgImage else { return nil }

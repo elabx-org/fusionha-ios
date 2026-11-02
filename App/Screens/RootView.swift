@@ -108,6 +108,7 @@ struct RootView: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("RootView.body")
         let split = split
         let spread = spreadContext(fold, hasItem: model.rightPageHasItem)
         FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap, primaryHidden: split.primaryHidden) {
@@ -217,7 +218,7 @@ struct RootView: View {
         .modifier(DownloadsBarSlot(state: downloadsBar,
                                    shown: !model.requestScoped && model.tab != .activity && downloadsBar.hasContent
                                        && !tabsCrossFold && !selectBars.isShowing))
-        .onChange(of: model.queue, initial: true) { downloadsBar.update(model.queue) }
+        .onQueueChange(model, initial: true) { [downloadsBar] queue in downloadsBar.update(queue) }
     }
 }
 

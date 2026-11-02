@@ -131,11 +131,22 @@ enum LiveActivityPosters {
     private(set) static var lastProblem: String?
     private(set) static var saved = 0
 
+    /// Titles whose poster is already saved: each 2s queue poll checked
+    /// every row's App Group file and keychain item on the main thread.
+    private static var found: Set<Int> = []
+
+    private static func hasPoster(_ id: Int) -> Bool {
+        if found.contains(id) { return true }
+        guard DownloadsActivityAttributes.ContentState.posterData(mediaItemId: id) != nil else { return false }
+        found.insert(id)
+        return true
+    }
+
     static func ensure(_ state: DownloadsActivityAttributes.ContentState) {
         let wanted = state.rows.map { ($0.mediaItemId, $0.posterUrl) } + state.held.map { ($0.mediaItemId, $0.posterUrl) }
         for (id, posterUrl) in wanted {
             guard let url = posterUrl, !inFlight.contains(id),
-                  DownloadsActivityAttributes.ContentState.posterData(mediaItemId: id) == nil else { continue }
+                  !hasPoster(id) else { continue }
             inFlight.insert(id)
             Task.detached(priority: .utility) {
                 let result = await Self.thumbnail(url)
@@ -199,7 +210,7 @@ enum LiveActivityPosters {
         candidates.append(contentsOf: state.held.map(\.mediaItemId))
         candidates.append(contentsOf: state.rows.map(\.mediaItemId))
         var ids: [Int] = []
-        for id in candidates where !ids.contains(id) && DownloadsActivityAttributes.ContentState.posterData(mediaItemId: id) != nil {
+        for id in candidates where !ids.contains(id) && hasPoster(id) {
             ids.append(id)
         }
         ids = Array(ids.prefix(3))
@@ -264,6 +275,8 @@ enum LiveActivityPosters {
     }
 
     private static func store(_ jpeg: Data, mediaItemId id: Int) {
+        // Saving may evict older copies: look them up again.
+        found = []
         if let file = DownloadsActivityAttributes.ContentState.posterFile(mediaItemId: id) {
             try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             try? jpeg.write(to: file, options: .atomic)

@@ -117,7 +117,7 @@ extension WatchlistsStore {
             switch view.kind {
             case .diary: _ = try await client.updateLetterboxd(username: lbUser(view), diaryEnabled: on)
             case .ownWatchlist: _ = try await client.followLetterboxdWatchlist(enabled: on)
-            case .list, .watchlist:
+            case .list, .watchlist, .feed:
                 guard let id = view.rowId else { return }
                 _ = try await client.updateRequestSource(id: id, enabled: on)
             case .plexWatchlist: plex = try await client.updatePlexWatchlist(enabled: on)
@@ -128,7 +128,8 @@ extension WatchlistsStore {
         }
     }
 
-    /// "Also request UHD·4K" on the diary, the own watchlist or the Plex watchlist.
+    /// "Also request UHD·4K" on the diary, the own watchlist, the Plex watchlist
+    /// or a followed feed (its own `also_uhd`, 0.4.237).
     @discardableResult
     func setUhd(_ view: AutoSourceView, _ on: Bool, _ model: AppModel) async -> Bool {
         await act(model) { client in
@@ -136,6 +137,9 @@ extension WatchlistsStore {
             case .diary: _ = try await client.updateLetterboxd(username: lbUser(view), alsoUhd: on)
             case .ownWatchlist: _ = try await client.followLetterboxdWatchlist(alsoUhd: on)
             case .plexWatchlist: plex = try await client.updatePlexWatchlist(alsoUhd: on)
+            case .feed:
+                guard let id = view.rowId else { return }
+                _ = try await client.updateRequestSource(id: id, alsoUhd: on)
             default: return
             }
         }
@@ -170,7 +174,7 @@ extension WatchlistsStore {
     static func removal(_ view: AutoSourceView) -> (allowed: Bool, disconnects: Bool) {
         switch view.kind {
         case .diary, .ownWatchlist: return (true, true)
-        case .list, .watchlist: return (view.rowId != nil, false)
+        case .list, .watchlist, .feed: return (view.rowId != nil, false)
         case .plexList: return (view.plexList?.deleted == true, false)
         case .plexWatchlist: return (false, false)
         }
@@ -180,7 +184,7 @@ extension WatchlistsStore {
         await act(model, success: SourceDetailCopy.removed) { client in
             switch view.kind {
             case .diary, .ownWatchlist: try await client.disconnectLetterboxd()
-            case .list, .watchlist:
+            case .list, .watchlist, .feed:
                 guard let id = view.rowId else { return }
                 try await client.deleteRequestSource(id: id)
             case .plexList:

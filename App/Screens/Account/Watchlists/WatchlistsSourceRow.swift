@@ -9,7 +9,7 @@ struct WatchlistsSourceRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            ProviderTile(isPlex: view.isPlex)
+            ProviderTile(provider: view.site)
             // The state beside the name; in a narrow column, under it.
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) {
@@ -59,25 +59,5 @@ struct SourceStateLabel: View {
                 .foregroundStyle(Theme.text(state.tone))
         }
         .fixedSize()
-    }
-}
-
-/// The provider tile: Letterboxd's three circles, Plex's list mark.
-struct ProviderTile: View {
-    let isPlex: Bool
-    var size: CGFloat = 30
-
-    var body: some View {
-        Group {
-            if isPlex {
-                WatchlistMarkGlyph(mark: .list, size: size * 0.55).foregroundStyle(WatchlistMark.list.ink)
-            } else {
-                WatchlistMarkGlyph(mark: .letterboxd, size: size * 0.58).foregroundStyle(WatchlistMark.letterboxd.ink)
-            }
-        }
-        .frame(width: size, height: size)
-        .background(Theme.panel2, in: RoundedRectangle(cornerRadius: size * 0.28, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: size * 0.28, style: .continuous).strokeBorder(Theme.line))
-        .accessibilityHidden(true)
     }
 }

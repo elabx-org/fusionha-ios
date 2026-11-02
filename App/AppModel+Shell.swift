@@ -42,4 +42,17 @@ extension AppModel {
             try? await Task.sleep(for: .seconds(1))
         }
     }
+
+    /// The Library scroll hides the chrome scrolling down and shows it
+    /// scrolling up or near the top (`offset` from the top of the content).
+    func updateChrome(old: CGFloat, new: CGFloat) {
+        let delta = new - old
+        if new <= 90 {
+            if chromeHidden { chromeHidden = false }
+        } else if delta > 4 {
+            if !chromeHidden { chromeHidden = true }
+        } else if delta < -4 {
+            if chromeHidden { chromeHidden = false }
+        }
+    }
 }

@@ -11,6 +11,8 @@ public enum AutoSourceKind: String, Sendable, Hashable {
     case watchlist, list
     case plexWatchlist = "plex_watchlist"
     case plexList = "plex_list"
+    /// A followed MDBList / Trakt list (`LIST_FEED`, 0.4.237).
+    case feed
 }
 
 /// One source row and the detail behind it.
@@ -33,8 +35,14 @@ public struct AutoSourceView: Sendable, Hashable, Identifiable {
     public var state: AutoSourceState { source.state }
     public var needsReview: Int { source.needsReview }
     public var isPlex: Bool { kind == .plexWatchlist || kind == .plexList || source.group == .plex }
-    /// "Letterboxd" or "Plex": the Pick sheet's provider word.
-    public var provider: String { isPlex ? "Plex" : "Letterboxd" }
+    /// The site behind it: its tile, and the word in the owner line.
+    public var site: SourceProvider {
+        if isPlex { return .plex }
+        if kind == .feed { return lb?.provider.map(SourceProvider.init(feed:)) ?? .mdblist }
+        return .letterboxd
+    }
+    /// "Letterboxd", "Plex", "MDBList" or "Trakt": the Pick sheet's provider word.
+    public var provider: String { site.word }
 
     /// `owner · mini · N to review` (the review part is the row's amber tail).
     public var subtitle: String { [owner, mini.isEmpty ? nil : mini].compactMap { $0 }.joined(separator: " · ") }
@@ -82,18 +90,33 @@ public enum AutoSourceViews {
                 let mini = list.itemCount.map { "\(requested(n)) · \($0) titles" } ?? requested(n)
                 return make(list.name, nil, mini, .plexList, nil, plex: plex, list: list)
             }
-            let isPlex = s.group == .plex
-            return make(isPlex ? "Plex list" : "Letterboxd list", nil, "", isPlex ? .plexList : .list, nil)
+            switch s.group {
+            case .plex: return make("Plex list", nil, "", .plexList, nil)
+            // A list is not something you connect: an unread followed list (web `core`).
+            case .lists: return make("Followed list", nil, "", .feed, nil)
+            case .letterboxd: return make("Letterboxd list", nil, "", .list, nil)
+            }
         }
     }
 
     static func linked(_ s: AutoSource, _ row: LbSource) -> AutoSourceView {
+        if row.isFeed { return feed(s, row) }
         let owner = row.owner.map { "@\($0)" }
         let isWatch = row.kind == "LETTERBOXD_WATCHLIST"
         let name = isWatch ? "\(owner ?? "Someone")’s watchlist" : (row.label ?? "List")
         return AutoSourceView(source: s, name: name, owner: isWatch ? nil : owner,
                               mini: lbMini(row.counts?.requested ?? row.requestedCount, row.counts?.baseline),
                               kind: isWatch ? .watchlist : .list, rowId: row.id, lb: row, plex: nil, plexList: nil)
+    }
+
+    /// A followed MDBList / Trakt list: `@owner · MDBList`, `N requested · M titles`.
+    static func feed(_ s: AutoSource, _ row: LbSource) -> AutoSourceView {
+        let site = row.provider.map(SourceProvider.init(feed:)) ?? .mdblist
+        let owner = [row.owner.map { "@\($0)" }, site.word].compactMap { $0 }.joined(separator: " · ")
+        let n = row.counts?.requested ?? row.requestedCount
+        let mini = row.itemCount.map { $0 > 0 ? "\(requested(n)) · \($0) titles" : requested(n) } ?? requested(n)
+        return AutoSourceView(source: s, name: row.label ?? "Followed list", owner: owner, mini: mini,
+                              kind: .feed, rowId: row.id, lb: row, plex: nil, plexList: nil)
     }
 
     static func requested(_ n: Int) -> String { "\(n) requested" }

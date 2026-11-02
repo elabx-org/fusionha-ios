@@ -101,10 +101,44 @@ extension APIClient {
         return try await sendSlow("POST", "/api/v1/me/request-sources", .object(body))
     }
 
-    public func updateRequestSource(id: Int, enabled: Bool? = nil, label: String? = nil) async throws -> LbSource {
+    // MARK: Followed lists by address (0.4.237, 10b slice 2)
+
+    /// Reads any public MDBList, Trakt or Letterboxd list address: `{url}` only.
+    /// Before a fetch: 422 `unsupported_site {supported, host}` / `coming_later`,
+    /// 409 `provider_unavailable`, 403 `not_allowed`. After: 422
+    /// `source_unreadable`, 503 `unavailable`, 429 `rate_limited {retry_after}`.
+    public func previewListAddress(_ url: String) async throws -> LbSourcePreview {
+        try await sendSlow("POST", "/api/v1/me/request-sources/preview", .object(["url": .string(url)]))
+    }
+
+    /// Follows a previewed address (201). An MDBList / Trakt list is a `feed`
+    /// with its own `also_uhd`; a Letterboxd address is linked as a `list`
+    /// (the web's `FeedFollowPanel`), which uses the diary's UHD·4K. 409
+    /// `already_linked`, `limit_reached` (shared 5), `provider_unavailable`, `policy`.
+    public func followListAddress(_ url: String, letterboxd: Bool, requestExisting: Bool,
+                                  alsoUhd: Bool) async throws -> LbSource {
+        try await sendSlow("POST", "/api/v1/me/request-sources",
+                           .object(Self.followBody(url, letterboxd: letterboxd, requestExisting: requestExisting, alsoUhd: alsoUhd)))
+    }
+
+    static func followBody(_ url: String, letterboxd: Bool, requestExisting: Bool, alsoUhd: Bool) -> [String: SettingsJSON] {
+        var body: [String: SettingsJSON] = ["url": .string(url), "enabled": true, "request_existing": .bool(requestExisting)]
+        if letterboxd {
+            body["kind"] = "list"
+        } else {
+            body["kind"] = "feed"
+            body["also_uhd"] = .bool(alsoUhd)
+        }
+        return body
+    }
+
+    /// `also_uhd` (0.4.237) is a followed feed's own UHD·4K (409 `policy` without 4K).
+    public func updateRequestSource(id: Int, enabled: Bool? = nil, label: String? = nil,
+                                    alsoUhd: Bool? = nil) async throws -> LbSource {
         var body: [String: SettingsJSON] = [:]
         if let enabled { body["enabled"] = .bool(enabled) }
         if let label { body["label"] = .string(label) }
+        if let alsoUhd { body["also_uhd"] = .bool(alsoUhd) }
         return try await sendJSON("PATCH", "/api/v1/me/request-sources/\(id)", .object(body))
     }
 

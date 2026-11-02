@@ -66,6 +66,7 @@ final class ImagePipeline {
     private func start(_ url: URL, fill: CGSize, scale: CGFloat) -> Task<ImageDownsampler.Decoded?, Never> {
         let session = self.session
         let fallback = Self.fallbackMaxPixel(for: url)
+        PerfCount.hit("ImagePipeline.decode")
         return Task.detached(priority: .userInitiated) {
             guard let (data, _) = try? await session.data(from: url) else { return nil }
             return ImageDownsampler.decode(data, fill: fill, fallbackMax: fallback, scale: scale)

@@ -16,9 +16,14 @@ on:
         type: boolean
         default: false
       perf:
-        description: "Activity perf check"
+        description: "Perf check (Activity, and the Library on the iPhone Duo's open inner display)"
         type: boolean
         default: false
+      perf_scope:
+        description: "Which perf scripts run when perf is on"
+        type: choice
+        options: [all, activity, library]
+        default: all
       shots_only:
         description: "Only the simulator screenshots whose name matches this regex (e.g. ^palette-); skips iPhone Duo and adds to the published set"
         type: string
@@ -747,15 +752,20 @@ jobs:
 
   # Drives the app through Activity (History at 1000+ events, Queue, Blocklist,
   # Tasks, Audit, Indexers) and Wanted against the mock server in volume mode,
-  # with the DEBUG perf probe (App/Debug/PerfProbe.swift) and its in-app
-  # main-thread sampler, then prints hitches, main-thread hangs, CPU and the
-  # heaviest symbols per phase.
+  # and scrolls the Library at the owner's size (3,785 titles, one poster each,
+  # 20 live downloads) on the iPhone Duo harness's open inner display (a Spread
+  # span, a Spread with a title open, the Web layout), with the DEBUG perf probe
+  # (App/Debug/PerfProbe.swift) and its in-app main-thread sampler, then prints
+  # hitches, main-thread hangs, CPU and the heaviest symbols per phase.
   # Optimised build (Release) with DEBUG set so the probe and mock hooks exist.
+  # `perf_scope` (manual runs) picks activity, library or all.
   perf:
-    name: Activity perf
+    name: Perf
     needs: plan
     if: needs.plan.outputs.perf == 'true'
     runs-on: xcode-27
+    env:
+      SCOPE: ${{ inputs.perf_scope || 'all' }}
     steps:
       - uses: actions/checkout@v5
 
@@ -786,7 +796,21 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
-      - name: Run the perf script
+      - name: Library perf on the iPhone Duo harness
+        if: env.SCOPE != 'activity'
+        timeout-minutes: 25
+        run: scripts/perf_library.sh build/Build/Products/Release-iphonesimulator/Fusionha.app perf
+
+      - name: Library report
+        if: always() && env.SCOPE != 'activity'
+        run: |
+          [ -f perf/library.log ] || exit 0
+          python3 scripts/perf_report.py perf/library.log --json perf/library-summary.json --title "Library perf (iPhone Duo, open)" \
+            | xcrun swift-demangle --simplified | cut -c1-240 | tee perf/library-summary.txt
+          { echo '## Library perf (iPhone Duo, open)'; echo '```'; cat perf/library-summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Run the Activity perf script
+        if: env.SCOPE != 'library'
         timeout-minutes: 25
         run: |
           sudo DevToolsSecurity -enable || true
@@ -819,7 +843,7 @@ jobs:
           grep -q "PERF DONE" perf/app.log || { echo "::error::perf script did not finish"; tail -50 perf/app.log; exit 1; }
 
       - name: Report
-        if: always()
+        if: always() && env.SCOPE != 'library'
         run: |
           # Swift symbols from the in-app sampler come out mangled.
           python3 scripts/perf_report.py perf/app.log --json perf/summary.json \
@@ -829,10 +853,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: activity-perf
+          name: perf
           path: |
             perf/*.txt
             perf/*.json
             perf/*.log
             perf/*.out
+            perf/*.png
           retention-days: 14
