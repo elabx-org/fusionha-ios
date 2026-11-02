@@ -11,8 +11,9 @@ import FusionhaKit
 /// and lets it go just under it, where its tabs begin.
 ///
 /// Geometry is in points from the top of the header; `underBar` lifts it
-/// under the bar (the open Duo's band), and the art always runs under the
-/// system column.
+/// under the bar (the open Duo's band, whose measured top is
+/// `HeroBackdropLayout.originY`), and the art always runs under the system
+/// column.
 struct DetailHeroBackdrop: View {
     @Environment(\.detailReduceMotion) private var reduce
     let url: URL?
@@ -23,7 +24,10 @@ struct DetailHeroBackdrop: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let top = underBar ? proxy.safeAreaInsets.top : 0
+            // How far the frame runs up under the bar: from the header's
+            // measured top (global), not the safe-area insets, which the
+            // Duo's shell and harness report differently.
+            let top = layout.originY.map { max(0, $0 - proxy.frame(in: .global).minY) } ?? 0
             let lead = proxy.safeAreaInsets.leading
             let size = CGSize(width: proxy.size.width, height: top + layout.height(fill: proxy.size.height - top))
             let profile = HeroBackdropProfile(layout: layout, top: top, size: size,
@@ -35,7 +39,8 @@ struct DetailHeroBackdrop: View {
                     .clipped()
                     .mask { profile.split(near: profile.artMask(Color.black), far: profile.farArtMask(Color.black)) }
                 profile.split(near: profile.titleShade(Theme.scrim), far: profile.farShade(Theme.scrim))
-                profile.split(near: profile.groundWash(Theme.bg), far: Color.clear)
+                // Full width: under the band it sits under the right page's tabs too.
+                profile.groundWash(Theme.bg)
             }
             .frame(width: size.width, height: size.height, alignment: .top)
         }
@@ -84,6 +89,9 @@ struct HeroBackdropLayout: Equatable {
     var end: CGFloat?
     /// The open Duo: the text column's width (the left page).
     var column: CGFloat?
+    /// The header's top in global coordinates, when the art runs up under
+    /// the bar above it.
+    var originY: CGFloat?
 
     /// The text column's art and wash end here.
     func height(fill: CGFloat) -> CGFloat {

@@ -27,14 +27,16 @@ struct DetailSpreadBody: View {
     let openWeb: () -> Void
 
     private static let margin: CGFloat = 20
-    @State private var bandHeight: CGFloat = 130
+    /// The band's frame (global): its height is the art's edge, its top
+    /// where the backdrop's header starts under the bar.
+    @State private var band = CGRect(x: 0, y: 0, width: 0, height: 130)
     /// The left page's header (facts to the top of Versions); 0 beside an episode.
     @State private var headerHeight: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
             DetailSpreadBand(detail: detail)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bandHeight = $0 }
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { band = $0 }
             if let target = store.episodeSheet {
                 FoldSplitLayout(primary: CGFloat(pages.left.width), gap: CGFloat(pages.gap)) {
                     tabsPage(marking: target.episodeId)
@@ -55,9 +57,9 @@ struct DetailSpreadBody: View {
         let header = store.episodeSheet == nil ? headerHeight : 0
         return DetailHeroBackdrop(
             url: ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl),
-            layout: HeroBackdropLayout(style: .band, edge: bandHeight,
-                                       end: header > 0 ? bandHeight + header : bandHeight + 28,
-                                       column: CGFloat(pages.left.width)),
+            layout: HeroBackdropLayout(style: .band, edge: band.height,
+                                       end: header > 0 ? band.height + header : band.height + 28,
+                                       column: CGFloat(pages.left.width), originY: band.minY),
             underBar: true)
     }
 
