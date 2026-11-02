@@ -68,13 +68,14 @@ app tolerates its absence). Re-pin again from the next tag you sync to.
   web's words from `detail.code` (`unsupported_site` with host + IMDb tip,
   `provider_unavailable`, `coming_later`, `unavailable` with provider, `not_allowed`,
   `limit_reached`, `blocked`; `FeedFollowLogic.message`). Admin Trakt app id:
-  `PUT/DELETE /api/v1/settings/trakt-client-id` (write-only, shown as Set / Not set) in
+  `PUT /api/v1/settings {trakt_client_id}` to set it, `DELETE /api/v1/settings/trakt-client-id`
+  to clear it (write-only; reads show `trakt_client_id_set`, shown as Set / Not set) in
   Settings › Indexers under the Cloudflare solver (`ListSitesCard`).
 - **Slice 3, admin Import lists** (web `/settings/import-lists`, `integrations.manage`):
   `GET/POST /import-lists`, `PATCH/DELETE /import-lists/{id}`, `POST /{id}/sync`,
   `POST /import-lists/preview`, `GET /{id}/runs`, `/runs/{run}/items`, `/{id}/unmatched`,
   `POST /items/{id}/resolve|ignore`, `GET/POST/DELETE /import-lists/exclusions`,
-  `GET /import-lists/summary`; app setting `import_list_max_add_per_sync`. Models in
+  `GET /api/v1/system/import-lists/summary`; app setting `import_list_max_add_per_sync`. Models in
   `ImportListModels.swift` / `ImportListLedgerModels.swift`, bodies in `ImportListDraft`
   (versions `[{tier, root_folder_id, quality_profile_id}]`, Letterboxd 12 h minimum),
   words in `ImportListCopy`. Activity › Tasks › System gains the Import lists card
@@ -83,6 +84,9 @@ app tolerates its absence). Re-pin again from the next tag you sync to.
   list/feed decoders are checked against the spec, the web's types and hand-written
   fixtures only; every POST/PATCH/DELETE above is covered by request-body tests, not by a
   live call.
+- **Still open:** official MDBList / Trakt marks (lettered brand-colour tiles until they
+  are bundled); other people's Plex lists (`coming_later`); a device pass on folded and
+  open Duo, iPad and the Daylight / Mono palettes for the new screens.
 
 ## 0.4.236 (synced at `v0.4.236`, `0322d9b6`, 2026-11-02; branch `api-0436`)
 
@@ -299,8 +303,8 @@ Synced at `v0.4.226` (`57c6e464`) from `frontend/src/components/account/lists/`,
   keeps the form sheet and a plain push (owner default while that decision is
   open); the page's sheets use `duoPageSheet`; the You tab's Spread right page
   follows the same rule.
-- **Open:** slice 2 (MDBList, Trakt, other people's Plex lists, admin import lists);
-  manual import decide is ported on its own (next section).
+- **Open:** other people's Plex lists (the server answers `coming_later`); MDBList,
+  Trakt and admin import lists shipped in 0.4.237 (above). Manual import decide is ported on its own (next section).
 
 ## 0.4.225: Manual Import bulk decide (held downloads; branch `mi-bulk-decide`)
 

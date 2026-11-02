@@ -14,6 +14,8 @@ struct ImportListExclusionsTab: View {
     var body: some View {
         Section {
             Button("Exclude a title", systemImage: "plus") { adding = true }
+                .task { await store.loadExclusions(model.client) }
+                .sheet(isPresented: $adding) { ImportListExclusionAddSheet(store: store) }
             Picker("Filter exclusions", selection: $filter) {
                 Text("All \(store.exclusions?.count ?? 0)").tag(Filter.all)
                 Text("Every list").tag(Filter.every)
@@ -26,8 +28,6 @@ struct ImportListExclusionsTab: View {
         } footer: {
             Text(ImportListCopy.exclusionsDesc)
         }
-        .task { await store.loadExclusions(model.client) }
-        .sheet(isPresented: $adding) { ImportListExclusionAddSheet(store: store) }
         Section {
             Button("Open Discover", systemImage: "safari") { model.openSettings(panel: "discover") }
         } header: {

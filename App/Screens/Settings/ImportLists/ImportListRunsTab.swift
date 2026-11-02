@@ -9,6 +9,7 @@ struct ImportListRunsTab: View {
     let onReview: (ImportList) -> Void
     @State private var picked: Int?
     @State private var runs: [ImportListRun]?
+    @State private var failed = false
 
     private var listId: Int? { picked ?? store.lists.first?.id }
 
@@ -21,8 +22,8 @@ struct ImportListRunsTab: View {
                     ForEach(store.lists) { Text($0.name).tag(Int?.some($0.id)) }
                 }
                 .pickerStyle(.menu)
+                .task(id: listId) { await load() }
             }
-            .task(id: listId) { await load() }
             if let runs, let list = store.list(listId) {
                 if runs.isEmpty {
                     Section { Text(ImportListCopy.noRuns).foregroundStyle(Theme.mut) }
@@ -31,7 +32,7 @@ struct ImportListRunsTab: View {
                     ImportListRunCard(run: run, site: list.site, startsOpen: index == 0) { onReview(list) }
                 }
             } else {
-                Section { SettingsLoadingRow() }
+                Section { SettingsLoadingRow(error: failed ? ImportListCopy.runsFailed : nil) }
             }
         }
     }
@@ -39,7 +40,8 @@ struct ImportListRunsTab: View {
     private func load() async {
         guard let client = model.client, let id = listId else { return }
         runs = nil
-        runs = (try? await client.importListRuns(id)) ?? []
+        failed = false
+        do { runs = try await client.importListRuns(id) } catch { failed = !Task.isCancelled }
     }
 }
 
@@ -53,23 +55,29 @@ struct ImportListRunCard: View {
     let onReview: () -> Void
     @State private var open: Bool?
     @State private var items: [ImportListItem]?
+    @State private var itemsFailed = false
 
     private var isOpen: Bool { open ?? startsOpen }
 
     var body: some View {
         Section {
             DisclosureGroup(isExpanded: Binding(get: { isOpen }, set: { open = $0 })) {
-                if let error = run.error { Text(error).font(.footnote).foregroundStyle(Theme.danger) }
+                if let error = run.error { Text(error).font(.footnote).foregroundStyle(Theme.dangerText) }
                 ImportListOutcomeBar(counts: run.counts)
                 ImportListOutcomeLegend(counts: run.counts)
                 itemRows
             } label: {
                 header
             }
-        }
-        .task(id: isOpen) {
-            guard isOpen, items == nil, let client = model.client else { return }
-            items = (try? await client.importListRunItems(run.id)) ?? []
+            .task(id: isOpen) {
+                guard isOpen, items == nil, let client = model.client else { return }
+                do {
+                    items = try await client.importListRunItems(run.id)
+                    itemsFailed = false
+                } catch {
+                    itemsFailed = !Task.isCancelled
+                }
+            }
         }
     }
 
@@ -103,7 +111,7 @@ struct ImportListRunCard: View {
                 }
             }
         } else {
-            SettingsLoadingRow()
+            SettingsLoadingRow(error: itemsFailed ? ImportListCopy.runItemsFailed : nil)
         }
     }
 }

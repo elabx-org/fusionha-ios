@@ -45,7 +45,7 @@ struct FeedFollowSections: View {
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill")
                 }
-                .foregroundStyle(Theme.danger)
+                .foregroundStyle(Theme.dangerText)
                 .accessibilityAddTraits(.isStaticText)
             } else if feed.isPlex {
                 Text(FeedCopy.plexLaterHint)

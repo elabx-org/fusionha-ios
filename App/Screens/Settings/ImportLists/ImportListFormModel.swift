@@ -38,24 +38,27 @@ final class ImportListFormModel {
     func runPreview(_ client: APIClient?) async {
         guard !draft.editing, let client else { return }
         let url = draft.trimmedURL
+        // A new address forgets the last preview's site and the name it filled.
         preview = nil
         problem = nil
+        previewing = false
+        draft.provider = nil
+        if !nameTyped { draft.name = "" }
         guard !url.isEmpty else { return }
         try? await Task.sleep(for: .milliseconds(400))
         while !Task.isCancelled {
             previewing = true
             do {
                 let read = try await client.previewImportList(url: url, mediaKind: draft.mediaKind)
+                previewing = false
                 guard !Task.isCancelled else { return }
                 preview = read
                 draft.provider = read.provider
                 if !nameTyped { draft.name = read.title ?? "" }
-                previewing = false
                 return
             } catch {
                 previewing = false
                 guard !Task.isCancelled else { return }
-                draft.provider = nil
                 problem = ImportListCopy.problem(error)
                 // A rate-limited preview retries quietly.
                 guard problem == nil else { return }

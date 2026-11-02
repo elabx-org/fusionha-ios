@@ -101,7 +101,6 @@ extension APIClient {
         return try await sendSlow("POST", "/api/v1/me/request-sources", .object(body))
     }
 
-    /// `also_uhd` (0.4.237) is a followed feed's own UHD·4K (409 `policy` without 4K).
     // MARK: Followed lists by address (0.4.237, 10b slice 2)
 
     /// Reads any public MDBList, Trakt or Letterboxd list address: `{url}` only.
@@ -133,6 +132,7 @@ extension APIClient {
         return body
     }
 
+    /// `also_uhd` (0.4.237) is a followed feed's own UHD·4K (409 `policy` without 4K).
     public func updateRequestSource(id: Int, enabled: Bool? = nil, label: String? = nil,
                                     alsoUhd: Bool? = nil) async throws -> LbSource {
         var body: [String: SettingsJSON] = [:]

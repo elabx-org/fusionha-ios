@@ -28,7 +28,7 @@ struct ImportListFormSheet: View {
                 ImportListVersionsSection(store: store, draft: $form.draft)
                 schedule
                 if let error = form.saveError {
-                    Section { Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.danger) }
+                    Section { Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.dangerText) }
                 }
             }
             .scrollContentBackground(.hidden)
@@ -126,7 +126,7 @@ struct ImportListAddressSection: View {
             if let problem = form.problem {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(problem.text, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(problem.fatal ? Theme.danger : Theme.missText)
+                        .foregroundStyle(problem.fatal ? Theme.dangerText : Theme.missText)
                     if problem.traktLink {
                         Button("Settings › Indexers", action: openIndexers).font(.footnote.weight(.semibold))
                     }

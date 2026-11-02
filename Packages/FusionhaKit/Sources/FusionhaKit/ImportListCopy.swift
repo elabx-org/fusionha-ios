@@ -38,6 +38,10 @@ public enum ImportListCopy {
     public static let noRunItems = "No titles were recorded for this run."
     public static let reviewTitle = "Pick the right title"
     public static let nothingLeft = "Nothing left to review."
+    /// A failed read is said, never shown as an empty list.
+    public static let unmatchedFailed = "Couldn’t load the titles to review."
+    public static let runsFailed = "Couldn’t load this list’s runs."
+    public static let runItemsFailed = "Couldn’t load this run’s titles."
 
     public static let intervalPresets = [6, 12, 24, 168]
     public static let maxAddPresets = [10, 25, 50, 100]

@@ -62,7 +62,7 @@ struct ListSitesCard: View {
                 .buttonStyle(.web())
                 .disabled(value.trimmingCharacters(in: .whitespaces).isEmpty || saving)
         }
-        if let error { Text(error).font(.system(size: 12.5)).foregroundStyle(Theme.danger) }
+        if let error { Text(error).font(.system(size: 12.5)).foregroundStyle(Theme.dangerText) }
     }
 
     private func load() async {

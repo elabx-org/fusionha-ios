@@ -13,6 +13,7 @@ struct ImportListUnmatchedSheet: View {
     @State private var term = ""
     @State private var picked: MediaSearchResult?
     @State private var busy = false
+    @State private var failed = false
 
     var body: some View {
         NavigationStack {
@@ -27,7 +28,7 @@ struct ImportListUnmatchedSheet: View {
                         if adding == item.id { picker(item) }
                     }
                 } else {
-                    Section { SettingsLoadingRow() }
+                    Section { SettingsLoadingRow(error: failed ? ImportListCopy.unmatchedFailed : nil) }
                 }
             }
             .scrollContentBackground(.hidden)
@@ -72,7 +73,13 @@ struct ImportListUnmatchedSheet: View {
     }
 
     private func load() async {
-        items = (try? await model.client?.importListUnmatched(list.id)) ?? []
+        guard let client = model.client else { return }
+        do {
+            items = try await client.importListUnmatched(list.id)
+            failed = false
+        } catch {
+            if items == nil { failed = true }
+        }
     }
 
     private func resolve(_ item: ImportListItem) async {
