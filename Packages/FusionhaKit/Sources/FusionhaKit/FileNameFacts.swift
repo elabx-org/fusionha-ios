@@ -182,3 +182,30 @@ extension FileNameFacts {
         return lines < (tier == .hd ? 1080 : 2160)
     }
 }
+
+// MARK: - Probe first (fusionha 0.4.236)
+
+extension MovieFile {
+    /// `h265`: the server's probed video codec, nil when unprobed.
+    public var probedVideo: String? { Self.text(videoCodec) }
+
+    /// `AAC 2.0`: the server's probed audio codec and channels, nil when unprobed.
+    public var probedAudio: String? {
+        guard let codec = Self.text(audioCodec) else { return nil }
+        return [codec, Self.text(audioChannels)].compactMap { $0 }.joined(separator: " ")
+    }
+
+    private static func text(_ value: String?) -> String? {
+        guard let t = value?.trimmingCharacters(in: .whitespaces), !t.isEmpty else { return nil }
+        return t
+    }
+}
+
+extension FileNameFacts {
+    /// The Files tab's video and audio facts: the server's probe fields first,
+    /// then the probe read on the device (an older server), then the name.
+    public static func media(for file: MovieFile, probeVideo: String? = nil, probeAudio: String? = nil,
+                             name: FileNameFacts) -> (video: String?, audio: String?) {
+        (file.probedVideo ?? probeVideo ?? name.videoCodec, file.probedAudio ?? probeAudio ?? name.audio)
+    }
+}

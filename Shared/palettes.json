@@ -1,5 +1,5 @@
 {
-  "$comment": "Shared app palettes (web + iOS). Field names follow PaletteTokens in fusionha-ios/Shared/AppPalette.swift. onAccent is computed (WCAG luminance of i1 > 0.179 -> black ink, else white), never stored. Web: run `npm run gen:palettes` in frontend/ after editing.",
+  "$comment": "Shared app palettes (web + iOS). Field names follow PaletteTokens in fusionha-ios/Shared/AppPalette.swift. onAccent is computed (WCAG luminance of i1 > 0.179 -> black ink, else white), never stored. card is optional (dark palettes' lifted card fill); absent = panel, with a flat hairline edge and no card shadow. Web: run `npm run gen:palettes` in frontend/ after editing.",
   "dark": [
     "aurora",
     "graphite",

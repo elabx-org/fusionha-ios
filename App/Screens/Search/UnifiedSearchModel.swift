@@ -3,10 +3,12 @@ import FusionhaKit
 
 /// The unified search's provider side (owner-approved 2026-10-23): the add lane
 /// runs as you type, ~300 ms after the last keystroke, through a
-/// `UnifiedSearchSource` (today the client fan-out over TMDB, TheTVDB and the id
-/// lookup). Each provider's rows land as it answers; a new term or kind cancels
-/// the calls still in flight. The owned lane stays local and instant
-/// (`OwnedSearch`). Before you type: Trending this week, per kind.
+/// `UnifiedSearchSource` (the server's `/search/unified` for the library and
+/// TMDB, beside TheTVDB and the id lookup). Each provider's rows land as it
+/// answers; a new term or kind cancels the calls still in flight. TMDB always
+/// runs (`tmdb=always`): the approved spec has no "Search to add" step. The owned lane stays local and instant (`OwnedSearch`), with
+/// the server's library rows until the library has loaded. Before you type:
+/// Trending this week, per kind.
 @MainActor
 @Observable
 final class UnifiedSearchModel {
@@ -33,6 +35,7 @@ final class UnifiedSearchModel {
             key = ""
             return
         }
+        // Debounce typing.
         try? await Task.sleep(for: .milliseconds(300))
         guard !Task.isCancelled else { return }
         var first = true

@@ -76,8 +76,17 @@ public struct UnifiedSearchLanes: Equatable, Sendable {
     public var unconfigured: Set<UnifiedSearchProvider> = []
     /// Providers that failed this time.
     public var failed: Set<UnifiedSearchProvider> = []
+    /// `sources.tmdb` from `/search/unified` (nil from the client fan-out).
+    public var tmdbSource: UnifiedTmdbSource?
+    /// The server's library lane (nil from the client fan-out).
+    public var library: UnifiedSearchResponse.Library?
+    /// `sources.library = forbidden`: a request-only account.
+    public var libraryForbidden = false
 
     public init() {}
+
+    /// `tmdb=auto` and the library matched: the add lane wasn't searched.
+    public var addSkipped: Bool { tmdbSource == .skipped }
 
     public var isSettled: Bool { pending.isEmpty }
     /// The providers that answered (for the lane label's marks).
@@ -98,6 +107,9 @@ public struct UnifiedSearchAccumulator: Sendable {
     public let asked: Set<UnifiedSearchProvider>
     public var unconfigured: Set<UnifiedSearchProvider> = []
     public var failed: Set<UnifiedSearchProvider> = []
+    public private(set) var tmdbSource: UnifiedTmdbSource?
+    public private(set) var library: UnifiedSearchResponse.Library?
+    public private(set) var libraryForbidden = false
 
     public init(pending: Set<UnifiedSearchProvider> = Set(UnifiedSearchProvider.allCases)) {
         self.pending = pending
@@ -118,6 +130,20 @@ public struct UnifiedSearchAccumulator: Sendable {
         for row in rows where !exact.contains(where: { $0.id == row.id }) { exact.append(row) }
     }
 
+    /// The server's answer: the library lane, and TMDB's rows and state. A
+    /// timeout keeps whatever answered in time; with nothing, it's a failure.
+    public mutating func receive(unified response: UnifiedSearchResponse) {
+        library = response.library
+        libraryForbidden = response.sources.library == .forbidden
+        tmdbSource = response.sources.tmdb
+        switch response.sources.tmdb {
+        case .ok, .skipped: receive(tmdb: response.tmdb.items)
+        case .timeout where !response.tmdb.items.isEmpty: receive(tmdb: response.tmdb.items)
+        case .timeout, .unavailable: fail(.tmdb)
+        case .notConfigured: unavailable(.tmdb)
+        }
+    }
+
     public mutating func unavailable(_ provider: UnifiedSearchProvider) {
         unconfigured.insert(provider)
         pending.remove(provider)
@@ -134,12 +160,21 @@ public struct UnifiedSearchAccumulator: Sendable {
         lanes.pending = pending
         lanes.unconfigured = unconfigured
         lanes.failed = failed
+        lanes.tmdbSource = tmdbSource
+        lanes.library = library
+        lanes.libraryForbidden = libraryForbidden
         lanes.ownedTmdb = (tmdb + exact).filter(\.inLibrary).uniqued(by: \.id)
         lanes.ownedLibraryIds = tvdb.filter { $0.inLibrary == true }.compactMap(\.libraryItemId)
         lanes.exact = exact.filter { !$0.inLibrary }
         let pinned = Set(lanes.exact.map(\.id))
         lanes.add = Self.merge(tmdb: tmdb, tvdb: tvdb).filter { hit in
             !(hit.tmdb.map { pinned.contains($0.id) } ?? false)
+        }
+        // Skipped (the library matched): no provider rows until "Search to
+        // add", and nothing left to wait for.
+        if lanes.addSkipped {
+            lanes.add = []
+            lanes.pending.remove(.tvdb)
         }
         return lanes
     }

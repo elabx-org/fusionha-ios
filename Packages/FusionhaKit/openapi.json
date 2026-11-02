@@ -3,7 +3,7 @@
   "info": {
     "title": "fusionha",
     "description": "fusionha replaces both Sonarr and Radarr with a single app that adds\nfirst-class multi-quality tracking (e.g. 1080p *and* 4K per title) and\ntreats anime as a first-class citizen. It exposes **two API surfaces**:\n\n* **fusionha-native, `/api/v1/*`** -- the app's own REST API: library items\n  (with all their quality editions), settings, config resources (root\n  folders, quality profiles, custom formats, indexers, download clients),\n  history, queue, health, and blocklist. This is what the fusionha UI (and\n  any other fusionha-aware client) talks to.\n* **arr v3 mirrors, `/<instance-slug>/api/v3/*`** -- faithful Radarr/Sonarr\n  v3 API surfaces (`radarr-hd`, `radarr-4k`, `sonarr-hd`, `sonarr-4k`), each\n  its own virtual instance with its own `X-Api-Key`. Add these to\n  Overseerr/Seer (their native 4K-service slots map to the `-4k`\n  instances) or Prowlarr exactly as you would a real Radarr/Sonarr -- they\n  are externally indistinguishable. All virtual instances are views over\n  the SAME shared item store; there is no data duplication.\n\nAuthenticate against the arr surface with the `X-Api-Key` header (per\nvirtual instance); see the Authorize button above.",
-    "version": "0.4.235"
+    "version": "0.4.236"
   },
   "paths": {
     "/api/v1/setup-status": {
@@ -14919,6 +14919,86 @@
           },
           "409": {
             "description": "`code: tmdb_not_configured` -- no TMDB API key is configured (Settings > Metadata)."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/search/unified": {
+      "get": {
+        "tags": ["Library"],
+        "summary": "Search the library and TMDB in one call",
+        "description": "The omni-search: titles **in your library** (title substring, an optional trailing year such as `dune 2021`, starts-with ranked first, then newest) and titles **available to add** from TMDB (the `GET /search?kind=all` rows with `in_library` / `library_item_id`).\n\n`tmdb=auto` (default) searches TMDB only when the library has no match; `always` / `never` force it. TMDB runs under a time budget: `sources.tmdb` reports `ok`, `skipped`, `timeout`, `unavailable` or `not_configured`, and the library rows are returned either way. A request-only account gets `sources.library = forbidden` and no library rows; a user scoped to some instances sees only the versions (and titles) those instances cover.",
+        "operationId": "search_unified_api_v1_search_unified_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "description": "The search term.",
+              "title": "Q"
+            },
+            "description": "The search term."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "description": "Most library rows to return (`library.total` counts all).",
+              "default": 8,
+              "title": "Limit"
+            },
+            "description": "Most library rows to return (`library.total` counts all)."
+          },
+          {
+            "name": "kinds",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "array", "items": { "$ref": "#/components/schemas/UnifiedSearchKind" } },
+                { "type": "null" }
+              ],
+              "description": "Only these kinds (repeatable). Default: all.",
+              "title": "Kinds"
+            },
+            "description": "Only these kinds (repeatable). Default: all."
+          },
+          {
+            "name": "tmdb",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/UnifiedTmdbMode",
+              "description": "When to search TMDB.",
+              "default": "auto"
+            },
+            "description": "When to search TMDB."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UnifiedSearchResponse" }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -33875,6 +33955,18 @@
             "enum": ["ok", "pending", "failed", "unavailable"],
             "title": "Analysis",
             "default": "ok"
+          },
+          "video_codec": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Video Codec"
+          },
+          "audio_codec": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Audio Codec"
+          },
+          "audio_channels": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Audio Channels"
           }
         },
         "type": "object",
@@ -42454,6 +42546,103 @@
         "required": ["ok", "message"],
         "title": "TvdbTestResult",
         "description": "#180: result of `POST /api/v1/settings/test-tvdb`. Never echoes the key\nor PIN -- only a boolean and a human-readable message."
+      },
+      "UnifiedLibrarySection": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Every library match before the `limit` cap (for '+N more')."
+          },
+          "items": {
+            "items": { "$ref": "#/components/schemas/LibraryItemRead" },
+            "type": "array",
+            "title": "Items",
+            "description": "The ranked matches, at most `limit`; each row is the `GET /library` row for that title."
+          }
+        },
+        "type": "object",
+        "required": ["total", "items"],
+        "title": "UnifiedLibrarySection"
+      },
+      "UnifiedLibrarySource": {
+        "type": "string",
+        "enum": ["ok", "forbidden"],
+        "title": "UnifiedLibrarySource"
+      },
+      "UnifiedSearchKind": {
+        "type": "string",
+        "enum": ["movie", "series", "anime"],
+        "title": "UnifiedSearchKind",
+        "description": "The ``kinds`` filter. ``anime`` is its own kind here, as in the library\nfacets: an anime title (movie or series) is ``anime``, never ``movie`` /\n``series``."
+      },
+      "UnifiedSearchQuery": {
+        "properties": {
+          "term": { "type": "string", "title": "Term", "description": "The term as sent." },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "The lower-cased title text the library lane matched on."
+          },
+          "year": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Year",
+            "description": "A trailing year split off the term, or null."
+          }
+        },
+        "type": "object",
+        "required": ["term", "title"],
+        "title": "UnifiedSearchQuery"
+      },
+      "UnifiedSearchResponse": {
+        "properties": {
+          "query": { "$ref": "#/components/schemas/UnifiedSearchQuery" },
+          "sources": { "$ref": "#/components/schemas/UnifiedSearchSources" },
+          "library": { "$ref": "#/components/schemas/UnifiedLibrarySection" },
+          "tmdb": { "$ref": "#/components/schemas/UnifiedTmdbSection" }
+        },
+        "type": "object",
+        "required": ["query", "sources", "library", "tmdb"],
+        "title": "UnifiedSearchResponse"
+      },
+      "UnifiedSearchSources": {
+        "properties": {
+          "library": { "$ref": "#/components/schemas/UnifiedLibrarySource" },
+          "tmdb": { "$ref": "#/components/schemas/UnifiedTmdbSource" }
+        },
+        "type": "object",
+        "required": ["library", "tmdb"],
+        "title": "UnifiedSearchSources"
+      },
+      "UnifiedTmdbMode": {
+        "type": "string",
+        "enum": ["auto", "always", "never"],
+        "title": "UnifiedTmdbMode",
+        "description": "When the TMDB lane runs. ``auto`` matches the web palette's lazy lane:\nTMDB is searched only when the library lane has no match."
+      },
+      "UnifiedTmdbSection": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "description": "Credit for the 'via' label.",
+            "default": "tmdb"
+          },
+          "items": {
+            "items": { "$ref": "#/components/schemas/MediaSearchResult" },
+            "type": "array",
+            "title": "Items",
+            "description": "TMDB rows (the `GET /search?kind=all` rows), movies and series interleaved; `in_library` / `library_item_id` mark titles already in the library."
+          }
+        },
+        "type": "object",
+        "required": ["items"],
+        "title": "UnifiedTmdbSection"
+      },
+      "UnifiedTmdbSource": {
+        "type": "string",
+        "enum": ["ok", "skipped", "timeout", "unavailable", "not_configured"],
+        "title": "UnifiedTmdbSource"
       },
       "UnlockRequest": {
         "properties": {

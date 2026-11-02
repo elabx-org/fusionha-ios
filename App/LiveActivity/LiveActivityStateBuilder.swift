@@ -28,9 +28,9 @@ enum LiveActivityStateBuilder {
                           bps: moving.contains { !$0.isPhaseMode } ? bps : nil, etaSeconds: etas.min(),
                           rows: rows(moving), held: held(waiting), steps: nil, event: nil,
                           updatedAt: now.timeIntervalSince1970)
-        // A download at 100% with no progress is finished and waiting its turn to
-        // import, not stalled: it stays a moving row, with no "Search again".
-        if let problem = moving.first(where: { $0.stalled && $0.pct < 100 }) ?? counted.first(where: { $0.cockpitState == .stuck }) {
+        // The server's `stalled` is false at 100% (fusionha 0.4.236): a finished
+        // download waiting its turn to import stays a moving row.
+        if let problem = moving.first(where: \.stalled) ?? counted.first(where: { $0.cockpitState == .stuck }) {
             state.mode = .problem
             state.event = problemEvent(problem)
         } else if moving.isEmpty {

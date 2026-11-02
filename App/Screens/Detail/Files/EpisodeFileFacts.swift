@@ -2,7 +2,8 @@ import Foundation
 import FusionhaKit
 
 /// What one episode file is, in words: the server's facts (quality code,
-/// probe, release group) first, the filename's where the server has none.
+/// probe fields `video_codec` / `audio_codec` / `audio_channels`, release
+/// group) first, the filename's where the server has none.
 struct EpisodeFileFacts {
     let quality: String?
     let video: String?
@@ -21,8 +22,9 @@ struct EpisodeFileFacts {
     init(file: MovieFile, tier: QualityTier) {
         let probe = file.mediaInfo?.probe
         let serverQuality = FileNameFacts.qualityText(file.quality)
-        let serverVideo = DetailMediaFacts.codec(probe)
-        let serverAudio = DetailMediaFacts.audio(probe)
+        // The server's probe facts (0.4.236), else the probe read here.
+        let serverVideo = file.probedVideo ?? DetailMediaFacts.codec(probe)
+        let serverAudio = file.probedAudio ?? DetailMediaFacts.audio(probe)
         let serverGroup = file.releaseGroup.flatMap { $0.isEmpty ? nil : $0 }
         // Parse the name only when a fact is missing (never for probed files).
         let needsName = serverQuality == nil || serverVideo == nil || serverAudio == nil || serverGroup == nil
@@ -30,10 +32,11 @@ struct EpisodeFileFacts {
 
         quality = serverQuality ?? name.quality
         let range = DetailMediaFacts.range(probe).flatMap { $0 == "SDR" ? nil : $0 }
-        let codec = serverVideo ?? name.videoCodec
+        let media = FileNameFacts.media(for: file, probeVideo: serverVideo, probeAudio: serverAudio, name: name)
+        let codec = media.video
         let videoParts = [codec, range].compactMap { $0 }
         video = videoParts.isEmpty ? nil : videoParts.joined(separator: " ")
-        audio = serverAudio ?? name.audio
+        audio = media.audio
         let named = (file.languages ?? []).filter { !$0.isEmpty }
         languages = named.isEmpty ? DetailMediaFacts.languages(probe) : named.joined(separator: ", ")
         group = serverGroup ?? name.releaseGroup
