@@ -118,22 +118,23 @@ struct FoldPairLayout: Layout {
         return equalPanes ? (min(first, second), min(first, second)) : (first, second)
     }
 
-    /// The children's heights for the last width measured. SwiftUI makes a
-    /// fresh cache whenever the children change, so this only spares the
-    /// repeat measurements of one unchanged row (the Library's span header
-    /// was re-measured each time the grid under it grew while scrolling).
+    /// The children's heights per width measured. SwiftUI makes a fresh
+    /// cache whenever the children change, so this only spares the repeat
+    /// measurements of an unchanged row: the Library's span header and
+    /// Recently added rows were re-measured, at each width a stack probes,
+    /// every time the grid under them grew while scrolling.
     struct Cache {
-        var width: CGFloat?
-        var heights: [CGFloat] = []
+        var heights: [CGFloat: [CGFloat]] = [:]
     }
 
     func makeCache(subviews: Subviews) -> Cache { Cache() }
 
     private func heights(_ total: CGFloat, _ subviews: Subviews, _ cache: inout Cache) -> [CGFloat] {
-        if cache.width == total, cache.heights.count == min(subviews.count, 2) { return cache.heights }
+        if let hit = cache.heights[total] { return hit }
         let (a, b) = widths(total)
         let heights = zip(subviews, [a, b]).map { $0.sizeThatFits(ProposedViewSize(width: $1, height: nil)).height }
-        cache = Cache(width: total, heights: heights)
+        if cache.heights.count > 8 { cache.heights.removeAll() }
+        cache.heights[total] = heights
         return heights
     }
 

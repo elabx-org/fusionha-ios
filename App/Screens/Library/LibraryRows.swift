@@ -283,5 +283,6 @@ struct LibraryGridRow: View {
             }
         }
         .padding(.bottom, 18)
+        .onAppear { PerfCount.hit("LibraryGridRow.appear") }
     }
 }
