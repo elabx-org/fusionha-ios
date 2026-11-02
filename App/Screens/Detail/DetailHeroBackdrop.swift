@@ -2,25 +2,35 @@ import SwiftUI
 import FusionhaKit
 
 /// The title page's hero backdrop (owner-approved with the web, 2026-11-02):
-/// the textless art runs behind the whole header, not a band with a hard
-/// bottom edge. Its top shade and the dark edge under the white title stay
-/// (the same scrim in every theme); below the title a wash of the ground
-/// colour sits behind the text column, and the art fades out over its lower
-/// third into the art-tinted ground (`AmbientBackdrop`). On the open Duo the
-/// text column is the left page: the far page keeps the art clear in the band
-/// and lets it go just under it, where its tabs begin.
+/// the textless art runs behind the whole header, from under the bar to the
+/// top of Versions, and fades out with no edge (`HeroBackdropProfile`).
 ///
-/// Geometry is in points from the top of the header; `underBar` lifts it
-/// under the bar (the open Duo's band, whose measured top is
-/// `HeroBackdropLayout.originY`), and the art always runs under the system
-/// column.
+/// - The sharp art keeps the approved hero's framing: its box is the hero's
+///   height, or a 16:9 backdrop's own height on a wide display, so it is
+///   never zoomed to fill a taller header. Below it the same art carries on
+///   blurred (mirrored, so its colours meet), the tint it fades into.
+/// - The white title sits on the art's darkened edge in every theme; below
+///   it a wash of the ground colour sits behind the text column.
+/// - On a wide single column the far side stays clear; on the open Duo both
+///   pages hold text, so both keep the wash, and each page's art fades out
+///   at its own foot (the left page's follows Versions as it scrolls).
+///
+/// The art always runs under the system column; `underBar` lifts the frame
+/// up under the bar (the open Duo's band, whose top is `layout.originY`).
 struct DetailHeroBackdrop: View {
     @Environment(\.detailReduceMotion) private var reduce
     let url: URL?
     let layout: HeroBackdropLayout
-    /// The header starts below the bar: the art runs up under it.
     var underBar = false
-    @State private var artShown = false
+    @State private var artShown: Bool
+
+    init(url: URL?, layout: HeroBackdropLayout, underBar: Bool = false) {
+        self.url = url
+        self.layout = layout
+        self.underBar = underBar
+        // The loading shell already eased this art in: no second zoom.
+        _artShown = State(initialValue: url.map { HeroArtReveal.shown.contains($0) } ?? false)
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -29,24 +39,62 @@ struct DetailHeroBackdrop: View {
             // Duo's shell and harness report differently.
             let top = layout.originY.map { max(0, $0 - proxy.frame(in: .global).minY) } ?? 0
             let lead = proxy.safeAreaInsets.leading
-            let size = CGSize(width: proxy.size.width, height: top + layout.height(fill: proxy.size.height - top))
-            let profile = HeroBackdropProfile(layout: layout, top: top, size: size,
-                                              ground: Theme.isLight ? 0.9 : 0.85,
-                                              column: layout.column.map { lead + $0 })
-            ZStack(alignment: .top) {
-                art
-                    .frame(width: size.width, height: size.height)
-                    .clipped()
-                    .mask { profile.split(near: profile.artMask(Color.black), far: profile.farArtMask(Color.black)) }
-                profile.split(near: profile.titleShade(Theme.scrim), far: profile.farShade(Theme.scrim))
-                // Full width: under the band it sits under the right page's tabs too.
-                profile.groundWash(Theme.bg)
-            }
-            .frame(width: size.width, height: size.height, alignment: .top)
+            let width = proxy.size.width
+            let height = top + layout.lowest + HeroBackdropLayout.tail
+            let artBottom = max(layout.edge, min(width * 9 / 16 - top, layout.lowest))
+            layers(top: top, width: width, height: height, artBottom: artBottom, lead: lead)
         }
         .ignoresSafeArea(.container, edges: underBar ? [.top, .horizontal] : .horizontal)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    private func layers(top: CGFloat, width: CGFloat, height: CGFloat, artBottom: CGFloat, lead: CGFloat) -> some View {
+        let ground = Theme.isLight ? 0.9 : 0.85
+        let near = HeroBackdropProfile(layout: layout, top: top, height: height, artBottom: artBottom,
+                                       foot: layout.foot, ground: ground)
+        let far = HeroBackdropProfile(layout: layout, top: top, height: height, artBottom: artBottom,
+                                      foot: layout.farFoot ?? layout.foot, ground: ground)
+        let column = layout.column.map { lead + $0 }
+        let shadeColumn = (layout.shadeColumn ?? layout.column).map { lead + $0 }
+        return ZStack(alignment: .top) {
+            if url != nil {
+                // Starts under the sharp art's fade, wherever its foot puts it.
+                continuation(from: max(0, top + min(artBottom, min(near.foot, far.foot)) - 96),
+                             width: width, height: height)
+                    .mask { HeroSplit(column: column, width: width) { near.continuationMask() } far: { far.continuationMask() } }
+            }
+            art
+                .frame(width: width, height: top + artBottom)
+                .clipped()
+                .frame(width: width, height: height, alignment: .top)
+                .mask { HeroSplit(column: column, width: width) { near.sharpMask() } far: { far.sharpMask() } }
+            HeroSplit(column: shadeColumn, width: width) {
+                near.titleShade(Theme.scrim)
+            } far: {
+                if layout.style == .band { far.farShade(Theme.scrim) } else { far.titleShade(Theme.scrim) }
+            }
+            HeroSplit(column: column, width: width) {
+                near.groundWash(Theme.bg)
+            } far: {
+                if layout.farWash { far.groundWash(Theme.bg) } else { Color.clear }
+            }
+        }
+        .frame(width: width, height: height, alignment: .top)
+    }
+
+    /// The art's blurred continuation under the sharp box (the cached
+    /// ambient bitmap, no live blur), mirrored so its top meets the art's foot.
+    private func continuation(from y: CGFloat, width: CGFloat, height: CGFloat) -> some View {
+        Color.clear
+            .frame(width: width, height: height)
+            .overlay(alignment: .top) {
+                AmbientArt(url: TMDBImage.resized(url?.absoluteString, to: "w780"), kind: .detailAmbient)
+                    .scaleEffect(x: 1, y: -1)
+                    .frame(width: width, height: max(height - y, 1))
+                    .offset(y: y)
+            }
+            .clipped()
     }
 
     @ViewBuilder
@@ -68,33 +116,8 @@ struct DetailHeroBackdrop: View {
     }
 
     private func showArt() {
+        if let url { HeroArtReveal.shown.insert(url) }
         guard !reduce, !artShown else { return }
         withAnimation(DetailMotion.reveal(0.9)) { artShown = true }
-    }
-}
-
-/// Where the hero's art and washes sit, in points from the top of the header.
-struct HeroBackdropLayout: Equatable {
-    enum Style: Equatable {
-        /// The single column's hero: the full art above the title.
-        case hero
-        /// The open Duo's band: a lighter shade over a shorter strip.
-        case band
-    }
-
-    var style: Style = .hero
-    /// The art's darkened edge: the white title block ends 14 to 18 pt above it.
-    var edge: CGFloat
-    /// Where the art has faded out under the text column (nil: the frame's foot).
-    var end: CGFloat?
-    /// The open Duo: the text column's width (the left page).
-    var column: CGFloat?
-    /// The header's top in global coordinates, when the art runs up under
-    /// the bar above it.
-    var originY: CGFloat?
-
-    /// The text column's art and wash end here.
-    func height(fill: CGFloat) -> CGFloat {
-        max(end ?? fill, edge + 32)
     }
 }

@@ -54,29 +54,26 @@ struct RequestedByPill: View {
 
 /// The instant-open shell (MobileDetailFlyout `loading`): the hero drawn from
 /// what the tapped poster already knew (art, title, year), else placeholder
-/// bars, over the body skeleton (DetailBodySkeleton). The shimmer stops under
-/// Reduce Motion.
+/// bars, over the body skeleton (DetailBodySkeleton). It already stands on
+/// the loaded page's backdrop (`DetailHeroBackdrop`, no hard edge) with the
+/// title in white on the art's darkened edge, where the loaded title lands.
+/// The shimmer stops under Reduce Motion.
 struct DetailLoadingShell: View {
     let seed: MediaItem?
+    @State private var edge: CGFloat = 360
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            DetailHeroArt(url: ItemDetailArt.hero(backdrop: seed?.backdropUrl, poster: seed?.posterUrl))
-            VStack(alignment: .leading, spacing: 12) {
-                if let seed {
-                    (Text(seed.title).foregroundColor(Theme.txt)
-                        + Text(verbatim: seed.year.map { " " + String($0) } ?? "")
-                            .font(Theme.display(56, semibold: true))
-                            .foregroundColor(Theme.dim))
-                        .font(Theme.display(56))
-                        .tracking(Theme.displayTracking(56))
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.6)
-                        .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    SkeletonBar(height: 40, radius: 10).frame(maxWidth: 260)
+            Color.clear
+                .containerRelativeFrame(.vertical) { length, _ in DetailHeroArt.height(for: length) }
+                .frame(maxWidth: .infinity)
+                .overlay(alignment: .bottomLeading) {
+                    title
+                        .padding(.horizontal, Theme.pageGutter)
+                        .padding(.bottom, 18)
                 }
-                SkeletonBar(height: 14).frame(maxWidth: 220)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { edge = $0 }
+            VStack(alignment: .leading, spacing: 12) {
                 textLines([1, 0.7])
                 HStack(spacing: 8) { ForEach(0..<4, id: \.self) { _ in SkeletonBar(height: 36, radius: 18) } }
                 SkeletonBar(height: 120, radius: 20).padding(.top, 10)
@@ -85,11 +82,36 @@ struct DetailLoadingShell: View {
                 ForEach(0..<3, id: \.self) { _ in SkeletonBar(height: 52, radius: 12) }
             }
             .padding(.horizontal, Theme.pageGutter)
-            .padding(.top, seed == nil ? -100 : -132)
+            .padding(.top, 12)
             .padding(.bottom, 32)
+        }
+        .background(alignment: .top) {
+            DetailHeroBackdrop(url: ItemDetailArt.hero(backdrop: seed?.backdropUrl, poster: seed?.posterUrl),
+                               layout: HeroBackdropLayout(edge: edge, handover: edge + 54, foot: edge + 240))
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Loading title")
+    }
+
+    /// The title and meta placeholder on the art's edge, white as on the hero.
+    private var title: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let seed {
+                (Text(seed.title).foregroundColor(Theme.onScrim)
+                    + Text(verbatim: seed.year.map { " " + String($0) } ?? "")
+                        .font(Theme.display(56, semibold: true))
+                        .foregroundColor(Theme.onScrim.opacity(0.6)))
+                    .font(Theme.display(56))
+                    .tracking(Theme.displayTracking(56))
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.6)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                SkeletonBar(height: 40, radius: 10).frame(maxWidth: 260)
+            }
+            SkeletonBar(height: 14).frame(maxWidth: 220)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func textLines(_ lines: [Double]) -> some View {

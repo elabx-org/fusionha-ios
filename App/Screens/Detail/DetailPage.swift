@@ -41,19 +41,26 @@ struct DetailPage: View {
     let detail: ItemDetail
     let openWeb: () -> Void
     var infoPage = false
-    /// The split title's left page: how far its header runs (to the top of
-    /// Versions), where the hero art fades out behind it.
-    var onHeaderHeight: ((CGFloat) -> Void)?
+    /// The split title's left page: where its strip ends and Versions start,
+    /// for the band's backdrop (`DetailSpreadBody`).
+    var onMetrics: ((HeroHeaderMetrics) -> Void)?
+    /// The split title's left page: the top of Versions on screen as it
+    /// scrolls (only the backdrop reads it, so the page is not redrawn).
+    var onVersionsOnScreen: ((CGFloat) -> Void)?
+    @State private var metrics = HeroHeaderMetrics()
+    /// The hero's height (its art's darkened edge) and the page's width.
+    @State private var edge: CGFloat = 360
+    @State private var width: CGFloat = 0
 
     private var gutter: CGFloat { infoPage ? 20 : Theme.pageGutter }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if infoPage {
-                DetailHeroFacts(detail: detail)
+                DetailHeroFacts(detail: detail) { metrics.stripEnd = $0 }
                     .padding(.horizontal, gutter)
             } else {
-                DetailHero(detail: detail)
+                DetailHero(detail: detail) { edge = $0 } onStripEnd: { metrics.stripEnd = $0 }
             }
 
             VStack(alignment: .leading, spacing: 0) {
@@ -87,7 +94,10 @@ struct DetailPage: View {
                     .id("editions")
                     .onGeometryChange(for: CGFloat.self) {
                         $0.frame(in: .named(Self.space)).minY
-                    } action: { onHeaderHeight?($0) }
+                    } action: { metrics.versionsTop = $0 }
+                    .onGeometryChange(for: CGFloat.self) {
+                        onVersionsOnScreen == nil ? 0 : $0.frame(in: .global).minY
+                    } action: { onVersionsOnScreen?($0) }
 
                 if detail.kind == .movie, ReleaseTimeline.hasData(detail) {
                     DetailSection(title: "Release timeline")
@@ -114,6 +124,23 @@ struct DetailPage: View {
             .padding(.bottom, 32)
         }
         .coordinateSpace(.named(Self.space))
+        .background(alignment: .top) {
+            if !infoPage { backdrop }
+        }
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .onChange(of: metrics, initial: true) { onMetrics?(metrics) }
+    }
+
+    /// The single column's hero art: behind the hero, facts, overview and
+    /// actions, fading out at the top of Versions (`DetailHeroBackdrop`).
+    private var backdrop: some View {
+        let handover = HeroBackdropLayout.handover(edge: edge, stripEnd: metrics.stripEnd)
+        return DetailHeroBackdrop(
+            url: ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl),
+            layout: HeroBackdropLayout(edge: edge, handover: handover,
+                                       foot: max(metrics.versionsTop, handover + 48),
+                                       column: HeroBackdropLayout.textColumn(width: width, gutter: gutter),
+                                       farWash: false))
     }
 
     private static let space = "detailPage"

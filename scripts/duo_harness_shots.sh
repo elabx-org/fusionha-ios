@@ -171,6 +171,8 @@ for theme in dark daylight monochrome; do
   shoot duo-harness-split-a-flat-library$SUF open $L $SP $SHOWN $T
   shoot duo-harness-split-a-flat-title$SUF open $L $SP $SHOWN $MOVIE $T
   shoot duo-harness-split-a-flat-title-list-hidden$SUF open $L $SP $HIDDEN $MOVIE $T
+  # The left page scrolled: the hero art's fade follows Versions up.
+  [ "$theme" = monochrome ] || shoot duo-harness-split-a-flat-title-list-hidden-scrolled$SUF open $L $SP $HIDDEN $MOVIE $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_SCROLL=editions
   shoot duo-harness-split-a-book-library$SUF open $L $SP $BOOK $SHOWN $T
   shoot duo-harness-split-a-book-title$SUF open $L $SP $BOOK $SHOWN $MOVIE $T
   shoot duo-harness-split-a-web-flat-title$SUF open $L $WEB $SHOWN $MOVIE $T

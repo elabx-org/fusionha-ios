@@ -13,10 +13,9 @@ import FusionhaKit
 ///   versions and Overview rails on the left page, the tabs on the right.
 ///
 /// Both pages sit on the art ground with the cards' colour bleed. The hero
-/// art (`DetailHeroBackdrop`) runs behind the band across both pages; on the
-/// left page it carries on behind the facts and fades out where Versions
-/// start, on a wash of the ground behind the text; on the right page it lets
-/// go just under the band, where the tabs begin.
+/// art (`DetailHeroBackdrop`) runs behind the band across both pages and on
+/// down both, on a wash of the ground behind their text, fading out at the
+/// level of the left page's Versions (`SpreadHeroBackdrop`).
 struct DetailSpreadBody: View {
     @Environment(DetailStore.self) private var store
     @Environment(\.motionEnabled) private var motion
@@ -30,12 +29,14 @@ struct DetailSpreadBody: View {
     /// The band's frame (global): its height is the art's edge, its top
     /// where the backdrop's header starts under the bar.
     @State private var band = CGRect(x: 0, y: 0, width: 0, height: 130)
-    /// The left page's header (facts to the top of Versions); 0 beside an episode.
-    @State private var headerHeight: CGFloat = 0
+    /// The left page's facts (strip end, top of Versions) and its scroll.
+    @State private var metrics = HeroHeaderMetrics()
+    @State private var tracker = HeroScrollTracker()
+    @State private var textWidth: CGFloat = 0
 
     var body: some View {
         VStack(spacing: 0) {
-            DetailSpreadBand(detail: detail)
+            DetailSpreadBand(detail: detail) { textWidth = $0 }
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { band = $0 }
             if let target = store.episodeSheet {
                 FoldSplitLayout(primary: CGFloat(pages.left.width), gap: CGFloat(pages.gap)) {
@@ -54,24 +55,34 @@ struct DetailSpreadBody: View {
     }
 
     private var backdrop: some View {
-        let header = store.episodeSheet == nil ? headerHeight : 0
-        return DetailHeroBackdrop(
-            url: ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl),
-            layout: HeroBackdropLayout(style: .band, edge: band.height,
-                                       end: header > 0 ? band.height + header : band.height + 28,
-                                       column: CGFloat(pages.left.width), originY: band.minY),
-            underBar: true)
+        SpreadHeroBackdrop(url: ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl),
+                           band: band, metrics: metrics, tracker: tracker,
+                           column: CGFloat(pages.left.width), textWidth: textWidth,
+                           beside: store.episodeSheet != nil)
     }
 
     /// The left page without an episode: the hero's facts, overview, item
     /// actions, versions and the Overview rails. Pulling it down closes the title.
     private var infoPage: some View {
-        ScrollView {
-            DetailPage(detail: detail, openWeb: openWeb, infoPage: true) { headerHeight = $0 }
-                .pinnedToProposedWidth()
+        ScrollViewReader { proxy in
+            ScrollView {
+                DetailPage(detail: detail, openWeb: openWeb, infoPage: true,
+                           onMetrics: { metrics = $0 }, onVersionsOnScreen: { tracker.versionsOnScreen = $0 })
+                    .pinnedToProposedWidth()
+            }
+            .scrollIndicators(.hidden)
+            .duoColumnPullSource()
+            .task { await screenshotScroll(proxy) }
         }
-        .scrollIndicators(.hidden)
-        .duoColumnPullSource()
+    }
+
+    /// CI screenshots: the left page scrolled (`FUSIONHA_SCREENSHOT_DETAIL_SCROLL`).
+    private func screenshotScroll(_ proxy: ScrollViewProxy) async {
+        #if DEBUG
+        guard let anchor = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_DETAIL_SCROLL"] else { return }
+        try? await Task.sleep(for: .seconds(1.2))
+        proxy.scrollTo(anchor, anchor: .center)
+        #endif
     }
 
     /// The title's tabs. Beside an episode they keep Overview and bring the

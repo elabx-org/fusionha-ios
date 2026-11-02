@@ -2,39 +2,33 @@ import SwiftUI
 import FusionhaKit
 
 /// The full-bleed art hero (owner-approved title page, 2026-10-23; backdrop
-/// 2026-11-02): the textless backdrop at full strength, and on its darkened
-/// edge the status chip, the display-face title + year in white and the meta
-/// line (Close is the system toolbar's, DC10). The art runs on behind the
-/// facts under the title (version strip, tagline, genre pills, requester) on
-/// a wash of the ground colour and fades out under them, no edge
-/// (`DetailHeroBackdrop`). Heights are the old hero's: nothing moves.
+/// 2026-11-02): on the art's darkened edge the status chip, the display-face
+/// title + year in white and the meta line (Close is the system toolbar's,
+/// DC10); under it the facts (version strip, tagline, genre pills,
+/// requester). The art itself is the page's backdrop (`DetailPage`,
+/// `DetailHeroBackdrop`), which runs on behind the facts and overview to
+/// Versions. Heights are the old hero's: nothing moves.
 struct DetailHero: View {
-    @Environment(\.detailReduceMotion) private var reduce
     let detail: ItemDetail
-    /// The art's darkened edge (the old hero's height), measured.
-    @State private var edge: CGFloat = 360
+    /// The art's darkened edge (the hero's height) and the facts' strip end.
+    var onEdge: (CGFloat) -> Void = { _ in }
+    var onStripEnd: (CGFloat) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear
-                .containerRelativeFrame(.vertical) { length, _ in DetailHeroArt<EmptyView>.height(for: length) }
+                .containerRelativeFrame(.vertical) { length, _ in DetailHeroArt.height(for: length) }
                 .frame(maxWidth: .infinity)
                 .overlay(alignment: .bottomLeading) {
                     onArt
                         .padding(.horizontal, Theme.pageGutter)
                         .padding(.bottom, 18)
                 }
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { edge = $0 }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { onEdge($0) }
                 // Open Duo: swipe across the art for the next / previous title.
                 .duoTitleSwipe(id: detail.id)
-            DetailHeroFacts(detail: detail)
+            DetailHeroFacts(detail: detail, onStripEnd: onStripEnd)
                 .padding(.horizontal, Theme.pageGutter)
-        }
-        .background(alignment: .top) {
-            // The fade runs on a little past the requester, into the overview's gap.
-            DetailHeroBackdrop(url: ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl),
-                               layout: HeroBackdropLayout(edge: edge))
-                .padding(.bottom, -12)
         }
     }
 
@@ -65,11 +59,15 @@ struct DetailHero: View {
 /// starts here.
 struct DetailHeroFacts: View {
     let detail: ItemDetail
+    /// The strip's bottom from the top of the block: the backdrop's dark
+    /// title edge hands over to the ground wash by here.
+    var onStripEnd: (CGFloat) -> Void = { _ in }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             DetailVersionStrip()
                 .padding(.top, 12)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { onStripEnd($0) }
                 .detailReveal(delay: 0.12)
             if let tagline = detail.tagline, !tagline.isEmpty {
                 Text(tagline)

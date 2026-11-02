@@ -1,96 +1,116 @@
 import SwiftUI
 
-/// The hero backdrop's washes as gradients over its frame (`DetailHeroBackdrop`).
-/// Points are from the top of the header; `top` is how far the frame runs
-/// up under the bar.
+/// The hero backdrop's layers as gradients over its frame, for one side of
+/// it (the text column, or the open Duo's far page with its own `foot`).
+/// Points are from the top of the header; `top` is how far the frame runs up
+/// under the bar. Every change of strength is eased over many points, so no
+/// step reads as a line.
 ///
-/// - The art: full strength down to its lower third, then it fades out (no
-///   edge) into the art-tinted ground.
+/// - The art: sharp in its own box (`artBottom`, the old hero's framing, so
+///   it is never zoomed further), easing over 72 pt into its blurred
+///   continuation, which carries the art's colour on behind the facts and
+///   overview and fades out over the lower third, at `foot`.
 /// - The title shade: a light shade under the bar and the dark edge the
-///   white title sits on, in every theme. It hands over to the ground wash in
-///   the gap between the meta line and the version strip.
-/// - The ground wash: the ground colour behind the text under the title, so
-///   body text keeps 4.5:1 over the worst art (`ground` is 0.85 on the dark
-///   palettes, 0.9 on Daylight, which keeps the art a pale wash there). It
-///   lets go once the art has mostly faded, so it meets the ground unseen.
-///
-/// On the open Duo the far page (right of `column`) keeps the art clear in
-/// the band and lets it go just under the band, where its tabs begin.
+///   white title sits on, in every theme; it eases out by `handover`.
+/// - The ground wash: the ground colour behind the text under the title,
+///   eased in over the same span, so body text keeps 4.5:1 over the worst
+///   art (0.85 dark, 0.9 Daylight, where it keeps the art a pale wash). It
+///   holds until the art has gone, then lets go past the foot.
 struct HeroBackdropProfile {
     let layout: HeroBackdropLayout
     let top: CGFloat
-    let size: CGSize
+    /// The frame's height (from its top, under the bar).
+    let height: CGFloat
+    /// The sharp art's box bottom, in header points.
+    let artBottom: CGFloat
+    let foot: CGFloat
     let ground: Double
-    /// The text column's trailing x in the frame (nil: the full width).
-    let column: CGFloat?
 
     private var edge: CGFloat { layout.edge }
-    /// The foot of the art under the text column, in header points.
-    private var foot: CGFloat { size.height - top }
-    /// The art's lower third begins here (never above the title block).
-    private var fadeStart: CGFloat { min(max(foot * 2 / 3, edge - 24), foot - 8) }
-    /// The ground wash holds until the art is half gone.
-    private var washHold: CGFloat { min(max((fadeStart + foot) / 2, edge + 10), foot - 4) }
+    private var sharpEnd: CGFloat { min(artBottom, max(foot, edge + 24)) }
+    private var sharpStart: CGFloat { max(sharpEnd - 72, -top) }
+    /// The art's lower third, never above the sharp art's end.
+    private var fadeStart: CGFloat { max(sharpEnd, foot - (foot + top) / 3) }
 
-    func artMask(_ color: Color) -> LinearGradient {
-        vertical(color, [(fadeStart, 1), (foot, 0)])
+    func sharpMask() -> LinearGradient {
+        vertical(.black, [(sharpStart, 1)] + Self.ease(sharpStart, 1, sharpEnd, 0))
     }
 
-    func farArtMask(_ color: Color) -> LinearGradient {
-        vertical(color, [(edge - 12, 1), (edge + 28, 0)])
+    func continuationMask() -> LinearGradient {
+        vertical(.black, [(fadeStart, 1)] + Self.ease(fadeStart, 1, foot, 0))
     }
 
     func titleShade(_ color: Color) -> LinearGradient {
-        switch layout.style {
-        case .hero:
-            vertical(color, [(-top, 0.28), (edge * 0.18, 0), (edge * 0.42, 0), (edge * 0.7, 0.55),
-                             (edge - 14, 0.82), (edge + 10, 0)])
-        case .band:
-            vertical(color, [(-top, 0.3), (edge * 0.35, 0.2), (edge - 12, 0.78), (edge + 10, 0)])
+        let lead: [(CGFloat, Double)] = switch layout.style {
+        case .hero: [(-top, 0.28), (edge * 0.18, 0), (edge * 0.42, 0), (edge * 0.7, 0.55), (edge - 14, 0.82)]
+        case .band: [(-top, 0.3), (edge * 0.35, 0.2), (edge - 12, 0.78)]
         }
+        let last = lead[lead.count - 1]
+        return vertical(color, lead + Self.ease(last.0, last.1, layout.handover, 0))
     }
 
-    /// The far page's shade: the bar's, then nearly clear so the art reads.
+    /// The open Duo's far page: the bar's shade, then nearly clear so the art reads.
     func farShade(_ color: Color) -> LinearGradient {
-        vertical(color, [(-top, 0.3), (edge * 0.35, 0.12), (edge, 0.2), (edge + 24, 0)])
+        vertical(color, [(-top, 0.3), (edge * 0.35, 0.12), (edge - 12, 0.2)]
+                    + Self.ease(edge - 12, 0.2, layout.handover, 0))
     }
 
     func groundWash(_ color: Color) -> LinearGradient {
-        vertical(color, [(edge - 14, 0), (edge + 10, ground), (washHold, ground), (foot, 0)])
+        vertical(color, Self.ease(edge - 14, 0, layout.handover, ground)
+                    + Self.ease(foot, ground, foot + HeroBackdropLayout.tail, 0))
     }
 
-    /// The text column's layer over the far page's, blended across 40 pt at
-    /// the column's edge. Without a column, the text column's layer alone.
-    @ViewBuilder
-    func split<Near: View, Far: View>(near: Near, far: Far) -> some View {
-        if let column, size.width > 0 {
+    /// Smoothstep from `a` at `y0` to `b` at `y1` in seven stops: no kink at
+    /// either end, so the eye finds no edge.
+    static func ease(_ y0: CGFloat, _ a: Double, _ y1: CGFloat, _ b: Double) -> [(CGFloat, Double)] {
+        (0...6).map { i in
+            let t = Double(i) / 6
+            let s = t * t * (3 - 2 * t)
+            return (y0 + (y1 - y0) * CGFloat(t), a + (b - a) * s)
+        }
+    }
+
+    /// A top-to-bottom gradient of `color` at the given opacities, at header
+    /// points (clamped to the frame and kept in order).
+    private func vertical(_ color: Color, _ points: [(CGFloat, Double)]) -> LinearGradient {
+        let height = max(height, 1)
+        var last = 0.0
+        let stops = points.map { point -> Gradient.Stop in
+            last = max(last, Self.unit((point.0 + top) / height))
+            return .init(color: color.opacity(point.1), location: last)
+        }
+        return LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom)
+    }
+
+    static func unit(_ value: CGFloat) -> Double {
+        Double(min(max(value, 0), 1))
+    }
+}
+
+/// The text column's layer over the far side's, blended across 80 pt at
+/// `column` (an x in the frame). Without a column, the text column's alone.
+struct HeroSplit<Near: View, Far: View>: View {
+    let column: CGFloat?
+    let width: CGFloat
+    @ViewBuilder var near: Near
+    @ViewBuilder var far: Far
+
+    var body: some View {
+        if let column, width > 0 {
             ZStack {
-                far
-                near.mask {
-                    LinearGradient(stops: [
-                        .init(color: .black, location: Self.unit((column - 40) / size.width)),
-                        .init(color: .clear, location: Self.unit((column + 40) / size.width)),
-                    ], startPoint: .leading, endPoint: .trailing)
-                }
+                far.mask { ramp(column, from: .clear, to: .black) }
+                near.mask { ramp(column, from: .black, to: .clear) }
             }
         } else {
             near
         }
     }
 
-    /// A top-to-bottom gradient of `color` at the given opacities, at header
-    /// points (clamped to the frame and kept in order).
-    private func vertical(_ color: Color, _ points: [(y: CGFloat, opacity: Double)]) -> LinearGradient {
-        let height = max(size.height, 1)
-        var last = 0.0
-        let stops = points.map { point -> Gradient.Stop in
-            last = max(last, Self.unit((point.y + top) / height))
-            return .init(color: color.opacity(point.opacity), location: last)
-        }
-        return LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom)
-    }
-
-    private static func unit(_ value: CGFloat) -> Double {
-        Double(min(max(value, 0), 1))
+    /// Complementary ramps: the sides cross-fade over the blend.
+    private func ramp(_ column: CGFloat, from: Color, to: Color) -> LinearGradient {
+        LinearGradient(stops: [
+            .init(color: from, location: HeroBackdropProfile.unit((column - 40) / width)),
+            .init(color: to, location: HeroBackdropProfile.unit((column + 40) / width)),
+        ], startPoint: .leading, endPoint: .trailing)
     }
 }
