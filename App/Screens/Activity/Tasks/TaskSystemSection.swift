@@ -2,7 +2,7 @@ import SwiftUI
 import FusionhaKit
 
 /// Tasks › System (web `TasksTab.module.css` `.sysGrid`): Media enrichment,
-/// RSS Sync, Watchlists & lists and Scheduled. One column on the phone; above
+/// RSS Sync, Watchlists & lists, Import lists and Scheduled. One column on the phone; above
 /// 720 (the desktop layout, measured on the Activity pane) three across, 10
 /// apart (`repeat(3, minmax(0, 1fr))`), cards top-aligned in each row.
 /// Enrichment's subtasks follow the grid there, full width.
@@ -11,17 +11,19 @@ struct TaskSystemSection: View {
     let rss: ActivitySystemTask?
     let latestRss: ActivityRun?
     let watchlists: RequestSourcesSummary?
+    let importLists: ImportListsSummary?
     let scheduled: [ActivitySystemTask]
     let refresh: () async -> Void
     @Environment(\.paneSize) private var pane
 
-    private enum Kind: Hashable { case enrichment, rss, watchlists, scheduled }
+    private enum Kind: Hashable { case enrichment, rss, watchlists, importLists, scheduled }
 
     private var kinds: [Kind] {
         var out: [Kind] = []
         if enrichment != nil { out.append(.enrichment) }
         if rss != nil { out.append(.rss) }
         if watchlists != nil { out.append(.watchlists) }
+        if importLists != nil { out.append(.importLists) }
         if !scheduled.isEmpty { out.append(.scheduled) }
         return out
     }
@@ -60,6 +62,7 @@ struct TaskSystemSection: View {
         case .enrichment: if let enrichment { EnrichmentCard(status: enrichment) }
         case .rss: if let rss { RssSyncCard(task: rss, latestRun: latestRss) }
         case .watchlists: if let watchlists { WatchlistsTaskCard(summary: watchlists) }
+        case .importLists: if let importLists { ImportListsTaskCard(summary: importLists) }
         case .scheduled: ScheduledCard(tasks: scheduled)
         }
     }

@@ -10,6 +10,10 @@ struct SettingsField {
 }
 
 let settingsFieldIndex: [SettingsField] = [
+    // settings-search-index-import-lists.ts (0.4.237)
+    SettingsField(panel: "importlists", label: "Add import list", keywords: ["mdblist", "trakt", "letterboxd", "list", "auto add", "radarr lists", "sonarr lists"]),
+    SettingsField(panel: "importlists", label: "Add at most per sync", keywords: ["limit", "cap", "max", "import list", "searches"]),
+    SettingsField(panel: "importlists", label: "Exclusions", keywords: ["exclude", "never add", "import list exclusion", "blocklist"]),
     // settings-search-index-request-rules.ts
     SettingsField(panel: "request-rules", label: "Rules", keywords: ["auto-approve", "approve rules", "first match wins"]),
     SettingsField(panel: "request-rules", label: "Guards", keywords: ["guard", "free space", "hold"]),

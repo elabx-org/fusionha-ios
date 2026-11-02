@@ -18,7 +18,7 @@ struct FeedPreviewSection: View {
                 facts
                 if let mix = preview.mix, mix.total > 0 { MixBar(mix: mix) }
             }
-            PosterStrip(items: Array(preview.items.prefix(Self.strip)))
+            PosterStrip(items: preview.items.prefix(Self.strip).map { PosterStrip.Item($0) })
         } footer: {
             Text(FeedCopy.sample)
         }
@@ -83,9 +83,17 @@ struct MixBar: View {
 }
 
 /// A row of small clean posters; a title with no art shows its name on the
-/// placeholder tile (there is no art to keep clean).
+/// placeholder tile (there is no art to keep clean). An in-library title gets
+/// a check under its poster, never on the art.
 struct PosterStrip: View {
-    let items: [LbPreviewItem]
+    struct Item: Hashable {
+        let title: String
+        let year: Int?
+        let posterUrl: String?
+        let inLibrary: Bool
+    }
+
+    let items: [Item]
 
     var body: some View {
         HStack(spacing: 8) {
@@ -97,13 +105,14 @@ struct PosterStrip: View {
                         .foregroundStyle(Theme.done)
                         .opacity(item.inLibrary ? 1 : 0)
                 }
+                .frame(maxWidth: 72)
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(label(item))
             }
         }
     }
 
-    @ViewBuilder private func poster(_ item: LbPreviewItem) -> some View {
+    @ViewBuilder private func poster(_ item: Item) -> some View {
         let shape = RoundedRectangle(cornerRadius: 6, style: .continuous)
         if let url = TMDBImage.resized(item.posterUrl, to: "w154") {
             PosterImage(url: url)
@@ -117,8 +126,18 @@ struct PosterStrip: View {
         }
     }
 
-    private func label(_ item: LbPreviewItem) -> String {
+    private func label(_ item: Item) -> String {
         let base = item.year.map { "\(item.title) (\($0))" } ?? item.title
         return item.inLibrary ? "\(base), \(FeedCopy.inLibrary)" : base
+    }
+}
+
+extension PosterStrip.Item {
+    init(_ item: LbPreviewItem) {
+        self.init(title: item.title, year: item.year, posterUrl: item.posterUrl, inLibrary: item.inLibrary)
+    }
+
+    init(_ item: ImportListPreviewItem) {
+        self.init(title: item.title, year: item.year, posterUrl: item.posterUrl, inLibrary: item.inLibrary)
     }
 }

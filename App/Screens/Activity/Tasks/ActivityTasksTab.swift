@@ -17,12 +17,14 @@ final class TasksStore {
     var enrichment: ActivityEnrichmentStatus?
     /// The admin rollup behind the Watchlists & lists card (0.4.215); nil for others.
     var watchlists: RequestSourcesSummary?
+    /// The admin rollup behind the Import lists card (0.4.237); nil for others.
+    var importLists: ImportListsSummary?
     var isAdmin = false
     var playful = true
 
     var anyRunning: Bool {
         feed.items.contains { $0.status == "running" } || tasks.contains { $0.running }
-            || (watchlists?.runningSources ?? 0) > 0
+            || (watchlists?.runningSources ?? 0) > 0 || importLists?.running == true
     }
 
     /// Recent (finished) runs grouped for the timeline, rebuilt only when the feed changes.
@@ -60,6 +62,7 @@ final class TasksStore {
         if let tasks = await t { self.tasks = tasks }
         enrichment = await e
         if isAdmin, let summary = try? await client.requestSourcesSummary() { watchlists = summary }
+        if isAdmin, let summary = try? await client.importListsSummary() { importLists = summary }
     }
 }
 
@@ -138,7 +141,8 @@ struct ActivityTasksTab: View {
         let rssTask = store.tasks.first { TasksLogic.isRss($0.name) }
         let scheduled = TasksLogic.scheduledTasks(store.tasks)
         let watchlists = store.watchlists.flatMap { $0.sources.isEmpty ? nil : $0 }
-        let showSystem = showEnrichment || rssTask != nil || !scheduled.isEmpty || watchlists != nil
+        let importLists = store.importLists.flatMap { $0.total > 0 ? $0 : nil }
+        let showSystem = showEnrichment || rssTask != nil || !scheduled.isEmpty || watchlists != nil || importLists != nil
         let folded = watchlists != nil && items.count < all.count
 
         if running.isEmpty && recent.isEmpty && !showSystem {
@@ -149,7 +153,7 @@ struct ActivityTasksTab: View {
             if showSystem {
                 sectionLabel("System")
                 TaskSystemSection(enrichment: showEnrichment ? enrich : nil, rss: rssTask,
-                                  latestRss: items.first { $0.trigger == "rss" }, watchlists: watchlists,
+                                  latestRss: items.first { $0.trigger == "rss" }, watchlists: watchlists, importLists: importLists,
                                   scheduled: scheduled) { await store.refresh(model.client) }
             }
             if let issues = enrich?.issues, !issues.isEmpty {
