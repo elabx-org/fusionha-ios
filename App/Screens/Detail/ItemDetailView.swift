@@ -65,6 +65,7 @@ struct ItemDetailView: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("ItemDetailView.body")
         page
             .modifier(DetailPageChrome(store: store, compact: compact && splitPages == nil, reduceMotion: reduceMotion))
             .toolbar {

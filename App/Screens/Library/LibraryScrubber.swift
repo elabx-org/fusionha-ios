@@ -184,6 +184,7 @@ struct ScrollScrubber: View {
     private static let space = "scroll-scrubber-track"
 
     var body: some View {
+        let _ = PerfCount.hit("ScrollScrubber.body")
         if !letters.isEmpty {
             GeometryReader { geo in
                 let origin = geo.frame(in: .global).minY

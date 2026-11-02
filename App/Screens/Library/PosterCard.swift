@@ -33,6 +33,7 @@ struct PosterCard: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("PosterCard.body")
         VStack(alignment: .leading, spacing: 0) {
             art
                 // Press-and-hold feedback: the poster sinks and dims while held.

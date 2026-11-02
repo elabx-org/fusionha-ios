@@ -254,6 +254,7 @@ struct LibraryGridRow: View {
     var tracks: [FoldColumns.Track]?
 
     var body: some View {
+        let _ = PerfCount.hit("LibraryGridRow.body")
         Group {
             if let tracks, tracks.count == columns {
                 TrackRowLayout(tracks: tracks) {

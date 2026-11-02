@@ -88,6 +88,7 @@ struct LibraryView: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("LibraryView.body")
         Screen(showsAdd: true, filtersInPlace: true) {
             ScrollViewReader { proxy in
                 scroll(proxy)

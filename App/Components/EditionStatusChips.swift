@@ -11,6 +11,7 @@ struct EditionStatusChips: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
+        let _ = PerfCount.hit("EditionStatusChips.body")
         let queue = model.queue
         let chips = EditionChipLabel.chips(for: item) { edition in
             queue.first { $0.editionId == edition.id }.map(QueueProgress.init)

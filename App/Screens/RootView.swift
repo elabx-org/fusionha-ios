@@ -108,6 +108,7 @@ struct RootView: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("RootView.body")
         let split = split
         let spread = spreadContext(fold, hasItem: model.rightPageHasItem)
         FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap, primaryHidden: split.primaryHidden) {
