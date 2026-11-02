@@ -6,13 +6,13 @@ import Foundation
 /// for Movies) and an id-shaped term's lookup still run beside it, as in the
 /// client fan-out. A server without the route (404) falls back to `/search`.
 ///
-/// `tmdb` is `.auto` for the Search tab (TMDB only when the library has no
-/// match) and `.always` once "Search to add" is tapped.
+/// The Search tab sends `.always`: the approved spec searches every provider
+/// as you type, with no "Search to add" step.
 public struct ServerUnifiedSearchSource: UnifiedSearchSource {
     let client: APIClient
     let tmdb: UnifiedTmdbMode
 
-    public init(client: APIClient, tmdb: UnifiedTmdbMode = .auto) {
+    public init(client: APIClient, tmdb: UnifiedTmdbMode = .always) {
         self.client = client
         self.tmdb = tmdb
     }

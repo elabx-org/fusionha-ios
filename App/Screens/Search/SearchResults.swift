@@ -3,8 +3,7 @@ import FusionhaKit
 
 /// The unified search's lanes for one term: "Exact match" (an id), "In your
 /// library" (instant, capped at 8, "+N more in Library"), then "Available to
-/// add · <marks>" filling in as each provider answers. When the library matched,
-/// the server skips TMDB (`tmdb=auto`) and the add lane offers "Search to add".
+/// add · <marks>" filling in as each provider answers. No "Search to add" step.
 struct SearchResults: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
@@ -106,9 +105,7 @@ struct SearchResults: View {
             }
             .opacity(stale ? 0.55 : 1)
         }
-        if lanes.addSkipped && !stale && !search.searching {
-            SearchToAddNote { search.searchToAdd(term, kind) }
-        } else if search.searching || stale {
+        if search.searching || stale {
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small).tint(Theme.mut)
                 Text(searchingText).font(.system(size: 13)).foregroundStyle(Theme.mut)
