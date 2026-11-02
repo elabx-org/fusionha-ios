@@ -51,13 +51,13 @@ private struct EpisodeCard: View {
                 monitorToggle
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(numberText)
-                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .font(.system(size: 12, weight: .medium, design: .monospaced))
                         .foregroundStyle(Theme.mut)
                         .fixedSize()
                         .frame(minWidth: 26, alignment: .leading)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(episode.title ?? "TBA")
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.system(size: 14))
                             .foregroundStyle(Theme.txt)
                             .lineLimit(1)
                             .frame(maxWidth: .infinity, alignment: .leading)

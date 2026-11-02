@@ -94,45 +94,7 @@ struct HistoryTab: View {
     }
 }
 
-// MARK: - Timeline
-
-private struct HistoryTimeline: View {
-    let detail: ItemDetail
-    let entries: [HistoryEntry]
-
-    private var days: [(String, [HistoryEntry])] {
-        var out: [(String, [HistoryEntry])] = []
-        let cal = Calendar.current
-        for entry in entries {
-            let date = DetailText.instant(entry.createdAt) ?? .distantPast
-            let key: String
-            if cal.isDateInToday(date) { key = "TODAY" }
-            else if cal.isDateInYesterday(date) { key = "YESTERDAY" }
-            else { key = date.formatted(.dateTime.month(.abbreviated).day()) }
-            if out.last?.0 == key { out[out.count - 1].1.append(entry) } else { out.append((key, [entry])) }
-        }
-        return out
-    }
-
-    var body: some View {
-        let days = days
-        VStack(alignment: .leading, spacing: 18) {
-            ForEach(days.indices, id: \.self) { i in
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(days[i].0)
-                        .font(.system(size: 11, weight: .bold))
-                        .tracking(1.3)
-                        .foregroundStyle(Theme.dim)
-                        .padding(.leading, 4)
-                        .padding(.bottom, 10)
-                    ForEach(days[i].1) { entry in
-                        TimelineRow(detail: detail, entry: entry)
-                    }
-                }
-            }
-        }
-    }
-}
+// MARK: - Timeline row (the day cards and runs: HistoryTimeline.swift)
 
 struct TimelineRow: View {
     @Environment(DetailStore.self) private var store
@@ -143,18 +105,7 @@ struct TimelineRow: View {
     var body: some View {
         let style = eventStyle(entry.eventType)
         HStack(alignment: .top, spacing: 12) {
-            // The spine + node.
-            ZStack(alignment: .top) {
-                Rectangle().fill(Theme.line).frame(width: 2).frame(maxHeight: .infinity)
-                Group {
-                    if let mono = style.mono { StatusSwatch(mono) } else { Circle().fill(style.color) }
-                }
-                    .frame(width: 13, height: 13)
-                    .padding(3)
-                    .background(style.color.opacity(0.18), in: Circle())
-                    .padding(.top, 2)
-            }
-            .frame(width: 20)
+            TimelineNode(color: style.color, mono: style.mono)
 
             VStack(alignment: .leading, spacing: 4) {
                 FlowRow(spacing: 6, lineSpacing: 4) {
@@ -197,15 +148,7 @@ struct TimelineRow: View {
             .padding(.bottom, 16)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(DetailText.relative(entry.createdAt)).font(.system(size: 12)).foregroundStyle(Theme.mut)
-                if let date = DetailText.instant(entry.createdAt) {
-                    Text(date.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits)))
-                        .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(Theme.dim)
-                }
-            }
-            .fixedSize()
+            TimelineWhen(createdAt: entry.createdAt)
         }
         .padding(.leading, 4)
     }
