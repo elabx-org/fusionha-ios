@@ -132,7 +132,7 @@ struct PosterCard: View {
             // Only an unmonitored poster pays for the dimming effects; a
             // monitored one scrolls with none (identity effects still cost a pass).
             .modifier(UnmonitoredDim(active: !monitored))
-            .shelfPoster(radius: 12, ring: ringColor, ringWidth: ringWidth)
+            .shelfPosterPlated(radius: 12, ring: ringColor, ringWidth: ringWidth)
             // Attention as a soft glow, never a coloured ring (web 0.4.222).
             // Only flagged posters get the shadow pass.
             .modifier(AttentionGlow(color: attentionColor))

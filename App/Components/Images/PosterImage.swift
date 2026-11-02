@@ -17,8 +17,17 @@ struct PosterImage: View {
     /// The laid-out frame, in points: the art is decoded for exactly this.
     @State private var box: CGSize = .zero
 
+    /// The gradient as a pre-rendered plate (`ShelfPlates`): a live
+    /// `LinearGradient` was rasterized on the main thread for every poster
+    /// that scrolled in.
+    @ViewBuilder
     private var placeholder: some View {
-        LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
+        let aspect = box.height > 0 ? box.width / box.height : 2 / 3
+        if let plate = ShelfPlates.placeholder(aspect: aspect) {
+            Image(uiImage: plate).resizable()
+        } else {
+            LinearGradient(colors: [Theme.panel2, Theme.card], startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
     }
 
     var body: some View {
