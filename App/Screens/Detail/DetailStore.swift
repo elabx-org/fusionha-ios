@@ -106,6 +106,8 @@ final class DetailStore {
     var seasonSheet: SeasonRef?
     /// The episode sheet (EpisodeDetailDialog): Details / History / Search.
     var episodeSheet: EpisodeSheetTarget? { didSet { opened("episode", oldValue?.id, episodeSheet?.id) } }
+    /// The Files tab's file sheet (one episode file's facts, path and Delete).
+    var fileSheet: EpisodeFileTarget?
     /// The item actions rail's dialogs (see DetailStore+ItemActions.swift).
     var renameScope: RenameScope? { didSet { opened("rename", oldValue?.id, renameScope?.id) } }
     var showingAliases = false { didSet { opened("aliases", oldValue, showingAliases) } }
