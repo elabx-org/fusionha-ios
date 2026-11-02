@@ -10,6 +10,20 @@ struct RenameScope: Identifiable {
 
 // The item actions rail's entry points (ItemDetail.tsx's rail handlers).
 extension DetailStore {
+    /// One item action, from the rail or the bar's More menu (folded Duo / phone).
+    func perform(_ action: ItemAction) {
+        switch action {
+        case .refresh: Task { await refresh(metadataOnly: true) }
+        case .previewRename: openRename()
+        case .manageFiles, .manageEpisodes: manageFiles = ManageFilesTarget(versionIds: detail?.scopeEditionIds(scope))
+        case .reportIssue: showingIssue = true
+        case .checkNumbering: Task { await checkNumbering() }
+        case .editionAliases: showingAliases = true
+        case .edit: showingEdit = true
+        case .delete: showingDelete = true
+        }
+    }
+
     /// "Preview rename": scoped to the page's version, like the web's `openRename(scopedVersionId())`.
     func openRename() {
         renameScope = RenameScope(versionId: scopeEditionId, season: nil)

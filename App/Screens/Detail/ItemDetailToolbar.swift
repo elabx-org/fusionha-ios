@@ -6,13 +6,16 @@ import FusionhaKit
 /// folded Duo it is the system column in that order (`docs/ui-plan.md`).
 ///
 /// Every item runs an action the page itself already has: Search all is the
-/// Versions panel's, Preview rename and Delete are the item actions rail's,
-/// and the sheets they open are the store's (`DetailChildSheets`), so the
-/// bar and the rail show the same dialog. The rail stays as it is (web parity).
+/// Versions panel's, the More items are the item actions rail's, and the
+/// sheets they open are the store's (`DetailChildSheets`), so the bar and the
+/// rail show the same dialog. The rail stays as it is (web parity) except on
+/// the folded Duo / phone, where More carries it (`ItemDetailMoreMenu`).
 struct ItemDetailToolbar: ToolbarContent {
     let store: DetailStore
     let canEdit: Bool
     let canSearch: Bool
+    /// The folded Duo / phone layout: More carries the item actions.
+    let compact: Bool
     let escapeCloses: Bool
     let close: () -> Void
     let openWeb: () -> Void
@@ -41,28 +44,9 @@ struct ItemDetailToolbar: ToolbarContent {
             Button("Refresh", systemImage: "arrow.clockwise") { Task { await store.load() } }
         }
         .barPriority(false)
-        ToolbarItem(placement: .topBarTrailing) { moreMenu }
-            .barPriority(false)
-    }
-
-    private var moreMenu: some View {
-        Menu {
-            Button("Open in the web app", systemImage: "safari", action: openWeb)
-            if let detail {
-                if canSearch {
-                    Button("Interactive search", systemImage: "person") { store.openInteractiveSearch() }
-                }
-                if canEdit {
-                    Button(ItemAction.previewRename.label(isSeries: detail.isSeries),
-                           systemImage: ItemActionsRail.symbol(.previewRename)) { store.openRename() }
-                    Divider()
-                    Button(ItemAction.delete.label(isSeries: detail.isSeries), systemImage: "trash", role: .destructive) {
-                        store.showingDelete = true
-                    }
-                }
-            }
-        } label: {
-            Label("More", systemImage: "ellipsis")
+        ToolbarItem(placement: .topBarTrailing) {
+            ItemDetailMoreMenu(store: store, canEdit: canEdit, canSearch: canSearch, compact: compact, openWeb: openWeb)
         }
+        .barPriority(false)
     }
 }

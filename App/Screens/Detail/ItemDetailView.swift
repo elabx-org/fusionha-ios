@@ -18,6 +18,7 @@ struct ItemDetailView: View {
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     /// True when this is the shell's trailing column (unfolded) rather than a sheet.
     @Environment(\.detailInColumn) private var inColumn
+    @Environment(\.horizontalSizeClass) private var sizeClass
     let store: DetailStore
     /// Closes the column; a sheet dismisses itself.
     var onClose: (() -> Void)?
@@ -36,6 +37,9 @@ struct ItemDetailView: View {
     }
 
     private var canEdit: Bool { model.me?.can("edit") ?? true }
+
+    /// The folded Duo / phone layout (`detailCompact`): a sheet in a compact-width window.
+    private var compactLayout: Bool { !inColumn && sizeClass == .compact }
 
     private var reduceMotion: Bool {
         systemReduceMotion || store.settings?.animationsEnabled == false
@@ -67,6 +71,10 @@ struct ItemDetailView: View {
             }
             .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             .scrollIndicators(.hidden)
+            // Under the compact title the page blurs away instead of ghosting
+            // through; over the hero the bar stays clear (as Preview does).
+            .scrollEdgeEffectStyle(.soft, for: .top)
+            .scrollEdgeEffectHidden(!compact, for: .top)
             .scrollPosition($position)
             .duoColumnPullSource()
             .ignoresSafeArea(.container, edges: .top)
@@ -109,7 +117,7 @@ struct ItemDetailView: View {
         .toolbar {
             // In the shell's column it isn't a sheet: Escape stays with the page.
             ItemDetailToolbar(store: store, canEdit: canEdit, canSearch: canEdit && (model.me?.can("search") ?? true),
-                              escapeCloses: !inColumn, close: close, openWeb: openWeb)
+                              compact: compactLayout, escapeCloses: !inColumn, close: close, openWeb: openWeb)
         }
         // The bar stays clear over the art; the title and the bar's ground
         // come in once the hero has scrolled away (the old compact bar).
@@ -118,6 +126,7 @@ struct ItemDetailView: View {
         .toolbarBackgroundVisibility(compact ? .visible : .hidden, for: .navigationBar)
         .environment(store)
         .environment(\.detailReduceMotion, reduceMotion)
+        .environment(\.detailCompact, compactLayout)
         .presentationDetents([.large])
         .presentationCornerRadius(34)
         .task {

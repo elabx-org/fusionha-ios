@@ -41,22 +41,9 @@ struct ItemActionsRail: View {
                                 size: 42, glyph: 16,
                                 tint: action == .checkNumbering && flagged ? Theme.miss : action == .delete ? Theme.danger : Theme.txt,
                                 busy: action == .checkNumbering && store.checkingNumbering) {
-            perform(action)
+            store.perform(action)
         }
         .glassEffect(.regular.interactive(), in: .circle)
-    }
-
-    private func perform(_ action: ItemAction) {
-        switch action {
-        case .refresh: Task { await store.refresh(metadataOnly: true) }
-        case .previewRename: store.openRename()
-        case .manageFiles, .manageEpisodes: store.manageFiles = ManageFilesTarget(versionIds: store.detail?.scopeEditionIds(store.scope))
-        case .reportIssue: store.showingIssue = true
-        case .checkNumbering: Task { await store.checkNumbering() }
-        case .editionAliases: store.showingAliases = true
-        case .edit: store.showingEdit = true
-        case .delete: store.showingDelete = true
-        }
     }
 
     /// The web's rail glyphs as SF Symbols (CLAUDE.md: edit = pencil, delete = trash, refresh = arrow.clockwise).

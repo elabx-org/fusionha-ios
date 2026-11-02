@@ -29,10 +29,13 @@ struct AmbientBackdrop: View {
 /// The scrolling page body (MobileDetailFlyout `.body`): setup strip,
 /// overview, Item actions + its "applies to" echo, Versions, the release
 /// timeline, the tabs (the rails live in their Overview tab) and the
-/// metadata credit.
+/// metadata credit. On the folded Duo / phone (`detailCompact`) the item
+/// actions live in the bar's More menu, and the Overview rails follow the
+/// tabs in the page.
 struct DetailPage: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
+    @Environment(\.detailCompact) private var compact
     let detail: ItemDetail
     let openWeb: () -> Void
 
@@ -56,9 +59,11 @@ struct DetailPage: View {
                         .detailReveal(delay: 0.18)
                 }
 
-                appliesTo
-                    .id("actions")
-                ItemActionsRail(detail: detail, openWeb: openWeb)
+                if !compact {
+                    appliesTo
+                        .id("actions")
+                    ItemActionsRail(detail: detail, openWeb: openWeb)
+                }
 
                 // MobileDetailFlyout: the request strip sits above Versions.
                 DetailRequestsStrip(itemId: detail.id)
@@ -76,6 +81,11 @@ struct DetailPage: View {
                 DetailTabsView(detail: detail, openWeb: openWeb)
                     .id("tabs")
                     .padding(.top, 6)
+
+                if compact {
+                    DetailRailStack(detail: detail)
+                        .id("overview")
+                }
 
                 MetadataCredit(provider: detail.resolvedMetadataProvider ?? "tmdb")
                     .font(.system(size: 13))

@@ -51,13 +51,17 @@ struct ReleaseTimeline: View {
                         }
                     }
                     Text(label(step.kind)).font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.txt)
+                    // One line: "· est." never wraps away from its date.
                     Text(step.date.formatted(.dateTime.month(.abbreviated).day().year()) + (step.estimated ? " · est." : ""))
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(Theme.mut)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .detailCard()
     }

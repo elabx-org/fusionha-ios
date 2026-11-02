@@ -11,6 +11,9 @@ struct DetailVersionsPanel: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     @Environment(\.detailReduceMotion) private var reduce
+    /// Folded Duo / phone: no "Tabs show" chip (the tabs' version menu) and no
+    /// Search all (the bar has it).
+    @Environment(\.detailCompact) private var compact
     let detail: ItemDetail
     let openWeb: () -> Void
 
@@ -106,16 +109,20 @@ struct DetailVersionsPanel: View {
                        + (total > 0 ? [DetailText.bytes(total)] : [])).joined(separator: " · ")
         VStack(alignment: .leading, spacing: 0) {
             DetailSection(title: "Versions", see: summary)
-            HStack(spacing: 12) {
-                if total > 0 {
-                    footprint(onDisk, total: total)
-                } else {
-                    Spacer(minLength: 0)
+            if total > 0 || !compact {
+                HStack(spacing: 12) {
+                    if total > 0 {
+                        footprint(onDisk, total: total)
+                    } else {
+                        Spacer(minLength: 0)
+                    }
+                    if !compact {
+                        scopeChip(focused)
+                            .layoutPriority(1)
+                    }
                 }
-                scopeChip(focused)
-                    .layoutPriority(1)
+                .padding(.bottom, 12)
             }
-            .padding(.bottom, 12)
             actions(focused: focused, compareAllowed: compareAllowed, comparing: comparing, visible: visible)
                 .padding(.bottom, 12)
         }
@@ -188,7 +195,7 @@ struct DetailVersionsPanel: View {
         GlassEffectContainer(spacing: 4) {
             FlowRow(spacing: 8, lineSpacing: 8) {
                 if compareAllowed { compareButton(comparing: comparing, visible: visible) }
-                if canSearch { searchAll }
+                if canSearch && !compact { searchAll }
                 if !readOnly { addMenu(focused: focused) }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

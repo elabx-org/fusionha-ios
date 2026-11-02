@@ -10,6 +10,8 @@ import FusionhaKit
 struct MovieEditionsTab: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
+    /// Folded Duo / phone: no Search all monitored (the bar has Search all).
+    @Environment(\.detailCompact) private var compact
     let detail: ItemDetail
     @State private var searchingAll = false
 
@@ -35,33 +37,39 @@ struct MovieEditionsTab: View {
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.mut)
             }
-            ScrollView(.horizontal) {
-                HStack(spacing: 8) {
-                    if (model.me?.can("edit") ?? true) && !owned.isEmpty { DetailRenameFilesButton { store.openRename() } }
-                    if model.me?.can("search") ?? true {
-                        Button {
-                            searchingAll = true
-                            Task {
-                                await store.search(label: "all monitored versions")
-                                searchingAll = false
+            let canEdit = model.me?.can("edit") ?? true
+            let canRename = canEdit && !owned.isEmpty
+            // On compact the bar's Search all covers it (shown to editors only).
+            let canSearchAll = !(compact && canEdit) && (model.me?.can("search") ?? true)
+            if canRename || canSearchAll {
+                ScrollView(.horizontal) {
+                    HStack(spacing: 8) {
+                        if canRename { DetailRenameFilesButton { store.openRename() } }
+                        if canSearchAll {
+                            Button {
+                                searchingAll = true
+                                Task {
+                                    await store.search(label: "all monitored versions")
+                                    searchingAll = false
+                                }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    if searchingAll { DetailSpinner(size: 13, color: Theme.onAccent) } else { Image(systemName: "magnifyingglass") }
+                                    Text("Search all monitored")
+                                }
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Theme.onAccent)
+                                .padding(.horizontal, 14)
+                                .frame(height: 36)
+                                .background(Theme.primary, in: Capsule())
                             }
-                        } label: {
-                            HStack(spacing: 6) {
-                                if searchingAll { DetailSpinner(size: 13, color: Theme.onAccent) } else { Image(systemName: "magnifyingglass") }
-                                Text("Search all monitored")
-                            }
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Theme.onAccent)
-                            .padding(.horizontal, 14)
-                            .frame(height: 36)
-                            .background(Theme.primary, in: Capsule())
+                            .buttonStyle(DetailPressStyle())
+                            .disabled(searchingAll)
                         }
-                        .buttonStyle(DetailPressStyle())
-                        .disabled(searchingAll)
                     }
                 }
+                .scrollIndicators(.hidden)
             }
-            .scrollIndicators(.hidden)
             ForEach(editions) { edition in
                 Group {
                     if edition.movieFile != nil {
