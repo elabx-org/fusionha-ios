@@ -178,8 +178,8 @@ struct LibraryView: View {
                         scrubber.setGridTop(frame.minY)
                         scrubber.setGridTrailing(frame.maxX)
                     }
-                    .onGeometryChange(for: LibraryGridFold.self) { [bookPose] in
-                        LibraryGridFold.measured($0, bookPose: bookPose)
+                    .onGeometryChange(for: LibraryGridFold.self) { [bookPose] proxy in
+                        LibraryGridFold.measured(proxy, bookPose: bookPose)
                     } action: { gridFold = $0 }
                 content
             }

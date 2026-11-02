@@ -85,7 +85,7 @@ struct PosterCard: View {
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits((selecting && selected) || picked ? [.isButton, .isSelected] : [.isButton])
         .accessibilityAction(named: "Actions") {
-            if !selecting { openSheet?(item) }
+            if !selecting, let openSheet { openSheet(item) }
         }
     }
 
