@@ -16,6 +16,7 @@ extension AutoSourceState {
         case .blocked: return "Blocked"
         case .retrying: return "Retrying"
         case .needsSignIn: return "Sign in again"
+        case .unavailable: return "Unavailable"
         case .notAllowed: return "Not allowed"
         case .paused: return "Paused"
         case .off: return "Off"
@@ -29,7 +30,7 @@ extension AutoSourceState {
         switch self {
         case .healthy: return .done
         case .syncing, .checking: return .grab
-        case .partlyWorking, .notPublic, .needsSignIn: return .miss
+        case .partlyWorking, .notPublic, .needsSignIn, .unavailable: return .miss
         case .retrying: return .stuck
         case .blocked: return .danger
         case .notAllowed, .paused, .off, .notConnected, .gone: return nil
@@ -149,6 +150,13 @@ public enum SourceDetailCopy {
     public static let privateLead = "This list isn’t public any more."
     public static let privateRest = "Set it to public on Letterboxd to keep it in sync. Counts are from the last check."
     public static let openOn = "Open on Letterboxd"
+
+    /// 0.4.237: the not-public line names the source's own site.
+    public static func privateRestOn(_ site: String) -> String {
+        "Set it to public on \(site) to keep it in sync. Counts are from the last check."
+    }
+
+    public static func openOnSite(_ site: String) -> String { "Open on \(site)" }
     public static let uhd = "Also request UHD·4K"
     public static let uhdInherits = "Also request UHD·4K: uses your diary setting"
     public static let uhdDesc = "Each tier is its own request."

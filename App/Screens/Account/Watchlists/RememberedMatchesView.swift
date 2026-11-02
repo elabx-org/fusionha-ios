@@ -38,7 +38,7 @@ struct RememberedMatchesView: View {
 
     private func row(_ match: ListMatch) -> some View {
         HStack(spacing: 12) {
-            ProviderTile(isPlex: match.isPlex, size: 28)
+            ProviderTile(provider: match.isPlex ? .plex : .letterboxd, size: 28)
             VStack(alignment: .leading, spacing: 2) {
                 Text(RememberedCopy.entry(match)).font(.caption.monospaced()).foregroundStyle(Theme.mut).lineLimit(1)
                 Text(RememberedCopy.into(match)).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.txt)

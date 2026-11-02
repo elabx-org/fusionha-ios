@@ -120,12 +120,14 @@ public struct SummarySource: Decodable, Sendable, Hashable, Identifiable {
     public let lastError: String?
     /// 0.4.226: the source's stable string id (`letterboxd-diary`, `list-38`, …).
     public let stableId: String?
+    /// 0.4.237: `LETTERBOXD`, `PLEX`, `MDBLIST` or `TRAKT`.
+    public let provider: String?
 
     public var id: Int { sourceId }
 
     enum CodingKeys: String, CodingKey {
         case sourceId, userId, owner, kind, label, state, checked, total, startedAt, counts
-        case lastCheckedAt, nextCheckAt, lastError, stableId
+        case lastCheckedAt, nextCheckAt, lastError, stableId, provider
     }
 
     public init(from decoder: Decoder) throws {
@@ -144,6 +146,7 @@ public struct SummarySource: Decodable, Sendable, Hashable, Identifiable {
         nextCheckAt = c.lenient(.nextCheckAt)
         lastError = c.lenient(.lastError)
         stableId = c.lenient(.stableId)
+        provider = c.lenient(.provider)
     }
 
     /// The same shape as a source read's `sync`, for the shared bar and percent.

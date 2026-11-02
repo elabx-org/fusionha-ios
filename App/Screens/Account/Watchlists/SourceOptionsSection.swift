@@ -20,6 +20,7 @@ struct SourceOptionsSection: View {
             case .diary: diaryRows
             case .ownWatchlist: ownWatchlistRows
             case .list, .watchlist: linkedRows
+            case .feed: feedRows
             case .plexWatchlist: plexWatchlistRows
             case .plexList:
                 toggle(SourceDetailCopy.plexList, on: data.enabled) { await store.setEnabled(view, $0, model) }
@@ -63,6 +64,20 @@ struct SourceOptionsSection: View {
             await store.setEnabled(view, $0, model)
         }
         Text(SourceDetailCopy.uhdInherits).font(.footnote).foregroundStyle(Theme.mut)
+    }
+
+    /// A followed MDBList / Trakt list (web `FeedOptions`): its own UHD·4K
+    /// (HD·1080p is always requested), the start choice, and auto-request.
+    @ViewBuilder
+    private var feedRows: some View {
+        toggle(SourceDetailCopy.uhd, desc: lbLocked ? SourceDetailCopy.uhdOff : SourceDetailCopy.uhdDesc,
+               on: data.uhd && !lbLocked, disabled: view.rowId == nil || lbLocked) {
+            await store.setUhd(view, $0, model)
+        }
+        baseline(diary: false)
+        toggle(FeedCopy.autoFeed, on: data.enabled, disabled: view.rowId == nil) {
+            await store.setEnabled(view, $0, model)
+        }
     }
 
     @ViewBuilder

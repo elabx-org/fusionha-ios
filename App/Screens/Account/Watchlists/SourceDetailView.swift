@@ -103,7 +103,7 @@ struct SourceDetailHead: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            ProviderTile(isPlex: view.isPlex, size: 34)
+            ProviderTile(provider: view.site, size: 34)
             VStack(alignment: .leading, spacing: 2) {
                 if showsName {
                     Text(view.name).font(.headline).foregroundStyle(Theme.txt)
@@ -126,10 +126,10 @@ struct SourceDetailStateLine: View {
     var body: some View {
         if view.state == .notPublic {
             VStack(alignment: .leading, spacing: 6) {
-                WatchlistAttention(lead: SourceDetailCopy.privateLead, rest: SourceDetailCopy.privateRest,
+                WatchlistAttention(lead: SourceDetailCopy.privateLead, rest: SourceDetailCopy.privateRestOn(view.site.word),
                                    color: Theme.missText)
                 if let url = data.url.flatMap(URL.init(string:)) {
-                    Link(SourceDetailCopy.openOn, destination: url).font(.footnote.weight(.semibold))
+                    Link(SourceDetailCopy.openOnSite(view.site.word), destination: url).font(.footnote.weight(.semibold))
                 }
             }
         } else {
@@ -146,7 +146,7 @@ struct SourceDetailStateLine: View {
         case .diary: return "Couldn’t read the diary"
         case .ownWatchlist, .watchlist: return "Couldn’t read the watchlist"
         case .plexWatchlist: return "Couldn’t read your Plex watchlist"
-        case .list, .plexList: return "Couldn’t read the list"
+        case .list, .plexList, .feed: return "Couldn’t read the list"
         }
     }
 }

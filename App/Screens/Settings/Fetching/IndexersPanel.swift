@@ -74,6 +74,7 @@ struct IndexersPanel: View {
                 }
             }
             FlareSolverrCard().padding(.top, 22)
+            ListSitesCard().padding(.top, 16)
         }
         .task { await load() }
         .task(id: range) { await loadStats() }

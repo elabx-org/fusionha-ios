@@ -19,8 +19,13 @@ public enum WatchlistsTaskLogic {
         "LETTERBOXD_LIST": "Letterboxd list",
     ]
 
-    public static func kindLabel(_ kind: String) -> String {
-        kindLabels[kind] ?? kind.lowercased().replacingOccurrences(of: "_", with: " ")
+    /// A followed MDBList / Trakt list names its site ("Trakt list", 0.4.237).
+    public static func kindLabel(_ kind: String, provider: String? = nil) -> String {
+        if kind == "LIST_FEED" {
+            let site = SourceProvider(rawValue: (provider ?? "").lowercased())
+            return "\(site.flatMap { [.mdblist, .trakt].contains($0) ? $0.word : nil } ?? "Followed") list"
+        }
+        return kindLabels[kind] ?? kind.lowercased().replacingOccurrences(of: "_", with: " ")
     }
 
     public static func hasPlexSource(_ sources: [SummarySource]) -> Bool {
@@ -64,7 +69,7 @@ public enum WatchlistsTaskLogic {
 
     /// "member · Letterboxd list · Best of 2026" (the label is left off a Plex watchlist).
     public static func detail(_ source: SummarySource) -> String {
-        var text = " · \(kindLabel(source.kind))"
+        var text = " · \(kindLabel(source.kind, provider: source.provider))"
         if let label = source.label, !source.kind.hasPrefix("PLEX_WATCHLIST") { text += " · \(label)" }
         return text
     }

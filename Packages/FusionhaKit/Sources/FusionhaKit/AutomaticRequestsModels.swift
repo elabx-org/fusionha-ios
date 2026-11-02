@@ -10,6 +10,8 @@ public enum AutoSourceState: String, Sendable, Hashable, CaseIterable {
     case partlyWorking = "partly_working"
     case notPublic = "not_public"
     case blocked, retrying
+    /// 0.4.237: a followed Trakt list while the server has no Trakt app id.
+    case unavailable
     case needsSignIn = "needs_sign_in"
     case notAllowed = "not_allowed"
     case paused, off, gone

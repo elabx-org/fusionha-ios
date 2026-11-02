@@ -40,6 +40,17 @@ extension APIClient {
         try await json("PUT", "/api/v1/settings", body: .object(diff)).object ?? [:]
     }
 
+    /// The Trakt app id (0.4.237, admin): write-only. Reads show only
+    /// `trakt_client_id_set`; the value is never sent back.
+    public func setTraktClientId(_ id: String) async throws -> [String: JSONValue] {
+        try await updateSettings(["trakt_client_id": .string(id)])
+    }
+
+    /// Forgets the Trakt app id (204). Followed Trakt lists then wait as Unavailable.
+    public func clearTraktClientId() async throws {
+        try await sendJSON("DELETE", "/api/v1/settings/trakt-client-id")
+    }
+
     /// The fusionha app API key (`GET /api/v1/settings/api-key`).
     public func revealAppApiKey() async throws -> String {
         try await json("GET", "/api/v1/settings/api-key")["api_key"]?.string ?? ""

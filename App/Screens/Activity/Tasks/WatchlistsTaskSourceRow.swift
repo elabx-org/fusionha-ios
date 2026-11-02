@@ -26,7 +26,7 @@ struct WatchlistsTaskSourceRow: View {
                 .monospacedDigit()
                 .fixedSize(horizontal: false, vertical: true)
             if running && source.total != nil {
-                SyncBar(sync: source.sync, label: "\(source.owner) \(WatchlistsTaskLogic.kindLabel(source.kind)) progress")
+                SyncBar(sync: source.sync, label: "\(source.owner) \(WatchlistsTaskLogic.kindLabel(source.kind, provider: source.provider)) progress")
                     .padding(.top, 2)
             }
             if let error = WatchlistsTaskLogic.errorLine(source) {
