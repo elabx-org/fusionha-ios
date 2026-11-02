@@ -1,9 +1,10 @@
 import Foundation
 
-/// Where the unified search's provider lanes come from. Today the client fans
-/// out over `/search`, `/search/tvdb` and `/search/by-id`
-/// (`ClientUnifiedSearchSource`); a later server `GET /search/unified` is one
-/// more conforming type, with no UI change.
+/// Where the unified search's provider lanes come from: the server's
+/// `GET /search/unified` for the library and TMDB plus TheTVDB and the id
+/// lookup (`ServerUnifiedSearchSource`, fusionha 0.4.236+), or the older
+/// client fan-out over `/search`, `/search/tvdb` and `/search/by-id`
+/// (`ClientUnifiedSearchSource`).
 ///
 /// The stream yields the whole provider side after each change (a provider
 /// answered, was skipped or failed) and finishes when every provider settled.
@@ -24,15 +25,6 @@ public struct ClientUnifiedSearchSource: UnifiedSearchSource {
         self.client = client
     }
 
-    private enum Arrival: Sendable {
-        case tmdb([MediaSearchResult])
-        case tvdb([TvdbSearchResult])
-        case exact([MediaSearchResult])
-        case unavailable(UnifiedSearchProvider)
-        case failed(UnifiedSearchProvider)
-        case none
-    }
-
     public func lanes(for term: String, kind: SearchKind) -> AsyncStream<UnifiedSearchLanes> {
         let client = self.client
         let idKinds = Self.idKinds(SearchIdQuery.parse(term), kind: kind)
@@ -40,7 +32,7 @@ public struct ClientUnifiedSearchSource: UnifiedSearchSource {
         return AsyncStream { continuation in
             let task = Task {
                 var acc = UnifiedSearchAccumulator(pending: asked)
-                await withTaskGroup(of: Arrival.self) { group in
+                await withTaskGroup(of: UnifiedSearchArrival.self) { group in
                     group.addTask { await Self.tmdb(client, term, kind) }
                     if asked.contains(.tvdb) {
                         group.addTask { await Self.tvdb(client, term) }
@@ -50,14 +42,7 @@ public struct ClientUnifiedSearchSource: UnifiedSearchSource {
                     }
                     for await arrival in group {
                         guard !Task.isCancelled else { break }
-                        switch arrival {
-                        case .tmdb(let rows): acc.receive(tmdb: rows)
-                        case .tvdb(let rows): acc.receive(tvdb: rows)
-                        case .exact(let rows): acc.receive(exact: rows)
-                        case .unavailable(let p): acc.unavailable(p)
-                        case .failed(let p): acc.fail(p)
-                        case .none: continue
-                        }
+                        guard acc.receive(arrival) else { continue }
                         continuation.yield(acc.lanes)
                     }
                 }
@@ -75,7 +60,7 @@ public struct ClientUnifiedSearchSource: UnifiedSearchSource {
         return kinds.map { (query.id, kind == .anime ? .anime : $0) }
     }
 
-    private static func tmdb(_ client: APIClient, _ term: String, _ kind: SearchKind) async -> Arrival {
+    static func tmdb(_ client: APIClient, _ term: String, _ kind: SearchKind) async -> UnifiedSearchArrival {
         do {
             return .tmdb(try await client.search(term: term, kind: kind))
         } catch {
@@ -83,7 +68,7 @@ public struct ClientUnifiedSearchSource: UnifiedSearchSource {
         }
     }
 
-    private static func tvdb(_ client: APIClient, _ term: String) async -> Arrival {
+    static func tvdb(_ client: APIClient, _ term: String) async -> UnifiedSearchArrival {
         do {
             return .tvdb(try await client.searchTVDB(term: term))
         } catch {
@@ -92,7 +77,7 @@ public struct ClientUnifiedSearchSource: UnifiedSearchSource {
     }
 
     /// 404 (nothing there) and 422 (not an id after all) just mean no exact match.
-    private static func byId(_ client: APIClient, _ id: String, _ kind: SearchKind) async -> Arrival {
+    static func byId(_ client: APIClient, _ id: String, _ kind: SearchKind) async -> UnifiedSearchArrival {
         guard let hit = try? await client.searchById(id, kind: kind) else { return .none }
         return .exact([hit])
     }
@@ -101,5 +86,32 @@ public struct ClientUnifiedSearchSource: UnifiedSearchSource {
     static func isNotConfigured(_ error: Error) -> Bool {
         if case APIError.http(status: 409, body: let body) = error, body.contains("not_configured") { return true }
         return false
+    }
+}
+
+/// One provider call's answer, for the sources' task groups.
+enum UnifiedSearchArrival: Sendable {
+    case unified(UnifiedSearchResponse)
+    case tmdb([MediaSearchResult])
+    case tvdb([TvdbSearchResult])
+    case exact([MediaSearchResult])
+    case unavailable(UnifiedSearchProvider)
+    case failed(UnifiedSearchProvider)
+    case none
+}
+
+extension UnifiedSearchAccumulator {
+    /// Applies one arrival; false when it changed nothing.
+    mutating func receive(_ arrival: UnifiedSearchArrival) -> Bool {
+        switch arrival {
+        case .unified(let response): receive(unified: response)
+        case .tmdb(let rows): receive(tmdb: rows)
+        case .tvdb(let rows): receive(tvdb: rows)
+        case .exact(let rows): receive(exact: rows)
+        case .unavailable(let p): unavailable(p)
+        case .failed(let p): fail(p)
+        case .none: return false
+        }
+        return true
     }
 }

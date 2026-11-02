@@ -19,6 +19,7 @@ instead of from scratch.
 | Watchlists & lists | requests phase 10b slice 1 synced to **v0.4.226** (`57c6e464`, 2026-10-23), see the 0.4.226 section (branch `requests-10b`) |
 | Manual Import safety | B1 batch synced to **v0.4.233** (`ad01ec6f`, 2026-11-01), see the 0.4.233 section (branch `mi-b1`); **shipped in build 657** |
 | Manual Import UX test | MI and held downloads checked against **v0.4.233** (`ad01ec6f`, 2026-11-01); owner decisions D1–D9 and batches B2–B8 shipped in build 660, see the UX test section |
+| 0.4.236 | synced to **v0.4.236** (`0322d9b6`, 2026-11-02): spec and palettes re-pinned, `/search/unified`, file probe facts, stalled at 100%; see the 0.4.236 section (branch `api-0436`) |
 | Manual Import / held 0.4.234–0.4.235 | synced to **v0.4.235** (`7f4b1b2c`, 2026-11-01), spec re-pinned; see the 0.4.234–0.4.235 section (branch `api-0435`) |
 | Manual Import bulk decide | held downloads synced to **0.4.225** (spec pinned `v0.4.226`), see its section (branch `mi-bulk-decide`); "bar in every scenario" **on** (`ManualImportFeatures.barEverywhere = true`, owner-approved 2026-11-01; branch `api-0435`) |
 | Handover doc | fusionha's shared Claude Doc, messages #1–#29 (the iOS ACKs are under "ACK from iOS") |
@@ -26,8 +27,9 @@ instead of from scratch.
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
 
-`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.235`** (`7f4b1b2c`;
-re-pinned 2026-11-01 for `held_target`, see the 0.4.234–0.4.235 section; before that
+`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.236`** (`0322d9b6`;
+re-pinned 2026-11-02 for `/search/unified` and the file probe facts, see the 0.4.236
+section; before that `v0.4.235` (`7f4b1b2c`, 2026-11-01) for `held_target`; before that
 `v0.4.233` (`ad01ec6f`, 2026-11-01) for Manual Import safety; before that
 `v0.4.227` (`31fc0170`, 2026-10-28) for the grab timeout; before that
 `v0.4.226` (`57c6e464`, 2026-10-23) for requests phase 10b slice 1, and `v0.4.222`
@@ -46,11 +48,42 @@ older server omits them. `ui_theme` is a plain string in the spec (no
 enum of names). `GET /api/v1/auth/providers` is still not in the spec (the
 app tolerates its absence). Re-pin again from the next tag you sync to.
 
-## iOS-only: `card` in `palettes.json` (2026-11-02; branch `card-depth`)
+## 0.4.236 (synced at `v0.4.236`, `0322d9b6`, 2026-11-02; branch `api-0436`)
+
+- **Re-pinned** `Packages/FusionhaKit/openapi.json` (`frontend/openapi.json`) and
+  `Shared/palettes.json` (`design/palettes.json`) from the tag. The palettes now
+  carry `card` upstream (same values as ours; only the `$comment` changed), so
+  `PaletteTokens.card` decodes and `SharedPalettesTests` covers it.
+- **Unified search** now runs on `GET /api/v1/search/unified?q=&limit=8&kinds=…&tmdb=`
+  (`ServerUnifiedSearchSource` in FusionhaKit, `UnifiedSearchModels.swift`). One call
+  answers the library (`library.total` / `items`, the `/library` rows) and TMDB
+  (`tmdb.items`, the `/search?kind=all` rows) with `sources.library` (`ok` /
+  `forbidden`) and `sources.tmdb` (`ok` / `skipped` / `timeout` / `unavailable` /
+  `not_configured`). `kinds` is sent for Movies / Series / Anime (none for All).
+  TheTVDB and the id lookup still run beside it on the device (the server has
+  neither). A 404 (an older server) falls back to `/search`. Typing is debounced
+  300 ms as before.
+  - The Search tab sends `tmdb=auto`: when the library matches, TMDB is `skipped`
+    and the add lane shows "Found in your library, so TMDB wasn't searched." with
+    **Search to add**, which re-runs at once with `tmdb=always`. This brings back
+    the web palette's "Search to add" step that the 2026-10-23 iOS spec had
+    dropped (see `docs/ui-plan.md`).
+  - `timeout` with rows shows them with "TMDB was slow — showing what answered in
+    time."; with none, "TMDB took too long to answer — try again." `not_configured`
+    keeps the TMDB key note; `forbidden` hides the library lane.
+  - Until the library has loaded, the library lane shows the server's ranked rows
+    and total.
+- **Files tab facts:** `MediaFileRead` (`MovieFile`) gained nullable `video_codec`,
+  `audio_codec` and `audio_channels`. The facts line prefers them, then the probe
+  read on the device (older servers), then the filename (`FileNameFacts.media`).
+- **Stalled at 100%:** the server sends `stalled=false` at progress ≥ 100, so the
+  Live Activity builder's local `pct < 100` guard is gone.
+
+## `card` in `palettes.json` (2026-11-02; branch `card-depth`)
 
 `Shared/palettes.json` gained a `card` hex (the raised card surface) on every dark
-palette except Noir; it is not in fusionha's `design/palettes.json` yet. Offer it
-upstream (the web can fall back to `panel` when absent) and keep it when re-pinning.
+palette except Noir. fusionha took it upstream in 0.4.236 (`design/palettes.json`;
+absent = `panel`), so re-pins now copy it as is.
 
 ## Manual Import UX test (B1–B8; branch `mi-b2`)
 
@@ -275,6 +308,7 @@ series for TMDB / IMDb ids, series for TVDB). Open with fusionha: web parity was
 proposed to the peer, and a server `GET /search/unified` (fan-out, dedupe, caching)
 may follow; when it lands, add one `UnifiedSearchSource` conformer
 (`Packages/FusionhaKit/Sources/FusionhaKit/UnifiedSearchSource.swift`), no UI change.
+**Done in 0.4.236:** `ServerUnifiedSearchSource`, see the 0.4.236 section.
 The by-id route takes `kind` (default movie), so a `tt…` id costs two calls.
 
 ## Where the cloud session stopped (2026-10-18)

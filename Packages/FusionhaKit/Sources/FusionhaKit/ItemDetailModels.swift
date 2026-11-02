@@ -110,6 +110,11 @@ public struct MovieFile: Decodable, Sendable, Hashable {
     public let linkUnresolved: Bool?
     public let unresolved: Bool?
     public let analysis: String?
+    /// The stored probe's facts in the arrs' labels (fusionha 0.4.236):
+    /// `h265`, `AAC`, `2.0`; nil when the file isn't probed.
+    public let videoCodec: String?
+    public let audioCodec: String?
+    public let audioChannels: String?
 }
 
 public struct Season: Decodable, Sendable, Hashable, Identifiable {

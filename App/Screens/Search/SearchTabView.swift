@@ -6,8 +6,9 @@ import FusionhaKit
 /// The iOS 26 search tab: the unified search (owner-approved 2026-10-23). One
 /// system field with the scopes Everything | This library; your library
 /// answers instantly ("In your library", capped at 8), and every provider with
-/// a key (TMDB, TheTVDB, the id lookup) answers as you type ("Available to
-/// add", deduped and merged, `UnifiedSearchModel`). The field is focused when
+/// a key (TMDB through `/search/unified`, TheTVDB, the id lookup) answers as
+/// you type ("Available to add", deduped and merged, `UnifiedSearchModel`).
+/// TMDB runs only when the library has no match, until "Search to add". The field is focused when
 /// the tab opens.
 ///
 /// On the open iPhone Duo: in a Spread the results stay on the left page and a
@@ -107,8 +108,9 @@ struct SearchTabView: View {
         .task {
             if !model.libraryLoaded && !model.requestScoped { await model.loadLibrary() }
         }
-        .task(id: UnifiedSearchModel.key(trimmed, kind)) {
-            await search.run(trimmed, kind: kind, source: model.client.map { ClientUnifiedSearchSource(client: $0) },
+        .task(id: search.taskKey(trimmed, kind)) {
+            let mode = search.tmdbMode(trimmed, kind)
+            await search.run(trimmed, kind: kind, source: model.client.map { ServerUnifiedSearchSource(client: $0, tmdb: mode) },
                              motion: motion)
         }
     }

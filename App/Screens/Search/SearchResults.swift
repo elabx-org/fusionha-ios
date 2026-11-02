@@ -3,7 +3,8 @@ import FusionhaKit
 
 /// The unified search's lanes for one term: "Exact match" (an id), "In your
 /// library" (instant, capped at 8, "+N more in Library"), then "Available to
-/// add · <marks>" filling in as each provider answers. No "Search to add" step.
+/// add · <marks>" filling in as each provider answers. When the library matched,
+/// the server skips TMDB (`tmdb=auto`) and the add lane offers "Search to add".
 struct SearchResults: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
@@ -32,7 +33,7 @@ struct SearchResults: View {
                 }
                 .transition(.searchRow(motion: motion))
             }
-            if !model.requestScoped { ownedLane(owned) }
+            if !model.requestScoped && !lanes.libraryForbidden { ownedLane(owned) }
             addLane(hits)
         }
     }
@@ -41,6 +42,10 @@ struct SearchResults: View {
 
     private var ownedRows: (rows: [MediaItem], total: Int) {
         guard !model.requestScoped else { return ([], 0) }
+        // Until the library loads, the server's ranked library rows stand in.
+        if !model.libraryLoaded, !stale, let library = lanes.library {
+            return (Array(library.items.prefix(OwnedSearch.cap)), library.total)
+        }
         let ids = stale ? [] : lanes.ownedTmdb.compactMap { model.libraryItemId(for: $0) } + lanes.ownedLibraryIds
         let items = kind.bucket.map { bucket in model.library.filter { $0.kindBucket == bucket } } ?? model.library
         return OwnedSearch.rows(items, term: term, providerOwned: ids)
@@ -101,7 +106,9 @@ struct SearchResults: View {
             }
             .opacity(stale ? 0.55 : 1)
         }
-        if search.searching || stale {
+        if lanes.addSkipped && !stale && !search.searching {
+            SearchToAddNote { search.searchToAdd(term, kind) }
+        } else if search.searching || stale {
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small).tint(Theme.mut)
                 Text(searchingText).font(.system(size: 13)).foregroundStyle(Theme.mut)
@@ -111,6 +118,8 @@ struct SearchResults: View {
             .transition(.opacity)
         } else if hits.isEmpty {
             note(emptyText)
+        } else if lanes.tmdbSource == .timeout {
+            note("TMDB was slow — showing what answered in time.")
         }
     }
 
@@ -126,6 +135,9 @@ struct SearchResults: View {
         }
         if filter == .tvdb && lanes.unconfigured.contains(.tvdb) {
             return "TheTVDB needs a key — add one in Settings › Metadata."
+        }
+        if lanes.tmdbSource == .timeout && lanes.answered.isEmpty {
+            return "TMDB took too long to answer — try again."
         }
         if !lanes.failed.isEmpty && lanes.answered.isEmpty {
             return "Couldn't reach the metadata provider — try again."

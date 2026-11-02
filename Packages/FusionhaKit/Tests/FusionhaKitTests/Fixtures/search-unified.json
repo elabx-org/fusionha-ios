@@ -1,0 +1,33 @@
+{
+  "query": {"term": "dune 2024", "title": "dune", "year": 2024},
+  "sources": {"library": "ok", "tmdb": "timeout"},
+  "library": {
+    "total": 9,
+    "items": [
+      {"id": 7, "title": "Dune: Part Two", "kind": "movie", "year": 2024, "tmdb_id": 693134, "tvdb_id": null,
+       "imdb_id": "tt15239678", "is_anime": false, "series_type": "standard", "is_animation": false,
+       "poster_url": "https://image.tmdb.org/t/p/w500/abc.jpg", "backdrop_url": null, "is_available": true,
+       "next_release": null, "added_at": "2026-10-01T10:00:00Z", "release_date": "2024-03-01", "monitored": true,
+       "has_attention": false, "metadata_provider": "tmdb",
+       "versions": [{"id": 11, "tier": "HD-1080p", "edition": null, "movie_edition": null, "monitored": true,
+                     "monitor": "all", "root_folder_id": 1, "quality_profile_id": 1, "status": "done", "have": 1,
+                     "total": 1, "size": 1, "grabbable": null, "available_from": null, "available_stage": null,
+                     "available_estimated": false, "unresolved_file_count": 0, "dead_link_count": 0, "attention": false}],
+       "editions": [{"id": 11, "tier": "HD-1080p", "edition": null, "movie_edition": null, "monitored": true,
+                     "monitor": "all", "root_folder_id": 1, "quality_profile_id": 1, "status": "done", "have": 1,
+                     "total": 1, "size": 1, "grabbable": null, "available_from": null, "available_stage": null,
+                     "available_estimated": false, "unresolved_file_count": 0, "dead_link_count": 0, "attention": false}]}
+    ]
+  },
+  "tmdb": {
+    "provider": "tmdb",
+    "items": [
+      {"tmdb_id": 438631, "title": "Dune", "year": 2021, "kind": "movie", "is_anime": false, "overview": "Paul Atreides…",
+       "in_library": false, "library_item_id": null, "poster_url": "https://image.tmdb.org/t/p/w500/d5.jpg",
+       "backdrop_url": null, "date": "2021-09-15", "vote_average": 7.8},
+      {"tmdb_id": 693134, "title": "Dune: Part Two", "year": 2024, "kind": "movie", "is_anime": false, "overview": null,
+       "in_library": true, "library_item_id": 7, "poster_url": null, "backdrop_url": null, "date": "2024-02-27",
+       "vote_average": 8.2}
+    ]
+  }
+}

@@ -3,10 +3,13 @@ import FusionhaKit
 
 /// The unified search's provider side (owner-approved 2026-10-23): the add lane
 /// runs as you type, ~300 ms after the last keystroke, through a
-/// `UnifiedSearchSource` (today the client fan-out over TMDB, TheTVDB and the id
-/// lookup). Each provider's rows land as it answers; a new term or kind cancels
-/// the calls still in flight. The owned lane stays local and instant
-/// (`OwnedSearch`). Before you type: Trending this week, per kind.
+/// `UnifiedSearchSource` (the server's `/search/unified` for the library and
+/// TMDB, beside TheTVDB and the id lookup). Each provider's rows land as it
+/// answers; a new term or kind cancels the calls still in flight. TMDB runs
+/// `auto` (only when the library has no match) until "Search to add" asks for
+/// it (`always`). The owned lane stays local and instant (`OwnedSearch`), with
+/// the server's library rows until the library has loaded. Before you type:
+/// Trending this week, per kind.
 @MainActor
 @Observable
 final class UnifiedSearchModel {
@@ -21,9 +24,29 @@ final class UnifiedSearchModel {
     /// 409 `tmdb_not_configured`: the KeyMissing notice instead of Trending.
     private(set) var trendingMissingKey = false
 
+    /// The term and kind "Search to add" was tapped for: TMDB runs `always`.
+    private(set) var forcedKey: String?
+
     var searching: Bool { !lanes.isSettled }
 
     static func key(_ term: String, _ kind: SearchKind) -> String { "\(kind.rawValue)|\(term)" }
+
+    /// `auto` until "Search to add" is tapped for this term and kind.
+    func tmdbMode(_ term: String, _ kind: SearchKind) -> UnifiedTmdbMode {
+        forcedKey == Self.key(term, kind) ? .always : .auto
+    }
+
+    /// The `.task(id:)` for a run: the term, kind and TMDB mode.
+    func taskKey(_ term: String, _ kind: SearchKind) -> String {
+        "\(Self.key(term, kind))|\(tmdbMode(term, kind).rawValue)"
+    }
+
+    /// "Search to add": search TMDB too, though the library matched.
+    func searchToAdd(_ term: String, _ kind: SearchKind) {
+        forcedKey = Self.key(term, kind)
+        lanes.tmdbSource = nil
+        lanes.pending.insert(.tmdb)
+    }
 
     /// Runs one term to completion (call from `.task(id:)`; cancelling the
     /// task cancels the provider calls).
@@ -33,7 +56,10 @@ final class UnifiedSearchModel {
             key = ""
             return
         }
-        try? await Task.sleep(for: .milliseconds(300))
+        // Debounce typing; a tapped "Search to add" runs at once.
+        if tmdbMode(term, kind) == .auto {
+            try? await Task.sleep(for: .milliseconds(300))
+        }
         guard !Task.isCancelled else { return }
         var first = true
         for await next in source.lanes(for: term, kind: kind) {
