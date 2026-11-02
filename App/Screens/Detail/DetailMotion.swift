@@ -160,31 +160,6 @@ struct DetailSpinner: View {
     }
 }
 
-/// Diagonal white stripes sliding along a downloading fill (`seasonBarStripe`, 18px period, 0.85s).
-struct DetailStripes: View {
-    @Environment(\.detailReduceMotion) private var reduce
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / 30, paused: reduce)) { timeline in
-            let phase = reduce ? 0 : CGFloat(timeline.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 0.85) / 0.85) * 18
-            Canvas { context, size in
-                var x = -size.height - 18 + phase
-                while x < size.width + 18 {
-                    var path = Path()
-                    path.move(to: CGPoint(x: x, y: size.height))
-                    path.addLine(to: CGPoint(x: x + size.height, y: 0))
-                    path.addLine(to: CGPoint(x: x + size.height + 6, y: 0))
-                    path.addLine(to: CGPoint(x: x + 6, y: size.height))
-                    path.closeSubpath()
-                    context.fill(path, with: .color(Theme.sweep.opacity(0.28)))
-                    x += 18
-                }
-            }
-        }
-        .allowsHitTesting(false)
-    }
-}
-
 // MARK: - Bars
 
 /// A rounded coverage bar with owned + grabbing segments that animate their width.
