@@ -432,6 +432,8 @@ class Handler(BaseHTTPRequestHandler):
         url = urlparse(self.path)
         path = url.path.rstrip("/")
         query = parse_qs(url.query)
+        if path.startswith("/__mock/art/"):
+            return self.send_art(mock_big_library.art(path))
         if (mi := mock_manual_import.handle("GET", path)) is not None:
             return self.send_json(mi)
         served, body = mock_add.get(path, query, preview, tvdb_search)
@@ -530,8 +532,11 @@ class Handler(BaseHTTPRequestHandler):
                                    "best_release_name": "Demo.2160p.WEB-DL.DV.HDR10", "message": None,
                                    "format_tags": [{"label": "DV", "kind": "hdr"}, {"label": "HDR10", "kind": "hdr"}]})
         if path == "/__mock/big-library":
-            mock_big_library.ENABLED = parse_qs(urlparse(self.path).query).get("on", ["1"])[0] == "1"
-            return self.send_json({"big_library": mock_big_library.ENABLED})
+            q = parse_qs(urlparse(self.path).query)
+            mock_big_library.ENABLED = q.get("on", ["1"])[0] == "1"
+            unique = mock_big_library.ENABLED and q.get("art", [""])[0] == "unique"
+            mock_big_library.ART_BASE = f"http://{self.headers.get('Host')}" if unique else None
+            return self.send_json({"big_library": mock_big_library.ENABLED, "unique_art": unique})
         hit = self.activity("POST")
         if hit:
             return self.send_json(*hit)
@@ -574,6 +579,17 @@ class Handler(BaseHTTPRequestHandler):
         if length:
             self.rfile.read(length)
         return mock_activity.handle(method, url.path.rstrip("/"), parse_qs(url.query))
+
+    def send_art(self, hit):
+        if hit is None:
+            return self.send_json({"detail": "Not Found"}, 404)
+        data, content_type = hit
+        self.send_response(200)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "public, max-age=86400")
+        self.end_headers()
+        self.wfile.write(data)
 
     def send_json(self, body, status=200):
         data = json.dumps(body).encode()

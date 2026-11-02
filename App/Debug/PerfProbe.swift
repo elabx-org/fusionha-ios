@@ -2,10 +2,11 @@ import SwiftUI
 import UIKit
 import Darwin
 
-// A DEBUG-only performance harness for CI (the "Activity perf" job). When the app
-// is launched with FUSIONHA_PERF set, it drives a fixed script: open Activity →
-// History, sit idle, scroll through several pages, switch through the other
-// tabs and Wanted. Each phase prints one `PERF {json}` line to stderr with the
+// A DEBUG-only performance harness for CI (the "perf" job). When the app is
+// launched with FUSIONHA_PERF set, it drives a fixed script: by default open
+// Activity → History, sit idle, scroll through several pages, switch through
+// the other tabs and Wanted; with FUSIONHA_PERF_SCRIPT=library, the Library
+// grid (PerfProbe+Library.swift). Each phase prints one `PERF {json}` line to stderr with the
 // frame pacing (hitches), main-thread and process CPU, memory and a few view
 // counters. scripts/perf_report.py turns those lines (and an optional
 // Time Profiler trace) into the job summary. Release builds compile none of it.
@@ -31,14 +32,18 @@ final class PerfProbe: NSObject {
         var hangTime: Double = 0
     }
 
-    private let model: AppModel
+    let model: AppModel
     private let mainThread: thread_act_t = mach_thread_self()
     private var link: CADisplayLink?
     private var stats = FrameStats()
     private var lastTimestamp: CFTimeInterval = 0
     private var scrolling = false
-    private let scrollSpeed: CGFloat = 1800
+    /// Points per second; negative scrolls up.
+    var scrollSpeed: CGFloat = 1800
     private weak var scrollView: UIScrollView?
+    /// The Library script: drive the scroll view with the tallest content (the
+    /// grid, not the title page beside it on a Spread).
+    var prefersTallest = false
 
     private var phaseName = ""
     private var phaseWall: CFTimeInterval = 0
@@ -98,6 +103,7 @@ final class PerfProbe: NSObject {
     private func run() async {
         let env = ProcessInfo.processInfo.environment
         let warmup = Double(env["FUSIONHA_PERF_DELAY"] ?? "") ?? 8
+        if env["FUSIONHA_PERF_SCRIPT"] == "library" { return await runLibrary(warmup: warmup) }
         await phase("warmup", warmup)
 
         model.tab = .activity
@@ -133,7 +139,7 @@ final class PerfProbe: NSObject {
         }
     }
 
-    private func phase(_ name: String, _ seconds: Double, scroll: Bool = false) async {
+    func phase(_ name: String, _ seconds: Double, scroll: Bool = false) async {
         // Lets CI start a `sample` of the process for exactly this phase.
         FileHandle.standardError.write(Data("PERF-BEGIN \(name) \(Int(seconds.rounded()))\n".utf8))
         begin(name)
@@ -224,31 +230,10 @@ final class PerfProbe: NSObject {
         guard let sv = scrollView else { return }
         // A steady fling; a stalled main thread jumps further, as a real fling would.
         let step = scrollSpeed * CGFloat(min(delta, 0.1))
-        let maxY = max(-sv.adjustedContentInset.top, sv.contentSize.height - sv.bounds.height + sv.adjustedContentInset.bottom)
-        let y = min(sv.contentOffset.y + step, maxY)
+        let minY = -sv.adjustedContentInset.top
+        let maxY = max(minY, sv.contentSize.height - sv.bounds.height + sv.adjustedContentInset.bottom)
+        let y = min(max(sv.contentOffset.y + step, minY), maxY)
         sv.setContentOffset(CGPoint(x: sv.contentOffset.x, y: y), animated: false)
-    }
-
-    /// The largest visible vertical scroll view in the key window (the tab's page).
-    private func findScrollView() -> UIScrollView? {
-        let windows = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .filter(\.isKeyWindow)
-        var best: UIScrollView?
-        var bestArea: CGFloat = 0
-        func visit(_ view: UIView) {
-            if view.isHidden || view.alpha < 0.01 { return }
-            if let sv = view as? UIScrollView, !(sv is UITextView), let window = sv.window,
-               sv.bounds.width > 200, sv.bounds.height > 300 {
-                let visible = sv.convert(sv.bounds, to: nil).intersection(window.bounds)
-                let area = visible.isNull ? 0 : visible.width * visible.height
-                if area > 0, area >= bestArea { best = sv; bestArea = area }
-            }
-            for sub in view.subviews { visit(sub) }
-        }
-        windows.forEach(visit)
-        return best
     }
 
     // MARK: Readings
@@ -287,7 +272,7 @@ final class PerfProbe: NSObject {
     private func round1(_ v: Double) -> Double { (v * 10).rounded() / 10 }
     private func round3(_ v: Double) -> Double { (v * 1000).rounded() / 1000 }
 
-    private func emit(_ object: [String: Any]) {
+    func emit(_ object: [String: Any]) {
         guard let data = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys]) else { return }
         FileHandle.standardError.write(Data("PERF ".utf8) + data + Data("\n".utf8))
     }
