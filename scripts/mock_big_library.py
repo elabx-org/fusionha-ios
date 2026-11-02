@@ -8,7 +8,8 @@ flags of the bucket they fill. Switched on and off by the harness with
 `&art=unique` (the perf job) also gives every copy its own poster URL, served
 by the mock from the fixture's TMDB art (`art()`), so the app decodes, caches
 and blurs one poster per title as it does with a real library, instead of
-reusing the 14 fixtures' bitmaps.
+reusing the 14 fixtures' bitmaps, and leaves some titles unmonitored (1 in
+13) and some flagged (1 in 29), as in a real library.
 """
 
 import copy
@@ -52,6 +53,15 @@ def expand(base):
             if ART_BASE and item.get("poster_url"):
                 item["poster_url"] = re.sub(r"^https://image\.tmdb\.org", f"{ART_BASE}/__mock/art/{next_id}",
                                             item["poster_url"])
+                # A real library's mix: some titles unmonitored, a few flagged.
+                if n % 13 == 5:
+                    item["monitored"] = False
+                    for edition in item.get("editions", []):
+                        edition["monitored"] = False
+                if n % 29 == 7:
+                    item["has_attention"] = True
+                    item["editions"][0]["attention"] = True
+                    item["editions"][0]["unresolved_file_count"] = 1
             for edition in item.get("editions", []):
                 edition["id"] = next_edition
                 next_edition += 1

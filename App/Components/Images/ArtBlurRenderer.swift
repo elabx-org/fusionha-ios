@@ -108,6 +108,7 @@ final class ArtBlurCache {
         let key = spec.key(for: url.absoluteString)
         if let hit = cached(key) { return hit }
         if let running = inflight[key] { return await running.value }
+        PerfCount.hit("ArtBlurCache.render")
         let task = Task<UIImage?, Never> {
             let fill = CGSize(width: spec.sourceWidth, height: spec.sourceHeight)
             guard let source = await ImagePipeline.shared.image(for: url, fill: fill, scale: 1)?.cgImage else { return nil }
