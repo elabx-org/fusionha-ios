@@ -52,6 +52,7 @@ struct MIBulkBar: ViewModifier {
             if compact { Text("Decide") } else { Label("Decide", systemImage: "checklist") }
         }
         .disabled(busy)
+        .accessibilityIdentifier("mi.bulk.decide")
         .accessibilityLabel("Decide")
         .accessibilityValue("\(s.n) selected")
     }
@@ -72,6 +73,7 @@ struct MIBulkBar: ViewModifier {
         .tint(Theme.i1)
         .disabled(s.imp.isEmpty || busy)
         .accessibilityHint(s.importSubtitle)
+        .accessibilityIdentifier("mi.bulk.import")
     }
 
     private func runImport() {

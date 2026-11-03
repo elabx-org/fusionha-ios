@@ -8,7 +8,7 @@ import XCTest
 /// - HELD_SHOT_ENV: the app's launch environment, `KEY=VALUE` pairs split by `;`.
 /// - HELD_SHOT_STEPS: `;`-split steps: `press-bar` (long-press the downloads
 ///   bar for its menu), `tap:<label prefix>` (tap the first element whose label
-///   starts so), `wait:<seconds>`.
+///   starts so), `tapid:<accessibility identifier>`, `wait:<seconds>`.
 /// - HELD_SHOT_EXPECT: a label prefix that proves the state is on screen.
 /// Prints SHOT READY (or SHOT READY (expected element not found)) and holds.
 final class HeldFlowOpener: XCTestCase {
@@ -32,6 +32,10 @@ final class HeldFlowOpener: XCTestCase {
                     print("bar not found; pressing above the tab bar")
                     app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.86)).press(forDuration: 1.2)
                 }
+            } else if step.hasPrefix("tapid:") {
+                let id = String(step.dropFirst(6))
+                let target = app.descendants(matching: .any).matching(identifier: id).firstMatch
+                if target.waitForExistence(timeout: 20) { target.tap() } else { print("not found: \(step)") }
             } else if step.hasPrefix("tap:") {
                 let target = element(app, prefix: String(step.dropFirst(4)))
                 if target.waitForExistence(timeout: 20) { target.tap() } else { print("not found: \(step)") }

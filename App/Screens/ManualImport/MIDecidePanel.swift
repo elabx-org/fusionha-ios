@@ -50,6 +50,7 @@ struct MIDecidePanel: View {
                     return session.notice?.error != true
                 }
                 .disabled(s.imp.isEmpty || busy)
+                .accessibilityIdentifier("mi.bulk.import")
             }
             MIDecideChips(summary: s, editing: $editing).disabled(busy)
         }
