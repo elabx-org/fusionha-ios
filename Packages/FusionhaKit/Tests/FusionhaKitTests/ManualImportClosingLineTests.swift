@@ -41,12 +41,13 @@ final class ManualImportClosingLineTests: XCTestCase {
     }
 
     func testOneFileReadsAsItsReceipt() throws {
-        XCTAssertEqual(ManualImportDecide.closingLine(try movie(), finish: removed),
+        let kept = try movie(), imported = try movie(committed: true)
+        XCTAssertEqual(ManualImportDecide.closingLine(kept, finish: removed),
                        "Interstellar · kept your FraMeSToR copy · download removed")
-        XCTAssertEqual(ManualImportDecide.closingLine(try movie(committed: true), finish: removed),
+        XCTAssertEqual(ManualImportDecide.closingLine(imported, finish: removed),
                        "Interstellar · imported · download removed")
         let left = FinishRescueResult(mode: "left", blocklisted: nil, libraryLinked: nil)
-        XCTAssertEqual(ManualImportDecide.closingLine(try movie(), finish: left),
+        XCTAssertEqual(ManualImportDecide.closingLine(kept, finish: left),
                        "Interstellar · kept your FraMeSToR copy · download left as it is")
     }
 
