@@ -531,6 +531,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"dispatched": True, "queried_indexers": 3, "found_uhd": True, "seasons_seen": [1, 2],
                                    "best_release_name": "Demo.2160p.WEB-DL.DV.HDR10", "message": None,
                                    "format_tags": [{"label": "DV", "kind": "hdr"}, {"label": "HDR10", "kind": "hdr"}]})
+        if path == "/__mock/held":
+            mock_activity.HIDE_HELD = parse_qs(urlparse(self.path).query).get("on", ["1"])[0] == "0"
+            return self.send_json({"held": not mock_activity.HIDE_HELD})
         if path == "/__mock/big-library":
             q = parse_qs(urlparse(self.path).query)
             mock_big_library.ENABLED = q.get("on", ["1"])[0] == "1"

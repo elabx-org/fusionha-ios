@@ -240,5 +240,36 @@ for pose in flat book; do
   shoot duo-harness-open-$pose-manual-import-none open $MI0 $SP $P
 done
 shoot duo-harness-open-web-manual-import open $MI $WEB
+# The held card itself (open Spread and Web, closed), then the queue after a
+# decide: the mock drops the held download, the toast is the closing one's.
+HC="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103"
+WAIT=16
+for theme in dark daylight; do
+  T=""; SUF=""
+  [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
+  shoot duo-harness-open-spread-held-card$SUF open $HC $SP $T
+  shoot duo-harness-folded-held-card$SUF folded $HC $SP $T
+done
+shoot duo-harness-open-web-held-card open $HC $WEB
+shoot duo-harness-open-web-held-why open $H $WEB
+curl -s -X POST "$S/__mock/held?on=0" > /dev/null
+for frame in open folded; do
+  shoot duo-harness-$frame-spread-held-after $frame SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity $SP "SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TOAST=Imported 1 · 1 download finished"
+done
+curl -s -X POST "$S/__mock/held?on=1" > /dev/null
+unset WAIT
+# Menus no launch flag opens (UITests/HeldFlowOpener), in the harness frame:
+# the downloads bar's menu, and on the open Spread a bulk Import answered.
+for frame in open folded; do
+  read -r fw fh <<< "$(size $frame)"
+  HE="FUSIONHA_SCREENSHOT_SERVER=$S;FUSIONHA_SCREENSHOT_DUO_FRAME=$frame;FUSIONHA_SCREENSHOT_DUO_LAYOUT=spread"
+  ONLY="$ONLY" scripts/held_flow_shot.sh "$UDID" "$OUT" duo-harness-$frame-spread-held-bar-menu "$HE;FUSIONHA_SCREENSHOT_TAB=discover" press-bar "Review in Manual Import" "$fw $fh"
+done
+HE="FUSIONHA_SCREENSHOT_SERVER=$S;FUSIONHA_SCREENSHOT_DUO_FRAME=open;FUSIONHA_SCREENSHOT_DUO_LAYOUT=spread;FUSIONHA_SCREENSHOT_RESCUE=77;FUSIONHA_SCREENSHOT_MI_SELECT=2,4,6,7"
+for theme in dark daylight; do
+  T=""; SUF=""
+  [ "$theme" = daylight ] && T=";FUSIONHA_SCREENSHOT_PALETTE=daylight" && SUF="-daylight"
+  ONLY="$ONLY" scripts/held_flow_shot.sh "$UDID" "$OUT" duo-harness-open-spread-manual-import-imported$SUF "$HE$T" "tap:Import ;wait:6" "" "951 669"
+done
 xcrun simctl shutdown "$UDID" || true
 ls -l "$OUT"/duo-harness-* 2> /dev/null || true

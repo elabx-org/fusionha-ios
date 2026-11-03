@@ -326,6 +326,21 @@ jobs:
             shoot manual-import-none-$P $B $R
             shoot manual-import-row-held-$P $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_OPEN=2
             shoot manual-import-row-stays-$P $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_OPEN=3
+            # The held card itself, and the queue after a decide (the mock drops
+            # the held download; the toast is the closing one's words).
+            shoot held-$P-card $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103
+            curl -s -X POST "$S/__mock/held?on=0" > /dev/null
+            shoot held-$P-after $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity "SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TOAST=Imported 1 · 1 download finished"
+            curl -s -X POST "$S/__mock/held?on=1" > /dev/null
+            # Menus no launch flag opens (UITests/HeldFlowOpener): the downloads
+            # bar's menu, Manual Import's Decide menu and its Keep current
+            # submenu, and a bulk Import answered.
+            E="FUSIONHA_SCREENSHOT_SERVER=$S;FUSIONHA_SCREENSHOT_PALETTE=$P"
+            MIE="$E;FUSIONHA_SCREENSHOT_RESCUE=77;FUSIONHA_SCREENSHOT_MI_SELECT=2,4,6,7"
+            scripts/held_flow_shot.sh "$UDID" shots held-$P-bar-menu "$E;FUSIONHA_SCREENSHOT_TAB=discover" press-bar "Review in Manual Import"
+            scripts/held_flow_shot.sh "$UDID" shots manual-import-decide-menu-$P "$MIE" "tap:Decide" "Keep current"
+            scripts/held_flow_shot.sh "$UDID" shots manual-import-keep-menu-$P "$MIE" "tap:Decide;tap:Keep current" ""
+            scripts/held_flow_shot.sh "$UDID" shots manual-import-imported-$P "$MIE" "tap:Import ;wait:6" ""
           done
           # A filtered run (shots_only) stops here: the rest are the full set and its checks.
           if [ -n "${ONLY:-}" ]; then ls -l shots; exit 0; fi

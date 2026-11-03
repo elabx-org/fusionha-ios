@@ -80,6 +80,10 @@ def _held_not_an_upgrade():
     }
 
 
+# POST /__mock/held?on=0 hides the held downloads: the queue after a decide.
+HIDE_HELD = False
+
+
 def queue():
     lib = _library()
     items = [
@@ -105,6 +109,8 @@ def queue():
                     sizeleft=0, progress=100.0, phase="complete", phase_terminal=True, outcome="imported",
                     finished_at=_ago(seconds=6)),
     ]
+    if HIDE_HELD:
+        items = [i for i in items if i.get("status") != "held"]
     return {"items": items, "total": len(items), "page": 1, "page_size": 50, "just_finished": finished}
 
 
