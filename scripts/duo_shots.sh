@@ -67,6 +67,7 @@ screens() {  # screens <pose> <display> [env…]
   want "duo-$P-manual-import-none-daylight" && { launch $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0 $DAY "$@"; snap "duo-$P-manual-import-none-daylight" "$D"; }
   want "duo-$P-manual-import-row" && { launch $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=0 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_OPEN=2 "$@"; snap "duo-$P-manual-import-row" "$D"; }
   want "duo-$P-manual-import-bulk" && { launch $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=2,4,6,7 "$@"; snap "duo-$P-manual-import-bulk" "$D"; }
+  want "duo-$P-manual-import-bulk-daylight" && { launch $B $R SIMCTL_CHILD_FUSIONHA_SCREENSHOT_MI_SELECT=2,4,6,7 $DAY "$@"; snap "duo-$P-manual-import-bulk-daylight" "$D"; }
   want "duo-$P-calendar-week" && { launch $B SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=week "$@"; snap "duo-$P-calendar-week" "$D"; }
 }
 

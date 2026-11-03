@@ -5,9 +5,12 @@ import FusionhaKit
 /// pass): Keep current (with the held download's disposition as a submenu),
 /// Skip, then Confirm N medium matches, Import mode (only while Import is
 /// possible) and Edit N selected…. Each item's second line is what it does, or
-/// why it is off. The prominent Import N sits beside the menu, not in it.
+/// why it is off. The prominent Import N sits beside the menu, not in it. On
+/// compact widths Select all undecided joins Clear selection at the end.
 struct MIDecideMenuItems: View {
     @Binding var editing: Bool
+    /// The phone and the folded Duo: Select all undecided lives here, not in the bar.
+    var selectsUndecided = false
     @Environment(ManualImportSession.self) private var session
 
     var body: some View {
@@ -43,6 +46,7 @@ struct MIDecideMenuItems: View {
                 .disabled(s.open.isEmpty)
         }
         Section {
+            if selectsUndecided { MISelectUndecidedButton(showsCount: true) }
             Button("Clear selection", systemImage: "xmark.circle") { session.selected = [] }
         }
     }

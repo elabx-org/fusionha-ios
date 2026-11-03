@@ -8,12 +8,16 @@ import FusionhaKit
 /// content (the bar is the glass), so it reads on every palette.
 struct MIBulkOutcome: View {
     let summary: ManualImportBulkSummary
+    /// The phone and the folded Duo: one line plus More (owner-approved item 4).
+    var oneLine = false
     @Environment(ManualImportSession.self) private var session
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let applying = session.applying {
                 MIApplyingLine(applying: applying, held: summary.held)
+            } else if oneLine {
+                MIOutcomeOneLine(summary: summary)
             } else {
                 // Compact over the list: the Decide menu says why an action is off.
                 MIOutcomeLines(summary: summary, reasonLines: 2)

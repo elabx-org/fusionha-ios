@@ -97,6 +97,7 @@ struct ManualImportSheet: View {
             Task { await model.refreshQueue() }
             dismiss()
         }
+        .modifier(MIAutoClose(session: session))
         .interactiveDismissDisabled(busy)
         // On the open Duo's pages: the pull-down waits while working, and asks with rows ticked.
         .duoPageDismiss(busy ? .busy : session.selected.isEmpty ? .allowed : .confirm(Self.closeQuestion))

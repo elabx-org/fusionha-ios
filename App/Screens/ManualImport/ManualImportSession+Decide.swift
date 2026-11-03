@@ -214,6 +214,7 @@ extension ManualImportSession {
 
     /// The kept rows of a finished download get their receipts; it leaves every count.
     private func recordFinish(_ id: Int, _ res: FinishRescueResult) {
+        finishResults[id] = res
         let mine = rows.filter { ManualImportDecide.downloadId($0, scan) == id }
         let group = mine.first { $0.replaceChoice == "keep_current" }?.existingFile?.releaseGroup ?? scan?.heldDetail?.currentGroup
         for r in mine where receipts[r.rowId] == nil {

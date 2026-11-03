@@ -4,36 +4,39 @@ import FusionhaKit
 /// The bulk bar (owner-approved "bar in every scenario"): while files are
 /// ticked it replaces the import footer, in held, not-held and folder scans
 /// alike. A system bottom bar, so iOS can move it into the closed iPhone
-/// Duo's vertical bar (the Library's select bar does the same): Decide ▾
-/// (headed "N selected"), Select all undecided (⌘A) and the prominent
-/// Import N ("Import 1 of 4"). A phone bar has no room for a count label as
-/// well. The outcome card above it is solid content, never glass.
+/// Duo's vertical bar (the Library's select bar does the same). On the phone
+/// and the folded Duo (compact width) it speaks in words (owner-approved item
+/// 4): a "Decide" text menu that also holds Select all undecided, and the
+/// prominent "Import N" / "Import 1 of 4"; the outcome card is one line plus
+/// More. Wider, Select all undecided (⌘A) keeps its own item. The outcome
+/// card above it is solid content, never glass.
 struct MIBulkBar: ViewModifier {
     let active: Bool
     @Environment(ManualImportSession.self) private var session
     @State private var editing = false
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     func body(content: Content) -> some View {
         let s = session.bulk
         let busy = session.applying != nil || session.working || session.bulkBusy
+        let compact = sizeClass == .compact
         content
             .toolbar {
                 if active {
-                    ToolbarItem(placement: .bottomBar) {
-                        Menu { MIDecideMenuItems(editing: $editing) } label: { Label("Decide", systemImage: "checklist") }
-                            .disabled(busy)
-                    }
+                    ToolbarItem(placement: .bottomBar) { decideMenu(s, compact: compact, busy: busy) }
                     ToolbarSpacer(.flexible, placement: .bottomBar)
-                    ToolbarItem(placement: .bottomBar) {
-                        MISelectUndecidedButton()
+                    if !compact {
+                        ToolbarItem(placement: .bottomBar) { MISelectUndecidedButton() }
+                            .barPriority(false)
                     }
-                    .barPriority(false)
-                    ToolbarItem(placement: .bottomBar) { importButton(s, busy: busy) }
+                    ToolbarItem(placement: .bottomBar) { importButton(s, compact: compact, busy: busy) }
                         .barPriority(true)
                 }
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                if active { MIBulkOutcome(summary: s).padding(.horizontal, 10).padding(.bottom, 6) }
+                if active {
+                    MIBulkOutcome(summary: s, oneLine: compact).padding(.horizontal, 10).padding(.bottom, 6)
+                }
             }
             .publishesSelectBar("manual-import.bulk", active: active)
             .duoPageSheet(isPresented: $editing) {
@@ -41,15 +44,38 @@ struct MIBulkBar: ViewModifier {
             }
     }
 
-    private func importButton(_ s: ManualImportBulkSummary, busy: Bool) -> some View {
-        ToolbarActionButton(title: MIBulkWords.importTitle(s, applying: session.applying),
-                            systemImage: "square.and.arrow.down", busy: session.applying?.action == .importFile) {
-            Task { await session.decide(.importFile) }
+    /// Decide: a text menu on the phone and the folded Duo, headed "N selected".
+    private func decideMenu(_ s: ManualImportBulkSummary, compact: Bool, busy: Bool) -> some View {
+        Menu {
+            MIDecideMenuItems(editing: $editing, selectsUndecided: compact)
+        } label: {
+            if compact { Text("Decide") } else { Label("Decide", systemImage: "checklist") }
+        }
+        .disabled(busy)
+        .accessibilityLabel("Decide")
+        .accessibilityValue("\(s.n) selected")
+    }
+
+    /// The prominent Import N ("Import 1 of 4"): words on compact widths.
+    @ViewBuilder private func importButton(_ s: ManualImportBulkSummary, compact: Bool, busy: Bool) -> some View {
+        let title = MIBulkWords.importTitle(s, applying: session.applying)
+        let importing = session.applying?.action == .importFile
+        Group {
+            if compact {
+                Button { runImport() } label: { Text(title).fontWeight(.semibold) }
+                    .accessibilityValue(importing ? "In progress" : "")
+            } else {
+                ToolbarActionButton(title: title, systemImage: "square.and.arrow.down", busy: importing) { runImport() }
+            }
         }
         .buttonStyle(.glassProminent)
         .tint(Theme.i1)
         .disabled(s.imp.isEmpty || busy)
         .accessibilityHint(s.importSubtitle)
+    }
+
+    private func runImport() {
+        Task { await session.decide(.importFile) }
     }
 }
 
