@@ -340,7 +340,7 @@ jobs:
             scripts/held_flow_shot.sh "$UDID" shots held-$P-bar-menu "$E;FUSIONHA_SCREENSHOT_TAB=discover" press-bar "Review in Manual Import"
             scripts/held_flow_shot.sh "$UDID" shots manual-import-decide-menu-$P "$MIE" "tapid:mi.bulk.decide" "Keep current"
             scripts/held_flow_shot.sh "$UDID" shots manual-import-keep-menu-$P "$MIE" "tapid:mi.bulk.decide;tap:Keep current" ""
-            scripts/held_flow_shot.sh "$UDID" shots manual-import-imported-$P "$MIE" "tapid:mi.bulk.import;wait:6" ""
+            scripts/held_flow_shot.sh "$UDID" shots manual-import-imported-$P "$MIE" "tapid:mi.bulk.import" ""
           done
           # A filtered run (shots_only) stops here: the rest are the full set and its checks.
           if [ -n "${ONLY:-}" ]; then ls -l shots; exit 0; fi

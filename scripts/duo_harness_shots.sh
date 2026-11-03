@@ -269,7 +269,7 @@ HE="FUSIONHA_SCREENSHOT_SERVER=$S;FUSIONHA_SCREENSHOT_DUO_FRAME=open;FUSIONHA_SC
 for theme in dark daylight; do
   T=""; SUF=""
   [ "$theme" = daylight ] && T=";FUSIONHA_SCREENSHOT_PALETTE=daylight" && SUF="-daylight"
-  ONLY="$ONLY" scripts/held_flow_shot.sh "$UDID" "$OUT" duo-harness-open-spread-manual-import-imported$SUF "$HE$T" "tapid:mi.bulk.import;wait:6" "" "951 669"
+  ONLY="$ONLY" scripts/held_flow_shot.sh "$UDID" "$OUT" duo-harness-open-spread-manual-import-imported$SUF "$HE$T" "tapid:mi.bulk.import" "" "951 669"
 done
 xcrun simctl shutdown "$UDID" || true
 ls -l "$OUT"/duo-harness-* 2> /dev/null || true
