@@ -13,6 +13,16 @@ enum MIScreenshot {
         #endif
     }
 
+    /// The closing toast's time on screen: 4 s, or 60 s for CI screenshots
+    /// (`FUSIONHA_SCREENSHOT_MI_TOAST_HOLD=1`), which can't time a 4 s toast.
+    static var closingToastDuration: Double {
+        #if DEBUG
+        ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_MI_TOAST_HOLD"] != nil ? 60 : 4
+        #else
+        4
+        #endif
+    }
+
     #if DEBUG
     /// Rows that have been laid out (their `onAppear` ran): a lazy title
     /// section builds its rows late, and `scrollTo` misses a row with no frame.

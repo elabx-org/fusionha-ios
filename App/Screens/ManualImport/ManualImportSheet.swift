@@ -93,7 +93,8 @@ struct ManualImportSheet: View {
         }
         .onChange(of: session.closing?.text) {
             guard let closing = session.closing else { return }
-            model.toast(closing.text, title: "Manual Import", variant: closing.warning ? .warning : .success)
+            model.toast(closing.text, title: "Manual Import", variant: closing.warning ? .warning : .success,
+                        duration: MIScreenshot.closingToastDuration)
             Task { await model.refreshQueue() }
             dismiss()
         }
