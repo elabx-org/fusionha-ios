@@ -1,14 +1,20 @@
 import SwiftUI
+import UIKit
 
 /// Keeps a field's focus across fold, unfold and rotation. The system ends
 /// editing while it moves the window (and its bars) to the new size, so a
 /// field that was focused just before the width changed is focused again once
 /// the new layout has settled. The width is read without the keyboard, so the
 /// keyboard showing or the person dismissing it never counts as a resize.
+/// Only the window's own size changing counts: closing the search (its ✕)
+/// re-lays the page out at a new width too, and that must not bring the
+/// keyboard straight back (build 757 on the open Duo).
 private struct FocusAcrossResize: ViewModifier {
     var focused: FocusState<Bool>.Binding
     /// When the field last lost focus.
     @State private var lostAt: Date?
+    /// The window's size at the last width change seen.
+    @State private var windowSize: CGSize?
 
     /// A focus loss this close to the resize was the resize's doing.
     private static let window: TimeInterval = 0.8
@@ -20,14 +26,26 @@ private struct FocusAcrossResize: ViewModifier {
             .onChange(of: focused.wrappedValue) { old, new in
                 if old && !new { lostAt = .now }
             }
+            .onAppear { windowSize = Self.currentWindowSize() }
             .background {
                 Color.clear
                     .ignoresSafeArea(.keyboard)
                     .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { old, new in
                         guard old > 0, abs(old - new) >= 1 else { return }
+                        let now = Self.currentWindowSize()
+                        defer { windowSize = now }
+                        // The page moved inside the same window: not a resize.
+                        guard let now, let before = windowSize, before != now else { return }
                         restore()
                     }
             }
+    }
+
+    /// The foreground window's size (a fold, unfold or rotation changes it).
+    private static func currentWindowSize() -> CGSize? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        let scene = scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+        return scene?.keyWindow?.bounds.size
     }
 
     private func restore() {

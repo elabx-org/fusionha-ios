@@ -8,7 +8,7 @@ import FusionhaKit
 /// answers instantly ("In your library", capped at 8), and every provider with
 /// a key (TMDB through `/search/unified`, TheTVDB, the id lookup) answers as
 /// you type ("Available to add", deduped and merged, `UnifiedSearchModel`). The field is focused when
-/// the tab opens.
+/// the tab opens on the phone; wide, it opens on Trending.
 ///
 /// On the open iPhone Duo: in a Spread the results stay on the left page and a
 /// tapped result's preview opens on the right page; in the Web layout the list
@@ -17,6 +17,7 @@ struct SearchTabView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.spread) private var spread
     @Environment(\.motionEnabled) private var motion
+    @Environment(\.horizontalSizeClass) private var sizeClass
     /// The preview and request sheets the rows open (shared with Discover's cards).
     @State private var store = DiscoverStore()
     @State private var search = UnifiedSearchModel()
@@ -99,11 +100,14 @@ struct SearchTabView: View {
         .searchScreenshotPreview(search: search) { store.preview = PreviewRoute($0) }
         #endif
         .task {
-            // Open ready to type, as a search tab does.
+            // Open ready to type on the phone, as a search tab does. Wide (the
+            // open Duo, iPad) it opens on Trending: the keyboard would cover
+            // half of it; tap the field to type (owner, 2026-11-05).
+            guard sizeClass == .compact else { return }
             try? await Task.sleep(for: .milliseconds(350))
             focused = true
         }
-        .onChange(of: model.searchFocusTick) { focused = true }
+        .onChange(of: model.searchFocusTick) { if sizeClass == .compact { focused = true } }
         .task {
             if !model.requestScoped { await model.loadLibraryIfNeeded() }
         }
