@@ -1,14 +1,14 @@
 import SwiftUI
 import FusionhaKit
 
-/// The title's ground across the stretch it is about to fill, while the
-/// handle drags the seam toward full width.
-///
-/// The title keeps its split width for the whole drag (`FoldSeam`: no
-/// column is re-laid out per frame) and only takes the full width when it
-/// lands there, so the room between the seam and the title is painted with
-/// the full-width ground it lands on. The ground keeps one size and is only
-/// uncovered, and its last few points fade into the title's own edge.
+/// The ground across the room the seam opens while the handle moves it, as
+/// no column is re-laid out mid-drag (`FoldSeam`):
+/// - toward full width (from the split): the title keeps its split width,
+///   so the room between the seam and the title gets the full-width ground
+///   it lands on, its last few points fading into the title's own edge;
+/// - toward close: the list keeps its split width, so the room between the
+///   list and the title gets the list pane's ground.
+/// Each ground keeps one size and is only uncovered.
 struct V2SeamGround: View {
     let context: DuoSeamContext
     let x: CGFloat
@@ -20,27 +20,36 @@ struct V2SeamGround: View {
 
     var body: some View {
         let seam = max(0, x)
-        let reach = context.rest + Self.blend - seam
-        if reach > Self.blend {
-            PageGround(palette: palette, recipe: .page)
-                .frame(width: context.width)
-                .offset(x: -seam)
-                .frame(width: reach, alignment: .leading)
-                .mask {
-                    HStack(spacing: 0) {
-                        Rectangle()
+        if !context.fullWidth, context.rest + Self.blend - seam > Self.blend {
+            uncovered(.page, from: seam, width: context.rest + Self.blend - seam, fades: true)
+        } else if seam > context.rest {
+            uncovered(.listPane, from: context.rest, width: seam - context.rest, fades: false)
+        }
+    }
+
+    /// `recipe`'s ground laid out across the whole display, shown from
+    /// `start` for `width` points.
+    private func uncovered(_ recipe: PageGround.Recipe, from start: CGFloat, width: CGFloat, fades: Bool) -> some View {
+        PageGround(palette: palette, recipe: recipe)
+            .frame(width: context.width)
+            .offset(x: -start)
+            .frame(width: width, alignment: .leading)
+            .mask {
+                HStack(spacing: 0) {
+                    Rectangle()
+                    if fades {
                         LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing)
                             .frame(width: Self.blend)
                     }
-                    .ignoresSafeArea()
                 }
-                .clipped()
-                .offset(x: seam)
-                .frame(maxHeight: .infinity)
                 .ignoresSafeArea()
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-        }
+            }
+            .clipped()
+            .offset(x: start)
+            .frame(maxHeight: .infinity)
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     /// The open title's palette, as its page paints it (`V2TitleView`).

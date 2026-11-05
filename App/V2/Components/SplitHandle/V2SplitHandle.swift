@@ -41,7 +41,7 @@ struct V2SplitHandle: View {
 
     var body: some View {
         ZStack(alignment: .leading) {
-            if seam.live != nil, !context.fullWidth { V2SeamGround(context: context, x: CGFloat(x)) }
+            if seam.live != nil, !seam.opening { V2SeamGround(context: context, x: CGFloat(x)) }
             if seam.live != nil, motion {
                 Color.black.opacity(DuoSeam.listShade(x: x, split: rest))
                     .frame(width: CGFloat(max(0, x)))
@@ -70,6 +70,7 @@ struct V2SplitHandle: View {
         .onDisappear {
             spring.cancel()
             seam.live = nil
+            seam.opening = false
             if model.presentedItem == nil { seam.slidIn = nil }
         }
     }
@@ -189,6 +190,7 @@ struct V2SplitHandle: View {
             case .closed: context.close()
             }
             context.drag.live = nil
+            context.drag.opening = false
         }
     }
 
@@ -201,6 +203,7 @@ struct V2SplitHandle: View {
         guard seam.slidIn != id else { return }
         seam.slidIn = id
         guard motion, !context.fullWidth, seam.live == nil else { return }
+        seam.opening = true
         seam.live = CGFloat(width)
         settle(.split, velocity: 0, tick: false)
     }
