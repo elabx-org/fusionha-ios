@@ -23,7 +23,13 @@ extension PerfProbe {
             try? await Task.sleep(for: .milliseconds(250))
         }
         emit(["event": "library", "label": "v2open", "titles": model.library.count,
-              "wait_s": ((CACurrentMediaTime() - start) * 10).rounded() / 10])
+              "error": model.libraryError ?? "", "wait_s": ((CACurrentMediaTime() - start) * 10).rounded() / 10])
+        // A failed first load (seen once on CI): one retry before measuring.
+        if model.library.isEmpty {
+            await model.loadLibrary()
+            emit(["event": "library", "label": "v2open.retry", "titles": model.library.count,
+                  "error": model.libraryError ?? ""])
+        }
         await phase("v2open.settle", warmup)
         await phase("v2open.idle", 4)
         // Movies and series from the fixtures (their detail pages exist), then
