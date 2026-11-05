@@ -65,6 +65,7 @@ struct DuoSeamContext {
     }
 
     /// The split as the seam moves: both columns laid out around `live`.
+    @MainActor
     func seam(live: CGFloat) -> FoldSeam {
         FoldSeam(x: live, listFloor: rest, titleFloor: width - rest, fromFull: fullWidth, listFull: drag.listFull)
     }
