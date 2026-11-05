@@ -8,14 +8,17 @@
 # simulator, against the mock's 3,785-title library (one poster URL per title,
 # 20 live downloads).
 #
-#   scripts/perf_v2_session.sh <app-path> <out-dir>
+#   [PERF_SCRIPT=v2frames] scripts/perf_v2_session.sh <app-path> <out-dir>
 #
-# Writes <out-dir>/v2session.log (stderr: the PERF lines) and v2session.png.
+# Writes <out-dir>/<script>.log (stderr: the PERF lines) and <script>.png;
+# v2frames (App/Debug/PerfProbe+Frames.swift) also copies its captures out
+# as <out-dir>/shot-*.jpg.
 set -u
 APP=$1
 OUT=$2
 BUNDLE=org.elabx.fusionha.v2
 PORT=8768
+SCRIPT=${PERF_SCRIPT:-v2session}
 S=http://127.0.0.1:$PORT
 mkdir -p "$OUT"
 
@@ -41,19 +44,24 @@ xcrun simctl install "$UDID" "$APP"
 # Let the freshly booted simulator settle before measuring.
 sleep 20
 
-log="$OUT/v2session.log"
-env SIMCTL_CHILD_FUSIONHA_PERF=1 SIMCTL_CHILD_FUSIONHA_PERF_SCRIPT=v2session \
+log="$OUT/$SCRIPT.log"
+env SIMCTL_CHILD_FUSIONHA_PERF=1 SIMCTL_CHILD_FUSIONHA_PERF_SCRIPT="$SCRIPT" \
   SIMCTL_CHILD_FUSIONHA_PERF_DELAY=8 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" \
   SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=open \
   SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LAYOUT=spread \
-  xcrun simctl launch --terminate-running-process --stderr="$PWD/$log" --stdout="$PWD/$OUT/v2session.out" \
+  xcrun simctl launch --terminate-running-process --stderr="$PWD/$log" --stdout="$PWD/$OUT/$SCRIPT.out" \
   "$UDID" "$BUNDLE"
 for _ in $(seq 1 600); do
   grep -q "PERF DONE" "$log" 2> /dev/null && break
   sleep 1
 done
-xcrun simctl io "$UDID" screenshot "$OUT/v2session.png" > /dev/null 2>&1 || true
+xcrun simctl io "$UDID" screenshot "$OUT/$SCRIPT.png" > /dev/null 2>&1 || true
 grep "PERF" "$log" | grep -v '"event":"stacks"' || true
+DATA=$(xcrun simctl get_app_container "$UDID" "$BUNDLE" data 2> /dev/null || true)
+if [ -n "$DATA" ] && [ -d "$DATA/tmp/perfshots" ]; then
+  for f in "$DATA"/tmp/perfshots/*.jpg; do cp "$f" "$OUT/shot-$(basename "$f")"; done
+  echo "copied $(ls "$DATA"/tmp/perfshots | wc -l) captures"
+fi
 status=0
 if ! grep -q "PERF DONE" "$log"; then
   echo "::error::v2 session perf did not finish"; tail -40 "$log"; status=1
