@@ -157,11 +157,13 @@ struct RootView: View {
         }
         .background(Theme.bg)
         // Measured without the keyboard: typing in inner landscape must not
-        // drop the height under the split rule and fold the title into a sheet.
+        // drop the height under the split rule and fold the title into a sheet
+        // (`steadied(after:)`: on the open Duo the keyboard still got through).
         .background {
             Color.clear
                 .ignoresSafeArea(.keyboard)
-                .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { newFold in
+                .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { measured in
+                    let newFold = measured.steadied(after: fold)
                     model.updateDetailHost(splitsWithTitle: splitsWithTitle(newFold))
                     fold = newFold
                 }

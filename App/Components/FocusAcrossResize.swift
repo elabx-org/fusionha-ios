@@ -8,7 +8,9 @@ import UIKit
 /// keyboard showing or the person dismissing it never counts as a resize.
 /// Only the window's own size changing counts: closing the search (its ✕)
 /// re-lays the page out at a new width too, and that must not bring the
-/// keyboard straight back (build 757 on the open Duo).
+/// keyboard straight back (build 757 on the open Duo), and neither must a
+/// title opening beside Search (the list narrows to a third) while the
+/// keyboard changes the window's height (build 781).
 private struct FocusAcrossResize: ViewModifier {
     var focused: FocusState<Bool>.Binding
     /// When the field last lost focus.
@@ -34,8 +36,10 @@ private struct FocusAcrossResize: ViewModifier {
                         guard old > 0, abs(old - new) >= 1 else { return }
                         let now = Self.currentWindowSize()
                         defer { windowSize = now }
-                        // The page moved inside the same window: not a resize.
-                        guard let now, let before = windowSize, before != now else { return }
+                        // The page moved inside the same window, or only the
+                        // window's height changed (the open Duo's keyboard):
+                        // not a resize. Fold, unfold and rotation change the width.
+                        guard let now, let before = windowSize, abs(before.width - now.width) >= 1 else { return }
                         restore()
                     }
             }
