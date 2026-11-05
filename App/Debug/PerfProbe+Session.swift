@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import GameController
 
 // The perf probe's owner-session script (FUSIONHA_PERF_SCRIPT=v2session): on
 // the iPhone Duo harness's flat open inner display, three rounds of what the
@@ -27,10 +28,12 @@ extension PerfProbe {
         if model.library.isEmpty { await model.loadLibrary() }
         emit(["event": "library", "label": "v2session", "titles": model.library.count,
               "error": model.libraryError ?? ""])
+        emit(["event": "input", "hardware_keyboard": GCKeyboard.coalesced != nil, "focus": focusState()])
         await phase("session.settle", warmup)
         for (index, pair) in Self.sessionTitles.enumerated() {
             await sessionRound(index + 1, movie: pair.0, series: pair.1)
         }
+        emit(["event": "input", "hardware_keyboard": GCKeyboard.coalesced != nil, "focus": focusState()])
         emit(["event": "done"])
         FileHandle.standardError.write(Data("PERF DONE\n".utf8))
     }
@@ -91,6 +94,14 @@ extension PerfProbe {
             sv.setContentOffset(CGPoint(x: sv.contentOffset.x, y: -sv.adjustedContentInset.top), animated: false)
         }
         try? await Task.sleep(for: .milliseconds(300))
+    }
+
+    /// Whether UIKit's focus system is on (a hardware keyboard on iPad) and what it holds.
+    private func focusState() -> String {
+        let window = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows).first { $0.isKeyWindow }
+        guard let window, let system = UIFocusSystem.focusSystem(for: window) else { return "none" }
+        return system.focusedItem.map { String(describing: type(of: $0)) } ?? "on, nothing focused"
     }
 
     /// The harness's open inner display (`DuoHarness`, 951 x 669).
