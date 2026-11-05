@@ -6,6 +6,9 @@ extension AppModel {
 
     /// `tab:` mirrors the web's `/library/{id}?tab=…` (e.g. History's "Why this decision").
     func open(_ itemId: Int, tab: DetailTab? = nil) {
+        #if V2
+        V2TitlePrefetch.start(itemId, model: self)
+        #endif
         pendingDetailTab = tab
         presentedItem = ItemRef(id: itemId)
     }

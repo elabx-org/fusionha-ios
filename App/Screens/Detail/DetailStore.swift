@@ -229,7 +229,17 @@ final class DetailStore {
     func reload() async {
         guard let client else { return }
         do {
-            let item = try await client.item(id: itemId)
+            let item: ItemDetail
+            #if V2
+            // v2: the poster press or tap may have fetched it already (`V2TitlePrefetch`).
+            if detail == nil, let prefetched = await V2TitlePrefetch.take(itemId) {
+                item = prefetched
+            } else {
+                item = try await client.item(id: itemId)
+            }
+            #else
+            item = try await client.item(id: itemId)
+            #endif
             detail = item
             loadError = nil
             seasonMonitorOverride = [:]

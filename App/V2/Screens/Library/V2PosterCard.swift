@@ -71,6 +71,8 @@ struct V2PosterCard: View {
     private func pressChanged(_ down: Bool) {
         pressDelay?.cancel()
         pressDelay = nil
+        // A press is most likely a tap: start fetching what its page needs.
+        if down, !selecting { V2TitlePrefetch.start(item.id, model: model) }
         guard down, !selecting, openSheet != nil else {
             if pressing { pressing = false }
             return
