@@ -157,6 +157,8 @@ struct ShellDetailColumn: View {
     /// far it has dropped once that closes it.
     @State private var pull = DuoColumnPull()
     @State private var drop: CGFloat = 0
+    /// v2's split handle (`DuoSeamDrag`), which slides a closing title out.
+    @Environment(DuoSeamDrag.self) private var seamDrag: DuoSeamDrag?
 
     /// v2's flat open Duo with a title open: list and title are one display
     /// (`TitlePageOverride.flatOpenListShare`), so no hairline between them.
@@ -222,6 +224,11 @@ struct ShellDetailColumn: View {
     private func closePage() {
         if let store = besideEpisode {
             store.episodeSheet = nil
+            return
+        }
+        // v2: the handle slides the title off the trailing edge first.
+        if seamless, let seamDrag, seamDrag.handleShown {
+            seamDrag.closeRequests += 1
             return
         }
         model.presentedItem = nil

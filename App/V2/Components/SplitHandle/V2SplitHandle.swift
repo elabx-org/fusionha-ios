@@ -41,7 +41,7 @@ struct V2SplitHandle: View {
 
     var body: some View {
         ZStack(alignment: .leading) {
-            if seam.live != nil, !seam.opening { V2SeamGround(context: context, x: CGFloat(x)) }
+            if seam.live != nil, !seam.listFull { V2SeamGround(context: context, x: CGFloat(x)) }
             if seam.live != nil, motion {
                 Color.black.opacity(DuoSeam.listShade(x: x, split: rest))
                     .frame(width: CGFloat(max(0, x)))
@@ -66,11 +66,16 @@ struct V2SplitHandle: View {
             Task { @MainActor in if start != nil { release(velocity: 0) } }
         }
         .task { await firstTimeHint() }
-        .onAppear { slideIn() }
+        .onAppear {
+            seam.handleShown = true
+            slideIn()
+        }
+        .onChange(of: seam.closeRequests) { slideOut() }
         .onDisappear {
             spring.cancel()
+            seam.handleShown = false
             seam.live = nil
-            seam.opening = false
+            seam.listFull = false
             if model.presentedItem == nil { seam.slidIn = nil }
         }
     }
@@ -190,22 +195,37 @@ struct V2SplitHandle: View {
             case .closed: context.close()
             }
             context.drag.live = nil
-            context.drag.opening = false
+            context.drag.listFull = false
         }
     }
 
-    /// A title just opened beside the list: it slides in from the trailing
-    /// edge to the split, the close drag played backwards, over the Library
-    /// still at its full width (`FoldSeam`). Once per title opened, not when
-    /// the handle comes back for one already open (and never at full width).
+    /// A title just opened: it slides in from the trailing edge to its stop
+    /// (the split, or the full width when the list is hidden), the close
+    /// drag played backwards, over the Library at its full width
+    /// (`FoldSeam`). Once per title opened, not when the handle comes back
+    /// for one already open.
     private func slideIn() {
         let id = model.presentedItem?.id
         guard seam.slidIn != id else { return }
         seam.slidIn = id
-        guard motion, !context.fullWidth, seam.live == nil else { return }
-        seam.opening = true
+        guard motion, seam.live == nil else { return }
+        seam.listFull = true
         seam.live = CGFloat(width)
-        settle(.split, velocity: 0, tick: false)
+        settle(restingStop, velocity: 0, tick: false)
+    }
+
+    /// Close: the title slides off the trailing edge over the Library at its
+    /// full width, then closes (at once under Reduce Motion).
+    private func slideOut() {
+        guard motion else {
+            context.close()
+            return
+        }
+        spring.cancel()
+        start = nil
+        if seam.live == nil { seam.live = CGFloat(x) }
+        seam.listFull = true
+        settle(.closed, velocity: 0, tick: false)
     }
 
     // MARK: First time

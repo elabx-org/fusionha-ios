@@ -194,6 +194,7 @@ struct RootView: View {
         .environment(\.duoListToggle, listToggle(split))
         .environment(\.titleSpread, titleSpread(split, spread: spread))
         .environment(\.duoOpen, fold.isDuoOpen)
+        .environment(seam)
         .environment(\.spreadSpanRequests, spanRequests)
         .environment(\.bookPose, fold.vertical != nil)
         .environment(\.motionEnabled, !reduceMotion && model.animationsEnabled)

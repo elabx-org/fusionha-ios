@@ -20,9 +20,15 @@ final class DuoSeamDrag {
     var live: CGFloat?
     /// The title v2's handle last slid in on opening, so it slides once.
     @ObservationIgnored var slidIn: Int?
-    /// The seam is carrying a title in as it opens (`V2SplitHandle`): the
-    /// list stays at the full width it had until the title lands.
-    var opening = false
+    /// The seam is carrying a title in as it opens, or out as Close closes
+    /// it (`V2SplitHandle`): the list is laid out at the full width it has
+    /// with no title.
+    var listFull = false
+    /// Close on a title with the handle (`ShellDetailColumn`): the handle
+    /// slides it off the trailing edge, then closes it.
+    var closeRequests = 0
+    /// The handle is on screen to take `closeRequests`.
+    @ObservationIgnored var handleShown = false
 }
 
 /// What the shell hands v2's handle: where the seam rests and what each stop does.
@@ -60,7 +66,7 @@ struct DuoSeamContext {
 
     /// The split as the seam moves: both columns laid out around `live`.
     func seam(live: CGFloat) -> FoldSeam {
-        FoldSeam(x: live, listFloor: rest, titleFloor: width - rest, fromFull: fullWidth, listFull: drag.opening)
+        FoldSeam(x: live, listFloor: rest, titleFloor: width - rest, fromFull: fullWidth, listFull: drag.listFull)
     }
 }
 
@@ -89,8 +95,9 @@ struct FoldSeam: Equatable {
     var titleFloor: CGFloat
     /// The drag began at full width (the list hidden).
     var fromFull = false
-    /// A title opening: the list keeps the full width it had (else the
-    /// list keeps its split width, and re-lays out once the title is gone).
+    /// A title opening or closed by Close: the list is at the full width it
+    /// has with no title (else it keeps its split width while dragged, and
+    /// re-lays out once the title is gone).
     var listFull = false
 
     /// How far into its closing look the title is (`DuoSeam.closeProgress`).
@@ -105,9 +112,9 @@ extension FoldSplitLayout {
     func placeSeam(_ seam: FoldSeam, in bounds: CGRect, subviews: LayoutSubviews) {
         let x = min(max(seam.x, 0), bounds.width)
         let towardClose = x > seam.listFloor
-        let listWidth = towardClose && seam.listFull ? bounds.width : seam.listFloor
+        let listWidth = seam.listFull ? bounds.width : seam.listFloor
         // Squeezed, the list slides a little under the title.
-        let slide = towardClose ? 0 : (seam.listFloor - x) * CGFloat(DuoSeam.listSlide)
+        let slide = towardClose || seam.listFull ? 0 : (seam.listFloor - x) * CGFloat(DuoSeam.listSlide)
         let titleX = towardClose || seam.fromFull ? x : seam.listFloor
         let titleWidth = seam.fromFull ? bounds.width : seam.titleFloor
         subviews[0].place(at: CGPoint(x: bounds.minX - slide, y: bounds.minY),
