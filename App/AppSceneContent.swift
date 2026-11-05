@@ -35,7 +35,14 @@ struct AppSceneContent<Root: View>: View {
         .scrollIndicators(.hidden)
         // At the root, so a link that cold-launches the app is never
         // missed; the shell applies it once signed in and on screen.
-        .onOpenURL { model.receiveDeepLink($0) }
+        .onOpenURL { url in
+            #if V2
+            // Split screen: the window used last takes it, not every window.
+            model.session.routeLink(url, fallback: model)
+            #else
+            model.receiveDeepLink(url)
+            #endif
+        }
         // The palette (Settings › Appearance): scheme, tint, Automatic.
         .paletteRoot(signedOut: model.credentials == nil)
         .task {

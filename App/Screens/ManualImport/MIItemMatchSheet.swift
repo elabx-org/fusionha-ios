@@ -46,7 +46,7 @@ struct MIItemMatchSheet: View {
             .toolbar { ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } } }
             .closeOnlyBars()
         }
-        .task { if !model.libraryLoaded { await model.loadLibrary() } }
+        .task { await model.loadLibraryIfNeeded() }
     }
 
     /// Why nothing is listed: still loading, the library failed to load, it is

@@ -1,8 +1,8 @@
 import SwiftUI
 import FusionhaKit
 
-/// The shell's other sheets, deep links and polling, applied once around the
-/// whole (possibly two-column) shell.
+/// The shell's other sheets, deep links and polling lease, applied once around
+/// the whole (possibly two-column) shell.
 struct ShellPresentations: ViewModifier {
     @Bindable var model: AppModel
     let reduceMotion: Bool
@@ -76,20 +76,15 @@ struct ShellPresentations: ViewModifier {
                 scene.requestGeometryUpdate(.iOS(interfaceOrientations: .landscapeRight)) { _ in }
             }
             #endif
-            await model.loadMe()
-            await model.registerPushDevice()
+            // Once per sign-in for the app, however many windows show the shell.
+            await model.session.loadAccountOnce()
         }
-        .task(id: scenePhase) {
+        .onChange(of: model.meLoads, initial: true) { model.applyAccountScope() }
+        // The queue, shell and setup pollers run once for the app while any
+        // window is active with its shell on screen (`AppSession+Polling`).
+        .task(id: scenePhase == .active) {
             guard scenePhase == .active else { return }
-            await model.pollQueue()
-        }
-        .task(id: "\(scenePhase == .active)|\(model.me?.id ?? -1)") {
-            guard scenePhase == .active, model.me != nil else { return }
-            await model.pollShell()
-        }
-        .task(id: "setups|\(scenePhase == .active)|\(model.me?.id ?? -1)") {
-            guard scenePhase == .active, model.me != nil, !model.requestScoped else { return }
-            await model.pollSetups()
+            await model.holdPollingLease()
         }
     }
 }

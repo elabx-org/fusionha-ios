@@ -12,7 +12,8 @@ struct FusionhaApp: App {
         // CI's iPhone Duo harness: its launch settings land before any view reads them.
         DuoHarness.prepare()
         #endif
-        _model = State(initialValue: AppModel())
+        // One window: one session (the app's data and pollers) and its one model.
+        _model = State(initialValue: AppModel(session: AppSession()))
     }
 
     var body: some Scene {

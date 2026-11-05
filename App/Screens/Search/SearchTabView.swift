@@ -105,7 +105,7 @@ struct SearchTabView: View {
         }
         .onChange(of: model.searchFocusTick) { focused = true }
         .task {
-            if !model.libraryLoaded && !model.requestScoped { await model.loadLibrary() }
+            if !model.requestScoped { await model.loadLibraryIfNeeded() }
         }
         .task(id: UnifiedSearchModel.key(trimmed, kind)) {
             await search.run(trimmed, kind: kind, source: model.client.map { ServerUnifiedSearchSource(client: $0, tmdb: .always) },

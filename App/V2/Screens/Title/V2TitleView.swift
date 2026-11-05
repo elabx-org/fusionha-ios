@@ -145,7 +145,7 @@ struct V2TitleView: View {
         let y = store.scrollY
         try? await Task.sleep(for: .milliseconds(80))
         if y > 0 { position.scrollTo(y: y) }
-        if inColumn { await DetailSheetPresence.settle(limit: .seconds(2)) }
+        if inColumn { await model.sheetPresence.settle(limit: .seconds(2)) }
         try? await Task.sleep(for: .milliseconds(inColumn ? 150 : 550))
         presentReady = true
     }

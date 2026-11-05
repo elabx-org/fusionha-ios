@@ -228,5 +228,9 @@ struct PosterActions: View {
             Button("Edit…", systemImage: "pencil") { model.edit(item.id) }
             Button("Delete…", systemImage: "trash", role: .destructive) { model.confirmDelete(item.id, title: item.title) }
         }
+        #if V2
+        // v2 runs in several windows (split screen): this title in a window of its own.
+        Section { OpenInNewWindowButton(itemId: item.id) }
+        #endif
     }
 }

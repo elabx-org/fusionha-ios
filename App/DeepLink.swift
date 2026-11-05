@@ -32,7 +32,7 @@ extension AppModel {
         // presenting during either is silently dropped.
         try? await Task.sleep(for: .milliseconds(closed ? 700 : 300))
         // A title closed for another one: its sheet must be fully gone first.
-        if presentedItem == nil { await DetailSheetPresence.settle() }
+        if presentedItem == nil { await sheetPresence.settle() }
         handleDeepLink(url)
         DeepLinkProbe.log("applied \(url.absoluteString) tab=\(tab) item=\(presentedItem?.id ?? 0)")
     }

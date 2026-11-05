@@ -1,13 +1,23 @@
 import Foundation
 import Observation
-import UIKit
-import WidgetKit
 import FusionhaKit
 
+/// One window's state: its tab, search, open title, sheets, pending links,
+/// selection and toasts. v1 has one; each v2 window has its own (`V2Window`).
+/// The data they show is the app-wide `AppSession`, read through
+/// AppModel+Session.swift.
 @MainActor
 @Observable
 final class AppModel {
-    var credentials: Credentials? = CredentialStore.load()
+    /// The app-wide data and pollers this window shows (`AppSession`; the
+    /// forwards are in AppModel+Session.swift).
+    @ObservationIgnored let session: AppSession
+    /// Whether this window's title sheet is on screen (`DetailSheetPresence`).
+    @ObservationIgnored let sheetPresence = DetailSheetPresence()
+    /// Leases this window holds: its scene is active with its shell on
+    /// screen (`holdPollingLease`; a count, as a late release can trail a new lease).
+    @ObservationIgnored var foregroundLeases = 0
+    var inForeground: Bool { foregroundLeases > 0 }
     var tab: AppTab = .library {
         // Opening the Calendar tab, or tapping it again, brings it back to today.
         didSet {
@@ -21,7 +31,6 @@ final class AppModel {
     var calendarTodayTick = 0
     /// Opening the Search tab, or tapping it again, puts the cursor in its field.
     var searchFocusTick = 0
-    private(set) var me: Me?
 
     // Shell state shared by the top bar, the + button and every screen.
     var searchText = ""
@@ -101,56 +110,15 @@ final class AppModel {
     /// Their auto-dismiss clocks, paused while a toast is held.
     let toastClock = ToastClock()
 
-    // Shell badges and settings (ShellState.swift; read through in AppModel+Access.swift).
-    let shell = ShellState()
-
-    // The library list, shared by Library and the top-bar search.
-    private(set) var library: [MediaItem] = [] {
-        didSet {
-            var map: [String: Int] = [:]
-            for item in library { if let tmdb = item.tmdbId { map[Self.tmdbKey(tmdb, item.kind)] = item.id } }
-            libraryIdByTmdb = map
-        }
-    }
-    /// TMDB id → library item id (the web's Discover `idByTmdb`). Discover rows
-    /// carry only `in_library`; the server fills `library_item_id` on /search alone.
-    private var libraryIdByTmdb: [String: Int] = [:]
-    private static func tmdbKey(_ tmdbId: Int, _ kind: MediaKind) -> String { "\(kind == .movie ? "m" : "s")\(tmdbId)" }
-    /// The library item for a TMDB result: its own id when sent, else the lookup.
-    func libraryItemId(for result: MediaSearchResult) -> Int? {
-        result.libraryItemId ?? libraryIdByTmdb[Self.tmdbKey(result.tmdbId, result.kind)]
-    }
-    private(set) var libraryLoaded = false
-    private(set) var libraryError: String?
-    /// Bumped whenever `library` changes, so screens can rebuild derived lists.
-    private(set) var libraryVersion = 0
-
-    // Queue state drives the Activity tab, the downloads accessory, the
-    // Live Activity and the Downloads widget.
-    private(set) var queue: [QueueItem] = [] { didSet { queueSlots.update(queue) } }
-    /// Per-version views of `queue` for the Library's version chips (`QueueSlots`).
-    @ObservationIgnored let queueSlots = QueueSlots()
-    private(set) var queueTotal = 0
-    /// The queue has been seen once (cache or poll): until then counts are unknown, not zero.
-    private(set) var queueLoaded = false
-    /// Downloads held for a manual import (the Activity header caption).
-    private(set) var queueHeld = 0
-    /// fusionha's own downloads are paused (Activity › Pause, 0.4.205).
-    var queuePaused = false
-    /// The held (manual-import-required) downloads on queue page 1, for the
-    /// Activity header's "Resolve all held" bulk rescue.
-    private(set) var queueHeldIds: [Int] = []
-    private(set) var queueError: String?
-    private var lastQueueIds: [Int] = []
-
-    init() {
+    init(session: AppSession) {
+        self.session = session
         tab = AppStartTab.launchTab()
         pendingActivityTab = AppStartTab.launchActivityTab()
         #if DEBUG
         // CI screenshots: point at the mock server and open a given screen.
         let env = ProcessInfo.processInfo.environment
-        if let server = env["FUSIONHA_SCREENSHOT_SERVER"].flatMap(URL.init(string:)) {
-            credentials = Credentials(serverURL: server, token: "screenshot", tokenId: nil)
+        if env["FUSIONHA_SCREENSHOT_SERVER"] != nil {
+            // AppSession pointed the sign-in at the mock server.
             switch env["FUSIONHA_SCREENSHOT_TAB"] {
             case "discover": tab = .discover
             case "search": tab = .search
@@ -188,147 +156,17 @@ final class AppModel {
             } else {
                 UserDefaults.standard.set("grid", forKey: "fusionha.library.density")
             }
-        } else if env["FUSIONHA_SCREENSHOT_LOGIN"] != nil {
-            credentials = nil
         }
         #endif
         // Observers don't run for the initializer's own assignments.
         cardFlags.pick(presentedItem?.id)
         cardFlags.select(selection)
-        observePush()
-        // Re-save on launch so sign-ins from older builds also land in the
-        // keychain record the widgets read, then let the widgets refresh.
-        if let credentials, ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SERVER"] == nil {
-            CredentialStore.save(credentials)
-            WidgetCenter.shared.reloadAllTimelines()
-        }
-    }
-
-    var client: APIClient? {
-        credentials?.client()
-    }
-
-    // MARK: Account and library
-
-    func loadMe() async {
-        guard let client else { return }
-        if let me = try? await client.me() {
-            self.me = me
-            if me.requestScoped == true, ![.discover, .requests, .you, .search].contains(tab) { tab = .discover }
-        }
-    }
-
-    /// Draws the last library this phone saw, at once, while the server's
-    /// answer is on its way (a cold launch otherwise waits for the whole fetch).
-    func restoreLibrary() async {
-        guard library.isEmpty, let server = credentials?.serverURL else { return }
-        let cached = await Task.detached(priority: .userInitiated) { LibraryDiskCache.load(server: server) }.value
-        guard library.isEmpty, let cached, !cached.isEmpty else { return }
-        library = cached
-        libraryVersion += 1
-    }
-
-    func loadLibrary() async {
-        guard let client else { return }
-        do {
-            let previousCount = library.count
-            let fresh = try await client.libraryWithData()
-            library = fresh.items
-            libraryVersion += 1
-            let server = client.baseURL, raw = fresh.data
-            Task.detached(priority: .utility) { LibraryDiskCache.save(raw, server: server) }
-            // A new title starts a setup: show the pill now, not at the next calm poll.
-            if libraryLoaded, library.count > previousCount, !requestScoped {
-                Task { _ = await setupProgress.refresh(client: client) }
-            }
-            libraryError = nil
-        } catch {
-            // A fetch cancelled with its view (the sign-in → app hand-over) is
-            // not an answer: leave the library unloaded so the next appearance
-            // fetches again, instead of an empty library until pull-to-refresh.
-            if Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled { return }
-            libraryError = error.localizedDescription
-        }
-        libraryLoaded = true
+        session.register(window: self)
     }
 
     /// The web's `/preview/{kind}/{tmdb_id}`. Until a native Preview screen
     /// exists this opens the Add sheet on that title (Preview's own Add).
     var previewHandler: ((MediaSearchResult) -> Void)?
-
-    func signOut() {
-        CredentialStore.clear()
-        WebSessionStore.clear()
-        credentials = nil
-        me = nil
-        LibraryDiskCache.clear()
-        ResponseDiskCache.clear()
-        library = []
-        libraryVersion += 1
-        libraryLoaded = false
-        searchText = ""
-        tab = .library
-        queue = []
-        queueTotal = 0
-        queueLoaded = false
-        queueHeld = 0
-        queueHeldIds = []
-        selectMode = false
-        selection = []
-        shell.reset()
-        LiveActivityController.endAll()
-        WidgetCenter.shared.reloadAllTimelines()
-    }
-
-    // MARK: Queue polling (no stream on the server, so poll like the web does)
-
-    func pollQueue() async {
-        // The queue as this phone last saw it, at once (badge, Activity, Live Activity
-        // wait for the first poll otherwise).
-        if queue.isEmpty, let kept = await client?.cached({ try await $0.queue() }) {
-            if queue.isEmpty {
-                queueLoaded = true
-                queue = kept.items
-                queueTotal = kept.total
-                queueHeldIds = kept.items.filter { $0.status.lowercased() == "held" }.map(\.id)
-                queueHeld = queueHeldIds.count
-            }
-        }
-        while !Task.isCancelled {
-            await refreshQueue()
-            let interval: Double = queue.isEmpty ? 6 : 2
-            try? await Task.sleep(for: .seconds(interval))
-        }
-    }
-
-    func refreshQueue() async {
-        PerfCount.hit("AppModel.refreshQueue")
-        guard let client else { return }
-        do {
-            let page = try await client.queue()
-            let (items, total) = DownloadsBarScreenshot.shaped(page.items, total: page.total)
-            // Polled every 2s: assign only what changed, so observers of the
-            // total / held count (Activity's header, the tab badge) don't
-            // re-render on every tick while progress moves.
-            if queue != items { queue = items }
-            if queueTotal != total { queueTotal = total }
-            let heldIds = items.filter { $0.status.lowercased() == "held" }.map(\.id)
-            if queueHeldIds != heldIds { queueHeldIds = heldIds }
-            if queueHeld != heldIds.count { queueHeld = heldIds.count }
-            if queueError != nil { queueError = nil }
-            if !queueLoaded { queueLoaded = true }
-            if queuePaused != (page.paused == true) { queuePaused = page.paused == true }
-            LiveActivityController.sync(with: items, paused: page.paused == true)
-            let ids = items.map(\.id)
-            if ids != lastQueueIds {
-                lastQueueIds = ids
-                WidgetCenter.shared.reloadTimelines(ofKind: "Downloads")
-                WidgetCenter.shared.reloadTimelines(ofKind: WidgetStack.downloading.kind)
-            }
-        } catch {
-            queueError = error.localizedDescription
-        }
-    }
 
     // MARK: Toasts
 
@@ -348,28 +186,5 @@ final class AppModel {
 
     func dismissToast(_ id: UUID) {
         toasts.removeAll { $0.id == id }
-    }
-
-    // MARK: Setup progress
-
-    /// The setting-up pill and the posters' setup rings (shared by every tab).
-    let setupProgress = SetupProgress()
-
-    // MARK: Cache
-
-    /// "Reset cache & reload": drop cached responses and artwork, then refetch.
-    func resetCacheAndReload() async {
-        URLCache.shared.removeAllCachedResponses()
-        ImagePipeline.shared.removeAll()
-        ArtBlurCache.shared.removeAll()
-        await ArtPaletteExtractor.shared.removeAll()
-        LibraryDiskCache.clear()
-        ResponseDiskCache.clear()
-        libraryLoaded = false
-        await loadMe()
-        await loadLibrary()
-        await refreshShell()
-        await refreshQueue()
-        toast("Cache cleared")
     }
 }

@@ -106,7 +106,7 @@ struct DiscoverView: View {
         // A decision moves the Requests badge now, not on the next 30 s poll.
         .onChange(of: store.requestsVersion) { Task { await model.refreshShell() } }
         // In-library cards route by the library list (the web's `idByTmdb`).
-        .task { if !model.libraryLoaded && !model.requestScoped { await model.loadLibrary() } }
+        .task { if !model.requestScoped { await model.loadLibraryIfNeeded() } }
         // Issues lives in the Requests menu now (Proposal 2): the old tab and
         // `?tab=issues` open Requests on Issues.
         .onChange(of: tab, initial: true) { _, now in

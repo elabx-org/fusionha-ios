@@ -11,10 +11,7 @@ extension AppModel {
     var requestsBadge: Int {
         (canApproveRequests ? shell.pendingRequests : 0) + (canManageIssues ? shell.issuesNeedingAction : 0)
     }
-    var canManageIssues: Bool {
-        guard let me else { return false }
-        return me.isAdmin || (me.permissions ?? []).contains("issues.manage")
-    }
+    var canManageIssues: Bool { session.canManageIssues }
     var commandsActive: Bool { shell.commandsActive }
     var settings: ShellSettings? { shell.settings }
 
@@ -22,11 +19,8 @@ extension AppModel {
     var railStyle: RailStyle { RailStyle(rawValue: settings?.libraryRailStyle ?? "") ?? .current }
     var railConsolidate: Bool { settings?.libraryRailConsolidate ?? false }
     var animationsEnabled: Bool { settings?.animationsEnabled ?? true }
-    var canApproveRequests: Bool {
-        guard let me else { return false }
-        return me.isAdmin || (me.permissions ?? []).contains("requests.approve")
-    }
+    var canApproveRequests: Bool { session.canApproveRequests }
 
     /// Requester accounts get the web's reduced nav.
-    var requestScoped: Bool { me?.requestScoped == true }
+    var requestScoped: Bool { session.requestScoped }
 }

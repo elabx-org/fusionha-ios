@@ -190,8 +190,9 @@ targets:
           - MonaSansVF.ttf
         UILaunchScreen:
           UIColorName: LaunchBackground
+        # v2 runs in several windows (split screen; docs/v2.md, Multiple windows). v1 stays single-window.
         UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
+          UIApplicationSupportsMultipleScenes: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft

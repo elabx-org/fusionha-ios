@@ -220,6 +220,10 @@ struct LibraryPosterSheet: View {
                 SheetSeparator()
                 SheetRow(index: 5, label: "Delete…", icon: "trash", tone: .danger,
                          action: run { model.confirmDelete(item.id, title: item.title) })
+                #if V2
+                // v2 runs in several windows (split screen): this title in a window of its own.
+                OpenInNewWindowSheetRow(index: 6, itemId: item.id, dismiss: { dismiss() })
+                #endif
             }
         }
         .padding(.bottom, 8)

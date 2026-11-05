@@ -124,10 +124,7 @@ struct LibraryView: View {
             LibraryPosterSheet(item: item)
         }
         .task {
-            if !model.libraryLoaded {
-                await model.restoreLibrary()
-                await model.loadLibrary()
-            }
+            await model.loadLibraryIfNeeded()
             #if DEBUG
             // CI screenshots: `FUSIONHA_SCREENSHOT_POSTER_SHEET=<item id>` long-presses that poster.
             if let id = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_POSTER_SHEET"].flatMap(Int.init) {

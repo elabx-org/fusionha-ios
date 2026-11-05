@@ -8,19 +8,22 @@ import Foundation
 /// sheet presented while the old one is still leaving is silently dropped
 /// (and the late dismissal writes `nil` back over the new title). So the
 /// link waits for the old sheet's `onDismiss` before presenting.
+///
+/// One per window (`AppModel.sheetPresence`): v2's windows side by side
+/// each have their own title sheet.
 @MainActor
-enum DetailSheetPresence {
-    private static var onScreen = false
+final class DetailSheetPresence {
+    private var onScreen = false
 
     /// The sheet's content appeared.
-    static func shown() { onScreen = true }
+    func shown() { onScreen = true }
 
     /// The sheet's `onDismiss`: it is fully gone.
-    static func dismissed() { onScreen = false }
+    func dismissed() { onScreen = false }
 
     /// Returns once no detail sheet is on screen, or after `limit` as a
     /// safety net should UIKit never report the dismissal.
-    static func settle(limit: Duration = .seconds(4)) async {
+    func settle(limit: Duration = .seconds(4)) async {
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: limit)
         while onScreen, clock.now < deadline {

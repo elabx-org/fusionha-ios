@@ -26,6 +26,10 @@ struct ItemDetailMoreMenu: View {
                     Divider()
                     searchItem
                     Button("Open in the web app", systemImage: "safari", action: openWeb)
+                    #if V2
+                    // v2's title page (compact More): this title in a window of its own.
+                    OpenInNewWindowButton(itemId: store.itemId)
+                    #endif
                 } else {
                     Button("Open in the web app", systemImage: "safari", action: openWeb)
                     searchItem

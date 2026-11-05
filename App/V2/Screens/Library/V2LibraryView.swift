@@ -8,7 +8,7 @@ import FusionhaKit
 /// the compact list. The ground comes from the first hero's art.
 ///
 /// It reuses v1's store and logic: the model's library, `LibraryInputs`
-/// (filtering, counting, rows), the persisted filters under v1's keys, the
+/// (filtering, counting, rows), the filters (per window, seeded from v1's keys), the
 /// scrubber, the poster sheet and the select bar. A tap opens v2's title
 /// page (`V2TitleView`). Phone and the folded Duo: three posters a row; flat open
 /// the grid simply widens across the seamless display; book pose keeps the
@@ -20,15 +20,16 @@ struct V2LibraryView: View {
     @Environment(\.bookPose) private var bookPose
     @Environment(\.duoOpen) private var duoOpen
     @Environment(\.horizontalSizeClass) private var sizeClass
-    @AppStorage("library.kind") private var kindRaw = "all"
+    // The filters follow the window (split screen), seeded from the ones
+    // used last (`V2LibrarySceneFilters`). Show › Not monitored is v2's own.
+    @SceneStorage("v2.library.kind") private var kindRaw = V2LibraryFilterSeed.kind
     @AppStorage("fusionha.library.density") private var density = "grid"
-    @AppStorage("library.tier") private var tier: LibraryTier = .all
-    @AppStorage("library.status") private var status: LibraryStatus = .all
-    @AppStorage("library.sort") private var sort: LibrarySort = .title
-    @AppStorage("library.recency") private var recency: LibraryRecency = .all
-    @AppStorage("library.group") private var group = false
-    /// Show › Not monitored: v2's own key, so v1's Library never sees it.
-    @AppStorage("v2.library.unmonitored") private var unmonitoredOnly = false
+    @SceneStorage("v2.library.tier") private var tier: LibraryTier = V2LibraryFilterSeed.tier
+    @SceneStorage("v2.library.status") private var status: LibraryStatus = V2LibraryFilterSeed.status
+    @SceneStorage("v2.library.sort") private var sort: LibrarySort = V2LibraryFilterSeed.sort
+    @SceneStorage("v2.library.recency") private var recency: LibraryRecency = V2LibraryFilterSeed.recency
+    @SceneStorage("v2.library.group") private var group = V2LibraryFilterSeed.group
+    @SceneStorage("v2.library.unmonitored") private var unmonitoredOnly = V2LibraryFilterSeed.unmonitored
     @AppStorage("v2.library.shelf") private var shelf: V2LibraryShelfSource = .recentlyAdded
     @State private var compactSort = CompactSort()
     @State private var derived = LibraryDerived()
@@ -147,10 +148,7 @@ struct V2LibraryView: View {
         .environment(\.openPosterSheet, OpenPosterSheet { posterSheet = $0 })
         .sheet(item: $posterSheet) { item in LibraryPosterSheet(item: item) }
         .task {
-            if !model.libraryLoaded {
-                await model.restoreLibrary()
-                await model.loadLibrary()
-            }
+            await model.loadLibraryIfNeeded()
         }
         .onQueueChange(model, initial: true) { queue in
             let next = Set(queue.filter { QueueProgress($0).held }.map(\.mediaItemId))
@@ -163,6 +161,8 @@ struct V2LibraryView: View {
         }
         .onChange(of: inputs, initial: true) { rederive() }
         .onChange(of: unmonitoredOnly) { rederive() }
+        .modifier(V2LibraryFilterWriteThrough(kind: kindRaw, tier: tier, status: status, sort: sort,
+                                              recency: recency, group: group, unmonitored: unmonitoredOnly))
         .onChange(of: held) { rebuildHome() }
     }
 

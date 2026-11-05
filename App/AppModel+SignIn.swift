@@ -109,7 +109,7 @@ extension AppModel {
         // app hand-over can cancel a view's `.task` mid-fetch.
         Task {
             await loadMe()
-            if !requestScoped, !libraryLoaded { await loadLibrary() }
+            if !requestScoped { await loadLibraryIfNeeded() }
         }
         WidgetCenter.shared.reloadAllTimelines()
         AppDelegate.requestPushAuthorization()
