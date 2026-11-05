@@ -35,7 +35,7 @@ extension PerfProbe {
                 sv.setContentOffset(CGPoint(x: sv.contentOffset.x, y: 4000), animated: false)
                 await phase("v2open.scrolled.idle", 3)
             }
-            let kind = model.library.first { $0.id == id }?.kind ?? "?"
+            let kind = model.library.first { $0.id == id }.map { String(describing: $0.kind) } ?? "?"
             await measureOpen(id, label: "open.\(round).\(kind)")
             await phase("opened.\(round).idle", 2)
             await measureClose(label: "close.\(round).\(kind)")
