@@ -37,6 +37,8 @@ public struct ArtBlurSpec: Hashable, Sendable {
         case detailAmbient
         /// The preview / add page's ambient wash (`PreviewAmbient`).
         case previewAmbient
+        /// v2's page ground art (W1, mock cards-w.js): blur 46, saturate 1.7.
+        case pageGround
     }
 
     public var kind: Kind
@@ -127,6 +129,23 @@ extension ArtBlurSpec {
                            art: ArtBlurRect(x: 0, y: 0, width: canvasW, height: canvasH), cornerRadius: 0,
                            blur: 72 * canvasW / shown, saturation: saturation, brightness: brightness,
                            alpha: 1, clampsEdges: true, overscanX: 1.28, overscanY: 1.28,
+                           sourceWidth: 160, sourceHeight: (160 / aspect).rounded())
+    }
+
+    /// v2's page ground art (W1, mock cards-w.js): the art aspect-filled
+    /// over the page `frame`, `blur(46px) saturate(1.7) brightness(.85)`.
+    /// Core Image's brightness adds rather than multiplies, so the dim is a
+    /// small negative offset. Monochrome stays grey.
+    public static func pageGround(tone: ArtTone, aspect: Double,
+                                  frame: (width: Double, height: Double) = (393, 852)) -> ArtBlurSpec {
+        let aspect = bucket(aspect)
+        let canvasW = 96.0, canvasH = (canvasW / aspect).rounded()
+        let shown = max(frame.width, frame.height * aspect)
+        return ArtBlurSpec(kind: .pageGround, tone: tone, canvasWidth: canvasW, canvasHeight: canvasH,
+                           art: ArtBlurRect(x: 0, y: 0, width: canvasW, height: canvasH), cornerRadius: 0,
+                           blur: 46 * canvasW / shown, saturation: tone == .mono ? 0 : 1.7,
+                           brightness: tone == .light ? -0.04 : -0.1,
+                           alpha: 1, clampsEdges: true, overscanX: 1.1, overscanY: 1.1,
                            sourceWidth: 160, sourceHeight: (160 / aspect).rounded())
     }
 }

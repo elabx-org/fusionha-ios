@@ -1,0 +1,210 @@
+import SwiftUI
+import FusionhaKit
+
+/// v2's Library tab (slice S4; mocks browse.js home, browse-lib.js, F1 of
+/// filters-alt.js, on the S3 ground and W1 cards). One scroll: the home
+/// (`V2LibraryPageTop`) then "All titles" as the A–Z poster grid with the
+/// scroll thumb, the status-grouped grid, a plain grid for other sorts, or
+/// the compact list. The ground comes from the first hero's art.
+///
+/// It reuses v1's store and logic: the model's library, `LibraryInputs`
+/// (filtering, counting, rows), the persisted filters under v1's keys, the
+/// scrubber, the poster sheet and the select bar. A tap opens v1's title
+/// page for now. Phone and the folded Duo: three posters a row; flat open
+/// the grid simply widens across the seamless display; book pose keeps the
+/// fold in a gutter.
+struct V2LibraryView: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.motionEnabled) private var motion
+    @Environment(\.spread) private var spread
+    @Environment(\.bookPose) private var bookPose
+    @AppStorage("library.kind") private var kindRaw = "all"
+    @AppStorage("fusionha.library.density") private var density = "grid"
+    @AppStorage("library.tier") private var tier: LibraryTier = .all
+    @AppStorage("library.status") private var status: LibraryStatus = .all
+    @AppStorage("library.sort") private var sort: LibrarySort = .title
+    @AppStorage("library.recency") private var recency: LibraryRecency = .all
+    @AppStorage("library.group") private var group = false
+    @AppStorage("v2.library.shelf") private var shelf: V2LibraryShelfSource = .recentlyAdded
+    @State private var compactSort = CompactSort()
+    @State private var derived = LibraryDerived()
+    @State private var home = V2LibraryHome()
+    /// Titles with a held download in the queue (read only when it changes).
+    @State private var held: Set<Int> = []
+    @State private var scrubber = ScrubberState()
+    @State private var posterSheet: MediaItem?
+    @State private var pane = LibraryPane()
+    @State private var onScreen = LibraryOnScreen()
+    @State private var entrance = LibraryEntrance()
+    @State private var gridFold = LibraryGridFold()
+
+    private var compact: Bool { density == "compact" }
+    private var alphaMode: Bool { sort == .title && !group && !compact }
+    private var showsRail: Bool { alphaMode && derived.titleCount > 0 }
+    /// Not on a Spread's left page: its trailing edge is the fold gutter.
+    private var showsScrubber: Bool { showsRail && !(spread.isActive && !spread.spans) }
+    private var query: String { model.searchText.trimmingCharacters(in: .whitespaces) }
+    /// The fold through the grid matters in book pose only: flat open is one
+    /// seamless display (owner, 2026-11-05).
+    private var fold: ClosedRange<CGFloat>? { bookPose ? gridFold.fold : nil }
+    /// The mock's side gutter: 20 on the phone and folded Duo, 24 open.
+    private var gutter: CGFloat { pane.width >= 700 ? 24 : 20 }
+    /// The home (heroes and shelf) shows above the grid.
+    private var showsHome: Bool { !compact && query.isEmpty }
+
+    private var filters: V2LibraryFilters {
+        V2LibraryFilters(kind: $kindRaw, tier: $tier, status: $status, sort: $sort,
+                         recency: $recency, group: $group, density: $density)
+    }
+
+    private var columns: Int {
+        if spread.spans { return PosterTracks.count(base: 3, spans: true) }
+        if fold != nil { return V2LibraryColumns.count(for: gridFold.width) }
+        return V2LibraryColumns.count(for: pane.width - 2 * gutter)
+    }
+
+    private var gridTracks: [FoldColumns.Track]? {
+        PosterTracks.tracks(count: derived.columns, width: Double(gridFold.width),
+                            fold: fold.map { Double($0.lowerBound)...Double($0.upperBound) },
+                            spans: spread.spans, spacing: V2LibraryGridRow.spacing)
+    }
+
+    private var inputs: LibraryInputs {
+        LibraryInputs(version: model.libraryVersion, kind: kindRaw, tier: tier, status: status, sort: sort,
+                      recency: recency, group: group, query: query, compact: compact, columns: columns,
+                      compactSort: compactSort, letterHeaders: false)
+    }
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            scroll(proxy)
+                .overlay {
+                    if showsScrubber {
+                        ScrollScrubber(state: scrubber, letters: derived.alpha.letters) { jump(toLetter: $0, proxy) }
+                    }
+                }
+                .onChange(of: derived.columns) {
+                    if let row = onScreen.anchorRow(in: derived) { jump(to: row, proxy) }
+                }
+                .onChange(of: model.duoGestures.swipedTo) { _, id in
+                    guard let id, let row = derived.rowId(holding: id), !onScreen.rowIds.contains(row) else { return }
+                    withAnimation(motion ? .smooth : nil) { proxy.scrollTo(row, anchor: .center) }
+                }
+                .onChange(of: model.scrollToTopTick) {
+                    withAnimation(motion ? .smooth : nil) { proxy.scrollTo("library-top", anchor: .top) }
+                }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .overlay(alignment: .top) {
+            if !model.requestScoped { SetupProgressPill(barHeight: 0) }
+        }
+        // The kit's ambient art, not W1's: full strength under the home,
+        // browse-lib.js's shorter, softer layer over the grid or list alone.
+        .v2PageGround(art: home.groundArt, artHeight: showsHome ? 760 : 520,
+                      artOpacity: showsHome ? .ambient : .libraryList)
+        .modifier(V2LibraryToolbar(derived: derived, status: $status))
+        .shellPage("Library", accountInPageWhenFolded: true)
+        .spreadSpansBothPages(.library, !compact)
+        .toolbarVisibility(model.selectMode ? .hidden : .automatic, for: .tabBar)
+        .librarySelectBar(active: model.selectMode, visibleIds: derived.visibleIds)
+        .animation(motion ? .snappy(duration: 0.3) : nil, value: model.selectMode)
+        .environment(\.openPosterSheet, OpenPosterSheet { posterSheet = $0 })
+        .sheet(item: $posterSheet) { item in LibraryPosterSheet(item: item) }
+        .task {
+            if !model.libraryLoaded {
+                await model.restoreLibrary()
+                await model.loadLibrary()
+            }
+        }
+        .onQueueChange(model, initial: true) { queue in
+            let next = Set(queue.filter { QueueProgress($0).held }.map(\.mediaItemId))
+            if next != held { held = next }
+        }
+        .onChange(of: derived.visibleIds, initial: true) { _, ids in model.duoGestures.libraryOrder = ids }
+        .onAppear {
+            let gestures = model.duoGestures
+            scrubber.onVisibility = { [weak gestures] shown in gestures?.edgeBusy = shown }
+        }
+        .onChange(of: inputs, initial: true) {
+            derived = inputs.derive(from: model.library)
+            rebuildHome()
+            startEntrance()
+        }
+        .onChange(of: held) { rebuildHome() }
+    }
+
+    // MARK: Scroll
+
+    private func scroll(_ proxy: ScrollViewProxy) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                V2LibraryPageTop(derived: derived, home: home, held: held, filters: filters, paneWidth: pane.width,
+                                 gutter: gutter, showsHome: showsHome, shelf: $shelf) {
+                    withAnimation(motion ? .smooth : nil) { proxy.scrollTo("library-grid", anchor: .top) }
+                }
+                Color.clear.frame(height: 1)
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+                        scrubber.setGridTop(frame.minY)
+                        scrubber.setGridTrailing(frame.maxX)
+                    }
+                    .onGeometryChange(for: LibraryGridFold.self) { [bookPose] proxy in
+                        LibraryGridFold.measured(proxy, bookPose: bookPose)
+                    } action: { gridFold = $0 }
+                V2LibraryRows(derived: derived, tracks: gridTracks, width: gridFold.width, entrance: entrance,
+                              compactSort: $compactSort, filters: filters, query: query)
+            }
+            // A column change re-flows thousands of rows: never animated.
+            .transaction(value: columns) { $0.animation = nil }
+            .padding(.horizontal, gutter)
+            .padding(.top, 8)
+            .padding(.bottom, Theme.pageBottom)
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .onGeometryChange(for: LibraryPane.self) { LibraryPane(width: $0.size.width) } action: { pane = $0 }
+        .refreshable { await model.loadLibrary() }
+        .onScrollGeometryChange(for: CGFloat.self) { geo in
+            geo.contentOffset.y + geo.contentInsets.top
+        } action: { old, new in
+            model.updateChrome(old: old, new: new)
+        }
+        .onScrollGeometryChange(for: ScrubberState.Metrics.self) { geo in
+            ScrubberState.Metrics(geo)
+        } action: { _, metrics in
+            if showsScrubber { scrubber.scrolled(metrics) }
+        }
+        .onScrollTargetVisibilityChange(idType: String.self, threshold: 0.5) { ids in
+            onScreen.rowIds = ids
+            guard showsRail else { return }
+            scrubber.activeLetter = derived.alpha.activeLetter(visible: ids)
+        }
+    }
+
+    /// The home's heroes, shelves and attention titles, from the same set.
+    private func rebuildHome() {
+        let ids = Set(derived.visibleIds)
+        let visible = model.library.filter { ids.contains($0.id) }
+        home = V2LibraryHome(visible: visible, recent: derived.recent, held: held)
+    }
+
+    /// A new kind, tier, filter or sort plays the grid's entrance (v1's rule).
+    private func startEntrance() {
+        let key = "\(kindRaw)|\(tier)|\(status)|\(sort)|\(recency)|\(group)|\(compact)|\(derived.rows.isEmpty)"
+        guard entrance.update(key: key, rows: derived.rows) else { return }
+        let generation = entrance.generation
+        Task {
+            try? await Task.sleep(for: LibraryEntrance.window)
+            entrance.end(generation)
+        }
+    }
+
+    private func jump(toLetter letter: String, _ proxy: ScrollViewProxy) {
+        if let row = derived.alpha.letterRow[letter] { jump(to: row, proxy) }
+    }
+
+    /// Always instant (an animated jump per scrub letter queued up scrolls).
+    private func jump(to row: String, _ proxy: ScrollViewProxy) {
+        var instant = Transaction()
+        instant.disablesAnimations = true
+        withTransaction(instant) { proxy.scrollTo(row, anchor: .top) }
+    }
+}

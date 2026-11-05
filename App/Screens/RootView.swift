@@ -197,7 +197,7 @@ struct RootView: View {
                 Tab("You", image: "nav-you", value: AppTab.you) { TabRoot { YouView() } }
                 Tab(value: AppTab.search, role: .search) { TabRoot { SearchTabView() } }
             } else {
-                Tab("Library", image: "nav-library", value: AppTab.library) { TabRoot { LibraryView() } }
+                Tab("Library", image: "nav-library", value: AppTab.library) { TabRoot { LibraryTabRoot() } }
                 Tab("Discover", image: "nav-discover", value: AppTab.discover) { TabRoot { DiscoverView() } }
                     // `needs_you`, capped at 99+ like the web's badge.
                     .badge(BadgeCount.text(model.requestsBadge).map { Text(verbatim: $0) })

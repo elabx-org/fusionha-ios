@@ -362,6 +362,7 @@ final class AppModel {
         URLCache.shared.removeAllCachedResponses()
         ImagePipeline.shared.removeAll()
         ArtBlurCache.shared.removeAll()
+        await ArtPaletteExtractor.shared.removeAll()
         LibraryDiskCache.clear()
         ResponseDiskCache.clear()
         libraryLoaded = false
