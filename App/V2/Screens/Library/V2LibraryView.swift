@@ -139,8 +139,11 @@ struct V2LibraryView: View {
         .v2PageGround(art: besideArt ?? homeArt ?? home.groundArt, recipe: besideArt == nil ? .page : .listPane,
                       showsArt: besideArt == nil, artHeight: showsHome ? 760 : 520,
                       artOpacity: showsHome ? .ambient : .libraryList)
-        .modifier(V2LibraryToolbar(derived: derived, status: $status))
-        .shellPage("Library", accountInPageWhenFolded: true)
+        .modifier(V2LibrarySearch())
+        .modifier(V2LibraryToolbar(derived: derived, filters: filters))
+        // Wide, the page draws the title beside its counts and kind control.
+        .shellPage(V2LibraryPageHeader.titleInPage(paneWidth: pane.width) ? "" : "Library",
+                   accountInPageWhenFolded: true)
         .spreadSpansBothPages(.library, !compact)
         .toolbarVisibility(model.selectMode ? .hidden : .automatic, for: .tabBar)
         .librarySelectBar(active: model.selectMode, visibleIds: derived.visibleIds)

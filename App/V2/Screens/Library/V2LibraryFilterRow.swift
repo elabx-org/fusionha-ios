@@ -1,128 +1,86 @@
 import SwiftUI
 import FusionhaKit
 
-/// The Library's filter row, F1 (mock filters-alt.js, the recommended
-/// option): the All | HD | 4K segmented control and one glass Filter menu
-/// with a count. The filters it sets show under it as removable tokens, and
-/// only when something is set (`V2LibraryFilterTokens`).
+/// The Library's chip row (v2 header, mock browse.js home 'live'): one
+/// sideways row of glass chips over the existing filters, no new semantics.
+/// All clears the version and status filters; HD / 4K are the tier; Missing
+/// and Upcoming the status filter; Anime the kind. A chip tapped again turns
+/// off. The rest of the filters live in the bar's Filter menu
+/// (`V2LibraryFilterMenu`); set ones show as tokens under this row.
 struct V2LibraryFilterRow: View {
     let filters: V2LibraryFilters
-    /// Titles needing attention in the current set (the menu's count).
-    let attentionCount: Int
+    /// The library has anime (the Anime chip's kind).
+    var showsAnime = true
+    @Environment(\.motionEnabled) private var motion
+
+    private var anime: Bool { filters.kind == LibraryKind.anime.rawValue }
+    private var feedbackKey: String { "\(filters.tier.rawValue)|\(filters.status.rawValue)|\(filters.kind)" }
 
     var body: some View {
-        GlassEffectContainer(spacing: 8) {
-            HStack(spacing: 8) {
-                // filters-alt.js `vers()`: a fixed 150pt control.
-                SegmentedPills(options: [(LibraryTier.all, "All"), (.hd, "HD"), (.uhd, "4K")],
-                               selection: filters.$tier, fill: true)
-                    .frame(width: 150)
-                V2LibraryFilterMenu(filters: filters, attentionCount: attentionCount)
-                Spacer(minLength: 0)
+        ScrollView(.horizontal, showsIndicators: false) {
+            GlassEffectContainer(spacing: 8) {
+                HStack(spacing: 8) {
+                    chip("All", on: filters.tier == .all && filters.status == .all) {
+                        filters.tier = .all
+                        filters.status = .all
+                    }
+                    chip("HD", on: filters.tier == .hd) { filters.tier = filters.tier == .hd ? .all : .hd }
+                    chip("4K", on: filters.tier == .uhd) { filters.tier = filters.tier == .uhd ? .all : .uhd }
+                    chip("Missing", on: filters.status == .missing) { toggle(.missing) }
+                    V2LibraryServiceChips(filters: filters)
+                    if showsAnime || anime {
+                        chip("Anime", symbol: "sparkle", on: anime) {
+                            filters.kind = anime ? "all" : LibraryKind.anime.rawValue
+                        }
+                    }
+                    chip("Upcoming", symbol: "clock", on: filters.status == .upcoming) { toggle(.upcoming) }
+                }
             }
         }
+        .scrollClipDisabled()
+        .sensoryFeedback(.selection, trigger: feedbackKey)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Filters")
+    }
+
+    private func toggle(_ status: LibraryStatus) {
+        filters.status = filters.status == status ? .all : status
+    }
+
+    /// kit `.chip` (34 high, 13.5pt): plain glass, or the accent when on
+    /// (selection is one of the accent's three jobs).
+    private func chip(_ title: String, symbol: String? = nil, on: Bool, action: @escaping () -> Void) -> some View {
+        Button {
+            withAnimation(motion ? .snappy : nil) { action() }
+        } label: {
+            HStack(spacing: 6) {
+                if let symbol { Image(systemName: symbol).font(.system(size: 13, weight: .semibold)) }
+                Text(title).font(.system(size: 13.5, weight: .semibold))
+            }
+            .foregroundStyle(on ? Theme.onAccent : Theme.txt)
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, 14)
+            .frame(height: 34)
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(on ? .regular.tint(Theme.primary).interactive() : .regular.interactive(), in: Capsule())
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 }
 
-/// F1's one Filter menu: Show (the status filter, and Not monitored), Sort and Display as
-/// pickers, then "More filters" (recency, group by status, combine HD + 4K)
-/// and Reset. Native menu, glass label.
-struct V2LibraryFilterMenu: View {
+/// HOOK, renders nothing yet: one chip per streaming service (the mock's
+/// Disney+, Paramount+, Apple TV, Netflix, Prime Video marks) between
+/// Missing and Anime. The server is adding `network_logo_url` /
+/// `network_name` to the library list rows; once `MediaItem` carries them,
+/// build the services from the library here, draw each logo as the one-ink
+/// network mark, and add a network filter to `V2LibraryFilters` and
+/// `LibraryInputs` (there is no network filter today).
+struct V2LibraryServiceChips: View {
     let filters: V2LibraryFilters
-    let attentionCount: Int
-    @Environment(AppModel.self) private var model
-
-    private var count: Int { filters.tokens.count }
 
     var body: some View {
-        Menu {
-            Section("Show") {
-                ForEach(LibraryStatus.v2MenuOrder, id: \.self) { status in
-                    Toggle(isOn: showing(status)) {
-                        Label(label(for: status), systemImage: status.v2Symbol)
-                    }
-                }
-                Toggle(isOn: filters.$unmonitored) {
-                    Label("Not monitored", systemImage: "bookmark.slash")
-                }
-            }
-            Picker(selection: filters.$sort) {
-                ForEach(LibrarySort.allCases) { Text($0.label).tag($0) }
-            } label: {
-                Label("Sort", systemImage: "arrow.up.arrow.down")
-            }
-            .pickerStyle(.menu)
-            Picker(selection: filters.$density) {
-                Label("Posters", systemImage: "square.grid.3x2").tag("grid")
-                Label("List", systemImage: "list.bullet").tag("compact")
-            } label: {
-                Label("Display", systemImage: "square.grid.2x2")
-            }
-            .pickerStyle(.menu)
-            Section("More filters") {
-                Picker(selection: filters.$recency) {
-                    Text("Any time").tag(LibraryRecency.all)
-                    Text("Added in the last 30 days").tag(LibraryRecency.added)
-                    Text("Released in the last 30 days").tag(LibraryRecency.released)
-                } label: {
-                    Label("Recency", systemImage: "clock")
-                }
-                .pickerStyle(.menu)
-                Toggle(isOn: filters.$group) {
-                    Label("Group by status", systemImage: "list.bullet.indent")
-                }
-                if model.me?.isAdmin == true {
-                    Toggle(isOn: combine) {
-                        Label("Combine HD + 4K", systemImage: "arrow.triangle.merge")
-                    }
-                }
-            }
-            Divider()
-            Button("Reset filters", systemImage: "arrow.uturn.backward") { filters.reset() }
-                .disabled(count == 0 && filters.sort == .title)
-        } label: {
-            menuLabel
-        }
-        .glassControl(on: count > 0)
-        .fixedSize()
-        .accessibilityLabel("Filter")
-        .accessibilityValue(count > 0 ? "\(count) on" : "")
-    }
-
-    private var menuLabel: some View {
-        // kit `.chip` (34 high, 13.5pt, 15pt icon) and `.bdg` (18, 11 bold).
-        HStack(spacing: 7) {
-            Image(systemName: "line.3.horizontal.decrease")
-                .font(.system(size: 15, weight: .semibold))
-            Text("Filter").font(.system(size: 13.5, weight: .semibold))
-            if count > 0 {
-                Text("\(count)")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Theme.onAccent)
-                    .padding(.horizontal, 5)
-                    .frame(minWidth: 18, minHeight: 18)
-                    .background(Theme.primary, in: Capsule())
-            }
-        }
-        .foregroundStyle(Theme.txt)
-        .padding(.horizontal, 13)
-        .frame(height: 34)
-        .contentShape(Capsule())
-    }
-
-    private func label(for status: LibraryStatus) -> String {
-        status == .attention && attentionCount > 0 ? "Needs attention · \(attentionCount)" : status.v2Label
-    }
-
-    /// One Show item: on while it is the status filter; turning it off clears it.
-    private func showing(_ status: LibraryStatus) -> Binding<Bool> {
-        Binding(get: { filters.status == status },
-                set: { filters.status = $0 ? status : .all })
-    }
-
-    /// The server's Combine HD + 4K setting (admins only, saved for everyone).
-    private var combine: Binding<Bool> {
-        Binding(get: { model.railConsolidate },
-                set: { value in Task { await model.updateRails(consolidate: value) } })
+        EmptyView()
     }
 }

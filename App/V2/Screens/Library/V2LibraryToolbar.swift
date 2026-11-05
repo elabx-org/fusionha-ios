@@ -1,15 +1,16 @@
 import SwiftUI
 import FusionhaKit
 
-/// The v2 Library's bar items (mock browse-lib.js): Add, Select and Library
-/// stats (badged when something needs attention), in the order v1's header
-/// uses, and the stats page they open. The library filter is on the page,
-/// so Search leaves the bar. The folded Duo's column leads with Account,
-/// then the prominent Add, then one More menu; a Spread's left page beside a
-/// title folds Select, stats and Add into one menu.
+/// The v2 Library's bar items (mock browse-lib.js, v2 header): Add, Filter
+/// (Show, Sort, Display, More filters, Select, Reset; badged with the filters
+/// set) and Library stats (badged when something needs attention), and the
+/// stats page they open. The library filter is the pull-down search field
+/// (`V2LibrarySearch`). The folded Duo's column leads with Account, then the
+/// prominent Add, Filter and one More menu; a Spread's left page beside a
+/// title folds Filter, Select, stats and Add into one menu.
 struct V2LibraryToolbar: ViewModifier {
     let derived: LibraryDerived
-    @Binding var status: LibraryStatus
+    let filters: V2LibraryFilters
     @Environment(AppModel.self) private var model
     @Environment(\.spread) private var spread
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -35,7 +36,7 @@ struct V2LibraryToolbar: ViewModifier {
                     showingSettings = true
                 }
             }) {
-                V2LibraryStatsSheet(pulse: derived.pulse, numbers: numbers, status: $status, manageIndexers: {
+                V2LibraryStatsSheet(pulse: derived.pulse, numbers: numbers, status: filters.$status, manageIndexers: {
                     settingsPanel = "indexers"
                     pendingSettings = true
                 }, openSettings: {
@@ -63,22 +64,22 @@ struct V2LibraryToolbar: ViewModifier {
                 }
                 .barPriority(true)
             }
+            filterItem
             if !model.selectMode {
-                ToolbarItem(placement: .topBarTrailing) { moreMenu(withAdd: false).badge(statsBadge) }
+                ToolbarItem(placement: .topBarTrailing) { moreMenu(compact: false).badge(statsBadge) }
                     .barPriority(true)
             }
         } else if overflowBar {
-            if !model.selectMode {
-                ToolbarItem(placement: .topBarTrailing) { moreMenu(withAdd: canAdd).badge(statsBadge) }
+            if model.selectMode {
+                filterItem
+            } else {
+                ToolbarItem(placement: .topBarTrailing) { moreMenu(compact: true).badge(statsBadge) }
                     .barPriority(false)
             }
         } else {
             AddTitleToolbarItem(model: model)
+            filterItem
             if !model.selectMode {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Select", systemImage: "checkmark.circle") { model.selectMode = true }
-                }
-                .barPriority(false)
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
                         .badge(statsBadge)
@@ -88,18 +89,41 @@ struct V2LibraryToolbar: ViewModifier {
         }
     }
 
-    /// Select and Library stats (and Add, on a Spread's narrow left page).
-    private func moreMenu(withAdd: Bool) -> some View {
+    /// Filter (Sort and Select inside it) on every bar; select mode keeps it.
+    private var filterItem: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            V2LibraryFilterMenu(filters: filters, attentionCount: derived.attentionCount)
+        }
+        .barPriority(true)
+    }
+
+    /// Select and Library stats; on a Spread's narrow left page (`compact`)
+    /// also Filter as a submenu, and Add.
+    private func moreMenu(compact: Bool) -> some View {
         Menu {
+            if compact {
+                Menu {
+                    V2LibraryFilterMenuItems(filters: filters, attentionCount: derived.attentionCount,
+                                             includesSelect: false)
+                } label: {
+                    Label(filterTitle, systemImage: "line.3.horizontal.decrease")
+                }
+            }
             Button("Select", systemImage: "checkmark.circle") { model.selectMode = true }
             Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
-            if withAdd {
+            if compact && canAdd {
                 Button("Add", systemImage: "plus") { model.showingAdd = true }
             }
         } label: {
             Label("More", systemImage: "ellipsis")
         }
         .accessibilityLabel(statsBadge == nil ? "More" : "More, library needs attention")
+    }
+
+    /// "Filter", or "Filter · 2" with filters set.
+    private var filterTitle: String {
+        let n = filters.tokens.count
+        return n == 0 ? "Filter" : "Filter · \(n)"
     }
 
     /// The stats page's numbers, from the titles the filters left.
