@@ -5,6 +5,8 @@ import FusionhaKit
 /// movie) as the one prominent glass button, Interactive search (person),
 /// then Monitored on a bookmark. Each runs v1's store action: the same
 /// search, the same interactive-search sheet, the same bulk monitor call.
+/// With a version card selected both searches name it and run on it alone
+/// ("Search 4K", "Search missing 4K").
 struct V2TitleActionRow: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
@@ -20,14 +22,19 @@ struct V2TitleActionRow: View {
     private var canSearch: Bool { canEdit && (model.me?.can("search") ?? true) }
     private var searching: Bool { store.flash?.phase == .searching }
     private var monitored: Bool { monitorOverride ?? (detail.monitored ?? true) }
+    /// The selected version card's version, when the title has more than one.
+    private var focused: DetailEdition? { detail.editions.count > 1 ? store.focusedVersion : nil }
+    private var searchTitle: String {
+        let base = detail.isSeries ? "Search missing" : "Search"
+        return focused.map { "\(base) \($0.tier.badgeLetters)" } ?? base
+    }
 
     var body: some View {
         HStack(spacing: 8) {
             if canSearch && showsSearch {
-                Button {
-                    Task { await store.search(label: "\(detail.title) — all monitored versions") }
-                } label: {
-                    Label(detail.isSeries ? "Search missing" : "Search", systemImage: "magnifyingglass")
+                Button { runSearch() } label: {
+                    Label(searchTitle, systemImage: "magnifyingglass")
+                        .contentTransition(.opacity)
                         .font(.system(size: 15, weight: .semibold))
                         .frame(height: height - 16)
                         .padding(.horizontal, 4)
@@ -36,7 +43,7 @@ struct V2TitleActionRow: View {
                 .tint(Theme.i1)
                 .symbolEffect(.pulse, options: .repeating, isActive: searching)
                 .disabled(searching)
-                .accessibilityHint("Searches every monitored version")
+                .accessibilityHint(focused.map { "Searches the \(detail.versionName($0)) version" } ?? "Searches every monitored version")
             }
             if canSearch {
                 Button { store.openInteractiveSearch() } label: {
@@ -45,7 +52,7 @@ struct V2TitleActionRow: View {
                         .frame(width: height - 16, height: height - 16)
                 }
                 .buttonStyle(.glass)
-                .accessibilityLabel("Interactive search")
+                .accessibilityLabel(focused.map { "Interactive search, \($0.tier.badgeLetters)" } ?? "Interactive search")
             }
             if canEdit {
                 Button { toggleMonitor() } label: {
@@ -60,8 +67,18 @@ struct V2TitleActionRow: View {
             }
             Spacer(minLength: 0)
         }
+        .v2FadesUnderTitleBar()
         .sensoryFeedback(.selection, trigger: monitored)
         .onChange(of: detail.monitored) { monitorOverride = nil }
+    }
+
+    private func runSearch() {
+        if let focused {
+            let label = "\(detail.title) — \(detail.versionName(focused))"
+            Task { await store.search(label: label, editionId: focused.id) }
+        } else {
+            Task { await store.search(label: "\(detail.title) — all monitored versions") }
+        }
     }
 
     /// The Library's bulk monitor for this one title, then the page reloads.

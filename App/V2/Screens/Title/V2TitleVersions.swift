@@ -40,7 +40,7 @@ struct V2TitleVersion: Identifiable {
             total = 1
             count = nil
             let size = Format.bytes(file?.size)
-            let quality = file?.quality ?? summary?.status.text
+            let quality = file?.quality.map { DetailText.quality($0) } ?? summary?.status.text
             line = [size == "—" ? nil : size, quality].compactMap { $0 }.joined(separator: " · ")
         }
     }

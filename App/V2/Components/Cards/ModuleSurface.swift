@@ -7,8 +7,12 @@ import SwiftUI
 /// specular): glass stays on the controls.
 struct ModuleSurface: View {
     var radius: CGFloat = ModuleMetrics.radius
+    /// A chosen card (the title's selected version): a brighter wash and
+    /// the accent ring.
+    var selected = false
     @Environment(\.pagePalette) private var page
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.badgeInk) private var inkOverride
 
     var body: some View {
         let light = page?.isLight ?? Theme.isLight
@@ -19,14 +23,18 @@ struct ModuleSurface: View {
             .fill(.ultraThinMaterial)
             .environment(\.colorScheme, light ? .light : .dark)
             .overlay(shape.fill(ModuleMetrics.wash(light: light)))
+            .overlay(shape.fill(ModuleMetrics.selectedLift(light: light)).opacity(selected ? 1 : 0))
             // The top light edge as a gradient stroke, not a masked one
             // (a mask is an offscreen pass per card while a list scrolls).
             .overlay(shape.strokeBorder(
                 LinearGradient(colors: [ModuleMetrics.edge(light: light), .clear], startPoint: .top,
                                endPoint: .init(x: 0.5, y: 0.08)),
                 lineWidth: EditionChip.hairline(displayScale)))
+            .overlay(shape.strokeBorder(ink.accent, lineWidth: 1.5).opacity(selected ? 1 : 0))
             .background { ModuleShadow(radius: radius, light: light) }
     }
+
+    private var ink: BadgeInk { inkOverride ?? .page }
 }
 
 /// The W1 numbers (cards-w.js `--wm*`).
@@ -42,6 +50,12 @@ enum ModuleMetrics {
     /// The tint over the material: rgba(30,30,38,.40) dark, white .58 light.
     static func wash(light: Bool) -> Color {
         light ? .white.opacity(0.58) : Color(red: 30 / 255, green: 30 / 255, blue: 38 / 255).opacity(0.40)
+    }
+
+    /// A selected card's extra wash: white +6% dark, +18% light (over the
+    /// .58 wash, so the light card still reads brighter than its neighbours).
+    static func selectedLift(light: Bool) -> Color {
+        .white.opacity(light ? 0.18 : 0.06)
     }
 
     /// The top light edge: white .16 dark, .95 light.

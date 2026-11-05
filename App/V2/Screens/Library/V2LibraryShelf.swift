@@ -36,6 +36,16 @@ struct V2LibraryShelf: View {
 
     private var spacing: CGFloat { gridPoster?.gap ?? (wide ? 16 : 14) }
 
+    /// On the Duo (open or folded) the row's scroll view reaches past the
+    /// page's trailing edge on under the system column (the gutter, the
+    /// column's inset and room to spare), as the hero carousel does: a lazy
+    /// row only builds the posters inside its own bounds, so without it a
+    /// poster peeked under the column only when one happened to straddle the
+    /// edge. A phone has no column and keeps its own bounds.
+    private var bleed: CGFloat {
+        wide || OuterDisplay.isFoldedDuo(sizeClass: sizeClass) ? 160 : 0
+    }
+
     var body: some View {
         if let shown, let items = home.shelves[shown] {
             let w = posterWidth
@@ -50,7 +60,13 @@ struct V2LibraryShelf: View {
                         }
                     }
                 }
+                .contentMargins(.trailing, bleed, for: .scrollContent)
                 .scrollClipDisabled()
+                // Pulled out under the column, the scroll view would otherwise
+                // add the column's inset to its trailing margin and the last
+                // poster would stop short of the page edge.
+                .ignoresSafeArea(.container, edges: bleed > 0 ? Edge.Set.trailing : [])
+                .padding(.trailing, -bleed)
             }
         }
     }

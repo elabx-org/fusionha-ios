@@ -14,6 +14,9 @@ struct V2EpisodeFileCard: View {
     let version: DetailEdition
     let file: MovieFile
     let monitored: Bool
+    /// The movie's file actions, inside the card under the path (mock
+    /// `movieFileCard` `.facts3`). The episode page passes none.
+    var footer: AnyView? = nil
     @State private var width: CGFloat = 0
 
     private var ink: Color { page?.ink ?? Theme.txt }
@@ -52,6 +55,7 @@ struct V2EpisodeFileCard: View {
                 .foregroundStyle(muted)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
+            if let footer { footer }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -64,7 +68,7 @@ struct V2EpisodeFileCard: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 8) {
                     EditionBadge(tier: version.tier, state: file.unresolved == true ? .held : .onDisk)
-                    Text(facts.quality ?? file.quality ?? version.label)
+                    Text(facts.quality ?? file.quality.map { DetailText.quality($0) } ?? version.label)
                         .font(.system(size: 20, weight: .heavy))
                         .tracking(-0.4)
                         .foregroundStyle(ink)

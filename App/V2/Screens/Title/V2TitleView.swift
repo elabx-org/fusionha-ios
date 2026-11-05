@@ -22,6 +22,8 @@ struct V2TitleView: View {
     @State private var presentReady: Bool
     @State private var position = ScrollPosition(idType: String.self)
     @State private var width: CGFloat = 0
+    /// The bar's reach down the scroll view (`v2TitleBarInset`).
+    @State private var barInset: CGFloat = 0
 
     init(store: DetailStore, onClose: (() -> Void)? = nil) {
         self.store = store
@@ -130,6 +132,8 @@ struct V2TitleView: View {
         .duoColumnPullSource()
         .ignoresSafeArea(.container, edges: .top)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { barInset = $0 }
+        .environment(\.v2TitleBarInset, barInset)
         .onScrollGeometryChange(for: CGFloat.self) { geo in
             geo.contentOffset.y + geo.contentInsets.top
         } action: { _, y in

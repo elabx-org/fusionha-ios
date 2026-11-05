@@ -88,7 +88,7 @@ struct V2ReleaseCard: View {
                      ReleaseSearch.isTorrent(release) ? release.seeders.map { "\($0) seed" } : nil]
         return FlowRow(spacing: 6, lineSpacing: 4) {
             if let quality = release.quality {
-                Self.filledTag(Text(quality), color: Theme.txt)
+                Self.filledTag(Text(DetailText.quality(quality)), color: Theme.txt)
             }
             Text(parts.compactMap { $0 }.joined(separator: " · "))
                 .font(.system(size: 12))

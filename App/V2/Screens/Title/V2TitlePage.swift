@@ -51,7 +51,7 @@ struct V2TitlePage: View {
                         .padding(.top, 22)
                 }
                 if detail.kind == .movie, ReleaseTimeline.hasData(detail) {
-                    ReleaseTimeline(detail: detail)
+                    V2ReleaseTimeline(detail: detail)
                         .padding(.top, 18)
                 }
                 DetailRequestsStrip(itemId: detail.id)

@@ -3,9 +3,10 @@ import FusionhaKit
 
 /// The title's tabs as one segmented control (mock `seg`). Series: Seasons ·
 /// Files · History · Searches · Overview. Movie: Overview · Files · History ·
-/// Searches · Collection (when it has one), landing on Overview. The panes
-/// are v1's (`DetailTabsView`'s) apart from Overview (v2's cards) and
-/// Seasons (v2's season cards, which push the season page, slice S6).
+/// Searches · Collection (when it has one), landing on Overview. Seasons,
+/// Files, History, Searches and Overview are v2's (`Title/Tabs/`); the
+/// Collection pane is still v1's. The control fades out as it slides under
+/// the compact bar (`v2FadesUnderTitleBar`).
 struct V2TitleTabs: View {
     @Environment(DetailStore.self) private var store
     @Environment(\.detailReduceMotion) private var reduce
@@ -36,6 +37,7 @@ struct V2TitleTabs: View {
             }
             .pickerStyle(.segmented)
             .sensoryFeedback(.selection, trigger: store.tab)
+            .v2FadesUnderTitleBar()
             pane
                 .id(current)
                 .transition(.opacity)
@@ -52,9 +54,9 @@ struct V2TitleTabs: View {
         switch current {
         case .seasons: V2SeasonsTab(detail: detail)
         case .files:
-            if detail.isSeries { SeriesFilesTab(detail: detail) } else { MovieEditionsTab(detail: detail) }
-        case .history: HistoryTab(detail: detail)
-        case .searches: SearchesTab()
+            if detail.isSeries { V2SeriesFilesTab(detail: detail) } else { V2MovieFilesTab(detail: detail) }
+        case .history: V2HistoryTab(detail: detail)
+        case .searches: V2SearchesTab(detail: detail)
         case .overview: V2TitleOverviewTab(detail: detail)
         case .collection: CollectionTab(detail: detail)
         }
