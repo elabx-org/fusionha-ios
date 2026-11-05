@@ -44,6 +44,10 @@ final class PerfProbe: NSObject {
     /// The Library script: drive the scroll view with the tallest content (the
     /// grid, not the title page beside it on a Spread).
     var prefersTallest = false
+    /// The v2 open script (PerfProbe+Open.swift): every frame's timestamp and
+    /// length while set, and a check run on each frame.
+    var frameLog: [(t: Double, delta: Double)]?
+    var frameWatch: (() -> Void)?
 
     private var phaseName = ""
     private var phaseWall: CFTimeInterval = 0
@@ -104,6 +108,7 @@ final class PerfProbe: NSObject {
         let env = ProcessInfo.processInfo.environment
         let warmup = Double(env["FUSIONHA_PERF_DELAY"] ?? "") ?? 8
         if env["FUSIONHA_PERF_SCRIPT"] == "library" { return await runLibrary(warmup: warmup) }
+        if env["FUSIONHA_PERF_SCRIPT"] == "v2open" { return await runOpen(warmup: warmup) }
         await phase("warmup", warmup)
 
         model.tab = .activity
@@ -139,12 +144,14 @@ final class PerfProbe: NSObject {
         }
     }
 
-    func phase(_ name: String, _ seconds: Double, scroll: Bool = false) async {
+    /// `action` runs once the phase has begun (the open script's tap).
+    func phase(_ name: String, _ seconds: Double, scroll: Bool = false, action: (() -> Void)? = nil) async {
         // Lets CI start a `sample` of the process for exactly this phase.
         FileHandle.standardError.write(Data("PERF-BEGIN \(name) \(Int(seconds.rounded()))\n".utf8))
         begin(name)
         scrollView = scroll ? findScrollView() : nil
         scrolling = scroll
+        action?()
         try? await Task.sleep(for: .seconds(seconds))
         scrolling = false
         end()
@@ -224,6 +231,8 @@ final class PerfProbe: NSObject {
         }
         if delta > 0.25 { stats.stalls += 1; stats.hangTime += delta }
         stats.maxDelta = max(stats.maxDelta, delta)
+        frameLog?.append((now, delta))
+        frameWatch?()
 
         guard scrolling else { return }
         if scrollView?.window == nil { scrollView = findScrollView() }

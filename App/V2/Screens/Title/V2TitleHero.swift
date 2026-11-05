@@ -18,6 +18,7 @@ struct V2TitleHero: View {
     private var art: URL? { ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl) }
 
     var body: some View {
+        let _ = PerfCount.hit("V2TitleHero.body")
         Color.clear
             .containerRelativeFrame(.vertical) { length, _ in Self.height(for: length, series: detail.isSeries) }
             .frame(maxWidth: .infinity)

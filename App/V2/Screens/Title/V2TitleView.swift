@@ -56,6 +56,8 @@ struct V2TitleView: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("V2TitleView.body")
+        let _ = PerfCount.mark("title.body")
         scroll
             .v2PageGround(art: groundArt, showsArt: false)
             .overlay(alignment: .bottom) { V2TitleToast(store: store, reduceMotion: reduceMotion) }
@@ -80,9 +82,9 @@ struct V2TitleView: View {
                 await store.load()
             }
             .task(id: store.detail == nil) {
-                if store.detail != nil { applyIntent() }
+                if store.detail != nil { PerfCount.mark("title.detail"); applyIntent() }
             }
-            .onAppear { store.hosted = true }
+            .onAppear { PerfCount.mark("title.appear"); store.hosted = true }
             .task { await rehost() }
             .onChange(of: model.pendingDetailTab) { applyPendingTab() }
             .onQueueChange(model) { [store] queue in

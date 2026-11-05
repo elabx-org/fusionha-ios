@@ -32,6 +32,7 @@ struct PageGround: View {
     @Environment(\.motionEnabled) private var motion
 
     var body: some View {
+        let _ = PerfCount.hit("PageGround.body")
         GeometryReader { proxy in
             ZStack(alignment: .top) {
                 GroundMesh(recipe: layers, size: proxy.size)
@@ -88,6 +89,7 @@ private struct GroundMesh: View {
     let size: CGSize
 
     var body: some View {
+        let _ = PerfCount.hit("GroundMesh.body")
         ZStack(alignment: .topLeading) {
             LinearGradient(colors: [Color(hsl: recipe.top), Color(hsl: recipe.bottom)],
                            startPoint: .top, endPoint: .bottom)
@@ -143,6 +145,7 @@ private struct PageGroundArt: View {
     @State private var loaded: (key: String, image: UIImage)?
 
     var body: some View {
+        let _ = PerfCount.hit("PageGroundArt.body")
         let spec = ArtBlurSpec.pageGround(tone: ArtTone(isLight: tokens.isLight, isMono: PagePalette.dropsHue(tokens)),
                                           aspect: aspect)
         let key = spec.key(for: url.absoluteString)

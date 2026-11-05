@@ -19,6 +19,7 @@ struct V2SeamGround: View {
     private static let blend: CGFloat = 16
 
     var body: some View {
+        let _ = PerfCount.hit("V2SeamGround.body")
         let seam = max(0, x)
         if !context.fullWidth, context.rest + Self.blend - seam > Self.blend {
             uncovered(.page, from: seam, width: context.rest + Self.blend - seam, fades: true)

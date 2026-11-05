@@ -22,7 +22,9 @@ on:
       perf_scope:
         description: "Which perf scripts run when perf is on"
         type: choice
-        options: [all, activity, library]
+        # v2open (opt-in, not in all): v2 (FusionhaV2) opening titles from
+        # the Library on the iPhone Duo's open inner display.
+        options: [all, activity, library, v2open]
         default: all
       shots_only:
         description: "Only the simulator screenshots whose name matches this regex (e.g. ^palette-); skips iPhone Duo and adds to the published set"
@@ -803,7 +805,9 @@ jobs:
   # (App/Debug/PerfProbe.swift) and its in-app main-thread sampler, then prints
   # hitches, main-thread hangs, CPU and the heaviest symbols per phase.
   # Optimised build (Release) with DEBUG set so the probe and mock hooks exist.
-  # `perf_scope` (manual runs) picks activity, library or all.
+  # `perf_scope` (manual runs) picks activity, library or all; v2open builds
+  # FusionhaV2 instead and opens and closes titles from its Library on the
+  # Duo harness (scripts/perf_v2_open.sh, App/Debug/PerfProbe+Open.swift).
   perf:
     name: Perf
     needs: plan
@@ -827,6 +831,7 @@ jobs:
           xcodegen generate
 
       - name: Build for the simulator (optimised, with the perf probe)
+        if: env.SCOPE != 'v2open'
         run: |
           set -o pipefail
           xcodebuild \
@@ -841,13 +846,46 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             build
 
+      # v2: its own target's V2 condition is overridden by the command line, so pass it too.
+      - name: Build v2 for the simulator (optimised, with the perf probe)
+        if: env.SCOPE == 'v2open'
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Fusionha.xcodeproj \
+            -scheme FusionhaV2 \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            ONLY_ACTIVE_ARCH=YES ARCHS=arm64 \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG V2" \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee xcodebuild.log || {
+            grep -E ": error: " xcodebuild.log | sort -u | head -40 | sed 's/^/::error::/'
+            exit 1
+          }
+
+      - name: v2 title open perf on the iPhone Duo harness
+        if: env.SCOPE == 'v2open'
+        timeout-minutes: 15
+        run: scripts/perf_v2_open.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf
+
+      - name: v2 title open report
+        if: always() && env.SCOPE == 'v2open'
+        run: |
+          [ -f perf/v2open.log ] || exit 0
+          python3 scripts/perf_report.py perf/v2open.log --json perf/v2open-summary.json --title "v2 title open (iPhone Duo, flat open)" \
+            | xcrun swift-demangle --simplified | cut -c1-240 | tee perf/v2open-summary.txt
+          { echo '## v2 title open (iPhone Duo, flat open)'; echo '```'; cat perf/v2open-summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Library perf on the iPhone Duo harness
-        if: env.SCOPE != 'activity'
+        if: env.SCOPE == 'all' || env.SCOPE == 'library'
         timeout-minutes: 25
         run: scripts/perf_library.sh build/Build/Products/Release-iphonesimulator/Fusionha.app perf
 
       - name: Library report
-        if: always() && env.SCOPE != 'activity'
+        if: always() && (env.SCOPE == 'all' || env.SCOPE == 'library')
         run: |
           [ -f perf/library.log ] || exit 0
           python3 scripts/perf_report.py perf/library.log --json perf/library-summary.json --title "Library perf (iPhone Duo, open)" \
@@ -855,7 +893,7 @@ jobs:
           { echo '## Library perf (iPhone Duo, open)'; echo '```'; cat perf/library-summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run the Activity perf script
-        if: env.SCOPE != 'library'
+        if: env.SCOPE == 'all' || env.SCOPE == 'activity'
         timeout-minutes: 25
         run: |
           sudo DevToolsSecurity -enable || true
@@ -888,7 +926,7 @@ jobs:
           grep -q "PERF DONE" perf/app.log || { echo "::error::perf script did not finish"; tail -50 perf/app.log; exit 1; }
 
       - name: Report
-        if: always() && env.SCOPE != 'library'
+        if: always() && (env.SCOPE == 'all' || env.SCOPE == 'activity')
         run: |
           # Swift symbols from the in-app sampler come out mangled.
           python3 scripts/perf_report.py perf/app.log --json perf/summary.json \

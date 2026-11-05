@@ -112,6 +112,8 @@ struct V2LibraryView: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("V2LibraryView.body")
+        let _ = PerfCount.mark("library.body")
         ScrollViewReader { proxy in
             scroll(proxy)
                 .overlay {
@@ -203,7 +205,10 @@ struct V2LibraryView: View {
             .padding(.bottom, Theme.pageBottom)
         }
         .scrollDismissesKeyboard(.immediately)
-        .onGeometryChange(for: LibraryPane.self) { LibraryPane(width: $0.size.width) } action: { pane = $0 }
+        .onGeometryChange(for: LibraryPane.self) { LibraryPane(width: $0.size.width) } action: {
+            PerfCount.hit("V2Library.pane.\(Int($0.width))")
+            pane = $0
+        }
         .refreshable { await model.loadLibrary() }
         .onScrollGeometryChange(for: CGFloat.self) { geo in
             geo.contentOffset.y + geo.contentInsets.top
@@ -226,8 +231,8 @@ struct V2LibraryView: View {
     /// switched off when Show › Not monitored is on (v1's inputs untouched).
     private func rederive() {
         let source = unmonitoredOnly ? model.library.filter { $0.monitored == false } : model.library
-        derived = inputs.derive(from: source)
-        rebuildHome()
+        derived = PerfCount.time("V2Library.derive") { inputs.derive(from: source) }
+        PerfCount.time("V2Library.rebuildHome") { rebuildHome() }
         startEntrance()
     }
 
