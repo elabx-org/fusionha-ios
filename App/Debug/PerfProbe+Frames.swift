@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import FusionhaKit
 
 // The perf probe's frame-capture script (FUSIONHA_PERF_SCRIPT=v2frames): on
 // the iPhone Duo harness's flat open inner display, open and close titles
