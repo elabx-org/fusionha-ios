@@ -6,8 +6,9 @@ import SwiftUI
 /// column), and on the flat open Duo the list keeps a third beside it.
 /// Slice S6: seasons and episodes push over it, with v2's interactive
 /// search and delete sheets. Slice S8: Activity's Queue tab is `V2QueueView`
-/// (the other Activity tabs are still v1's) and the downloads bar is
-/// `V2DownloadsAccessory`. Every other tab is still v1's.
+/// and the downloads bar is `V2DownloadsAccessory`. Slice S10: Activity's
+/// other scopes (`V2ScopeTabs`). Slice S9: Manual Import for held downloads
+/// is `V2ManualImportView` (grouped by problem). Every other tab is still v1's.
 struct V2RootView: View {
     var body: some View {
         RootView()
@@ -18,8 +19,10 @@ struct V2RootView: View {
                 AnyView(V2SplitHandle(context: context))
             }))
             .environment(\.activityQueueTab, ActivityQueueTabOverride { search in AnyView(V2QueueView(search: search)) })
+            .environment(\.activityScopeTab, V2ScopeTabs.override)
             .environment(\.downloadsBarContent, DownloadsBarContentOverride { state in
                 AnyView(V2DownloadsAccessory(state: state))
             })
+            .environment(\.manualImportSheet, V2ManualImportView.override)
     }
 }

@@ -127,12 +127,9 @@ struct ActivityView: View {
         Screen {
             switch chrome.tab {
             case .queue: ActivityQueueRoot(search: chrome.search)
-            case .wanted: WantedView(embedded: true)
-            case .history: ActivityHistoryTab(search: chrome.search, itemId: chrome.itemFilter?.itemId)
-            case .blocklist: ActivityBlocklistTab(search: chrome.search)
-            case .tasks: ActivityTasksTab()
-            case .audit: ActivityAuditTab(search: chrome.search)
-            case .indexers: ActivityIndexersTab()
+            // v1's History, Wanted, Blocklist, Tasks, Audit and Indexers,
+            // unless a product swaps a scope in (`ActivityScopeRoot`).
+            default: ActivityScopeRoot(tab: chrome.tab, search: chrome.search, itemId: chrome.itemFilter?.itemId)
             }
         }
         // Wide layouts follow the width Activity gets, never the size class.
@@ -187,7 +184,7 @@ struct ActivityView: View {
         // On the open Duo it spans both pages: the list before the fold, the
         // file or the decision panel after it (`MISplitBody`).
         .duoPageSheet(item: $router.rescue, placement: .twoPages) { request in
-            ManualImportSheet(downloadIds: request.downloadIds, client: model.client) {
+            ManualImportSheetRoot(downloadIds: request.downloadIds, client: model.client) {
                 // After the native sheet closes, open the web version of the same rescue.
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(450))
@@ -232,11 +229,12 @@ struct ActivityView: View {
 /// laid out flat (each row a direct child of the lazy stack).
 struct ActivityPage<Content: View>: View {
     @ViewBuilder var content: Content
+    @Environment(\.activityPageHeader) private var header
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                ActivityPageHeader()
+                if let header { header.make() } else { ActivityPageHeader() }
                 content
             }
             .padding(.horizontal, Theme.pageGutter)
