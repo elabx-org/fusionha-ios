@@ -14,6 +14,7 @@ import FusionhaKit
 struct V2SplitHandle: View {
     let context: DuoSeamContext
     @Environment(\.motionEnabled) private var motion
+    @Environment(AppModel.self) private var model
     /// Set once the handle has been touched: the tip never shows again.
     @AppStorage("v2.splitHandle.used") private var used = false
     /// Where the seam was when the finger went down, and whether it has moved.
@@ -40,6 +41,7 @@ struct V2SplitHandle: View {
 
     var body: some View {
         ZStack(alignment: .leading) {
+            if seam.live != nil, !context.fullWidth { V2SeamGround(context: context, x: CGFloat(x)) }
             if seam.live != nil, motion {
                 Color.black.opacity(DuoSeam.listShade(x: x, split: rest))
                     .frame(width: CGFloat(max(0, x)))
@@ -64,9 +66,11 @@ struct V2SplitHandle: View {
             Task { @MainActor in if start != nil { release(velocity: 0) } }
         }
         .task { await firstTimeHint() }
+        .onAppear { slideIn() }
         .onDisappear {
             spring.cancel()
             seam.live = nil
+            if model.presentedItem == nil { seam.slidIn = nil }
         }
     }
 
@@ -162,8 +166,8 @@ struct V2SplitHandle: View {
     }
 
     /// Spring to `stop`, then hand it to the shell.
-    private func settle(_ stop: DuoSeam.Stop, velocity: Double) {
-        ticks += 1
+    private func settle(_ stop: DuoSeam.Stop, velocity: Double, tick: Bool = true) {
+        if tick { ticks += 1 }
         let from = x
         let target = DuoSeam.position(of: stop, width: width, split: rest)
         let drag = context.drag
@@ -186,6 +190,19 @@ struct V2SplitHandle: View {
             }
             context.drag.live = nil
         }
+    }
+
+    /// A title just opened beside the list: it slides in from the trailing
+    /// edge to the split, the close drag played backwards, over the Library
+    /// still at its full width (`FoldSeam`). Once per title opened, not when
+    /// the handle comes back for one already open (and never at full width).
+    private func slideIn() {
+        let id = model.presentedItem?.id
+        guard seam.slidIn != id else { return }
+        seam.slidIn = id
+        guard motion, !context.fullWidth, seam.live == nil else { return }
+        seam.live = CGFloat(width)
+        settle(.split, velocity: 0, tick: false)
     }
 
     // MARK: First time

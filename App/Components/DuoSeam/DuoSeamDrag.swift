@@ -18,6 +18,8 @@ final class DuoSeamDrag {
     /// The seam's distance from the leading edge while dragged or
     /// springing; nil at rest.
     var live: CGFloat?
+    /// The title v2's handle last slid in on opening, so it slides once.
+    @ObservationIgnored var slidIn: Int?
 }
 
 /// What the shell hands v2's handle: where the seam rests and what each stop does.
@@ -55,29 +57,32 @@ struct DuoSeamContext {
 
     /// The split as the seam moves: both columns laid out around `live`.
     func seam(live: CGFloat) -> FoldSeam {
-        FoldSeam(x: live, listFloor: rest, titleFloor: width - rest)
+        FoldSeam(x: live, listFloor: rest, titleFloor: width - rest, fromFull: fullWidth)
     }
 }
 
 /// The two columns around a moving seam (`FoldSplitLayout.seam`).
 ///
-/// Smoothness (build 757 lagged): a column's size is never changed per
-/// frame, since a new size re-lays out the whole Library grid or title page.
-/// Each column has two sizes only, its split size and the size of the stop
-/// the drag is heading to, and the seam just moves them:
-/// - seam left of the split (toward full width): the title is laid out at
-///   the full width once, its trailing part off the edge until it arrives;
-///   the list keeps its width and slides under it.
-/// - seam right of the split (toward close): the list is laid out at the full
-///   width once (the Library it closes back to), under the title; the title
-///   keeps its width and slides off the trailing edge.
-/// Letting go at the stop it was heading to then lays nothing out again.
+/// Smoothness (builds 757 and 760): no column is re-laid out while the seam
+/// moves, since a new size re-lays out the whole Library grid or title page.
+/// Each column keeps the size it had when the drag began, and the seam only
+/// moves them:
+/// - from the split, toward full width: the list keeps its width and slides
+///   under the shade; the title stays where it is, and v2's handle paints
+///   the ground it will fill (`V2SeamGround`). It takes the full width once,
+///   when it lands there.
+/// - from the split, toward close: the title slides off the trailing edge
+///   at its width, over the list at the full width it closes back to (the
+///   Library at rest before the title opened, so opening slides the same way).
+/// - from full width: the title stays at the full width and slides.
 struct FoldSeam: Equatable {
     var x: CGFloat
     /// The list's width in the split.
     var listFloor: CGFloat
     /// The title's width in the split.
     var titleFloor: CGFloat
+    /// The drag began at full width (the list hidden).
+    var fromFull = false
 
     /// How far into its closing look the title is (`DuoSeam.closeProgress`).
     var closeProgress: CGFloat {
@@ -92,12 +97,13 @@ extension FoldSplitLayout {
         let x = min(max(seam.x, 0), bounds.width)
         let towardClose = x > seam.listFloor
         let listWidth = towardClose ? bounds.width : seam.listFloor
-        let titleWidth = towardClose ? seam.titleFloor : bounds.width
         // Squeezed, the list slides a little under the title.
         let slide = towardClose ? 0 : (seam.listFloor - x) * CGFloat(DuoSeam.listSlide)
+        let titleX = towardClose || seam.fromFull ? x : seam.listFloor
+        let titleWidth = seam.fromFull ? bounds.width : seam.titleFloor
         subviews[0].place(at: CGPoint(x: bounds.minX - slide, y: bounds.minY),
                           proposal: ProposedViewSize(width: listWidth, height: bounds.height))
-        subviews[1].place(at: CGPoint(x: bounds.minX + x, y: bounds.minY),
+        subviews[1].place(at: CGPoint(x: bounds.minX + titleX, y: bounds.minY),
                           proposal: ProposedViewSize(width: titleWidth, height: bounds.height))
     }
 }
