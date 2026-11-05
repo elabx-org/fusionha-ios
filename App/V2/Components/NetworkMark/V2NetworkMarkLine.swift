@@ -2,11 +2,13 @@ import SwiftUI
 import UIKit
 import FusionhaKit
 
-/// A meta line led by the title's network mark (mock kit `.netd`): the
-/// studio's logo on a small white plate, so a coloured logo on transparent
-/// stays legible on any art and any palette, then `content`. Nothing but the
+/// A meta line led by the title's network mark (mock kit `mark(net, 'mono')`,
+/// owner pick 2026-11-05 over the white `.netd` plate): the studio's logo as a
+/// one-ink silhouette on transparent (its alpha as a mask, in the line's
+/// primary ink at 85%), then `content`. A logo with no transparency would
+/// become a solid block, so it shows nothing instead. Nothing but the
 /// content until the logo has loaded, and nothing at all without a logo (the
-/// mark is never the name in text); it fades in when it arrives. The plate
+/// mark is never the name in text); it fades in when it arrives. The mark
 /// sits in the meta line, never on the art. Content, not glass.
 struct V2NetworkMarkLine<Content: View>: View {
     let studio: Studio?
@@ -23,8 +25,8 @@ struct V2NetworkMarkLine<Content: View>: View {
         let cached = url.flatMap { ImagePipeline.shared.cached($0) }
         let logo = shownURL == url ? (image ?? cached) : cached
         HStack(spacing: spacing) {
-            if let logo, let studio {
-                plate(logo)
+            if let logo, let studio, V2LogoAlpha.isCutOut(logo) {
+                mark(logo)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(studio.name)
                     .transition(.opacity)
@@ -34,21 +36,19 @@ struct V2NetworkMarkLine<Content: View>: View {
         .task(id: url) { await load() }
     }
 
-    /// 11pt tall logo, a very wide one capped at 58pt and shrunk to fit.
-    private func plate(_ logo: UIImage) -> some View {
+    /// 13pt tall silhouette, a very wide one capped at 64pt and shrunk to fit.
+    private func mark(_ logo: UIImage) -> some View {
         let aspect = logo.size.height > 0 ? logo.size.width / logo.size.height : 1
-        let width = min(58, 11 * aspect)
+        let width = min(64, 13 * aspect)
         return Image(uiImage: logo)
+            .renderingMode(.template)
             .resizable()
             .interpolation(.high)
             .aspectRatio(contentMode: .fit)
-            .frame(width: width, height: min(11, width / max(aspect, 0.01)))
-            .frame(height: 11)
-            .padding(.horizontal, 6)
-            .frame(minWidth: 22, minHeight: 22)
-            .background(.white, in: Capsule())
-            .overlay(Capsule().strokeBorder(.black.opacity(0.06)))
-            .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1)
+            .frame(width: width, height: min(13, width / max(aspect, 0.01)))
+            .frame(height: 13)
+            .foregroundStyle(.primary)
+            .opacity(0.85)
             .fixedSize()
     }
 
