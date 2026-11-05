@@ -59,10 +59,19 @@ struct DuoSeamContext {
     }
 }
 
-/// The two columns around a moving seam (`FoldSplitLayout.seam`). Neither
-/// column is laid out narrower than in the split: squeezed, the list keeps
-/// its width and slides under the title; pushed right, the title keeps its
-/// width and slides off the trailing edge. Each widens past the split.
+/// The two columns around a moving seam (`FoldSplitLayout.seam`).
+///
+/// Smoothness (build 757 lagged): a column's size is never changed per
+/// frame, since a new size re-lays out the whole Library grid or title page.
+/// Each column has two sizes only, its split size and the size of the stop
+/// the drag is heading to, and the seam just moves them:
+/// - seam left of the split (toward full width): the title is laid out at
+///   the full width once, its trailing part off the edge until it arrives;
+///   the list keeps its width and slides under it.
+/// - seam right of the split (toward close): the list is laid out at the full
+///   width once (the Library it closes back to), under the title; the title
+///   keeps its width and slides off the trailing edge.
+/// Letting go at the stop it was heading to then lays nothing out again.
 struct FoldSeam: Equatable {
     var x: CGFloat
     /// The list's width in the split.
@@ -77,14 +86,18 @@ struct FoldSeam: Equatable {
 }
 
 extension FoldSplitLayout {
-    /// Places the list and the title around `seam` (horizontal only).
+    /// Places the list and the title around `seam` (horizontal only): two
+    /// sizes per column, so moving the seam only moves them.
     func placeSeam(_ seam: FoldSeam, in bounds: CGRect, subviews: LayoutSubviews) {
         let x = min(max(seam.x, 0), bounds.width)
-        let list = max(x, seam.listFloor)
-        let slide = (list - x) * CGFloat(DuoSeam.listSlide)
+        let towardClose = x > seam.listFloor
+        let listWidth = towardClose ? bounds.width : seam.listFloor
+        let titleWidth = towardClose ? seam.titleFloor : bounds.width
+        // Squeezed, the list slides a little under the title.
+        let slide = towardClose ? 0 : (seam.listFloor - x) * CGFloat(DuoSeam.listSlide)
         subviews[0].place(at: CGPoint(x: bounds.minX - slide, y: bounds.minY),
-                          proposal: ProposedViewSize(width: list, height: bounds.height))
+                          proposal: ProposedViewSize(width: listWidth, height: bounds.height))
         subviews[1].place(at: CGPoint(x: bounds.minX + x, y: bounds.minY),
-                          proposal: ProposedViewSize(width: max(bounds.width - x, seam.titleFloor), height: bounds.height))
+                          proposal: ProposedViewSize(width: titleWidth, height: bounds.height))
     }
 }
