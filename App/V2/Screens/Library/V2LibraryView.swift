@@ -9,8 +9,8 @@ import FusionhaKit
 ///
 /// It reuses v1's store and logic: the model's library, `LibraryInputs`
 /// (filtering, counting, rows), the persisted filters under v1's keys, the
-/// scrubber, the poster sheet and the select bar. A tap opens v1's title
-/// page for now. Phone and the folded Duo: three posters a row; flat open
+/// scrubber, the poster sheet and the select bar. A tap opens v2's title
+/// page (`V2TitleView`). Phone and the folded Duo: three posters a row; flat open
 /// the grid simply widens across the seamless display; book pose keeps the
 /// fold in a gutter.
 struct V2LibraryView: View {
@@ -18,6 +18,7 @@ struct V2LibraryView: View {
     @Environment(\.motionEnabled) private var motion
     @Environment(\.spread) private var spread
     @Environment(\.bookPose) private var bookPose
+    @Environment(\.duoOpen) private var duoOpen
     @AppStorage("library.kind") private var kindRaw = "all"
     @AppStorage("fusionha.library.density") private var density = "grid"
     @AppStorage("library.tier") private var tier: LibraryTier = .all
@@ -51,6 +52,15 @@ struct V2LibraryView: View {
     private var gutter: CGFloat { pane.width >= 700 ? 24 : 20 }
     /// The home (heroes and shelf) shows above the grid.
     private var showsHome: Bool { !compact && query.isEmpty }
+
+    /// Flat open beside an open title (slice S5): the list pane takes the
+    /// title's palette in the deeper list-pane wash, with no art of its own,
+    /// so the display reads as one page. Book pose keeps the Library's own.
+    private var besideArt: URL? {
+        guard duoOpen, !bookPose, let id = model.presentedItem?.id,
+              let item = model.library.first(where: { $0.id == id }) else { return nil }
+        return PageArtSource.url(backdrop: item.backdropUrl, poster: item.posterUrl)
+    }
 
     private var filters: V2LibraryFilters {
         V2LibraryFilters(kind: $kindRaw, tier: $tier, status: $status, sort: $sort,
@@ -100,7 +110,8 @@ struct V2LibraryView: View {
         }
         // The kit's ambient art, not W1's: full strength under the home,
         // browse-lib.js's shorter, softer layer over the grid or list alone.
-        .v2PageGround(art: home.groundArt, artHeight: showsHome ? 760 : 520,
+        .v2PageGround(art: besideArt ?? home.groundArt, recipe: besideArt == nil ? .page : .listPane,
+                      showsArt: besideArt == nil, artHeight: showsHome ? 760 : 520,
                       artOpacity: showsHome ? .ambient : .libraryList)
         .modifier(V2LibraryToolbar(derived: derived, status: $status))
         .shellPage("Library", accountInPageWhenFolded: true)

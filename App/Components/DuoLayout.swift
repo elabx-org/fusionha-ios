@@ -140,6 +140,8 @@ struct ShellDetailColumn: View {
     @Environment(\.duoOpen) private var duoOpen
     @Environment(\.duoListToggle) private var listToggle
     @Environment(\.titleSpread) private var titleSpread
+    @Environment(\.titlePage) private var titlePage
+    @Environment(\.bookPose) private var bookPose
     /// The page following a swipe from its leading edge (`DuoPageEdge`).
     @State private var dragOffset: CGFloat = 0
     @State private var width: CGFloat = 0
@@ -149,6 +151,13 @@ struct ShellDetailColumn: View {
     /// far it has dropped once that closes it.
     @State private var pull = DuoColumnPull()
     @State private var drop: CGFloat = 0
+
+    /// v2's flat open Duo with a title open: list and title are one display
+    /// (`TitlePageOverride.flatOpenListShare`), so no hairline between them.
+    /// v1 never sets `titlePage`; book pose keeps its gutter.
+    private var seamless: Bool {
+        titlePage?.flatOpenListShare != nil && duoOpen && !bookPose && model.presentedItem != nil
+    }
 
     /// Which page is up: a new title or preview swings in over the last one.
     private var pageKey: String {
@@ -173,7 +182,7 @@ struct ShellDetailColumn: View {
         .onChange(of: pull.closeRequests) { closeByPull() }
         .animation(duoOpen ? DuoPageMotion.animation(motion: motion) : nil, value: pageKey)
         .overlay(alignment: .leading) {
-            Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea()
+            if !seamless { Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea() }
         }
         // Gestures 1 and 2: swipe the page away, or the list off and back.
         .overlay(alignment: .leading) {
@@ -228,7 +237,7 @@ struct ShellDetailColumn: View {
                 NavigationStack {
                     // The same store the sheet showed (`AppModel.detailStore`), so
                     // unfolding keeps the page, its child sheets and their drafts.
-                    ItemDetailView(store: model.detailStore(for: ref.id), onClose: { closePage() })
+                    TitlePageHost(store: model.detailStore(for: ref.id), onClose: { closePage() })
                         .environment(\.detailInColumn, true)
                         .duoListToggleToolbar()
                 }

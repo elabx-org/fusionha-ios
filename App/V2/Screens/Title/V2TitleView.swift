@@ -1,0 +1,186 @@
+import SwiftUI
+import FusionhaKit
+
+/// v2's title page (slice S5), shown wherever v1 shows `ItemDetailView`
+/// (`TitlePageHost`): the sheet when folded, the shell's column when open.
+/// One scrolling column on the art-palette ground (`.v2PageGround`, the
+/// hero's art lifted and painted down the whole page), never split at the
+/// fold. It runs on v1's `DetailStore` with v1's loading, live queue, toast
+/// and fold / unfold re-hosting, so every action calls the same code as v1.
+/// Seasons and episodes push over it (`V2TitleRoute`, slice S6); its sheets
+/// are `V2TitleSheets` (v2's search and delete, v1's others).
+struct V2TitleView: View {
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @Environment(\.detailInColumn) private var inColumn
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    let store: DetailStore
+    var onClose: (() -> Void)?
+    @State private var compact = false
+    @State private var presentReady: Bool
+    @State private var position = ScrollPosition(idType: String.self)
+    @State private var width: CGFloat = 0
+
+    init(store: DetailStore, onClose: (() -> Void)? = nil) {
+        self.store = store
+        self.onClose = onClose
+        _presentReady = State(initialValue: !store.hosted)
+    }
+
+    private var canEdit: Bool { model.me?.can("edit") ?? true }
+    private var canSearch: Bool { canEdit && (model.me?.can("search") ?? true) }
+    private var compactLayout: Bool { !inColumn && sizeClass == .compact }
+    private var reduceMotion: Bool { systemReduceMotion || store.settings?.animationsEnabled == false }
+
+    private var presenter: DetailPresenter {
+        let host: DetailHost = inColumn ? .column : .sheet
+        return DetailPresenter(store: store, ready: presentReady) { [model] in model.detailHostAccepts(host) }
+    }
+
+    /// The hero's art, the ground's source (`V2Page.title`: its own backdrop).
+    private var groundArt: URL? {
+        let seed = model.library.first { $0.id == store.itemId }
+        return PageArtSource.url(backdrop: store.detail?.backdropUrl ?? seed?.backdropUrl,
+                                 poster: store.detail?.posterUrl ?? seed?.posterUrl)
+    }
+
+    var body: some View {
+        scroll
+            .v2PageGround(art: groundArt, showsArt: false)
+            .overlay(alignment: .bottom) { V2TitleToast(store: store, reduceMotion: reduceMotion) }
+            .navigationTitle(compact ? (store.detail?.title ?? "") : "")
+            .navigationSubtitle(compact ? subtitle : "")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackgroundVisibility(compact ? .visible : .hidden, for: .navigationBar)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: compact)
+            .toolbar {
+                V2TitleToolbar(store: store, canEdit: canEdit, canSearch: canSearch, escapeCloses: !inColumn,
+                               close: close, openWeb: openWeb)
+            }
+            .environment(store)
+            .environment(\.detailReduceMotion, reduceMotion)
+            .environment(\.detailCompact, compactLayout)
+            .presentationDetents([.large])
+            .presentationCornerRadius(34)
+            .task {
+                store.client = model.client
+                store.queue = model.queue.filter { $0.mediaItemId == store.itemId }
+                applyPendingTab()
+                await store.load()
+            }
+            .task(id: store.detail == nil) {
+                if store.detail != nil { applyIntent() }
+            }
+            .onAppear { store.hosted = true }
+            .task { await rehost() }
+            .onChange(of: model.pendingDetailTab) { applyPendingTab() }
+            .onQueueChange(model) { [store] queue in
+                let mine = queue.filter { $0.mediaItemId == store.itemId }
+                if store.queue != mine { store.queue = mine }
+            }
+            .onChange(of: store.deleted) {
+                guard store.deleted else { return }
+                Task { await model.loadLibrary() }
+                store.episodeSheet = nil
+                close()
+            }
+            .v2TitleDestinations(store: store, reduceMotion: reduceMotion)
+            .modifier(V2TitleSheets(presenter: presenter, reduceMotion: reduceMotion))
+    }
+
+    /// The compact bar's second line (mock `cbar .tt small`): "2026 · HD 6/7 ·
+    /// 4K 6/7" for a series, "2025 · Movie · HD and 4K on disk" for a movie.
+    private var subtitle: String {
+        guard let detail = store.detail else { return "" }
+        let versions = V2TitleVersion.all(store, detail: detail)
+        var parts: [String] = detail.year.map { [String($0)] } ?? []
+        if detail.isSeries {
+            parts += versions.compactMap { v in v.count.map { "\(v.edition.tier.badgeLetters) \($0)" } }
+        } else {
+            parts.append("Movie")
+            var tiers: [String] = []
+            for v in versions where v.have > 0 && !tiers.contains(v.edition.tier.badgeLetters) {
+                tiers.append(v.edition.tier.badgeLetters)
+            }
+            if !tiers.isEmpty { parts.append("\(tiers.joined(separator: " and ")) on disk") }
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    private var scroll: some View {
+        ScrollView {
+            Group {
+                if let detail = store.detail {
+                    V2TitlePage(detail: detail, width: width)
+                } else if store.loadError != nil {
+                    DetailLoadError(close: close)
+                } else {
+                    DetailLoadingShell(seed: model.library.first { $0.id == store.itemId })
+                }
+            }
+            .pinnedToProposedWidth()
+        }
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        .scrollIndicators(.hidden)
+        .scrollEdgeEffectStyle(.soft, for: .top)
+        .scrollEdgeEffectHidden(!compact, for: .top)
+        .scrollPosition($position)
+        .duoColumnPullSource()
+        .ignoresSafeArea(.container, edges: .top)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+        .onScrollGeometryChange(for: CGFloat.self) { geo in
+            geo.contentOffset.y + geo.contentInsets.top
+        } action: { _, y in
+            store.scrollY = y
+            if compact != (y > 240) { compact = y > 240 }
+        }
+    }
+
+    /// After a fold / unfold: back to the same offset, then (once the old
+    /// host has left) re-present whichever child sheet was up (v1's rule).
+    private func rehost() async {
+        guard !presentReady else { return }
+        let y = store.scrollY
+        try? await Task.sleep(for: .milliseconds(80))
+        if y > 0 { position.scrollTo(y: y) }
+        if inColumn { await DetailSheetPresence.settle(limit: .seconds(2)) }
+        try? await Task.sleep(for: .milliseconds(inColumn ? 150 : 550))
+        presentReady = true
+    }
+
+    private func close() {
+        if let onClose { onClose() } else { dismiss() }
+    }
+
+    /// What the poster menu asked for when it opened this title (v1's intents).
+    private func applyIntent() {
+        guard let intent = model.detailIntent, let detail = store.detail else { return }
+        model.detailIntent = nil
+        switch intent {
+        case .edit:
+            store.showingEdit = true
+        case .interactiveSearch(let tier):
+            let editions = tier.map { t in detail.orderedEditions.filter { $0.tier == t } } ?? detail.orderedEditions
+            let picked = editions.isEmpty ? detail.orderedEditions : editions
+            guard !picked.isEmpty else { return }
+            store.interactive = InteractiveTarget(editionIds: picked.map(\.id),
+                                                  subtitle: picked.count == 1 ? picked[0].label : "All versions")
+        case .scopedSearch(let scope):
+            store.interactive = InteractiveTarget(editionIds: scope.editionIds, episodeId: scope.episodeId,
+                                                  seasonNumber: scope.seasonNumber, subtitle: scope.subtitle)
+        }
+    }
+
+    private func openWeb() {
+        guard let server = model.credentials?.serverURL else { return }
+        openURL(server.appendingPathComponent("library/\(store.itemId)"))
+    }
+
+    private func applyPendingTab() {
+        guard let tab = model.pendingDetailTab else { return }
+        model.pendingDetailTab = nil
+        store.tab = tab
+    }
+}

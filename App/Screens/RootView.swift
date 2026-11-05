@@ -24,6 +24,8 @@ struct RootView: View {
     @State private var pillSpace = DownloadsPillSpace()
     /// The tabs whose list the sidebar button hid (`DuoListMemory`). Per device.
     @AppStorage(DuoListMemory.storageKey) private var hiddenLists = ""
+    /// v2's title page (`TitlePageHost`); nil in v1.
+    @Environment(\.titlePage) private var titlePage
 
     /// The Spread, when the Duo is open and the setting says so (else `.off`).
     private func spreadContext(_ fold: FoldInfo, hasItem: Bool) -> SpreadContext {
@@ -40,20 +42,33 @@ struct RootView: View {
         split.primaryHidden = split.axis == .horizontal && (episodeBeside(split, spread: spread) || DuoSplit.hidesList(
             remembered: DuoListMemory(raw: hiddenLists).isHidden(model.tab.listMemoryKey),
             posture: fold.posture, detailShown: split.shown && hasItem))
+        applyFlatOpenShare(&split)
         return split
+    }
+
+    /// v2 (`TitlePageOverride.flatOpenListShare`): the flat open Duo is one
+    /// seamless display, so an open title takes the rest beside a list of
+    /// that share, with no fold gutter. Book pose keeps the pages.
+    private func applyFlatOpenShare(_ split: inout ShellSplit) {
+        guard let share = titlePage?.flatOpenListShare, fold.vertical == nil, fold.flatVertical != nil,
+              split.shown, split.axis == .horizontal, !split.primaryHidden, model.presentedItem != nil else { return }
+        split.primary = (fold.size.width * CGFloat(share)).rounded()
+        split.gap = 0
     }
 
     /// A Spread with an episode open from the title: the title's tabs on the
     /// left page, the episode on the right, the list hidden until it closes.
     private func episodeBeside(_ split: ShellSplit, spread: SpreadContext) -> Bool {
-        guard split.shown, let ref = model.presentedItem,
+        // v2's title page is one column: an episode never takes the list's place.
+        guard titlePage == nil, split.shown, let ref = model.presentedItem,
               TitleSpread.pages(fold: fold, spread: spread) != nil else { return false }
         return model.detailStore(for: ref.id).episodeSheet != nil
     }
 
     /// The title's halves for its column (`TitleSpread`).
     private func titleSpread(_ split: ShellSplit, spread: SpreadContext) -> TitleSpread? {
-        guard split.shown, split.axis == .horizontal, model.presentedItem != nil,
+        // v2's title page never splits at the fold.
+        guard titlePage == nil, split.shown, split.axis == .horizontal, model.presentedItem != nil,
               let pages = TitleSpread.pages(fold: fold, spread: spread) else { return nil }
         return TitleSpread(pages: pages, fillsDisplay: split.primaryHidden)
     }
@@ -172,7 +187,7 @@ struct RootView: View {
         .sheet(item: sheetItem, onDismiss: { DetailSheetPresence.dismissed() }) { ref in
             // A stack of its own, so Close, Refresh and Open in the web app are
             // system toolbar items over the art (DC10, ruling Q-DC8).
-            NavigationStack { ItemDetailView(store: model.detailStore(for: ref.id)) }
+            NavigationStack { TitlePageHost(store: model.detailStore(for: ref.id)) }
                 .onAppear {
                     DetailSheetPresence.shown()
                     DeepLinkProbe.log("detail \(ref.id) shown")

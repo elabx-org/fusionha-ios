@@ -6,7 +6,7 @@ import FusionhaKit
 /// (`V2PosterCaption`). Attention draws an orange ring, the title open on
 /// the right page the accent ring. Select mode puts a checkbox in the
 /// art's bottom-right corner and a tap toggles; otherwise a tap opens the
-/// title (v1's title page for now) and press-and-hold opens the poster
+/// title (v2's title page, through `TitlePageHost`) and press-and-hold opens the poster
 /// sheet. Content, not glass.
 struct V2PosterCard: View {
     @Environment(AppModel.self) private var model

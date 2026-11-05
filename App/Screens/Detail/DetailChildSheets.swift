@@ -51,8 +51,8 @@ struct DetailChildSheets: ViewModifier {
     }
 }
 
-/// The item actions rail's sheets.
-private struct DetailActionSheets: ViewModifier {
+/// The item actions rail's sheets (v2's `V2TitleSheets` reuses them).
+struct DetailActionSheets: ViewModifier {
     let presenter: DetailPresenter
     let episodeInline: Bool
     private var store: DetailStore { presenter.store }

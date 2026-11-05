@@ -1,0 +1,83 @@
+import SwiftUI
+import FusionhaKit
+
+/// The title's primary actions (mock `acts`): Search missing (Search for a
+/// movie) as the one prominent glass button, Interactive search (person),
+/// then Monitored on a bookmark. Each runs v1's store action: the same
+/// search, the same interactive-search sheet, the same bulk monitor call.
+struct V2TitleActionRow: View {
+    @Environment(DetailStore.self) private var store
+    @Environment(AppModel.self) private var model
+    @Environment(\.pagePalette) private var page
+    let detail: ItemDetail
+    /// The open Duo's column carries Search in its bar: the row keeps the rest.
+    var showsSearch = true
+    var height: CGFloat = 42
+    /// The flip while the PATCH is in flight.
+    @State private var monitorOverride: Bool?
+
+    private var canEdit: Bool { model.me?.can("edit") ?? true }
+    private var canSearch: Bool { canEdit && (model.me?.can("search") ?? true) }
+    private var searching: Bool { store.flash?.phase == .searching }
+    private var monitored: Bool { monitorOverride ?? (detail.monitored ?? true) }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            if canSearch && showsSearch {
+                Button {
+                    Task { await store.search(label: "\(detail.title) — all monitored versions") }
+                } label: {
+                    Label(detail.isSeries ? "Search missing" : "Search", systemImage: "magnifyingglass")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(height: height - 16)
+                        .padding(.horizontal, 4)
+                }
+                .buttonStyle(.glassProminent)
+                .tint(Theme.i1)
+                .symbolEffect(.pulse, options: .repeating, isActive: searching)
+                .disabled(searching)
+                .accessibilityHint("Searches every monitored version")
+            }
+            if canSearch {
+                Button { store.openInteractiveSearch() } label: {
+                    Image(systemName: "person")
+                        .font(.system(size: 16, weight: .semibold))
+                        .frame(width: height - 16, height: height - 16)
+                }
+                .buttonStyle(.glass)
+                .accessibilityLabel("Interactive search")
+            }
+            if canEdit {
+                Button { toggleMonitor() } label: {
+                    Label(monitored ? "Monitored" : "Monitor", systemImage: monitored ? "bookmark.fill" : "bookmark")
+                        .font(.system(size: 15, weight: .semibold))
+                        .contentTransition(.symbolEffect(.replace))
+                        .frame(height: height - 16)
+                }
+                .buttonStyle(.glass)
+                .foregroundStyle(page?.ink ?? Theme.txt)
+                .accessibilityValue(monitored ? "On" : "Off")
+            }
+            Spacer(minLength: 0)
+        }
+        .sensoryFeedback(.selection, trigger: monitored)
+        .onChange(of: detail.monitored) { monitorOverride = nil }
+    }
+
+    /// The Library's bulk monitor for this one title, then the page reloads.
+    private func toggleMonitor() {
+        let next = !monitored
+        monitorOverride = next
+        Task {
+            do {
+                try await store.client?.bulkMonitor(BulkMonitorRequest(itemIds: [detail.id], monitored: next))
+                store.show(next ? "Monitoring \(detail.title)" : "Stopped monitoring \(detail.title)", variant: .success)
+                await store.reload()
+                await model.loadLibrary()
+            } catch {
+                monitorOverride = nil
+                store.show("Couldn't update \(detail.title)", variant: .error)
+            }
+        }
+    }
+}
