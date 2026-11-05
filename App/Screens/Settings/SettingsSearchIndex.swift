@@ -22,6 +22,7 @@ let settingsFieldIndex: [SettingsField] = [
     SettingsField(panel: "about", label: "Copy info", keywords: ["bug report", "build", "clipboard", "commit", "diagnostics", "version"]),
     SettingsField(panel: "appearance", label: "Coverage rails", keywords: ["bar", "checkmark", "current", "dot", "fill", "glow", "library rail", "rail style", "trailing dot"]),
     SettingsField(panel: "appearance", label: "Consolidate HD + 4K", keywords: ["combine", "combo rail", "hd 4k", "merge", "single rail", "uhd"]),
+    SettingsField(panel: "maintenance", label: "Saved reports", keywords: ["diagnostics", "hang", "lag", "metrickit", "performance reports", "stutter"]),
     SettingsField(panel: "about", label: "Project links", keywords: ["changelog", "documentation", "github", "releases", "repo", "report an issue"]),
     SettingsField(panel: "access", label: "Add user", keywords: ["account", "create user", "login", "new user", "principal", "rbac"]),
     SettingsField(panel: "access", label: "Administrator", keywords: ["admin", "full access", "privilege", "role", "superuser"]),

@@ -122,7 +122,7 @@ enum SettingsNav {
         .init(id: "discover", label: "Discover", title: "Discover",
               subtitle: "Ignored collections & films — restore anything you hid from the Discover rails.", icon: "safari"),
         .init(id: "maintenance", label: "Maintenance", title: "Maintenance",
-              subtitle: "App version, update status, and the reset-cache recovery tools for a stale UI.", icon: "wrench.adjustable"),
+              subtitle: "App version, update status, the reset-cache recovery tools for a stale UI, and performance reports.", icon: "wrench.adjustable"),
     ]
 
     static let top = ["general", "metadata"]

@@ -21,6 +21,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        // MetricKit hang, crash and hitch reports, saved for Settings > Maintenance.
+        PerformanceReports.shared.start()
         #if !V2
         // Tokens can change (restore, reinstall, re-sign): re-register every launch
         // once the user has granted permission. v2 has no push yet (docs/v2.md).
