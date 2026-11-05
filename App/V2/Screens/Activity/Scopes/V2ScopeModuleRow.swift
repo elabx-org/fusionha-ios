@@ -1,4 +1,5 @@
 import SwiftUI
+import FusionhaKit
 
 // W1 modules whose rows run through a lazy stack: each row draws its own
 // slice of the card (`ModuleListSegment`), so a long feed (History's
