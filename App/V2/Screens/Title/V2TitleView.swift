@@ -58,6 +58,7 @@ struct V2TitleView: View {
     var body: some View {
         let _ = PerfCount.hit("V2TitleView.body")
         let _ = PerfCount.mark("title.body")
+        let _ = PerfCount.printsChanges ? Self._printChanges() : ()
         scroll
             .v2PageGround(art: groundArt, showsArt: false)
             .overlay(alignment: .bottom) { V2TitleToast(store: store, reduceMotion: reduceMotion) }

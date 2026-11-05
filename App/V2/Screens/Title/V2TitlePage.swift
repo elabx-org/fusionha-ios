@@ -17,6 +17,7 @@ struct V2TitlePage: View {
     var body: some View {
         let _ = PerfCount.hit("V2TitlePage.body")
         let _ = PerfCount.mark("title.page")
+        let _ = PerfCount.printsChanges ? Self._printChanges() : ()
         VStack(alignment: .leading, spacing: 0) {
             V2TitleHero(detail: detail)
             VStack(alignment: .leading, spacing: 0) {

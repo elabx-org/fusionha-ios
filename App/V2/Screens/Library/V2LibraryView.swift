@@ -116,6 +116,7 @@ struct V2LibraryView: View {
     var body: some View {
         let _ = PerfCount.hit("V2LibraryView.body")
         let _ = PerfCount.mark("library.body")
+        let _ = PerfCount.printsChanges ? Self._printChanges() : ()
         ScrollViewReader { proxy in
             scroll(proxy)
                 .overlay {

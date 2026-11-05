@@ -38,6 +38,13 @@ enum PerfCount {
         #endif
     }
 
+    /// The perf run's `_printChanges` gate: why a view's body re-ran, on stdout.
+    #if DEBUG
+    static let printsChanges = enabled && ProcessInfo.processInfo.environment["FUSIONHA_PERF_CHANGES"] != nil
+    #else
+    static let printsChanges = false
+    #endif
+
     /// Records when `key` first happened (the v2 open script's timeline).
     @inline(__always)
     static func mark(_ key: String) {

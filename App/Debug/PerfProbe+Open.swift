@@ -55,7 +55,7 @@ extension PerfProbe {
         _ = PerfCount.takeMarks()
         frameLog = []
         var t0: Double = 0
-        await phase(label, 3) { [model] in
+        await phase(label, 4.5) { [model] in
             t0 = CACurrentMediaTime()
             model.open(id)
         }

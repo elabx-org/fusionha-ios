@@ -30,6 +30,7 @@ struct V2PosterCard: View {
 
     var body: some View {
         let _ = PerfCount.hit("V2PosterCard.body")
+        let _ = PerfCount.printsChanges ? Self._printChanges() : ()
         VStack(alignment: .leading, spacing: 0) {
             art
                 .overlay {

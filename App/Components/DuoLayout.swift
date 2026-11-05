@@ -176,6 +176,7 @@ struct ShellDetailColumn: View {
 
     var body: some View {
         let _ = PerfCount.hit("ShellDetailColumn.body")
+        let _ = PerfCount.printsChanges ? Self._printChanges() : ()
         ZStack {
             page
                 .transition(duoOpen ? DuoPageMotion.transition(motion: motion) : .opacity)
