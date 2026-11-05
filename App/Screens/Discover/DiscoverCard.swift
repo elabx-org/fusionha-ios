@@ -8,7 +8,7 @@ import FusionhaKit
 struct DiscoverCard: View {
     @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
-    @Environment(\.spread) private var spread
+    @Environment(\.spreadActive) private var spreadActive
     let result: MediaSearchResult
     var trending = false
     let canAdd: Bool
@@ -30,7 +30,7 @@ struct DiscoverCard: View {
     private var alreadyRequested: Bool { requestStatus == "pending" || requestStatus == "approved" }
     private var showsQuickAdd: Bool { canAdd && !inLibrary }
     /// In a Spread, the title open on the right page is outlined in the grid.
-    private var picked: Bool { spread.isActive && result.isPicked(in: model, libraryId: libraryId) }
+    private var picked: Bool { spreadActive && result.isPicked(in: model, libraryId: libraryId) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {

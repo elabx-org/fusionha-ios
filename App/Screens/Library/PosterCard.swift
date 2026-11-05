@@ -11,7 +11,7 @@ struct PosterCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @Environment(\.openPosterSheet) private var openSheet
-    @Environment(\.spread) private var spread
+    @Environment(\.spreadActive) private var spreadActive
     let item: MediaItem
     /// The card's width when the grid knows it (`LibraryGridRow`).
     var artWidth: CGFloat?
@@ -26,7 +26,7 @@ struct PosterCard: View {
     private var flags: CardFlag { model.cardFlags.slot(for: item.id) }
     private var selected: Bool { flags.selected }
     /// In a Spread, the title open on the right page is outlined in the grid.
-    private var picked: Bool { spread.isActive && !selecting && flags.picked }
+    private var picked: Bool { spreadActive && !selecting && flags.picked }
 
     /// Attention glows softly around the poster; the rail says what is wrong.
     private var attentionColor: Color? {

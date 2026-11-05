@@ -12,7 +12,7 @@ struct V2PosterCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @Environment(\.openPosterSheet) private var openSheet
-    @Environment(\.spread) private var spread
+    @Environment(\.spreadActive) private var spreadActive
     let item: MediaItem
     /// The card's width when the grid knows it.
     var artWidth: CGFloat?
@@ -25,7 +25,7 @@ struct V2PosterCard: View {
     private var selecting: Bool { model.selectMode }
     private var flags: CardFlag { model.cardFlags.slot(for: item.id) }
     private var selected: Bool { flags.selected }
-    private var picked: Bool { spread.isActive && !selecting && flags.picked }
+    private var picked: Bool { spreadActive && !selecting && flags.picked }
     private var artSize: CGSize? { artWidth.map { CGSize(width: $0, height: $0 * 3 / 2) } }
 
     var body: some View {

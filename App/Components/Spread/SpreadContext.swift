@@ -55,6 +55,11 @@ struct SpreadContext: Equatable {
 extension EnvironmentValues {
     /// The shell's Spread state (`SpreadContext`).
     @Entry var spread = SpreadContext()
+    /// `spread.isActive` alone, for the grids' cards: reading the whole
+    /// `spread` re-rendered every card when a title opened or closed (the
+    /// mode changes from spanning to two pages) though a card only asks
+    /// whether there is a Spread at all.
+    @Entry var spreadActive = false
     /// The iPhone Duo is open with a top-to-bottom fold (flat or Book), so the
     /// "iPhone Duo, open" choice applies and its toolbar switch shows.
     @Entry var duoOpen = false

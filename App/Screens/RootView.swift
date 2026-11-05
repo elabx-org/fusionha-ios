@@ -194,6 +194,7 @@ struct RootView: View {
         .environment(selectBars)
         .environment(pillSpace)
         .environment(\.spread, spread)
+        .environment(\.spreadActive, spread.isActive)
         .environment(\.duoListToggle, listToggle(split))
         .environment(\.titleSpread, titleSpread(split, spread: spread))
         .environment(\.duoOpen, fold.isDuoOpen)
