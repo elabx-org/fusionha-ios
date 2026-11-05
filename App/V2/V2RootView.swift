@@ -12,6 +12,8 @@ struct V2RootView: View {
             .environment(\.libraryTabRoot, LibraryTabRootOverride { AnyView(V2LibraryView()) })
             .environment(\.titlePage, TitlePageOverride(make: { store, onClose in
                 AnyView(V2TitleView(store: store, onClose: onClose))
-            }, flatOpenListShare: 1.0 / 3))
+            }, flatOpenListShare: 1.0 / 3, seamHandle: { context in
+                AnyView(V2SplitHandle(context: context))
+            }))
     }
 }

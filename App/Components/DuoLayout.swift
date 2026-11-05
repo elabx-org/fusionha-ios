@@ -38,6 +38,8 @@ struct FoldSplitLayout: Layout {
     /// just off the leading edge (its grid never re-flows) and the second
     /// child fills the container.
     var primaryHidden = false
+    /// v2's split handle is moving the seam: both children around it (`FoldSeam`).
+    var seam: FoldSeam?
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         proposal.replacingUnspecifiedDimensions()
@@ -49,6 +51,8 @@ struct FoldSplitLayout: Layout {
             return
         }
         switch axis {
+        case .horizontal where seam != nil:
+            if let seam { placeSeam(seam, in: bounds, subviews: subviews) }
         case .horizontal where primaryHidden:
             let first = min(max(primary, 0), bounds.width)
             subviews[0].place(at: CGPoint(x: bounds.minX - first - gap, y: bounds.minY),
@@ -83,6 +87,8 @@ struct ShellSplit: Equatable {
     /// The list is hidden (the sidebar button, flat only): the trailing
     /// column fills the container.
     var primaryHidden = false
+    /// v2's split handle is moving the seam (`DuoSeamDrag`); nil at rest.
+    var seam: FoldSeam?
 
     /// The shell's split: a Spread's pages when `spread` is active, else the
     /// Web layout's (`init(fold:hasItem:)`).
@@ -189,8 +195,9 @@ struct ShellDetailColumn: View {
             if !seamless { Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea() }
         }
         // Gestures 1 and 2: swipe the page away, or the list off and back.
+        // v2's split handle takes the seamless seam instead (`V2SplitHandle`).
         .overlay(alignment: .leading) {
-            if duoOpen && model.rightPageHasItem {
+            if duoOpen && model.rightPageHasItem && !(seamless && titlePage?.seamHandle != nil) {
                 DuoPageEdge(width: width, canClose: atRoot, list: listToggle, offset: $dragOffset) {
                     closePage()
                 }

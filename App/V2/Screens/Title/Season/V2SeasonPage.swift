@@ -4,7 +4,8 @@ import FusionhaKit
 /// A season, pushed from its card (mock browse.js `seasonPhone` /
 /// `seasonTop`, slice S6): on the series' art-palette ground, the bar's
 /// "Season 1 / 6 of 7 on disk · 1 upcoming" and ⋯, one tick lane per
-/// version, Search missing, then the episode rows. A row pushes its
+/// version, Search missing, then the episode rows in one frosted card, each with a small still
+/// (each row's background is its slice of the card). A row pushes its
 /// episode; swiping it offers Monitor (bookmark) and Search. A list, so
 /// the swipe actions are the system's.
 struct V2SeasonPage: View {
@@ -45,24 +46,31 @@ struct V2SeasonPage: View {
         let oldest = store.oldestFirst.contains(seasonNumber)
         let episodes = season.episodes.sorted { oldest ? $0.episodeNumber < $1.episodeNumber : $0.episodeNumber > $1.episodeNumber }
         let editions = detail.orderedEditions
+        // Owner pick (2026-11-05, "alternative"): every row keeps a small
+        // still. The series art until the server sends episode stills.
+        let still = TMDBImage.resized(detail.backdropUrl ?? detail.posterUrl, to: "w300")
         return List {
             V2SeasonPageHeader(detail: detail, season: season, facts: facts, canSearch: canSearch)
-                .listRowInsets(EdgeInsets(top: 8, leading: gutter, bottom: 10, trailing: gutter))
+                .listRowInsets(EdgeInsets(top: 8, leading: gutter, bottom: 16, trailing: gutter))
                 .listRowBackground(Color.clear)
                 .listRowSeparator(.hidden)
-            ForEach(episodes) { episode in
+            ForEach(Array(episodes.enumerated()), id: \.element.id) { index, episode in
                 V2EpisodeRow(detail: detail, episode: episode,
                              state: V2EpisodeState(episode: episode, editions: editions),
-                             monitored: store.episodeMonitored(episode), stillWidth: stillWidth)
+                             monitored: store.episodeMonitored(episode), stillURL: still)
                     .background {
                         NavigationLink(value: V2TitleRoute.episode(season: seasonNumber, episodeId: episode.id)) { EmptyView() }
                             .opacity(0)
                     }
                     .accessibilityAddTraits(.isButton)
                     .accessibilityHint("Opens the episode")
-                    .listRowInsets(EdgeInsets(top: 0, leading: gutter, bottom: 0, trailing: gutter))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparatorTint(ModuleMetrics.hairline(light: Theme.isLight))
+                    // Inside the episode card: the gutter plus the card's inset.
+                    .listRowInsets(EdgeInsets(top: 0, leading: gutter + ModuleMetrics.inset, bottom: 0,
+                                              trailing: gutter + ModuleMetrics.inset))
+                    .listRowBackground(ModuleListSegment(
+                        position: .init(index: index, count: episodes.count), gutter: gutter,
+                        hairlineLeading: ModuleMetrics.inset + V2EpisodeRow.textLeading(hasStill: still != nil)))
+                    .listRowSeparator(.hidden)
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         swipe(detail, episode)
                     }
@@ -76,7 +84,6 @@ struct V2SeasonPage: View {
     }
 
     private var gutter: CGFloat { width >= 560 ? 24 : 16 }
-    private var stillWidth: CGFloat { width >= 560 ? 150 : width >= 400 ? 128 : 112 }
 
     @ViewBuilder
     private func swipe(_ detail: ItemDetail, _ episode: Episode) -> some View {
@@ -120,7 +127,8 @@ struct V2SeasonPage: View {
 }
 
 /// The season's lanes and Search missing, above the episodes (mock
-/// `seasonTop .slanes`): thin tick lanes, each keeping its T5 badge (badges
+/// `seasonTop .slanes`) on its own frosted card, so they stay readable on
+/// bright art: thin tick lanes, each keeping its T5 badge (badges
 /// wherever editions show) but not its count, since the bar says how many.
 private struct V2SeasonPageHeader: View {
     @Environment(DetailStore.self) private var store
@@ -153,5 +161,6 @@ private struct V2SeasonPageHeader: View {
             }
         }
         .frame(maxWidth: .infinity)
+        .v2CardStyle()
     }
 }

@@ -1,32 +1,38 @@
 import SwiftUI
 import FusionhaKit
 
-/// One episode on the season page (mock kit `erow`): a still (the series
-/// art until the server sends episode stills), the title, "E4 · 48m ·
-/// Oct 20", two lines of overview, one T5 badge per version and the status
-/// circle. Episodes not out yet dim their art. Content, not glass.
+/// One episode on the season page (mock kit `erow`), a row of the season's
+/// episode card: a leading 112pt 16:9 still (the series art until the
+/// server sends episode stills; the number block when there is no art),
+/// the title, "E4 · 48m · Oct 20", two lines
+/// of overview, one T5 badge per version and the status circle on the title
+/// line. Episodes not out yet dim their lead. Content, not glass.
 struct V2EpisodeRow: View {
     @Environment(\.pagePalette) private var page
     let detail: ItemDetail
     let episode: Episode
     let state: V2EpisodeState
     var monitored = true
-    var stillWidth: CGFloat = 120
+    /// The row's still. nil (no art at all): the number block.
+    var stillURL: URL?
     /// Shorter rows (the open Duo's list beside an episode): no overview.
     var showsOverview = true
+
+    static let stillWidth: CGFloat = 112
+    static let numberSide: CGFloat = 44
+    static let leadSpacing: CGFloat = 12
+    /// Where the text column starts inside the row, for the card's hairline.
+    static func textLeading(hasStill: Bool) -> CGFloat {
+        (hasStill ? stillWidth : numberSide) + leadSpacing
+    }
 
     private var ink: Color { page?.ink ?? Theme.txt }
     private var muted: Color { page?.inkMuted ?? Theme.mut }
     private var upcoming: Bool { state.circle == .upcoming }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            PosterImage(url: TMDBImage.resized(detail.backdropUrl ?? detail.posterUrl, to: "w300"))
-                .frame(width: stillWidth, height: (stillWidth * 9 / 16).rounded())
-                .saturation(upcoming ? 0.5 : 1)
-                .brightness(upcoming ? -0.1 : 0)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .accessibilityHidden(true)
+        HStack(alignment: .top, spacing: Self.leadSpacing) {
+            lead
             VStack(alignment: .leading, spacing: 0) {
                 Text(episode.title ?? "Episode \(episode.episodeNumber)")
                     .font(.system(size: 15.5, weight: .bold))
@@ -54,13 +60,38 @@ struct V2EpisodeRow: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             V2EpisodeStatusCircle(circle: state.circle)
                 .opacity(monitored ? 1 : 0.5)
-                // Centred on the still (kit `.st` margin-top 20 beside a 120pt still).
-                .padding(.top, max(2, ((stillWidth * 9 / 16).rounded() - 28) / 2))
+                // On the title line: the circle's centre on the title's
+                // (15.5pt bold, ~10pt to its middle).
+                .alignmentGuide(.top) { $0[VerticalAlignment.center] - 10 }
         }
-        .padding(.vertical, 12)
+        .padding(.vertical, ModuleMetrics.rowPadding)
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spokenLabel)
+    }
+
+    @ViewBuilder
+    private var lead: some View {
+        if let stillURL {
+            PosterImage(url: stillURL)
+                .frame(width: Self.stillWidth, height: (Self.stillWidth * 9 / 16).rounded())
+                .saturation(upcoming ? 0.5 : 1)
+                .brightness(upcoming ? -0.1 : 0)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .accessibilityHidden(true)
+        } else {
+            Text(verbatim: "E\(episode.episodeNumber)")
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+                .padding(.horizontal, 4)
+                .foregroundStyle(upcoming ? muted : ink)
+                .frame(width: Self.numberSide, height: Self.numberSide)
+                .background(ink.opacity(upcoming ? 0.06 : 0.1),
+                            in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .accessibilityHidden(true)
+        }
     }
 
     @ViewBuilder

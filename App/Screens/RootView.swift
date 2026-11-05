@@ -26,6 +26,8 @@ struct RootView: View {
     @AppStorage(DuoListMemory.storageKey) private var hiddenLists = ""
     /// v2's title page (`TitlePageHost`); nil in v1.
     @Environment(\.titlePage) private var titlePage
+    /// v2's split handle moving the seam (`DuoSeamDrag`); never set in v1.
+    @State private var seam = DuoSeamDrag()
 
     /// The Spread, when the Duo is open and the setting says so (else `.off`).
     private func spreadContext(_ fold: FoldInfo, hasItem: Bool) -> SpreadContext {
@@ -43,6 +45,7 @@ struct RootView: View {
             remembered: DuoListMemory(raw: hiddenLists).isHidden(model.tab.listMemoryKey),
             posture: fold.posture, detailShown: split.shown && hasItem))
         applyFlatOpenShare(&split)
+        if let live = seam.live, let context = seamContext(split) { split.seam = context.seam(live: live) }
         return split
     }
 
@@ -54,6 +57,11 @@ struct RootView: View {
               split.shown, split.axis == .horizontal, !split.primaryHidden, model.presentedItem != nil else { return }
         split.primary = (fold.size.width * CGFloat(share)).rounded()
         split.gap = 0
+    }
+
+    /// v2's split handle, where it is offered (`DuoSeamContext`); nil in v1.
+    private func seamContext(_ split: ShellSplit) -> DuoSeamContext? {
+        DuoSeamContext(titlePage: titlePage, fold: fold, split: split, toggle: listToggle(split), drag: seam, model: model)
     }
 
     /// A Spread with an episode open from the title: the title's tabs on the
@@ -126,19 +134,26 @@ struct RootView: View {
         let _ = PerfCount.hit("RootView.body")
         let split = split
         let spread = spreadContext(fold, hasItem: model.rightPageHasItem)
-        FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap, primaryHidden: split.primaryHidden) {
+        FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap, primaryHidden: split.primaryHidden,
+                        seam: split.seam) {
             // Hidden (the sidebar button), the list keeps its width off screen.
             tabs
                 .allowsHitTesting(!split.primaryHidden)
                 .accessibilityHidden(split.primaryHidden)
             if split.shown {
                 ShellDetailColumn()
+                    .modifier(DuoSeamCloseEffect(enabled: titlePage?.seamHandle != nil,
+                                                 progress: split.seam?.closeProgress ?? 0))
                     .transition(detailTransition)
             }
         }
         // Gesture 4: swipe in from the content's trailing edge for the page just closed.
         .overlay(alignment: .trailing) {
             if fold.isDuoOpen { DuoReopenEdge() }
+        }
+        // v2's split handle on the seam (`V2SplitHandle`).
+        .overlay(alignment: .topLeading) {
+            if let make = titlePage?.seamHandle, let context = seamContext(split) { make(context) }
         }
         .background(Theme.bg)
         // Measured without the keyboard: typing in inner landscape must not

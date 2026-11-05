@@ -16,6 +16,9 @@ struct TitlePageOverride {
     /// The list's share of the flat open Duo while a title is open beside
     /// it (one seamless display, no fold gutter); nil keeps the shell's split.
     var flatOpenListShare: Double?
+    /// A handle on that seamless split's seam (v2's `V2SplitHandle`); nil
+    /// keeps the open Duo's leading-edge swipe (`DuoPageEdge`).
+    var seamHandle: (@MainActor (DuoSeamContext) -> AnyView)?
 }
 
 /// Where the shell puts the open title: the override's page when one is
