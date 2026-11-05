@@ -119,16 +119,19 @@ struct V2TitleHeading: View {
     }
 }
 
-/// Series: year · genre · certificate · ★ rating (the network mark waits on
-/// the API). Movie: year · certificate · runtime · ★ rating · two genres.
+/// The network mark (series: the network, movie: the studio), then series:
+/// year · genre · certificate · ★ rating; movie: year · certificate ·
+/// runtime · ★ rating · two genres.
 struct V2TitleMetaLine: View {
     let detail: ItemDetail
 
     var body: some View {
-        HStack(spacing: 7) {
-            ForEach(Array(parts.enumerated()), id: \.offset) { index, part in
-                if index > 0 { Text(verbatim: "·").opacity(0.6).accessibilityHidden(true) }
-                part
+        V2NetworkMarkLine(studio: detail.networkMark) {
+            HStack(spacing: 7) {
+                ForEach(Array(parts.enumerated()), id: \.offset) { index, part in
+                    if index > 0 { Text(verbatim: "·").opacity(0.6).accessibilityHidden(true) }
+                    part
+                }
             }
         }
         .font(.system(size: 13.5, weight: .medium))

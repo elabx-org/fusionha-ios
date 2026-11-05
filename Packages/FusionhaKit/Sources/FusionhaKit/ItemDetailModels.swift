@@ -42,6 +42,9 @@ public struct ItemDetail: Decodable, Sendable, Identifiable {
     public let trailerKey: String?
     public let collection: CollectionRef?
     public let tags: [ItemTag]?
+    /// Series: the TMDB networks; movies: the production companies (absent on
+    /// an older server).
+    public let studios: [Studio]?
 
     private enum CodingKeys: String, CodingKey {
         case id, title, kind, year, isAnime, overview, runtime, status, tagline, voteAverage
@@ -50,7 +53,19 @@ public struct ItemDetail: Decodable, Sendable, Identifiable {
         case legacyEditions = "editions"
         case seasons, history, tmdbId, seriesType, metadataProvider, resolvedMetadataProvider
         case episodeNumberingSource, numberingMismatch, releaseDate, inCinemas, digitalRelease
-        case physicalRelease, releaseWindows, cast, similar, trailerKey, collection, tags
+        case physicalRelease, releaseWindows, cast, similar, trailerKey, collection, tags, studios
+    }
+}
+
+extension ItemDetail {
+    /// The studio the v2 hero shows as its network mark (`Studio.mark`).
+    public var networkMark: Studio? { Studio.mark(in: studios) }
+}
+
+extension Studio {
+    /// The first studio with a logo: the mark is the logo, never the name in text.
+    public static func mark(in studios: [Studio]?) -> Studio? {
+        studios?.first { !($0.logoUrl ?? "").trimmingCharacters(in: .whitespaces).isEmpty }
     }
 }
 
