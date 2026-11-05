@@ -3,9 +3,8 @@ import FusionhaKit
 
 /// The v2 Library's body under the home: the skeleton while the library
 /// first loads, the could-not-load and empty messages, the no-match state,
-/// or the lazy rows (`LibraryRowModel`: poster rows, status sections, the
-/// compact list). Rows are flat so the scroll stays lazy and the thumb can
-/// jump to any of them.
+/// the lazy poster grid (`V2LibraryGrid`, its sections read off
+/// `LibraryRowModel`'s rows) or the compact list's lazy rows.
 struct V2LibraryRows: View {
     let derived: LibraryDerived
     var tracks: [FoldColumns.Track]?
@@ -38,23 +37,35 @@ struct V2LibraryRows: View {
         }
     }
 
+    /// The poster grid (`V2LibraryGrid`), or the compact list's lazy rows.
+    @ViewBuilder
     private var rows: some View {
+        if isList {
+            list
+        } else {
+            V2LibraryGrid(sections: V2LibraryGridSection.sections(from: derived.rows), columns: derived.columns,
+                          tracks: tracks, width: width, entrance: entrance)
+        }
+    }
+
+    /// The compact list's rows start with its column header.
+    private var isList: Bool {
+        if case .tableHeader = derived.rows.first { return true }
+        return false
+    }
+
+    private var list: some View {
         LazyVStack(alignment: .leading, spacing: 0) {
             ForEach(derived.rows) { row in
                 switch row {
-                case .section(let status, let count):
-                    StatusSectionHeader(status: status, count: count)
-                case .letter(let letter, let count):
-                    LibraryLetterHeader(letter: letter, count: count)
-                case .items(let items):
-                    V2LibraryGridRow(items: items, columns: derived.columns, tracks: tracks, width: width)
-                        .libraryRowEntrance(entrance, id: row.id)
                 case .tableHeader:
                     V2LibraryListHeader(sort: compactSort) { column in
                         withAnimation(motion ? .snappy : nil) { compactSort = compactSort.tapped(column) }
                     }
                 case .tableRow(let item, let last):
                     V2LibraryListRow(item: item, last: last)
+                case .section, .letter, .items:
+                    EmptyView()
                 }
             }
         }
