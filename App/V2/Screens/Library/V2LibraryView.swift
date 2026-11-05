@@ -94,17 +94,17 @@ struct V2LibraryView: View {
     private var gridTracks: [FoldColumns.Track]? {
         PosterTracks.tracks(count: derived.columns, width: Double(gridFold.width),
                             fold: fold.map { Double($0.lowerBound)...Double($0.upperBound) },
-                            spans: spread.spans, spacing: V2LibraryGridRow.spacing)
+                            spans: spread.spans, spacing: V2LibraryGrid.spacing)
     }
 
     /// The grid's poster width and gap, for the home's shelf to match (nil
     /// before the grid is measured; the shelf then keeps its own sizes).
     private var gridPoster: (width: CGFloat, gap: CGFloat)? {
-        if let first = gridTracks?.first { return (CGFloat(first.width), CGFloat(V2LibraryGridRow.spacing)) }
+        if let first = gridTracks?.first { return (CGFloat(first.width), CGFloat(V2LibraryGrid.spacing)) }
         let width = gridFold.width
-        guard let cell = V2LibraryGridRow.cellWidth(width: width, columns: derived.columns, sizeClass: sizeClass)
+        guard let cell = V2LibraryGrid.cellWidth(width: width, columns: derived.columns, sizeClass: sizeClass)
         else { return nil }
-        return (cell, V2LibraryGridRow.columnGap(width: width, sizeClass: sizeClass))
+        return (cell, V2LibraryGrid.columnGap(width: width, sizeClass: sizeClass))
     }
 
     private var inputs: LibraryInputs {
