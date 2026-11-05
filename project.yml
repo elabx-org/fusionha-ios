@@ -30,7 +30,10 @@ targets:
     type: application
     platform: iOS
     sources:
-      - App
+      # App/V2 is the v2 product's own code (FusionhaV2 below).
+      - path: App
+        excludes:
+          - "V2/**"
       - Shared
     dependencies:
       - package: FusionhaKit
@@ -93,7 +96,9 @@ targets:
     type: app-extension
     platform: iOS
     sources:
-      - Widgets
+      - path: Widgets
+        excludes:
+          - "V2/**"
       - Shared
     dependencies:
       - package: FusionhaKit
@@ -153,6 +158,116 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.notification-service
         SKIP_INSTALL: "YES"
 
+  # fusionha v2 (docs/v2.md): a second app beside v1, from the same sources plus
+  # App/V2. Its own bundle ids, App Group, keychain namespace and URL scheme
+  # (read at runtime by FusionhaKit's AppIdentity from the Info.plist keys
+  # below). No push yet: no notification-service extension and no
+  # aps-environment until the server accepts a per-device APNs topic.
+  # Its version (2.0.<run>) is stamped by CI (scripts/app_version.sh).
+  FusionhaV2:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes:
+          - "FusionhaApp.swift"
+          - "Info.plist"
+          - "Fusionha.entitlements"
+      - Shared
+    dependencies:
+      - package: FusionhaKit
+      - target: FusionhaV2Widgets
+    info:
+      path: App/V2/Info.plist
+      properties:
+        CFBundleDisplayName: fusionha v2
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        FusionhaAppGroup: group.org.elabx.fusionha.v2
+        FusionhaKeychainNamespace: org.elabx.fusionha.v2
+        FusionhaURLScheme: fusionha2
+        UIAppFonts:
+          - MonaSansVF.ttf
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        NSSupportsLiveActivities: true
+        CFBundleURLTypes:
+          - CFBundleURLName: org.elabx.fusionha.v2
+            CFBundleURLSchemes: [fusionha2]
+        UIBackgroundModes:
+          - fetch
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        NSLocalNetworkUsageDescription: fusionha connects to your fusionha server on your local network.
+    entitlements:
+      path: App/V2/FusionhaV2.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.org.elabx.fusionha.v2
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)org.elabx.fusionha.v2.shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.v2
+        PRODUCT_NAME: FusionhaV2
+        MARKETING_VERSION: "2.0.0"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) V2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIconV2
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+
+  FusionhaV2Widgets:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets
+        excludes:
+          - "Info.plist"
+          - "FusionhaWidgets.entitlements"
+      - Shared
+    dependencies:
+      - package: FusionhaKit
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+    info:
+      path: Widgets/V2/Info.plist
+      properties:
+        CFBundleDisplayName: fusionha v2
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        FusionhaAppGroup: group.org.elabx.fusionha.v2
+        FusionhaKeychainNamespace: org.elabx.fusionha.v2
+        FusionhaURLScheme: fusionha2
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        UIAppFonts:
+          - MonaSansVF.ttf
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    entitlements:
+      path: Widgets/V2/FusionhaV2Widgets.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.org.elabx.fusionha.v2
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)org.elabx.fusionha.v2.shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.v2.widgets
+        MARKETING_VERSION: "2.0.0"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) V2"
+        SKIP_INSTALL: "YES"
+
   FusionhaUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -165,3 +280,15 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.uitests
         GENERATE_INFOPLIST_FILE: "YES"
         TEST_TARGET_NAME: Fusionha
+
+schemes:
+  # v2's app (and its widgets). v1's Fusionha scheme comes from its target's
+  # `scheme:` above and is unchanged.
+  FusionhaV2:
+    build:
+      targets:
+        FusionhaV2: all
+    run:
+      config: Debug
+    archive:
+      config: Release

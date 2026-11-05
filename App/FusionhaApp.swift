@@ -1,5 +1,7 @@
 import SwiftUI
 
+/// fusionha (v1). v2's `@main` is `App/V2/FusionhaV2App.swift`, built only
+/// into the FusionhaV2 target; both share `AppSceneContent`.
 @main
 struct FusionhaApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -15,38 +17,7 @@ struct FusionhaApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if let page = WidgetPageGalleryView.screenshotPage {
-                    // CI screenshots of one paged-widget view, medium and large.
-                    WidgetPageGalleryView(page: page)
-                } else if let stack = WidgetStackGalleryView.screenshotVariant {
-                    // CI screenshots of one Smart Stack widget, every size.
-                    WidgetStackGalleryView(variant: stack)
-                } else if let gallery = WidgetGalleryView.screenshotVariant {
-                    // CI screenshots of the home-screen widgets.
-                    WidgetGalleryView(variant: gallery)
-                } else if model.credentials == nil {
-                    SignInView()
-                } else {
-                    RootView()
-                }
-            }
-            // CI screenshots only: the app inside an iPhone Duo frame with a fake fold.
-            .duoHarness()
-            .environment(model)
-            .publishesWindowSize()
-            // A native app shows no scroll bars: every page, list and sheet
-            // below inherits it (the Library keeps its own A–Z scrubber).
-            .scrollIndicators(.hidden)
-            // At the root, so a link that cold-launches the app is never
-            // missed; RootView applies it once signed in and on screen.
-            .onOpenURL { model.receiveDeepLink($0) }
-            // The palette (Settings › Appearance): scheme, tint, Automatic.
-            .paletteRoot(signedOut: model.credentials == nil)
-            .task {
-                DeepLinkProbe.log("launched")
-                PerfProbe.startIfRequested(model: model)
-            }
+            AppSceneContent(model: model) { RootView() }
         }
     }
 }

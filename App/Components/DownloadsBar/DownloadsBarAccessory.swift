@@ -105,8 +105,8 @@ struct DownloadsBarAccessory: View {
 
     /// Activity › Queue, scrolled to the lead (the widgets' deep link).
     private func openQueue(_ downloadId: Int?) {
-        let link = downloadId.map { "fusionha://activity/queue?focus=\($0)" } ?? "fusionha://activity/queue"
-        if let url = URL(string: link) { model.handleDeepLink(url) }
+        let link = downloadId.map { "activity/queue?focus=\($0)" } ?? "activity/queue"
+        if let url = AppIdentity.current.link(link) { model.handleDeepLink(url) }
     }
 }
 

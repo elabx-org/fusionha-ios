@@ -9,7 +9,7 @@ import Security
 /// and the app's Widget diagnostics. When no keychain group takes a write (an
 /// unsigned simulator build), it lands in this process's own defaults instead.
 public enum SharedKeychain {
-    private static let service = "org.elabx.fusionha.shared-state"
+    private static let service = AppIdentity.current.service("shared-state")
 
     private static func query(_ account: String, group: String?) -> [String: Any] {
         var q: [String: Any] = [

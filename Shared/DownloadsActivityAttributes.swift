@@ -124,7 +124,7 @@ extension DownloadsActivityAttributes.ContentState {
 
     /// The App Group file the app writes a small poster to, for the activity.
     static func posterFile(mediaItemId: Int) -> URL? {
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.org.elabx.fusionha")?
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: AppIdentity.current.appGroup)?
             .appendingPathComponent("live-activity", isDirectory: true)
             .appendingPathComponent("poster-\(mediaItemId).jpg")
     }

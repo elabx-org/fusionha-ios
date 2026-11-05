@@ -2,6 +2,8 @@
 
 Status: in progress (updated 2026-10-05). The app shell, screens and login now follow the web app's mobile layout and look.
 
+This plan covers v1 (`fusionha`). v2 (`fusionha v2`) is a separate app that installs beside it, with its own look. See `docs/v2.md` for how the two products are split.
+
 ## 1. Principles
 
 1. **Same app, native skin.** Same destinations, same screens, same flows and the same words as the web UI's mobile layout (≤720px). Anyone who knows the web app should find everything in the same place.

@@ -130,7 +130,7 @@ struct LiveActivityLockScreen: View {
                         }
                         .buttonStyle(.plain)
                     }
-                    if let link = URL(string: "fusionha://activity" + (event.downloadId.map { "?focus=\($0)" } ?? "")) {
+                    if let link = AppIdentity.current.link("activity" + (event.downloadId.map { "?focus=\($0)" } ?? "")) {
                         Link(destination: link) { Text("Open queue").capsule(Color.white.opacity(0.1)) }
                     }
                 }

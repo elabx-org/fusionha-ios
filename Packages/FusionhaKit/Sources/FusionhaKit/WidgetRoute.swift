@@ -1,7 +1,7 @@
 import Foundation
 
 /// Where a widget tap lands: `fusionha://item/{id}` or a tab
-/// (`fusionha://activity`, `calendar`, `library`).
+/// (`fusionha://activity`, `calendar`, `library`), in this app's scheme.
 public enum WidgetRoute: Sendable, Hashable {
     case item(Int)
     case activity
@@ -13,15 +13,23 @@ public enum WidgetRoute: Sendable, Hashable {
     /// Discover › Requests.
     case requests
 
-    public var url: URL {
+    /// In this app's scheme (`AppIdentity.urlScheme`: v1 `fusionha`, v2 its own).
+    public var url: URL { link(in: .current) }
+
+    public func link(in identity: AppIdentity) -> URL {
+        identity.link(path)!
+    }
+
+    /// The link after `scheme://`.
+    var path: String {
         switch self {
-        case .item(let id): return URL(string: "fusionha://item/\(id)")!
-        case .activity: return URL(string: "fusionha://activity")!
-        case .calendar: return URL(string: "fusionha://calendar")!
-        case .library: return URL(string: "fusionha://library")!
-        case .wanted: return URL(string: "fusionha://wanted")!
-        case .indexers: return URL(string: "fusionha://activity/indexers")!
-        case .requests: return URL(string: "fusionha://discover/requests")!
+        case .item(let id): return "item/\(id)"
+        case .activity: return "activity"
+        case .calendar: return "calendar"
+        case .library: return "library"
+        case .wanted: return "wanted"
+        case .indexers: return "activity/indexers"
+        case .requests: return "discover/requests"
         }
     }
 

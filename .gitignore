@@ -19,5 +19,9 @@ Widgets/Info.plist
 Widgets/*.entitlements
 NotificationService/*.entitlements
 NotificationService/Info.plist
+App/V2/Info.plist
+App/V2/*.entitlements
+Widgets/V2/Info.plist
+Widgets/V2/*.entitlements
 __pycache__/
 .claude/worktrees/

@@ -2,7 +2,8 @@ import Foundation
 import Security
 
 /// Where the server address and API token live, shared with the widget and
-/// notification extensions through the `group.org.elabx.fusionha` App Group.
+/// notification extensions through the app's App Group (`AppIdentity`: v1's
+/// `group.org.elabx.fusionha`, v2's own group).
 /// The token goes in the Keychain using the App Group as its access group (no team
 /// prefix needed, so it survives re-signing with any team in Feather).
 public struct Credentials: Codable, Sendable, Equatable {
@@ -24,8 +25,8 @@ public struct Credentials: Codable, Sendable, Equatable {
 }
 
 public enum CredentialStore {
-    public static let appGroup = "group.org.elabx.fusionha"
-    private static let service = "org.elabx.fusionha.api-token"
+    public static let appGroup = AppIdentity.current.appGroup
+    private static let service = AppIdentity.current.service("api-token")
     private static let serverKey = "serverURL"
     private static let tokenIdKey = "tokenId"
     private static let methodKey = "authMethod"
@@ -167,7 +168,7 @@ public enum CredentialStore {
 
     // MARK: Shared record (team keychain)
 
-    private static let recordService = "org.elabx.fusionha.credentials"
+    private static let recordService = AppIdentity.current.service("credentials")
 
     nonisolated(unsafe) private static var teamProbeStatus: OSStatus = 0
     nonisolated(unsafe) private static var defaultGroup: String = "?"
@@ -177,11 +178,11 @@ public enum CredentialStore {
     /// group (the probe item). Xcode signs with the explicit
     /// `TEAMID.org.elabx.fusionha.shared`; a re-signing tool that copies the
     /// profile's entitlements instead gives every target the literal `TEAMID.*`
-    /// group, so that string is tried too.
+    /// group, so that string is tried too (v1 only: `AppIdentity.teamGroups`).
     static let teamGroups: [String] = {
         let probe: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "org.elabx.fusionha.probe",
+            kSecAttrService as String: AppIdentity.current.service("probe"),
             kSecAttrAccount as String: "probe",
         ]
         var attrs = probe
@@ -200,9 +201,7 @@ public enum CredentialStore {
               let group = dict[kSecAttrAccessGroup as String] as? String,
               let prefix = group.split(separator: ".").first, prefix.count == 10 else { return [] }
         defaultGroup = group
-        var groups = ["\(prefix).org.elabx.fusionha.shared", "\(prefix).*"]
-        if group.hasSuffix("*"), !groups.contains(group) { groups.append(group) }
-        return groups
+        return AppIdentity.current.teamGroups(prefix: String(prefix), defaultGroup: group)
     }()
 
     static var teamGroup: String? { teamGroups.first }

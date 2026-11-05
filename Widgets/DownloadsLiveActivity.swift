@@ -79,18 +79,18 @@ enum LiveActivityLinks {
     static func tap(_ state: DownloadsActivityAttributes.ContentState) -> URL? {
         switch state.mode {
         case .imported, .upgraded:
-            if let id = state.event?.mediaItemId { return URL(string: "fusionha://item/\(id)") }
+            if let id = state.event?.mediaItemId { return AppIdentity.current.link("item/\(id)") }
         case .problem:
-            if let id = state.event?.downloadId { return URL(string: "fusionha://activity?focus=\(id)") }
+            if let id = state.event?.downloadId { return AppIdentity.current.link("activity?focus=\(id)") }
         default:
             break
         }
-        return URL(string: "fusionha://activity")
+        return AppIdentity.current.link("activity")
     }
 
     /// Opens the native Manual Import sheet on these held downloads.
     static func review(_ ids: [Int]) -> URL? {
-        URL(string: "fusionha://activity?rescue=" + ids.map(String.init).joined(separator: ","))
+        AppIdentity.current.link("activity?rescue=" + ids.map(String.init).joined(separator: ","))
     }
 }
 

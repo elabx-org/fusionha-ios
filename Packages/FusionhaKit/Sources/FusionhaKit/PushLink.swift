@@ -1,7 +1,7 @@
 import Foundation
 
 /// Maps the web path a push carries (`url` in its payload) to the app's own
-/// `fusionha://` deep link, so a tapped notification opens the same place it
+/// `fusionha://` deep link (in this app's scheme), so a tapped notification opens the same place it
 /// would on the web (handoff §2, "Deep links from pushes"):
 ///
 /// - `/library/{id}` → `fusionha://item/{id}`
@@ -11,11 +11,16 @@ import Foundation
 /// - `/account/lists[/<source-id>]` → `fusionha://account/lists[/<source-id>]`
 public enum PushLink {
     public static func deepLink(webPath: String?) -> URL? {
+        deepLink(webPath: webPath, identity: .current)
+    }
+
+    /// The same, in `identity`'s URL scheme.
+    public static func deepLink(webPath: String?, identity: AppIdentity) -> URL? {
         guard let webPath, let parts = URLComponents(string: webPath) else { return nil }
         let segments = parts.path.split(separator: "/").map(String.init)
         let query = Dictionary((parts.queryItems ?? []).map { ($0.name, $0.value ?? "") }, uniquingKeysWith: { a, _ in a })
         var link = URLComponents()
-        link.scheme = "fusionha"
+        link.scheme = identity.urlScheme
         switch segments.first {
         case "library":
             guard segments.count >= 2, let id = Int(segments[1]) else { return nil }

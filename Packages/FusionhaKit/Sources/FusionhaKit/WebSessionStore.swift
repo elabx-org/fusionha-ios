@@ -5,7 +5,7 @@ import Security
 /// in-app web panels (Settings → Naming, Custom Formats …) open signed in.
 /// Kept in the app's own Keychain next to the API token; the widgets never need it.
 public enum WebSessionStore {
-    private static let service = "org.elabx.fusionha.web-session"
+    private static let service = AppIdentity.current.service("web-session")
 
     public struct Session: Sendable, Equatable {
         public let serverURL: URL

@@ -142,12 +142,20 @@ jobs:
             tests.log
           retention-days: 14
 
+  # One leg per app: v1 (Fusionha) and v2 (FusionhaV2, docs/v2.md). A failed
+  # v2 leg never blocks v1's release (fail-fast off; the release job carries
+  # v2's previous entry forward).
   build:
-    name: Build unsigned IPA
+    # v1's check keeps its pre-v2 name (branch protection, pollers); only v2's leg gets a suffix.
+    name: ${{ matrix.scheme == 'Fusionha' && 'Build unsigned IPA' || 'Build unsigned IPA (FusionhaV2)' }}
     if: inputs.duo_only == ''
     runs-on: xcode-27
     permissions:
-      contents: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        scheme: [Fusionha, FusionhaV2]
     steps:
       - uses: actions/checkout@v5
 
@@ -164,18 +172,18 @@ jobs:
           xcodegen generate
 
       # Feather only offers an update when the version string changes, so the
-      # patch number is the CI run number: 1.1.0 in project.yml ships as 1.1.<run>.
+      # patch number is the CI run number: v1's 1.1.0 in project.yml ships as
+      # 1.1.<run>, v2 as 2.0.<run> (scripts/app_version.sh).
       - name: Set version
         run: |
-          BASE=$(sed -n 's/^ *MARKETING_VERSION: *"\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' project.yml | head -1)
-          echo "APP_VERSION=${BASE%.*}.${{ github.run_number }}" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(bash scripts/app_version.sh ${{ matrix.scheme }} ${{ github.run_number }})" >> "$GITHUB_ENV"
 
       - name: Build (unsigned)
         run: |
           set -o pipefail
           xcodebuild \
             -project Fusionha.xcodeproj \
-            -scheme Fusionha \
+            -scheme ${{ matrix.scheme }} \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -derivedDataPath build \
@@ -193,42 +201,64 @@ jobs:
       - name: Package IPA
         run: |
           mkdir -p Payload
-          cp -R build/Build/Products/Release-iphoneos/Fusionha.app Payload/
-          zip -qry Fusionha.ipa Payload
-          ls -lh Fusionha.ipa
+          cp -R build/Build/Products/Release-iphoneos/${{ matrix.scheme }}.app Payload/
+          zip -qry ${{ matrix.scheme }}.ipa Payload
+          ls -lh ${{ matrix.scheme }}.ipa
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Fusionha-unsigned-ipa
-          path: Fusionha.ipa
+          name: ${{ matrix.scheme }}-unsigned-ipa
+          path: ${{ matrix.scheme }}.ipa
           retention-days: 14
 
-      # Every push to main (and every v* tag) becomes a GitHub release carrying
-      # the IPA plus a Feather/AltStore source. Feed URL to add in Feather:
-      #   https://github.com/elabx-org/fusionha-ios/releases/latest/download/source.json
+  # Every push to main (and every v* tag) becomes a GitHub release carrying
+  # both IPAs plus one Feather/AltStore source listing both apps. Feed URL to add in Feather:
+  #   https://github.com/elabx-org/fusionha-ios/releases/latest/download/source.json
+  # Runs when v1 built, whatever v2 did: without FusionhaV2.ipa the previous
+  # release's v2 entry is carried forward (scripts/release_source.sh).
+  release:
+    name: Publish release
+    needs: build
+    if: >-
+      !cancelled() && github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      # Each leg's IPA, if it built (Fusionha.ipa, FusionhaV2.ipa).
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: "*-unsigned-ipa"
+          path: ipas
+          merge-multiple: true
+
       - name: Prepare release
         id: release
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
-        run: |
-          VERSION="$APP_VERSION"
-          BUILD=${{ github.run_number }}
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="build-$BUILD"; fi
-          python3 scripts/make_source.py Fusionha.ipa "$TAG" "$VERSION" "$BUILD" source.json
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "name=fusionha $VERSION (build $BUILD)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/release_source.sh ipas ${{ github.run_number }} release
 
       - name: Publish release
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+        if: steps.release.outputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release.outputs.tag }}
           name: ${{ steps.release.outputs.name }}
           target_commitish: ${{ github.sha }}
-          files: |
-            Fusionha.ipa
-            source.json
+          files: release/*
           generate_release_notes: true
           make_latest: true
+
+      # v1 is what the release exists for: no Fusionha.ipa fails this job.
+      - name: Require v1
+        if: steps.release.outputs.tag == ''
+        run: |
+          echo "::error::The v1 (Fusionha) leg produced no IPA; nothing was released."
+          exit 1
 
   # Screenshots of every screen from the simulator, against a mock server that
   # serves a demo library (scripts/mock_server.py). Published to the

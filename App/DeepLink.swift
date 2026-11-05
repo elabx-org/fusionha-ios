@@ -1,7 +1,8 @@
 import Foundation
 import FusionhaKit
 
-/// `fusionha://` deep links from the widgets, the Live Activity and notifications:
+/// `fusionha://` deep links (v2: its own scheme, `AppIdentity.urlScheme`) from the
+/// widgets, the Live Activity and notifications:
 /// `activity`, `calendar`, `library`, `wanted`, `discover` switch tabs (with an
 /// optional sub-tab: `activity/indexers`, `discover/requests`), and `item/{id}`
 /// opens that title's detail sheet; `account/lists` (and `account/lists/<source-id>`,
@@ -17,7 +18,7 @@ import FusionhaKit
 /// first, since a sheet can't present over another one.
 extension AppModel {
     func receiveDeepLink(_ url: URL) {
-        guard url.scheme == "fusionha" else { return }
+        guard AppIdentity.current.owns(url) else { return }
         DeepLinkProbe.log("received \(url.absoluteString)")
         pendingLink = url
     }
@@ -37,7 +38,7 @@ extension AppModel {
     }
 
     func handleDeepLink(_ url: URL) {
-        guard url.scheme == "fusionha" else { return }
+        guard AppIdentity.current.owns(url) else { return }
         let path = url.pathComponents.filter { $0 != "/" }
         switch url.host() ?? "" {
         case "activity" where !requestScoped:

@@ -21,20 +21,25 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        #if !V2
         // Tokens can change (restore, reinstall, re-sign): re-register every launch
-        // once the user has granted permission.
+        // once the user has granted permission. v2 has no push yet (docs/v2.md).
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             guard [.authorized, .provisional, .ephemeral].contains(settings.authorizationStatus) else { return }
             DispatchQueue.main.async { application.registerForRemoteNotifications() }
         }
+        #endif
         return true
     }
 
     static func requestPushAuthorization() {
+        #if !V2
+        // v2 has no push yet (docs/v2.md): no permission prompt for pushes that can't arrive.
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
             guard granted else { return }
             DispatchQueue.main.async { UIApplication.shared.registerForRemoteNotifications() }
         }
+        #endif
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {

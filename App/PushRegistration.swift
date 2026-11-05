@@ -45,11 +45,17 @@ enum PushRegistration {
     /// Sends this device's token to the server (an upsert; also a liveness ping).
     @discardableResult
     static func register(with client: APIClient) async -> ApnsDevice? {
+        #if V2
+        // The server pushes under v1's topic (org.elabx.fusionha), which APNs
+        // rejects for v2's tokens: v2 stays off push until it accepts a per-device topic.
+        return nil
+        #else
         guard let token = deviceToken, !disabledHere else { return nil }
         let name = await MainActor.run { UIDevice.current.name }
         let body = ApnsDeviceRegistration(deviceToken: token, environment: environment,
                                           deviceName: name, appVersion: appVersion)
         return try? await client.registerApnsDevice(body)
+        #endif
     }
 
     /// Settings › Notifications › This device › Disable (web `ThisDevice`):
