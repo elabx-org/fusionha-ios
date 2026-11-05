@@ -58,8 +58,35 @@ enum ShelfPlates {
         }
     }
 
-    /// The shelf's deep shadow under one card size (as `ShelfShadow`'s
-    /// nine-slice, drawn whole so it is a plain image).
+    /// The shelf's deep shadow, as a nine-slice drawn once per corner radius
+    /// and theme: its corners and edges hold the whole blur, and the middle
+    /// is flat, so it stretches to any card. A plate per card size re-blurred
+    /// on the main thread whenever the grid's column width changed (a title
+    /// opening or closing on the open Duo, the split handle), and the shared
+    /// cache's reset re-blurred every size again.
+    static func shadow(radius: CGFloat) -> (image: UIImage, insets: EdgeInsets, bleed: CGFloat)? {
+        let isLight = Theme.isLight
+        let blur: CGFloat = 11
+        let bleed = ArtBlurRenderer.shadowBleed(blur: blur)
+        // From the plate's edge: the bleed, then the blur's reach inside the
+        // card (or its corner, if larger); past that the shadow is flat.
+        let cap = bleed + max(radius, bleed) + 1
+        let core = (cap - bleed) * 2 + 2
+        let image = plate("shadow9|\(radius)|\(isLight)") {
+            ArtBlurRenderer.shadow(size: CGSize(width: core, height: core), radius: radius, blur: blur,
+                                   opacity: isLight ? 0.18 : 0.9, scale: 2).image
+        }
+        return image.map { ($0, EdgeInsets(top: cap, leading: cap, bottom: cap, trailing: cap), bleed) }
+    }
+
+    /// The smallest card the nine-slice shadow stretches to.
+    static func shadowFits(_ size: CGSize, radius: CGFloat) -> Bool {
+        let core = (max(radius, ArtBlurRenderer.shadowBleed(blur: 11)) + 1) * 2 + 2
+        return size.width >= core && size.height >= core
+    }
+
+    /// The same shadow drawn whole under one card size, for a card smaller
+    /// than the nine-slice's middle.
     static func shadow(size: CGSize, radius: CGFloat) -> (image: UIImage, bleed: CGFloat)? {
         guard size.width >= 1, size.height >= 1 else { return nil }
         let isLight = Theme.isLight
@@ -121,7 +148,14 @@ private struct ShelfPlated: ViewModifier {
     /// Centred on the card, `bleed` out on every side, dropped 12.
     @ViewBuilder
     private func shadow(_ size: CGSize) -> some View {
-        if let made = ShelfPlates.shadow(size: size, radius: radius) {
+        if ShelfPlates.shadowFits(size, radius: radius), let made = ShelfPlates.shadow(radius: radius) {
+            Image(uiImage: made.image)
+                .resizable(capInsets: made.insets, resizingMode: .stretch)
+                .frame(width: size.width + made.bleed * 2, height: size.height + made.bleed * 2)
+                .offset(y: 12)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        } else if let made = ShelfPlates.shadow(size: size, radius: radius) {
             Image(uiImage: made.image)
                 .resizable()
                 .frame(width: size.width + made.bleed * 2, height: size.height + made.bleed * 2)
