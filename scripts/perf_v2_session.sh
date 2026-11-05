@@ -32,7 +32,7 @@ pick = next((d for d in devices if "13-inch" in d["name"]), None) or next((d for
 print(pick["udid"] if pick else "")')
 if [ -z "$UDID" ]; then echo "::error::No 13-inch iPad simulator for the Duo harness"; exit 1; fi
 echo "v2 session perf device: $UDID"
-if [ "${PERF_HW_KEYBOARD:-0}" = 0 ]; then
+if [ "${PERF_HW_KEYBOARD:-1}" = 0 ]; then
   defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
 fi
 xcrun simctl boot "$UDID" 2> /dev/null || true
