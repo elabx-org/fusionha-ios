@@ -29,6 +29,7 @@ struct V2PosterCard: View {
     private var artSize: CGSize? { artWidth.map { CGSize(width: $0, height: $0 * 3 / 2) } }
 
     var body: some View {
+        let _ = PerfCount.hit("V2PosterCard.body")
         VStack(alignment: .leading, spacing: 0) {
             art
                 .overlay {

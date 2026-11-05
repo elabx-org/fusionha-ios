@@ -175,6 +175,7 @@ struct ShellDetailColumn: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("ShellDetailColumn.body")
         ZStack {
             page
                 .transition(duoOpen ? DuoPageMotion.transition(motion: motion) : .opacity)
@@ -192,6 +193,7 @@ struct ShellDetailColumn: View {
             }
         }
         .onChange(of: pull.closeRequests) { closeByPull() }
+        .perfCloseTitleHook { closePage() }
         .animation(duoOpen ? DuoPageMotion.animation(motion: motion) : nil, value: pageKey)
         .overlay(alignment: .leading) {
             if !seamless { Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea() }

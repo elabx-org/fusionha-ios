@@ -29,6 +29,7 @@ struct PageGroundModifier: ViewModifier {
     @State private var loaded: (key: String, colors: [HSLColor])?
 
     func body(content: Content) -> some View {
+        let _ = PerfCount.hit("PageGroundModifier.body")
         let t = tokens ?? Theme.palette
         let palette = dominant.map { PagePalette.art($0, tokens: t) } ?? .tokens(t)
         content
@@ -51,6 +52,7 @@ struct PageGroundModifier: ViewModifier {
     private func load() async {
         guard let art, ArtPaletteExtractor.shared.cached(art) == nil else { return }
         guard let colors = await ArtPaletteExtractor.shared.colors(for: art), !Task.isCancelled else { return }
+        PerfCount.mark("ground.loaded")
         loaded = (art.absoluteString, colors)
     }
 }

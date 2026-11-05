@@ -15,6 +15,8 @@ struct V2TitlePage: View {
     private var gutter: CGFloat { width >= 560 ? 24 : 20 }
 
     var body: some View {
+        let _ = PerfCount.hit("V2TitlePage.body")
+        let _ = PerfCount.mark("title.page")
         VStack(alignment: .leading, spacing: 0) {
             V2TitleHero(detail: detail)
             VStack(alignment: .leading, spacing: 0) {

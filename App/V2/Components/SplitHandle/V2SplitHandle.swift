@@ -40,6 +40,7 @@ struct V2SplitHandle: View {
     private var gripX: CGFloat { CGFloat(min(max(x, 6), width - 6)) }
 
     var body: some View {
+        let _ = PerfCount.hit("V2SplitHandle.body")
         ZStack(alignment: .leading) {
             if seam.live != nil, !seam.listFull { V2SeamGround(context: context, x: CGFloat(x)) }
             if seam.live != nil, motion {
@@ -180,12 +181,13 @@ struct V2SplitHandle: View {
         let shell = context
         spring.run(from: from, velocity: velocity, to: target,
                    dampingRatio: motion ? DuoSeam.dampingRatio : 1,
-                   step: { drag.live = CGFloat($0) },
+                   step: { PerfCount.hit("V2SeamSpring.step"); drag.live = CGFloat($0) },
                    done: { Self.commit(stop, context: shell) })
     }
 
     /// The seam is at `stop`: the shell takes over at rest, in one frame.
     private static func commit(_ stop: DuoSeam.Stop, context: DuoSeamContext) {
+        PerfCount.mark("seam.commit")
         var instant = Transaction()
         instant.disablesAnimations = true
         withTransaction(instant) {
@@ -206,6 +208,7 @@ struct V2SplitHandle: View {
     /// for one already open.
     private func slideIn() {
         let id = model.presentedItem?.id
+        PerfCount.mark("seam.slideIn")
         guard seam.slidIn != id else { return }
         seam.slidIn = id
         guard motion, seam.live == nil else { return }
@@ -217,6 +220,7 @@ struct V2SplitHandle: View {
     /// Close: the title slides off the trailing edge over the Library at its
     /// full width, then closes (at once under Reduce Motion).
     private func slideOut() {
+        PerfCount.mark("seam.slideOut")
         guard motion else {
             context.close()
             return

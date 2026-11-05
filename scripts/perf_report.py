@@ -77,6 +77,34 @@ def totals(phases):
 
 # MARK: in-app main-thread samples
 
+def load_events(path, kind):
+    out = []
+    with open(path, errors="replace") as fh:
+        for line in fh:
+            idx = line.find("PERF {")
+            if idx < 0:
+                continue
+            try:
+                obj = json.loads(line[idx + 5:])
+            except json.JSONDecodeError:
+                continue
+            if obj.get("event") == kind:
+                out.append(obj)
+    return out
+
+
+def open_report(events):
+    """The v2 open script's `open` events: ms after the tap (or Close)."""
+    out = [f"{'step':22s} {'first':>7s} {'full':>7s} {'long':>6s}  long frames [at ms, length ms]; marks (ms)"]
+    for e in events:
+        marks = ", ".join(f"{k}={v:.0f}" for k, v in sorted(e.get("marks_ms", {}).items(), key=lambda kv: kv[1]))
+        frames = " ".join(f"[{t:.0f},{d:.0f}]" for t, d in e.get("long_frames", [])[:12])
+        out.append(f"{e['label']:22s} {e.get('first_frame_ms', '-')!s:>7s} {e.get('full_frame_ms', '-')!s:>7s} "
+                   f"{e.get('long_ms', 0):>6d}  {frames}")
+        out.append(f"{'':22s} marks: {marks}")
+    return "\n".join(out)
+
+
 def load_stacks(path):
     out = []
     with open(path, errors="replace") as fh:
@@ -137,6 +165,11 @@ def main(argv):
         print(f"  {k:7s} " + "  ".join(f"{a}={b}" for a, b in v.items()))
     print("\nView counters per phase (count, total ms where timed):")
     print(counters(phases))
+    opens = load_events(argv[1], "open")
+    if opens:
+        print("\nTitle open / close (first = first frame after the title view was built, or the slide-out began;")
+        print(" full = first frame after the page and the seam settled, or the title closed; long = ms in frames > 25 ms):")
+        print(open_report(opens))
     stacks = load_stacks(argv[1])
     if stacks:
         print("\nMain-thread samples per phase (self = leaf frame; app/incl = anywhere on the stack;")
@@ -144,7 +177,7 @@ def main(argv):
         print(stacks_report(stacks))
     if out_json:
         with open(out_json, "w") as fh:
-            json.dump({"phases": phases, "totals": t}, fh, indent=1)
+            json.dump({"phases": phases, "totals": t, "opens": opens}, fh, indent=1)
     return 0
 
 

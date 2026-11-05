@@ -37,6 +37,7 @@ struct V2LibraryGridRow: View {
     }
 
     var body: some View {
+        let _ = PerfCount.hit("V2LibraryGridRow.body")
         Group {
             if let tracks, tracks.count == columns {
                 TrackRowLayout(tracks: tracks) {
