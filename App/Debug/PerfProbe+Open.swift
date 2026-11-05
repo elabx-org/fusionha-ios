@@ -51,7 +51,7 @@ extension PerfProbe {
         FileHandle.standardError.write(Data("PERF DONE\n".utf8))
     }
 
-    private func measureOpen(_ id: Int, label: String) async {
+    func measureOpen(_ id: Int, label: String) async {
         _ = PerfCount.takeMarks()
         frameLog = []
         var t0: Double = 0
@@ -66,7 +66,7 @@ extension PerfProbe {
                full: marks["title.page"] == nil ? nil : full)
     }
 
-    private func measureClose(label: String) async {
+    func measureClose(label: String) async {
         _ = PerfCount.takeMarks()
         frameLog = []
         frameWatch = { [model] in if model.presentedItem == nil { PerfCount.mark("closed") } }

@@ -72,6 +72,7 @@ struct V2SplitHandle: View {
             slideIn()
         }
         .onChange(of: seam.closeRequests) { slideOut() }
+        .perfSeamDragHook { dx, velocity in Task { await perfDrag(dx, velocity: velocity) } }
         .onDisappear {
             spring.cancel()
             seam.handleShown = false
@@ -236,6 +237,15 @@ struct V2SplitHandle: View {
         if seam.live == nil { seam.live = CGFloat(x) }
         seam.listFull = true
         settle(.closed, velocity: 0, tick: false, deferred: true)
+    }
+
+    /// The perf session's finger: about 240 ms of drag by `dx`, then let go.
+    private func perfDrag(_ dx: Double, velocity: Double) async {
+        for i in 1...15 {
+            follow(CGFloat(dx * Double(i) / 15))
+            try? await Task.sleep(for: .milliseconds(16))
+        }
+        release(velocity: velocity)
     }
 
     // MARK: First time

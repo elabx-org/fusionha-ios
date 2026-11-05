@@ -6,7 +6,8 @@ import Darwin
 // launched with FUSIONHA_PERF set, it drives a fixed script: by default open
 // Activity → History, sit idle, scroll through several pages, switch through
 // the other tabs and Wanted; with FUSIONHA_PERF_SCRIPT=library, the Library
-// grid (PerfProbe+Library.swift). Each phase prints one `PERF {json}` line to stderr with the
+// grid (PerfProbe+Library.swift); v2open and v2session, the v2 Duo (PerfProbe+Open.swift,
+// PerfProbe+Session.swift). Each phase prints one `PERF {json}` line to stderr with the
 // frame pacing (hitches), main-thread and process CPU, memory and a few view
 // counters. scripts/perf_report.py turns those lines (and an optional
 // Time Profiler trace) into the job summary. Release builds compile none of it.
@@ -30,6 +31,11 @@ final class PerfProbe: NSObject {
         var maxDelta: Double = 0
         var stalls = 0
         var hangTime: Double = 0
+        /// Frames longer than 25, 50 and 100 ms, and the time spent in > 25 ms frames.
+        var over25 = 0
+        var over50 = 0
+        var over100 = 0
+        var longTime: Double = 0
     }
 
     let model: AppModel
@@ -109,6 +115,7 @@ final class PerfProbe: NSObject {
         let warmup = Double(env["FUSIONHA_PERF_DELAY"] ?? "") ?? 8
         if env["FUSIONHA_PERF_SCRIPT"] == "library" { return await runLibrary(warmup: warmup) }
         if env["FUSIONHA_PERF_SCRIPT"] == "v2open" { return await runOpen(warmup: warmup) }
+        if env["FUSIONHA_PERF_SCRIPT"] == "v2session" { return await runSession(warmup: warmup) }
         await phase("warmup", warmup)
 
         model.tab = .activity
@@ -200,6 +207,11 @@ final class PerfProbe: NSObject {
             "max_frame_ms": round1(stats.maxDelta * 1000),
             "stalls_250ms": stats.stalls,
             "hang_ms": Int(stats.hangTime * 1000),
+            "long_25": stats.over25,
+            "long_50": stats.over50,
+            "long_100": stats.over100,
+            "long_ms": Int(stats.longTime * 1000),
+            "main_ms": Int(main * 1000),
             "main_cpu_pct": round1(main / max(wall, 0.001) * 100),
             "proc_cpu_pct": round1(proc / max(wall, 0.001) * 100),
             "mem_mb": round1(footprintMB()),
@@ -230,6 +242,9 @@ final class PerfProbe: NSObject {
             stats.hitchTime += delta - expected
         }
         if delta > 0.25 { stats.stalls += 1; stats.hangTime += delta }
+        if delta > 0.025 { stats.over25 += 1; stats.longTime += delta }
+        if delta > 0.05 { stats.over50 += 1 }
+        if delta > 0.1 { stats.over100 += 1 }
         stats.maxDelta = max(stats.maxDelta, delta)
         frameLog?.append((now, delta))
         frameWatch?()

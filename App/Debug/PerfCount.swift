@@ -7,6 +7,8 @@ extension Notification.Name {
     static let perfActivityTab = Notification.Name("fusionha.perf.activityTab")
     /// Closes the open title the way its Close button does (`ShellDetailColumn`).
     static let perfCloseTitle = Notification.Name("fusionha.perf.closeTitle")
+    /// The session script's finger on v2's split handle: object is [dx, velocity] (points, points/s).
+    static let perfSeamDrag = Notification.Name("fusionha.perf.seamDrag")
 }
 
 /// Cheap counters for view-body evaluations and derived-data rebuilds.
@@ -69,6 +71,17 @@ extension View {
         #if DEBUG
         onReceive(NotificationCenter.default.publisher(for: .perfActivityTab)) { note in
             if let raw = note.object as? String, let value = ActivityTab(rawValue: raw) { tab.wrappedValue = value }
+        }
+        #else
+        self
+        #endif
+    }
+
+    /// Lets the perf script drag v2's split handle by dx and let go at a velocity. A no-op in Release.
+    func perfSeamDragHook(_ drag: @escaping (Double, Double) -> Void) -> some View {
+        #if DEBUG
+        onReceive(NotificationCenter.default.publisher(for: .perfSeamDrag)) { note in
+            if let v = note.object as? [Double], v.count == 2 { drag(v[0], v[1]) }
         }
         #else
         self

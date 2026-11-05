@@ -23,8 +23,9 @@ on:
         description: "Which perf scripts run when perf is on"
         type: choice
         # v2open (opt-in, not in all): v2 (FusionhaV2) opening titles from
-        # the Library on the iPhone Duo's open inner display.
-        options: [all, activity, library, v2open]
+        # the Library on the iPhone Duo's open inner display. v2session: v2's
+        # owner session there (Library, titles, the split handle, tabs, Search).
+        options: [all, activity, library, v2open, v2session]
         default: all
       shots_only:
         description: "Only the simulator screenshots whose name matches this regex (e.g. ^palette-); skips iPhone Duo and adds to the published set"
@@ -831,7 +832,7 @@ jobs:
           xcodegen generate
 
       - name: Build for the simulator (optimised, with the perf probe)
-        if: env.SCOPE != 'v2open'
+        if: env.SCOPE != 'v2open' && env.SCOPE != 'v2session'
         run: |
           set -o pipefail
           xcodebuild \
@@ -848,7 +849,7 @@ jobs:
 
       # v2: its own target's V2 condition is overridden by the command line, so pass it too.
       - name: Build v2 for the simulator (optimised, with the perf probe)
-        if: env.SCOPE == 'v2open'
+        if: env.SCOPE == 'v2open' || env.SCOPE == 'v2session'
         run: |
           set -o pipefail
           xcodebuild \
@@ -878,6 +879,19 @@ jobs:
           python3 scripts/perf_report.py perf/v2open.log --json perf/v2open-summary.json --title "v2 title open (iPhone Duo, flat open)" \
             | xcrun swift-demangle --simplified | cut -c1-240 | tee perf/v2open-summary.txt
           { echo '## v2 title open (iPhone Duo, flat open)'; echo '```'; cat perf/v2open-summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: v2 owner session perf on the iPhone Duo harness
+        if: env.SCOPE == 'v2session'
+        timeout-minutes: 20
+        run: scripts/perf_v2_session.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf
+
+      - name: v2 owner session report
+        if: always() && env.SCOPE == 'v2session'
+        run: |
+          [ -f perf/v2session.log ] || exit 0
+          python3 scripts/perf_report.py perf/v2session.log --json perf/v2session-summary.json --title "v2 owner session (iPhone Duo, flat open)" \
+            | xcrun swift-demangle --simplified | cut -c1-240 | tee perf/v2session-summary.txt
+          { echo '## v2 owner session (iPhone Duo, flat open)'; echo '```'; cat perf/v2session-summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Library perf on the iPhone Duo harness
         if: env.SCOPE == 'all' || env.SCOPE == 'library'

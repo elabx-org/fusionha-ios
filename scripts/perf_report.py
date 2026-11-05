@@ -32,13 +32,35 @@ def load_phases(path):
 
 def phase_table(phases):
     cols = [("phase", 28), ("wall_s", 7), ("fps", 6), ("hitch_ms_per_s", 8), ("hang_ms", 8), ("stalls_250ms", 7), ("bg_stall_ms", 8),
-            ("max_frame_ms", 9), ("main_cpu_pct", 9), ("proc_cpu_pct", 9), ("mem_mb", 7), ("scroll_y", 8), ("content_h", 9)]
-    heads = {"hitch_ms_per_s": "hitch/s", "stalls_250ms": "hangs", "bg_stall_ms": "bgStall", "max_frame_ms": "maxframe", "main_cpu_pct": "main%",
+            ("max_frame_ms", 9), ("long_ms", 7), ("long_50", 5), ("long_100", 5), ("main_ms", 7), ("main_cpu_pct", 9), ("proc_cpu_pct", 9), ("mem_mb", 7), ("scroll_y", 8), ("content_h", 9)]
+    heads = {"hitch_ms_per_s": "hitch/s", "stalls_250ms": "hangs", "bg_stall_ms": "bgStall", "max_frame_ms": "maxframe", "long_ms": "long", "long_50": ">50", "long_100": ">100", "main_ms": "mainMs", "main_cpu_pct": "main%",
              "proc_cpu_pct": "proc%", "mem_mb": "memMB", "scroll_y": "scrollY", "content_h": "contentH"}
     out = ["  ".join(heads.get(c, c).rjust(w) if i else heads.get(c, c).ljust(w) for i, (c, w) in enumerate(cols))]
     for p in phases:
         out.append("  ".join(str(p.get(c, "")).rjust(w) if i else str(p.get(c, "")).ljust(w)
                              for i, (c, w) in enumerate(cols)))
+    return "\n".join(out)
+
+
+def worst(phases, n=15):
+    """The steps ranked by time spent in long (> 25 ms) frames, when the probe reports it."""
+    sel = [p for p in phases if "long_ms" in p and not p["phase"].endswith("settle")]
+    if not sel:
+        return ""
+    sel.sort(key=lambda p: -p["long_ms"])
+    out = [f"  {'phase':28s} {'long':>6s} {'>50':>4s} {'>100':>4s} {'mainMs':>7s} {'maxframe':>9s}"]
+    for p in sel[:n]:
+        out.append(f"  {p['phase']:28s} {p['long_ms']:6d} {p.get('long_50', 0):4d} {p.get('long_100', 0):4d}"
+                   f" {p.get('main_ms', 0):7d} {p['max_frame_ms']:9.1f}")
+    by = collections.defaultdict(lambda: [0, 0, 0])
+    for p in sel:
+        step = re.sub(r"^r\d+\.", "", p["phase"])
+        by[step][0] += p["long_ms"]
+        by[step][1] += p.get("main_ms", 0)
+        by[step][2] += 1
+    out.append("\n  per step, all rounds (long ms, main ms, phases):")
+    for step, (lm, mm, c) in sorted(by.items(), key=lambda kv: -kv[1][0]):
+        out.append(f"  {step:28s} {lm:6d} {mm:7d} {c:3d}")
     return "\n".join(out)
 
 
@@ -163,6 +185,10 @@ def main(argv):
     print("\nTotals:")
     for k, v in t.items():
         print(f"  {k:7s} " + "  ".join(f"{a}={b}" for a, b in v.items()))
+    ranked = worst(phases)
+    if ranked:
+        print("\nWorst steps (long = ms in frames > 25 ms; >50/>100 = frames over that; mainMs = main-thread CPU ms):")
+        print(ranked)
     print("\nView counters per phase (count, total ms where timed):")
     print(counters(phases))
     opens = load_events(argv[1], "open")
