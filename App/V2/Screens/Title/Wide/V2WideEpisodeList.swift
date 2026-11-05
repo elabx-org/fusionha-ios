@@ -32,7 +32,7 @@ struct V2WideEpisodeList: View {
                     header(facts)
                         .padding(.bottom, 10)
                     ForEach(episodes, id: \.id) { episode in
-                        row(episode, state: V2EpisodeState(episode: episode, editions: editions), still: still)
+                        row(episode, state: V2EpisodeState(episode: episode, editions: editions), still: V2EpisodeRow.still(episode, series: still))
                             .id(episode.id)
                     }
                 }

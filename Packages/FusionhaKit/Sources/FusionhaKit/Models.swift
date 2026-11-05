@@ -231,6 +231,16 @@ public struct MediaItem: Decodable, Sendable, Identifiable, Hashable {
     public let imdbId: String?
     public let seriesType: String?
     public let metadataProvider: String?
+    /// The first stored network (series) or production company (movies)
+    /// with a logo: an absolute TMDB PNG with alpha (0.4.238).
+    public let networkName: String?
+    public let networkLogoUrl: String?
+
+    /// The row's network mark (0.4.238), or nil when it has none.
+    public var networkMark: Studio? {
+        guard let networkLogoUrl else { return nil }
+        return Studio(name: networkName ?? "", logoUrl: networkLogoUrl)
+    }
 }
 
 public struct Edition: Decodable, Sendable, Identifiable, Hashable {

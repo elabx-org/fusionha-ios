@@ -47,7 +47,7 @@ struct V2SeasonPage: View {
         let episodes = season.episodes.sorted { oldest ? $0.episodeNumber < $1.episodeNumber : $0.episodeNumber > $1.episodeNumber }
         let editions = detail.orderedEditions
         // Owner pick (2026-11-05, "alternative"): every row keeps a small
-        // still. The series art until the server sends episode stills.
+        // still: the episode's own (0.4.238), else the series art.
         let still = TMDBImage.resized(detail.backdropUrl ?? detail.posterUrl, to: "w300")
         return List {
             V2SeasonPageHeader(detail: detail, season: season, facts: facts, canSearch: canSearch)
@@ -57,7 +57,7 @@ struct V2SeasonPage: View {
             ForEach(Array(episodes.enumerated()), id: \.element.id) { index, episode in
                 V2EpisodeRow(detail: detail, episode: episode,
                              state: V2EpisodeState(episode: episode, editions: editions),
-                             monitored: store.episodeMonitored(episode), stillURL: still)
+                             monitored: store.episodeMonitored(episode), stillURL: V2EpisodeRow.still(episode, series: still))
                     .background {
                         NavigationLink(value: V2TitleRoute.episode(season: seasonNumber, episodeId: episode.id)) { EmptyView() }
                             .opacity(0)

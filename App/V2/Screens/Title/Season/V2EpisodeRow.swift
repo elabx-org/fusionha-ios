@@ -2,8 +2,8 @@ import SwiftUI
 import FusionhaKit
 
 /// One episode on the season page (mock kit `erow`), a row of the season's
-/// episode card: a leading 112pt 16:9 still (the series art until the
-/// server sends episode stills; the number block when there is no art),
+/// episode card: a leading 112pt 16:9 still (the episode's own, else the
+/// series art; the number block when there is no art),
 /// the title, "E4 · 48m · Oct 20", two lines
 /// of overview, one T5 badge per version and the status circle on the title
 /// line. Episodes not out yet dim their lead. Content, not glass.
@@ -19,6 +19,11 @@ struct V2EpisodeRow: View {
     var showsOverview = true
 
     static let stillWidth: CGFloat = 112
+
+    /// The episode's own still (absolute, 0.4.238), else the series art.
+    static func still(_ episode: Episode, series: URL?) -> URL? {
+        episode.stillUrl.flatMap(URL.init(string:)) ?? series
+    }
     static let numberSide: CGFloat = 44
     static let leadSpacing: CGFloat = 12
     /// Where the text column starts inside the row, for the card's hairline.

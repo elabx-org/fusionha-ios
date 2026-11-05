@@ -18,7 +18,7 @@ struct V2LibraryHeroCard: View {
     @Environment(\.motionEnabled) private var motion
     /// The art's lead colour; lifted in `body`, so a palette switch re-lifts it.
     @State private var lead: HSLColor?
-    /// The network mark, from the title's detail (`V2StudioMarkCache`).
+    /// The network mark, from the Library row (or the detail on older servers).
     @State private var studio: Studio?
 
     private var art: URL? { TMDBImage.resized(item.backdropUrl ?? item.posterUrl, to: "w780") }
@@ -101,6 +101,11 @@ struct V2LibraryHeroCard: View {
 
     private func loadMark() async {
         guard showsFooter, let client = model.client else { return }
+        // 0.4.238 sends the mark on the Library row; older servers need the detail.
+        if item.networkName != nil || item.networkLogoUrl != nil {
+            studio = item.networkMark
+            return
+        }
         if let known = V2StudioMarkCache.shared.cached(item.id, server: client.baseURL) {
             studio = known
             return

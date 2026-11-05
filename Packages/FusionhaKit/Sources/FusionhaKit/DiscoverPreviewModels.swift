@@ -24,6 +24,11 @@ public struct CastMember: Decodable, Sendable, Hashable {
 public struct Studio: Decodable, Sendable, Hashable {
     public let name: String
     public let logoUrl: String?
+
+    public init(name: String, logoUrl: String?) {
+        self.name = name
+        self.logoUrl = logoUrl
+    }
 }
 
 public struct SimilarCard: Decodable, Sendable, Hashable, Identifiable {

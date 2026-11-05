@@ -152,6 +152,9 @@ public struct Episode: Decodable, Sendable, Hashable, Identifiable {
     public let airDatetime: String?
     /// Minutes, from the metadata provider.
     public let runtime: Int?
+    /// The episode's still, absolute (TMDB w300, or TVmaze/TVDB as stored);
+    /// nil until the series' next metadata refresh (0.4.238).
+    public let stillUrl: String?
 }
 
 public struct EpisodeDownload: Decodable, Sendable, Hashable {
