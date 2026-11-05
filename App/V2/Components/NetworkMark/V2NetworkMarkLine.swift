@@ -4,9 +4,9 @@ import FusionhaKit
 
 /// A meta line led by the title's network mark (mock kit `mark(net, 'mono')`,
 /// owner pick 2026-11-05 over the white `.netd` plate): the studio's logo as a
-/// one-ink silhouette on transparent (its alpha as a mask, in the line's
-/// primary ink at 85%), then `content`. A logo with no transparency would
-/// become a solid block, so it shows nothing instead. Nothing but the
+/// one-ink mark on transparent (`V2LogoAlpha`: the logo's alpha, two-tone
+/// logos knocked out to their light parts, in the line's primary ink at
+/// 85%), then `content`. A logo on a solid tile shows nothing. Nothing but the
 /// content until the logo has loaded, and nothing at all without a logo (the
 /// mark is never the name in text); it fades in when it arrives. The mark
 /// sits in the meta line, never on the art. Content, not glass.
@@ -25,8 +25,8 @@ struct V2NetworkMarkLine<Content: View>: View {
         let cached = url.flatMap { ImagePipeline.shared.cached($0) }
         let logo = shownURL == url ? (image ?? cached) : cached
         HStack(spacing: spacing) {
-            if let logo, let studio, V2LogoAlpha.isCutOut(logo) {
-                mark(logo)
+            if let logo, let studio, let url, let ink = V2LogoAlpha.mask(for: logo, url: url) {
+                mark(ink)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(studio.name)
                     .transition(.opacity)
