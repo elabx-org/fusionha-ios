@@ -88,7 +88,7 @@ struct RootView: View {
               model.rightPageHasItem,
               !episodeBeside(split, spread: spreadContext(fold, hasItem: true)) else { return nil }
         let key = model.tab.listMemoryKey
-        return DuoListToggle(hidden: split.primaryHidden) {
+        return DuoListToggle(hidden: split.primaryHidden, key: key) {
             var memory = DuoListMemory(raw: hiddenLists)
             memory.toggle(key)
             hiddenLists = memory.raw

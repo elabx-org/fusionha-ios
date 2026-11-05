@@ -11,9 +11,17 @@ import FusionhaKit
 
 /// The shell's hide / show action, handed to the detail column. `nil` when
 /// the list can't hide here (folded, book pose, nothing beside the list).
-struct DuoListToggle {
+///
+/// Equatable on what it does (not the closure, new on every shell render):
+/// otherwise every reader, the whole title page among them, re-rendered on
+/// each frame of v2's seam spring.
+struct DuoListToggle: Equatable {
     var hidden: Bool
+    /// The tab whose list it hides (`AppTab.listMemoryKey`).
+    var key = ""
     var toggle: @MainActor () -> Void
+
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.hidden == rhs.hidden && lhs.key == rhs.key }
 }
 
 extension EnvironmentValues {

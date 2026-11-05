@@ -33,6 +33,8 @@ struct V2LibraryView: View {
     @AppStorage("v2.library.shelf") private var shelf: V2LibraryShelfSource = .recentlyAdded
     @State private var compactSort = CompactSort()
     @State private var derived = LibraryDerived()
+    /// What `derived` was built from, but its columns (`V2LibraryDeriveKey`).
+    @State private var derivedKey: V2LibraryDeriveKey?
     @State private var home = V2LibraryHome()
     /// Titles with a held download in the queue (read only when it changes).
     @State private var held: Set<Int> = []
@@ -230,6 +232,15 @@ struct V2LibraryView: View {
     /// The grid and home from the library, narrowed first to the titles
     /// switched off when Show › Not monitored is on (v1's inputs untouched).
     private func rederive() {
+        let key = V2LibraryDeriveKey(inputs, unmonitoredOnly: unmonitoredOnly)
+        defer { derivedKey = key }
+        // Only the columns changed (a title opening beside the list): new rows, nothing else.
+        if key == derivedKey, let next = PerfCount.time("V2Library.rechunk", {
+            derived.rechunked(inputs, library: model.library)
+        }) {
+            derived = next
+            return
+        }
         let source = unmonitoredOnly ? model.library.filter { $0.monitored == false } : model.library
         derived = PerfCount.time("V2Library.derive") { inputs.derive(from: source) }
         PerfCount.time("V2Library.rebuildHome") { rebuildHome() }
