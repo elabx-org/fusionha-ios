@@ -95,6 +95,8 @@ struct V2HeroShade: View {
 struct V2TitleHeading: View {
     let detail: ItemDetail
     var size: CGFloat = 34
+    /// The movie's tagline under the meta line (not on the short wide band).
+    var showsTagline = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -106,7 +108,7 @@ struct V2TitleHeading: View {
                 .shadow(color: .black.opacity(0.45), radius: 9, y: 2)
                 .accessibilityAddTraits(.isHeader)
             V2TitleMetaLine(detail: detail)
-            if !detail.isSeries, let tagline = detail.tagline, !tagline.isEmpty {
+            if showsTagline, !detail.isSeries, let tagline = detail.tagline, !tagline.isEmpty {
                 Text(tagline)
                     .font(.system(size: 14, weight: .medium).italic())
                     .foregroundStyle(.white.opacity(0.86))

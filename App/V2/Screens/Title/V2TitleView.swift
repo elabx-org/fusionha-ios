@@ -16,6 +16,9 @@ struct V2TitleView: View {
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     @Environment(\.detailInColumn) private var inColumn
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.duoOpen) private var duoOpen
+    @Environment(\.bookPose) private var bookPose
+    @Environment(\.duoListToggle) private var listToggle
     let store: DetailStore
     var onClose: (() -> Void)?
     @State private var compact = false
@@ -35,6 +38,10 @@ struct V2TitleView: View {
     private var canSearch: Bool { canEdit && (model.me?.can("search") ?? true) }
     private var compactLayout: Bool { !inColumn && sizeClass == .compact }
     private var reduceMotion: Bool { systemReduceMotion || store.settings?.animationsEnabled == false }
+    /// The list hidden on the flat open Duo: the band and two columns (S7).
+    private var wide: Bool {
+        inColumn && V2TitleWide.fills(duoOpen: duoOpen, bookPose: bookPose, toggle: listToggle)
+    }
 
     private var presenter: DetailPresenter {
         let host: DetailHost = inColumn ? .column : .sheet
@@ -115,7 +122,11 @@ struct V2TitleView: View {
         ScrollView {
             Group {
                 if let detail = store.detail {
-                    V2TitlePage(detail: detail, width: width)
+                    if wide {
+                        V2TitleWidePage(detail: detail, width: width)
+                    } else {
+                        V2TitlePage(detail: detail, width: width)
+                    }
                 } else if store.loadError != nil {
                     DetailLoadError(close: close)
                 } else {
@@ -123,6 +134,7 @@ struct V2TitleView: View {
                 }
             }
             .pinnedToProposedWidth()
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: wide)
         }
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
         .scrollIndicators(.hidden)
@@ -138,7 +150,9 @@ struct V2TitleView: View {
             geo.contentOffset.y + geo.contentInsets.top
         } action: { _, y in
             store.scrollY = y
-            if compact != (y > 240) { compact = y > 240 }
+            // The compact bar once the hero (or the shorter band) is gone.
+            let past = y > (wide ? 96 : 240)
+            if compact != past { compact = past }
         }
     }
 

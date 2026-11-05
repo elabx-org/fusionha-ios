@@ -19,13 +19,22 @@ struct V2TitleDestination: View {
     /// Tells the stack this page is on top or gone (`DuoPageAtRoot`).
     var visible: (Bool) -> Void = { _ in }
 
+    @Environment(\.duoOpen) private var duoOpen
+    @Environment(\.bookPose) private var bookPose
+    @Environment(\.duoListToggle) private var listToggle
+
     var body: some View {
         Group {
-            switch route {
-            case .season(let number):
-                V2SeasonPage(seasonNumber: number)
-            case .episode(let season, let episodeId):
-                V2EpisodePage(seasonNumber: season, episodeId: episodeId)
+            if V2TitleWide.fills(duoOpen: duoOpen, bookPose: bookPose, toggle: listToggle) {
+                // The title fills the flat open Duo: band, siblings | page (S7).
+                V2TitleWideChild(route: route)
+            } else {
+                switch route {
+                case .season(let number):
+                    V2SeasonPage(seasonNumber: number)
+                case .episode(let season, let episodeId):
+                    V2EpisodePage(seasonNumber: season, episodeId: episodeId)
+                }
             }
         }
         .environment(store)

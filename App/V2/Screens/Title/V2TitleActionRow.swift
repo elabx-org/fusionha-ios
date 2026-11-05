@@ -6,7 +6,8 @@ import FusionhaKit
 /// then Monitored on a bookmark. Each runs v1's store action: the same
 /// search, the same interactive-search sheet, the same bulk monitor call.
 /// With a version card selected both searches name it and run on it alone
-/// ("Search 4K", "Search missing 4K").
+/// ("Search 4K", "Search missing 4K"). `stacked` puts Monitored on its own
+/// line (the title filling the flat open Duo).
 struct V2TitleActionRow: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
@@ -15,6 +16,8 @@ struct V2TitleActionRow: View {
     /// The open Duo's column carries Search in its bar: the row keeps the rest.
     var showsSearch = true
     var height: CGFloat = 42
+    /// Monitored on its own line under the searches (the wide page's column).
+    var stacked = false
     /// The flip while the PATCH is in flight.
     @State private var monitorOverride: Bool?
 
@@ -30,46 +33,70 @@ struct V2TitleActionRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
-            if canSearch && showsSearch {
-                Button { runSearch() } label: {
-                    Label(searchTitle, systemImage: "magnifyingglass")
-                        .contentTransition(.opacity)
-                        .font(.system(size: 15, weight: .semibold))
-                        .frame(height: height - 16)
-                        .padding(.horizontal, 4)
+        Group {
+            if stacked {
+                // The wide page's left column (mock `tabWide`): the searches,
+                // then Monitored on its own line.
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        searches
+                        Spacer(minLength: 0)
+                    }
+                    monitor
                 }
-                .buttonStyle(.glassProminent)
-                .tint(Theme.i1)
-                .symbolEffect(.pulse, options: .repeating, isActive: searching)
-                .disabled(searching)
-                .accessibilityHint(focused.map { "Searches the \(detail.versionName($0)) version" } ?? "Searches every monitored version")
-            }
-            if canSearch {
-                Button { store.openInteractiveSearch() } label: {
-                    Image(systemName: "person")
-                        .font(.system(size: 16, weight: .semibold))
-                        .frame(width: height - 16, height: height - 16)
+            } else {
+                HStack(spacing: 8) {
+                    searches
+                    monitor
+                    Spacer(minLength: 0)
                 }
-                .buttonStyle(.glass)
-                .accessibilityLabel(focused.map { "Interactive search, \($0.tier.badgeLetters)" } ?? "Interactive search")
             }
-            if canEdit {
-                Button { toggleMonitor() } label: {
-                    Label(monitored ? "Monitored" : "Monitor", systemImage: monitored ? "bookmark.fill" : "bookmark")
-                        .font(.system(size: 15, weight: .semibold))
-                        .contentTransition(.symbolEffect(.replace))
-                        .frame(height: height - 16)
-                }
-                .buttonStyle(.glass)
-                .foregroundStyle(page?.ink ?? Theme.txt)
-                .accessibilityValue(monitored ? "On" : "Off")
-            }
-            Spacer(minLength: 0)
         }
         .v2FadesUnderTitleBar()
         .sensoryFeedback(.selection, trigger: monitored)
         .onChange(of: detail.monitored) { monitorOverride = nil }
+    }
+
+    @ViewBuilder
+    private var searches: some View {
+        if canSearch && showsSearch {
+            Button { runSearch() } label: {
+                Label(searchTitle, systemImage: "magnifyingglass")
+                    .contentTransition(.opacity)
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(height: height - 16)
+                    .padding(.horizontal, 4)
+            }
+            .buttonStyle(.glassProminent)
+            .tint(Theme.i1)
+            .symbolEffect(.pulse, options: .repeating, isActive: searching)
+            .disabled(searching)
+            .accessibilityHint(focused.map { "Searches the \(detail.versionName($0)) version" } ?? "Searches every monitored version")
+        }
+        if canSearch {
+            Button { store.openInteractiveSearch() } label: {
+                Image(systemName: "person")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: height - 16, height: height - 16)
+            }
+            .buttonStyle(.glass)
+            .accessibilityLabel(focused.map { "Interactive search, \($0.tier.badgeLetters)" } ?? "Interactive search")
+        }
+    }
+
+    @ViewBuilder
+    private var monitor: some View {
+        if canEdit {
+            Button { toggleMonitor() } label: {
+                Label(monitored ? "Monitored" : "Monitor", systemImage: monitored ? "bookmark.fill" : "bookmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .contentTransition(.symbolEffect(.replace))
+                    .frame(height: height - 16)
+            }
+            .buttonStyle(.glass)
+            .foregroundStyle(page?.ink ?? Theme.txt)
+            .accessibilityValue(monitored ? "On" : "Off")
+        }
     }
 
     private func runSearch() {

@@ -36,7 +36,7 @@ struct V2SeasonPage: View {
                     .frame(maxHeight: .infinity, alignment: .top)
             }
         }
-        .v2PageGround(art: groundArt)
+        .v2PageGroundUnlessWideChild(art: groundArt)
         .navigationTitle(season?.title ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .overlay(alignment: .bottom) { V2TitleToast(store: store, reduceMotion: reduce) }

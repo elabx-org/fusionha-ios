@@ -11,6 +11,9 @@ struct V2EpisodePage: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     @Environment(\.detailReduceMotion) private var reduce
+    /// Beside the season's list on the flat open Duo (`V2TitleWideChild`):
+    /// the band above carries the art, so a short header instead of the hero.
+    @Environment(\.v2WideChild) private var wideChild
     let seasonNumber: Int
     let episodeId: Int
     @State private var tab: EpisodeSheetTab = .details
@@ -37,7 +40,7 @@ struct V2EpisodePage: View {
                     .frame(maxHeight: .infinity, alignment: .top)
             }
         }
-        .v2PageGround(art: groundArt, showsArt: false)
+        .v2PageGroundUnlessWideChild(art: groundArt, showsArt: false)
         .navigationTitle(compact ? (episode?.title ?? "") : "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackgroundVisibility(compact ? .visible : .hidden, for: .navigationBar)
@@ -52,7 +55,13 @@ struct V2EpisodePage: View {
     private func page(_ detail: ItemDetail, _ episode: Episode) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                V2EpisodeHero(detail: detail, episode: episode, seasonNumber: seasonNumber)
+                if wideChild {
+                    V2EpisodeWideHeader(detail: detail, episode: episode, seasonNumber: seasonNumber)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 14)
+                } else {
+                    V2EpisodeHero(detail: detail, episode: episode, seasonNumber: seasonNumber)
+                }
                 VStack(alignment: .leading, spacing: 14) {
                     Picker("Episode", selection: $tab) {
                         ForEach(EpisodeSheetTab.allCases, id: \.self) { Text($0.title).tag($0) }
