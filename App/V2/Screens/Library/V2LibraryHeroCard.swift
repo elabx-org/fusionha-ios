@@ -12,6 +12,8 @@ struct V2LibraryHeroCard: View {
     let height: CGFloat
     /// Off while the card only peeks beside the centred one (mock `.hcard.peek`).
     var showsFooter = true
+    /// Why the card is here ("S2 E5 · tonight"); takes the "year · kind" line.
+    var note: String? = nil
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     /// The art's lead colour; lifted in `body`, so a palette switch re-lifts it.
@@ -66,13 +68,15 @@ struct V2LibraryHeroCard: View {
                 .lineLimit(2)
                 .minimumScaleFactor(0.8)
                 .shadow(color: .black.opacity(0.55), radius: 10, y: 2)
-            Text(meta)
+            Text(note ?? meta)
                 .font(.system(size: 13.5, weight: .medium))
                 .foregroundStyle(.white.opacity(0.86))
                 .lineLimit(1)
+                .minimumScaleFactor(0.85)
             let badges = V2EditionBadges(item) { model.queueSlots.slot(for: $0.id).progress }
             EditionTicketPair(hd: badges.hd, uhd: badges.uhd)
-            if let next = V2HeroNextLine(item) {
+            // With a reason line, only what is moving or needs the owner.
+            if let next = V2HeroNextLine(item), note == nil || next.needsYou || item.cardStatus == .downloading {
                 Text(next.text)
                     .font(.system(size: 12.5, weight: .semibold))
                     .foregroundStyle(next.needsYou ? Theme.stuck : .white.opacity(0.8))

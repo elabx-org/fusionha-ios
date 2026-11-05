@@ -26,6 +26,8 @@ struct V2LibraryView: View {
     @AppStorage("library.sort") private var sort: LibrarySort = .title
     @AppStorage("library.recency") private var recency: LibraryRecency = .all
     @AppStorage("library.group") private var group = false
+    /// Show › Not monitored: v2's own key, so v1's Library never sees it.
+    @AppStorage("v2.library.unmonitored") private var unmonitoredOnly = false
     @AppStorage("v2.library.shelf") private var shelf: V2LibraryShelfSource = .recentlyAdded
     @State private var compactSort = CompactSort()
     @State private var derived = LibraryDerived()
@@ -38,6 +40,8 @@ struct V2LibraryView: View {
     @State private var onScreen = LibraryOnScreen()
     @State private var entrance = LibraryEntrance()
     @State private var gridFold = LibraryGridFold()
+    /// The Coming up row's lead card art: the ground follows the first card.
+    @State private var comingUpArt: URL?
 
     private var compact: Bool { density == "compact" }
     private var alphaMode: Bool { sort == .title && !group && !compact }
@@ -62,15 +66,25 @@ struct V2LibraryView: View {
         return PageArtSource.url(backdrop: item.backdropUrl, poster: item.posterUrl)
     }
 
+    /// The lead card's art while the Coming up row shows (V2LibraryPageTop's rule).
+    private var homeArt: URL? {
+        showsHome && !home.heroes.isEmpty ? comingUpArt : nil
+    }
+
     private var filters: V2LibraryFilters {
         V2LibraryFilters(kind: $kindRaw, tier: $tier, status: $status, sort: $sort,
-                         recency: $recency, group: $group, density: $density)
+                         recency: $recency, group: $group, density: $density, unmonitored: $unmonitoredOnly)
     }
+
+    /// Room kept clear at the grid's trailing side for the A–Z thumb (34
+    /// wide, its trailing edge 16 past the content edge, so 18 of it would
+    /// sit over the last column), plus a 6pt breath before it.
+    private var scrubberRoom: CGFloat { showsScrubber ? 24 : 0 }
 
     private var columns: Int {
         if spread.spans { return PosterTracks.count(base: 3, spans: true) }
         if fold != nil { return V2LibraryColumns.count(for: gridFold.width) }
-        return V2LibraryColumns.count(for: pane.width - 2 * gutter)
+        return V2LibraryColumns.count(for: pane.width - 2 * gutter - scrubberRoom)
     }
 
     private var gridTracks: [FoldColumns.Track]? {
@@ -110,7 +124,7 @@ struct V2LibraryView: View {
         }
         // The kit's ambient art, not W1's: full strength under the home,
         // browse-lib.js's shorter, softer layer over the grid or list alone.
-        .v2PageGround(art: besideArt ?? home.groundArt, recipe: besideArt == nil ? .page : .listPane,
+        .v2PageGround(art: besideArt ?? homeArt ?? home.groundArt, recipe: besideArt == nil ? .page : .listPane,
                       showsArt: besideArt == nil, artHeight: showsHome ? 760 : 520,
                       artOpacity: showsHome ? .ambient : .libraryList)
         .modifier(V2LibraryToolbar(derived: derived, status: $status))
@@ -136,11 +150,8 @@ struct V2LibraryView: View {
             let gestures = model.duoGestures
             scrubber.onVisibility = { [weak gestures] shown in gestures?.edgeBusy = shown }
         }
-        .onChange(of: inputs, initial: true) {
-            derived = inputs.derive(from: model.library)
-            rebuildHome()
-            startEntrance()
-        }
+        .onChange(of: inputs, initial: true) { rederive() }
+        .onChange(of: unmonitoredOnly) { rederive() }
         .onChange(of: held) { rebuildHome() }
     }
 
@@ -150,19 +161,26 @@ struct V2LibraryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 V2LibraryPageTop(derived: derived, home: home, held: held, filters: filters, paneWidth: pane.width,
-                                 gutter: gutter, showsHome: showsHome, shelf: $shelf) {
+                                 gutter: gutter, showsHome: showsHome, shelf: $shelf,
+                                 comingUpArt: $comingUpArt) {
                     withAnimation(motion ? .smooth : nil) { proxy.scrollTo("library-grid", anchor: .top) }
                 }
+                // The thumb hangs off the full content edge; the grid
+                // itself stops short of it (`scrubberRoom`).
                 Color.clear.frame(height: 1)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
                         scrubber.setGridTop(frame.minY)
                         scrubber.setGridTrailing(frame.maxX)
                     }
-                    .onGeometryChange(for: LibraryGridFold.self) { [bookPose] proxy in
-                        LibraryGridFold.measured(proxy, bookPose: bookPose)
-                    } action: { gridFold = $0 }
-                V2LibraryRows(derived: derived, tracks: gridTracks, width: gridFold.width, entrance: entrance,
-                              compactSort: $compactSort, filters: filters, query: query)
+                VStack(alignment: .leading, spacing: 0) {
+                    Color.clear.frame(height: 0)
+                        .onGeometryChange(for: LibraryGridFold.self) { [bookPose] proxy in
+                            LibraryGridFold.measured(proxy, bookPose: bookPose)
+                        } action: { gridFold = $0 }
+                    V2LibraryRows(derived: derived, tracks: gridTracks, width: gridFold.width, entrance: entrance,
+                                  compactSort: $compactSort, filters: filters, query: query)
+                }
+                .padding(.trailing, scrubberRoom)
             }
             // A column change re-flows thousands of rows: never animated.
             .transaction(value: columns) { $0.animation = nil }
@@ -190,6 +208,15 @@ struct V2LibraryView: View {
         }
     }
 
+    /// The grid and home from the library, narrowed first to the titles
+    /// switched off when Show › Not monitored is on (v1's inputs untouched).
+    private func rederive() {
+        let source = unmonitoredOnly ? model.library.filter { $0.monitored == false } : model.library
+        derived = inputs.derive(from: source)
+        rebuildHome()
+        startEntrance()
+    }
+
     /// The home's heroes, shelves and attention titles, from the same set.
     private func rebuildHome() {
         let ids = Set(derived.visibleIds)
@@ -199,7 +226,7 @@ struct V2LibraryView: View {
 
     /// A new kind, tier, filter or sort plays the grid's entrance (v1's rule).
     private func startEntrance() {
-        let key = "\(kindRaw)|\(tier)|\(status)|\(sort)|\(recency)|\(group)|\(compact)|\(derived.rows.isEmpty)"
+        let key = "\(kindRaw)|\(tier)|\(status)|\(unmonitoredOnly)|\(sort)|\(recency)|\(group)|\(compact)|\(derived.rows.isEmpty)"
         guard entrance.update(key: key, rows: derived.rows) else { return }
         let generation = entrance.generation
         Task {

@@ -43,6 +43,7 @@ struct PageGround: View {
                                                      .init(color: .clear, location: 1)],
                                              startPoint: .top, endPoint: .bottom))
                         .opacity(palette.isLight ? artOpacity.light : artOpacity.dark)
+                        .blendMode(!palette.isLight && artOpacity.lightensOnly ? .screen : .normal)
                         .transition(.opacity)
                 }
             }
@@ -67,13 +68,16 @@ struct PageGround: View {
 struct GroundArtOpacity: Equatable, Sendable {
     var dark: Double
     var light: Double
+    /// On dark palettes the art only lightens the mesh (screen blend): a
+    /// dark side of the art never blacks out that side of a wide page.
+    var lightensOnly = false
 
     /// cards-w.js `.ambient.w1g`.
     static let w1 = GroundArtOpacity(dark: 0.9, light: 0.55)
     /// The kit's `.ambient` (`--ambient-op` .62 dark, .42 light): the Library home.
-    static let ambient = GroundArtOpacity(dark: 0.62, light: 0.42)
+    static let ambient = GroundArtOpacity(dark: 0.62, light: 0.42, lightensOnly: true)
     /// browse-lib.js: the Library's grid and list, `--ambient-op` × .7.
-    static let libraryList = GroundArtOpacity(dark: 0.434, light: 0.294)
+    static let libraryList = GroundArtOpacity(dark: 0.434, light: 0.294, lightensOnly: true)
 }
 
 /// A recipe's base and ellipses. Each ellipse gets its own frame, since a
@@ -102,18 +106,27 @@ private struct GroundMesh: View {
 extension GroundRecipe {
     /// The ground with no art (cards-w.js `.w1-tint`), from the palette's
     /// tokens: the accent top left, the grab hue on the right, the edition
-    /// hue at the foot, over the page colour. Hue-less palettes use their
-    /// accent grey for all three.
+    /// hue at the foot, over a base lifted off the page colour toward the
+    /// accent (dark palettes never sit on near-black; OLED and Noir stay
+    /// dark, tinted). Hue-less palettes use their accent grey for all three.
     static func tint(_ t: PaletteTokens) -> GroundRecipe {
         let mono = PagePalette.dropsHue(t)
-        let bg = hsl(t.bg)
         let k = t.isLight ? 0.5 : 1.0
         let i1 = hsl(t.i1), cyan = mono ? i1 : hsl(t.grab), violet = mono ? i1 : hsl(t.edition)
-        return GroundRecipe(top: bg, bottom: bg, ellipses: [
+        return GroundRecipe(top: base(t, toward: i1, dark: 0.13), bottom: base(t, toward: violet, dark: 0.10), ellipses: [
             GroundEllipse(color: i1, alpha: 0.34 * k, x: 0.10, y: 0, rx: 1.2, ry: 0.55, fade: 0.70),
             GroundEllipse(color: cyan, alpha: (t.isLight ? 0.10 : 0.16), x: 1, y: 0.38, rx: 0.9, ry: 0.45, fade: 0.72),
             GroundEllipse(color: violet, alpha: (t.isLight ? 0.12 : 0.20), x: 0, y: 0.92, rx: 1.1, ry: 0.5, fade: 0.70),
         ])
+    }
+
+    /// The page colour on light palettes; on dark ones lifted to `dark`
+    /// lightness (OLED and Noir: a third of it) in a little of `hue`.
+    private static func base(_ t: PaletteTokens, toward hue: HSLColor, dark l: Double) -> HSLColor {
+        let bg = hsl(t.bg)
+        guard !t.isLight else { return bg }
+        let deep = PagePalette.isDeep(t)
+        return HSLColor(h: hue.h, s: min(hue.s, 0.5) * (deep ? 0.6 : 0.45), l: max(bg.l, deep ? l / 3 : l))
     }
 
     private static func hsl(_ hex: UInt32) -> HSLColor {

@@ -4,7 +4,7 @@ import FusionhaKit
 /// A title's HD and 4K badges as the two halves of one T5 ticket (owner
 /// 2026-11-04). When both halves draw the same and carry nothing beside
 /// them (both filled, or both outlined, with no ring, count or "!") they plug together with a
-/// 1.3pt gap; otherwise they sit apart, each with its ring or count, so the
+/// 2pt gap; otherwise they sit apart, each with its ring or count, so the
 /// shape itself says "these differ". The change animates (`.snappy`)
 /// unless Reduce Motion is on. A title with one version shows one badge.
 struct EditionTicketPair: View {
@@ -41,9 +41,9 @@ struct EditionTicketPair: View {
             && BadgeAccessory.isEmpty(a, showsCount: showsCount)
             && BadgeAccessory.isEmpty(b, showsCount: showsCount)
         let m = TicketMetrics.self
-        // Joined: body, 1.3 gap, body. Apart: the left half keeps room for
+        // Joined: body, 2pt gap, body. Apart: the left half keeps room for
         // its scallops, then the row gap, 2pt more, and the right half's own
-        // offset (seam to seam 1.8 + 3 + 2 + 1.1 with nothing between).
+        // offset (seam to seam 1.2 + 3 + 2 + 1 with nothing between).
         let afterLeft = joined ? m.joinedGap : m.leftOverhang
         let beforeRight = joined ? 0 : m.itemGap + m.apartExtra + m.rightOverhang
         return HStack(spacing: 0) {

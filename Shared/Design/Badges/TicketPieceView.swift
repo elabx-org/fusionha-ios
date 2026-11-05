@@ -47,7 +47,7 @@ struct TicketPieceView: View {
     }
 
     /// The letters, centred clear of the seam: the left half centres them on
-    /// its body less the 1.3 gap, the right half shifts them past it.
+    /// its body less the joined gap, the right half shifts them past it.
     private func label(w: CGFloat) -> some View {
         let gap = side == nil ? 0 : TicketMetrics.joinedGap * scale
         let lead: CGFloat = side == .right ? gap : 0

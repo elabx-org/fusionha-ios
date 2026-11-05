@@ -4,7 +4,7 @@ import FusionhaKit
 /// The v2 Library above the grid (mocks browse.js home, browse-lib.js and
 /// filters-alt.js F1): the stats line, the library filter, the kind control
 /// with its make-up bar, the F1 row and its tokens, the Needs-attention
-/// row, the hero carousel, the poster shelf, then "All titles". Flat open,
+/// row, the "Coming up" row (`V2ComingUpRow`), the poster shelf, then "All titles". Flat open,
 /// the kind control and the F1 row share one line and the rails simply run
 /// wider; in book pose that line splits at the fold.
 struct V2LibraryPageTop: View {
@@ -18,6 +18,8 @@ struct V2LibraryPageTop: View {
     /// The hero and shelf show (posters, no search words).
     let showsHome: Bool
     @Binding var shelf: V2LibraryShelfSource
+    /// The Coming up row's lead art, for the page's ground.
+    @Binding var comingUpArt: URL?
     /// Scrolls to the "All titles" heading.
     let toGrid: () -> Void
     @Environment(AppModel.self) private var model
@@ -25,6 +27,8 @@ struct V2LibraryPageTop: View {
     @Environment(\.bookPose) private var bookPose
     @Environment(\.pagePalette) private var page
     @State private var kindCountsInSummary = false
+    /// The Coming up row is showing Recently added (nothing in the window).
+    @State private var comingUpFallingBack = false
 
     private var wideRow: Bool { paneWidth >= 700 }
     private var showsAttention: Bool { !home.attention.isEmpty && filters.status != .attention }
@@ -45,12 +49,14 @@ struct V2LibraryPageTop: View {
                     .reveal(2)
             }
             if showsHome && !home.heroes.isEmpty {
-                V2LibraryHeroCarousel(items: home.heroes, width: paneWidth, gutter: gutter)
+                V2ComingUpRow(visibleIds: derived.visibleIds, recent: home.shelves[.recentlyAdded] ?? [],
+                              width: paneWidth, gutter: gutter, leadArt: $comingUpArt,
+                              fallingBack: $comingUpFallingBack)
                     .padding(.top, 20)
                     .reveal(3)
             }
-            if showsHome && !home.sources.isEmpty {
-                V2LibraryShelf(home: home, source: $shelf, paneWidth: paneWidth) { see($0) }
+            if showsHome, let shelfSource {
+                V2LibraryShelf(home: home, source: shelfSource, paneWidth: paneWidth) { see($0) }
                     // The carousel's frame keeps 24 for its shadow: 16 under the cards.
                     .padding(.top, showsHome && !home.heroes.isEmpty ? -8 : 20)
                     .reveal(4)
@@ -64,6 +70,19 @@ struct V2LibraryPageTop: View {
             }
         }
         .animation(motion ? .snappy : nil, value: filters.tokens)
+    }
+
+    /// The shelf's source. While the Coming up row falls back to Recently
+    /// added, a shelf on Recently added shows the next source with titles
+    /// instead (the stored choice stays), or hides when there is none.
+    private var shelfSource: Binding<V2LibraryShelfSource>? {
+        let sources = home.sources
+        guard !sources.isEmpty else { return nil }
+        let rowShowsRecent = comingUpFallingBack && !home.heroes.isEmpty
+        let shown = sources.contains(shelf) ? shelf : sources[0]
+        guard rowShowsRecent && shown == .recentlyAdded else { return $shelf }
+        guard let other = sources.first(where: { $0 != .recentlyAdded }) else { return nil }
+        return Binding(get: { other }, set: { shelf = $0 })
     }
 
     /// The stats line, then the library filter. Flat open (mock libInner)

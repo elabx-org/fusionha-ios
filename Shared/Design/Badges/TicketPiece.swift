@@ -14,24 +14,34 @@ enum TicketMetrics {
     /// letters stay centred clear of the scallops.
     static let leftExtra: CGFloat = 1.5
     static let rightExtra: CGFloat = 2.5
-    /// The seam: four semicircles of radius 1.75 down the joint.
-    static let scallop: CGFloat = 1.75
-    /// Joined: the gap between the interlocked edges.
-    static let joinedGap: CGFloat = 1.3
+    /// The seam: three shallow scallops (0.9 deep) down the joint. Four
+    /// 1.75 semicircles ran flat where they met, so at caption size the
+    /// joined seam closed up and read as an "S" ("HD$4K") rather than a
+    /// torn ticket edge.
+    static let scallops = 3
+    static let scallop: CGFloat = 0.9
+    /// Joined: the gap between the interlocked edges, wide enough that a
+    /// 1pt outline on each side still leaves the seam open.
+    static let joinedGap: CGFloat = 2
     /// Apart: the left piece's room for its scallops, the row's item gap,
     /// the extra space before the right piece and that piece's own offset.
-    static let leftOverhang: CGFloat = 1.8
+    static let leftOverhang: CGFloat = 1.2
     static let itemGap: CGFloat = 3
     static let apartExtra: CGFloat = 2
-    static let rightOverhang: CGFloat = 1.1
+    static let rightOverhang: CGFloat = 1.0
     /// The letters: 9.5pt semibold, +0.3 tracking.
     static let letterSize: CGFloat = 9.5
     static let letterTracking: CGFloat = 0.3
+    /// The left half's bulges down the seam, top to bottom (+1 out to the
+    /// right). The right half follows the same line from the bottom up, so
+    /// the halves nest.
+    static var leftBulges: [CGFloat] { (0..<scallops).map { i -> CGFloat in i.isMultiple(of: 2) ? 1 : -1 } }
+
     /// The outline (1pt).
     static let stroke: CGFloat = 1
 
-    /// A length snapped to whole device pixels (1.3pt gaps and 1.75pt arcs
-    /// otherwise land on half pixels at @3x and blur).
+    /// A length snapped to whole device pixels (fractional gaps otherwise
+    /// land on half pixels at @3x and blur).
     static func snap(_ value: CGFloat, _ displayScale: CGFloat) -> CGFloat {
         let s = max(displayScale, 1)
         return (value * s).rounded() / s
@@ -39,8 +49,8 @@ enum TicketMetrics {
 }
 
 /// One half of the HD/4K ticket. The left half's right edge and the right
-/// half's left edge are the scalloped seam (out, in, out, in from the top on
-/// the left; the mirror on the right), so the two halves interlock. The
+/// half's left edge are the scalloped seam (out, in, out from the top on the
+/// left; the same line on the right), so the two halves interlock. The
 /// shape's frame is the piece's body: the seam's bulges reach
 /// `TicketMetrics.scallop` past it, outside the frame.
 struct TicketPiece: Shape {
@@ -57,7 +67,8 @@ struct TicketPiece: Shape {
         case .left:
             p.move(to: CGPoint(x: x0 + r, y: y0))
             p.addLine(to: CGPoint(x: x1, y: y0))
-            Self.addSeam(&p, x: x1, from: y0, to: y1, bulges: [1, -1, 1, -1])
+            Self.addSeam(&p, x: x1, from: y0, to: y1, depth: TicketMetrics.scallop * s,
+                         bulges: TicketMetrics.leftBulges)
             p.addLine(to: CGPoint(x: x0 + r, y: y1))
             p.addArc(tangent1End: CGPoint(x: x0, y: y1), tangent2End: CGPoint(x: x0, y: y0), radius: r)
             p.addLine(to: CGPoint(x: x0, y: y0 + r))
@@ -69,33 +80,26 @@ struct TicketPiece: Shape {
             p.addLine(to: CGPoint(x: x1, y: y1 - r))
             p.addArc(tangent1End: CGPoint(x: x1, y: y1), tangent2End: CGPoint(x: x0, y: y1), radius: r)
             p.addLine(to: CGPoint(x: x0, y: y1))
-            // Bottom to top: in, out, in, out (mirrors the left half).
-            Self.addSeam(&p, x: x0, from: y1, to: y0, bulges: [-1, 1, -1, 1])
+            // Bottom to top along the same line as the left half's seam.
+            Self.addSeam(&p, x: x0, from: y1, to: y0, depth: TicketMetrics.scallop * s,
+                         bulges: Array(TicketMetrics.leftBulges.reversed()))
         }
         p.closeSubpath()
         return p
     }
 
-    /// Semicircles down the line x, from `start` to `end` (a quarter of the
-    /// height each, so radius 1.75 at 14pt), each
-    /// bulging +x (1) or -x (-1). Drawn as cubic quarter arcs, so the
-    /// direction never depends on an arc's clockwise convention.
-    private static func addSeam(_ p: inout Path, x: CGFloat, from start: CGFloat, to end: CGFloat, bulges: [CGFloat]) {
-        let k: CGFloat = 0.552_284_75
-        let step = (end - start) / CGFloat(bulges.count)
-        let r = abs(step) / 2
-        let dir: CGFloat = step >= 0 ? 1 : -1
+    /// Shallow scallops down the line x, from `start` to `end`, each
+    /// bulging `depth` toward +x (1) or -x (-1). Each is a quadratic arc, so
+    /// the seam crosses the line on a slant rather than running flat there,
+    /// and the joined gap stays open along its whole length.
+    private static func addSeam(_ p: inout Path, x: CGFloat, from start: CGFloat, to end: CGFloat,
+                                depth: CGFloat, bulges: [CGFloat]) {
+        let step = (end - start) / CGFloat(max(bulges.count, 1))
         for (i, bulge) in bulges.enumerated() {
             let ya = start + step * CGFloat(i)
-            let yb = ya + step
-            let cy = (ya + yb) / 2
-            let bx = x + bulge * r
-            p.addCurve(to: CGPoint(x: bx, y: cy),
-                       control1: CGPoint(x: x + bulge * k * r, y: ya),
-                       control2: CGPoint(x: bx, y: cy - dir * k * r))
-            p.addCurve(to: CGPoint(x: x, y: yb),
-                       control1: CGPoint(x: bx, y: cy + dir * k * r),
-                       control2: CGPoint(x: x + bulge * k * r, y: yb))
+            // A quadratic peaks at half its control's offset.
+            p.addQuadCurve(to: CGPoint(x: x, y: ya + step),
+                           control: CGPoint(x: x + bulge * 2 * depth, y: ya + step / 2))
         }
     }
 }

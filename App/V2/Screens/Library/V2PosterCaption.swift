@@ -1,13 +1,15 @@
 import SwiftUI
 import FusionhaKit
 
-/// Everything under a v2 Library poster (mock browse-lib.js `lpost`), so the
-/// art itself stays clean: the title, a meta line (year, the kind glyph, the
-/// Anime tag, an attention glyph, the monitor bookmark), then the title's
-/// HD and 4K as one T5 ticket (`EditionTicketPair`).
+/// Everything under a v2 Library poster (mock browse-lib.js `lpost`, the
+/// owner's monitor mark M1), so the art itself stays clean: the title, then
+/// one row with the title's HD and 4K as one T5 ticket (`EditionTicketPair`,
+/// any n/m count included) and, after it, only what is out of the ordinary:
+/// the Anime tag, the attention glyph, and a slashed bookmark with "Off"
+/// when the title is not monitored. Monitored is the norm and shows nothing.
 struct V2PosterCaption: View {
     let item: MediaItem
-    /// The shelf's smaller cards drop the meta line.
+    /// The shelf's smaller cards drop the Anime tag.
     var showsMeta = true
     @Environment(AppModel.self) private var model
     @Environment(\.pagePalette) private var page
@@ -21,47 +23,66 @@ struct V2PosterCaption: View {
         // leaves this caption alone (`QueueSlots`).
         let slots = model.queueSlots
         let badges = V2EditionBadges(item) { slots.slot(for: $0.id).progress }
-        VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading, spacing: 0) {
             Text(item.title)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(monitored ? ink : muted)
                 .lineLimit(1)
-            if showsMeta { meta }
-            EditionTicketPair(hd: badges.hd, uhd: badges.uhd)
-                .padding(.top, 5)
+            // A narrow card with counts on both tickets keeps the slashed
+            // bookmark and drops the word.
+            ViewThatFits(in: .horizontal) {
+                row(badges, compact: false)
+                row(badges, compact: true)
+            }
+            .padding(.top, 5)
         }
     }
 
-    private var meta: some View {
-        HStack(spacing: 4) {
-            if let year = item.year {
-                Text(verbatim: String(year)).monospacedDigit()
-                Text(verbatim: "·").accessibilityHidden(true)
-            }
-            Image(systemName: V2EditionBadges.kindSymbol(item)).accessibilityHidden(true)
-            if item.isAnime == true {
-                Text("Anime")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Theme.anime)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
-                    .background(Theme.anime.opacity(0.14), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-            }
-            if item.hasAttention == true {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .foregroundStyle(Theme.stuck)
-                    .accessibilityLabel("Needs attention")
-            }
-            Spacer(minLength: 2)
-            Image(systemName: monitored ? "bookmark.fill" : "bookmark")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(monitored ? ink : muted.opacity(0.7))
-                .accessibilityLabel(monitored ? "Monitored" : "Not monitored")
+    private func row(_ badges: V2EditionBadges, compact: Bool) -> some View {
+        HStack(spacing: 6) {
+            EditionTicketPair(hd: badges.hd, uhd: badges.uhd)
+            marks(compact: compact)
         }
-        .font(.system(size: 11.5))
-        .foregroundStyle(muted)
         .lineLimit(1)
-        .padding(.top, 1)
+    }
+
+    @ViewBuilder
+    private func marks(compact: Bool) -> some View {
+        if showsMeta && item.isAnime == true {
+            Text("Anime")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(Theme.anime)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .background(Theme.anime.opacity(0.14), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+        }
+        if item.hasAttention == true {
+            Image(systemName: "exclamationmark.circle.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Theme.stuck)
+                .accessibilityLabel("Needs attention")
+        }
+        if !monitored {
+            V2MonitorOffMark(color: muted, showsWord: !compact)
+        }
+    }
+}
+
+/// M1's "not monitored" mark: a slashed bookmark and "Off" in the muted ink.
+struct V2MonitorOffMark: View {
+    var color: Color
+    var showsWord = true
+
+    var body: some View {
+        HStack(spacing: 2) {
+            Image(systemName: "bookmark.slash")
+            if showsWord { Text("Off") }
+        }
+        .font(.system(size: 11, weight: .medium))
+        .foregroundStyle(color)
+        .fixedSize()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Not monitored")
     }
 }
 
@@ -79,11 +100,5 @@ struct V2EditionBadges: Equatable {
             case .uhd: if uhd == nil { uhd = state }
             }
         }
-    }
-
-    /// Movie, series or anime, as a glyph.
-    static func kindSymbol(_ item: MediaItem) -> String {
-        if item.isAnime == true { return "sparkles" }
-        return item.kind == .movie ? "film" : "tv"
     }
 }

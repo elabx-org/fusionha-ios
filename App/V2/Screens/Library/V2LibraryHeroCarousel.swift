@@ -12,6 +12,8 @@ struct V2LibraryHeroCarousel: View {
     let width: CGFloat
     /// The page's side gutter (the carousel sits inside it).
     let gutter: CGFloat
+    /// Each card's reason line by title id ("Digital · Fri", the "Coming up" row).
+    var notes: [Int: String] = [:]
     @Environment(\.motionEnabled) private var motion
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var centred: Int?
@@ -43,7 +45,7 @@ struct V2LibraryHeroCarousel: View {
             LazyHStack(alignment: .top, spacing: Self.spacing) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
                     V2LibraryHeroCard(item: item, width: size.width, height: size.height,
-                                      showsFooter: wide || item.id == current)
+                                      showsFooter: wide || item.id == current, note: notes[item.id])
                         .landing(i, motion: motion)
                 }
             }
@@ -56,6 +58,6 @@ struct V2LibraryHeroCarousel: View {
         // under the column to the screen edge.
         .scrollClipDisabled()
         .frame(height: size.height + 24, alignment: .top)
-        .accessibilityLabel("Featured")
+        .accessibilityLabel(notes.isEmpty ? "Featured" : "Coming up")
     }
 }

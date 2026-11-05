@@ -29,12 +29,18 @@ struct PagePalette: Equatable, Sendable {
         t.isMono || BadgeInk.isAchromatic(t.i1)
     }
 
+    /// The true-black palettes (OLED, Noir): their grounds stay dark, tinted.
+    static func isDeep(_ t: PaletteTokens) -> Bool {
+        !t.isLight && t.bg == 0x000000
+    }
+
     /// From an artwork's dominant colours (`ArtPaletteExtractor`), lifted for
     /// the palette `t`. Falls back to the token tint when `dominant` is empty.
     static func art(_ dominant: [HSLColor], tokens t: PaletteTokens) -> PagePalette {
         let dark = !t.isLight, mono = dropsHue(t)
         let lifted = dominant.map { PaletteMath.lift($0, dark: dark, mono: mono) }
-        guard let lead = lifted.first, let recipe = PageGroundRecipe.page(lifted, dark: dark) else { return tokens(t) }
+        guard let lead = lifted.first,
+              let recipe = PageGroundRecipe.page(lifted, dark: dark, deep: isDeep(t)) else { return tokens(t) }
         return PagePalette(
             recipe: recipe,
             paneRecipe: PageGroundRecipe.listPane(lifted, dark: dark),

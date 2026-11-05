@@ -40,19 +40,27 @@ public struct GroundRecipe: Equatable, Sendable {
 
 public enum PageGroundRecipe {
     /// The page ground from three lifted colours (`PaletteMath.lift`):
-    /// light grounds are a touch fainter (k 0.9). Nil for no colours.
-    public static func page(_ lifted: [HSLColor], dark: Bool) -> GroundRecipe? {
+    /// light grounds are a touch fainter (k 0.9). The base is the palette's
+    /// own colours, never the page's near-black, and four ellipses reach
+    /// every corner (top left, right, lower left, foot right), so no side
+    /// of a wide page (the open Duo) is left black. `deep` (OLED, Noir, the
+    /// true-black palettes) keeps the page dark but still tinted. Nil for no
+    /// colours.
+    public static func page(_ lifted: [HSLColor], dark: Bool, deep: Bool = false) -> GroundRecipe? {
         guard let a = lifted.first else { return nil }
         let b = lifted.count > 1 ? lifted[1] : a
         let c = lifted.count > 2 ? lifted[2] : b
-        let k = dark ? 1.0 : 0.9
+        let k = dark ? (deep ? 0.55 : 1.0) : 0.9
+        let top = dark ? (deep ? 0.07 : 0.20) : 0.93
+        let bottom = dark ? (deep ? 0.05 : 0.15) : 0.95
         return GroundRecipe(
-            top: HSLColor(h: a.h, s: a.s * 0.6, l: dark ? 0.12 : 0.93),
-            bottom: HSLColor(h: c.h, s: c.s * 0.6, l: dark ? 0.10 : 0.95),
+            top: HSLColor(h: a.h, s: a.s * 0.6, l: top),
+            bottom: HSLColor(h: c.h, s: c.s * 0.6, l: bottom),
             ellipses: [
-                GroundEllipse(color: a, alpha: 0.62 * k, x: 0.10, y: 0.42, rx: 0.75, ry: 0.38, fade: 0.72),
-                GroundEllipse(color: b, alpha: 0.50 * k, x: 0.95, y: 0.64, rx: 0.70, ry: 0.40, fade: 0.72),
-                GroundEllipse(color: c, alpha: 0.55 * k, x: 0.20, y: 0.94, rx: 0.85, ry: 0.42, fade: 0.72),
+                GroundEllipse(color: a, alpha: 0.62 * k, x: 0.10, y: 0.08, rx: 0.80, ry: 0.36, fade: 0.72),
+                GroundEllipse(color: b, alpha: 0.50 * k, x: 0.92, y: 0.40, rx: 0.75, ry: 0.40, fade: 0.72),
+                GroundEllipse(color: c, alpha: 0.52 * k, x: 0.25, y: 0.72, rx: 0.85, ry: 0.40, fade: 0.72),
+                GroundEllipse(color: a, alpha: 0.45 * k, x: 0.80, y: 0.98, rx: 0.80, ry: 0.36, fade: 0.72),
             ])
     }
 

@@ -7,13 +7,32 @@ final class PageGroundRecipeTests: XCTestCase {
         HSLColor(h: 10, s: 0.7, l: 0.4), HSLColor(h: 200, s: 0.5, l: 0.36), HSLColor(h: 280, s: 0.6, l: 0.44),
     ]
 
-    func testPageHasThreeEllipsesInTheMockPlaces() {
+    func testPageEllipsesReachEveryCorner() {
         let r = PageGroundRecipe.page(colors, dark: true)
-        XCTAssertEqual(r?.ellipses.count, 3)
-        XCTAssertEqual(r?.ellipses.map(\.x), [0.10, 0.95, 0.20])
+        XCTAssertEqual(r?.ellipses.count, 4)
+        XCTAssertEqual(r?.ellipses.map(\.x), [0.10, 0.92, 0.25, 0.80])
+        XCTAssertEqual(r?.ellipses.first?.y ?? 1, 0.08, accuracy: 1e-9)
         XCTAssertEqual(r?.ellipses.first?.alpha ?? 0, 0.62, accuracy: 1e-9)
         XCTAssertEqual(r?.top.h, 10)
         XCTAssertEqual(r?.bottom.h, 280)
+    }
+
+    /// The dark base comes from the art, never the page's near-black.
+    func testDarkBaseIsLiftedNotBlack() {
+        let r = PageGroundRecipe.page(colors, dark: true)!
+        XCTAssertGreaterThanOrEqual(r.top.l, 0.18)
+        XCTAssertGreaterThanOrEqual(r.bottom.l, 0.14)
+        XCTAssertGreaterThan(r.top.s, 0)
+    }
+
+    /// OLED and Noir stay dark, but tinted.
+    func testDeepStaysDarkButTinted() {
+        let deep = PageGroundRecipe.page(colors, dark: true, deep: true)!
+        let page = PageGroundRecipe.page(colors, dark: true)!
+        XCTAssertLessThan(deep.top.l, page.top.l)
+        XCTAssertGreaterThan(deep.top.l, 0)
+        XCTAssertGreaterThan(deep.top.s, 0)
+        XCTAssertLessThan(deep.ellipses[0].alpha, page.ellipses[0].alpha)
     }
 
     func testLightIsPaleAndFainter() {
@@ -25,7 +44,7 @@ final class PageGroundRecipeTests: XCTestCase {
 
     func testShortListsPad() {
         let one = PageGroundRecipe.page([colors[0]], dark: true)
-        XCTAssertEqual(one?.ellipses.count, 3)
+        XCTAssertEqual(one?.ellipses.count, 4)
         XCTAssertEqual(one?.bottom.h, 10)
         XCTAssertNil(PageGroundRecipe.page([], dark: true))
         XCTAssertEqual(PageGroundRecipe.listPane([colors[0]], dark: false)?.ellipses.count, 2)

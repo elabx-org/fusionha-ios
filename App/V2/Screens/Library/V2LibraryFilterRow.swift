@@ -24,7 +24,7 @@ struct V2LibraryFilterRow: View {
     }
 }
 
-/// F1's one Filter menu: Show (the status filter), Sort and Display as
+/// F1's one Filter menu: Show (the status filter, and Not monitored), Sort and Display as
 /// pickers, then "More filters" (recency, group by status, combine HD + 4K)
 /// and Reset. Native menu, glass label.
 struct V2LibraryFilterMenu: View {
@@ -41,6 +41,9 @@ struct V2LibraryFilterMenu: View {
                     Toggle(isOn: showing(status)) {
                         Label(label(for: status), systemImage: status.v2Symbol)
                     }
+                }
+                Toggle(isOn: filters.$unmonitored) {
+                    Label("Not monitored", systemImage: "bookmark.slash")
                 }
             }
             Picker(selection: filters.$sort) {
