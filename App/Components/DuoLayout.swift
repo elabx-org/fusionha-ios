@@ -90,6 +90,13 @@ struct ShellSplit: Equatable {
     /// v2's split handle is moving the seam (`DuoSeamDrag`); nil at rest.
     var seam: FoldSeam?
 
+    /// The split without the moving seam (what the shell's own animation follows).
+    var atRest: ShellSplit {
+        var rest = self
+        rest.seam = nil
+        return rest
+    }
+
     /// The shell's split: a Spread's pages when `spread` is active, else the
     /// Web layout's (`init(fold:hasItem:)`).
     init(fold: FoldInfo, hasItem: Bool, spread: SpreadContext) {

@@ -1,48 +1,51 @@
-import Foundation
+import SwiftUI
 import FusionhaKit
 
-/// Runs the split handle's snap (`DuoSeam.Spring`, the mock's spring) frame
-/// by frame on the main actor, so the shell lays the seam out at every step
-/// rather than animating between two layouts.
+/// Runs the split handle's snap (the mock's spring, `DuoSeam.stiffness` and
+/// `DuoSeam.dampingRatio`) as one SwiftUI animation: the seam is set to its
+/// target once and SwiftUI moves the two columns on the display's frames,
+/// so nothing is laid out or re-rendered per frame (build 774 stepped it on
+/// an 8 ms timer and re-rendered the shell at every step; measured on the
+/// v2open perf harness, `perf/v2-open`).
 @MainActor
 final class V2SeamSpring {
-    private var task: Task<Void, Never>?
+    /// Bumped by every run and cancel: a stale animation's completion is dropped.
+    private var generation = 0
+    private(set) var isRunning = false
 
-    var isRunning: Bool { task != nil }
-
+    /// A new touch caught the seam: whatever was running never reports done.
     func cancel() {
-        task?.cancel()
-        task = nil
+        generation += 1
+        isRunning = false
     }
 
     /// Springs from `x` (moving at `velocity`, points per second) to
-    /// `target`, handing each step to `step`, then `done` once settled.
-    /// Cancelled (a new touch), it stops where it is and `done` never runs.
-    func run(from x: Double, velocity: Double, to target: Double, dampingRatio: Double,
+    /// `target` by handing `target` to `step` inside the animation, then
+    /// runs `done` once it has landed. `deferred`: start on the next run
+    /// loop turn, so a seam placed at `x` this update is on screen first.
+    func run(from x: Double, velocity: Double, to target: Double, dampingRatio: Double, deferred: Bool = false,
              step: @escaping @MainActor (Double) -> Void, done: @escaping @MainActor () -> Void) {
         cancel()
-        task = Task { @MainActor [weak self] in
-            var spring = DuoSeam.Spring(x: x, velocity: velocity)
-            let clock = ContinuousClock()
-            let start = clock.now
-            var last = start
-            while !spring.settled(at: target), clock.now - start < .seconds(2) {
-                try? await Task.sleep(for: .milliseconds(8))
-                if Task.isCancelled { return }
-                let now = clock.now
-                spring.step(toward: target, dt: V2SeamSpring.seconds(now - last), dampingRatio: dampingRatio)
-                last = now
-                step(spring.x)
+        let id = generation
+        isRunning = true
+        let distance = target - x
+        let relative = abs(distance) > 0.5 ? velocity / distance : 0
+        let stiffness = DuoSeam.stiffness
+        let animation = Animation.interpolatingSpring(mass: 1, stiffness: stiffness,
+                                                      damping: 2 * stiffness.squareRoot() * dampingRatio,
+                                                      initialVelocity: relative)
+        let go = { [weak self] in
+            guard let self, self.generation == id else { return }
+            withAnimation(animation) { step(target) } completion: { [weak self] in
+                guard let self, self.generation == id else { return }
+                self.isRunning = false
+                done()
             }
-            if Task.isCancelled { return }
-            step(target)
-            self?.task = nil
-            done()
         }
-    }
-
-    private static func seconds(_ duration: Duration) -> Double {
-        let parts = duration.components
-        return Double(parts.seconds) + Double(parts.attoseconds) * 1e-18
+        if deferred {
+            DispatchQueue.main.async { go() }
+        } else {
+            go()
+        }
     }
 }

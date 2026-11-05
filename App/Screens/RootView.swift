@@ -179,7 +179,8 @@ struct RootView: View {
         // button's hide / show slides (the inner modifier wins): the list
         // keeps its width, so nothing in it re-flows.
         .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: split.primaryHidden)
-        .animation(reduceMotion || fold.isDuoOpen ? nil : .smooth(duration: 0.3), value: split)
+        // The moving seam is left out: v2's handle animates it itself.
+        .animation(reduceMotion || fold.isDuoOpen ? nil : .smooth(duration: 0.3), value: split.atRest)
         // Toasts: above the tab bar when folded; on the trailing column when
         // split, so they never straddle the fold (DC14); on the right page
         // while a Spread's tab spans both pages.

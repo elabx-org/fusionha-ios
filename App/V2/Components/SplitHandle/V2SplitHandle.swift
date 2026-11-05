@@ -173,14 +173,14 @@ struct V2SplitHandle: View {
     }
 
     /// Spring to `stop`, then hand it to the shell.
-    private func settle(_ stop: DuoSeam.Stop, velocity: Double, tick: Bool = true) {
+    private func settle(_ stop: DuoSeam.Stop, velocity: Double, tick: Bool = true, deferred: Bool = false) {
         if tick { ticks += 1 }
         let from = x
         let target = DuoSeam.position(of: stop, width: width, split: rest)
         let drag = context.drag
         let shell = context
         spring.run(from: from, velocity: velocity, to: target,
-                   dampingRatio: motion ? DuoSeam.dampingRatio : 1,
+                   dampingRatio: motion ? DuoSeam.dampingRatio : 1, deferred: deferred,
                    step: { PerfCount.hit("V2SeamSpring.step"); drag.live = CGFloat($0) },
                    done: { Self.commit(stop, context: shell) })
     }
@@ -214,7 +214,8 @@ struct V2SplitHandle: View {
         guard motion, seam.live == nil else { return }
         seam.listFull = true
         seam.live = CGFloat(width)
-        settle(restingStop, velocity: 0, tick: false)
+        // The title at the trailing edge goes on screen first, then springs in.
+        settle(restingStop, velocity: 0, tick: false, deferred: true)
     }
 
     /// Close: the title slides off the trailing edge over the Library at its
@@ -229,7 +230,7 @@ struct V2SplitHandle: View {
         start = nil
         if seam.live == nil { seam.live = CGFloat(x) }
         seam.listFull = true
-        settle(.closed, velocity: 0, tick: false)
+        settle(.closed, velocity: 0, tick: false, deferred: true)
     }
 
     // MARK: First time
