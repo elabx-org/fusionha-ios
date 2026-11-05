@@ -27,15 +27,21 @@ struct V2TitleOverviewTab: View {
                 V2TitleSectionHead(title: "Cast", detail: "\(cast.count) people")
                 V2CastRail(cast: cast)
                     .padding(.top, 12)
+                    // A horizontal scroll view takes any spare height it is
+                    // offered (the wide title's tabs column): keep each rail
+                    // at its own height, so no gap opens under it.
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if detail.collection != nil, let collection = store.collection {
                 DetailCollectionRail(collection: collection)
                     .padding(.top, 22)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if !similar.isEmpty {
                 V2TitleSectionHead(title: "More like this", detail: "from TMDB")
                 DetailSimilarRail(similar: similar)
                     .padding(.top, 10)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             if genres.isEmpty && trailer == nil && cast.isEmpty && similar.isEmpty && store.collection == nil {
                 EmptyBox(message: "No trailer, cast or similar titles for this one yet.")

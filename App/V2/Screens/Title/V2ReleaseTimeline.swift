@@ -64,9 +64,13 @@ struct V2ReleaseTimeline: View {
             Text(ReleaseTimelineCopy.label(step.kind))
                 .font(.system(size: 11.5, weight: .bold))
                 .foregroundStyle(past ? ink : muted)
-            Text(ReleaseTimelineCopy.relative(step.date, now: now))
-                .font(.system(size: 11.5, weight: past ? .regular : .semibold))
-                .foregroundStyle(past ? muted : ink)
+            if let near = ReleaseTimelineCopy.near(step.date, now: now) {
+                Text(near)
+                    .font(.system(size: 11.5, weight: past ? .regular : .semibold))
+                    .foregroundStyle(past ? muted : ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
             Text(step.date.formatted(.dateTime.month(.abbreviated).day().year()) + (step.estimated ? " · est." : ""))
                 .font(.system(size: 10.5, design: .monospaced))
                 .foregroundStyle(muted)
@@ -76,7 +80,8 @@ struct V2ReleaseTimeline: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(ReleaseTimelineCopy.label(step.kind)), \(past ? "released" : "coming"), "
-            + ReleaseTimelineCopy.relative(step.date, now: now))
+            + (ReleaseTimelineCopy.near(step.date, now: now)
+                ?? step.date.formatted(.dateTime.month(.wide).day().year())))
     }
 
     /// Filled with the icon knocked out once it has happened; an outline before.
@@ -141,6 +146,12 @@ enum ReleaseTimelineCopy {
     static func progress(from start: Date, to end: Date, now: Date) -> Double {
         guard end > start else { return now >= end ? 1 : 0 }
         return min(1, max(0, now.timeIntervalSince(start) / end.timeIntervalSince(start)))
+    }
+
+    /// The step's relative time while it is close (within a year either
+    /// way); an old release just keeps its date ("178 months ago" was noise).
+    static func near(_ date: Date, now: Date) -> String? {
+        abs(date.timeIntervalSince(now)) < 365 * 86_400 ? relative(date, now: now) : nil
     }
 
     /// "Today", "Yesterday", "5 days ago", "in 12 weeks", by calendar day.
