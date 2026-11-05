@@ -131,6 +131,13 @@ for theme in dark daylight; do
 done
 shoot duo-harness-open-spread-search-title open $SQ $SP SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
 shoot duo-harness-open-web-search open $SQ $WEB
+# A library title opened from its Search row with the keyboard up: the
+# right column, as from the Library, and still there 8 s later (build 781
+# looped sheet / keyboard on the open Duo).
+SO="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=breaking SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_OPEN=8"
+shoot duo-harness-open-web-search-open open $SO $WEB
+WAIT=18 shoot duo-harness-open-web-search-open-later open $SO $WEB
+shoot duo-harness-open-spread-search-open open $SO $SP
 shoot duo-harness-open-spread-library-daylight open $L $SP $DAY
 # No top-to-bottom fold: Spread does not apply (inner portrait, folded).
 shoot duo-harness-portrait-library portrait $L $SP

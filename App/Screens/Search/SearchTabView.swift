@@ -18,6 +18,7 @@ struct SearchTabView: View {
     @Environment(\.spread) private var spread
     @Environment(\.motionEnabled) private var motion
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.duoOpen) private var duoOpen
     /// The preview and request sheets the rows open (shared with Discover's cards).
     @State private var store = DiscoverStore()
     @State private var search = UnifiedSearchModel()
@@ -60,11 +61,12 @@ struct SearchTabView: View {
             // The Web layout on the open Duo: the list before the fold.
             .foldLeadingColumn(!spread.isActive)
         }
-        .scrollDismissesKeyboard(.interactively)
+        // The open Duo's keyboard covers half the results: any scroll puts it away.
+        .scrollDismissesKeyboard(duoOpen ? .immediately : .interactively)
         .background(Theme.bg.ignoresSafeArea())
         .shellPage("Search")
         .searchable(text: $model.searchQuery,
-                    prompt: model.requestScoped ? "Find something to request…" : "Search your library or add something new…")
+                    prompt: SearchPrompt.text(requester: model.requestScoped, wide: duoOpen || sizeClass != .compact))
         .searchScopes($scope) {
             if !model.requestScoped {
                 Text("Everything").tag(SearchScope.everything)
@@ -82,11 +84,12 @@ struct SearchTabView: View {
         }
         // Before you type, Trending spans both pages of a Spread.
         .spreadSpansBothPages(.search, trimmed.isEmpty)
-        // A result picked: the words join the recent searches.
-        .onChange(of: store.preview) { if store.preview != nil { remember() } }
-        .onChange(of: store.requestPick) { if store.requestPick != nil { remember() } }
-        .onChange(of: tvdbPick) { if tvdbPick != nil { remember() } }
-        .onChange(of: model.presentedItem?.id) { if model.presentedItem != nil, model.tab == .search { remember() } }
+        // A result picked: the words join the recent searches and the keyboard
+        // goes, so closing the result comes back to the results, not the keyboard.
+        .onChange(of: store.preview) { if store.preview != nil { picked() } }
+        .onChange(of: store.requestPick) { if store.requestPick != nil { picked() } }
+        .onChange(of: tvdbPick) { if tvdbPick != nil { picked() } }
+        .onChange(of: model.presentedItem?.id) { if model.presentedItem != nil, model.tab == .search { picked() } }
         .environment(store)
         // A requester's pick: the request modal (web OmniResults → RequestModal).
         .duoPageSheet(item: $store.requestPick, placement: .twoPages) { pick in
@@ -98,6 +101,7 @@ struct SearchTabView: View {
         .spreadPreviewHost(.search, preview: $store.preview, onOpenLibrary: { model.open($0) })
         #if DEBUG
         .searchScreenshotPreview(search: search) { store.preview = PreviewRoute($0) }
+        .searchScreenshotOpen($focused)
         #endif
         .task {
             // Open ready to type on the phone, as a search tab does. Wide (the
@@ -130,6 +134,11 @@ struct SearchTabView: View {
         model.searchScope = .library
         model.tab = .library
         scope = .everything
+    }
+
+    private func picked() {
+        focused = false
+        remember()
     }
 
     private func remember() {
