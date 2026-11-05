@@ -19,6 +19,7 @@ struct V2LibraryView: View {
     @Environment(\.spread) private var spread
     @Environment(\.bookPose) private var bookPose
     @Environment(\.duoOpen) private var duoOpen
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @AppStorage("library.kind") private var kindRaw = "all"
     @AppStorage("fusionha.library.density") private var density = "grid"
     @AppStorage("library.tier") private var tier: LibraryTier = .all
@@ -93,6 +94,16 @@ struct V2LibraryView: View {
                             spans: spread.spans, spacing: V2LibraryGridRow.spacing)
     }
 
+    /// The grid's poster width and gap, for the home's shelf to match (nil
+    /// before the grid is measured; the shelf then keeps its own sizes).
+    private var gridPoster: (width: CGFloat, gap: CGFloat)? {
+        if let first = gridTracks?.first { return (CGFloat(first.width), CGFloat(V2LibraryGridRow.spacing)) }
+        let width = gridFold.width
+        guard let cell = V2LibraryGridRow.cellWidth(width: width, columns: derived.columns, sizeClass: sizeClass)
+        else { return nil }
+        return (cell, V2LibraryGridRow.columnGap(width: width, sizeClass: sizeClass))
+    }
+
     private var inputs: LibraryInputs {
         LibraryInputs(version: model.libraryVersion, kind: kindRaw, tier: tier, status: status, sort: sort,
                       recency: recency, group: group, query: query, compact: compact, columns: columns,
@@ -161,7 +172,7 @@ struct V2LibraryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 V2LibraryPageTop(derived: derived, home: home, held: held, filters: filters, paneWidth: pane.width,
-                                 gutter: gutter, showsHome: showsHome, shelf: $shelf,
+                                 gridPoster: gridPoster, gutter: gutter, showsHome: showsHome, shelf: $shelf,
                                  comingUpArt: $comingUpArt) {
                     withAnimation(motion ? .smooth : nil) { proxy.scrollTo("library-grid", anchor: .top) }
                 }

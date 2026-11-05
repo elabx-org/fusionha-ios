@@ -12,6 +12,8 @@ struct V2LibraryShelf: View {
     @Binding var source: V2LibraryShelfSource
     /// The page's width (the poster size follows the device).
     let paneWidth: CGFloat
+    /// The grid's poster width and gap, so the shelf lines up with it.
+    var gridPoster: (width: CGFloat, gap: CGFloat)?
     let seeAll: (V2LibraryShelfSource) -> Void
     @Environment(\.motionEnabled) private var motion
     @Environment(\.pagePalette) private var page
@@ -24,11 +26,15 @@ struct V2LibraryShelf: View {
     }
 
     private var wide: Bool { paneWidth >= 700 }
-    /// The mock's poster widths: flat open 94, folded Duo 78, phone 84.
+    /// The grid's poster width (owner, 2026-11-05), else until the grid is
+    /// measured the mock's: flat open 94, folded Duo 78, phone 84.
     private var posterWidth: CGFloat {
+        if let gridPoster { return gridPoster.width }
         if wide { return 94 }
         return OuterDisplay.isFoldedDuo(sizeClass: sizeClass) ? 78 : 84
     }
+
+    private var spacing: CGFloat { gridPoster?.gap ?? (wide ? 16 : 14) }
 
     var body: some View {
         if let shown, let items = home.shelves[shown] {
@@ -36,7 +42,7 @@ struct V2LibraryShelf: View {
             VStack(alignment: .leading, spacing: 12) {
                 header(shown, items: items)
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: wide ? 16 : 14) {
+                    LazyHStack(alignment: .top, spacing: spacing) {
                         ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
                             V2PosterCard(item: item, artWidth: w, showsMeta: false)
                                 .frame(width: w)

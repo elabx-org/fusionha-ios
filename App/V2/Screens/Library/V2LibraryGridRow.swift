@@ -15,15 +15,25 @@ struct V2LibraryGridRow: View {
     var width: CGFloat = 0
     @Environment(\.horizontalSizeClass) private var sizeClass
 
+    private var phone: Bool { Self.isPhone(width: width, sizeClass: sizeClass) }
+    private var columnGap: CGFloat { Self.columnGap(width: width, sizeClass: sizeClass) }
+    private var cellWidth: CGFloat? { Self.cellWidth(width: width, columns: columns, sizeClass: sizeClass) }
+
     /// The phone's grid (mock libPhone `gap: 18px 16px`): wider gaps than the Duo's.
-    private var phone: Bool {
+    static func isPhone(width: CGFloat, sizeClass: UserInterfaceSizeClass?) -> Bool {
         width > 0 && width < 520 && !OuterDisplay.isFoldedDuo(sizeClass: sizeClass)
     }
-    private var columnGap: CGFloat { phone ? 16 : CGFloat(Self.spacing) }
 
-    private var cellWidth: CGFloat? {
+    static func columnGap(width: CGFloat, sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        isPhone(width: width, sizeClass: sizeClass) ? 16 : CGFloat(spacing)
+    }
+
+    /// A poster's width in a grid `width` wide (nil before it is measured).
+    /// The home's shelf uses it too, so its posters line up with the grid's.
+    static func cellWidth(width: CGFloat, columns: Int, sizeClass: UserInterfaceSizeClass?) -> CGFloat? {
         guard width > 0, columns > 0 else { return nil }
-        return (width - columnGap * CGFloat(columns - 1)) / CGFloat(columns)
+        let gap = columnGap(width: width, sizeClass: sizeClass)
+        return (width - gap * CGFloat(columns - 1)) / CGFloat(columns)
     }
 
     var body: some View {
@@ -51,13 +61,17 @@ struct V2LibraryGridRow: View {
 }
 
 /// v2's poster columns: three on phones and the folded Duo (never four),
-/// two in a narrow column, and across the open Duo the mock's denser grid
-/// (90pt posters, 14 apart: eight across the flat inner display's 820).
+/// two in a narrow column, and wider than that as many as keep the posters
+/// nearest 130pt, 14 apart (owner, 2026-11-05: six across the flat open
+/// Duo's ~820, about 125pt each; no density setting).
 enum V2LibraryColumns {
+    static let targetPoster: CGFloat = 130
+
     static func count(for width: CGFloat) -> Int {
         guard width > 0 else { return 3 }
         if width < 300 { return 2 }
         if width < 520 { return 3 }
-        return max(4, Int((width + CGFloat(V2LibraryGridRow.spacing)) / 104))
+        let gap = CGFloat(V2LibraryGridRow.spacing)
+        return max(4, Int(((width + gap) / (targetPoster + gap)).rounded()))
     }
 }

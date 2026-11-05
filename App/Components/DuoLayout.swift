@@ -172,12 +172,16 @@ struct ShellDetailColumn: View {
                 .transition(duoOpen ? DuoPageMotion.transition(motion: motion) : .opacity)
         }
         .modifier(DuoPageDragEffect(offset: dragOffset, width: width, motion: motion))
-        .modifier(DuoColumnPullEffect(progress: pull.progress, drop: drop, motion: motion))
+        .modifier(DuoColumnPullEffect(progress: pull.progress, drop: drop, motion: motion,
+                                      follow: pull.sheetLike ? pull.overscroll : 0, sheetLike: pull.sheetLike))
         .environment(\.duoColumnPull, duoOpen && model.rightPageHasItem ? pull : nil)
         // Gesture 6: pull the page down to close it, as its sheet does folded.
         // Not on a title split at the fold: the column's middle is the fold.
         .overlay(alignment: .top) {
-            if duoOpen && model.rightPageHasItem && titleSpread?.fillsDisplay != true { DuoColumnGrabber() }
+            if duoOpen && model.rightPageHasItem && titleSpread?.fillsDisplay != true {
+                // The sheet-like pull carries its grabber with the page.
+                DuoColumnGrabber().offset(y: pull.sheetLike && motion ? drop + pull.overscroll * 0.6 : 0)
+            }
         }
         .onChange(of: pull.closeRequests) { closeByPull() }
         .animation(duoOpen ? DuoPageMotion.animation(motion: motion) : nil, value: pageKey)
@@ -193,6 +197,9 @@ struct ShellDetailColumn: View {
             }
         }
         .onPreferenceChange(DuoPageAtRoot.self) { atRoot = $0 }
+        // v2's title pulls like a sheet at its root; with a page pushed, not at all.
+        .onChange(of: seamless && atRoot, initial: true) { _, now in pull.sheetLike = now }
+        .onChange(of: seamless && !atRoot, initial: true) { _, now in pull.blocked = now }
         .onGeometryChange(for: CGSize.self) { $0.size } action: { width = $0.width; height = $0.height }
     }
 
@@ -217,6 +224,8 @@ struct ShellDetailColumn: View {
     private func closeByPull() {
         if let store = besideEpisode {
             store.episodeSheet = nil
+            // A committed pull leaves its travel for the close to clear.
+            withAnimation(.spring(duration: 0.3, bounce: 0.15)) { pull.overscroll = 0 }
             return
         }
         withAnimation(.spring(duration: 0.28, bounce: 0)) { drop = height } completion: {
@@ -226,6 +235,7 @@ struct ShellDetailColumn: View {
                 model.presentedItem = nil
                 model.spreadPreview = nil
                 drop = 0
+                pull.overscroll = 0
             }
         }
     }

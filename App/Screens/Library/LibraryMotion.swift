@@ -109,6 +109,14 @@ extension View {
         modifier(EntranceRow(index: entrance.index(of: id), generation: entrance.generation))
             .modifier(BrowseRow())
     }
+
+    /// The entrance stagger alone, without the browse effect: v2's grid sits
+    /// on an art-tinted ground, where the browse veil (a `Theme.bg` fill,
+    /// unscaled) read as a dark band and its 0.94 scale from the top centre
+    /// pulled the bottom row in from both edges.
+    func libraryRowEntrance(_ entrance: LibraryEntrance, id: String) -> some View {
+        modifier(EntranceRow(index: entrance.index(of: id), generation: entrance.generation))
+    }
 }
 
 // MARK: - The open Duo's title swipe (gesture 3)

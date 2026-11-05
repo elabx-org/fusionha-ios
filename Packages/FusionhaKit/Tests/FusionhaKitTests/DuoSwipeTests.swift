@@ -18,6 +18,17 @@ final class DuoSwipeTests: XCTestCase {
         XCTAssertEqual(DuoSwipe.pullProgress(overscroll: 400), 1)
     }
 
+    func testTitlePullClosesPastTheThresholdOrOnAFling() {
+        XCTAssertEqual(DuoSwipe.titlePullProgress(overscroll: -10), 0)
+        XCTAssertEqual(DuoSwipe.titlePullProgress(overscroll: 30), 0.5)
+        XCTAssertEqual(DuoSwipe.titlePullProgress(overscroll: 200), 1)
+        XCTAssertTrue(DuoSwipe.titlePullCommits(overscroll: DuoSwipe.titlePullClose, velocity: 0))
+        XCTAssertFalse(DuoSwipe.titlePullCommits(overscroll: 40, velocity: 100))
+        XCTAssertTrue(DuoSwipe.titlePullCommits(overscroll: 30, velocity: 900))
+        XCTAssertFalse(DuoSwipe.titlePullCommits(overscroll: 5, velocity: 2000))
+        XCTAssertFalse(DuoSwipe.titlePullCommits(overscroll: 40, velocity: -900))
+    }
+
     func testHorizontalNeedsAClearSidewaysLead() {
         XCTAssertTrue(DuoSwipe.isHorizontal(dx: 40, dy: 10))
         XCTAssertTrue(DuoSwipe.isHorizontal(dx: -40, dy: 20))

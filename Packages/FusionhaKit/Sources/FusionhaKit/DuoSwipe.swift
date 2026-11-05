@@ -44,6 +44,29 @@ public enum DuoSwipe {
         min(1, max(0, overscroll / pullClose))
     }
 
+    /// v2's title page (gesture 6 as a sheet): the pull past the scroll's top
+    /// at which letting go closes it. The rubber band moves the content about
+    /// half the finger's travel, so this is roughly 110pt under the finger.
+    public static let titlePullClose = 60.0
+    /// How fast the pull past the top grows (points per second) for letting
+    /// go to read as a fling down, short of `titlePullClose`.
+    public static let titlePullFling = 450.0
+    /// The least pull a fling needs, so a tap or a nudge at the top never closes.
+    public static let titlePullFlingFloor = 12.0
+
+    /// How far toward closing v2's title pull is, 0...1.
+    public static func titlePullProgress(overscroll: Double) -> Double {
+        min(1, max(0, overscroll / titlePullClose))
+    }
+
+    /// Whether letting go of v2's title pull closes the page: past the
+    /// threshold, or flung down. `velocity`: the pull's growth in points per
+    /// second at release (positive = still pulling down).
+    public static func titlePullCommits(overscroll: Double, velocity: Double) -> Bool {
+        if overscroll >= titlePullClose { return true }
+        return overscroll >= titlePullFlingFloor && velocity >= titlePullFling
+    }
+
     /// A drag that reads as horizontal: clearly more sideways than up or down.
     public static func isHorizontal(dx: Double, dy: Double) -> Bool {
         abs(dx) > 12 && abs(dx) > abs(dy) * 1.5

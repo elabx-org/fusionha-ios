@@ -13,6 +13,8 @@ struct V2LibraryPageTop: View {
     let held: Set<Int>
     let filters: V2LibraryFilters
     let paneWidth: CGFloat
+    /// The grid's poster width and gap: the shelf's posters match them.
+    let gridPoster: (width: CGFloat, gap: CGFloat)?
     /// The page's side gutter.
     let gutter: CGFloat
     /// The hero and shelf show (posters, no search words).
@@ -56,7 +58,8 @@ struct V2LibraryPageTop: View {
                     .reveal(3)
             }
             if showsHome, let shelfSource {
-                V2LibraryShelf(home: home, source: shelfSource, paneWidth: paneWidth) { see($0) }
+                V2LibraryShelf(home: home, source: shelfSource, paneWidth: paneWidth,
+                               gridPoster: gridPoster) { see($0) }
                     // The carousel's frame keeps 24 for its shadow: 16 under the cards.
                     .padding(.top, showsHome && !home.heroes.isEmpty ? -8 : 20)
                     .reveal(4)

@@ -48,7 +48,7 @@ struct V2LibraryRows: View {
                     LibraryLetterHeader(letter: letter, count: count)
                 case .items(let items):
                     V2LibraryGridRow(items: items, columns: derived.columns, tracks: tracks, width: width)
-                        .libraryRowMotion(entrance, id: row.id)
+                        .libraryRowEntrance(entrance, id: row.id)
                 case .tableHeader:
                     V2LibraryListHeader(sort: compactSort) { column in
                         withAnimation(motion ? .snappy : nil) { compactSort = compactSort.tapped(column) }
