@@ -208,14 +208,19 @@ struct V2SplitHandle: View {
     /// for one already open.
     private func slideIn() {
         let id = model.presentedItem?.id
-        PerfCount.mark("seam.slideIn")
         guard seam.slidIn != id else { return }
         seam.slidIn = id
-        guard motion, seam.live == nil else { return }
+        guard motion, seam.live == nil, let id else { return }
         seam.listFull = true
         seam.live = CGFloat(width)
-        // The title at the trailing edge goes on screen first, then springs in.
-        settle(restingStop, velocity: 0, tick: false, deferred: true)
+        // The page slides in once its detail and colours are there (`V2OpenReadiness`).
+        let store = model.detailStore(for: id)
+        let art = V2OpenReadiness.art(store, seed: model.library.first { $0.id == id })
+        Task { @MainActor in
+            await V2OpenReadiness.wait(for: store, art: art)
+            guard seam.slidIn == id, start == nil, seam.live == CGFloat(width) else { return }
+            settle(restingStop, velocity: 0, tick: false)
+        }
     }
 
     /// Close: the title slides off the trailing edge over the Library at its
