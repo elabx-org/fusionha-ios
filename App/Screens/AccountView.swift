@@ -130,6 +130,11 @@ struct AccountView: View {
         }
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets())
+
+        #if V2
+        // v2 only (App/V2): the Badge gallery, for checking the v2 look on device.
+        V2AccountFooter()
+        #endif
     }
 
     private func rowButton(_ title: String, chevron: Bool = false, action: @escaping () -> Void) -> some View {

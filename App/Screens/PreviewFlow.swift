@@ -3,6 +3,8 @@ import SwiftUI
 /// A wrapping row (genre chips).
 struct PreviewFlow: Layout {
     var spacing: CGFloat = 7
+    /// The gap between rows; nil = `spacing`.
+    var rowSpacing: CGFloat? = nil
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.width ?? .infinity
@@ -11,7 +13,7 @@ struct PreviewFlow: Layout {
             let size = view.sizeThatFits(.unspecified)
             if x > 0 && x + size.width > width {
                 x = 0
-                y += rowHeight + spacing
+                y += rowHeight + (rowSpacing ?? spacing)
                 rowHeight = 0
             }
             x += size.width + spacing
@@ -27,7 +29,7 @@ struct PreviewFlow: Layout {
             let size = view.sizeThatFits(.unspecified)
             if x > bounds.minX && x + size.width > bounds.maxX {
                 x = bounds.minX
-                y += rowHeight + spacing
+                y += rowHeight + (rowSpacing ?? spacing)
                 rowHeight = 0
             }
             view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))

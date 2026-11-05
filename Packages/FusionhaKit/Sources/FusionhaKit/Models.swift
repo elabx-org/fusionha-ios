@@ -126,10 +126,7 @@ public enum PlexPinState: Sendable {
     case signedIn
 }
 
-public struct HealthResponse: Decodable, Sendable {
-    public let status: String
-    public let version: String
-}
+// HealthResponse: ServerHealthModels.swift.
 
 // MARK: - Queue  (GET /api/v1/queue)
 
