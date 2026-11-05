@@ -126,7 +126,7 @@ struct ActivityView: View {
         let _ = PerfCount.hit("ActivityView.body")
         Screen {
             switch chrome.tab {
-            case .queue: ActivityQueueTab(search: chrome.search)
+            case .queue: ActivityQueueRoot(search: chrome.search)
             case .wanted: WantedView(embedded: true)
             case .history: ActivityHistoryTab(search: chrome.search, itemId: chrome.itemFilter?.itemId)
             case .blocklist: ActivityBlocklistTab(search: chrome.search)

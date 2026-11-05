@@ -8,13 +8,17 @@ import FusionhaKit
 /// there). iOS before 26.1 has no way to hide an accessory, so it goes without.
 struct DownloadsBarSlot: ViewModifier {
     @Environment(DownloadsPillSpace.self) private var space: DownloadsPillSpace?
+    /// v2's own bar content (`DownloadsBarOverride.swift`); v1 never sets it.
+    @Environment(\.downloadsBarContent) private var override
     let state: DownloadsBarState
     let shown: Bool
 
     func body(content: Content) -> some View {
         if #available(iOS 26.1, *) {
             content
-                .tabViewBottomAccessory(isEnabled: shown) { DownloadsBarAccessory(state: state) }
+                .tabViewBottomAccessory(isEnabled: shown) {
+                    Group { if let override { override.make(state) } else { DownloadsBarAccessory(state: state) } }
+                }
                 // The tabs reserve the pill's space while it shows (D3).
                 .onChange(of: shown, initial: true) { _, value in space?.shown = value }
         } else {
