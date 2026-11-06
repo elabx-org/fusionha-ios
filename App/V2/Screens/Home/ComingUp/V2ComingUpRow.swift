@@ -13,6 +13,8 @@ struct V2ComingUpRow: View {
     let width: CGFloat
     let gutter: CGFloat
     let wide: Bool
+    /// Space above the row, only while it shows.
+    var topGap: CGFloat = 0
     /// The focused card's art, for the page's ground (nil while hidden).
     @Binding var leadArt: URL?
     @Environment(AppModel.self) private var model
@@ -28,7 +30,8 @@ struct V2ComingUpRow: View {
     private var current: V2ComingUpCard? { cards.first { $0.id == focused } ?? cards.first }
 
     var body: some View {
-        Group {
+        // A real container even while empty: its feed task must still run.
+        VStack(alignment: .leading, spacing: 0) {
             if !cards.isEmpty {
                 if wide {
                     V2HomePair {
@@ -39,14 +42,17 @@ struct V2ComingUpRow: View {
                     } trailing: {
                         if let current { V2ComingUpDetail(card: current).padding(.top, 64).padding(.leading, 16) }
                     }
+                    .padding(.top, topGap)
                 } else {
                     VStack(alignment: .leading, spacing: 4) {
                         header.padding(.horizontal, gutter)
                         carousel(cardWidth: min(260, max(160, width - 140)), showsMeta: true)
                     }
+                    .padding(.top, topGap)
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .animation(motion ? .snappy : nil, value: cards)
         .onChange(of: leadURL, initial: true) { _, url in leadArt = url }
         .task(id: window) { await feed() }

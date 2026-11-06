@@ -15,7 +15,11 @@ struct V2HomeView: View {
     @Environment(\.duoOpen) private var duoOpen
     @Environment(\.bookPose) private var bookPose
     @AppStorage("fusionha.library.density") private var density = "grid"
-    @SceneStorage("v2.home.allTitles") private var showsAllTitles = false
+    /// All titles was open in this window (restored on relaunch).
+    @SceneStorage("v2.home.allTitles") private var allTitlesKept = false
+    /// The push itself, set a beat after Home is up: a destination
+    /// presented in the stack's first pass came up blank (CI, build 1).
+    @State private var showsAllTitles = false
     @State private var entry: V2AllTitlesEntry?
     @State private var data = V2HomeData()
     /// Titles with a held download in the queue (read only when it changes).
@@ -66,10 +70,15 @@ struct V2HomeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .v2PageGround(art: besideArt ?? comingUpArt ?? data.groundArt, recipe: besideArt == nil ? .page : .listPane,
                       showsArt: besideArt == nil, artHeight: 760, artOpacity: .ambient)
-        .shellPage("Home") { AddTitleToolbarItem(model: model) }
+        // Wide, the page draws "Home" itself (`V2HomeContent.heading`).
+        .shellPage(width >= 700 ? "" : "Home") { AddTitleToolbarItem(model: model) }
         // Home spans both pages of a Spread; All titles keeps the grid's rule.
         .spreadSpansBothPages(.library, !showsAllTitles || density != "compact")
         .navigationDestination(isPresented: $showsAllTitles) { V2LibraryView(entry: $entry) }
+        .onChange(of: showsAllTitles) { _, shown in allTitlesKept = shown }
+        .task {
+            if allTitlesKept && !showsAllTitles { await push(nil) }
+        }
         .task { await model.loadLibraryIfNeeded() }
         .onQueueChange(model, initial: true) { queue in
             let next = Set(queue.filter { QueueProgress($0).held }.map(\.mediaItemId))
@@ -86,7 +95,12 @@ struct V2HomeView: View {
     }
 
     private func openAllTitles(_ how: V2AllTitlesEntry) {
-        entry = how
+        Task { await push(how) }
+    }
+
+    private func push(_ how: V2AllTitlesEntry?) async {
+        try? await Task.sleep(for: .milliseconds(80))
+        if let how { entry = how }
         showsAllTitles = true
     }
 

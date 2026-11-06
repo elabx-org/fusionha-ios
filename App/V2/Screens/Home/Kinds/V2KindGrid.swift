@@ -28,9 +28,10 @@ struct V2KindGrid: View {
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         }
+        // The column's own width (not the grid's, which follows its cells).
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
     }
 
     private var rows: [[MediaItem]] {

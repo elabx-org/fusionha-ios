@@ -13,6 +13,7 @@ struct V2HomeContent: View {
     let width: CGFloat
     @Binding var comingUpArt: URL?
     let open: (V2AllTitlesEntry) -> Void
+    @Environment(\.pagePalette) private var page
 
     private var wide: Bool { width >= 700 }
     private var gutter: CGFloat { wide ? 24 : 20 }
@@ -23,6 +24,18 @@ struct V2HomeContent: View {
 
     private var stats: some View {
         V2LibraryStatsLine(derived: data.stats, kind: "all")
+    }
+
+    /// Wide, the page draws "Home" with the counts under it (the bar's
+    /// title has no room beside the tabs), as All titles does.
+    private var heading: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Home")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundStyle(page?.ink ?? Theme.txt)
+                .accessibilityAddTraits(.isHeader)
+            stats
+        }
     }
 
     @ViewBuilder
@@ -38,8 +51,7 @@ struct V2HomeContent: View {
             if !data.attention.isEmpty {
                 attention.padding(.horizontal, gutter).padding(.top, 14)
             }
-            V2ComingUpRow(width: width, gutter: gutter, wide: false, leadArt: $comingUpArt)
-                .padding(.top, 22)
+            V2ComingUpRow(width: width, gutter: gutter, wide: false, topGap: 22, leadArt: $comingUpArt)
             V2RecentSection(data: data, width: width, gutter: gutter, wide: false) { open(.recent) }
                 .padding(.top, 18)
                 .id("home-recent")
@@ -59,12 +71,12 @@ struct V2HomeContent: View {
     private var wideBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             V2HomePair {
-                stats.padding(.top, 4)
+                heading
             } trailing: {
                 attention
             }
-            V2ComingUpRow(width: width, gutter: gutter, wide: true, leadArt: $comingUpArt)
-                .padding(.top, 22)
+            .padding(.top, 8)
+            V2ComingUpRow(width: width, gutter: gutter, wide: true, topGap: 22, leadArt: $comingUpArt)
             V2RecentSection(data: data, width: width, gutter: gutter, wide: true) { open(.recent) }
                 .padding(.top, 26)
                 .id("home-recent")
