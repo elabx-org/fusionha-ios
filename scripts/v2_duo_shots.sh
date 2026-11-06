@@ -110,15 +110,20 @@ LAYOUT=spread shoot account-spread 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1
 shoot account-folded 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD
 shoot account-folded-daylight 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD $DAY
 
-# S14 shell: the flat open Duo's sidebar (shown, Daylight, hidden), and the
-# downloads capsule on the left page in book pose (the tabs cross the fold).
-shoot shell-sidebar 14
-shoot shell-sidebar-daylight 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
-xcrun simctl spawn "$UDID" defaults write "$BUNDLE" v2.shell.sidebarHidden -bool YES
-shoot shell-sidebar-hidden 14
-xcrun simctl spawn "$UDID" defaults delete "$BUNDLE" v2.shell.sidebarHidden 2> /dev/null || true
-shoot shell-book-capsule 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book
-shoot shell-book-capsule-daylight 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
+# S14 shell (sidebar and column minimize removed, owner 2026-11-06): the
+# system column shows every tab and the screen's buttons, open (Library,
+# Discover, Activity) and folded, dark and Daylight; and the downloads
+# capsule on the left page in book pose (the tabs cross the fold).
+for theme in dark daylight; do
+  T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_UNUSED=1; SUF=""
+  [ "$theme" = daylight ] && T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight && SUF="-daylight"
+  WAIT=14 shoot "shell-column-library$SUF" $T
+  WAIT=14 shoot "shell-column-discover$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover
+  WAIT=14 shoot "shell-column-activity$SUF" $T $A
+  WAIT=14 FRAME=folded shoot "shell-column-folded$SUF" $T
+done
+WAIT=14 shoot shell-book-capsule SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book
+WAIT=14 shoot shell-book-capsule-daylight SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
 
 xcrun simctl terminate "$UDID" "$BUNDLE" 2> /dev/null || true
 xcrun simctl shutdown "$UDID" 2> /dev/null || true

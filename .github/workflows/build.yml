@@ -964,7 +964,10 @@ jobs:
       - name: v2 screenshots on the iPhone Duo harness
         if: env.SCOPE == 'v2shots'
         timeout-minutes: 25
-        run: scripts/v2_duo_shots.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf/shots
+        # shots_only narrows the set (a name regex), as for the other shots.
+        env:
+          ONLY: ${{ inputs.shots_only }}
+        run: scripts/v2_duo_shots.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf/shots "${ONLY:-}"
 
       - name: v2 owner session report
         if: always() && env.SCOPE == 'v2session'

@@ -28,10 +28,8 @@ struct RootView: View {
     @Environment(\.titlePage) private var titlePage
     /// v2's split handle moving the seam (`DuoSeamDrag`); never set in v1.
     @State private var seam = DuoSeamDrag()
-    /// v2's sidebar, minimize, badge and downloads capsule (`ShellChromeOverride`); nil in v1.
+    /// v2's badge and downloads capsule (`ShellChromeOverride`); nil in v1.
     @Environment(\.shellChrome) private var chrome
-    /// The open Duo's sidebar hidden with its toggle. Per device.
-    @AppStorage(ShellSidebarMemory.storageKey) private var sidebarHidden = false
 
     /// The Spread, when the Duo is open and the setting says so (else `.off`).
     private func spreadContext(_ fold: FoldInfo, hasItem: Bool) -> SpreadContext {
@@ -125,19 +123,6 @@ struct RootView: View {
                                             fold: fold.vertical.map { Double($0.lowerBound)...Double($0.upperBound) })
     }
 
-    /// v2's sidebar is offered on the flat open Duo with nothing open beside
-    /// the list; an open title keeps the list's third (`ShellSidebarHost`).
-    private func sidebarToggle(_ split: ShellSplit) -> ShellSidebarToggle? {
-        guard chrome?.sidebar != nil, !model.requestScoped, fold.vertical == nil, fold.flatVertical != nil,
-              !split.shown else { return nil }
-        let motion = !reduceMotion && model.animationsEnabled
-        return ShellSidebarToggle(hidden: sidebarHidden) {
-            withAnimation(motion ? .smooth(duration: 0.3) : nil) { sidebarHidden.toggle() }
-        }
-    }
-
-    private func sidebarShown(_ split: ShellSplit) -> Bool { sidebarToggle(split)?.hidden == false }
-
     /// v2's floating downloads bar (`DuoDownloadsCapsule`): only where the
     /// tabs' column crosses the fold, which keeps the system's bar away.
     @ViewBuilder
@@ -200,11 +185,7 @@ struct RootView: View {
                         seam: split.seam) {
             // Hidden (the sidebar button), the list keeps its width off screen.
             ShellTabs(fold: fold, splitShown: split.shown, downloadsBar: downloadsBar,
-                      downloadsBarAllowed: !tabsCrossFold && !selectBars.isShowing,
-                      sidebarShown: sidebarShown(split))
-                // v2, flat open Duo: the sidebar beside the tabs (`ShellSidebarHost`).
-                .modifier(ShellSidebarHost(make: sidebarShown(split) ? chrome?.sidebar : nil,
-                                           toggle: sidebarToggle(split), reduceMotion: reduceMotion))
+                      downloadsBarAllowed: !tabsCrossFold && !selectBars.isShowing)
                 .allowsHitTesting(!split.primaryHidden)
                 .accessibilityHidden(split.primaryHidden)
             if split.shown {
@@ -265,7 +246,6 @@ struct RootView: View {
         .environment(\.spread, spread)
         .environment(\.spreadActive, spread.isActive)
         .environment(\.duoListToggle, listToggle(split))
-        .environment(\.shellSidebarToggle, sidebarToggle(split))
         .environment(\.titleSpread, titleSpread(split, spread: spread))
         .environment(\.duoOpen, fold.isDuoOpen)
         .environment(seam)
