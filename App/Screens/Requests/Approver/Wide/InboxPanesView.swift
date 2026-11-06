@@ -18,7 +18,16 @@ struct InboxPanesView: View {
     /// v2's card: Decline asks for a reason; the menu messages the requester.
     var onDeclineWithReason: (MediaRequest) -> Void = { _ in }
     var onMessage: (MediaRequest) -> Void = { _ in }
-    @State private var focus = TriageQueueFocus()
+    @State private var localFocus = TriageQueueFocus()
+    /// v2's fold continuity (`FoldKeep`); nil in v1.
+    @Environment(\.foldKeep) private var foldKeep
+
+    /// The focused row. v2 keeps it on the inbox, so folding opens the deck
+    /// on the same request (`TriageQueueFocus.deckOrder`); v1 keeps its own.
+    private var focus: TriageQueueFocus {
+        get { foldKeep == nil ? localFocus : inbox.focus }
+        nonmutating set { if foldKeep == nil { localFocus = newValue } else { inbox.focus = newValue } }
+    }
 
     private var focused: MediaRequest? {
         let queue = inbox.queue
@@ -36,6 +45,14 @@ struct InboxPanesView: View {
             }
         }
         .triageKeys(on: .panes, perform: key)
+        #if DEBUG
+        // CI fold shots: `FUSIONHA_SCREENSHOT_REQUESTS_FOCUS=<index>` focuses that row.
+        .task(id: inbox.queue.count) {
+            guard let raw = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_REQUESTS_FOCUS"],
+                  let index = Int(raw), inbox.queue.indices.contains(index), focus.focusId == nil else { return }
+            focus.focus(inbox.queue[index].id, in: inbox.queue.map(\.id))
+        }
+        #endif
     }
 
     /// The web's `minmax(294px, 380px)`, `minmax(294px, 320px)` at 1100 and below.

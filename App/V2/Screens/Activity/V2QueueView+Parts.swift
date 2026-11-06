@@ -11,6 +11,8 @@ extension V2QueueView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     V2QueueHeader(counts: counts, loaded: store.loaded)
+                        .id(FoldAnchorTop.header)
+                        .foldAnchor(FoldAnchorTop.header)
                     content
                 }
                 .padding(.horizontal, gutter)
@@ -18,6 +20,7 @@ extension V2QueueView {
                 .padding(.bottom, 24)
             }
             .scrollDismissesKeyboard(.immediately)
+            .keepsFoldAnchor(anchor, proxy: proxy, active: dragShare == nil)
             .onChange(of: model.pendingQueueScroll, initial: true) { consumeFocus(proxy) }
             .onChange(of: store.items.map(\.id)) { consumeFocus(proxy) }
         }
@@ -63,7 +66,7 @@ extension V2QueueView {
                                  done: endSelecting)
         } else if let item = openHeld {
             HeldDecisionPage(item: item, siblings: V2QueueSiblings.of(item, in: store.items), canDecide: canDecide,
-                             dense: true, gutter: 24,
+                             dense: true, gutter: 24, draft: heldDraft,
                              review: { router.manualImport(rescue: item.id) },
                              perform: { await ops.perform($0, on: item) },
                              done: { withAnimation(motion ? .snappy(duration: 0.25) : nil) { decision = nil } })

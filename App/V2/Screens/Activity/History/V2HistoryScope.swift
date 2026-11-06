@@ -68,6 +68,10 @@ struct V2HistoryScope: View {
         .sheet(item: $lifecycleSheet) { story in
             HistoryLifecycleSheetV2(story: story, onChanged: refresh).environment(model)
         }
+        // Fold continuity: the picked story moves between the right page and its sheet.
+        .foldPick(splits: splits, picked: $picked, sheet: $lifecycleSheet, id: \.key) { key in
+            shownStories.first { $0.key == key }
+        }
     }
 
     @ViewBuilder

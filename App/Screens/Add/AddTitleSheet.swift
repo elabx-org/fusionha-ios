@@ -33,6 +33,8 @@ struct AddTitleSheet: View {
     @Environment(\.motionEnabled) var motion
     /// v2's dress (`AddLookOverride`); nil in v1.
     @Environment(\.addLook) var look
+    /// v2's fold continuity (`AddTitleSheet+FoldKeep`); nil in v1.
+    @Environment(\.foldKeep) var foldKeep
     @Namespace var zoomSpace
     @State var path = NavigationPath()
     @State var flow: AddFlow?
@@ -83,6 +85,7 @@ struct AddTitleSheet: View {
         // On the open Duo's pages: a title picked from search and mid-setup asks before the pull-down closes it.
         .duoPageDismiss(setupAtRisk ? .confirm("Discard this title's setup?") : .allowed)
         .onAppear(perform: start)
+        .addFoldCarry(self)
         .onChange(of: kind) { if kind == .movie { source = .tmdb } }
         .onChange(of: tvdbConfigured) { if !tvdbConfigured { source = .tmdb } }
         .task(id: kind) { await loadTrending() }
@@ -159,6 +162,8 @@ struct AddTitleSheet: View {
     // MARK: Picks
 
     func start() {
+        // v2: a fold rebuilt this sheet; it carries on where the last one was.
+        if restoreFromFold() { return }
         if let initialPick {
             sessionProvider = providerOverride ?? "auto"
             startFlow(initialPick)
