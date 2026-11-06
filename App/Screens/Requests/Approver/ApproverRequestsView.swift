@@ -47,7 +47,7 @@ struct ApproverRequestsView: View {
             // The drawer and the filter are presented from their controls in
             // `RequestsViewHeader`: popovers when wide, sheets on a phone (DC21).
             .fullScreenCover(isPresented: $nav.rulesOpen) {
-                SettingsView(client: model.client, initialPanel: "request-rules").sheetEscapeRoot()
+                AppSettingsView(client: model.client, initialPanel: "request-rules").sheetEscapeRoot()
             }
             .sheet(item: Binding(get: { wide ? nil : thread }, set: { thread = $0 })) { request in
                 RequestThreadSheet(request: request) { store.requestsVersion += 1 }.sheetEscapeRoot()
