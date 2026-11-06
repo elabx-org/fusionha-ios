@@ -36,12 +36,14 @@ final class SceneRelaunchDriver: XCTestCase {
 
     /// Taps the app's Home Screen icon, paging through the Home Screen to find it.
     private func tapIcon(_ name: String) -> Bool {
-        let icon = springboard.icons[name]
-        for _ in 0..<6 {
-            if icon.exists && icon.isHittable {
+        let icon = springboard.icons.matching(NSPredicate(format: "label ==[c] %@", name)).firstMatch
+        for page in 0..<6 {
+            if icon.waitForExistence(timeout: 2) && icon.isHittable {
                 icon.tap()
                 return true
             }
+            let labels = springboard.icons.allElementsBoundByIndex.map(\.label)
+            print("SCENES page \(page) icons: \(labels.joined(separator: " | "))")
             springboard.swipeLeft()
             sleep(1)
         }
