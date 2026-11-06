@@ -26,7 +26,8 @@ on:
         # the Library on the iPhone Duo's open inner display. v2session: v2's
         # owner session there (Library, titles, the split handle, tabs, Search).
         # v2frames: window captures while titles open and close there.
-        options: [all, activity, library, v2open, v2session, v2frames]
+        # v2shots: v2 screenshots there (scripts/v2_duo_shots.sh).
+        options: [all, activity, library, v2open, v2session, v2frames, v2shots]
         default: all
       shots_only:
         description: "Only the simulator screenshots whose name matches this regex (e.g. ^palette-); skips iPhone Duo and adds to the published set"
@@ -833,7 +834,7 @@ jobs:
           xcodegen generate
 
       - name: Build for the simulator (optimised, with the perf probe)
-        if: env.SCOPE != 'v2open' && env.SCOPE != 'v2session' && env.SCOPE != 'v2frames'
+        if: env.SCOPE != 'v2open' && env.SCOPE != 'v2session' && env.SCOPE != 'v2frames' && env.SCOPE != 'v2shots'
         run: |
           set -o pipefail
           xcodebuild \
@@ -850,7 +851,7 @@ jobs:
 
       # v2: its own target's V2 condition is overridden by the command line, so pass it too.
       - name: Build v2 for the simulator (optimised, with the perf probe)
-        if: env.SCOPE == 'v2open' || env.SCOPE == 'v2session' || env.SCOPE == 'v2frames'
+        if: env.SCOPE == 'v2open' || env.SCOPE == 'v2session' || env.SCOPE == 'v2frames' || env.SCOPE == 'v2shots'
         run: |
           set -o pipefail
           xcodebuild \
@@ -890,6 +891,11 @@ jobs:
         if: env.SCOPE == 'v2frames'
         timeout-minutes: 15
         run: PERF_SCRIPT=v2frames scripts/perf_v2_session.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf
+
+      - name: v2 screenshots on the iPhone Duo harness
+        if: env.SCOPE == 'v2shots'
+        timeout-minutes: 25
+        run: scripts/v2_duo_shots.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf/shots
 
       - name: v2 owner session report
         if: always() && env.SCOPE == 'v2session'
@@ -965,4 +971,5 @@ jobs:
             perf/*.png
             perf/*.jpg
             perf/*.mp4
+            perf/shots/*.png
           retention-days: 14
