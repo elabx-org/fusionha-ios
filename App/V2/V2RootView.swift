@@ -11,8 +11,9 @@ import SwiftUI
 /// is `V2ManualImportView` (grouped by problem). Slice S11 (Add): the shared
 /// Add flow in v2's dress (`V2AddLook`). Slice S14: the shell chrome
 /// (`V2ShellChrome`: Activity's needs-you badge, the Duo's downloads
-/// capsule; the sidebar and column minimize were removed). Every other tab
-/// is still v1's.
+/// capsule; the sidebar and column minimize were removed). Slice S11
+/// (browse): Discover, Calendar, Search and the Add-collection page in v2's
+/// dress (`V2BrowseLook`). Every other tab is still v1's.
 struct V2RootView: View {
     var body: some View {
         RootView()
@@ -32,6 +33,7 @@ struct V2RootView: View {
             .environment(\.manualImportSheet, V2ManualImportView.override)
             .environment(\.addLook, V2AddLook.override)
             .environment(\.shellChrome, V2ShellChrome.override)
+            .environment(\.browseLook, V2BrowseLook.override)
     }
 }
 

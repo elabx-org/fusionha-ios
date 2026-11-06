@@ -8,6 +8,8 @@ import FusionhaKit
 /// - Day: the week strip, the day, then an "Up next" card.
 struct PhoneDayList: View {
     enum Kind { case forecast, day, agenda }
+    /// v2 (S11): the day heads scroll with their cards (no opaque band).
+    @Environment(\.browseLook) private var look
 
     let kind: Kind
     /// The visible days in order (Day: just the anchored day).
@@ -23,7 +25,7 @@ struct PhoneDayList: View {
     var body: some View {
         let byDay = CalendarMath.groupByDay(entries, cal)
         let shown = kind == .agenda ? days.filter { !(byDay[$0] ?? []).isEmpty } : days
-        LazyVStack(alignment: .leading, spacing: 4, pinnedViews: [.sectionHeaders]) {
+        LazyVStack(alignment: .leading, spacing: 4, pinnedViews: look == nil ? [.sectionHeaders] : []) {
             if kind == .day, let day = days.first {
                 PhoneDayStrip(selected: day, todayIso: todayIso, firstDay: firstDay, byDay: byDay,
                               known: Set((-1...1).map { CalendarMath.shift(day, days: $0, cal) }),

@@ -963,7 +963,7 @@ jobs:
 
       - name: v2 screenshots on the iPhone Duo harness
         if: env.SCOPE == 'v2shots'
-        timeout-minutes: 25
+        timeout-minutes: 45
         # shots_only narrows the set (a name regex), as for the other shots.
         env:
           ONLY: ${{ inputs.shots_only }}

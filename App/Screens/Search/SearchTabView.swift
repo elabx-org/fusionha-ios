@@ -19,6 +19,8 @@ struct SearchTabView: View {
     @Environment(\.motionEnabled) private var motion
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.duoOpen) private var duoOpen
+    /// v2 (S11): the palette's tint ground and W1 lanes.
+    @Environment(\.browseLook) private var look
     /// The preview and request sheets the rows open (shared with Discover's cards).
     @State private var store = DiscoverStore()
     @State private var search = UnifiedSearchModel()
@@ -63,7 +65,10 @@ struct SearchTabView: View {
         }
         // The open Duo's keyboard covers half the results: any scroll puts it away.
         .scrollDismissesKeyboard(duoOpen ? .immediately : .interactively)
-        .background(Theme.bg.ignoresSafeArea())
+        // The rows' Add fits its word only where the list has room (v2).
+        .publishesPaneSize()
+        .background { if look == nil { Theme.bg.ignoresSafeArea() } }
+        .browseGround(look)
         .shellPage("Search")
         .searchable(text: $model.searchQuery,
                     prompt: SearchPrompt.text(requester: model.requestScoped, wide: duoOpen || sizeClass != .compact))

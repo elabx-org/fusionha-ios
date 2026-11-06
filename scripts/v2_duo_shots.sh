@@ -33,13 +33,15 @@ xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --ba
 xcrun simctl install "$UDID" "$APP"
 sleep 15
 
-shoot() {  # shoot <name> [env…]
+shoot() {  # shoot <name> [wait-seconds] [env…]
   local name=$1; shift
+  local wait=${WAIT:-12}
+  case "${1:-}" in ''|*[!0-9]*) ;; *) wait=$1; shift;; esac
   if [ -n "$ONLY" ] && ! echo "$name" | grep -qE "$ONLY"; then return 0; fi
   env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=${FRAME:-open} \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LAYOUT=${LAYOUT:-spread} SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library "$@" \
     xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" > /dev/null
-  sleep "${WAIT:-12}"
+  sleep "$wait"
   local raw="$OUT/.raw-$name.png"
   xcrun simctl io "$UDID" screenshot "$raw" > /dev/null
   local px scale
@@ -124,6 +126,25 @@ for theme in dark daylight; do
 done
 WAIT=14 shoot shell-book-capsule SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book
 WAIT=14 shoot shell-book-capsule-daylight SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
+
+# S11 (browse): Discover (hero carousel, rails), Calendar Agenda, Search
+# results and the Add-collection page, open flat and folded, dark and Daylight.
+DISC=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover
+CAL="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=agenda"
+SRCH=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=dune
+COLL="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover SIMCTL_CHILD_FUSIONHA_SCREENSHOT_COLLECTION=726871"
+for theme in dark daylight; do
+  T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_UNUSED=1; SUF=""
+  [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
+  WAIT=14 shoot "discover$SUF" $DISC $T
+  WAIT=14 FRAME=folded shoot "discover-folded$SUF" $DISC $T
+  WAIT=14 shoot "calendar$SUF" $CAL $T
+  WAIT=14 FRAME=folded shoot "calendar-folded$SUF" $CAL $T
+  WAIT=14 shoot "search$SUF" $SRCH $T
+  WAIT=14 FRAME=folded shoot "search-folded$SUF" $SRCH $T
+  WAIT=14 shoot "collection$SUF" $COLL $T
+  WAIT=14 FRAME=folded shoot "collection-folded$SUF" $COLL $T
+done
 
 xcrun simctl terminate "$UDID" "$BUNDLE" 2> /dev/null || true
 xcrun simctl shutdown "$UDID" 2> /dev/null || true

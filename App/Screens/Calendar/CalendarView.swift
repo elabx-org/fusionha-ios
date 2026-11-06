@@ -14,6 +14,8 @@ struct CalendarView: View {
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     /// Half open with the fold top to bottom: the week reads as a list (Q-DC5).
     @Environment(\.bookPose) var bookPose
+    /// v2 (S11): the palette's tint ground.
+    @Environment(\.browseLook) var look
     /// The Calendar's own width (`useCalendarWidth`), never the size class.
     @State var width: CGFloat = 0
     /// The last chosen view, remembered per device (web `fusionha.calendar.view`).
@@ -115,6 +117,7 @@ struct CalendarView: View {
                 }
             }
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+            .browseGround(look)
         }
         .shellPage(title) { barItems }
         .environment(\.calMotionOff, settings?.animationsEnabled == false)
