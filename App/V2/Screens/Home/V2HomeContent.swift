@@ -52,7 +52,7 @@ struct V2HomeContent: View {
                 attention.padding(.horizontal, gutter).padding(.top, 14)
             }
             V2ComingUpRow(width: width, gutter: gutter, wide: false, topGap: 22, leadArt: $comingUpArt)
-            V2RecentSection(data: data, width: width, gutter: gutter, wide: false) { open(.recent) }
+            V2RecentSection(data: data, width: width, gutter: gutter, wide: false) { open(.recent(lastMonth: data.recentCount > 0)) }
                 .padding(.top, 18)
                 .id("home-recent")
             VStack(alignment: .leading, spacing: 26) {
@@ -77,7 +77,7 @@ struct V2HomeContent: View {
             }
             .padding(.top, 8)
             V2ComingUpRow(width: width, gutter: gutter, wide: true, topGap: 22, leadArt: $comingUpArt)
-            V2RecentSection(data: data, width: width, gutter: gutter, wide: true) { open(.recent) }
+            V2RecentSection(data: data, width: width, gutter: gutter, wide: true) { open(.recent(lastMonth: data.recentCount > 0)) }
                 .padding(.top, 26)
                 .id("home-recent")
             V2HomeKinds(data: data, open: open)

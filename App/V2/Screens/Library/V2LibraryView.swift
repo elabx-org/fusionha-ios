@@ -239,9 +239,9 @@ struct V2LibraryView: View {
             kindRaw = kind.rawValue
         case .needsYou:
             status = .attention
-        case .recent:
+        case .recent(let lastMonth):
             status = .all
-            recency = .added
+            recency = lastMonth ? .added : .all
             sort = .addedDesc
         }
     }

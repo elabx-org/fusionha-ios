@@ -15,7 +15,7 @@ struct V2RecentSection: View {
         if !data.recent.isEmpty {
             VStack(alignment: .leading, spacing: wide ? 14 : 4) {
                 V2HomeSectionHead(title: "Recently added",
-                                  action: data.recentCount > 0 ? "See all \(data.recentCount.formatted())" : nil,
+                                  action: data.recentCount > 0 ? "See all \(data.recentCount.formatted())" : "See all",
                                   accessibilityAction: "See all recently added", tap: seeAll)
                     .padding(.horizontal, wide ? 0 : gutter)
                 if wide {

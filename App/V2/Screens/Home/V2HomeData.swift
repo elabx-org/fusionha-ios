@@ -62,11 +62,12 @@ struct V2HomeKind: Identifiable {
 }
 
 /// How All titles opens from Home: as it was, on a kind, on what needs
-/// the owner, or on Recently added (sorted by date added).
+/// the owner, or on Recently added (sorted by date added; `lastMonth`
+/// narrows it to the last 30 days when anything came in then).
 enum V2AllTitlesEntry: Equatable {
     case asLeft
     case everything
     case kind(LibraryKind)
     case needsYou
-    case recent
+    case recent(lastMonth: Bool)
 }

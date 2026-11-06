@@ -77,7 +77,7 @@ struct V2HomeView: View {
         .navigationDestination(isPresented: $showsAllTitles) { V2LibraryView(entry: $entry) }
         .onChange(of: showsAllTitles) { _, shown in allTitlesKept = shown }
         .task {
-            if allTitlesKept && !showsAllTitles { await push(nil) }
+            if allTitlesKept && !showsAllTitles && !Self.freshForScreenshots { await push(nil) }
         }
         .task { await model.loadLibraryIfNeeded() }
         .onQueueChange(model, initial: true) { queue in
@@ -96,6 +96,15 @@ struct V2HomeView: View {
 
     private func openAllTitles(_ how: V2AllTitlesEntry) {
         Task { await push(how) }
+    }
+
+    /// CI screenshots start on Home unless a shot asks for All titles.
+    private static var freshForScreenshots: Bool {
+        #if DEBUG
+        ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SERVER"] != nil
+        #else
+        false
+        #endif
     }
 
     private func push(_ how: V2AllTitlesEntry?) async {
