@@ -11,6 +11,8 @@ import UIKit
 struct TabBadgeTint: UIViewControllerRepresentable {
     let fill: UIColor
     let text: UIColor
+    /// Per tab title, a fill of its own (v2: Activity's needs-you count in orange).
+    var fills: [String: UIColor] = [:]
     /// Anything that changes the badges or the bar (counts, palette, size), so updates re-run.
     let key: String
 
@@ -20,14 +22,16 @@ struct TabBadgeTint: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> UIViewController { UIViewController() }
 
     func updateUIViewController(_ vc: UIViewController, context: Context) {
-        let fill = fill, text = text
+        let fill = fill, text = text, fills = fills
         let apply = { [weak vc] in
             guard let root = vc?.view.window?.rootViewController,
                   let tabs = Self.tabBarController(in: root) else { return }
             for item in tabs.tabBar.items ?? [] {
-                item.badgeColor = fill
-                item.setBadgeTextAttributes([.foregroundColor: text], for: .normal)
-                item.setBadgeTextAttributes([.foregroundColor: text], for: .selected)
+                let own = item.title.flatMap { fills[$0] }
+                let ink = own == nil ? text : UIColor.white
+                item.badgeColor = own ?? fill
+                item.setBadgeTextAttributes([.foregroundColor: ink], for: .normal)
+                item.setBadgeTextAttributes([.foregroundColor: ink], for: .selected)
             }
         }
         DispatchQueue.main.async(execute: apply)
@@ -43,8 +47,10 @@ struct TabBadgeTint: UIViewControllerRepresentable {
 
 extension View {
     /// Tab bar badges in the palette's accent (`TabBadgeTint`).
-    func tabBadgeTint(key: String) -> some View {
+    /// `fills` gives a tab (by its title) a fill of its own.
+    func tabBadgeTint(key: String, fills: [String: Color] = [:]) -> some View {
         background(TabBadgeTint(fill: UIColor(Theme.indigo), text: UIColor(Theme.onAccent),
+                                fills: fills.mapValues { UIColor($0) },
                                 key: key + PaletteStore.shared.active.rawValue)
             .frame(width: 0, height: 0)
             .accessibilityHidden(true))

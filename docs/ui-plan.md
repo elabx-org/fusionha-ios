@@ -35,7 +35,7 @@ Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`g
 | Attention control + health badge | A glass toolbar bell with a badge count, opening an **Attention sheet**. Sources: `GET /api/v1/library/attention`, `/system/runs/attention`, `/system/indexers/unavailable` and `GET /health`. |
 | Requester role (Discover · My requests · You) | Tabs swap to **Discover · My requests · You**, driven by `request_scoped` from `GET /api/v1/auth/me`, the same rule as `REQUESTOR_DESTINATIONS`. |
 | Park & Resume dock | Not in v1. A parked interactive search could later share the bottom accessory with the downloads bar. |
-| iPad | The same shell as the unfolded iPhone Duo (below): the system tab bar, the open title as a trailing column, and Settings as a split view like the desktop web sidebar. An adaptive sidebar (`.sidebarAdaptable`) is proposed, not built: it would change the web-parity navigation. |
+| iPad | The same shell as the unfolded iPhone Duo (below): the system tab bar, the open title as a trailing column, and Settings as a split view like the desktop web sidebar. An adaptive sidebar (`.sidebarAdaptable`) is proposed, not built: it would change the web-parity navigation. **v2 (S14, deviation):** the flat open iPhone Duo gets its own floating glass sidebar (not `.sidebarAdaptable`) beside the tabs while nothing is open beside the list, the Duo's vertical column minimizes to the current tab plus Search on scroll (our own, since the system's minimize leaves the column), and Activity's badge is the needs-you count in orange (docs/v2.md "Shell"). |
 | iPhone Duo (and any window at least 560 × 500pt) | See **iPhone Duo** below. Folded it is the phone app, unchanged. |
 
 ### iPhone Duo

@@ -28,6 +28,10 @@ struct RootView: View {
     @Environment(\.titlePage) private var titlePage
     /// v2's split handle moving the seam (`DuoSeamDrag`); never set in v1.
     @State private var seam = DuoSeamDrag()
+    /// v2's sidebar, minimize, badge and downloads capsule (`ShellChromeOverride`); nil in v1.
+    @Environment(\.shellChrome) private var chrome
+    /// The open Duo's sidebar hidden with its toggle. Per device.
+    @AppStorage(ShellSidebarMemory.storageKey) private var sidebarHidden = false
 
     /// The Spread, when the Duo is open and the setting says so (else `.off`).
     private func spreadContext(_ fold: FoldInfo, hasItem: Bool) -> SpreadContext {
@@ -121,6 +125,33 @@ struct RootView: View {
                                             fold: fold.vertical.map { Double($0.lowerBound)...Double($0.upperBound) })
     }
 
+    /// v2's sidebar is offered on the flat open Duo with nothing open beside
+    /// the list; an open title keeps the list's third (`ShellSidebarHost`).
+    private func sidebarToggle(_ split: ShellSplit) -> ShellSidebarToggle? {
+        guard chrome?.sidebar != nil, !model.requestScoped, fold.vertical == nil, fold.flatVertical != nil,
+              !split.shown else { return nil }
+        let motion = !reduceMotion && model.animationsEnabled
+        return ShellSidebarToggle(hidden: sidebarHidden) {
+            withAnimation(motion ? .smooth(duration: 0.3) : nil) { sidebarHidden.toggle() }
+        }
+    }
+
+    private func sidebarShown(_ split: ShellSplit) -> Bool { sidebarToggle(split)?.hidden == false }
+
+    /// v2's floating downloads bar (`DuoDownloadsCapsule`): only where the
+    /// tabs' column crosses the fold, which keeps the system's bar away.
+    @ViewBuilder
+    private var downloadsCapsule: some View {
+        if let make = chrome?.downloadsCapsule, let fold = fold.vertical, tabsCrossFold,
+           downloadsBar.hasContent, !model.requestScoped, model.tab != .activity, !selectBars.isShowing {
+            make(downloadsBar)
+                .frame(maxWidth: min(360, fold.lowerBound - 40))
+                .padding(.leading, 20)
+                .padding(.bottom, 12)
+                .transition(.opacity)
+        }
+    }
+
     /// The title's column coming in: on the open Duo the right page swings
     /// open from the fold (`DuoPageMotion`, its own animation, as the split
     /// itself doesn't animate there), a slide elsewhere, a plain fade under
@@ -168,7 +199,12 @@ struct RootView: View {
         FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap, primaryHidden: split.primaryHidden,
                         seam: split.seam) {
             // Hidden (the sidebar button), the list keeps its width off screen.
-            tabs
+            ShellTabs(fold: fold, splitShown: split.shown, downloadsBar: downloadsBar,
+                      downloadsBarAllowed: !tabsCrossFold && !selectBars.isShowing,
+                      sidebarShown: sidebarShown(split))
+                // v2, flat open Duo: the sidebar beside the tabs (`ShellSidebarHost`).
+                .modifier(ShellSidebarHost(make: sidebarShown(split) ? chrome?.sidebar : nil,
+                                           toggle: sidebarToggle(split), reduceMotion: reduceMotion))
                 .allowsHitTesting(!split.primaryHidden)
                 .accessibilityHidden(split.primaryHidden)
             if split.shown {
@@ -217,6 +253,8 @@ struct RootView: View {
         // Toasts: above the tab bar when folded; on the trailing column when
         // split, so they never straddle the fold (DC14); on the right page
         // while a Spread's tab spans both pages.
+        // v2: the downloads bar floats on the left page where the system's can't show.
+        .overlay(alignment: .bottomLeading) { downloadsCapsule }
         .overlay {
             ToastLayer(region: ToastRegion.shell(split, spread: spread, size: fold.size),
                        clearsAbove: split.shown || spread.spans ? nil : toastAnchor.floor, gap: 16)
@@ -227,6 +265,7 @@ struct RootView: View {
         .environment(\.spread, spread)
         .environment(\.spreadActive, spread.isActive)
         .environment(\.duoListToggle, listToggle(split))
+        .environment(\.shellSidebarToggle, sidebarToggle(split))
         .environment(\.titleSpread, titleSpread(split, spread: spread))
         .environment(\.duoOpen, fold.isDuoOpen)
         .environment(seam)
@@ -249,42 +288,6 @@ struct RootView: View {
         .modifier(ShellPresentations(model: model, reduceMotion: reduceMotion, scenePhase: scenePhase,
                                      duoOpen: fold.isDuoOpen, accountOnPages: fold.isDuoOpen && duoLayout == .spread,
                                      measured: fold.size != .zero))
-    }
-
-    /// The tabs: the whole app when folded, the leading column when unfolded.
-    private var tabs: some View {
-        @Bindable var model = model
-        // A custom binding so tapping the current tab again still reaches the model.
-        let selection = Binding(get: { model.tab }, set: { model.tab = $0 })
-        return TabView(selection: selection) {
-            if model.requestScoped {
-                Tab("Discover", image: "nav-discover", value: AppTab.discover) { TabRoot { DiscoverView() } }
-                Tab("My requests", image: "nav-requests", value: AppTab.requests) { TabRoot { RequestsView() } }
-                Tab("You", image: "nav-you", value: AppTab.you) { TabRoot { YouView() } }
-                Tab(value: AppTab.search, role: .search) { TabRoot { SearchTabView() } }
-            } else {
-                Tab("Library", image: "nav-library", value: AppTab.library) { TabRoot { LibraryTabRoot() } }
-                Tab("Discover", image: "nav-discover", value: AppTab.discover) { TabRoot { DiscoverView() } }
-                    // `needs_you`, capped at 99+ like the web's badge.
-                    .badge(BadgeCount.text(model.requestsBadge).map { Text(verbatim: $0) })
-                Tab("Calendar", image: "nav-calendar", value: AppTab.calendar) { TabRoot { CalendarView() } }
-                Tab("Activity", image: "nav-activity", value: AppTab.activity) { TabRoot { ActivityView() } }
-                    .badge(BadgeCount.text(model.queueTotal).map { Text(verbatim: $0) })
-                Tab(value: AppTab.search, role: .search) { TabRoot { SearchTabView() } }
-            }
-        }
-        .tint(Theme.indigo)
-        // Count badges in the accent, as on the web, not the system red; the
-        // shell's size re-tints them after the bar changes axis.
-        .tabBadgeTint(key: "\(model.requestsBadge)-\(model.queueTotal)-\(model.tab)-\(Int(fold.size.width))x\(Int(fold.size.height))-\(split.shown)")
-        .tabBarMinimizeBehavior(.onScrollDown)
-        // The downloads bar (iOS-only): while the queue has items, off Activity,
-        // never across the iPhone Duo's fold (the Activity badge still counts),
-        // and never over a select mode's bulk bar (`SelectBarPresence`).
-        .modifier(DownloadsBarSlot(state: downloadsBar,
-                                   shown: !model.requestScoped && model.tab != .activity && downloadsBar.hasContent
-                                       && !tabsCrossFold && !selectBars.isShowing))
-        .onQueueChange(model, initial: true) { [downloadsBar] queue in downloadsBar.update(queue) }
     }
 }
 
