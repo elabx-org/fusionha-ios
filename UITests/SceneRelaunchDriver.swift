@@ -10,28 +10,38 @@ import XCTest
 /// once after launch.
 final class SceneRelaunchDriver: XCTestCase {
     private let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+    private let start = Date()
 
     func testRelaunchFromHomeScreen() {
+        executionTimeAllowance = 300
         let app = XCUIApplication(bundleIdentifier: "org.elabx.fusionha.v2")
         app.launchEnvironment = ["FUSIONHA_SCENE_PROBE": "1"]
         if ProcessInfo.processInfo.environment["SCENE_NEW_WINDOW"] != nil {
             app.launchEnvironment["FUSIONHA_SCENE_PROBE_NEW_WINDOW"] = "1"
         }
+        step("launch")
         app.launch()
+        step("launched")
         sleep(16)
         for round in 1...2 {
             XCUIDevice.shared.press(.home)
             sleep(3)
-            print("SCENES tap icon \(round): \(tapIcon("fusionha v2"))")
+            step("tap icon \(round): \(tapIcon("fusionha v2"))")
             sleep(8)
         }
         XCUIDevice.shared.press(.home)
         sleep(3)
+        step("open link")
         XCUIDevice.shared.system.open(URL(string: "fusionha2://library")!)
         let open = springboard.alerts.buttons["Open"]
         if open.waitForExistence(timeout: 5) { open.tap() }
         sleep(8)
-        print("SCENES DONE")
+        step("DONE")
+    }
+
+    /// One driver line, with the seconds since the test started.
+    private func step(_ text: String) {
+        print("SCENES +\(Int(Date().timeIntervalSince(start)))s \(text)")
     }
 
     /// Taps the app's Home Screen icon, paging through the Home Screen to find it.
@@ -43,7 +53,7 @@ final class SceneRelaunchDriver: XCTestCase {
                 return true
             }
             let labels = springboard.icons.allElementsBoundByIndex.map(\.label)
-            print("SCENES page \(page) icons: \(labels.joined(separator: " | "))")
+            step("page \(page) icons: \(labels.joined(separator: " | "))")
             springboard.swipeLeft()
             sleep(1)
         }
