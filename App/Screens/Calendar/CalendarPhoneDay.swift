@@ -8,6 +8,7 @@ import FusionhaKit
 /// The day's head (`.mhead`): `Today · Wed 7` in the now colour, past days
 /// dimmed, then `N airings`. Opaque so it can pin over the list.
 struct PhoneDayHead: View {
+    @Environment(\.pagePalette) private var page
     let iso: String
     let todayIso: String
     let count: Int
@@ -18,7 +19,7 @@ struct PhoneDayHead: View {
             Text(CalendarMath.mobileDayLabel(iso, todayIso: todayIso, CalendarMath.gregorian()))
                 .font(.system(size: 14, weight: .heavy))
                 .tracking(-0.14)
-                .foregroundStyle(isToday ? Theme.grab : iso < todayIso ? Theme.mut : Theme.txt)
+                .foregroundStyle(isToday ? Theme.grab : iso < todayIso ? BrowseInks(page: page).muted : BrowseInks(page: page).ink)
             Text("\(count) airing\(count == 1 ? "" : "s")")
                 .font(.system(size: 11).monospacedDigit())
                 .foregroundStyle(Theme.mut)
@@ -27,7 +28,7 @@ struct PhoneDayHead: View {
         .padding(.top, 12)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.bg)
+        .background(BrowseInks(page: page).band)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
     }
@@ -38,11 +39,22 @@ struct PhoneDayCards: View {
     let iso: String
     let entries: [CalendarEntry]
     let todayIso: String
+    /// v2 (S11): the day on one card of time-column rows.
+    @Environment(\.browseLook) private var look
 
     var body: some View {
         let now = Date()
         let items = CalendarMath.dayItems(entries)
         let split = CalendarMath.phoneDay(items, isToday: iso == todayIso, now: now)
+        if look != nil && !entries.isEmpty {
+            CalendarDayCard(items: split.before + split.after, isToday: iso == todayIso, now: now)
+        } else {
+            v1Cards(split, now: now)
+        }
+    }
+
+    private func v1Cards(_ split: (before: [CalendarDayItem], after: [CalendarDayItem], showsNow: Bool),
+                         now: Date) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             if entries.isEmpty {
                 Text("Nothing airing")

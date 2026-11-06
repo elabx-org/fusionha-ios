@@ -8,6 +8,8 @@ import FusionhaKit
 /// on the right (Trending's Today / This Week, the owner's mock).
 struct RailSection<Icon: View, Toggle: View, Track: View>: View {
     @Environment(\.spread) private var spread
+    /// v2's ground: the page's inks.
+    @Environment(\.pagePalette) private var page
     let title: String
     let count: String?
     @ViewBuilder var icon: Icon
@@ -36,10 +38,10 @@ struct RailSection<Icon: View, Toggle: View, Track: View>: View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             HStack(spacing: 8) {
                 icon
-                Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.txt)
+                Text(title).font(.system(size: 16, weight: .bold)).foregroundStyle(BrowseInks(page: page).ink)
             }
             if let count {
-                Text(count).font(.system(size: 12)).foregroundStyle(Theme.dim)
+                Text(count).font(.system(size: 12)).foregroundStyle(page?.inkMuted ?? Theme.dim)
             }
         }
     }

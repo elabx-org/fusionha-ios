@@ -8,6 +8,8 @@ import FusionhaKit
 struct AddCollectionSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+    /// v2 (S11): the art header, the films as posters, W1 cards.
+    @Environment(\.browseLook) private var look
     let summary: CollectionSummary
     /// The films to preselect (the detail page's "Add all missing" or one film); nil = every missing film.
     var preselect: [Int]? = nil
@@ -27,7 +29,13 @@ struct AddCollectionSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    if let detail {
+                    if let detail, look != nil {
+                        v2Films(detail)
+                        DialogSectionLabel(text: "Add them as").padding(.top, 8)
+                        VStack(alignment: .leading, spacing: 12) { editions }
+                            .padding(12)
+                            .browseCard(look, radius: 20)
+                    } else if let detail {
                         ForEach(detail.parts, id: \.tmdbId) { part in
                             let owned = part.inLibrary == true
                             Button {
@@ -52,12 +60,7 @@ struct AddCollectionSheet: View {
                             .disabled(owned)
                         }
                         DialogSectionLabel(text: "Editions").padding(.top, 8)
-                        ApproveEditionCard(tier: .hd, config: $hd, roots: roots, profiles: profiles, tag: "default")
-                        ApproveEditionCard(tier: .uhd, config: $uhd, roots: roots, profiles: profiles)
-                        Toggle(isOn: $searchOnAdd) {
-                            Text("Start search for missing on add").font(.system(size: 13)).foregroundStyle(Theme.txt)
-                        }
-                        .tint(Theme.indigo)
+                        editions
                     } else if failed {
                         DiscoverEmptyState(message: "Could not load this collection.")
                     } else {
@@ -67,8 +70,9 @@ struct AddCollectionSheet: View {
                 }
                 .padding(16)
             }
-            .background(Theme.panel)
-            .navigationTitle(summary.name)
+            .background(look == nil ? Theme.panel : .clear)
+            .browseGround(look, backdrop: summary.backdropUrl, poster: summary.posterUrl)
+            .navigationTitle(look == nil ? summary.name : "Complete the collection")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
@@ -86,6 +90,35 @@ struct AddCollectionSheet: View {
         .presentationDragIndicator(.visible)
         .sheetBackground(Theme.panel)
         .task { await load() }
+    }
+
+    @ViewBuilder
+    private var editions: some View {
+        ApproveEditionCard(tier: .hd, config: $hd, roots: roots, profiles: profiles, tag: "default")
+        ApproveEditionCard(tier: .uhd, config: $uhd, roots: roots, profiles: profiles)
+        Toggle(isOn: $searchOnAdd) {
+            Text("Start search for missing on add").font(.system(size: 13)).foregroundStyle(Theme.txt)
+        }
+        .tint(Theme.indigo)
+    }
+
+    /// v2: the art header, select all / none, the films as posters.
+    @ViewBuilder
+    private func v2Films(_ detail: CollectionDetail) -> some View {
+        let missing = detail.parts.filter { $0.owned != true }.map(\.tmdbId)
+        CollectionSheetHeader(name: detail.name, backdrop: summary.backdropUrl ?? detail.posterUrl,
+                              total: detail.totalCount, owned: detail.ownedCount, missing: missing.count)
+        HStack(spacing: 8) {
+            Button("Select all missing") { selected = Set(missing) }
+                .buttonStyle(.glass)
+            Button("Deselect all") { selected = [] }
+                .buttonStyle(.glass)
+                .disabled(selected.isEmpty)
+        }
+        .font(.system(size: 13, weight: .semibold))
+        .padding(.top, 2)
+        CollectionPartGrid(parts: detail.parts, selected: $selected)
+            .padding(.top, 2)
     }
 
     private func load() async {

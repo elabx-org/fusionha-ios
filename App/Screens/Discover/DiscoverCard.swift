@@ -9,6 +9,8 @@ struct DiscoverCard: View {
     @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
     @Environment(\.spreadActive) private var spreadActive
+    /// v2 (S11): an owned title shows the Library card's caption (tickets).
+    @Environment(\.browseLook) private var look
     let result: MediaSearchResult
     var trending = false
     let canAdd: Bool
@@ -28,6 +30,10 @@ struct DiscoverCard: View {
     private var libraryId: Int? { inLibrary ? model.libraryItemId(for: result) : nil }
     private var requestStatus: String? { store.statusByTmdb[result.tmdbId] }
     private var alreadyRequested: Bool { requestStatus == "pending" || requestStatus == "approved" }
+    /// The owned title itself, for v2's caption (needs the library loaded).
+    private var ownedItem: MediaItem? { inLibrary ? libraryId.flatMap { id in model.library.first { $0.id == id } } : nil }
+    @Environment(\.pagePalette) private var page
+    private var inks: BrowseInks { BrowseInks(page: page) }
     private var showsQuickAdd: Bool { canAdd && !inLibrary }
     /// In a Spread, the title open on the right page is outlined in the grid.
     private var picked: Bool { spreadActive && result.isPicked(in: model, libraryId: libraryId) }
@@ -38,7 +44,11 @@ struct DiscoverCard: View {
                 VStack(alignment: .leading, spacing: 0) {
                     poster
                         .anchorPreference(key: DiscoverPosterBounds.self, value: .bounds) { $0 }
-                    meta
+                    if let look, let item = ownedItem {
+                        look.caption(item).padding(.top, 8).padding(.horizontal, 1)
+                    } else {
+                        meta
+                    }
                 }
                 .contentShape(Rectangle())
             }
@@ -99,7 +109,7 @@ struct DiscoverCard: View {
             // The Library card's text size, so a poster reads the same on both.
             Text(result.title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Theme.txt)
+                .foregroundStyle(inks.ink)
                 .lineLimit(1)
             // One line when it fits; in a narrow cell (a Spread page's grid,
             // a phone rail) the marks and chip wrap under the year instead of

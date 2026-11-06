@@ -41,8 +41,24 @@ struct DayGroup: View {
     let entries: [CalendarEntry]
     let isToday: Bool
     let now: Date
+    /// v2 (S11): the day on one card of time-column rows.
+    @Environment(\.browseLook) private var look
 
     var body: some View {
+        if look != nil {
+            VStack(alignment: .leading, spacing: 0) {
+                CalDayHeader(iso: iso, isToday: isToday, count: entries.count, noun: "event")
+                    .padding(.top, 22)
+                    .padding(.bottom, 8)
+                CalendarDayCard(items: CalendarMath.dayItems(entries), isToday: isToday, now: now)
+            }
+        } else {
+            v1Rows
+        }
+    }
+
+    @ViewBuilder
+    private var v1Rows: some View {
         let nowIndex: Int? = isToday ? entries.firstIndex(where: { !$0.hasAired(now: now) }) : nil
         VStack(alignment: .leading, spacing: 0) {
             CalDayHeader(iso: iso, isToday: isToday, count: entries.count, noun: "event")

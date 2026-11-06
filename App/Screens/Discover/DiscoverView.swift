@@ -13,7 +13,11 @@ struct DiscoverView: View {
     @Environment(AppModel.self) private var model
     /// iPhone Duo Spread (S3): with nothing picked, Browse spans both pages.
     @Environment(\.spread) private var spread
+    /// v2 (S11): the art ground and the hero carousel over the rails.
+    @Environment(\.browseLook) private var look
     @State private var store = DiscoverStore()
+    /// The hero card in view: the v2 ground takes its colours.
+    @State private var heroArt: String?
     @State private var kind: SearchKind = .movie
     @State private var tab: DiscoverTab
     @State private var query = ""
@@ -56,6 +60,7 @@ struct DiscoverView: View {
                     .padding(.bottom, Theme.pageBottom)
                 }
                 .scrollDismissesKeyboard(.interactively)
+                .browseGround(look, backdrop: tab == .browse ? heroArt : nil)
                 // Wide Requests panes scroll on their own: no page scroll around them (D2a).
                 .requestsWidePageScroll()
                 .onChange(of: scrollTarget) {
@@ -173,6 +178,9 @@ struct DiscoverView: View {
 
     @ViewBuilder
     private var rails: some View {
+        if look != nil {
+            DiscoverHeroCarousel(kind: kind, canAdd: canAdd, canRequest: canRequest, art: $heroArt)
+        }
         LetterboxdRail(canAdd: canAdd, canRequest: canRequest)
         TrendingRail(kind: kind, canAdd: canAdd, canRequest: canRequest)
         TrailerRail(kind: kind, canAdd: canAdd)
@@ -246,6 +254,10 @@ struct DiscoverView: View {
             if parts.count == 2, let kind = PreviewKind(rawValue: String(parts[0])), let id = Int(parts[1]) {
                 store.preview = PreviewRoute(kind: kind, tmdbId: id)
             }
+        }
+        // `FUSIONHA_SCREENSHOT_COLLECTION=<collection tmdb id>`: the Add-collection page.
+        if store.collection == nil, let id = env["FUSIONHA_SCREENSHOT_COLLECTION"].flatMap(Int.init) {
+            store.collection = CollectionSummary(collectionTmdbId: id, name: "Collection")
         }
         if store.requestPick == nil, let raw = env["FUSIONHA_SCREENSHOT_REQUEST"] {
             let parts = raw.split(separator: "/")

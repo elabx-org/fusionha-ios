@@ -83,6 +83,25 @@ LAYOUT=spread shoot account-spread 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1
 shoot account-folded 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD
 shoot account-folded-daylight 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD $DAY
 
+# S11 (browse): Discover (hero carousel, rails), Calendar Agenda, Search
+# results and the Add-collection page, open flat and folded, dark and Daylight.
+DISC=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover
+CAL="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=calendar SIMCTL_CHILD_FUSIONHA_SCREENSHOT_CALENDAR_VIEW=agenda"
+SRCH=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_OMNI=dune
+COLL="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover SIMCTL_CHILD_FUSIONHA_SCREENSHOT_COLLECTION=726871"
+for theme in dark daylight; do
+  T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_UNUSED=1; SUF=""
+  [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
+  WAIT=14 shoot "discover$SUF" $DISC $T
+  WAIT=14 shoot "discover-folded$SUF" $DISC $FOLD $T
+  WAIT=14 shoot "calendar$SUF" $CAL $T
+  WAIT=14 shoot "calendar-folded$SUF" $CAL $FOLD $T
+  WAIT=14 shoot "search$SUF" $SRCH $T
+  WAIT=14 shoot "search-folded$SUF" $SRCH $FOLD $T
+  WAIT=14 shoot "collection$SUF" $COLL $T
+  WAIT=14 shoot "collection-folded$SUF" $COLL $FOLD $T
+done
+
 xcrun simctl terminate "$UDID" "$BUNDLE" 2> /dev/null || true
 xcrun simctl shutdown "$UDID" 2> /dev/null || true
 ls "$OUT"/v2-*.png > /dev/null 2>&1 || { echo "::error::no v2 shots"; exit 1; }
