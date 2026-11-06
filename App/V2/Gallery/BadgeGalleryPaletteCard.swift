@@ -24,7 +24,7 @@ struct BadgeGalleryPaletteCard: View {
                     }
                 }
             }
-            group("HD and 4K tickets") {
+            group("HD and 4K pairs") {
                 ForEach(BadgeGallerySamples.pairs) { p in
                     BadgeGalleryRow(label: p.label, labelColor: mut) {
                         EditionTicketPair(hd: p.hd, uhd: p.uhd)

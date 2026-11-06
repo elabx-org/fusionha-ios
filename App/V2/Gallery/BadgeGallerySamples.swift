@@ -28,7 +28,8 @@ enum BadgeGallerySamples {
         Single(label: "On disk", state: .onDisk),
         Single(label: "Partly on disk", state: .partial(have: 3, of: 5)),
         Single(label: "Missing", state: .missing),
-        Single(label: "Downloading 40%", state: .downloading(progress: 0.4)),
+        Single(label: "Downloading 62%", state: .downloading(progress: 0.62)),
+        Single(label: "Downloading 5%", state: .downloading(progress: 0.05)),
         Single(label: "Downloading, no figure yet", state: .downloading(progress: nil)),
         Single(label: "Held", state: .held),
     ]
@@ -36,6 +37,7 @@ enum BadgeGallerySamples {
     static let pairs: [Pair] = [
         Pair(label: "Both on disk (joined)", hd: .onDisk, uhd: .onDisk),
         Pair(label: "Both missing (joined)", hd: .missing, uhd: .missing),
+        Pair(label: "Both downloading (joined)", hd: .downloading(progress: 0.8), uhd: .downloading(progress: 0.3)),
         Pair(label: "HD on disk, 4K missing", hd: .onDisk, uhd: .missing),
         Pair(label: "HD on disk, 4K downloading", hd: .onDisk, uhd: .downloading(progress: 0.62)),
         Pair(label: "HD downloading, 4K missing", hd: .downloading(progress: 0.18), uhd: .missing),
@@ -71,6 +73,7 @@ enum BadgeGallerySamples {
     static let cycle: [(EditionBadgeState, EditionBadgeState)] = [
         (.onDisk, .onDisk),
         (.onDisk, .downloading(progress: 0.35)),
+        (.onDisk, .downloading(progress: 0.9)),
         (.onDisk, .held),
         (.missing, .missing),
     ]
