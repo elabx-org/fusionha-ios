@@ -34,6 +34,15 @@ struct TriageInboxView: View {
                 inbox.bind(model.client) { message, title, variant in model.toast(message, title: title, variant: variant) }
                 inbox.viewerIsAdmin = model.me?.isAdmin == true
                 inbox.filterItems = nav.filter.listQuery(.inbox)
+                #if DEBUG
+                // CI screenshots: `FUSIONHA_SCREENSHOT_REQUESTS_DETAILS=1` opens the first card's Details.
+                if ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_REQUESTS_DETAILS"] != nil {
+                    Task {
+                        try? await Task.sleep(for: .seconds(4))
+                        details = inbox.queue.first
+                    }
+                }
+                #endif
                 await inbox.poll()
             }
             .task(id: nav.filter.listQuery(.inbox)) {
