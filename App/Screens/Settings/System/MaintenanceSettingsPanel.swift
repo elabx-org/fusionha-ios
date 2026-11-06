@@ -47,6 +47,7 @@ struct MaintenanceSettingsPanel: View {
                         .foregroundStyle(Theme.done)
                 }
             }
+            PerformanceReportsSection()
         }
         .alert("Full reset?", isPresented: $confirmFull) {
             Button("Cancel", role: .cancel) {}
