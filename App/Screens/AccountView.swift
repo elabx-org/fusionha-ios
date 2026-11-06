@@ -78,6 +78,16 @@ struct AccountView: View {
 
     @ViewBuilder
     private func content(_ me: Me) -> some View {
+        #if V2
+        // v2 (plan S12): one Account sheet, the avatar hub's rows merged in.
+        V2AccountContent(me: me, requestCount: requestCount, watchlists: watchlists, resetting: resetting,
+                         signingOut: signingOut, hooks: V2AccountHooks(
+                            openLists: { openLists(nil) },
+                            openMethods: { showingMethods = true },
+                            openSessions: { showingSessions = true },
+                            reset: { Task { await resetCache() } },
+                            signOut: { signingOut = true; Task { await model.logOut() } }))
+        #else
         AccountProfileHeader(me: me)
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
@@ -130,10 +140,6 @@ struct AccountView: View {
         }
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets())
-
-        #if V2
-        // v2 only (App/V2): the Badge gallery, for checking the v2 look on device.
-        V2AccountFooter()
         #endif
     }
 

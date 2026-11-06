@@ -92,9 +92,31 @@ extension View {
     /// panels. Solid content, never glass. Lifted in dark palettes (raised
     /// fill, top-lit edge, soft shadow); in Daylight and Noir a faint hairline
     /// and, with `shadow`, the soft falloff shadow (`cardSurface`).
+    /// v2 sets `detailCardSurface` so a v1 card shown on its title page
+    /// takes that page's card (tinted from the art), not the plain one.
     func detailCard(radius: CGFloat = 20, shadow: Bool = true) -> some View {
-        cardSurface(radius: radius, lift: true, flatShadow: shadow, flatEdge: .faint)
+        modifier(DetailCardSurface(radius: radius, shadow: shadow))
     }
+}
+
+private struct DetailCardSurface: ViewModifier {
+    let radius: CGFloat
+    let shadow: Bool
+    @Environment(\.detailCardSurface) private var override
+
+    func body(content: Content) -> some View {
+        if let override {
+            content.background { override(radius) }
+        } else {
+            content.cardSurface(radius: radius, lift: true, flatShadow: shadow, flatEdge: .faint)
+        }
+    }
+}
+
+extension EnvironmentValues {
+    /// The card behind `detailCard` content on a page that has its own (v2's
+    /// title page: `ModuleSurface` in the page's palette); nil for v1's.
+    @Entry var detailCardSurface: ((CGFloat) -> AnyView)? = nil
 }
 
 /// The 11px uppercase row label of the switcher rows (`ACT ON`, `VERSION`).

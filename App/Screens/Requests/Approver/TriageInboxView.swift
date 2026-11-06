@@ -34,6 +34,15 @@ struct TriageInboxView: View {
                 inbox.bind(model.client) { message, title, variant in model.toast(message, title: title, variant: variant) }
                 inbox.viewerIsAdmin = model.me?.isAdmin == true
                 inbox.filterItems = nav.filter.listQuery(.inbox)
+                #if DEBUG
+                // CI screenshots: `FUSIONHA_SCREENSHOT_REQUESTS_DETAILS=1` opens the first card's Details.
+                if ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_REQUESTS_DETAILS"] != nil {
+                    Task {
+                        try? await Task.sleep(for: .seconds(4))
+                        details = inbox.queue.first
+                    }
+                }
+                #endif
                 await inbox.poll()
             }
             .task(id: nav.filter.listQuery(.inbox)) {
@@ -81,12 +90,13 @@ struct TriageInboxView: View {
                     .padding(.top, 36)
                 } else if wide && !inbox.queue.isEmpty {
                     InboxPanesView(inbox: inbox, viewerId: viewerId, onAdjust: { adjusting = $0 }, onDetails: { details = $0 },
-                                   onOpenTitle: openTitle)
+                                   onOpenTitle: openTitle, onDeclineWithReason: { noting = $0 }, onMessage: onOpenThread)
                 } else if wide {
                     ScrollView {
                         SwipeDeckView(inbox: inbox, viewerId: viewerId, onDetails: { details = $0 },
                                       onSelectMode: { nav.selecting = true }, onOpenThread: onOpenThread,
-                                      onOpenBoard: onOpenBoard, onOpenHistory: onOpenHistory)
+                                      onOpenBoard: onOpenBoard, onOpenHistory: onOpenHistory,
+                                  onDeclineWithReason: { noting = $0 })
                     }
                 } else if nav.inboxList && nav.selecting && !inbox.queue.isEmpty {
                     InboxListView(inbox: inbox, viewerId: viewerId, onOpen: { details = $0 }, onOpenTitle: openTitle,
@@ -96,7 +106,8 @@ struct TriageInboxView: View {
                 } else {
                     SwipeDeckView(inbox: inbox, viewerId: viewerId, onDetails: { details = $0 },
                                   onSelectMode: { nav.selecting = true }, onOpenThread: onOpenThread,
-                                  onOpenBoard: onOpenBoard, onOpenHistory: onOpenHistory)
+                                  onOpenBoard: onOpenBoard, onOpenHistory: onOpenHistory,
+                                  onDeclineWithReason: { noting = $0 })
                 }
             }
         }
@@ -129,6 +140,12 @@ struct TriageInboxView: View {
     private func detailsSheet(_ request: MediaRequest) -> some View {
         NavigationStack {
             ScrollView {
+                #if V2
+                V2DecisionCard(request: request, triage: inbox.triage[request.id],
+                               own: inbox.isLocked(request, viewerId: viewerId), armed: inbox.armedId == request.id,
+                               actions: v2Actions(request, closing: true))
+                .padding(16)
+                #else
                 DecisionCardView(
                     request: request, triage: inbox.triage[request.id], own: inbox.isLocked(request, viewerId: viewerId),
                     armed: inbox.armedId == request.id,
@@ -140,10 +157,16 @@ struct TriageInboxView: View {
                     onMessage: { details = nil; onOpenThread(request) },
                     onOpenTitle: { details = nil; openTitle(request) })
                 .padding(16)
+                #endif
             }
+            #if V2
+            .v2PageGround(art: PageArtSource.url(backdrop: nil, poster: request.poster), artHeight: 420)
+            #endif
             .triageKeys(on: .card) { cardKey($0, request) }
             .environment(\.triageKeysEnabled, true)
+            #if !V2
             .background(Theme.bg)
+            #endif
             .navigationTitle("Decide")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { details = nil } } }
@@ -153,6 +176,20 @@ struct TriageInboxView: View {
         // Wide, Details opens from the Inbox aside: the web's modal, a form sheet.
         .formSheet()
     }
+
+    #if V2
+    /// v2's card: Not yet defers ("Not available yet"), Decline asks for a reason.
+    /// `closing`: the Details sheet closes once the choice is made.
+    private func v2Actions(_ request: MediaRequest, closing: Bool) -> V2DecisionActions {
+        V2DecisionActions(
+            approve: { if inbox.approve(request, viewerId: viewerId), closing { details = nil } },
+            notYet: { if inbox.decline(request, viewerId: viewerId, reason: .notAvailableYet), closing { details = nil } },
+            decline: { details = nil; noting = request },
+            adjust: { details = nil; adjusting = request },
+            message: { details = nil; onOpenThread(request) },
+            openTitle: { details = nil; openTitle(request) })
+    }
+    #endif
 
     /// Skip: the next waiting request, if any.
     private func next(after request: MediaRequest) -> MediaRequest? { neighbour(of: request, 1) }

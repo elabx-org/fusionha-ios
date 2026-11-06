@@ -45,8 +45,8 @@ shoot() {  # shoot <name> [env…]
   local px scale
   px=$(sips -g pixelWidth "$raw" | awk '/pixelWidth/{print $2}')
   scale=$(python3 -c "import sys; px=int(sys.argv[1]); print(round(px / (1032 if px % 1032 == 0 else 1024)))" "$px")
-  local w=951 h=669
-  [ "${FRAME:-open}" = folded ] && { w=466; h=678; }
+  local w=951 h=669  # the open inner display; folded: the outer one
+  [ "${FRAME:-open}" = folded ] && w=466 && h=678
   sips --cropToHeightWidth $((h * scale)) $((w * scale)) "$raw" --out "$OUT/v2-$name.png" > /dev/null
   rm -f "$raw"
   echo "v2-$name"
@@ -61,6 +61,11 @@ for theme in dark daylight; do
   shoot "add-configure$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631
   shoot "add-configure-versions$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631 \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_4K=1 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_SCROLL=versions
+  # Folded (outer display): the setup's footer tray and the top under the
+  # grabber, a movie at rest and a series scrolled to What to monitor.
+  FRAME=folded shoot "add-configure-folded$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631
+  FRAME=folded shoot "add-configure-monitor-folded$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=63639 \
+    SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_SCROLL=monitor
   WAIT=18 shoot "add-after$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631 \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_COMMIT=1
 done
@@ -81,6 +86,31 @@ A=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity
 WAIT=14 LAYOUT=web shoot activity-live $A
 WAIT=14 LAYOUT=web shoot activity-held $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103
 WAIT=14 shoot activity-spread $A
+
+# S12: Requests (Discover › Requests, the approver's Inbox) and Account, open
+# flat and folded, dark and Daylight.
+RQ="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_TAB=requests"
+DAY=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
+FOLD=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=folded
+shoot requests-inbox 16 $RQ
+shoot requests-inbox-daylight 16 $RQ $DAY
+shoot requests-inbox-folded 16 $RQ $FOLD
+shoot requests-inbox-folded-daylight 16 $RQ $FOLD $DAY
+shoot requests-details-folded 18 $RQ $FOLD SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTS_DETAILS=1
+shoot account 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1
+LAYOUT=spread shoot account-spread 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1
+shoot account-folded 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD
+shoot account-folded-daylight 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD $DAY
+
+# S14 shell: the flat open Duo's sidebar (shown, Daylight, hidden), and the
+# downloads capsule on the left page in book pose (the tabs cross the fold).
+shoot shell-sidebar 14
+shoot shell-sidebar-daylight 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
+xcrun simctl spawn "$UDID" defaults write "$BUNDLE" v2.shell.sidebarHidden -bool YES
+shoot shell-sidebar-hidden 14
+xcrun simctl spawn "$UDID" defaults delete "$BUNDLE" v2.shell.sidebarHidden 2> /dev/null || true
+shoot shell-book-capsule 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book
+shoot shell-book-capsule-daylight 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
 
 xcrun simctl terminate "$UDID" "$BUNDLE" 2> /dev/null || true
 xcrun simctl shutdown "$UDID" 2> /dev/null || true

@@ -55,10 +55,25 @@ private struct DuoPageSheet<Item: Identifiable, Sheet: View>: ViewModifier {
 
     private var paged: Bool { onPages ?? duoOpen }
 
+    /// CI's folded Duo harness: a sheet would escape the harness frame (it
+    /// presents on the iPad's window), so it covers the frame instead.
+    private var harnessSheet: Bool {
+        #if DEBUG
+        DuoHarness.frame == .folded
+        #else
+        false
+        #endif
+    }
+
     func body(content: Content) -> some View {
         content
             // A sheet takes Escape itself again, even opened from a page cover.
-            .sheet(item: paged ? .constant(nil) : $item) { sheet($0).sheetEscapeRoot() }
+            .sheet(item: paged || harnessSheet ? .constant(nil) : $item) { sheet($0).sheetEscapeRoot() }
+            #if DEBUG
+            .fullScreenCover(item: !paged && harnessSheet ? $item : .constant(nil)) { value in
+                sheet(value).sheetEscapeRoot().presentationBackground(.clear).duoHarness(backdrop: false)
+            }
+            #endif
             .fullScreenCover(item: paged ? $item : .constant(nil)) { value in
                 DuoPageCover(placement: placement) { sheet(value) }
             }

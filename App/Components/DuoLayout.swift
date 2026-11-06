@@ -185,7 +185,7 @@ struct ShellDetailColumn: View {
         let _ = PerfCount.hit("ShellDetailColumn.body")
         ZStack {
             page
-                .transition(duoOpen ? DuoPageMotion.transition(motion: motion) : .opacity)
+                .transition(duoOpen ? DuoPageMotion.transition(motion: motion, flat: titlePage?.seamHandle != nil) : .opacity)
         }
         .modifier(DuoPageDragEffect(offset: dragOffset, width: width, motion: motion))
         .modifier(DuoColumnPullEffect(progress: pull.progress, drop: drop, motion: motion,

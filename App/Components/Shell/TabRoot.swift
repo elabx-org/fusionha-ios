@@ -11,6 +11,7 @@ import SwiftUI
 /// presented from a tab bring their own stacks only inside sheets and covers,
 /// never inside this one.
 struct TabRoot<Content: View>: View {
+    @Environment(\.columnMinimize) private var minimize
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -20,6 +21,25 @@ struct TabRoot<Content: View>: View {
                 .reservesDownloadsPillSpace()
                 // The tab bar's top, for the shell's toasts (D3).
                 .publishesToastAnchor()
+                // v2: the Duo's column minimizes on scroll (`ColumnMinimize`).
+                .reportsColumnScroll(minimize)
+                .modifier(ShellSidebarShowItem())
+        }
+    }
+}
+
+/// v2, flat open Duo: while the sidebar is hidden, its toggle leads the
+/// tab root's column (mock minimize.js "sidebar hidden"). Nothing in v1.
+private struct ShellSidebarShowItem: ViewModifier {
+    @Environment(\.shellSidebarToggle) private var toggle
+
+    func body(content: Content) -> some View {
+        content.toolbar {
+            if let toggle, toggle.hidden {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Show sidebar", systemImage: "sidebar.left") { toggle.toggle() }
+                }
+            }
         }
     }
 }

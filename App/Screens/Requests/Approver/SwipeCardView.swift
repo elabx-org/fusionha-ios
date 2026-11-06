@@ -79,6 +79,13 @@ struct SwipeCardView: View {
             .accessibilityHidden(true)
     }
 
+    /// v2's left swipe is Not yet (defer); Decline asks for a reason.
+    #if V2
+    static let leftWord = "NOT YET"
+    #else
+    static let leftWord = "DECLINE"
+    #endif
+
     private var washes: some View {
         let approve = min(approveBlocked ? 0.3 : 1, max(0, dragX / 120))
         let decline = min(1, max(0, -dragX / 120))
@@ -87,7 +94,7 @@ struct SwipeCardView: View {
             Theme.danger.opacity(0.35 * decline)
             Text("APPROVE").font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.done)
                 .rotationEffect(.degrees(-12)).opacity(approve)
-            Text("DECLINE").font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.danger)
+            Text(Self.leftWord).font(.system(size: 30, weight: .heavy)).foregroundStyle(Theme.danger)
                 .rotationEffect(.degrees(12)).opacity(decline)
         }
         .allowsHitTesting(false)
