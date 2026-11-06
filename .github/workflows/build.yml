@@ -215,6 +215,65 @@ jobs:
           path: ${{ matrix.scheme }}.ipa
           retention-days: 14
 
+  # v2 runs in several windows: on an iPad simulator, launching it again from
+  # the Home Screen must come back to its window (not open another), and
+  # Open in New Window must still add one (scripts/v2_scene_check.sh).
+  v2-windows:
+    name: v2 windows (iPad)
+    if: inputs.duo_only == ''
+    runs-on: xcode-27
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode 27.1
+        run: |
+          sudo xcode-select -s /Applications/Xcode_27.1.app
+          xcodebuild -version
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build v2 for the simulator (Debug, with the scene probe)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Fusionha.xcodeproj \
+            -scheme FusionhaV2 \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            ONLY_ACTIVE_ARCH=YES ARCHS=arm64 \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee xcodebuild.log | grep -E "error:|BUILD" || {
+            grep -E ": error: " xcodebuild.log | sort -u | head -40 | sed 's/^/::error::/'
+            exit 1
+          }
+
+      - name: Relaunch from the Home Screen keeps one window
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = [d for rt, ds in sorted(json.load(sys.stdin)["devices"].items(), reverse=True) if "iOS-27" in rt for d in ds]
+          print(next(d for d in devices if d["name"].startswith("iPad"))["udid"])')
+          echo "Using simulator $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          sleep 15
+          scripts/v2_scene_check.sh "$UDID" build/Build/Products/Debug-iphonesimulator/FusionhaV2.app scenes
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v2-windows
+          path: scenes/*.png
+          retention-days: 14
+
   # Every push to main (and every v* tag) becomes a GitHub release carrying
   # both IPAs plus one Feather/AltStore source listing both apps. Feed URL to add in Feather:
   #   https://github.com/elabx-org/fusionha-ios/releases/latest/download/source.json

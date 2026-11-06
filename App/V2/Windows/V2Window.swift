@@ -33,6 +33,9 @@ struct V2Window: View {
             // own links: matching "*" would also claim `openWindow`'s scene
             // identifier, so Open in New Window could reuse this window.
             .handlesExternalEvents(preferring: Self.ownLinks, allowing: Self.ownLinks)
+            #if DEBUG
+            .modifier(V2SceneProbe())
+            #endif
     }
 
     private static let ownLinks: Set<String> = ["\(AppIdentity.current.urlScheme)://"]
