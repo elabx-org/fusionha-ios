@@ -32,6 +32,9 @@ extension AddConfigView {
             monitorUhd: flow.isSeries && split ? flow.monitorSummary(flow.versions?[.uhd]?.monitor ?? flow.monitor, withCustom: false) : nil,
             stop: flow.isSeries ? nil : (label: stop.label, dateText: stop.dateText))
         let busy = phase == .progress || (flow.isAdding && phase != .done)
+        // v2's primary buttons are glass-prominent on the primary: a white
+        // label (V2TitleActionRow); v1 keeps the contrast pick on `i1`.
+        let onAdd = look == nil ? Theme.onAccent : Color.white
         let done = phase == .done
         return VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
@@ -50,18 +53,18 @@ extension AddConfigView {
                 Button { Task { await add() } } label: {
                     ZStack(alignment: .leading) {
                         GeometryReader { geo in
-                            Rectangle().fill(Theme.onAccent.opacity(0.18))
+                            Rectangle().fill(onAdd.opacity(0.18))
                                 .frame(width: geo.size.width * (phase == .done ? 1 : phase == .progress ? 0.9 : 0))
                         }
                         Text(done ? "✓ Added" : busy ? "Adding…" : "Add \(flow.isSeries ? "series" : "movie")")
                             .font(.system(size: 14.5, weight: .bold))
-                            .foregroundStyle(Theme.onAccent)
+                            .foregroundStyle(onAdd)
                             .frame(maxWidth: .infinity)
                             .contentTransition(.opacity)
                     }
                     .frame(maxWidth: .infinity, minHeight: 52, maxHeight: 52)
                     .background {
-                        if done {
+                        if done && look == nil {
                             Theme.done
                         } else {
                             // The palette's primary, like every other main button.

@@ -44,40 +44,7 @@ extension AddTitleSheet {
     }
 
     var sourceSegment: some View {
-        HStack(spacing: 0) {
-            sourceButton(.tmdb)
-            if kind != .movie { sourceButton(.tvdb) }
-        }
-        .padding(3)
-        .panel(Theme.panel2, radius: 11)
-        .sensoryFeedback(.selection, trigger: source)
-    }
-
-    func sourceButton(_ value: MetadataSource) -> some View {
-        let active = source == value
-        // Shown but unreachable without a TVDB key, so people learn it exists.
-        let locked = value == .tvdb && !tvdbConfigured
-        // The provider's own colour, like the web's source switch.
-        let tint = value == .tmdb ? Theme.brand(0x01B4E4) : Theme.brand(0x4FB862)
-        return Button {
-            withAnimation(motion ? Motion.indicator : nil) { source = value }
-        } label: {
-            ProviderMark(provider: value == .tmdb ? "tmdb" : "tvdb", size: 12)
-                .opacity(locked ? 0.4 : 1)
-                .frame(maxWidth: .infinity, minHeight: 34)
-                .background {
-                    if active {
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(tint.opacity(0.12))
-                            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(tint.opacity(0.5), lineWidth: 1))
-                    }
-                }
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(locked)
-        .accessibilityLabel(value == .tmdb ? "Search TMDB" : "Search TVDB")
-        .accessibilityHint(locked ? "Needs a TVDB key → Settings" : "")
+        AddSourcePicker(source: $source, showsTvdb: kind != .movie, tvdbConfigured: tvdbConfigured)
     }
 
     var placeholder: String {

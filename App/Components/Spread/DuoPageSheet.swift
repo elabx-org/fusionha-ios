@@ -144,7 +144,7 @@ private struct DuoPageCover<Content: View>: View {
             .offset(y: pull)
             .modifier(DuoPagePull(pull: $pull, height: measured.size.height, attemptClose: attemptClose,
                                   busy: dismissGuard.policy == .busy,
-                                  grabberOffset: grabberX))
+                                  grabberOffset: grabberX, showsGrabber: placement != .twoPages))
     }
 
     /// The grabber is drawn in the page's frame before its offsets, so it is

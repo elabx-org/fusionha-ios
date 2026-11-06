@@ -90,7 +90,8 @@ struct AddConfigView: View {
     private var hero: some View {
         let shown = TitleYear.display(flow.title, flow.year)
         let view = PreviewHero(art: poster ?? backdrop, status: flow.preview?.status, title: shown.title, year: shown.year,
-                               tagline: flow.preview?.tagline, meta: heroMeta, genres: flow.preview?.genres ?? [])
+                               tagline: flow.preview?.tagline, meta: heroMeta, genres: flow.preview?.genres ?? [],
+                               oneInk: look != nil)
         if let zoom {
             view.matchedTransitionSource(id: zoom.id, in: zoom.namespace)
         } else {
@@ -121,7 +122,8 @@ struct AddConfigView: View {
             }
             .buttonStyle(.plain)
             .font(.system(size: 12.5, weight: .semibold))
-            .foregroundStyle(Theme.i2)
+            // v2: a link is label ink (the accent is for selection and the Add).
+            .foregroundStyle(look == nil ? Theme.i2 : Theme.txt)
             .frame(minHeight: 44)
             .padding(.horizontal, 16)
         }

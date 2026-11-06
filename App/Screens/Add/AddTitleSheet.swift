@@ -204,7 +204,7 @@ struct AddTitleSheet: View {
     }
 
     func pick(_ result: MediaSearchResult) {
-        if result.inLibrary, let id = result.libraryItemId, !model.requestScoped {
+        if result.inLibrary, let id = model.libraryItemId(for: result), !model.requestScoped {
             dismiss()
             model.open(id)
         } else if model.requestScoped {

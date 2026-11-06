@@ -14,9 +14,11 @@ struct V2AddTile: View {
 
     private var ink: Color { page?.ink ?? Theme.txt }
     private var muted: Color { page?.inkMuted ?? Theme.mut }
-    /// The library's own item when the result is already there.
+    /// The library's own item when the result is already there. Trending
+    /// rows carry `in_library` without an id: the library resolves it.
     private var owned: MediaItem? {
-        guard result.inLibrary, let id = result.libraryItemId else { return nil }
+        guard result.inLibrary || result.libraryItemId != nil,
+              let id = model.libraryItemId(for: result) else { return nil }
         return model.library.first { $0.id == id }
     }
 
@@ -65,7 +67,7 @@ struct V2AddTile: View {
                 Button(action: pick) {
                     Image(systemName: "plus")
                         .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(Theme.onAccent)
+                        .foregroundStyle(.white)
                         .frame(width: 28, height: 28)
                         .background(Theme.primary, in: Circle())
                         .frame(width: 44, height: 44)

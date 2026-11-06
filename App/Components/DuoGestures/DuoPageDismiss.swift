@@ -57,18 +57,23 @@ struct DuoPagePull: ViewModifier {
     let busy: Bool
     /// Keeps the grabber off the fold when the page spans both halves.
     var grabberOffset: CGFloat = 0
+    /// False for a page across both halves (its ✕ closes; a grabber over one
+    /// half sat on that half's header). The pull still works.
+    var showsGrabber = true
     @State private var armed = false
     @State private var tracking = false
 
     func body(content: Content) -> some View {
         content
             .overlay(alignment: .top) {
-                Capsule().fill(Theme.mut.opacity(0.5))
-                    .frame(width: 36, height: 5)
-                    .padding(.top, 6)
-                    .offset(x: grabberOffset, y: pull)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
+                if showsGrabber {
+                    Capsule().fill(Theme.mut.opacity(0.5))
+                        .frame(width: 36, height: 5)
+                        .padding(.top, 6)
+                        .offset(x: grabberOffset, y: pull)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
             }
             .simultaneousGesture(drag)
             .sensoryFeedback(.impact(weight: .light), trigger: armed) { _, on in on }

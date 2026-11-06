@@ -41,6 +41,8 @@ struct PreviewHero: View {
     let tagline: String?
     let meta: [Meta]
     let genres: [String]
+    /// v2's one ink: the status chip in the label colour, never a hue.
+    var oneInk = false
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
@@ -76,7 +78,7 @@ struct PreviewHero: View {
     private var overlay: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let status, !status.isEmpty {
-                StatusToneChip(status: status).padding(.bottom, 10)
+                StatusToneChip(status: status, oneInk: oneInk).padding(.bottom, 10)
             }
             (Text(title).font(.system(size: 33, weight: .black)).tracking(-0.66)
              + Text(verbatim: year.map { " \($0)" } ?? "").font(.system(size: 33, weight: .semibold)).foregroundColor(Theme.txt.opacity(0.78)))
@@ -139,9 +141,16 @@ struct PreviewHero: View {
 /// The hero status chip: clock icon + mono status, toned by meaning.
 struct StatusToneChip: View {
     let status: String
+    /// v2: the label ink (released, airing) or muted, never green or a status hue.
+    var oneInk = false
 
     private var tone: (bg: Color, fg: Color, border: Color) {
         let s = status.lowercased()
+        if oneInk {
+            let known = ["released", "available", "ended", "continuing", "returning", "airing", "on air"]
+                .contains(where: { s.contains($0) })
+            return (Theme.txt.opacity(0.08), known ? Theme.txt : Theme.mut, Theme.txt.opacity(0.2))
+        }
         if ["released", "available", "ended"].contains(where: { s.contains($0) }) {
             return (Theme.done.opacity(0.16), Theme.done, Theme.done.opacity(0.3))
         }
