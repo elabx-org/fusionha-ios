@@ -45,8 +45,24 @@ struct RootView: View {
             remembered: DuoListMemory(raw: hiddenLists).isHidden(model.tab.listMemoryKey),
             posture: fold.posture, detailShown: split.shown && hasItem))
         applyFlatOpenShare(&split)
-        if let live = seam.live, let context = seamContext(split) { split.seam = context.seam(live: live) }
+        if let live = seam.live, let context = seamContext(split) {
+            split.seam = context.seam(live: live)
+        } else if slidePending(), let context = seamContext(split) {
+            split.seam = context.slideInStart()
+        }
         return split
+    }
+
+    /// v2: a title just opened that its handle will slide in (`V2SplitHandle.slideIn`)
+    /// is laid out where the slide starts from the first frame: off the trailing
+    /// edge, over the list at its full width. Before the handle appeared, that
+    /// frame had the split at rest, so with the list remembered hidden the
+    /// Library jumped (animated) toward its hidden place and back, and the
+    /// title showed in the middle of it (owner, build 791).
+    private func slidePending() -> Bool {
+        guard !reduceMotion, model.animationsEnabled, !seam.handleShown,
+              let id = model.presentedItem?.id else { return false }
+        return seam.slidIn != id
     }
 
     /// v2 (`TitlePageOverride.flatOpenListShare`): the flat open Duo is one

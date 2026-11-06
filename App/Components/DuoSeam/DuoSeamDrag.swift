@@ -69,6 +69,13 @@ struct DuoSeamContext {
     func seam(live: CGFloat) -> FoldSeam {
         FoldSeam(x: live, listFloor: rest, titleFloor: width - rest, fromFull: fullWidth, listFull: drag.listFull)
     }
+
+    /// Where a title's slide-in starts (`V2SplitHandle.slideIn`), before the
+    /// handle has appeared to set `live`: off the trailing edge, the list at
+    /// its full width.
+    func slideInStart() -> FoldSeam {
+        FoldSeam(x: width, listFloor: rest, titleFloor: width - rest, fromFull: fullWidth, listFull: true)
+    }
 }
 
 /// The two columns around a moving seam (`FoldSplitLayout.seam`).
