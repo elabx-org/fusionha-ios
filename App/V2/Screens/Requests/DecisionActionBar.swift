@@ -16,30 +16,22 @@ struct DecisionActionBar: View {
         GlassEffectContainer(spacing: 8) {
             HStack(spacing: 8) {
                 Button(action: onDecline) {
-                    Label("Decline", systemImage: "xmark.circle")
-                        .labelStyle(.titleAndIcon)
-                        .frame(maxWidth: .infinity, minHeight: 34)
+                    choice("Decline", "xmark.circle")
                 }
                 .buttonStyle(.glass)
                 .tint(Theme.danger)
                 .disabled(decideDisabled)
 
                 Button(action: onNotYet) {
-                    Label("Not yet", systemImage: "clock")
-                        .labelStyle(.titleAndIcon)
-                        .frame(maxWidth: .infinity, minHeight: 34)
+                    choice("Not yet", "clock")
                 }
                 .buttonStyle(.glass)
                 .disabled(decideDisabled)
                 .accessibilityHint("Tells them it isn’t available yet")
 
                 Button(action: onApprove) {
-                    Label(approveLabel, systemImage: "checkmark")
-                        .labelStyle(.titleAndIcon)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                    choice(approveLabel, "checkmark")
                         .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity, minHeight: 34)
                 }
                 .buttonStyle(.glassProminent)
                 .tint(Theme.primary)
@@ -48,7 +40,16 @@ struct DecisionActionBar: View {
             }
             .font(.subheadline.weight(.semibold))
             .buttonBorderShape(.capsule)
-            .controlSize(.large)
         }
+    }
+
+    /// Icon and word side by side, always (a Label can drop its title).
+    private func choice(_ title: String, _ icon: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+            Text(title).lineLimit(1).minimumScaleFactor(0.8)
+        }
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .contentShape(Capsule())
     }
 }
