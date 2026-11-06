@@ -27,7 +27,8 @@ extension AddConfigView {
         let parts = AddSentence.summary(
             isSeries: flow.isSeries,
             versions: flow.onTiers.map { ($0, flow.editions[$0]) },
-            searchNow: flow.searchNow,
+            // The Search now switch sits right under the sentence: it doesn't repeat it.
+            searchNow: false,
             monitor: flow.isSeries ? flow.monitorSummary(flow.monitor, withCustom: !split) : nil,
             monitorUhd: flow.isSeries && split ? flow.monitorSummary(flow.versions?[.uhd]?.monitor ?? flow.monitor, withCustom: false) : nil,
             stop: flow.isSeries ? nil : (label: stop.label, dateText: stop.dateText))
@@ -83,14 +84,13 @@ extension AddConfigView {
             }
         }
         .padding(.horizontal, 14)
-        .padding(.top, 12)
-        .padding(.bottom, 14)
+        .padding(.top, 14)
+        .padding(.bottom, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular.tint(Theme.panel.opacity(0.5)), in: .rect(cornerRadius: 0))
-        // A scrim under the glass that runs to the screen edge, so the page
-        // never reads through the bar or shows below it.
-        .background { Theme.bg.opacity(0.88).ignoresSafeArea(edges: .bottom) }
-        .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
+        // One glass tray from its top edge to the screen's bottom edge: the
+        // glass and its scrim both run through the bottom safe area, so no
+        // page shows below the bar (device report, build 854).
+        .background { AddFooterTray() }
         .sensoryFeedback(.success, trigger: done)
     }
 
@@ -122,5 +122,35 @@ struct AddLeadingSwitchStyle: ToggleStyle {
             configuration.label
         }
         .contentShape(Rectangle())
+    }
+}
+
+/// The footer's ground: Liquid Glass over a ground scrim, rounded on top, to
+/// the bottom edge of the screen.
+private struct AddFooterTray: View {
+    private let shape = UnevenRoundedRectangle(topLeadingRadius: 22, topTrailingRadius: 22, style: .continuous)
+
+    var body: some View {
+        shape.fill(Theme.bg.opacity(0.85))
+            .glassEffect(.regular.tint(Theme.panel.opacity(0.35)), in: shape)
+            .overlay(shape.stroke(Theme.line, lineWidth: 1))
+            .ignoresSafeArea(edges: .bottom)
+    }
+}
+
+/// The configure page's top mask: clear under the grabber, opaque below.
+/// Inactive (the hero at the top), it masks nothing.
+struct AddTopFade: View {
+    let active: Bool
+
+    var body: some View {
+        VStack(spacing: 0) {
+            LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .clear, location: 0.3),
+                                   .init(color: .black, location: 1)],
+                           startPoint: .top, endPoint: .bottom)
+                .frame(height: active ? 60 : 0)
+            Color.black
+        }
+        .ignoresSafeArea()
     }
 }

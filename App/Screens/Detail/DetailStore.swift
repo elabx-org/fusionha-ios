@@ -26,6 +26,12 @@ struct AddEditionPreset: Identifiable {
     var version: String?
 }
 
+/// The release group a row's "Block <GROUP>" opens the block sheet for (v2).
+struct GroupBlockTarget: Identifiable {
+    let group: String
+    var id: String { group }
+}
+
 struct SeasonRef: Identifiable {
     let number: Int
     var id: Int { number }
@@ -130,6 +136,11 @@ final class DetailStore {
     var collectionFailed = false
     /// The Add-collection sheet, preselected to these films.
     var collectionAdd: CollectionAddTarget? { didSet { opened("collection", oldValue?.id, collectionAdd?.id) } }
+    /// v2 only (v1 never sets them): the title's Release groups sheet, the
+    /// "Block <GROUP>" sheet a row opens, and the blocks that apply here.
+    var showingReleaseGroups = false
+    var blockGroup: GroupBlockTarget?
+    var groupBlocks: [ReleaseGroupBlock]?
     /// Who asked for this title (`GET /api/v1/requests/item/{id}`): the hero pill and the strip.
     var requestRows: [ItemRequestRow] = []
     /// Bumped by the hero's "Requested by" pill: the page scrolls to the strip.

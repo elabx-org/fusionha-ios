@@ -133,6 +133,21 @@ def _scope_status(item_id, edition_id):
     }
 
 
+def _group_block(block_id, group, item_id, note=None, reason="manual", days=3):
+    return {"id": block_id, "group": group, "group_key": group.lower(), "scope": "item" if item_id else "global",
+            "media_item_id": item_id or None, "item_title": None, "reason": reason, "note": note,
+            "source": "api", "custom_format_id": None, "custom_format_name": None, "created_by": "admin",
+            "created_at": _ago(hours=24 * days), "evidence": {"mislabeled_count": 0, "probed_count": 0}}
+
+
+def _group_blocks(item_id):
+    """The title's release-group blocks: FLUX for it, EPSiLON everywhere (both in the mock releases)."""
+    rows = [_group_block(2, "EPSiLON", None, note="Broken DTS-HD audio", days=12)]
+    if item_id:
+        rows.insert(0, _group_block(1, "FLUX", item_id, note="Wrong cut for this title"))
+    return rows
+
+
 def _version_id(query):
     """`version_id` since 0.4.122; the deprecated `edition_id` is still accepted."""
     raw = (query.get("version_id") or query.get("edition_id") or ["0"])[0]
@@ -164,6 +179,8 @@ def get(path, query):
     m = re.fullmatch(r"/api/v1/library/(\d+)/search-pauses", path)
     if m:
         return {"episodes": [], "seasons": [], "now": _ago()}
+    if path == "/api/v1/release-groups/blocks":
+        return _group_blocks(int((query.get("media_item_id") or ["0"])[0] or 0))
     m = re.fullmatch(r"/api/v1/library/(\d+)/releases/scope-status", path)
     if m:
         return _scope_status(int(m.group(1)), _version_id(query))
@@ -181,6 +198,8 @@ def post(path):
         return {"id": 77, "status": "queued", "grab_trigger": "interactive"}
     if re.fullmatch(r"/library/\d+/search", path):
         return []
+    if path == "/api/v1/release-groups/blocks":
+        return _group_block(9, "NTb", 8)
     if re.fullmatch(r"/api/v1/library/\d+(/seasons/\d+)?/refresh", path):
         return {"run_id": 950}
     if re.fullmatch(r"/api/v1/library/versions/\d+/replace-dead", path):

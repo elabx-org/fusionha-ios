@@ -25,6 +25,9 @@ struct ItemDetailMoreMenu: View {
                     actionItems(detail)
                     Divider()
                     searchItem
+                    #if V2
+                    V2ReleaseGroupsMenuItem(store: store)
+                    #endif
                     Button("Open in the web app", systemImage: "safari", action: openWeb)
                     #if V2
                     // v2's title page (compact More): this title in a window of its own.

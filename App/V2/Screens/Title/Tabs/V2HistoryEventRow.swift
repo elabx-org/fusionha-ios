@@ -169,5 +169,6 @@ struct V2HistoryEventRow: View {
                 store.show("Release name copied", variant: .success)
             }
         }
+        V2BlockGroupButton(group: entry.chips?.first { $0.kind == "group" }?.label)
     }
 }

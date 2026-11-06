@@ -36,7 +36,7 @@ sleep 15
 shoot() {  # shoot <name> [env…]
   local name=$1; shift
   if [ -n "$ONLY" ] && ! echo "$name" | grep -qE "$ONLY"; then return 0; fi
-  env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=open \
+  env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=${FRAME:-open} \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LAYOUT=${LAYOUT:-spread} SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library "$@" \
     xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" > /dev/null
   sleep "${WAIT:-12}"
@@ -45,7 +45,9 @@ shoot() {  # shoot <name> [env…]
   local px scale
   px=$(sips -g pixelWidth "$raw" | awk '/pixelWidth/{print $2}')
   scale=$(python3 -c "import sys; px=int(sys.argv[1]); print(round(px / (1032 if px % 1032 == 0 else 1024)))" "$px")
-  sips --cropToHeightWidth $((669 * scale)) $((951 * scale)) "$raw" --out "$OUT/v2-$name.png" > /dev/null
+  local w=951 h=669  # the open inner display; folded: the outer one
+  [ "${FRAME:-open}" = folded ] && w=466 && h=678
+  sips --cropToHeightWidth $((h * scale)) $((w * scale)) "$raw" --out "$OUT/v2-$name.png" > /dev/null
   rm -f "$raw"
   echo "v2-$name"
 }
@@ -59,8 +61,33 @@ for theme in dark daylight; do
   shoot "add-configure$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631
   shoot "add-configure-versions$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631 \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_4K=1 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_SCROLL=versions
+  # Folded (outer display): the setup's footer tray and the top under the
+  # grabber, a movie at rest and a series scrolled to What to monitor.
+  FRAME=folded shoot "add-configure-folded$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631
+  FRAME=folded shoot "add-configure-monitor-folded$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=63639 \
+    SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_SCROLL=monitor
   WAIT=18 shoot "add-after$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631 \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_COMMIT=1
+  # Release groups on a title (series 8): the sheet, Block <GROUP>?, and the
+  # search with its blocked rows (mock: FLUX for this title, EPSiLON everywhere).
+  G=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_GROUPS; I=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
+  WAIT=16 shoot "groups-list$SUF" $I $T $G=list
+  WAIT=16 FRAME=folded shoot "groups-list-folded$SUF" $I $T $G=list
+  WAIT=16 shoot "groups-block$SUF" $I $T $G=NTb
+  WAIT=20 shoot "groups-search$SUF" $I $T $G=search
+  WAIT=20 FRAME=folded shoot "groups-search-folded$SUF" $I $T $G=search
+done
+# Library A–Z: the grid runs to the page gutter and the scroll thumb floats
+# over its trailing edge (thumb = resting mid-library, S = grabbed with the
+# bubble). Folded (outer display), and open spanning both pages.
+for theme in dark daylight; do
+  T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_UNUSED=1; SUF=""
+  [ "$theme" = daylight ] && T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight && SUF="-daylight"
+  FRAME=folded shoot "library-folded$SUF" $T
+  FRAME=folded shoot "library-folded-thumb$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=thumb
+  FRAME=folded shoot "library-folded-scrub$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=S
+  shoot "library-open-thumb$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=thumb
+  LAYOUT=web shoot "library-web-scrub$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=S
 done
 # Activity (live queue wide): the Web layout, the owner's setting; held Interstellar = 103.
 A=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity
@@ -83,6 +110,16 @@ LAYOUT=spread shoot account-spread 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1
 shoot account-folded 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD
 shoot account-folded-daylight 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD $DAY
 
+# S14 shell: the flat open Duo's sidebar (shown, Daylight, hidden), and the
+# downloads capsule on the left page in book pose (the tabs cross the fold).
+shoot shell-sidebar 14
+shoot shell-sidebar-daylight 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
+xcrun simctl spawn "$UDID" defaults write "$BUNDLE" v2.shell.sidebarHidden -bool YES
+shoot shell-sidebar-hidden 14
+xcrun simctl spawn "$UDID" defaults delete "$BUNDLE" v2.shell.sidebarHidden 2> /dev/null || true
+shoot shell-book-capsule 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book
+shoot shell-book-capsule-daylight 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
+
 # S11 (browse): Discover (hero carousel, rails), Calendar Agenda, Search
 # results and the Add-collection page, open flat and folded, dark and Daylight.
 DISC=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover
@@ -93,13 +130,13 @@ for theme in dark daylight; do
   T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_UNUSED=1; SUF=""
   [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
   WAIT=14 shoot "discover$SUF" $DISC $T
-  WAIT=14 shoot "discover-folded$SUF" $DISC $FOLD $T
+  WAIT=14 FRAME=folded shoot "discover-folded$SUF" $DISC $T
   WAIT=14 shoot "calendar$SUF" $CAL $T
-  WAIT=14 shoot "calendar-folded$SUF" $CAL $FOLD $T
+  WAIT=14 FRAME=folded shoot "calendar-folded$SUF" $CAL $T
   WAIT=14 shoot "search$SUF" $SRCH $T
-  WAIT=14 shoot "search-folded$SUF" $SRCH $FOLD $T
+  WAIT=14 FRAME=folded shoot "search-folded$SUF" $SRCH $T
   WAIT=14 shoot "collection$SUF" $COLL $T
-  WAIT=14 shoot "collection-folded$SUF" $COLL $FOLD $T
+  WAIT=14 FRAME=folded shoot "collection-folded$SUF" $COLL $T
 done
 
 xcrun simctl terminate "$UDID" "$BUNDLE" 2> /dev/null || true

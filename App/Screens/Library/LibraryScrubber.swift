@@ -237,6 +237,11 @@ struct ScrollScrubber: View {
         if raw == "jump" { return await state.screenshotJump(letters: letters, jump: jump) }
         let thumb = raw == "thumb"
         let letter = thumb ? letters[letters.count / 2] : raw.uppercased()
+        // Land the jump first: the hold freezes the track's top, and frozen
+        // before the grid moved up (a tall home above it) it parked the
+        // thumb below the screen.
+        if letters.contains(letter) { jump(letter) }
+        try? await Task.sleep(for: .milliseconds(600))
         state.screenshotHold(letter: letter, bubble: !thumb, letters: letters, jump: jump)
     }
     #endif

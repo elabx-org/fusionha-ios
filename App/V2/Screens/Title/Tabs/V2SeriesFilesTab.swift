@@ -142,5 +142,8 @@ struct V2SeasonFilesBlock: View {
             V2EpisodeFileLine(row: row, tier: section.edition.tier)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            if let group = row.file?.releaseGroup { V2BlockGroupButton(group: group) }
+        }
     }
 }
