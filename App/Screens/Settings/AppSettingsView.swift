@@ -10,7 +10,9 @@ struct AppSettingsView: View {
 
     var body: some View {
         #if V2
+        // A full-screen cover escapes the CI Duo frame; put it back in.
         V2SettingsView(client: client, initialPanel: initialPanel)
+            .duoHarness(backdrop: false)
         #else
         SettingsView(client: client, initialPanel: initialPanel)
         #endif
