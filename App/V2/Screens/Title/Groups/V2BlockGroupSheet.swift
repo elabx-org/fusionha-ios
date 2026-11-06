@@ -51,7 +51,6 @@ struct V2BlockGroupSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
 

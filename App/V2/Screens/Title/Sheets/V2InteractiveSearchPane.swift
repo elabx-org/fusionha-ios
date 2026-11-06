@@ -57,6 +57,7 @@ struct V2InteractiveSearchPane: View {
                 model.toast = SearchToast(text: line)
             }
             .environment(model.store)
+            .presentationDetents([.medium, .large])
         }
         .task {
             if app.mayBlockGroups, model.store.groupBlocks == nil { await model.store.loadGroupBlocks() }
