@@ -224,7 +224,7 @@ jobs:
     # Main pushes and manual runs only: ~15 min of macOS runner per run.
     if: inputs.duo_only == '' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
     runs-on: xcode-27
-    timeout-minutes: 40
+    timeout-minutes: 60
     permissions:
       contents: read
     steps:
@@ -243,6 +243,7 @@ jobs:
       # The v2 app with its scene probe, and v1's UI-test runner, which
       # drives v2 by bundle id from the Home Screen (UITests/SceneRelaunchDriver).
       - name: Build v2 and the UI-test driver for the simulator (Debug)
+        timeout-minutes: 25
         run: |
           set -o pipefail
           for scheme in FusionhaV2 Fusionha; do
@@ -262,15 +263,18 @@ jobs:
             }
           done
 
+      # Bounded: each simctl call and each driver case has its own limit inside
+      # the script, so a stuck simulator fails here instead of at the job timeout.
       - name: Relaunch from the Home Screen keeps one window
+        timeout-minutes: 30
         run: |
           UDID=$(xcrun simctl list devices available -j | python3 -c '
           import json, sys
           devices = [d for rt, ds in sorted(json.load(sys.stdin)["devices"].items(), reverse=True) if "iOS-27" in rt for d in ds]
           print(next(d for d in devices if d["name"].startswith("iPad"))["udid"])')
           echo "Using simulator $UDID"
-          xcrun simctl boot "$UDID"
-          xcrun simctl bootstatus "$UDID" -b
+          perl -e 'alarm 300; exec @ARGV' xcrun simctl bootstatus "$UDID" -b || {
+            echo "::error::simulator $UDID did not boot within 5 min"; exit 1; }
           sleep 15
           scripts/v2_scene_check.sh "$UDID" build/Build/Products/Debug-iphonesimulator/FusionhaV2.app
 
