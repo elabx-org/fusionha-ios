@@ -9,6 +9,7 @@ struct DetailCollectionRail: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     let collection: CollectionDetail
+    @Environment(\.posterRail) private var rail
 
     private var canAdd: Bool { model.me?.can("add") ?? true }
 
@@ -30,10 +31,10 @@ struct DetailCollectionRail: View {
                 }
                 .padding(.top, 22)
                 ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(alignment: .top, spacing: 16) {
+                    LazyHStack(alignment: .top, spacing: rail.spacing) {
                         ForEach(collection.parts, id: \.tmdbId) { part in
                             card(part)
-                                .containerRelativeFrame(.horizontal) { width, _ in DetailSimilarRail.cardWidth(width) }
+                                .containerRelativeFrame(.horizontal) { width, _ in rail.cardWidth(width) }
                         }
                     }
                 }
@@ -49,7 +50,7 @@ struct DetailCollectionRail: View {
     private func card(_ part: CollectionPart) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Button(action: openTab) {
-                CollectionPartArt(part: part)
+                CollectionPartArt(part: part, radius: rail.radius)
             }
             .buttonStyle(DiscoverPressStyle())
             .accessibilityLabel("Open \(part.title ?? "film")")
@@ -77,12 +78,13 @@ struct DetailCollectionRail: View {
 struct CollectionPartArt: View {
     let part: CollectionPart
     var isHere = false
+    var radius: CGFloat = 8
 
     var body: some View {
         Color.clear
             .aspectRatio(2 / 3, contentMode: .fit)
             .overlay { DiscoverArt(url: TMDBImage.resized(part.posterUrl, to: "w500")) }
-            .shelfPoster()
+            .shelfPoster(radius: radius)
             .overlay(alignment: .topTrailing) {
                 switch CollectionPartState(part) {
                 case .present: PosterStatusBadge(kind: .inLibrary).padding(6)
@@ -92,7 +94,7 @@ struct CollectionPartArt: View {
             }
             .overlay {
                 if isHere {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Theme.accentText, lineWidth: 2)
+                    RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(Theme.accentText, lineWidth: 2)
                 }
             }
     }

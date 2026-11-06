@@ -58,7 +58,7 @@ struct V2TitleTabs: View {
         case .history: V2HistoryTab(detail: detail)
         case .searches: V2SearchesTab(detail: detail)
         case .overview: V2TitleOverviewTab(detail: detail)
-        case .collection: CollectionTab(detail: detail)
+        case .collection: V2CollectionTab(detail: detail)
         }
     }
 }
