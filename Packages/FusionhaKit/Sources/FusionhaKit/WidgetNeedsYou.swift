@@ -43,15 +43,17 @@ public enum WidgetNeedsYou {
     }
 
     public static func summary(_ items: [QueueItem]) -> Summary {
-        let ranked = [DownloadsBar.Need.held, .failed, .stuck].flatMap { kind in
-            items.filter { DownloadsBar.need($0) == kind }
+        var needs: [Line] = []
+        for kind in [DownloadsBar.Need.held, .failed, .stuck] {
+            for item in items where DownloadsBar.need(item) == kind {
+                needs.append(line(item, detail: DownloadsBar.reason(kind, item)))
+            }
         }
-        let moving = items.filter { DownloadsBar.need($0) == nil }
-        return Summary(
-            needCount: ranked.count,
-            needs: ranked.map { line($0, detail: DownloadsBar.reason(DownloadsBar.need($0) ?? .held, $0)) },
-            movingCount: moving.count,
-            moving: moving.map { line($0, detail: movingDetail($0)) })
+        var moving: [Line] = []
+        for item in items where DownloadsBar.need(item) == nil {
+            moving.append(line(item, detail: movingDetail(item)))
+        }
+        return Summary(needCount: needs.count, needs: needs, movingCount: moving.count, moving: moving)
     }
 
     static func line(_ item: QueueItem, detail: String) -> Line {
