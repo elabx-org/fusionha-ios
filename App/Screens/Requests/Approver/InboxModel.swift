@@ -35,6 +35,9 @@ final class InboxModel {
     /// The low-space approve that has been warned once ("Approve anyway").
     var armedId: Int?
     var selected: Set<Int> = []
+    /// v2: the wide panes' focused request, which the folded deck opens on
+    /// (fold continuity). v1's panes keep their own focus and never set it.
+    var focus = TriageQueueFocus()
     /// Admins decide their own requests too (fusionha 0.4.214).
     var viewerIsAdmin = false
     /// The filter sheet's search, requester and source (`q`, `user_id`, `source`).

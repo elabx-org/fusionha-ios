@@ -39,6 +39,7 @@ struct V2TitleDestination: View {
         }
         .environment(store)
         .environment(\.detailReduceMotion, reduceMotion)
+        .v2TitleLiveImport(store)
         .onAppear { visible(true) }
         .onDisappear { visible(false) }
     }
@@ -56,6 +57,9 @@ extension View {
 private struct V2TitleDestinations: ViewModifier {
     let store: DetailStore
     let reduceMotion: Bool
+    /// The window's kept stacks (fold continuity): v1's episode sheet
+    /// pushes onto the kept path, so a fold keeps that page too.
+    @Environment(V2TitleStacks.self) private var stacks: V2TitleStacks?
     @State private var pushed: V2TitleRoute?
     /// The pushed pages on screen. Empty means the title itself is on top,
     /// so the open Duo's leading-edge swipe (`DuoPageEdge`) may close the
@@ -74,7 +78,8 @@ private struct V2TitleDestinations: ViewModifier {
             .onChange(of: store.episodeSheet?.id, initial: true) {
                 guard let target = store.episodeSheet else { return }
                 store.episodeSheet = nil
-                pushed = .episode(season: target.seasonNumber, episodeId: target.episodeId)
+                let route = V2TitleRoute.episode(season: target.seasonNumber, episodeId: target.episodeId)
+                if let stacks { stacks.push(route, on: store.itemId) } else { pushed = route }
             }
     }
 

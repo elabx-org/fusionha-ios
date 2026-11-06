@@ -15,7 +15,14 @@ import SwiftUI
 /// capsule; the sidebar and column minimize were removed). Slice S11
 /// (browse): Discover, Calendar, Search and the Add-collection page in v2's
 /// dress (`V2BrowseLook`). Every other tab is still v1's.
+///
+/// Fold continuity (`docs/v2.md`): the window's `FoldKeep` and title stacks
+/// (`V2TitleStacks`) hold what a fold's layout swap would otherwise reset.
 struct V2RootView: View {
+    @Environment(AppModel.self) private var model
+    @State private var stacks = V2TitleStacks()
+    @State private var keep = FoldKeep()
+
     var body: some View {
         RootView()
             .environment(\.libraryTabRoot, LibraryTabRootOverride(title: "Home", systemImage: "house") {
@@ -27,7 +34,14 @@ struct V2RootView: View {
                 AnyView(V2SplitHandle(context: context))
             }, shellGround: { id in
                 AnyView(V2TitleShellGround(itemId: id))
+            }, stackPath: { [stacks, model] id, host in
+                stacks.path(id) { model.detailHostAccepts(host) }
             }))
+            .environment(stacks)
+            .environment(\.foldKeep, keep)
+            .onChange(of: model.presentedItem?.id) { old, _ in
+                if let old { stacks.close(old) }
+            }
             .environment(\.activityQueueTab, ActivityQueueTabOverride { search in AnyView(V2QueueView(search: search)) })
             .environment(\.activityScopeTab, V2ScopeTabs.override)
             .environment(\.downloadsBarContent, DownloadsBarContentOverride { state in

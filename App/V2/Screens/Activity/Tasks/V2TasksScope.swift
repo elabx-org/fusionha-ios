@@ -61,6 +61,10 @@ struct V2TasksScope: View {
             }
             .environment(model)
         }
+        // Fold continuity: the picked run moves between the right page and its sheet.
+        .foldPick(splits: split.splits, picked: $picked, sheet: $sheetRun, id: \.id) { [store] id in
+            store.feed.items.first { $0.id == id }
+        }
     }
 
     // MARK: Caption

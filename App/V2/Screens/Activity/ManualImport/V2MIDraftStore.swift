@@ -28,6 +28,8 @@ final class V2MIDraftStore {
     var focus: MIProblem?
     /// The file shown beside the list on the open Duo.
     var fileFocus: Int?
+    /// The list's scroll, so a fold's new host opens where the last one was.
+    @ObservationIgnored var listY: CGFloat = 0
     /// Applying the draft.
     private(set) var applying = false
 

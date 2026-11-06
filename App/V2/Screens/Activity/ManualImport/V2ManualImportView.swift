@@ -13,7 +13,7 @@ struct V2ManualImportView: View {
     static let override = ManualImportSheetOverride { ids, client, onOpenWeb in
         ids.isEmpty
             ? AnyView(ManualImportSheet(downloadIds: ids, client: client, onOpenWeb: onOpenWeb))
-            : AnyView(V2ManualImportView(downloadIds: ids, client: client, onOpenWeb: onOpenWeb))
+            : AnyView(V2ManualImportHost(downloadIds: ids, client: client, onOpenWeb: onOpenWeb))
     }
 
     let downloadIds: [Int]
@@ -30,10 +30,17 @@ struct V2ManualImportView: View {
     @State private var sheet: V2MISheet?
     @State private var pollRun = 0
 
-    init(downloadIds: [Int], client: APIClient?, onOpenWeb: @escaping () -> Void) {
+    /// The window's kept models (`V2MIKept`), so a fold keeps the scan,
+    /// the choices and the open card; nil starts fresh.
+    private let kept: V2MIKept?
+
+    init(downloadIds: [Int], client: APIClient?, kept: V2MIKept? = nil, onOpenWeb: @escaping () -> Void) {
         self.downloadIds = downloadIds
         self.onOpenWeb = onOpenWeb
-        _session = State(initialValue: ManualImportSession(rescueIds: downloadIds, client: client))
+        self.kept = kept
+        _session = State(initialValue: kept?.session ?? ManualImportSession(rescueIds: downloadIds, client: client))
+        _store = State(initialValue: kept?.store ?? V2MIDraftStore())
+        _path = State(initialValue: kept?.path ?? [])
     }
 
     var body: some View {
@@ -46,8 +53,10 @@ struct V2ManualImportView: View {
                 .navigationDestination(for: V2MIRoute.self) { route in
                     V2MIRoutePage(route: route).v2PageGround(art: nil)
                 }
-                .onGeometryChange(for: V2MIPanes?.self) { V2MILayout.panes($0) } action: { panes = $0 }
         }
+        // Measured on the stack, not its root: with a page pushed the root
+        // isn't laid out, and unfolding must still see the split (fold continuity).
+        .onGeometryChange(for: V2MIPanes?.self) { V2MILayout.panes($0) } action: { panes = $0 }
         .v2MISheets($sheet, downloadIds: downloadIds, client: session.client, openWeb: openWeb)
         .environment(session)
         .environment(store)
@@ -64,6 +73,13 @@ struct V2ManualImportView: View {
         // Files view's, so a new scan starts with none (else Close asks and
         // the fallback footer would import the ticked files directly).
         .onChange(of: session.scan?.scanId) { session.selected = [] }
+        // Fold continuity: the split's open card and the phone's pushed page are one.
+        .onChange(of: panes == nil, initial: true) { _, phone in
+            var next = path
+            V2MIFoldRoute.reconcile(split: !phone, path: &next, store: store)
+            if next != path { path = next }
+        }
+        .onChange(of: path) { kept?.path = path }
         .modifier(MIAutoClose(session: session))
         .interactiveDismissDisabled(busy)
         .duoPageDismiss(busy ? .busy : dirty ? .confirm(Self.closeQuestion) : .allowed)

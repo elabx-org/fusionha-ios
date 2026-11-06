@@ -1,4 +1,5 @@
 import SwiftUI
+import FusionhaKit
 
 extension EnvironmentValues {
     /// A replacement for the open title's page, in the sheet and the shell's
@@ -24,6 +25,28 @@ struct TitlePageOverride {
     /// foot are in the title's colours from its first frame; nil keeps the
     /// shell's plain ground.
     var shellGround: (@MainActor (Int) -> AnyView)?
+    /// The pages pushed over the title (v2's seasons and episodes), kept
+    /// per window so the sheet and the column show the same stack across a
+    /// fold (`TitleStack`); the host passes itself so only the host on
+    /// screen writes. nil keeps each host's own stack.
+    var stackPath: (@MainActor (_ itemId: Int, _ host: DetailHost) -> Binding<NavigationPath>)?
+}
+
+/// The open title's navigation stack, in the sheet and the column alike:
+/// bound to the override's kept path when it has one, else its own.
+struct TitleStack<Content: View>: View {
+    @Environment(\.titlePage) private var override
+    let itemId: Int
+    let host: DetailHost
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        if let path = override?.stackPath?(itemId, host) {
+            NavigationStack(path: path) { content }
+        } else {
+            NavigationStack { content }
+        }
+    }
 }
 
 /// Where the shell puts the open title: the override's page when one is

@@ -159,6 +159,9 @@ final class DetailStore {
     @ObservationIgnored var scrollY: CGFloat = 0
     /// Whether a host has shown this store yet: a later host is a fold / unfold.
     @ObservationIgnored var hosted = false
+    /// v2: the pending re-fetch after one of this title's downloads finished
+    /// (`DetailStore+V2LiveImport`).
+    @ObservationIgnored var settleReload: Task<Void, Never>?
 
     init(itemId: Int) {
         self.itemId = itemId

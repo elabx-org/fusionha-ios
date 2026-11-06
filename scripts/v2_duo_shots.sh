@@ -183,6 +183,66 @@ WAIT=18 FRAME=folded shoot home-big-folded-kinds $HS=kinds
 WAIT=18 shoot all-titles-big-open $ALL
 curl -s -X POST "$S/__mock/big-library?on=0" > /dev/null || true
 
+# Fold continuity (owner 2026-11-06): one launch per scenario, the harness
+# frame switched in-process (FUSIONHA_SCREENSHOT_DUO_REFOLD, a fold is a
+# resize and the app keeps its scene), a shot after each step:
+# v2-<name>-<n>-<frame>.png. Each pair must show the same place.
+#   refold <name> "<frame>@0 <frame>@<s> <frame>@<s>…" [env…]
+snap() {  # snap <out-name> <frame>
+  local raw="$OUT/.raw-$1.png" px scale w=951 h=669
+  xcrun simctl io "$UDID" screenshot "$raw" > /dev/null
+  px=$(sips -g pixelWidth "$raw" | awk '/pixelWidth/{print $2}')
+  scale=$(python3 -c "import sys; px=int(sys.argv[1]); print(round(px / (1032 if px % 1032 == 0 else 1024)))" "$px")
+  [ "$2" = folded ] && w=466 && h=678
+  sips --cropToHeightWidth $((h * scale)) $((w * scale)) "$raw" --out "$OUT/v2-$1.png" > /dev/null
+  rm -f "$raw"
+  echo "v2-$1"
+}
+refold() {
+  local name=$1 steps=$2; shift 2
+  if [ -n "$ONLY" ] && ! echo "$name" | grep -qE "$ONLY"; then return 0; fi
+  local frames=() times=() rest="" i
+  for step in $steps; do frames+=("${step%@*}"); times+=("${step#*@}"); done
+  for i in "${!frames[@]}"; do [ "$i" -gt 0 ] && rest="$rest${rest:+,}${frames[$i]}@${times[$i]}"; done
+  env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME="${frames[0]}" \
+    SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_REFOLD="$rest" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LAYOUT=${LAYOUT:-spread} \
+    SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library "$@" \
+    xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" > /dev/null
+  local t0 at
+  t0=$(date +%s)
+  for i in "${!frames[@]}"; do
+    # The first shot once the launch settled; then 6 s after each step.
+    if [ "$i" -eq 0 ]; then at=${WAIT:-12}; else at=$(( ${times[$i]} + 6 )); fi
+    while [ $(( $(date +%s) - t0 )) -lt "$at" ]; do sleep 0.5; done
+    snap "$name-$((i + 1))-${frames[$i]}" "${frames[$i]}"
+  done
+}
+FOLD_OPEN="folded@0 open@16 folded@26"
+OPEN_FOLD="open@0 folded@16 open@26"
+TITLE="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DETAIL_TAB=seasons"
+# A title on Seasons, then its season 1 page pushed (the sheet folded, the column open).
+WAIT=13 refold fold-title-seasons "$FOLD_OPEN" $TITLE
+WAIT=13 refold fold-title-season-page "$FOLD_OPEN" $TITLE SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TITLE_PAGE=season:1
+WAIT=13 refold fold-title-season-page-open "$OPEN_FOLD" $TITLE SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TITLE_PAGE=season:1
+# Activity with held Interstellar (103) picked: its decision page open, its sheet folded.
+WAIT=14 LAYOUT=web refold fold-activity-held "$OPEN_FOLD" $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103
+# Close mid-decision: an override picked and the decision scrolled down; the
+# folded sheet must show the same option and scroll, and unfolding the page.
+WAIT=14 LAYOUT=web refold fold-activity-mid-decision "$OPEN_FOLD" $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103 \
+  SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_CHOICE=removeSearch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_SCROLL=220
+WAIT=14 LAYOUT=web refold fold-activity-mid-decision-folded "$FOLD_OPEN" $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103 \
+  SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_CHOICE=removeSearch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_SCROLL=220
+# Manual Import open for held Interstellar mid-way (the rescue sheet / pages).
+WAIT=18 LAYOUT=web refold fold-manual-import "$OPEN_FOLD" $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=103
+# Settings › Maintenance: the panel beside the sidebar open, pushed folded.
+WAIT=12 refold fold-settings-maintenance "$OPEN_FOLD" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=maintenance
+WAIT=12 refold fold-settings-maintenance-folded "$FOLD_OPEN" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=maintenance
+# Requests: the second request focused in the open panes, then the folded deck.
+WAIT=16 LAYOUT=web refold fold-requests "$OPEN_FOLD" $RQ SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTS_FOCUS=1
+# Add mid-setup (a movie picked from "dune").
+WAIT=14 refold fold-add-configure "$OPEN_FOLD" $ADD SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_QUERY=dune \
+  SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631
+
 xcrun simctl terminate "$UDID" "$BUNDLE" 2> /dev/null || true
 xcrun simctl shutdown "$UDID" 2> /dev/null || true
 ls "$OUT"/v2-*.png > /dev/null 2>&1 || { echo "::error::no v2 shots"; exit 1; }

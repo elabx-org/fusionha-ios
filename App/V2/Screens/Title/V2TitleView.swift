@@ -89,10 +89,8 @@ struct V2TitleView: View {
             .onAppear { PerfCount.mark("title.appear"); store.hosted = true }
             .task { await rehost() }
             .onChange(of: model.pendingDetailTab) { applyPendingTab() }
-            .onQueueChange(model) { [store] queue in
-                let mine = queue.filter { $0.mediaItemId == store.itemId }
-                if store.queue != mine { store.queue = mine }
-            }
+            // Only this title's rows; a finished download re-fetches the item.
+            .v2TitleLiveImport(store)
             .onChange(of: store.deleted) {
                 guard store.deleted else { return }
                 Task { await model.loadLibrary() }
@@ -100,6 +98,7 @@ struct V2TitleView: View {
                 close()
             }
             .v2TitleDestinations(store: store, reduceMotion: reduceMotion)
+            .modifier(V2FoldScreenshot(store: store))
             .modifier(V2TitleSheets(presenter: presenter, reduceMotion: reduceMotion))
     }
 

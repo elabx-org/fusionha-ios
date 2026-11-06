@@ -257,7 +257,7 @@ struct RootView: View {
         .sheet(item: sheetItem, onDismiss: { model.sheetPresence.dismissed() }) { ref in
             // A stack of its own, so Close, Refresh and Open in the web app are
             // system toolbar items over the art (DC10, ruling Q-DC8).
-            NavigationStack { TitlePageHost(store: model.detailStore(for: ref.id)) }
+            TitleStack(itemId: ref.id, host: .sheet) { TitlePageHost(store: model.detailStore(for: ref.id)) }
                 .onAppear {
                     model.sheetPresence.shown()
                     DeepLinkProbe.log("detail \(ref.id) shown")
