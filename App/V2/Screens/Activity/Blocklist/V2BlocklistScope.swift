@@ -58,6 +58,14 @@ struct V2BlocklistScope: View {
         .task(id: search) { await data.load(model.client, search: search) }
         .onChange(of: data.category) { data.prune() }
         .onChange(of: data.feed.revision) { data.prune() }
+        // Fold continuity: the title open on the right page opens inline folded, and back.
+        .onChange(of: split.splits) { _, now in
+            if now {
+                if picked == nil, toggled.count == 1 { picked = toggled.first }
+            } else if let picked {
+                toggled.insert(picked)
+            }
+        }
         .confirmationDialog("Clear the whole blocklist?", isPresented: $clearing, titleVisibility: .visible) {
             Button("Clear blocklist", role: .destructive) { Task { await data.clearAll(model.client, toaster: toaster) } }
         } message: {

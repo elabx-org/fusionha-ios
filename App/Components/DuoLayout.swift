@@ -267,7 +267,7 @@ struct ShellDetailColumn: View {
     private var page: some View {
         Group {
             if let ref = model.presentedItem {
-                NavigationStack {
+                TitleStack(itemId: ref.id, host: .column) {
                     // The same store the sheet showed (`AppModel.detailStore`), so
                     // unfolding keeps the page, its child sheets and their drafts.
                     TitlePageHost(store: model.detailStore(for: ref.id), onClose: { closePage() })

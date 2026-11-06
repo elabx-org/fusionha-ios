@@ -15,6 +15,8 @@ struct ShellPresentations: ViewModifier {
     /// The shell has been measured: Account waits for it, so a launch or a
     /// link that opens it at once doesn't show the form sheet, then the pages.
     let measured: Bool
+    /// v2's fold continuity (`FoldKeep`); nil in v1.
+    @Environment(\.foldKeep) private var foldKeep
 
     /// Account's form sheet (`paged` false) or its pages (`paged` true). A
     /// presentation the layout no longer picks never writes back.
@@ -41,6 +43,8 @@ struct ShellPresentations: ViewModifier {
                       placement: .twoPages, onPages: true) {
             AccountSpreadSheet()
         }
+        // v2: Add closed for good, so what it typed doesn't ride into the next one.
+        .onChange(of: model.showingAdd) { if !model.showingAdd { foldKeep?.drop("add-find") } }
         .onChange(of: model.showingAccount) {
             // The page cover has no onDismiss: open what the hub queued once it is gone.
             guard accountOnPages, !model.showingAccount else { return }

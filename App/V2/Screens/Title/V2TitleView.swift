@@ -100,6 +100,7 @@ struct V2TitleView: View {
                 close()
             }
             .v2TitleDestinations(store: store, reduceMotion: reduceMotion)
+            .modifier(V2FoldScreenshot(store: store))
             .modifier(V2TitleSheets(presenter: presenter, reduceMotion: reduceMotion))
     }
 

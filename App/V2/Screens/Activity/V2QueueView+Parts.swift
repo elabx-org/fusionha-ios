@@ -11,6 +11,8 @@ extension V2QueueView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     V2QueueHeader(counts: counts, loaded: store.loaded)
+                        .id(FoldAnchorTop.header)
+                        .foldAnchor(FoldAnchorTop.header)
                     content
                 }
                 .padding(.horizontal, gutter)
@@ -18,6 +20,7 @@ extension V2QueueView {
                 .padding(.bottom, 24)
             }
             .scrollDismissesKeyboard(.immediately)
+            .keepsFoldAnchor(anchor, proxy: proxy, active: dragShare == nil)
             .onChange(of: model.pendingQueueScroll, initial: true) { consumeFocus(proxy) }
             .onChange(of: store.items.map(\.id)) { consumeFocus(proxy) }
         }
