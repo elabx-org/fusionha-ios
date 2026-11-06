@@ -42,9 +42,6 @@ shoot() {  # shoot <name> [env…]
   sleep "${WAIT:-12}"
   local raw="$OUT/.raw-$name.png"
   xcrun simctl io "$UDID" screenshot "$raw" > /dev/null
-  local probe
-  probe="$(xcrun simctl get_app_container "$UDID" "$BUNDLE" data 2> /dev/null)/Library/Caches/deeplink-log.txt"
-  if [ -f "$probe" ]; then echo "-- $name probe:"; tail -8 "$probe"; rm -f "$probe"; fi
   local px scale
   px=$(sips -g pixelWidth "$raw" | awk '/pixelWidth/{print $2}')
   scale=$(python3 -c "import sys; px=int(sys.argv[1]); print(round(px / (1032 if px % 1032 == 0 else 1024)))" "$px")
