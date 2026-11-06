@@ -29,8 +29,9 @@ struct V2KindGrid: View {
                 }
             }
         }
-        // The column's own width (not the grid's, which follows its cells).
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // The column's own width (not the grid's, which follows its cells):
+        // `minWidth: 0` so a first pass measured too wide can't hold itself.
+        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
     }
 
