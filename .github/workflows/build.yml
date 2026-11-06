@@ -274,8 +274,11 @@ jobs:
           pick = next((d for d in devices if d["name"].startswith("iPad mini")), None) or next(d for d in devices if d["name"].startswith("iPad"))
           print(pick["udid"])')
           echo "Using simulator $UDID"
-          # The build's services hold gigabytes the simulator needs on this runner.
-          killall SWBBuildService XCBBuildService swift-frontend sourcekit-lsp 2> /dev/null || true
+          # The runner has ~7 GB: a freshly booted iPad Pro 13" (SimRenderServer
+          # peaks past 3.5 GB even on the mini) beside the build's leftover
+          # services swapped it until the runner stopped answering. Use the
+          # iPad mini and free the build's services first.
+          killall -v SWBBuildService XCBBuildService swift-frontend sourcekit-lsp 2>&1 || true
           xcrun simctl shutdown all 2> /dev/null || true
           perl -e 'alarm 300; exec @ARGV' xcrun simctl bootstatus "$UDID" -b || {
             echo "::error::simulator $UDID did not boot within 5 min"; exit 1; }

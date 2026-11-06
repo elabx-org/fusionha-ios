@@ -32,7 +32,7 @@ watch_runner() {
 }
 watch_runner &
 WATCH_PID=$!
-trap 'kill $WATCH_PID 2> /dev/null' EXIT
+trap 'pkill -P $WATCH_PID 2> /dev/null; kill $WATCH_PID 2> /dev/null' EXIT
 
 log_file() {
   echo "$(bounded 60 xcrun simctl get_app_container "$UDID" "$APP" data)/Library/Caches/deeplink-log.txt"
