@@ -11,8 +11,8 @@
 #   [PERF_SCRIPT=v2frames] scripts/perf_v2_session.sh <app-path> <out-dir>
 #
 # Writes <out-dir>/<script>.log (stderr: the PERF lines) and <script>.png;
-# v2frames (App/Debug/PerfProbe+Frames.swift) also copies its captures out
-# as <out-dir>/shot-*.jpg.
+# v2frames (App/Debug/PerfProbe+Frames.swift) records the screen
+# (<out-dir>/v2frames.mp4) and pulls frames around each mark as shot-*.jpg.
 set -u
 APP=$1
 OUT=$2
@@ -45,6 +45,14 @@ xcrun simctl install "$UDID" "$APP"
 sleep 20
 
 log="$OUT/$SCRIPT.log"
+# v2frames: the screen is recorded; each PERF-MARK's frames come out of it below.
+REC=""
+if [ "$SCRIPT" = v2frames ]; then
+  xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$OUT/v2frames.mp4" 2> "$OUT/record.log" &
+  REC=$!
+  sleep 2
+  REC_START=$(python3 -c 'import time; print(time.time())')
+fi
 env SIMCTL_CHILD_FUSIONHA_PERF=1 SIMCTL_CHILD_FUSIONHA_PERF_SCRIPT="$SCRIPT" \
   SIMCTL_CHILD_FUSIONHA_PERF_DELAY=8 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" \
   SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=open \
@@ -57,10 +65,20 @@ for _ in $(seq 1 600); do
 done
 xcrun simctl io "$UDID" screenshot "$OUT/$SCRIPT.png" > /dev/null 2>&1 || true
 grep "PERF" "$log" | grep -v '"event":"stacks"' || true
-DATA=$(xcrun simctl get_app_container "$UDID" "$BUNDLE" data 2> /dev/null || true)
-if [ -n "$DATA" ] && [ -d "$DATA/tmp/perfshots" ]; then
-  for f in "$DATA"/tmp/perfshots/*.jpg; do cp "$f" "$OUT/shot-$(basename "$f")"; done
-  echo "copied $(ls "$DATA"/tmp/perfshots | wc -l) captures"
+if [ -n "$REC" ]; then
+  kill -INT "$REC" 2> /dev/null; wait "$REC" 2> /dev/null || true
+  command -v ffmpeg > /dev/null || brew install ffmpeg > /dev/null 2>&1 || true
+  # Frames every 0.25 s for 3.5 s from each mark (recording time = mark - start).
+  grep "^PERF-MARK" "$log" | while read -r _ name at; do
+    base=$(python3 -c "print(max(0.0, $at - $REC_START))")
+    for step in $(seq 0 14); do
+      t=$(python3 -c "print(round($base + $step * 0.25, 3))")
+      ms=$(printf '%04d' $((step * 250)))
+      ffmpeg -loglevel error -ss "$t" -i "$OUT/v2frames.mp4" -frames:v 1 -vf scale=1032:-1 -q:v 4 \
+        "$OUT/shot-$name-$ms.jpg" < /dev/null || true
+    done
+  done
+  echo "frames: $(ls "$OUT"/shot-*.jpg 2> /dev/null | wc -l)"
 fi
 status=0
 if ! grep -q "PERF DONE" "$log"; then

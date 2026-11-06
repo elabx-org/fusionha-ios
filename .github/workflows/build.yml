@@ -964,4 +964,5 @@ jobs:
             perf/*.out
             perf/*.png
             perf/*.jpg
+            perf/*.mp4
           retention-days: 14
