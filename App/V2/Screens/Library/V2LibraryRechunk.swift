@@ -9,12 +9,14 @@ import FusionhaKit
 struct V2LibraryDeriveKey: Equatable {
     var inputs: LibraryInputs
     var unmonitoredOnly: Bool
+    var network: String
 
-    init(_ inputs: LibraryInputs, unmonitoredOnly: Bool) {
+    init(_ inputs: LibraryInputs, unmonitoredOnly: Bool, network: String) {
         var any = inputs
         any.columns = 0
         self.inputs = any
         self.unmonitoredOnly = unmonitoredOnly
+        self.network = network
     }
 }
 

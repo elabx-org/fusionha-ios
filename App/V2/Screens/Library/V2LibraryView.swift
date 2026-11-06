@@ -30,6 +30,7 @@ struct V2LibraryView: View {
     @SceneStorage("v2.library.recency") private var recency: LibraryRecency = V2LibraryFilterSeed.recency
     @SceneStorage("v2.library.group") private var group = V2LibraryFilterSeed.group
     @SceneStorage("v2.library.unmonitored") private var unmonitoredOnly = V2LibraryFilterSeed.unmonitored
+    @SceneStorage("v2.library.network") private var network = V2LibraryFilterSeed.network
     @AppStorage("v2.library.shelf") private var shelf: V2LibraryShelfSource = .recentlyAdded
     @State private var compactSort = CompactSort()
     @State private var derived = LibraryDerived()
@@ -77,7 +78,8 @@ struct V2LibraryView: View {
 
     private var filters: V2LibraryFilters {
         V2LibraryFilters(kind: $kindRaw, tier: $tier, status: $status, sort: $sort,
-                         recency: $recency, group: $group, density: $density, unmonitored: $unmonitoredOnly)
+                         recency: $recency, group: $group, density: $density, unmonitored: $unmonitoredOnly,
+                         network: $network)
     }
 
     private var columns: Int {
@@ -165,8 +167,10 @@ struct V2LibraryView: View {
         }
         .onChange(of: inputs, initial: true) { rederive() }
         .onChange(of: unmonitoredOnly) { rederive() }
+        .onChange(of: network) { rederive() }
         .modifier(V2LibraryFilterWriteThrough(kind: kindRaw, tier: tier, status: status, sort: sort,
-                                              recency: recency, group: group, unmonitored: unmonitoredOnly))
+                                              recency: recency, group: group, unmonitored: unmonitoredOnly,
+                                              network: network))
         .onChange(of: held) { rebuildHome() }
     }
 
@@ -227,9 +231,10 @@ struct V2LibraryView: View {
     }
 
     /// The grid and home from the library, narrowed first to the titles
-    /// switched off when Show › Not monitored is on (v1's inputs untouched).
+    /// switched off when Show › Not monitored is on and to the Service
+    /// chip's network (v1's inputs untouched).
     private func rederive() {
-        let key = V2LibraryDeriveKey(inputs, unmonitoredOnly: unmonitoredOnly)
+        let key = V2LibraryDeriveKey(inputs, unmonitoredOnly: unmonitoredOnly, network: network)
         defer { derivedKey = key }
         // Only the columns changed (a title opening beside the list): new rows, nothing else.
         if key == derivedKey, let next = PerfCount.time("V2Library.rechunk", {
@@ -238,7 +243,8 @@ struct V2LibraryView: View {
             derived = next
             return
         }
-        let source = unmonitoredOnly ? model.library.filter { $0.monitored == false } : model.library
+        let mine = unmonitoredOnly ? model.library.filter { $0.monitored == false } : model.library
+        let source = V2LibraryServices.narrow(mine, to: network)
         derived = PerfCount.time("V2Library.derive") { inputs.derive(from: source) }
         PerfCount.time("V2Library.rebuildHome") { rebuildHome() }
         startEntrance()
@@ -253,7 +259,7 @@ struct V2LibraryView: View {
 
     /// A new kind, tier, filter or sort plays the grid's entrance (v1's rule).
     private func startEntrance() {
-        let key = "\(kindRaw)|\(tier)|\(status)|\(unmonitoredOnly)|\(sort)|\(recency)|\(group)|\(compact)|\(derived.rows.isEmpty)"
+        let key = "\(kindRaw)|\(tier)|\(status)|\(unmonitoredOnly)|\(network)|\(sort)|\(recency)|\(group)|\(compact)|\(derived.rows.isEmpty)"
         guard entrance.update(key: key, rows: derived.rows) else { return }
         let generation = entrance.generation
         Task {

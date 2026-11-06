@@ -3,31 +3,38 @@ import FusionhaKit
 
 /// The Library's chip row (v2 header, mock browse.js home 'live'): one
 /// sideways row of glass chips over the existing filters, no new semantics.
-/// All clears the version and status filters; HD / 4K are the tier; Missing
-/// and Upcoming the status filter; Anime the kind. A chip tapped again turns
+/// All clears the version, status and service filters; HD / 4K are the tier; Missing
+/// and Upcoming the status filter; Service the network (`V2LibraryServiceChip`);
+/// Anime the kind. A chip tapped again turns
 /// off. The rest of the filters live in the bar's Filter menu
 /// (`V2LibraryFilterMenu`); set ones show as tokens under this row.
 struct V2LibraryFilterRow: View {
     let filters: V2LibraryFilters
     /// The library has anime (the Anime chip's kind).
     var showsAnime = true
+    @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
+    /// The library's services for the Service chip, rebuilt when the library changes.
+    @State private var services: [V2LibraryService] = []
 
     private var anime: Bool { filters.kind == LibraryKind.anime.rawValue }
-    private var feedbackKey: String { "\(filters.tier.rawValue)|\(filters.status.rawValue)|\(filters.kind)" }
+    private var feedbackKey: String { "\(filters.tier.rawValue)|\(filters.status.rawValue)|\(filters.kind)|\(filters.network)" }
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             GlassEffectContainer(spacing: 8) {
                 HStack(spacing: 8) {
-                    chip("All", on: filters.tier == .all && filters.status == .all) {
+                    chip("All", on: filters.tier == .all && filters.status == .all && filters.network.isEmpty) {
                         filters.tier = .all
                         filters.status = .all
+                        filters.network = ""
                     }
                     chip("HD", on: filters.tier == .hd) { filters.tier = filters.tier == .hd ? .all : .hd }
                     chip("4K", on: filters.tier == .uhd) { filters.tier = filters.tier == .uhd ? .all : .uhd }
                     chip("Missing", on: filters.status == .missing) { toggle(.missing) }
-                    V2LibraryServiceChips(filters: filters)
+                    if !services.isEmpty || !filters.network.isEmpty {
+                        V2LibraryServiceChip(filters: filters, services: services)
+                    }
                     if showsAnime || anime {
                         chip("Anime", symbol: "sparkle", on: anime) {
                             filters.kind = anime ? "all" : LibraryKind.anime.rawValue
@@ -38,6 +45,19 @@ struct V2LibraryFilterRow: View {
             }
         }
         .scrollClipDisabled()
+        .task(id: "\(model.libraryVersion)|\(filters.network)") {
+            let next = V2LibraryServices.from(model.library, keeping: filters.network)
+            if next != services { services = next }
+        }
+        #if DEBUG
+        // CI screenshots: `FUSIONHA_SCREENSHOT_NETWORK=<name>` picks that service;
+        // any other shot starts with none (the pick persists between launches).
+        .onAppear {
+            let env = ProcessInfo.processInfo.environment
+            guard env["FUSIONHA_SCREENSHOT_SERVER"] != nil else { return }
+            filters.network = env["FUSIONHA_SCREENSHOT_NETWORK"] ?? ""
+        }
+        #endif
         .sensoryFeedback(.selection, trigger: feedbackKey)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Filters")
@@ -67,20 +87,5 @@ struct V2LibraryFilterRow: View {
         .buttonStyle(.plain)
         .glassEffect(on ? .regular.tint(Theme.primary).interactive() : .regular.interactive(), in: Capsule())
         .accessibilityAddTraits(on ? .isSelected : [])
-    }
-}
-
-/// HOOK, renders nothing yet: one chip per streaming service (the mock's
-/// Disney+, Paramount+, Apple TV, Netflix, Prime Video marks) between
-/// Missing and Anime. The server is adding `network_logo_url` /
-/// `network_name` to the library list rows; once `MediaItem` carries them,
-/// build the services from the library here, draw each logo as the one-ink
-/// network mark, and add a network filter to `V2LibraryFilters` and
-/// `LibraryInputs` (there is no network filter today).
-struct V2LibraryServiceChips: View {
-    let filters: V2LibraryFilters
-
-    var body: some View {
-        EmptyView()
     }
 }

@@ -63,7 +63,10 @@ extension V2LibraryFilters {
 extension V2LibraryToken {
     /// Shown by the chip row (`V2LibraryFilterRow`) rather than as a token.
     var hasChip: Bool {
-        if case .status(let status) = self { return status == .missing || status == .upcoming }
-        return false
+        switch self {
+        case .status(let status): return status == .missing || status == .upcoming
+        case .network: return true
+        default: return false
+        }
     }
 }

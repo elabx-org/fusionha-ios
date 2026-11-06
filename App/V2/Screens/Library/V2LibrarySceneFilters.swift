@@ -14,6 +14,7 @@ enum V2LibraryFilterSeed {
     static let recencyKey = "library.recency"
     static let groupKey = "library.group"
     static let unmonitoredKey = "v2.library.unmonitored"
+    static let networkKey = "v2.library.network"
 
     private static var defaults: UserDefaults { .standard }
 
@@ -28,6 +29,7 @@ enum V2LibraryFilterSeed {
     }
     static var group: Bool { defaults.bool(forKey: groupKey) }
     static var unmonitored: Bool { defaults.bool(forKey: unmonitoredKey) }
+    static var network: String { defaults.string(forKey: networkKey) ?? "" }
 }
 
 /// Writes the window's filters back as the "used last" seed for the next window.
@@ -39,6 +41,7 @@ struct V2LibraryFilterWriteThrough: ViewModifier {
     let recency: LibraryRecency
     let group: Bool
     let unmonitored: Bool
+    let network: String
 
     func body(content: Content) -> some View {
         content
@@ -49,6 +52,7 @@ struct V2LibraryFilterWriteThrough: ViewModifier {
             .onChange(of: recency) { _, value in save(value.rawValue, V2LibraryFilterSeed.recencyKey) }
             .onChange(of: group) { _, value in save(value, V2LibraryFilterSeed.groupKey) }
             .onChange(of: unmonitored) { _, value in save(value, V2LibraryFilterSeed.unmonitoredKey) }
+            .onChange(of: network) { _, value in save(value, V2LibraryFilterSeed.networkKey) }
     }
 
     private func save(_ value: Any, _ key: String) {

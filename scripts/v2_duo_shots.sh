@@ -90,6 +90,10 @@ for theme in dark daylight; do
   FRAME=folded shoot "library-folded-scrub$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=S
   shoot "library-open-thumb$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=thumb
   LAYOUT=web shoot "library-web-scrub$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=S
+  # The Service chip picked (the network filter).
+  NET="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_NETWORK=Warner Bros. Pictures"
+  FRAME=folded shoot "library-service-folded$SUF" $T "$NET"
+  shoot "library-service$SUF" $T "$NET"
 done
 # Activity (live queue wide): the Web layout, the owner's setting; held Interstellar = 103.
 A=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity
