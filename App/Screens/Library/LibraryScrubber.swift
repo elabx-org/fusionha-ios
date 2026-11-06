@@ -201,6 +201,12 @@ struct ScrollScrubber: View {
                     .frame(width: 110, height: height)
                     .coordinateSpace(.named(Self.space))
                     .offset(x: trailingEdge(geo) - 110, y: top)
+                    #if DEBUG
+                    .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+                        guard ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SCRUB"] != nil else { return }
+                        DeepLinkProbe.log("scrub track \(frame) reader=\(geo.frame(in: .global))")
+                    }
+                    #endif
             }
             .sensoryFeedback(.selection, trigger: state.tick)
             .accessibilityHidden(true)
@@ -238,6 +244,9 @@ struct ScrollScrubber: View {
         let thumb = raw == "thumb"
         let letter = thumb ? letters[letters.count / 2] : raw.uppercased()
         state.screenshotHold(letter: letter, bubble: !thumb, letters: letters, jump: jump)
+        try? await Task.sleep(for: .seconds(1))
+        DeepLinkProbe.log("scrub hold \(letter) visible=\(state.visible) progress=\(state.progress) "
+            + "gridTop=\(state.gridTop) gridTrailing=\(state.gridTrailing.map { "\($0)" } ?? "nil")")
     }
     #endif
 
