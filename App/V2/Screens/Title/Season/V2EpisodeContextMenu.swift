@@ -16,9 +16,12 @@ struct V2EpisodeContextMenu: View {
 
     var body: some View {
         if canSearch {
-            Button("Automatic search", systemImage: "magnifyingglass") {
-                Task { await store.search(label: "\(detail.title) \(code)", episodeId: episode.id) }
+            let activity = store.activity(.episode(episode.id))
+            // A menu item shows only text and a symbol: the row shows the spinner.
+            Button(activity?.label ?? "Automatic search", systemImage: activity?.symbol ?? "magnifyingglass") {
+                store.v2Search(.episode(episode.id), label: "\(detail.title) \(code)", episodeId: episode.id)
             }
+            .disabled(activity?.isSearching == true)
             Button("Interactive search", systemImage: "person") {
                 store.interactive = InteractiveTarget(editionIds: detail.orderedEditions.map(\.id), episodeId: episode.id,
                                                       subtitle: code)

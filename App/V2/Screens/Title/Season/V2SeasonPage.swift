@@ -88,13 +88,16 @@ struct V2SeasonPage: View {
     @ViewBuilder
     private func swipe(_ detail: ItemDetail, _ episode: Episode) -> some View {
         if canSearch {
+            let activity = store.activity(.episode(episode.id))
             Button {
                 let code = EpisodeCode.episode(season: seasonNumber, episode: episode.episodeNumber)
-                Task { await store.search(label: "\(detail.title) \(code)", episodeId: episode.id) }
+                store.v2Search(.episode(episode.id), label: "\(detail.title) \(code)", episodeId: episode.id)
             } label: {
-                Label("Search", systemImage: "magnifyingglass")
+                // A swipe action shows only text and a symbol: the row shows the spinner.
+                Label(activity?.label ?? "Search", systemImage: activity?.symbol ?? "magnifyingglass")
             }
             .tint(.blue)
+            .disabled(activity?.isSearching == true)
         }
         if canEdit {
             let on = store.episodeMonitored(episode)
@@ -137,7 +140,10 @@ private struct V2SeasonPageHeader: View {
     let facts: V2SeasonFacts
     let canSearch: Bool
 
-    private var searching: Bool { store.flash?.phase == .searching }
+    private var n: Int { season.seasonNumber }
+    private var missingRun: SearchActivity? { store.activity(.seasonMissing(n)) }
+    /// Search season / Search each episode, started from the ⋯ menu.
+    private var seasonRun: SearchActivity? { store.activity(.season(n)) }
 
     var body: some View {
         VStack(spacing: 12) {
@@ -146,21 +152,25 @@ private struct V2SeasonPageHeader: View {
             }
             .padding(.horizontal, 4)
             .padding(.top, 4)
-            if canSearch && facts.missing > 0 {
+            if let seasonRun {
+                V2SearchStatusLine(activity: seasonRun)
+            }
+            if canSearch && (facts.missing > 0 || missingRun != nil) {
                 Button {
-                    Task { await store.gradualSearch(label: "\(detail.title) \(season.title)", season: season.seasonNumber,
-                                                     missingOnly: true) }
+                    store.v2GradualSearch(.seasonMissing(n), label: "\(detail.title) \(season.title)", season: n,
+                                          missingOnly: true)
                 } label: {
-                    Label("Search missing", systemImage: "magnifyingglass")
+                    V2SearchLabel(title: "Search missing", activity: missingRun, haptics: false)
                         .font(.system(size: 15, weight: .semibold))
                         .padding(.horizontal, 4)
                 }
                 .buttonStyle(.glass)
-                .disabled(searching)
+                .disabled(missingRun?.isSearching == true)
                 .accessibilityHint("Searches the \(facts.missing) missing episode\(facts.missing == 1 ? "" : "s"), one at a time")
             }
         }
         .frame(maxWidth: .infinity)
         .v2CardStyle()
+        .v2SearchHaptics(store.seasonActivity(n))
     }
 }

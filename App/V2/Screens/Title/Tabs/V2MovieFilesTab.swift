@@ -123,7 +123,9 @@ struct V2MovieWantedCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.pagePalette) private var page
     let edition: DetailEdition
-    @State private var searching = false
+
+    /// This version's own search, or the title's (which covers it).
+    private var activity: SearchActivity? { store.searchActivity.activity(any: [.version(edition.id), .title]) }
 
     private var downloading: Bool { edition.downloadState == "downloading" || edition.downloadState == "upgrading" }
 
@@ -144,15 +146,11 @@ struct V2MovieWantedCard: View {
             if model.me?.can("search") ?? true {
                 HStack(spacing: 8) {
                     Button {
-                        searching = true
-                        Task {
-                            await store.search(label: edition.label, editionId: edition.id)
-                            searching = false
-                        }
+                        store.v2Search(.version(edition.id), label: edition.label, editionId: edition.id)
                     } label: {
-                        Label("Search", systemImage: "magnifyingglass")
+                        V2SearchLabel(title: "Search", activity: activity)
                     }
-                    .disabled(searching)
+                    .disabled(activity?.isSearching == true)
                     Button("Interactive search", systemImage: "person") {
                         store.interactive = InteractiveTarget(editionIds: [edition.id], subtitle: edition.label)
                     }

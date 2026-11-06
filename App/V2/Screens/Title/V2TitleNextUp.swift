@@ -92,13 +92,13 @@ struct V2TitleNextUpCard: View {
                 Button { open() } label: { card }
                     .buttonStyle(PressScaleStyle(scale: 0.98))
                 Button { search() } label: {
-                    Image(systemName: "magnifyingglass")
+                    V2SearchLabel(title: "Search \(next.code)", activity: activity, iconOnly: true)
                         .font(.system(size: 15, weight: .semibold))
                         .frame(width: 26, height: 26)
                 }
                 .buttonStyle(.glass)
                 .buttonBorderShape(.circle)
-                .accessibilityLabel("Search \(next.code)")
+                .disabled(activity?.isSearching == true)
             }
             .padding(10)
             .background { ModuleSurface(radius: 20) }
@@ -134,6 +134,7 @@ struct V2TitleNextUpCard: View {
                     ForEach(next.states.indices, id: \.self) { i in
                         EditionBadge(tier: next.states[i].tier, state: next.states[i].state)
                     }
+                    if let activity { V2SearchStatusLine(activity: activity).padding(.leading, 4) }
                 }
                 .padding(.top, 4)
             }
@@ -148,8 +149,10 @@ struct V2TitleNextUpCard: View {
         store.episodeSheet = EpisodeSheetTarget(episodeId: next.episode.id, seasonNumber: next.season)
     }
 
+    private var activity: SearchActivity? { store.activity(.episode(next.episode.id)) }
+
     private func search() {
         let code = EpisodeCode.episode(season: next.season, episode: next.episode.episodeNumber)
-        Task { await store.search(label: "\(detail.title) \(code)", episodeId: next.episode.id) }
+        store.v2Search(.episode(next.episode.id), label: "\(detail.title) \(code)", episodeId: next.episode.id)
     }
 }

@@ -150,6 +150,8 @@ final class DetailStore {
     /// The anchor of the row the strip just revealed, lit briefly (only that
     /// row: a Files card never lights the Versions panel row too).
     var highlightedAnchor: String?
+    /// v2 only: each automatic search's state where it was started (`v2Search`).
+    var searchActivity = SearchActivityBook()
 
     /// What the child sheets had typed when their host went away (`retainsDraft`).
     @ObservationIgnored var drafts = DraftBag()

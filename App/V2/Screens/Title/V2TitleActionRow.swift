@@ -23,7 +23,8 @@ struct V2TitleActionRow: View {
 
     private var canEdit: Bool { model.me?.can("edit") ?? true }
     private var canSearch: Bool { canEdit && (model.me?.can("search") ?? true) }
-    private var searching: Bool { store.flash?.phase == .searching }
+    private var target: SearchTarget { focused.map { .version($0.id) } ?? .title }
+    private var activity: SearchActivity? { store.activity(target) }
     private var monitored: Bool { monitorOverride ?? (detail.monitored ?? true) }
     /// The selected version card's version, when the title has more than one.
     private var focused: DetailEdition? { detail.editions.count > 1 ? store.focusedVersion : nil }
@@ -61,16 +62,20 @@ struct V2TitleActionRow: View {
     private var searches: some View {
         if canSearch && showsSearch {
             Button { runSearch() } label: {
-                Label(searchTitle, systemImage: "magnifyingglass")
-                    .contentTransition(.opacity)
+                V2SearchLabel(title: searchTitle, activity: activity, spinner: Theme.onAccent)
+                    // The page ink (dark in Daylight) otherwise wins over the
+                    // prominent style's own text colour.
+                    .foregroundStyle(Theme.onAccent)
                     .font(.system(size: 15, weight: .semibold))
                     .frame(height: height - 16)
                     .padding(.horizontal, 4)
             }
             .buttonStyle(.glassProminent)
             .tint(Theme.i1)
-            .symbolEffect(.pulse, options: .repeating, isActive: searching)
-            .disabled(searching)
+            // Searching is the active state: the fill stays indigo (a disabled
+            // prominent button greys out and hides the spinner); taps are off.
+            .allowsHitTesting(activity?.isSearching != true)
+            .accessibilityAddTraits(activity?.isSearching == true ? .updatesFrequently : [])
             .accessibilityHint(focused.map { "Searches the \(detail.versionName($0)) version" } ?? "Searches every monitored version")
         }
         if canSearch {
@@ -101,10 +106,9 @@ struct V2TitleActionRow: View {
 
     private func runSearch() {
         if let focused {
-            let label = "\(detail.title) — \(detail.versionName(focused))"
-            Task { await store.search(label: label, editionId: focused.id) }
+            store.v2Search(target, label: "\(detail.title) — \(detail.versionName(focused))", editionId: focused.id)
         } else {
-            Task { await store.search(label: "\(detail.title) — all monitored versions") }
+            store.v2Search(target, label: "\(detail.title) — all monitored versions")
         }
     }
 

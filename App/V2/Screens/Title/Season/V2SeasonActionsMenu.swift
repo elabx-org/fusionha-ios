@@ -26,16 +26,22 @@ struct V2SeasonActionsMenu: View {
         Menu {
             if canSearch {
                 Section("Search") {
-                    Button("Search season", systemImage: "magnifyingglass") {
-                        Task { await store.search(label: label, season: n) }
+                    let seasonRun = store.activity(.season(n))
+                    let missingRun = store.activity(.seasonMissing(n))
+                    // Menu items show only text and a symbol: the season header shows the spinner.
+                    Button(seasonRun?.label ?? "Search season", systemImage: seasonRun?.symbol ?? "magnifyingglass") {
+                        store.v2Search(.season(n), label: label, season: n)
                     }
-                    Button(missing > 0 ? "Search missing (\(missing))" : "Search missing", systemImage: "text.magnifyingglass") {
-                        Task { await store.gradualSearch(label: label, season: n, missingOnly: true) }
+                    .disabled(seasonRun?.isSearching == true)
+                    Button(missingRun?.label ?? (missing > 0 ? "Search missing (\(missing))" : "Search missing"),
+                           systemImage: "text.magnifyingglass") {
+                        store.v2GradualSearch(.seasonMissing(n), label: label, season: n, missingOnly: true)
                     }
-                    .disabled(missing == 0)
+                    .disabled(missing == 0 || missingRun?.isSearching == true)
                     Button("Search each episode", systemImage: "list.bullet.indent") {
-                        Task { await store.gradualSearch(label: label, season: n, missingOnly: false) }
+                        store.v2GradualSearch(.season(n), label: label, season: n, missingOnly: false)
                     }
+                    .disabled(seasonRun?.isSearching == true)
                     Button("Interactive search", systemImage: "person") {
                         store.interactive = InteractiveTarget(editionIds: detail.orderedEditions.map(\.id),
                                                               seasonNumber: n, subtitle: season.title)

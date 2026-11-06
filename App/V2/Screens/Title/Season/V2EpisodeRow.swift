@@ -9,6 +9,7 @@ import FusionhaKit
 /// line. Episodes not out yet dim their lead. Content, not glass.
 struct V2EpisodeRow: View {
     @Environment(\.pagePalette) private var page
+    @Environment(DetailStore.self) private var store
     let detail: ItemDetail
     let episode: Episode
     let state: V2EpisodeState
@@ -34,6 +35,8 @@ struct V2EpisodeRow: View {
     private var ink: Color { page?.ink ?? Theme.txt }
     private var muted: Color { page?.inkMuted ?? Theme.mut }
     private var upcoming: Bool { state.circle == .upcoming }
+    /// A search for this episode started from its swipe, menu or page.
+    private var search: SearchActivity? { store.searchActivity.activity(episode: episode.id) }
 
     var body: some View {
         HStack(alignment: .top, spacing: Self.leadSpacing) {
@@ -59,6 +62,7 @@ struct V2EpisodeRow: View {
                             .foregroundStyle(muted)
                             .accessibilityHidden(true)
                     }
+                    if let search { V2SearchStatusLine(activity: search).padding(.leading, 4) }
                 }
                 .padding(.top, 6)
             }
@@ -73,6 +77,7 @@ struct V2EpisodeRow: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spokenLabel)
+        .v2SearchHaptics(search)
     }
 
     @ViewBuilder
@@ -121,6 +126,6 @@ struct V2EpisodeRow: View {
         let title = episode.title ?? "Episode \(episode.episodeNumber)"
         let badges = state.badges.map { "\($0.tier.badgeLetters) \($0.state.spoken)" }.joined(separator: ", ")
         return "\(V2EpisodeText.meta(episode, anime: detail.isAnime == true)), \(title). \(state.spoken). \(badges)"
-            + (monitored ? "" : ". Not monitored")
+            + (monitored ? "" : ". Not monitored") + (search.map { ". \($0.label)" } ?? "")
     }
 }
