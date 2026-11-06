@@ -65,6 +65,8 @@ struct SearchTabView: View {
         }
         // The open Duo's keyboard covers half the results: any scroll puts it away.
         .scrollDismissesKeyboard(duoOpen ? .immediately : .interactively)
+        // The rows' Add fits its word only where the list has room (v2).
+        .publishesPaneSize()
         .background { if look == nil { Theme.bg.ignoresSafeArea() } }
         .browseGround(look)
         .shellPage("Search")

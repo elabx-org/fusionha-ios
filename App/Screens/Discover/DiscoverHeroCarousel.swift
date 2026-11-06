@@ -32,8 +32,9 @@ struct DiscoverHeroCarousel: View {
     }
 
     var body: some View {
-        Group {
-            if !items.isEmpty { carousel }
+        // A placeholder while empty: `.task` never runs on an empty Group.
+        VStack(spacing: 0) {
+            if items.isEmpty { Color.clear.frame(height: 0) } else { carousel }
         }
         .task(id: kind) { await load() }
         .onChange(of: centred) { syncArt() }
@@ -81,8 +82,8 @@ struct DiscoverHeroCarousel: View {
         if let fresh = try? await call(client) { items = Self.pick(fresh) }
     }
 
-    /// The first eight with art to show.
+    /// The first eight with art to show (the backdrop, else the poster).
     private static func pick(_ rows: [MediaSearchResult]) -> [MediaSearchResult] {
-        Array(rows.filter { $0.backdropUrl != nil }.prefix(8))
+        Array(rows.filter { $0.backdropUrl != nil || $0.posterUrl != nil }.prefix(8))
     }
 }

@@ -28,7 +28,7 @@ struct PhoneDayHead: View {
         .padding(.top, 12)
         .padding(.bottom, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(BrowseInks(page: page).band)
+        .background(page == nil ? Theme.bg : .clear)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isHeader)
     }

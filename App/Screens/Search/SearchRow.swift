@@ -61,11 +61,13 @@ struct SearchRowButton: View {
     enum Kind { case open, add, request }
     let kind: Kind
     let action: () -> Void
-    /// v2 (S11): Add is a "+ Add" capsule, as in the mock.
+    /// v2 (S11): Add is a "+ Add" capsule, as in the mock, where the
+    /// column has room (a narrow Duo column keeps the round +).
     @Environment(\.browseLook) private var look
+    @Environment(\.paneSize) private var pane
 
     var body: some View {
-        if look != nil && kind == .add {
+        if look != nil && kind == .add && pane.width >= 360 {
             Button(action: action) {
                 Label("Add", systemImage: "plus")
                     .font(.system(size: 13, weight: .semibold))

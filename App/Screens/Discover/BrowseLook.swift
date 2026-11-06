@@ -57,8 +57,6 @@ struct BrowseInks {
 
     var ink: Color { page?.ink ?? Theme.txt }
     var muted: Color { page?.inkMuted ?? Theme.mut }
-    /// The opaque band behind a pinned header.
-    var band: Color { page?.tint ?? Theme.bg }
 }
 
 extension AppModel {
