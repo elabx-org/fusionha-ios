@@ -33,13 +33,15 @@ xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --ba
 xcrun simctl install "$UDID" "$APP"
 sleep 15
 
-shoot() {  # shoot <name> [env…]
+shoot() {  # shoot <name> [wait-seconds] [env…]
   local name=$1; shift
+  local wait=${WAIT:-12}
+  case "${1:-}" in ''|*[!0-9]*) ;; *) wait=$1; shift;; esac
   if [ -n "$ONLY" ] && ! echo "$name" | grep -qE "$ONLY"; then return 0; fi
   env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=${FRAME:-open} \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LAYOUT=${LAYOUT:-spread} SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library "$@" \
     xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" > /dev/null
-  sleep "${WAIT:-12}"
+  sleep "$wait"
   local raw="$OUT/.raw-$name.png"
   xcrun simctl io "$UDID" screenshot "$raw" > /dev/null
   local px scale
