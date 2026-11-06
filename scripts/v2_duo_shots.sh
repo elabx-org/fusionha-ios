@@ -90,6 +90,16 @@ LAYOUT=spread shoot account-spread 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1
 shoot account-folded 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD
 shoot account-folded-daylight 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD $DAY
 
+# S14 shell: the flat open Duo's sidebar (shown, Daylight, hidden), and the
+# downloads capsule on the left page in book pose (the tabs cross the fold).
+shoot shell-sidebar 14
+shoot shell-sidebar-daylight 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
+xcrun simctl spawn "$UDID" defaults write "$BUNDLE" v2.shell.sidebarHidden -bool YES
+shoot shell-sidebar-hidden 14
+xcrun simctl spawn "$UDID" defaults delete "$BUNDLE" v2.shell.sidebarHidden 2> /dev/null || true
+shoot shell-book-capsule 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book
+shoot shell-book-capsule-daylight 14 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
+
 xcrun simctl terminate "$UDID" "$BUNDLE" 2> /dev/null || true
 xcrun simctl shutdown "$UDID" 2> /dev/null || true
 ls "$OUT"/v2-*.png > /dev/null 2>&1 || { echo "::error::no v2 shots"; exit 1; }
