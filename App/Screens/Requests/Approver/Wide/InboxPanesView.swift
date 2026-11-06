@@ -15,6 +15,9 @@ struct InboxPanesView: View {
     let onAdjust: (MediaRequest) -> Void
     let onDetails: (MediaRequest) -> Void
     let onOpenTitle: (MediaRequest) -> Void
+    /// v2's card: Decline asks for a reason; the menu messages the requester.
+    var onDeclineWithReason: (MediaRequest) -> Void = { _ in }
+    var onMessage: (MediaRequest) -> Void = { _ in }
     @State private var focus = TriageQueueFocus()
 
     private var focused: MediaRequest? {
@@ -69,6 +72,21 @@ struct InboxPanesView: View {
     private var card: some View {
         if let request = focused {
             ScrollView {
+                #if V2
+                V2DecisionCard(
+                    request: request, triage: inbox.triage[request.id], own: inbox.isLocked(request, viewerId: viewerId),
+                    armed: inbox.armedId == request.id, wide: true,
+                    actions: V2DecisionActions(
+                        approve: { _ = inbox.approve(request, viewerId: viewerId) },
+                        notYet: { _ = inbox.decline(request, viewerId: viewerId, reason: .notAvailableYet) },
+                        decline: { onDeclineWithReason(request) },
+                        adjust: { onAdjust(request) },
+                        message: { onMessage(request) },
+                        openTitle: { onOpenTitle(request) }))
+                .padding(16)
+                .id(request.id)
+                .transition(.opacity)
+                #else
                 InboxAsideView(
                     request: request, triage: inbox.triage[request.id], own: inbox.isLocked(request, viewerId: viewerId),
                     armed: inbox.armedId == request.id,
@@ -78,7 +96,13 @@ struct InboxPanesView: View {
                     onDetails: { onDetails(request) })
                 .id(request.id)
                 .transition(.opacity)
+                #endif
             }
+            #if V2
+            // The pane sits on the focused title's art ground (mock `decisionPane`).
+            .v2PageGround(art: PageArtSource.url(backdrop: nil, poster: request.poster), artHeight: 420)
+            .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+            #endif
             .scrollIndicators(.hidden)
             .scrollBounceBehavior(.basedOnSize)
             .animation(.snappy(duration: 0.2), value: request.id)

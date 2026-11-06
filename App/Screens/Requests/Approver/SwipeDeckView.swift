@@ -15,6 +15,8 @@ struct SwipeDeckView: View {
     let onOpenThread: (MediaRequest) -> Void
     let onOpenBoard: () -> Void
     let onOpenHistory: (HistoryFilter) -> Void
+    /// v2: Decline asks for a reason (a left swipe is Not yet).
+    var onDeclineWithReason: (MediaRequest) -> Void = { _ in }
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var drag: (id: Int, dx: CGFloat)?
     @State private var flying: (id: Int, right: Bool)?
@@ -31,7 +33,7 @@ struct SwipeDeckView: View {
         VStack(spacing: 14) {
             if let top = deck.first {
                 HStack {
-                    Text("Swipe right to approve · left to decline")
+                    Text(Self.hint)
                     Spacer(minLength: 8)
                     Text(verbatim: "1 of \(deck.count)").monospacedDigit()
                 }
@@ -48,7 +50,15 @@ struct SwipeDeckView: View {
                                                                      removal: .identity))
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, deck.count > 2 ? 18 : deck.count > 1 ? 9 : 0)
+                #if V2
+                V2DeckChoices(request: top, triage: inbox.triage[top.id],
+                              armed: inbox.armedId == top.id,
+                              onDecline: { onDeclineWithReason(top) },
+                              onNotYet: { fly(top, right: false, canApprove: approvable(top)) },
+                              onApprove: { fly(top, right: true, canApprove: approvable(top)) })
+                #else
                 buttons(top)
+                #endif
             } else {
                 InboxZeroView(ownOnly: !inbox.queue.isEmpty, onShowList: onSelectMode,
                               onOpenThread: onOpenThread, onOpenBoard: onOpenBoard, onOpenHistory: onOpenHistory)
@@ -86,6 +96,17 @@ struct SwipeDeckView: View {
             .onTapGesture { if isTop { onDetails(request) } }
             .accessibilityAction(named: "Approve") { fly(request, right: true, canApprove: canApprove) }
             .accessibilityAction(named: "Decline") { fly(request, right: false, canApprove: canApprove) }
+    }
+
+    #if V2
+    static let hint = "Swipe right to approve · left for Not yet"
+    #else
+    static let hint = "Swipe right to approve · left to decline"
+    #endif
+
+    private func approvable(_ request: MediaRequest) -> Bool {
+        let t = inbox.triage[request.id]
+        return TriageFacts.loaded(t) && !TriageFacts.setupMissing(t)
     }
 
     private func offset(_ id: Int) -> CGFloat {
