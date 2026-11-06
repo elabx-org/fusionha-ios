@@ -271,8 +271,12 @@ jobs:
           UDID=$(xcrun simctl list devices available -j | python3 -c '
           import json, sys
           devices = [d for rt, ds in sorted(json.load(sys.stdin)["devices"].items(), reverse=True) if "iOS-27" in rt for d in ds]
-          print(next(d for d in devices if d["name"].startswith("iPad"))["udid"])')
+          pick = next((d for d in devices if d["name"].startswith("iPad mini")), None) or next(d for d in devices if d["name"].startswith("iPad"))
+          print(pick["udid"])')
           echo "Using simulator $UDID"
+          # The build's services hold gigabytes the simulator needs on this runner.
+          killall SWBBuildService XCBBuildService swift-frontend sourcekit-lsp 2> /dev/null || true
+          xcrun simctl shutdown all 2> /dev/null || true
           perl -e 'alarm 300; exec @ARGV' xcrun simctl bootstatus "$UDID" -b || {
             echo "::error::simulator $UDID did not boot within 5 min"; exit 1; }
           sleep 15

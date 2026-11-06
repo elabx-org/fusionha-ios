@@ -22,6 +22,18 @@ bounded() { perl -e 'alarm shift; exec @ARGV or die "exec: $!"' "$@"; }
 # Prefixes each line with the time, so the log shows where a case spends it.
 stamp() { perl -MPOSIX -ne '$|=1; print strftime("%H:%M:%S ", localtime), $_'; }
 
+# Every 30 s while the check runs: memory pressure and the biggest processes,
+# so a starved runner shows up in the log before it stops answering.
+watch_runner() {
+  while sleep 30; do
+    echo "[runner $(date +%T)] $(sysctl -n vm.loadavg) $(memory_pressure -Q 2> /dev/null | tail -1)"
+    top -l 1 -o mem -n 5 -stats pid,command,mem,cpu 2> /dev/null | tail -6 | sed 's/^/[runner]   /'
+  done
+}
+watch_runner &
+WATCH_PID=$!
+trap 'kill $WATCH_PID 2> /dev/null' EXIT
+
 log_file() {
   echo "$(bounded 60 xcrun simctl get_app_container "$UDID" "$APP" data)/Library/Caches/deeplink-log.txt"
 }
@@ -39,11 +51,11 @@ run_case() {
   env ${new_window:+TEST_RUNNER_SCENE_NEW_WINDOW=1} \
     perl -e 'alarm shift; exec @ARGV' "$CASE_SECS" \
     xcodebuild test-without-building -project Fusionha.xcodeproj -scheme Fusionha \
-    -destination "id=$UDID" -derivedDataPath build CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES \
-    -only-testing:FusionhaUITests/SceneRelaunchDriver/testRelaunchFromHomeScreen 2>&1 | stamp > "$out"
+    -destination "id=$UDID" -derivedDataPath build CODE_SIGNING_ALLOWED=NO \
+    -test-timeouts-enabled YES -parallel-testing-enabled NO \
+    -only-testing:FusionhaUITests/SceneRelaunchDriver/testRelaunchFromHomeScreen 2>&1 | stamp | tee "$out"
   rc=${PIPESTATUS[0]}
   echo "xcodebuild exited $rc after $((SECONDS - start))s"
-  echo "::group::$name: xcodebuild output"; cat "$out"; echo "::endgroup::"
   grep "SCENES" "$out" | grep -v " Test"
   [ "$rc" = 142 ] && echo "::error::$name: the UI-test driver did not finish within ${CASE_SECS}s (xcodebuild output above)"
   echo "-- probe log:"; cat "$(log_file)" 2> /dev/null || echo "(none)"
