@@ -87,10 +87,17 @@ struct V2HomeView: View {
         .onChange(of: DataKey(version: model.libraryVersion, held: held), initial: true) {
             data = PerfCount.time("V2Home.data") { V2HomeData(library: model.library, held: held) }
         }
-        .onChange(of: model.pendingAllTitles, initial: true) { _, pending in
-            guard pending else { return }
+        // Routes that open the Library land in All titles. At launch the
+        // push waits for the first library load (up to 3 s): pushed while
+        // it was loading, the stack stalled on Home (CI, small library).
+        .task(id: model.pendingAllTitles) {
+            guard model.pendingAllTitles else { return }
+            for _ in 0..<30 where !model.libraryLoaded {
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+            guard !Task.isCancelled, model.pendingAllTitles else { return }
             model.pendingAllTitles = false
-            openAllTitles(.asLeft)
+            await push(.asLeft)
         }
     }
 
