@@ -23,25 +23,25 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         UNUserNotificationCenter.current().delegate = self
         // MetricKit hang, crash and hitch reports, saved for Settings > Maintenance.
         PerformanceReports.shared.start()
-        #if !V2
         // Tokens can change (restore, reinstall, re-sign): re-register every launch
-        // once the user has granted permission. v2 has no push yet (docs/v2.md).
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
-            guard [.authorized, .provisional, .ephemeral].contains(settings.authorizationStatus) else { return }
-            DispatchQueue.main.async { application.registerForRemoteNotifications() }
+        // once the user has granted permission and the server pushes to this app
+        // (PushAvailability: always for v1).
+        if PushAvailability.canPushHere {
+            UNUserNotificationCenter.current().getNotificationSettings { settings in
+                guard [.authorized, .provisional, .ephemeral].contains(settings.authorizationStatus) else { return }
+                DispatchQueue.main.async { application.registerForRemoteNotifications() }
+            }
         }
-        #endif
         return true
     }
 
     static func requestPushAuthorization() {
-        #if !V2
-        // v2 has no push yet (docs/v2.md): no permission prompt for pushes that can't arrive.
+        // No permission prompt for pushes that can't arrive (PushAvailability).
+        guard PushAvailability.canPushHere else { return }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
             guard granted else { return }
             DispatchQueue.main.async { UIApplication.shared.registerForRemoteNotifications() }
         }
-        #endif
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {

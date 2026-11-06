@@ -9,6 +9,8 @@ import FusionhaKit
 enum NativePushStatus {
     case loading, serverNotConfigured(String), serverOff(String), denied, notAsked
     case noEntitlement(String), registering, enabled(ApnsDevice)
+    /// The server pushes under another app's id (its topic), so none reach this one.
+    case otherApp(topic: String)
     /// Disabled here from This device (web `off`): not re-registered until enabled.
     case disabledHere
 }
@@ -44,6 +46,7 @@ final class NativePushState {
                 ?? "The server has no APNs key configured, so it can't send push to this app yet.")
         }
         if !status.enabled { return .serverOff(status.message ?? "iOS push is turned off on the server.") }
+        if !PushAvailability.accepts(topic: status.topic) { return .otherApp(topic: status.topic) }
         switch authStatus {
         case .denied: return .denied
         case .notDetermined: return .notAsked
@@ -58,7 +61,9 @@ final class NativePushState {
     func load(_ client: APIClient?) async {
         guard let client else { return }
         do {
-            status = try await client.apnsStatus()
+            let fresh = try await client.apnsStatus()
+            PushAvailability.remember(fresh)
+            status = fresh
         } catch APIError.http(404, _) {
             status = ApnsStatus(configured: false, enabled: false, topic: "", environment: "", missing: [],
                                 message: "This fusionha server doesn't support native iOS push yet. Update it.")
@@ -142,7 +147,10 @@ final class NativePushState {
     /// Refreshes the server's status after an admin changed the APNs settings.
     func refreshStatus(_ client: APIClient?) async {
         guard let client else { return }
-        if let fresh = try? await client.apnsStatus() { status = fresh }
+        if let fresh = try? await client.apnsStatus() {
+            PushAvailability.remember(fresh)
+            status = fresh
+        }
     }
 
     static func openSystemSettings() {
