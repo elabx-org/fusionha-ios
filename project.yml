@@ -134,7 +134,10 @@ targets:
     type: app-extension
     platform: iOS
     sources:
-      - NotificationService
+      # NotificationService/V2 holds v2's generated Info.plist and entitlements.
+      - path: NotificationService
+        excludes:
+          - "V2/**"
     info:
       path: NotificationService/Info.plist
       properties:
@@ -161,8 +164,10 @@ targets:
   # fusionha v2 (docs/v2.md): a second app beside v1, from the same sources plus
   # App/V2. Its own bundle ids, App Group, keychain namespace and URL scheme
   # (read at runtime by FusionhaKit's AppIdentity from the Info.plist keys
-  # below). No push yet: no notification-service extension and no
-  # aps-environment until the server accepts a per-device APNs topic.
+  # below). Push (S16): the same rich-push extension as v1 under v2's ids, and
+  # the app registers only when the server's APNs topic is its bundle id
+  # (App/PushAvailability.swift). No aps-environment yet: it waits for the
+  # cutover to v1's ids (docs/v2.md, Cutover), which needs the owner's signing.
   # Its version (2.0.<run>) is stamped by CI (scripts/app_version.sh).
   FusionhaV2:
     type: application
@@ -177,6 +182,7 @@ targets:
     dependencies:
       - package: FusionhaKit
       - target: FusionhaV2Widgets
+      - target: FusionhaV2NotificationService
     info:
       path: App/V2/Info.plist
       properties:
@@ -207,6 +213,7 @@ targets:
           - CFBundleURLName: org.elabx.fusionha.v2
             CFBundleURLSchemes: [fusionha2]
         UIBackgroundModes:
+          - remote-notification
           - fetch
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
@@ -265,6 +272,44 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.v2.widgets
+        MARKETING_VERSION: "2.0.0"
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) V2"
+        SKIP_INSTALL: "YES"
+
+  # v2's rich push (poster attachment): v1's NotificationService sources under
+  # v2's ids. Its sources name no id or group, so it works unchanged after the cutover.
+  FusionhaV2NotificationService:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: NotificationService
+        excludes:
+          - "Info.plist"
+          - "FusionhaNotificationService.entitlements"
+    info:
+      path: NotificationService/V2/Info.plist
+      properties:
+        CFBundleDisplayName: fusionha v2
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        FusionhaAppGroup: group.org.elabx.fusionha.v2
+        FusionhaKeychainNamespace: org.elabx.fusionha.v2
+        FusionhaURLScheme: fusionha2
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.usernotifications.service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+    entitlements:
+      path: NotificationService/V2/FusionhaV2NotificationService.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.org.elabx.fusionha.v2
+        keychain-access-groups:
+          - $(AppIdentifierPrefix)org.elabx.fusionha.v2.shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.elabx.fusionha.v2.notification-service
         MARKETING_VERSION: "2.0.0"
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) V2"
         SKIP_INSTALL: "YES"
