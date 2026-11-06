@@ -208,7 +208,7 @@ WAIT=14 LAYOUT=web refold fold-activity-mid-decision "$OPEN_FOLD" $A SIMCTL_CHIL
 WAIT=14 LAYOUT=web refold fold-activity-mid-decision-folded "$FOLD_OPEN" $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103 \
   SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_CHOICE=removeSearch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_SCROLL=220
 # Manual Import open for held Interstellar mid-way (the rescue sheet / pages).
-WAIT=18 LAYOUT=web refold fold-manual-import "$OPEN_FOLD" $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=103
+WAIT=14 LAYOUT=web refold fold-manual-import "open@0 folded@20 open@32" $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=103
 # Settings › Maintenance: the panel beside the sidebar open, pushed folded.
 WAIT=12 refold fold-settings-maintenance "$OPEN_FOLD" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=maintenance
 WAIT=12 refold fold-settings-maintenance-folded "$FOLD_OPEN" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=maintenance
