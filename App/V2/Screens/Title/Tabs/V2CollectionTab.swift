@@ -65,10 +65,9 @@ private struct V2CollectionHeader: View {
                     .shelfPoster(radius: 10, shadow: false)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 6) {
-                    Label("Part of a collection", systemImage: "square.grid.2x2")
-                        .font(.system(size: 11, weight: .bold))
-                        .tracking(1.2)
-                        .textCase(.uppercase)
+                    // The page's small label ("Metadata via"), not v1's caps.
+                    Text("Part of a collection")
+                        .font(.system(size: 13))
                         .foregroundStyle(muted)
                     Text(collection.name)
                         .font(.system(size: 18, weight: .bold))
@@ -82,7 +81,7 @@ private struct V2CollectionHeader: View {
             }
             HStack(spacing: 14) {
                 if model.me?.can("add") ?? true, !missing.isEmpty {
-                    Button("Add all missing (\(missing.count))", systemImage: "plus") {
+                    Button(addTitle(missing), systemImage: "plus") {
                         store.addFromCollection(missing)
                     }
                     .font(.system(size: 13, weight: .bold))
@@ -90,20 +89,38 @@ private struct V2CollectionHeader: View {
                     .tint(Theme.primary)
                 }
                 Spacer(minLength: 0)
-                if model.me?.can("edit") ?? true {
+                if canMonitor {
                     Toggle(isOn: Binding(get: { monitorAll }, set: { toggle($0) })) {
-                        Label("Monitor", systemImage: monitorAll ? "bookmark.fill" : "bookmark")
+                        Label("Monitor collection", systemImage: monitorAll ? "bookmark.fill" : "bookmark")
                             .font(.system(size: 12.5, weight: .semibold))
                             .foregroundStyle(monitorAll ? ink : muted)
                     }
                     .fixedSize()
                     .tint(Theme.primary)
                     .disabled(monitorPending || CollectionProgress.ownedLibraryIds(collection).isEmpty)
-                    .accessibilityLabel("Monitor whole collection")
                 }
+            }
+            if canMonitor {
+                // What the toggle does (web MovieCollectionTab: it PATCHes the
+                // films already in the library; new films are not watched yet).
+                Text("Monitors every film from this collection that's in your library.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(muted)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .v2CardStyle()
+    }
+
+    private var canMonitor: Bool { model.me?.can("edit") ?? true }
+
+    /// "Add 24 Jump Street" for one missing film, "Add 3 missing" for more.
+    private func addTitle(_ missing: [Int]) -> String {
+        if missing.count == 1, let part = collection.parts.first(where: { $0.tmdbId == missing[0] }),
+           let title = part.title, !title.isEmpty {
+            return "Add \(title)"
+        }
+        return "Add \(missing.count) missing"
     }
 
     /// "2 of 3 in library · 1 missing"; a film in the library with no file
