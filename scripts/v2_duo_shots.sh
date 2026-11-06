@@ -68,6 +68,21 @@ WAIT=14 LAYOUT=web shoot activity-live $A
 WAIT=14 LAYOUT=web shoot activity-held $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103
 WAIT=14 shoot activity-spread $A
 
+# S12: Requests (Discover › Requests, the approver's Inbox) and Account, open
+# flat and folded, dark and Daylight.
+RQ="SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=discover SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DISCOVER_TAB=requests"
+DAY=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight
+FOLD=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=folded
+shoot requests-inbox 16 $RQ
+shoot requests-inbox-daylight 16 $RQ $DAY
+shoot requests-inbox-folded 16 $RQ $FOLD
+shoot requests-inbox-folded-daylight 16 $RQ $FOLD $DAY
+shoot requests-details-folded 18 $RQ $FOLD SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTS_DETAILS=1
+shoot account 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1
+LAYOUT=spread shoot account-spread 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1
+shoot account-folded 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD
+shoot account-folded-daylight 12 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ACCOUNT=1 $FOLD $DAY
+
 xcrun simctl terminate "$UDID" "$BUNDLE" 2> /dev/null || true
 xcrun simctl shutdown "$UDID" 2> /dev/null || true
 ls "$OUT"/v2-*.png > /dev/null 2>&1 || { echo "::error::no v2 shots"; exit 1; }
