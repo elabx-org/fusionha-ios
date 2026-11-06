@@ -98,7 +98,7 @@ private struct V2DecisionHeader: View {
                         .foregroundStyle(Theme.txt)
                         .lineLimit(3)
                     Text(metaLine).font(.footnote).foregroundStyle(Theme.mut).lineLimit(2)
-                    RequestStatusPill(status: request.status, age: TriageFacts.compactAge(request.requestedAt))
+                    V2RequestStatusPill(status: request.status, age: TriageFacts.compactAge(request.requestedAt))
                 }
                 Spacer(minLength: 0)
                 menu(name)

@@ -5,7 +5,7 @@ import FusionhaKit
 /// `pill`): Pending in the muted ink, Approved in the accent (it is active),
 /// Available in the label colour, Declined in red, Not available yet in the
 /// held orange (the requester can ask again). An age can follow ("Pending · 16 d").
-struct RequestStatusPill: View {
+struct V2RequestStatusPill: View {
     let status: String
     var age: String = ""
 
