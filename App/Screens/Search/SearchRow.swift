@@ -71,6 +71,8 @@ struct SearchRowButton: View {
             Button(action: action) {
                 Label("Add", systemImage: "plus")
                     .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                    .fixedSize()
                     .foregroundStyle(Theme.accentText)
                     .padding(.horizontal, 12)
                     .frame(height: 32)

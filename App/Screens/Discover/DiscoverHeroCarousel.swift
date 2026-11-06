@@ -28,7 +28,7 @@ struct DiscoverHeroCarousel: View {
             return CGSize(width: w, height: (w * 0.6).rounded())
         }
         let w = max(240, pane.width - 2 * Self.gutter - 40).rounded()
-        return CGSize(width: w, height: (w * 0.72).rounded())
+        return CGSize(width: w, height: (w * 0.64).rounded())
     }
 
     var body: some View {
