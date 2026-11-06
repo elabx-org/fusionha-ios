@@ -135,8 +135,10 @@ struct V2LibraryView: View {
                 }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .overlay(alignment: .top) {
-            if !model.requestScoped { SetupProgressPill(barHeight: 0) }
+        // A title setting up floats low, over the downloads bar's row, never
+        // over the page's header, kind control or the list's toolbar (build 805).
+        .overlay(alignment: .bottom) {
+            if !model.requestScoped { SetupProgressPill(barHeight: 0).padding(.bottom, 76) }
         }
         // The kit's ambient art, not W1's: full strength under the home,
         // browse-lib.js's shorter, softer layer over the grid or list alone.

@@ -25,7 +25,10 @@ private struct AddTierCard: View {
     let tier: QualityTier
     let state: AddTierState
     @Environment(\.motionEnabled) private var motion
+    @Environment(\.addLook) private var look
+    @Environment(\.pagePalette) private var page
 
+    private var inks: AddInks { AddInks(look: look, page: page) }
     private static let standard = "Standard"
     private var label: String { AddVocab.tierLabel(tier) }
     private var edition: String { flow.editions[tier] ?? Self.standard }
@@ -43,22 +46,23 @@ private struct AddTierCard: View {
                 Text(label)
                     .font(.system(size: 17, weight: .heavy))
                     .tracking(-0.17)
-                    .foregroundStyle(tier.color)
+                    .foregroundStyle(inks.tier(tier))
                 if tier == .hd {
+                    let chip = look == nil ? Theme.done : inks.muted
                     Text("DEFAULT")
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
                         .tracking(0.6)
-                        .foregroundStyle(Theme.done)
+                        .foregroundStyle(chip)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 4)
-                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Theme.done.opacity(0.4)))
+                        .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(chip.opacity(0.4)))
                 }
                 Spacer(minLength: 0)
                 Toggle(label, isOn: Binding(get: { state.on }, set: { on in
                     withAnimation(motion ? .snappy(duration: 0.3) : nil) { flow.setTierOn(tier, on) }
                 }))
                 .labelsHidden()
-                .tint(tier.color)
+                .tint(inks.toggle(tier))
             }
             .frame(minHeight: 26)
             if state.on {
@@ -78,7 +82,7 @@ private struct AddTierCard: View {
                 .buttonStyle(PressScaleStyle())
             }
             if tier == .hd {
-                AvailRow(tone: Theme.edition, icon: { Text("HD") },
+                AvailRow(tone: look == nil ? Theme.edition : inks.ink, icon: { Text("HD") },
                          title: Text("The copy most people watch"),
                          sub: AnyView(availSub("Added by default · searched on add")))
             } else {
@@ -86,10 +90,11 @@ private struct AddTierCard: View {
             }
         }
         .padding(14)
-        .background(state.on ? tier.color.opacity(0.05) : .clear, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(state.on && look == nil ? tier.color.opacity(0.05) : .clear,
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .addCard(look, radius: 16)
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .strokeBorder(state.on ? tier.color.opacity(0.22) : Theme.line))
+            .strokeBorder(state.on ? inks.tier(tier).opacity(0.22) : Theme.line))
         .opacity(state.on ? 1 : 0.78)
         .sensoryFeedback(.selection, trigger: state.on)
     }

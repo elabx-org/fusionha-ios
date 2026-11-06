@@ -31,6 +31,8 @@ struct AddTitleSheet: View {
     @Environment(AppModel.self) var model
     @Environment(\.dismiss) var dismiss
     @Environment(\.motionEnabled) var motion
+    /// v2's dress (`AddLookOverride`); nil in v1.
+    @Environment(\.addLook) var look
     @Namespace var zoomSpace
     @State var path = NavigationPath()
     @State var flow: AddFlow?
@@ -73,8 +75,9 @@ struct AddTitleSheet: View {
                 singleStack
             }
         }
-        .onGeometryChange(for: FoldColumns.Panes?.self) { proxy in
+        .onGeometryChange(for: FoldColumns.Panes?.self) { [flat = look?.flatSpread] proxy in
             DiscoverFold.requestPanes(width: Double(proxy.size.width), fold: GridFold(proxy).foldRange)
+                ?? flat?(Double(proxy.size.width), Double(proxy.size.height))
         } action: { foldPanes = $0 }
         .presentationDetents([.fraction(0.88), .large], selection: $detent)
         // On the open Duo's pages: a title picked from search and mid-setup asks before the pull-down closes it.
@@ -150,7 +153,7 @@ struct AddTitleSheet: View {
             .padding(.bottom, 30)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(Theme.panel)
+        .addFindGround(look)
     }
 
     // MARK: Picks
@@ -245,7 +248,13 @@ struct AddTitleSheet: View {
     func added(_ item: AddedTitle, flow: AddFlow) {
         model.toast("\(flow.title) added")
         dismiss()
-        Task { await model.loadLibrary() }
+        // v2 opens what was just added (its setup runs on the title page and
+        // the Library card), unless the caller takes the new id itself.
+        let opens = look != nil && onAdded == nil
+        Task {
+            await model.loadLibrary()
+            if opens { model.open(item.id) }
+        }
         onAdded?(item.id)
     }
 

@@ -8,7 +8,8 @@ import SwiftUI
 /// search and delete sheets. Slice S8: Activity's Queue tab is `V2QueueView`
 /// and the downloads bar is `V2DownloadsAccessory`. Slice S10: Activity's
 /// other scopes (`V2ScopeTabs`). Slice S9: Manual Import for held downloads
-/// is `V2ManualImportView` (grouped by problem). Every other tab is still v1's.
+/// is `V2ManualImportView` (grouped by problem). Slice S11 (Add): the shared
+/// Add flow in v2's dress (`V2AddLook`). Every other tab is still v1's.
 struct V2RootView: View {
     var body: some View {
         RootView()
@@ -24,5 +25,6 @@ struct V2RootView: View {
                 AnyView(V2DownloadsAccessory(state: state))
             })
             .environment(\.manualImportSheet, V2ManualImportView.override)
+            .environment(\.addLook, V2AddLook.override)
     }
 }

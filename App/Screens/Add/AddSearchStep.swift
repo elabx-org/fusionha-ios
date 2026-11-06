@@ -218,7 +218,16 @@ extension AddTitleSheet {
 
     @ViewBuilder
     func tmdbList(_ list: [MediaSearchResult]) -> some View {
-        if gridView {
+        if let look, gridView {
+            // v2: the Library's own card, at its width.
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: look.tileWidth.lowerBound, maximum: look.tileWidth.upperBound),
+                                         spacing: 14, alignment: .top)], spacing: 18) {
+                ForEach(Array(list.enumerated()), id: \.element.id) { index, result in
+                    look.tile(result, { pick(result) }, { preview(result) })
+                        .reveal(index, y: 10, duration: 0.4)
+                }
+            }
+        } else if gridView {
             // Three across on a phone and the folded Duo, more on a wider page.
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 104, maximum: 150), spacing: 10, alignment: .top)], spacing: 14) {
                 ForEach(Array(list.enumerated()), id: \.element.id) { index, result in
