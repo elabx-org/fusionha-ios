@@ -53,8 +53,10 @@ struct V2ManualImportView: View {
                 .navigationDestination(for: V2MIRoute.self) { route in
                     V2MIRoutePage(route: route).v2PageGround(art: nil)
                 }
-                .onGeometryChange(for: V2MIPanes?.self) { V2MILayout.panes($0) } action: { panes = $0 }
         }
+        // Measured on the stack, not its root: with a page pushed the root
+        // isn't laid out, and unfolding must still see the split (fold continuity).
+        .onGeometryChange(for: V2MIPanes?.self) { V2MILayout.panes($0) } action: { panes = $0 }
         .v2MISheets($sheet, downloadIds: downloadIds, client: session.client, openWeb: openWeb)
         .environment(session)
         .environment(store)

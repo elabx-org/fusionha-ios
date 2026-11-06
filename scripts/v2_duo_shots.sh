@@ -213,7 +213,7 @@ WAIT=18 LAYOUT=web refold fold-manual-import "$OPEN_FOLD" $A SIMCTL_CHILD_FUSION
 WAIT=12 refold fold-settings-maintenance "$OPEN_FOLD" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=maintenance
 WAIT=12 refold fold-settings-maintenance-folded "$FOLD_OPEN" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=maintenance
 # Requests: the second request focused in the open panes, then the folded deck.
-WAIT=16 refold fold-requests "$OPEN_FOLD" $RQ SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTS_FOCUS=1
+WAIT=16 LAYOUT=web refold fold-requests "$OPEN_FOLD" $RQ SIMCTL_CHILD_FUSIONHA_SCREENSHOT_REQUESTS_FOCUS=1
 # Add mid-setup (a movie picked from "dune").
 WAIT=14 refold fold-add-configure "$OPEN_FOLD" $ADD SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_QUERY=dune \
   SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631
