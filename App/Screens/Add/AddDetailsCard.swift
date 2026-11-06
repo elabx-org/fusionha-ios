@@ -10,6 +10,7 @@ struct AddDetailsCard: View {
     let flow: AddFlow
     @State private var openRow: String?
     @Environment(\.motionEnabled) private var motion
+    @Environment(\.addLook) private var look
 
     private static let seriesTypes: [(value: String, label: String, note: String, icon: String)] = [
         ("standard", "Standard", "Season and episode numbers", "list.number"),
@@ -75,7 +76,7 @@ struct AddDetailsCard: View {
                 divider
                 AddFolderRow(flow: flow)
             }
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .addCard(look, radius: 14)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
             Text("Defaults from Settings → Default profiles")

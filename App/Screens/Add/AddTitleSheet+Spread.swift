@@ -17,7 +17,7 @@ extension AddTitleSheet {
                 .frame(width: CGFloat(panes.lead))
                 .overlay(alignment: .trailing) {
                     // Flat: the pages meet at the hinge line, nothing on it.
-                    if panes.gap == 0 { Rectangle().fill(Theme.line).frame(width: 1) }
+                    if panes.gap == 0 { Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea() }
                 }
             // Book: the fold's gutter, holding nothing.
             Color.clear.frame(width: CGFloat(panes.gap))
@@ -83,7 +83,7 @@ extension AddTitleSheet {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.panel)
+        .modifier(AddSetupGround(look: look, backdrop: nil, poster: nil))
     }
 
     /// A pick from Find. On the spread, a pick over a setup with choices asks

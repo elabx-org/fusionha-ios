@@ -51,10 +51,11 @@ extension AddTitleSheet {
     /// CI screenshots: open on a trending pick (`…_ADD_PICK=<tmdb id>`, with
     /// `…_ADD_KIND` for one off the list) or a
     /// TVDB-only one (`…_ADD_TVDB=<tvdb id>`); `…_ADD_DETAILS` then pushes
-    /// its "View details".
+    /// its "View details". `…_ADD_QUERY=<term>` types a search.
     func screenshotHooks() {
         let env = ProcessInfo.processInfo.environment
         guard flow == nil, let client = model.client else { return }
+        if let term = env["FUSIONHA_SCREENSHOT_ADD_QUERY"] { query = term }
         if let id = env["FUSIONHA_SCREENSHOT_ADD_PICK"].flatMap(Int.init) {
             Task {
                 let list = (try? await client.discover(kind: .all, list: .trending)) ?? []

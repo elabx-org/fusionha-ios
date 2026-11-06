@@ -87,15 +87,26 @@ private struct DuoPageCover<Content: View>: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            Theme.scrim.opacity(0.45 * (1 - progress))
-                .ignoresSafeArea()
-                .contentShape(Rectangle())
-                .onTapGesture { attemptClose() }
-                .accessibilityLabel("Close")
-                .accessibilityAddTraits(.isButton)
-            page
-        }
+        // The safe-area frame is measured on its own layer, never on the
+        // page sized from it: measured on the ZStack, the page (framed to the
+        // first width, before the open Duo's column came in with the page's
+        // toolbar items) held the ZStack at that width, so the page stayed
+        // ~85 pt too wide, centred and clipped on the left (build 805).
+        Color.clear
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { measured = $0 }
+            .overlay(alignment: .topLeading) {
+                ZStack(alignment: .topLeading) {
+                    Theme.scrim.opacity(0.45 * (1 - progress))
+                        .ignoresSafeArea()
+                        .contentShape(Rectangle())
+                        .onTapGesture { attemptClose() }
+                        .accessibilityLabel("Close")
+                        .accessibilityAddTraits(.isButton)
+                    page
+                }
+                .frame(width: measured.size.width > 0 ? measured.size.width : nil, alignment: .topLeading)
+            }
         // A hardware keyboard's Escape: the dim's close, through the same
         // guard. The content's own Close gives Escape up to it (one per page).
         .background {
@@ -107,7 +118,6 @@ private struct DuoPageCover<Content: View>: View {
         .environment(\.escapeTakenByHost, true)
         // The content's own sheet background steps aside (`sheetBackground`).
         .environment(\.onDuoPage, true)
-        .onGeometryChange(for: FoldInfo.self) { FoldInfo($0) } action: { measured = $0 }
         .environment(dismissGuard)
         .onChange(of: dismissGuard.closeRequests) { attemptClose() }
         .confirmationDialog(confirmText, isPresented: $asking, titleVisibility: .visible) {

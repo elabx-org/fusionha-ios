@@ -11,6 +11,7 @@ struct GrabTimeline: View {
     let onChange: (String) -> Void
     @State private var why = false
     @Environment(\.motionEnabled) private var motion
+    @Environment(\.addLook) private var look
 
     /// Today's pill keeps this far from a track edge, and from a knob.
     private static let edge: CGFloat = 26
@@ -36,10 +37,11 @@ struct GrabTimeline: View {
                             Text("TODAY")
                                 .font(.system(size: 11, weight: .heavy, design: .monospaced))
                                 .tracking(0.76)
-                                .foregroundStyle(Theme.onFill(hex: Theme.palette.miss))
+                                .foregroundStyle(look == nil ? Theme.onFill(hex: Theme.palette.miss) : Theme.bg)
                                 .padding(.horizontal, 7)
                                 .padding(.vertical, 4)
-                                .background(Theme.miss, in: Capsule())
+                                // v2: orange is only for what needs the owner; today is the ink.
+                                .background(look == nil ? Theme.miss : Theme.txt, in: Capsule())
                                 .background(Capsule().strokeBorder(Theme.card, lineWidth: 3).padding(-3))
                                 .fixedSize()
                                 .position(x: todayX(today, width: width), y: 19)
@@ -74,7 +76,7 @@ struct GrabTimeline: View {
             .padding(.horizontal, 14)
             .padding(.top, 20)
             .padding(.bottom, 14)
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .addCard(look, radius: 14)
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
             if why {
                 AddSummaryText(parts: ReleaseTimelineModel.grabNote(selected))

@@ -11,6 +11,7 @@ struct AddMonitorStrip: View {
     @Binding var splitChosen: Bool
     @Binding var editingRow: QualityTier
     @Environment(\.motionEnabled) private var motion
+    @Environment(\.addLook) private var look
 
     private var hdOn: Bool { flow.versions?[.hd]?.on ?? false }
     private var uhdOn: Bool { flow.versions?[.uhd]?.on ?? false }
@@ -81,7 +82,7 @@ struct AddMonitorStrip: View {
                 .font(.system(size: 13))
             }
             .padding(14)
-            .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .addCard(look, radius: 14)
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
         }
     }

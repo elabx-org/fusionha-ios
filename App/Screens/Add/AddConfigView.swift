@@ -16,6 +16,7 @@ struct AddConfigView: View {
     var zoom: (id: String, namespace: Namespace.ID)?
 
     @Environment(\.motionEnabled) var motion
+    @Environment(\.addLook) var look
     @State var splitChosen = false
     @State private var editingRow: QualityTier = .uhd
     @State private var compact = false
@@ -35,7 +36,7 @@ struct AddConfigView: View {
     var body: some View {
         let timeline = flow.timeline(today: today)
         ZStack(alignment: .top) {
-            PreviewAmbient(art: poster ?? backdrop)
+            if look == nil { PreviewAmbient(art: poster ?? backdrop) }
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
@@ -61,7 +62,7 @@ struct AddConfigView: View {
                 #endif
             }
         }
-        .background(Theme.bg)
+        .modifier(AddSetupGround(look: look, backdrop: backdrop, poster: poster))
         // Close and Back are system toolbar items (DC10, D4), so the Duo can
         // move them into its vertical bar; the hero stays clean. Scrolled
         // past the hero, the bar takes the title.
@@ -246,7 +247,9 @@ struct AddConfigView: View {
         .padding(.top, first ? 22 : 11)
         .padding(.bottom, 11)
         .background {
-            if first {
+            if look != nil {
+                // v2: the sections sit straight on the art's ground.
+            } else if first {
                 LinearGradient(stops: [.init(color: Theme.bg.opacity(0), location: 0),
                                        .init(color: Theme.bg.opacity(0.62), location: 0.12)],
                                startPoint: .top, endPoint: .bottom)
@@ -255,30 +258,6 @@ struct AddConfigView: View {
             }
         }
     }
-
-    #if DEBUG
-    /// CI screenshots: `…_ADD_SCROLL=versions|monitor` scrolls to a section,
-    /// `…_ADD_4K` turns the 4K version on and runs its check, `…_ADD_SPLIT`
-    /// picks "Different for 4K", `…_ADD_GRAB=<stop>` picks a grab stop.
-    private func screenshotHooks(_ proxy: ScrollViewProxy) {
-        let env = ProcessInfo.processInfo.environment
-        if env["FUSIONHA_SCREENSHOT_ADD_4K"] != nil || env["FUSIONHA_SCREENSHOT_ADD_SPLIT"] != nil {
-            flow.setTierOn(.uhd, true)
-            if env["FUSIONHA_SCREENSHOT_ADD_4K"] != nil { Task { await flow.checkFourK() } }
-        }
-        if env["FUSIONHA_SCREENSHOT_ADD_SPLIT"] != nil {
-            splitChosen = true
-            flow.setTierMonitor(.uhd, "future")
-        }
-        if let stop = env["FUSIONHA_SCREENSHOT_ADD_GRAB"] { flow.setMinAvail(stop) }
-        if let target = env["FUSIONHA_SCREENSHOT_ADD_SCROLL"] {
-            Task {
-                try? await Task.sleep(for: .milliseconds(300))
-                proxy.scrollTo(target, anchor: .top)
-            }
-        }
-    }
-    #endif
 }
 
 /// A text link with its chevron after the title.

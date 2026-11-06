@@ -26,7 +26,7 @@ on:
         # the Library on the iPhone Duo's open inner display. v2session: v2's
         # owner session there (Library, titles, the split handle, tabs, Search).
         # v2frames: window captures while titles open and close there.
-        # v2shots: v2 screenshots on the Duo harness (scripts/v2_duo_shots.sh).
+        # v2shots: v2 screenshots there (scripts/v2_duo_shots.sh).
         options: [all, activity, library, v2open, v2session, v2frames, v2shots]
         default: all
       shots_only:
@@ -952,8 +952,8 @@ jobs:
 
       - name: v2 screenshots on the iPhone Duo harness
         if: env.SCOPE == 'v2shots'
-        timeout-minutes: 15
-        run: scripts/v2_duo_shots.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf
+        timeout-minutes: 25
+        run: scripts/v2_duo_shots.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf/shots
 
       - name: v2 owner session report
         if: always() && env.SCOPE == 'v2session'
@@ -1029,4 +1029,5 @@ jobs:
             perf/*.png
             perf/*.jpg
             perf/*.mp4
+            perf/shots/*.png
           retention-days: 14
