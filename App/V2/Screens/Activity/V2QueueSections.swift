@@ -16,6 +16,9 @@ struct V2QueueSections: View {
     let reviewAll: ([Int]) -> Void
     let actions: V2QueueRowActions
     let openHistory: () -> Void
+    /// The open Duo's overview column shows the scheduled runs (Up next),
+    /// so the queue lists only its waiting downloads, as "Queued".
+    var runsInOverview = false
 
     var body: some View {
         let items = store.items
@@ -26,7 +29,8 @@ struct V2QueueSections: View {
                     module(section, list)
                 }
             }
-            V2QueueUpNextModule(queued: routed[.upnext] ?? [], tasks: summary?.tasks,
+            V2QueueUpNextModule(queued: routed[.upnext] ?? [], tasks: runsInOverview ? nil : summary?.tasks,
+                                caption: runsInOverview ? "Queued" : "Up next",
                                 row: { item in row(item, downloads: [item]) })
             V2JustFinishedModule(rows: QueueLogic.justFinished(store.justFinished), openHistory: openHistory)
         }

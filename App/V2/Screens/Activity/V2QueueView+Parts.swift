@@ -41,7 +41,7 @@ extension V2QueueView {
             V2QueueSections(store: store, summary: feed.summary, selecting: selecting, selected: $selected,
                             openHeld: splits ? openHeld?.id : nil, review: openDecision,
                             reviewAll: { router.manualImport(rescue: $0) }, actions: rowActions,
-                            openHistory: { chrome.tab = .history })
+                            openHistory: { chrome.tab = .history }, runsInOverview: splits)
             if store.hasMore {
                 Button(store.loadingMore ? "Loading…" : "Load \(store.total - store.items.count) more") {
                     Task { await store.loadMore(model.client) }
@@ -66,19 +66,21 @@ extension V2QueueView {
                              dense: true, gutter: 24,
                              review: { router.manualImport(rescue: item.id) },
                              perform: { await ops.perform($0, on: item) },
-                             done: { decision = nil })
+                             done: { withAnimation(motion ? .snappy(duration: 0.25) : nil) { decision = nil } })
                 .id(item.id)
                 .transition(motion ? .opacity.combined(with: .offset(x: 12)) : .opacity)
         } else {
             QueueIdleRightPage(tasks: feed.summary?.tasks)
+                .transition(.opacity)
         }
     }
 
-    /// The decision on the right page: the one tapped, else the first held.
+    /// The decision on the right page: the held download tapped (none is
+    /// preselected: with nothing picked the queue is the wide side and the
+    /// overview the narrow one, owner on build 805).
     var openHeld: QueueItem? {
-        let held = store.items.filter { $0.cockpitState == .held }
-        if let decision, let item = held.first(where: { $0.id == decision }) { return item }
-        return held.first
+        guard let decision else { return nil }
+        return store.items.first { $0.id == decision && $0.cockpitState == .held }
     }
 
     func openDecision(_ item: QueueItem) {

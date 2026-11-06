@@ -7,13 +7,16 @@ import FusionhaKit
 struct V2QueueUpNextModule<Row: View>: View {
     let queued: [QueueItem]
     let tasks: IdleSummary.Tasks?
+    /// "Queued" on the open Duo, where the overview column has Up next.
+    var caption = "Up next"
     @ViewBuilder let row: (QueueItem) -> Row
     @State private var showsAll = false
 
     var body: some View {
         let runs = V2ScheduledRun.all(tasks)
         if !queued.isEmpty || !runs.isEmpty {
-            WidgetModule(caption: "Up next", systemImage: "clock") {
+            WidgetModule(caption: queued.isEmpty || tasks != nil ? caption : "\(caption) · \(queued.count)",
+                         systemImage: "clock") {
                 if queued.count > 4 {
                     Button(showsAll ? "Fewer" : "All \(queued.count)") { showsAll.toggle() }
                         .font(.footnote.weight(.semibold))

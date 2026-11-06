@@ -23,4 +23,12 @@ final class QueueDuoRuleV2Tests: XCTestCase {
         XCTAssertEqual(QueueDuoRuleV2.gap(bookPose: true), 40)
         XCTAssertEqual(QueueDuoRuleV2.gap(bookPose: false), 0)
     }
+
+    func testLiveQueueIsTwoThirdsAndLeavesTheOverviewAColumn() {
+        XCTAssertEqual(QueueDuoRuleV2.queueWidth(width: 951, share: QueueDuoRuleV2.queueShare, bookPose: false), 634)
+        // A dragged share is clamped so either side keeps a folded column.
+        XCTAssertEqual(QueueDuoRuleV2.queueWidth(width: 951, share: 0.95, bookPose: false), 651)
+        XCTAssertEqual(QueueDuoRuleV2.queueWidth(width: 951, share: 0.1, bookPose: false), 300)
+        XCTAssertEqual(QueueDuoRuleV2.queueWidth(width: 951, share: 0.66, bookPose: true), 455.5)
+    }
 }

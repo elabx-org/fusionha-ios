@@ -7,7 +7,10 @@ import FusionhaKit
 /// stay v1's) and reuses v1's `QueueStore`, sections, idle feed and API
 /// calls. The caption, glass scopes, pipeline strip, then one W1 module per
 /// section; a held row opens its decision (a sheet on the phone, the right
-/// page on the open Duo, where the first Needs-you row is preselected).
+/// page on the open Duo). Flat open the live queue is the wide side and the
+/// overview (needs attention, this week, up next) the narrow one, with a
+/// grip on the hairline to resize it (owner on build 805); a decision
+/// takes the wide side while it is open.
 /// Title search is the bar's pull-down field; More holds Process queue,
 /// Select and Clear.
 struct V2QueueView: View {
@@ -33,6 +36,10 @@ struct V2QueueView: View {
     @State var clearing = false
     @State var processing = false
     @State var busy = false
+    /// The live queue's share of the flat open Duo, kept per device.
+    @AppStorage("v2.activity.queueShare") var queueShare = QueueDuoRuleV2.queueShare
+    /// The share while the grip is being dragged.
+    @State var dragShare: Double?
 
     var ops: V2QueueOps { V2QueueOps(model: model, toaster: toaster, store: store) }
     var splits: Bool { QueueDuoRuleV2.splits(width: Double(pane.width), duoOpen: duoOpen) }
@@ -44,12 +51,19 @@ struct V2QueueView: View {
     var body: some View {
         @Bindable var chrome = chrome
         HStack(spacing: 0) {
-            list.frame(width: splits ? CGFloat(QueueDuoRuleV2.listWidth(width: Double(pane.width), bookPose: bookPose)) : nil)
+            list.frame(width: splits ? listWidth : nil)
             if splits {
                 if bookPose {
                     Color.clear.frame(width: CGFloat(QueueDuoRuleV2.gap(bookPose: true)))
                 } else {
                     Rectangle().fill(Theme.txt.opacity(0.12)).frame(width: 0.5).ignoresSafeArea()
+                        .overlay {
+                            if !deciding {
+                                V2QueueSplitHandle(width: pane.width, queueWidth: listWidth, dragShare: $dragShare) { share in
+                                    withAnimation(motion ? .snappy(duration: 0.25) : nil) { queueShare = share }
+                                }
+                            }
+                        }
                 }
                 rightPage.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             }
@@ -110,6 +124,18 @@ struct V2QueueView: View {
         } message: {
             Text("All \(ActFmt.plural(store.total, "download")) leave the download queue. Downloaded files stay on disk and nothing is blocklisted, so anything still wanted can be searched again.")
         }
+    }
+
+    /// A decision or the bulk remove panel is on the right page: it gets the
+    /// wide side and the queue the mock's third.
+    var deciding: Bool { openHeld != nil || (selecting && !selected.isEmpty) }
+
+    /// The queue column's width in the split: the remembered (or dragged)
+    /// share while live, the third while deciding, equal pages in book pose.
+    var listWidth: CGFloat {
+        let width = Double(pane.width)
+        if deciding { return CGFloat(QueueDuoRuleV2.listWidth(width: width, bookPose: bookPose)) }
+        return CGFloat(QueueDuoRuleV2.queueWidth(width: width, share: dragShare ?? queueShare, bookPose: bookPose))
     }
 
     /// The ground's art: the open decision's title, else the first download's.

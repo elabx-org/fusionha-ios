@@ -26,6 +26,20 @@ public enum QueueDuoRuleV2 {
         return min(width / 2, max(minimumList, (width * listShare).rounded()))
     }
 
+    /// The live queue's share of a flat or wide pane while nothing is being
+    /// decided (owner, build 805): the queue updates live, so it takes the
+    /// wide side and the overview (needs attention, this week, up next) the
+    /// narrow one. A held download's decision flips back to `listShare`.
+    public static let queueShare = 2.0 / 3
+
+    /// The live queue's width in a split pane at `share` (the handle's,
+    /// remembered), leaving the overview at least a folded column.
+    public static func queueWidth(width: Double, share: Double, bookPose: Bool) -> Double {
+        if bookPose { return max(0, (width - bookGutter) / 2) }
+        let clamped = min(max(share, 0), 1)
+        return min(width - minimumList, max(minimumList, (width * clamped).rounded()))
+    }
+
     /// Space between the list and the right page: the fold's gutter in
     /// book pose, a hairline otherwise.
     public static func gap(bookPose: Bool) -> Double { bookPose ? bookGutter : 0 }

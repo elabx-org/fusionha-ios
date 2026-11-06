@@ -8,7 +8,7 @@ import FusionhaKit
 struct V2QueueIdleView: View {
     let feed: QueueIdleFeed
     let lastImport: QueuePipeline.LastImport?
-    /// The open Duo's right page carries Needs attention.
+    /// The open Duo's overview column carries Needs attention and Up next.
     var attentionOnRight = false
     let openHistory: () -> Void
     @Environment(AppModel.self) private var model
@@ -24,7 +24,10 @@ struct V2QueueIdleView: View {
             if !attentionOnRight, !V2LibraryAttention.items(model.library).isEmpty {
                 V2NeedsAttentionRow(items: V2LibraryAttention.items(model.library), held: []) { model.tab = .library }
             }
-            V2QueueUpNextModule(queued: [], tasks: feed.summary?.tasks, row: { _ in EmptyView() })
+            // The open Duo's overview column carries Up next (shown once).
+            if !attentionOnRight {
+                V2QueueUpNextModule(queued: [], tasks: feed.summary?.tasks, row: { _ in EmptyView() })
+            }
             recent
         }
     }
