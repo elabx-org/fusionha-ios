@@ -112,7 +112,14 @@ struct AccountToolbarItem: ToolbarContent {
 
     var body: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
-            Button { model.avatar.showingSheet = true } label: {
+            Button {
+                #if V2
+                // v2: one Account sheet (plan S12), no hub in front of it.
+                model.showingAccount = true
+                #else
+                model.avatar.showingSheet = true
+                #endif
+            } label: {
                 Label {
                     Text("Account")
                 } icon: {

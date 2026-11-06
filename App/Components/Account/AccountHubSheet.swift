@@ -132,7 +132,7 @@ struct AccountHubSheet: View {
 }
 
 /// Account › App colours: the same rows as Settings › Appearance › Theme.
-private struct AccountColoursPage: View {
+struct AccountColoursPage: View {
     var body: some View {
         Form { AppPaletteSection() }
             .scrollContentBackground(.hidden)
