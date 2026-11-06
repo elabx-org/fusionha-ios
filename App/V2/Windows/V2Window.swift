@@ -28,11 +28,16 @@ struct V2Window: View {
                 if signedOut { model.resetUI() }
             }
             .task(id: title) { openTitle() }
-            // A link from outside (widget, Live Activity) goes to an open
-            // window (`AppSession.routeLink`), never a new one. Only the app's
-            // own links: matching "*" would also claim `openWindow`'s scene
-            // identifier, so Open in New Window could reuse this window.
-            .handlesExternalEvents(preferring: Self.ownLinks, allowing: Self.ownLinks)
+            // Which events an open window takes (its scene's activation
+            // conditions). It prefers the app's own links (widget, Live
+            // Activity, push: `AppSession.routeLink` then picks the window)
+            // and allows anything else, including a plain launch from the
+            // Home Screen icon. Allowing only the links made every icon tap
+            // match no open window, so the system opened a new one each time.
+            .handlesExternalEvents(preferring: Self.ownLinks, allowing: ["*"])
+            #if DEBUG
+            .modifier(V2SceneProbe())
+            #endif
     }
 
     private static let ownLinks: Set<String> = ["\(AppIdentity.current.urlScheme)://"]
