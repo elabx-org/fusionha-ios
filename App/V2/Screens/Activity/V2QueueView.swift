@@ -40,6 +40,10 @@ struct V2QueueView: View {
     @AppStorage("v2.activity.queueShare") var queueShare = QueueDuoRuleV2.queueShare
     /// The share while the grip is being dragged.
     @State var dragShare: Double?
+    /// The row at the list's top, kept across a fold (`FoldAnchor`).
+    @State var anchor = FoldAnchorTracker()
+    /// The open decision's choice and scroll, for its page and its sheet alike.
+    @State var heldDraft = HeldDecisionDraft()
 
     var ops: V2QueueOps { V2QueueOps(model: model, toaster: toaster, store: store) }
     var splits: Bool { QueueDuoRuleV2.splits(width: Double(pane.width), duoOpen: duoOpen) }
@@ -93,8 +97,12 @@ struct V2QueueView: View {
         .task(id: search) { await poll() }
         .task { await feed.run(model.client) }
         .onChange(of: store.items.map(\.id)) { selected.formIntersection(Set(store.items.map(\.id))) }
+        // Fold continuity: the picked held download moves between the right page and its sheet.
+        .foldPick(splits: splits, picked: $decision, sheet: $sheetDecision, id: \.id) { [store] id in
+            store.items.contains { $0.id == id && $0.cockpitState == .held } ? V2HeldRef(id: id) : nil
+        }
         .sheet(item: $sheetDecision) { ref in
-            HeldDecisionSheet(ref: ref, store: store, canDecide: canDecide,
+            HeldDecisionSheet(ref: ref, store: store, canDecide: canDecide, draft: heldDraft,
                               review: { item in
                                   // Manual Import is Activity's sheet: open it once this one has gone.
                                   Task { @MainActor in

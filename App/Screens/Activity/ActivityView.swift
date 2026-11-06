@@ -112,6 +112,8 @@ struct ActivityView: View {
     @State private var animationsEnabled = true
     @Namespace private var tabsNamespace
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    /// v2's fold continuity: Manual Import's kept models (`V2MIKept`); nil in v1.
+    @Environment(\.foldKeep) private var foldKeep
 
     private static var initialTab: ActivityTab {
         #if DEBUG
@@ -192,6 +194,10 @@ struct ActivityView: View {
                 }
             }
             .environment(model)
+        }
+        // v2: Manual Import closed for good, its kept scan and choices go (a fold only swaps its host).
+        .onChange(of: router.rescue?.id) { old, _ in
+            if let old { foldKeep?.drop("mi-" + old) }
         }
         .task(id: chrome.searchInput) {
             if chrome.searchInput.isEmpty { chrome.search = ""; return }

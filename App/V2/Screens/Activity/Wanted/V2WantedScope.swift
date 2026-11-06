@@ -40,6 +40,7 @@ struct V2WantedScope: View {
         .task(id: data.searchInput) { await data.debounce() }
         .task(id: "\(data.tab.rawValue)|\(data.search)") { await data.loadFeed(model.client) }
         .onChange(of: data.tab) { picked = nil }
+        .onChange(of: split.splits) { _, now in carryPick(splits: now) }
         .sheet(item: $sheetItem) { item in
             V2ScopeSheet(title: item.title, art: item.posterUrl) {
                 WantedDecisionPane(item: item, tab: data.tab, interval: data.interval)
@@ -155,6 +156,20 @@ struct V2WantedScope: View {
             withAnimation(motion ? .snappy(duration: 0.25) : nil) { picked = item.id }
         } else {
             sheetFourK = item
+        }
+    }
+
+    /// Fold continuity (`FoldPick`): the picked title moves between the
+    /// right page and its sheet, for the tab on screen.
+    private func carryPick(splits: Bool) {
+        if data.tab == .fourk {
+            let next = FoldPick(picked: picked, sheet: sheetFourK?.id).reconciled(splits: splits)
+            picked = next.picked
+            if sheetFourK?.id != next.sheet { sheetFourK = data.fourkFeed.items.first { $0.id == next.sheet } }
+        } else {
+            let next = FoldPick(picked: picked, sheet: sheetItem?.id).reconciled(splits: splits)
+            picked = next.picked
+            if sheetItem?.id != next.sheet { sheetItem = data.feed.items.first { $0.id == next.sheet } }
         }
     }
 

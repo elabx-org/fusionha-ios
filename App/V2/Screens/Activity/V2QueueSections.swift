@@ -75,6 +75,7 @@ struct V2QueueSections: View {
             }
         }
         .id(lead.id)
+        .foldAnchor(lead.id)
         .onTapGesture { tap(lead, ids: ids) }
         .contextMenu { if !selecting { V2QueueRowMenu(item: lead, actions: actions) } }
     }

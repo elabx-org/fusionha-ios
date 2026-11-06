@@ -21,11 +21,19 @@ struct SwipeDeckView: View {
     @State private var drag: (id: Int, dx: CGFloat)?
     @State private var flying: (id: Int, right: Bool)?
     @State private var feedback = 0
+    /// v2's fold continuity (`FoldKeep`); nil in v1.
+    @Environment(\.foldKeep) private var foldKeep
 
     static let threshold: CGFloat = 110
 
     private var deck: [MediaRequest] {
-        inbox.queue.filter { !inbox.isLocked($0, viewerId: viewerId) }
+        var queue = inbox.queue
+        // v2: the deck opens on the request focused open (fold continuity).
+        if foldKeep != nil {
+            let byId = Dictionary(queue.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+            queue = inbox.focus.deckOrder(queue.map(\.id)).compactMap { byId[$0] }
+        }
+        return queue.filter { !inbox.isLocked($0, viewerId: viewerId) }
     }
 
     var body: some View {

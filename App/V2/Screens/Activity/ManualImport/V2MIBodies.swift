@@ -25,6 +25,7 @@ struct V2MIPhoneBody: View {
             .padding(.top, 6)
             .padding(.bottom, 16)
         }
+        .keepsScrollOffset(read: { [store] in store.listY }, write: { [store] y in store.listY = y })
         .scrollIndicators(.hidden)
         .v2MIFooter(hidden: bulkActive)
         .v2MIBulkBar(active: bulkActive)
@@ -89,6 +90,7 @@ struct V2MISplitBody: View {
                 .padding(.trailing, 18)
                 .padding(.vertical, 12)
             }
+            .keepsScrollOffset(read: { [store] in store.listY }, write: { [store] y in store.listY = y })
             .scrollIndicators(.hidden)
             .frame(width: panes.lead)
             if panes.gap > 0 {

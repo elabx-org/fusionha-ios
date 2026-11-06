@@ -18,10 +18,27 @@ struct HeldDecisionPage: View {
     let perform: (HeldChoice) async -> Bool
     /// After an override ran (the sheet closes; the page moves on).
     let done: () -> Void
-    @State private var choice: HeldChoice = .stay
+    /// The queue's kept choice and scroll (fold continuity); nil keeps its own.
+    var draft: HeldDecisionDraft?
+    @State private var choice: HeldChoice
     @State private var confirming = false
     @State private var busy = false
     @Environment(\.motionEnabled) private var motion
+
+    init(item: QueueItem, siblings: [QueueItem], canDecide: Bool, dense: Bool = false, gutter: CGFloat = 16,
+         draft: HeldDecisionDraft? = nil, review: @escaping () -> Void,
+         perform: @escaping (HeldChoice) async -> Bool, done: @escaping () -> Void) {
+        self.item = item
+        self.siblings = siblings
+        self.canDecide = canDecide
+        self.dense = dense
+        self.gutter = gutter
+        self.draft = draft
+        self.review = review
+        self.perform = perform
+        self.done = done
+        _choice = State(initialValue: draft?.choice(for: item.id) ?? .stay)
+    }
 
     var body: some View {
         ScrollView {
@@ -32,13 +49,16 @@ struct HeldDecisionPage: View {
                 .padding(.top, 8)
                 .padding(.bottom, 16)
         }
+        .keepsScrollOffset(read: { [draft, item] in draft?.offset(for: item.id) ?? 0 },
+                           write: { [draft, item] y in draft?.setOffset(y, for: item.id) })
         .scrollIndicators(.hidden)
         .goBarInset {
             GoBar(label: choice.goLabel, systemImage: choice.goIcon, tone: choice.isOverride ? .override : .primary,
                   note: note, busy: busy, disabled: choice.isOverride && !canDecide, action: commit)
                 .animation(motion ? .snappy(duration: 0.25) : nil, value: choice)
         }
-        .onChange(of: item.id) { choice = .stay }
+        .onChange(of: item.id) { choice = draft?.choice(for: item.id) ?? .stay }
+        .onChange(of: choice) { draft?.setChoice(choice, for: item.id) }
         .confirmationDialog(choice.confirmTitle(item), isPresented: $confirming, titleVisibility: .visible) {
             Button(choice.goLabel, role: .destructive) { run(choice) }
             Button("Keep it held", role: .cancel) {}

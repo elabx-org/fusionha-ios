@@ -75,8 +75,18 @@ enum DuoHarness {
         var cornerRadius: CGFloat { self == .folded ? 46 : 40 }
     }
 
-    static let frame: Frame? = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_DUO_FRAME"]
-        .flatMap(Frame.init(rawValue:))
+    /// The frame on screen: the launch's, until a refold step changes it
+    /// (`FUSIONHA_SCREENSHOT_DUO_REFOLD`). Observable, so the harness frame
+    /// and the views that read it follow a step.
+    static var frame: Frame? { live.frame }
+
+    @Observable
+    final class Live {
+        var frame: Frame? = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_DUO_FRAME"]
+            .flatMap(Frame.init(rawValue:))
+    }
+
+    nonisolated(unsafe) static let live = Live()
 
     /// `FUSIONHA_SCREENSHOT_DUO_POSE=book`: the fake fold is active (partially
     /// folded, reserved); otherwise flat (inactive, nothing reserved).
@@ -88,12 +98,33 @@ enum DuoHarness {
     /// Applies the harness's launch settings before the first view reads them.
     static func prepare() {
         let env = ProcessInfo.processInfo.environment
+        if let steps = env["FUSIONHA_SCREENSHOT_DUO_REFOLD"] { refold(steps) }
         if let layout = env["FUSIONHA_SCREENSHOT_DUO_LAYOUT"].flatMap(DuoOpenLayout.init(rawValue:)) {
             UserDefaults.standard.set(layout.rawValue, forKey: DuoOpenLayout.storageKey)
         }
         if env["FUSIONHA_SCREENSHOT_DUO_LIST"] != nil {
             UserDefaults.standard.set(listHidden ? "library,discover,search,calendar,activity,requests,you" : "",
                                       forKey: DuoListMemory.storageKey)
+        }
+    }
+
+    /// Fold continuity shots: `FUSIONHA_SCREENSHOT_DUO_REFOLD=open@16,folded@26`
+    /// switches the frame to `open` 16 s after launch, then back to `folded`
+    /// at 26 s, in the same process (a fold is a resize; the app keeps its
+    /// scene), so the shots before and after each step show what it kept.
+    private static func refold(_ steps: String) {
+        let parsed: [(Frame, Double)] = steps.split(separator: ",").compactMap { step in
+            let parts = step.split(separator: "@")
+            guard parts.count == 2, let frame = Frame(rawValue: String(parts[0])), let at = Double(parts[1]) else { return nil }
+            return (frame, at)
+        }
+        Task { @MainActor in
+            let clock = ContinuousClock()
+            let start = clock.now
+            for (frame, at) in parsed {
+                try? await clock.sleep(until: start.advanced(by: .milliseconds(Int(at * 1000))))
+                live.frame = frame
+            }
         }
     }
 
