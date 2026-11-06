@@ -23,16 +23,18 @@ struct V2WideEpisodeList: View {
             oldest ? $0.episodeNumber < $1.episodeNumber : $0.episodeNumber > $1.episodeNumber
         }
         let still = TMDBImage.resized(detail.backdropUrl ?? detail.posterUrl, to: "w300")
+        let fileFacts = SeasonFileFacts.perVersion(season, editions: editions)
         ScrollViewReader { reader in
             ScrollView {
                 // Not lazy: a season is a few dozen rows at most, and `scrollTo`
                 // only reaches rows that exist, so the open episode far down a
                 // long season is centred on the first open.
                 VStack(alignment: .leading, spacing: 4) {
-                    header(facts)
+                    header(facts, fileFacts: fileFacts)
                         .padding(.bottom, 10)
                     ForEach(episodes, id: \.id) { episode in
-                        row(episode, state: V2EpisodeState(episode: episode, editions: editions), still: V2EpisodeRow.still(episode, series: still))
+                        row(episode, state: V2EpisodeState(episode: episode, editions: editions),
+                            still: V2EpisodeRow.still(episode, series: still), fileFacts: fileFacts)
                             .id(episode.id)
                     }
                 }
@@ -46,7 +48,7 @@ struct V2WideEpisodeList: View {
         .sensoryFeedback(.selection, trigger: selected)
     }
 
-    private func header(_ facts: V2SeasonFacts) -> some View {
+    private func header(_ facts: V2SeasonFacts, fileFacts: [SeasonVersionFileFacts]) -> some View {
         VStack(spacing: 8) {
             VStack(spacing: 2) {
                 Text(season.title).font(.system(size: 17, weight: .bold))
@@ -57,6 +59,7 @@ struct V2WideEpisodeList: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
+            if !fileFacts.isEmpty { V2SeasonFileFactsHeader(versions: fileFacts) }
             VStack(spacing: 6) {
                 ForEach(facts.lanes) { V2SeasonLaneRow(lane: $0, showsCount: false) }
             }
@@ -68,13 +71,16 @@ struct V2WideEpisodeList: View {
         .padding(.horizontal, 10)
     }
 
-    private func row(_ episode: Episode, state: V2EpisodeState, still: URL?) -> some View {
+    /// The facts are plain content here: a tap opens the episode beside the list.
+    private func row(_ episode: Episode, state: V2EpisodeState, still: URL?,
+                     fileFacts: [SeasonVersionFileFacts]) -> some View {
         let isOpen = episode.id == selected
         return Button {
             withAnimation(reduce ? nil : .easeInOut(duration: 0.2)) { selected = episode.id }
         } label: {
             V2EpisodeRow(detail: detail, episode: episode, state: state,
-                         monitored: store.episodeMonitored(episode), stillURL: still, showsOverview: false)
+                         monitored: store.episodeMonitored(episode), stillURL: still, showsOverview: false,
+                         fileFacts: fileFacts)
                 .padding(.horizontal, 10)
                 .background {
                     if isOpen { ModuleSurface(radius: 16, selected: true) }

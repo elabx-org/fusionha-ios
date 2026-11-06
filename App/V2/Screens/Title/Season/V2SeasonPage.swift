@@ -49,7 +49,15 @@ struct V2SeasonPage: View {
         // Owner pick (2026-11-05, "alternative"): every row keeps a small
         // still: the episode's own (0.4.238), else the series art.
         let still = TMDBImage.resized(detail.backdropUrl ?? detail.posterUrl, to: "w300")
+        // What the season's files share, said once under the bar (option B).
+        let fileFacts = SeasonFileFacts.perVersion(season, editions: editions)
         return List {
+            if !fileFacts.isEmpty {
+                V2SeasonFileFactsHeader(versions: fileFacts)
+                    .listRowInsets(EdgeInsets(top: 0, leading: gutter, bottom: 0, trailing: gutter))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
             V2SeasonPageHeader(detail: detail, season: season, facts: facts, canSearch: canSearch)
                 .listRowInsets(EdgeInsets(top: 8, leading: gutter, bottom: 16, trailing: gutter))
                 .listRowBackground(Color.clear)
@@ -57,7 +65,8 @@ struct V2SeasonPage: View {
             ForEach(Array(episodes.enumerated()), id: \.element.id) { index, episode in
                 V2EpisodeRow(detail: detail, episode: episode,
                              state: V2EpisodeState(episode: episode, editions: editions),
-                             monitored: store.episodeMonitored(episode), stillURL: V2EpisodeRow.still(episode, series: still))
+                             monitored: store.episodeMonitored(episode), stillURL: V2EpisodeRow.still(episode, series: still),
+                             fileFacts: fileFacts, factsSeason: seasonNumber)
                     .background {
                         NavigationLink(value: V2TitleRoute.episode(season: seasonNumber, episodeId: episode.id)) { EmptyView() }
                             .opacity(0)
