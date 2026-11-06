@@ -37,6 +37,7 @@ struct V2ManualImportHost: View {
 /// The open card on the split and the phone's pushed page are one
 /// selection (`FoldRoute`): the split shows a group or a file, the phone
 /// pushes it.
+@MainActor
 enum V2MIFoldRoute {
     static func reconcile(split: Bool, path: inout [V2MIRoute], store: V2MIDraftStore) {
         if split {

@@ -66,7 +66,7 @@ extension V2QueueView {
                                  done: endSelecting)
         } else if let item = openHeld {
             HeldDecisionPage(item: item, siblings: V2QueueSiblings.of(item, in: store.items), canDecide: canDecide,
-                             dense: true, gutter: 24,
+                             dense: true, gutter: 24, draft: heldDraft,
                              review: { router.manualImport(rescue: item.id) },
                              perform: { await ops.perform($0, on: item) },
                              done: { withAnimation(motion ? .snappy(duration: 0.25) : nil) { decision = nil } })

@@ -201,6 +201,14 @@ WAIT=13 refold fold-title-season-page "$FOLD_OPEN" $TITLE SIMCTL_CHILD_FUSIONHA_
 WAIT=13 refold fold-title-season-page-open "$OPEN_FOLD" $TITLE SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TITLE_PAGE=season:1
 # Activity with held Interstellar (103) picked: its decision page open, its sheet folded.
 WAIT=14 LAYOUT=web refold fold-activity-held "$OPEN_FOLD" $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103
+# Close mid-decision: an override picked and the decision scrolled down; the
+# folded sheet must show the same option and scroll, and unfolding the page.
+WAIT=14 LAYOUT=web refold fold-activity-mid-decision "$OPEN_FOLD" $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103 \
+  SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_CHOICE=removeSearch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_SCROLL=220
+WAIT=14 LAYOUT=web refold fold-activity-mid-decision-folded "$FOLD_OPEN" $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103 \
+  SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_CHOICE=removeSearch SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HELD_SCROLL=220
+# Manual Import open for held Interstellar mid-way (the rescue sheet / pages).
+WAIT=18 LAYOUT=web refold fold-manual-import "$OPEN_FOLD" $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_RESCUE=103
 # Settings › Maintenance: the panel beside the sidebar open, pushed folded.
 WAIT=12 refold fold-settings-maintenance "$OPEN_FOLD" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=maintenance
 WAIT=12 refold fold-settings-maintenance-folded "$FOLD_OPEN" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SETTINGS=maintenance

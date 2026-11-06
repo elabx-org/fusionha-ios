@@ -13,6 +13,8 @@ struct HeldDecisionSheet: View {
     let ref: V2HeldRef
     let store: QueueStore
     let canDecide: Bool
+    /// The queue's kept choice and scroll (fold continuity).
+    var draft: HeldDecisionDraft?
     let review: (QueueItem) -> Void
     let perform: (HeldChoice, QueueItem) async -> Bool
     @Environment(\.dismiss) private var dismiss
@@ -23,7 +25,7 @@ struct HeldDecisionSheet: View {
             Group {
                 if let item = store.items.first(where: { $0.id == ref.id }) {
                     HeldDecisionPage(item: item, siblings: V2QueueSiblings.of(item, in: store.items),
-                                     canDecide: canDecide,
+                                     canDecide: canDecide, draft: draft,
                                      review: { dismiss(); review(item) },
                                      perform: { await perform($0, item) },
                                      done: { dismiss() })
