@@ -220,7 +220,8 @@ jobs:
   # Open in New Window must still add one (scripts/v2_scene_check.sh).
   v2-windows:
     name: v2 windows (iPad)
-    if: inputs.duo_only == ''
+    # Main pushes and manual runs only: ~15 min of macOS runner per run.
+    if: inputs.duo_only == '' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
     runs-on: xcode-27
     timeout-minutes: 40
     permissions:
