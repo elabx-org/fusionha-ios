@@ -53,7 +53,7 @@ extension DetailStore {
     }
 
     /// Releases grabbed, counted per version like the toast.
-    private static func grabbedVersions(_ decisions: [SearchDecision]) -> Int {
+    nonisolated private static func grabbedVersions(_ decisions: [SearchDecision]) -> Int {
         let grabbed = decisions.filter(\.grabbed)
         guard !grabbed.isEmpty else { return 0 }
         return max(Set(grabbed.compactMap(\.editionId)).count, 1)

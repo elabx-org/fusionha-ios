@@ -78,7 +78,7 @@ for theme in dark daylight; do
   WAIT=20 FRAME=folded shoot "groups-search-folded$SUF" $I $T $G=search
   # Automatic search feedback in place (seeded, nothing sent): movie 3's
   # Search running and its outcome, series 8's Search missing and Next up.
-  AS=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH; M=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=3
+  AS=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_AUTOSEARCH; M=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=3
   WAIT=16 shoot "autosearch-movie$SUF" $M $T $AS=searching
   WAIT=16 FRAME=folded shoot "autosearch-movie-folded$SUF" $M $T $AS=searching
   WAIT=16 shoot "autosearch-movie-done$SUF" $M $T $AS=done

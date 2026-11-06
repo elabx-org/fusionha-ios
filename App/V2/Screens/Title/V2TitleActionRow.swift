@@ -69,7 +69,10 @@ struct V2TitleActionRow: View {
             }
             .buttonStyle(.glassProminent)
             .tint(Theme.i1)
-            .disabled(activity?.isSearching == true)
+            // Searching is the active state: the fill stays indigo (a disabled
+            // prominent button greys out and hides the spinner); taps are off.
+            .allowsHitTesting(activity?.isSearching != true)
+            .accessibilityAddTraits(activity?.isSearching == true ? .updatesFrequently : [])
             .accessibilityHint(focused.map { "Searches the \(detail.versionName($0)) version" } ?? "Searches every monitored version")
         }
         if canSearch {
