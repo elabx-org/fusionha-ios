@@ -63,6 +63,9 @@ struct V2TitleActionRow: View {
         if canSearch && showsSearch {
             Button { runSearch() } label: {
                 V2SearchLabel(title: searchTitle, activity: activity, spinner: Theme.onAccent)
+                    // The page ink (dark in Daylight) otherwise wins over the
+                    // prominent style's own text colour.
+                    .foregroundStyle(Theme.onAccent)
                     .font(.system(size: 15, weight: .semibold))
                     .frame(height: height - 16)
                     .padding(.horizontal, 4)
