@@ -190,6 +190,43 @@ final class ManageFilesModel {
         await load()
     }
 
+    /// v2's clear-out: one bulk delete (searching only when the episodes
+    /// stay monitored), then, with `stopMonitoring`, each covered episode
+    /// unmonitored. Returns the failure to show, nil when everything went.
+    func clearOut(_ targets: [ManagedFileItem], stopMonitoring: Bool, episodeIds: [Int]) async -> String? {
+        guard let client, !targets.isEmpty else { return nil }
+        deleting = targets.count
+        defer { deleting = nil }
+        var failure: String?
+        do {
+            let start = try await client.bulkDeleteFiles(itemId: detail.id, fileIds: targets.map(\.id), search: !stopMonitoring)
+            if let runId = start.runId {
+                var state = try await client.run(id: runId)
+                while state.isRunning {
+                    try await Task.sleep(for: .seconds(1))
+                    state = try await client.run(id: runId)
+                }
+                if state.failed { failure = "The delete didn’t finish. Some files may still be on disk." }
+            }
+        } catch {
+            failure = ErrorCopy.message(for: error, fallback: "Couldn’t delete the files. Try again.")
+        }
+        if failure == nil, stopMonitoring {
+            var missed = 0
+            for id in episodeIds {
+                do { try await client.setEpisodeMonitored(itemId: detail.id, episodeId: id, monitored: false) } catch { missed += 1 }
+            }
+            if missed > 0 {
+                failure = "Files deleted, but \(missed == 1 ? "1 episode is" : "\(missed) episodes are") still monitored. Try again from the season page."
+            }
+        }
+        selected.subtract(targets.map(\.id))
+        note = Note(text: failure ?? "Deleted \(targets.count == 1 ? "1 file" : "\(targets.count) files").", failed: failure != nil)
+        changed = true
+        await load()
+        return failure
+    }
+
     // MARK: Move and re-scan
 
     func move(_ item: ManagedFileItem, to version: DetailEdition) async {
@@ -208,13 +245,19 @@ final class ManageFilesModel {
         }
     }
 
-    /// Refresh & scan files, then re-read the list once the run settles.
-    func rescan() async {
+    /// Refresh & scan files (one season's, for v2's Re-check files), then
+    /// re-read the list once the run settles.
+    func rescan(season: Int? = nil) async {
         guard let client, !rescanning else { return }
         rescanning = true
         defer { rescanning = false }
         do {
-            let dispatch = try await client.refreshItem(id: detail.id, metadataOnly: false)
+            let dispatch: RefreshDispatch
+            if let season {
+                dispatch = try await client.refreshSeason(itemId: detail.id, season: season)
+            } else {
+                dispatch = try await client.refreshItem(id: detail.id, metadataOnly: false)
+            }
             var state = try await client.run(id: dispatch.runId)
             while state.isRunning {
                 try await Task.sleep(for: .seconds(1.5))
