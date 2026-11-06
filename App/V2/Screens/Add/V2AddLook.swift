@@ -27,7 +27,7 @@ enum V2AddLook {
     /// for both (the flat open Duo, an iPad), Find about a third.
     static func panes(width: Double, height: Double) -> FoldColumns.Panes? {
         guard width >= 760, height >= 480 else { return nil }
-        let lead = min(max((width * 0.36).rounded(), 300), 400)
-        return FoldColumns.panes(width: width, fold: lead...lead, minLead: 300, minTrail: 420, gutter: 0)
+        let lead = min(max((width * 0.42).rounded(), 320), 420)
+        return FoldColumns.panes(width: width, fold: lead...lead, minLead: 320, minTrail: 420, gutter: 0)
     }
 }
