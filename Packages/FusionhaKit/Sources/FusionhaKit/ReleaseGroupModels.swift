@@ -66,17 +66,21 @@ extension APIClient {
             reason: "mislabeled_resolution", createCustomFormat: createCustomFormat, source: "prompt"))
     }
 
-    /// Settings › Quality › Blocklist: every release-group block.
-    public func releaseGroupBlocks() async throws -> [ReleaseGroupBlock] {
-        try await get("/api/v1/release-groups/blocks")
+    /// Settings › Quality › Blocklist: every release-group block. With a
+    /// title: that title's blocks plus the global ones (they apply to it too).
+    public func releaseGroupBlocks(mediaItemId: Int? = nil) async throws -> [ReleaseGroupBlock] {
+        try await get("/api/v1/release-groups/blocks",
+                      query: mediaItemId.map { [URLQueryItem(name: "media_item_id", value: "\($0)")] } ?? [])
     }
 
-    /// A manual block from Settings: everywhere, or for one title.
-    public func addReleaseGroupBlock(_ group: String, mediaItemId: Int?, note: String?) async throws -> ReleaseGroupBlock {
+    /// A manual block: everywhere (`mediaItemId` nil), or for one title.
+    /// `source` is the server's enum: `settings` from Settings, `api` from a title.
+    public func addReleaseGroupBlock(_ group: String, mediaItemId: Int?, note: String?,
+                                     source: String = "settings") async throws -> ReleaseGroupBlock {
         try await sendJSON("POST", "/api/v1/release-groups/blocks", .object([
-            "group": .string(group), "scope": .string(mediaItemId == nil ? "global" : "item"),
+            "group": .string(group), "scope": .string(TitleGroupBlocks.scope(mediaItemId: mediaItemId)),
             "media_item_id": mediaItemId.map { .int($0) } ?? .null, "reason": .string("manual"),
-            "note": note.map { .string($0) } ?? .null, "source": .string("settings"),
+            "note": note.map { .string($0) } ?? .null, "source": .string(source),
         ]))
     }
 

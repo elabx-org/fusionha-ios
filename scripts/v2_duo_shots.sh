@@ -68,6 +68,14 @@ for theme in dark daylight; do
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_SCROLL=monitor
   WAIT=18 shoot "add-after$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631 \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_COMMIT=1
+  # Release groups on a title (series 8): the sheet, Block <GROUP>?, and the
+  # search with its blocked rows (mock: FLUX for this title, EPSiLON everywhere).
+  G=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_GROUPS; I=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
+  WAIT=16 shoot "groups-list$SUF" $I $T $G=list
+  WAIT=16 FRAME=folded shoot "groups-list-folded$SUF" $I $T $G=list
+  WAIT=16 shoot "groups-block$SUF" $I $T $G=NTb
+  WAIT=20 shoot "groups-search$SUF" $I $T $G=search
+  WAIT=20 FRAME=folded shoot "groups-search-folded$SUF" $I $T $G=search
 done
 # Library A–Z: the grid runs to the page gutter and the scroll thumb floats
 # over its trailing edge (thumb = resting mid-library, S = grabbed with the

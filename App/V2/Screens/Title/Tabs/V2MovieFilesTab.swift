@@ -108,6 +108,7 @@ struct V2MovieFileActions: View {
                 UIPasteboard.general.string = V2EpisodeFilePath.full(file, version: edition, store: store)
                 store.show("Path copied", variant: .success)
             }
+            V2BlockGroupButton(group: file.releaseGroup)
         } label: {
             Label("More", systemImage: "ellipsis").labelStyle(.iconOnly)
         }

@@ -45,6 +45,7 @@ struct V2TitleSheets: ViewModifier {
                         .presentationDetents([.medium, .large])
                 }
             }
+            .modifier(V2TitleGroupSheets(presenter: presenter))
             .modifier(DetailActionSheets(presenter: presenter, episodeInline: true))
     }
 }
