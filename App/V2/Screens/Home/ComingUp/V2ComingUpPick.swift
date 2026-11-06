@@ -2,11 +2,14 @@ import Foundation
 import FusionhaKit
 
 /// One "Coming up" card: the library title, the release or airing that
-/// put it on the row, and why ("Digital · Fri", "S2 E5 · tonight").
+/// put it on the row, what it is ("Digital", "S2 E5") and when ("Fri",
+/// "tonight"); `reason` joins them ("Digital · Fri").
 struct V2ComingUpCard: Identifiable, Equatable {
     let item: MediaItem
     let at: Date
-    let reason: String
+    let what: String
+    let when: String
+    var reason: String { "\(what) · \(when)" }
     var id: Int { item.id }
 
     static func == (a: V2ComingUpCard, b: V2ComingUpCard) -> Bool {
@@ -44,7 +47,7 @@ enum V2ComingUpPick {
                 guard let item = titles[pick.entry.itemId] else { return nil }
                 let when = V2ComingUpWhen.words(pick.at, timed: pick.entry.airDatetime != nil,
                                                 now: now, calendar: calendar)
-                return V2ComingUpCard(item: item, at: pick.at, reason: "\(label(pick.entry, kind: pick.kind)) · \(when)")
+                return V2ComingUpCard(item: item, at: pick.at, what: label(pick.entry, kind: pick.kind), when: when)
             }
     }
 

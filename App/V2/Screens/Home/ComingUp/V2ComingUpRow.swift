@@ -1,23 +1,20 @@
 import SwiftUI
 import FusionhaKit
 
-/// The Library home's "Coming up" row, in place of the old hero picks: a
-/// header with the preset menu (`V2ComingUpMenu`), then the hero carousel
-/// of library titles with a release or airing in the window, each card
-/// saying why. Nothing matching falls back to Recently added. The calendar
-/// feed is read here (cached first, then every ten minutes) so the row
-/// carries its own data; until the first answer it holds its place unseen.
+/// Home's "Coming up" (owner-approved Home mock, 2026-11-06): the header with
+/// the preset menu (`V2ComingUpMenu`, "Mix"), then the centre-focus carousel
+/// (`V2ComingUpCarousel`) of library titles with a release or airing in the
+/// window. Wide (a page of 700 or more) the carousel takes the left column
+/// and the focused title's detail the right (`V2ComingUpDetail`). The
+/// calendar feed is read here (cached first, then every ten minutes); with
+/// nothing in the window the row hides (Recently added sits right under it).
 struct V2ComingUpRow: View {
-    /// The titles the Library's filters leave.
-    let visibleIds: [Int]
-    /// The fallback: Recently added, newest first.
-    let recent: [MediaItem]
+    /// The page's width and side gutter.
     let width: CGFloat
     let gutter: CGFloat
-    /// The lead card's art, for the page's ground (nil until the feed answers).
+    let wide: Bool
+    /// The focused card's art, for the page's ground (nil while hidden).
     @Binding var leadArt: URL?
-    /// True while the row shows Recently added in place of Coming up.
-    @Binding var fallingBack: Bool
     @Environment(AppModel.self) private var model
     @Environment(\.pagePalette) private var page
     @Environment(\.motionEnabled) private var motion
@@ -25,62 +22,70 @@ struct V2ComingUpRow: View {
     @AppStorage(V2ComingUpSettings.daysKey) private var days = V2ComingUpSettings.defaultDays
     @State private var entries: [CalendarEntry]?
     @State private var cards: [V2ComingUpCard] = []
+    @State private var focused: Int?
 
     private var window: Int { V2ComingUpSettings.window(days) }
-    private var fallback: [MediaItem] {
-        Array(recent.filter { ($0.backdropUrl ?? $0.posterUrl) != nil }.prefix(V2ComingUpPick.limit))
-    }
+    private var current: V2ComingUpCard? { cards.first { $0.id == focused } ?? cards.first }
 
     var body: some View {
-        let coming = !cards.isEmpty
-        let items = coming ? cards.map(\.item) : fallback
-        VStack(alignment: .leading, spacing: 12) {
-            if !items.isEmpty {
-                header(coming ? "Coming up" : "Recently added")
-                V2LibraryHeroCarousel(items: items, width: width, gutter: gutter,
-                                      notes: coming ? Dictionary(uniqueKeysWithValues: cards.map { ($0.id, $0.reason) }) : [:])
-                    .id(coming)
+        Group {
+            if !cards.isEmpty {
+                if wide {
+                    V2HomePair {
+                        VStack(alignment: .leading, spacing: 4) {
+                            header
+                            carousel(cardWidth: 197, showsMeta: false)
+                        }
+                    } trailing: {
+                        if let current { V2ComingUpDetail(card: current).padding(.top, 64).padding(.leading, 16) }
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 4) {
+                        header.padding(.horizontal, gutter)
+                        carousel(cardWidth: min(260, max(160, width - 140)), showsMeta: true)
+                    }
+                }
             }
         }
-        .opacity(entries == nil ? 0 : 1)
-        .animation(motion ? .easeOut(duration: 0.25) : nil, value: entries == nil)
         .animation(motion ? .snappy : nil, value: cards)
-        .onChange(of: leadURL(items), initial: true) { _, url in leadArt = url }
-        .onChange(of: entries != nil && !coming && !items.isEmpty, initial: true) { _, on in fallingBack = on }
+        .onChange(of: leadURL, initial: true) { _, url in leadArt = url }
         .task(id: window) { await feed() }
-        .onChange(of: RebuildKey(entries: entries, kinds: kindsRaw, window: window, ids: visibleIds,
-                                 version: model.libraryVersion), initial: true) { rebuild() }
+        .onChange(of: RebuildKey(entries: entries, kinds: kindsRaw, window: window, version: model.libraryVersion),
+                  initial: true) { rebuild() }
     }
 
-    private func header(_ title: String) -> some View {
+    private func carousel(cardWidth: CGFloat, showsMeta: Bool) -> some View {
+        V2ComingUpCarousel(cards: cards, cardWidth: cardWidth, showsMeta: showsMeta, clips: wide, focused: $focused)
+    }
+
+    private var header: some View {
         HStack(alignment: .center, spacing: 12) {
-            Text(title)
+            Text("Coming up")
                 .font(.system(size: 21, weight: .bold))
                 .tracking(-0.4)
                 .foregroundStyle(page?.ink ?? Theme.txt)
                 .accessibilityAddTraits(.isHeader)
-                .contentTransition(.opacity)
             Spacer(minLength: 8)
             V2ComingUpMenu(kindsRaw: $kindsRaw, days: $days)
         }
     }
 
-    /// The first card's art once the feed has answered (the row is unseen before).
-    private func leadURL(_ items: [MediaItem]) -> URL? {
-        guard entries != nil, let first = items.first else { return nil }
-        return PageArtSource.url(backdrop: first.backdropUrl, poster: first.posterUrl)
+    /// The focused card's art (nil while the row is hidden).
+    private var leadURL: URL? {
+        guard let item = current?.item else { return nil }
+        return PageArtSource.url(backdrop: item.backdropUrl, poster: item.posterUrl)
     }
 
     private func rebuild() {
         guard let entries else { return }
-        let ids = Set(visibleIds)
         var titles: [Int: MediaItem] = [:]
-        for item in model.library where ids.contains(item.id) && (item.backdropUrl ?? item.posterUrl) != nil {
+        for item in model.library where (item.posterUrl ?? item.backdropUrl) != nil {
             titles[item.id] = item
         }
         let next = V2ComingUpPick.cards(entries, titles: titles, kinds: V2ComingUpSettings.decode(kindsRaw),
                                         days: window)
         if next != cards { cards = next }
+        if let focused, !next.contains(where: { $0.id == focused }) { self.focused = nil }
     }
 
     /// Today − 1 (a network's air date can trail the viewer's day) to the
@@ -114,7 +119,6 @@ struct V2ComingUpRow: View {
         let entries: [CalendarEntry]?
         let kinds: String
         let window: Int
-        let ids: [Int]
         let version: Int
     }
 }

@@ -56,7 +56,9 @@ extension AppModel {
             if !rescue.isEmpty { pendingRescueIds = rescue }
             tab = .activity
         case "calendar" where !requestScoped: tab = .calendar
-        case "library" where !requestScoped: tab = .library
+        case "library" where !requestScoped:
+            pendingAllTitles = true
+            tab = .library
         case "wanted" where !requestScoped:
             // Wanted lives under Activity.
             pendingActivityTab = .wanted

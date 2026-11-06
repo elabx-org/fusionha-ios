@@ -70,6 +70,7 @@ struct SearchResults: View {
         Button {
             model.searchText = term
             model.searchScope = .library
+            model.pendingAllTitles = true
             model.tab = .library
         } label: {
             Text("+ \(count) more in Library")

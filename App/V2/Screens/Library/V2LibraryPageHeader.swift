@@ -61,10 +61,10 @@ struct V2LibraryPageHeader: View {
         }
     }
 
-    /// "Library" at the system large-title size, the counts on its baseline.
+    /// "All titles" at the system large-title size, the counts on its baseline.
     private var heading: some View {
         HStack(alignment: .firstTextBaseline, spacing: 14) {
-            Text("Library")
+            Text("All titles")
                 .font(.system(size: 34, weight: .bold))
                 .foregroundStyle(page?.ink ?? Theme.txt)
                 .lineLimit(1)

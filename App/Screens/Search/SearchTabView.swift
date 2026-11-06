@@ -137,6 +137,7 @@ struct SearchTabView: View {
     private func handToLibrary() {
         model.searchText = trimmed
         model.searchScope = .library
+        model.pendingAllTitles = true
         model.tab = .library
         scope = .everything
     }
