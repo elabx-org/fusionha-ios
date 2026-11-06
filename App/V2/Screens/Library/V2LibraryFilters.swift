@@ -16,6 +16,8 @@ struct V2LibraryFilters {
     /// Show › Not monitored (v2 only, owner's monitor mark M1): only the
     /// titles that are switched off. Combines with the status filter.
     @Binding var unmonitored: Bool
+    /// The Service chip's pick: one `network_name`, "" for every service.
+    @Binding var network: String
 
     var compact: Bool { density == "compact" }
 
@@ -25,6 +27,7 @@ struct V2LibraryFilters {
     var tokens: [V2LibraryToken] {
         var out: [V2LibraryToken] = []
         if status != .all { out.append(.status(status)) }
+        if !network.isEmpty { out.append(.network(network)) }
         if unmonitored { out.append(.unmonitored) }
         if recency != .all { out.append(.recency(recency)) }
         if group { out.append(.group) }
@@ -34,6 +37,7 @@ struct V2LibraryFilters {
     func remove(_ token: V2LibraryToken) {
         switch token {
         case .status: status = .all
+        case .network: network = ""
         case .unmonitored: unmonitored = false
         case .recency: recency = .all
         case .group: group = false
@@ -43,6 +47,7 @@ struct V2LibraryFilters {
     /// Reset filters: everything the menu sets, back to its default.
     func reset() {
         status = .all
+        network = ""
         unmonitored = false
         recency = .all
         group = false
@@ -60,6 +65,8 @@ struct V2LibraryFilters {
 /// One active filter, shown as a token under the F1 row.
 enum V2LibraryToken: Hashable, Identifiable {
     case status(LibraryStatus)
+    /// Shown on the Service chip, never as a token (counts on the Filter badge).
+    case network(String)
     case unmonitored
     case recency(LibraryRecency)
     case group
@@ -67,6 +74,7 @@ enum V2LibraryToken: Hashable, Identifiable {
     var id: String {
         switch self {
         case .status(let s): return "status-\(s.rawValue)"
+        case .network(let n): return "network-\(n)"
         case .unmonitored: return "unmonitored"
         case .recency(let r): return "recency-\(r.rawValue)"
         case .group: return "group"
@@ -76,6 +84,7 @@ enum V2LibraryToken: Hashable, Identifiable {
     var label: String {
         switch self {
         case .status(let s): return s.v2Label
+        case .network(let n): return n
         case .unmonitored: return "Not monitored"
         case .recency(.added): return "Added · 30 days"
         case .recency(.released): return "Released · 30 days"
@@ -87,6 +96,7 @@ enum V2LibraryToken: Hashable, Identifiable {
     var systemImage: String {
         switch self {
         case .status(let s): return s.v2Symbol
+        case .network: return "tv"
         case .unmonitored: return "bookmark.slash"
         case .recency: return "clock"
         case .group: return "list.bullet.indent"
