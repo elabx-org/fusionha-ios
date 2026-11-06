@@ -29,7 +29,7 @@ struct V2RecentRows: View {
                         .padding(.top, 10)
                         .padding(.bottom, 2)
                 }
-                V2RecentRow(item: item, thumb: thumb, slot: Self.slot)
+                V2RecentTimelineRow(item: item, thumb: thumb, slot: Self.slot)
             }
         }
         .padding(.top, 8)
@@ -45,7 +45,7 @@ struct V2RecentRows: View {
 }
 
 /// One timeline row: the spine's dot, the thumb, the words.
-struct V2RecentRow: View {
+struct V2RecentTimelineRow: View {
     let item: MediaItem
     let thumb: CGFloat
     let slot: CGFloat

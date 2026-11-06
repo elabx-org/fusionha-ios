@@ -55,15 +55,3 @@ struct V2ComingUpFocusCard: View {
         .frame(width: width + 60)
     }
 }
-
-/// A title's HD and 4K tickets with its live downloads (`V2EditionBadges`).
-struct V2ItemTickets: View {
-    let item: MediaItem
-    @Environment(AppModel.self) private var model
-
-    var body: some View {
-        let slots = model.queueSlots
-        let badges = V2EditionBadges(item) { slots.slot(for: $0.id).progress }
-        EditionTicketPair(hd: badges.hd, uhd: badges.uhd)
-    }
-}
