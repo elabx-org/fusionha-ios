@@ -252,6 +252,7 @@ The Live Activity is **one aggregate activity, not one per download**. That keep
    - Backend pieces: the `apns_devices` table, and `/api/v1/notifications/apns/{status,settings,devices,devices/token/{token},test}`.
    - App side: the app registers its token after sign-in and on every launch. It sends `sandbox` or `production` based on the embedded profile's `aps-environment`, and unregisters on sign-out.
    - Requirements: an Apple Developer account, and a signing profile with Push Notifications enabled for `org.elabx.fusionha`. Builds signed without that entitlement get no token, and the panel says so.
+   - **v2 (slice S16, docs/v2.md):** the same push code and rich-push extension. An app whose bundle id isn't the server's APNs topic doesn't prompt or register, and This device reads "Unavailable" with the topic it would need (`App/PushAvailability.swift`); v2 gets push at the cutover to v1's ids.
 2. **Live Activity updates:** queue progress is not an event today. This needs throttled progress pushes from the download poll loop, plus registration of push-to-start and update tokens.
 3. **Nice to have:**
    - An `eta` field on `QueueRead`. Today it has to be derived from `sizeleft` over time.

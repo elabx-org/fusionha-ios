@@ -23,5 +23,7 @@ App/V2/Info.plist
 App/V2/*.entitlements
 Widgets/V2/Info.plist
 Widgets/V2/*.entitlements
+NotificationService/V2/Info.plist
+NotificationService/V2/*.entitlements
 __pycache__/
 .claude/worktrees/

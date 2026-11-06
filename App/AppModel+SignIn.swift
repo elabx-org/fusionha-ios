@@ -112,7 +112,11 @@ extension AppModel {
             if !requestScoped { await loadLibraryIfNeeded() }
         }
         WidgetCenter.shared.reloadAllTimelines()
-        AppDelegate.requestPushAuthorization()
+        // A non-v1 app learns the server's APNs topic first (PushAvailability).
+        Task { [client] in
+            if let client { await PushAvailability.refresh(with: client) }
+            AppDelegate.requestPushAuthorization()
+        }
         // A token from an earlier session registers right away; a fresh one
         // arrives via `.apnsTokenChanged`.
         await registerPushDevice()

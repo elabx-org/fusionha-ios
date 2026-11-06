@@ -80,7 +80,7 @@ struct ThisDeviceNativeCard: View {
                 Button { register() } label: { Label("Enable on this device", systemImage: "bell.badge") }
                     .buttonStyle(.web(.primary))
                     .disabled(push.registering)
-            case .loading, .serverOff, .noEntitlement:
+            case .loading, .serverOff, .noEntitlement, .otherApp:
                 EmptyView()
             }
             if push.testing || push.registering {
@@ -138,6 +138,7 @@ struct ThisDeviceNativeCard: View {
         case .denied: FetchPill(text: "● Blocked", tone: .err)
         case .notAsked: FetchPill(text: "● Off", tone: .off)
         case .noEntitlement: FetchPill(text: "● Unavailable", tone: .err)
+        case .otherApp: FetchPill(text: "● Unavailable", tone: .off)
         case .registering: FetchPill(text: "● Not registered", tone: .off)
         case .disabledHere: FetchPill(text: "● Off", tone: .off)
         }
@@ -155,7 +156,10 @@ struct ThisDeviceNativeCard: View {
         case .notAsked:
             return ("Get grabs, imports, failures and requests as native notifications on this device. Your event choices below apply to every device.", false)
         case .noEntitlement(let error):
-            return ("iOS didn't issue a push token (\(error)). The build must be signed with a profile that has Push Notifications enabled for org.elabx.fusionha.", true)
+            return ("iOS didn't issue a push token (\(error)). The build must be signed with a profile that has Push Notifications enabled for \(PushAvailability.bundleId).", true)
+        case .otherApp(let topic):
+            return ("The server sends iOS push to \(topic), so this app (\(PushAvailability.bundleId)) can't get it."
+                + (isAdmin ? " Change the bundle ID in the APNs settings below to send push here instead." : ""), true)
         case .enabled(let d):
             if let error = d.lastError, (d.failureCount ?? 0) > 0 { return ("Last delivery failed: \(error)", true) }
             return nil
