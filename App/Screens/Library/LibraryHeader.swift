@@ -125,7 +125,7 @@ struct LibraryHeader: View {
         }
         #endif
         .fullScreenCover(isPresented: $showingIndexerSettings) {
-            SettingsView(client: model.client, initialPanel: "indexers")
+            AppSettingsView(client: model.client, initialPanel: "indexers")
         }
     }
 

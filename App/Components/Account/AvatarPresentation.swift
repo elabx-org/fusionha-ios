@@ -64,7 +64,7 @@ struct AvatarPresentations: ViewModifier {
                     .presentationDragIndicator(.visible)
             }
             .fullScreenCover(isPresented: $avatar.showingSettings) {
-                SettingsView(client: model.client, initialPanel: avatar.settingsPanel)
+                AppSettingsView(client: model.client, initialPanel: avatar.settingsPanel)
             }
             .sheet(isPresented: $avatar.showingWidgets) {
                 WidgetDiagnosticsView()

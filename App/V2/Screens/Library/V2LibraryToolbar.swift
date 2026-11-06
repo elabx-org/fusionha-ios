@@ -48,7 +48,7 @@ struct V2LibraryToolbar: ViewModifier {
                     .presentationBackground(Theme.bg)
             }
             .fullScreenCover(isPresented: $showingSettings) {
-                SettingsView(client: model.client, initialPanel: settingsPanel)
+                AppSettingsView(client: model.client, initialPanel: settingsPanel)
             }
     }
 
