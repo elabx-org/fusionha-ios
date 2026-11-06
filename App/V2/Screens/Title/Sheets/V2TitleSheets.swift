@@ -46,6 +46,7 @@ struct V2TitleSheets: ViewModifier {
                 }
             }
             .modifier(V2TitleGroupSheets(presenter: presenter))
+            .modifier(V2SearchScreenshot(store: presenter.store))
             .modifier(DetailActionSheets(presenter: presenter, episodeInline: true))
     }
 }

@@ -70,24 +70,29 @@ extension DetailStore {
     }
 
     /// One-at-a-time search of the whole title (`season == nil`) or one season.
-    func gradualSearch(label: String, season: Int? = nil, editionId: Int? = nil, missingOnly: Bool) async {
-        guard let client else { return }
+    /// Returns how many it grabbed (0 when there was nothing to search), nil on failure.
+    @discardableResult
+    func gradualSearch(label: String, season: Int? = nil, editionId: Int? = nil, missingOnly: Bool) async -> Int? {
+        guard let client else { return nil }
         do {
             let start = try await client.gradualSearch(itemId: itemId, season: season, editionId: editionId, missingOnly: missingOnly)
             guard let runId = start.runId, (start.total ?? 0) > 0 else {
                 show(missingOnly ? "\(label): no missing episodes — nothing to search"
                                  : "\(label): all episodes meet the cutoff — nothing to upgrade", variant: .warning)
-                return
+                return 0
             }
             gradual = GradualJob(runId: runId, season: season, total: start.total ?? 0, label: label)
-            await pollGradual(runId: runId)
+            return await pollGradual(runId: runId)
         } catch {
             show("Couldn't search \(label)", variant: .error)
+            return nil
         }
     }
 
-    func pollGradual(runId: Int) async {
-        guard let client else { return }
+    /// Polls the run until it ends: what it grabbed, or 0 when another run took over.
+    @discardableResult
+    func pollGradual(runId: Int) async -> Int {
+        guard let client else { return 0 }
         while let job = gradual, job.runId == runId {
             try? await Task.sleep(for: .seconds(1.5))
             guard let run = try? await client.commandRun(id: runId) else { continue }
@@ -100,8 +105,10 @@ extension DetailStore {
                      variant: grabbed > 0 ? .success : .warning)
                 await reload()
                 await loadRuns()
+                return grabbed
             }
         }
+        return 0
     }
 
     func stopGradual() async {

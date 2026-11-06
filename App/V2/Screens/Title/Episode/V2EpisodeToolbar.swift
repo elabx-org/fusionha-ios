@@ -26,24 +26,19 @@ private struct V2EpisodeSearchButtons: View {
     let detail: ItemDetail
     let episode: Episode
     let seasonNumber: Int
-    @State private var running = false
 
+    private var activity: SearchActivity? { store.activity(.episode(episode.id)) }
     private var code: String { EpisodeCode.episode(season: seasonNumber, episode: episode.episodeNumber) }
     private var canSearch: Bool { (model.me?.can("edit") ?? true) && (model.me?.can("search") ?? true) }
 
     var body: some View {
         if canSearch {
             Button {
-                running = true
-                Task {
-                    await store.search(label: "\(detail.title) \(code)", episodeId: episode.id)
-                    running = false
-                }
+                store.v2Search(.episode(episode.id), label: "\(detail.title) \(code)", episodeId: episode.id)
             } label: {
-                Label("Automatic search", systemImage: "magnifyingglass")
+                V2SearchLabel(title: "Automatic search", activity: activity)
             }
-            .disabled(running)
-            .symbolEffect(.pulse, options: .repeating, isActive: running)
+            .disabled(activity?.isSearching == true)
             Button {
                 store.interactive = InteractiveTarget(editionIds: detail.orderedEditions.map(\.id), episodeId: episode.id,
                                                       subtitle: "S\(seasonNumber)·E\(episode.episodeNumber)")

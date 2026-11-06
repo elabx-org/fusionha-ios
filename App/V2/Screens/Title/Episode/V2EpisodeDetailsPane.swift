@@ -110,6 +110,7 @@ private struct V2EpisodeNoFileCard: View {
     let version: DetailEdition
 
     private var canSearch: Bool { (model.me?.can("edit") ?? true) && (model.me?.can("search") ?? true) }
+    private var own: SearchTarget { .episodeVersion(episode: episode.id, version: version.id) }
 
     var body: some View {
         let state = V2TitleNextUp.state(episode, edition: version, now: Date())
@@ -129,11 +130,15 @@ private struct V2EpisodeNoFileCard: View {
             }
             if canSearch {
                 HStack(spacing: 8) {
-                    Button("Search \(version.tier.badgeLetters)", systemImage: "magnifyingglass") {
+                    let activity = store.searchActivity.activity(any: [own, .episode(episode.id)])
+                    Button {
                         let code = EpisodeCode.episode(season: seasonNumber, episode: episode.episodeNumber)
-                        Task { await store.search(label: "\(detail.title) \(code) · \(version.label)", editionId: version.id,
-                                                  episodeId: episode.id) }
+                        store.v2Search(own, label: "\(detail.title) \(code) · \(version.label)", editionId: version.id,
+                                       episodeId: episode.id)
+                    } label: {
+                        V2SearchLabel(title: "Search \(version.tier.badgeLetters)", activity: activity)
                     }
+                    .disabled(activity?.isSearching == true)
                     Button("Choose", systemImage: "person") {
                         store.interactive = InteractiveTarget(editionIds: [version.id], episodeId: episode.id,
                                                               subtitle: "S\(seasonNumber)·E\(episode.episodeNumber)")

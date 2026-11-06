@@ -60,6 +60,9 @@ struct V2WideEpisodeList: View {
             VStack(spacing: 6) {
                 ForEach(facts.lanes) { V2SeasonLaneRow(lane: $0, showsCount: false) }
             }
+            if let activity = store.seasonActivity(season.seasonNumber) {
+                V2SearchStatusLine(activity: activity)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 10)
