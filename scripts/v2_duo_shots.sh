@@ -36,7 +36,7 @@ sleep 15
 shoot() {  # shoot <name> [env…]
   local name=$1; shift
   if [ -n "$ONLY" ] && ! echo "$name" | grep -qE "$ONLY"; then return 0; fi
-  env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=open \
+  env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=${FRAME:-open} \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LAYOUT=${LAYOUT:-spread} SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library "$@" \
     xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" > /dev/null
   sleep "${WAIT:-12}"
@@ -45,7 +45,9 @@ shoot() {  # shoot <name> [env…]
   local px scale
   px=$(sips -g pixelWidth "$raw" | awk '/pixelWidth/{print $2}')
   scale=$(python3 -c "import sys; px=int(sys.argv[1]); print(round(px / (1032 if px % 1032 == 0 else 1024)))" "$px")
-  sips --cropToHeightWidth $((669 * scale)) $((951 * scale)) "$raw" --out "$OUT/v2-$name.png" > /dev/null
+  local w=951 h=669
+  [ "${FRAME:-open}" = folded ] && { w=466; h=678; }
+  sips --cropToHeightWidth $((h * scale)) $((w * scale)) "$raw" --out "$OUT/v2-$name.png" > /dev/null
   rm -f "$raw"
   echo "v2-$name"
 }
@@ -61,6 +63,18 @@ for theme in dark daylight; do
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_4K=1 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_SCROLL=versions
   WAIT=18 shoot "add-after$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631 \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_COMMIT=1
+done
+# Library A–Z: the grid runs to the page gutter and the scroll thumb floats
+# over its trailing edge (thumb = resting mid-library, S = grabbed with the
+# bubble). Folded (outer display), and open spanning both pages.
+for theme in dark daylight; do
+  T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_UNUSED=1; SUF=""
+  [ "$theme" = daylight ] && T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight && SUF="-daylight"
+  FRAME=folded shoot "library-folded$SUF" $T
+  FRAME=folded shoot "library-folded-thumb$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=thumb
+  FRAME=folded shoot "library-folded-scrub$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=S
+  shoot "library-open-thumb$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=thumb
+  LAYOUT=web shoot "library-web-scrub$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=S
 done
 # Activity (live queue wide): the Web layout, the owner's setting; held Interstellar = 103.
 A=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity

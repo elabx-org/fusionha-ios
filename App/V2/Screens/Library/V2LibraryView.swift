@@ -80,15 +80,10 @@ struct V2LibraryView: View {
                          recency: $recency, group: $group, density: $density, unmonitored: $unmonitoredOnly)
     }
 
-    /// Room kept clear at the grid's trailing side for the A–Z thumb (34
-    /// wide, its trailing edge 16 past the content edge, so 18 of it would
-    /// sit over the last column), plus a 6pt breath before it.
-    private var scrubberRoom: CGFloat { showsScrubber ? 24 : 0 }
-
     private var columns: Int {
         if spread.spans { return PosterTracks.count(base: 3, spans: true) }
         if fold != nil { return V2LibraryColumns.count(for: gridFold.width) }
-        return V2LibraryColumns.count(for: pane.width - 2 * gutter - scrubberRoom)
+        return V2LibraryColumns.count(for: pane.width - 2 * gutter)
     }
 
     private var gridTracks: [FoldColumns.Track]? {
@@ -185,8 +180,9 @@ struct V2LibraryView: View {
                                  comingUpArt: $comingUpArt) {
                     withAnimation(motion ? .smooth : nil) { proxy.scrollTo("library-grid", anchor: .top) }
                 }
-                // The thumb hangs off the full content edge; the grid
-                // itself stops short of it (`scrubberRoom`).
+                // The grid runs to the page gutter; the A–Z thumb floats over
+                // its trailing edge only while scrolling (Photos' scroller), so
+                // no width is kept for it (owner, build 854).
                 Color.clear.frame(height: 1)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
                         scrubber.setGridTop(frame.minY)
@@ -200,7 +196,6 @@ struct V2LibraryView: View {
                     V2LibraryRows(derived: derived, tracks: gridTracks, width: gridFold.width, entrance: entrance,
                                   compactSort: $compactSort, filters: filters, query: query)
                 }
-                .padding(.trailing, scrubberRoom)
             }
             // A column change re-flows thousands of rows: never animated.
             .transaction(value: columns) { $0.animation = nil }
