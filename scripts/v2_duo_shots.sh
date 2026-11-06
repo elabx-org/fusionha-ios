@@ -3,7 +3,7 @@
 # job, perf_scope v2shots): the optimised FusionhaV2 app renders itself in a
 # Duo-sized frame on a 13-inch iPad simulator against the default mock (live
 # downloads, the held Interstellar = 103). Each shot is one launch with its
-# own screenshot hooks.
+# own screenshot hooks, in the Web layout unless LAYOUT=spread.
 #
 #   scripts/v2_duo_shots.sh <app-path> <out-dir>
 #
@@ -36,16 +36,19 @@ sleep 15
 shoot() {
   local name=$1 wait=$2; shift 2
   env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=open \
-    SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LAYOUT=spread "$@" \
+    SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LAYOUT=${LAYOUT:-web} "$@" \
     xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" > /dev/null
   sleep "$wait"
   xcrun simctl io "$UDID" screenshot "$OUT/v2-$name.png" > /dev/null 2>&1 && echo "shot v2-$name"
 }
 
+# Activity is one full-width page in the Web layout (the owner's setting); the
+# Spread puts it on the left page beside v1's ActivityRightPage.
 A=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity
 shoot activity-live 14 $A
 shoot activity-held 14 $A SIMCTL_CHILD_FUSIONHA_SCREENSHOT_QUEUE_SCROLL=103
 shoot activity-live-later 22 $A
+LAYOUT=spread shoot activity-spread 14 $A
 
 xcrun simctl terminate "$UDID" "$BUNDLE" 2> /dev/null || true
 xcrun simctl shutdown "$UDID" 2> /dev/null || true
