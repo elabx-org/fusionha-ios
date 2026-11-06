@@ -50,9 +50,12 @@ struct V2LibraryFilterRow: View {
             if next != services { services = next }
         }
         #if DEBUG
-        // CI screenshots: `FUSIONHA_SCREENSHOT_NETWORK=<name>` picks that service.
+        // CI screenshots: `FUSIONHA_SCREENSHOT_NETWORK=<name>` picks that service;
+        // any other shot starts with none (the pick persists between launches).
         .onAppear {
-            if let name = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_NETWORK"] { filters.network = name }
+            let env = ProcessInfo.processInfo.environment
+            guard env["FUSIONHA_SCREENSHOT_SERVER"] != nil else { return }
+            filters.network = env["FUSIONHA_SCREENSHOT_NETWORK"] ?? ""
         }
         #endif
         .sensoryFeedback(.selection, trigger: feedbackKey)
