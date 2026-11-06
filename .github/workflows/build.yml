@@ -238,22 +238,27 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
-      - name: Build v2 for the simulator (Debug, with the scene probe)
+      # The v2 app with its scene probe, and v1's UI-test runner, which
+      # drives v2 by bundle id from the Home Screen (UITests/SceneRelaunchDriver).
+      - name: Build v2 and the UI-test driver for the simulator (Debug)
         run: |
           set -o pipefail
-          xcodebuild \
-            -project Fusionha.xcodeproj \
-            -scheme FusionhaV2 \
-            -configuration Debug \
-            -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' \
-            -derivedDataPath build \
-            ONLY_ACTIVE_ARCH=YES ARCHS=arm64 \
-            CODE_SIGNING_ALLOWED=NO \
-            build 2>&1 | tee xcodebuild.log | grep -E "error:|BUILD" || {
-            grep -E ": error: " xcodebuild.log | sort -u | head -40 | sed 's/^/::error::/'
-            exit 1
-          }
+          for scheme in FusionhaV2 Fusionha; do
+            action=build; [ "$scheme" = Fusionha ] && action=build-for-testing
+            xcodebuild \
+              -project Fusionha.xcodeproj \
+              -scheme $scheme \
+              -configuration Debug \
+              -sdk iphonesimulator \
+              -destination 'generic/platform=iOS Simulator' \
+              -derivedDataPath build \
+              CODE_SIGNING_ALLOWED=NO \
+              $action > xcodebuild.log 2>&1 || {
+              grep -E ": error: " xcodebuild.log | sort -u | head -40 | sed 's/^/::error::/'
+              tail -20 xcodebuild.log
+              exit 1
+            }
+          done
 
       - name: Relaunch from the Home Screen keeps one window
         run: |
@@ -265,14 +270,7 @@ jobs:
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
           sleep 15
-          scripts/v2_scene_check.sh "$UDID" build/Build/Products/Debug-iphonesimulator/FusionhaV2.app scenes
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: v2-windows
-          path: scenes/*.png
-          retention-days: 14
+          scripts/v2_scene_check.sh "$UDID" build/Build/Products/Debug-iphonesimulator/FusionhaV2.app
 
   # Every push to main (and every v* tag) becomes a GitHub release carrying
   # both IPAs plus one Feather/AltStore source listing both apps. Feed URL to add in Feather:
