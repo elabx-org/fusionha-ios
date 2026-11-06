@@ -12,7 +12,10 @@ struct V2InteractiveSearchPane: View {
     @Bindable var model: InteractiveSearchModel
     var embedded = false
     @Environment(\.detailReduceMotion) private var reduce
+    @Environment(AppModel.self) private var app
     @State private var deciding: ReleasePreview?
+    /// "Block <GROUP>" from a card's ⋯: its own sheet over the search.
+    @State private var blocking: GroupBlockTarget?
 
     var body: some View {
         Group {
@@ -47,6 +50,23 @@ struct V2InteractiveSearchPane: View {
             V2GrabAnywaySheet(release: release, model: model)
                 .presentationDetents([.medium, .large])
         }
+        .sheet(item: $blocking) { target in
+            V2BlockGroupSheet(target: target, title: model.store.detail?.title ?? "this title") {
+                model.toast = SearchToast(text: $0)
+            }
+            .environment(model.store)
+        }
+        .task {
+            if app.mayBlockGroups, model.store.groupBlocks == nil { await model.store.loadGroupBlocks() }
+        }
+    }
+
+    /// Where the card's group is blocked: the loaded blocks, or the server's
+    /// own rejection ("Release group X is blocked everywhere").
+    private func groupBlockLabel(_ release: ReleasePreview) -> String? {
+        if let block = model.store.groupBlock(for: release.releaseGroup) { return TitleGroupBlocks.scopeLabel(block) }
+        guard release.rejected, TitleGroupBlocks.isGroupBlockReason(release.reason) else { return nil }
+        return release.reason?.lowercased().hasSuffix("everywhere") == true ? "Everywhere" : "This title"
     }
 
     @ViewBuilder
@@ -79,7 +99,9 @@ struct V2InteractiveSearchPane: View {
                     ForEach(visible) { release in
                         V2ReleaseCard(release: release, downloading: model.grabbed.contains(release.guid),
                                       blocklistReason: blocklistReason(release),
-                                      currentTier: current != nil && release.title == current ? model.edition?.tier : nil) {
+                                      currentTier: current != nil && release.title == current ? model.edition?.tier : nil,
+                                      groupBlock: groupBlockLabel(release),
+                                      blockGroup: { blocking = GroupBlockTarget(group: $0) }) {
                             if release.rejected || release.blocklisted == true {
                                 deciding = release
                             } else {

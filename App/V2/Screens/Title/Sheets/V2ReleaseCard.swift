@@ -14,6 +14,11 @@ struct V2ReleaseCard: View {
     let blocklistReason: String
     /// The version's tier when this release is its current file.
     var currentTier: QualityTier?
+    /// Where the release's group is blocked ("This title" / "Everywhere"):
+    /// the card stays, dimmed, and says so.
+    var groupBlock: String?
+    /// "Block <GROUP>" in ⋯, handed the group.
+    var blockGroup: ((String) -> Void)?
     let onGrab: () -> Void
 
     private var anyway: Bool { release.rejected || release.blocklisted == true }
@@ -33,13 +38,15 @@ struct V2ReleaseCard: View {
                 .padding(.top, -1)
             if let tier = currentTier {
                 why("checkmark.circle", "This is your current \(tier.badgeLetters) file", color: Theme.doneText)
+            } else if let groupBlock {
+                why("nosign", "Blocked group · \(groupBlock)", color: Theme.mut)
             } else if release.rejected, let reason = release.reason, !reason.isEmpty {
                 why("exclamationmark.circle", reason, color: Theme.stuck)
                 LearnEditionAliasButton(release: release)
             }
             if release.blocklisted == true { why("nosign", blocklistReason, color: Theme.mut) }
             HStack(spacing: 8) {
-                if let tag = V2ReleaseReason.short(release) {
+                if groupBlock == nil, let tag = V2ReleaseReason.short(release) {
                     Self.filledTag(Text(tag), color: Theme.mut)
                         .lineLimit(1)
                 }
@@ -49,6 +56,7 @@ struct V2ReleaseCard: View {
             }
         }
         .padding(EdgeInsets(top: 11, leading: 14, bottom: 12, trailing: 12))
+        .opacity(groupBlock != nil ? 0.55 : 1)
         .background { ModuleSurface(radius: 18) }
         .overlay {
             if currentTier != nil {
@@ -109,6 +117,9 @@ struct V2ReleaseCard: View {
     private var more: some View {
         Menu {
             Button("Copy name", systemImage: "doc.on.doc") { UIPasteboard.general.string = release.title }
+            if let blockGroup, groupBlock == nil {
+                V2BlockGroupButton(group: release.releaseGroup, open: blockGroup)
+            }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.system(size: 14, weight: .semibold))
@@ -147,6 +158,7 @@ enum V2ReleaseReason {
         if release.blocklisted == true { return "Blocklisted" }
         guard release.rejected, let reason = release.reason, !reason.isEmpty else { return nil }
         let lower = reason.lowercased()
+        if TitleGroupBlocks.isGroupBlockReason(reason) { return "Blocked group" }
         if lower.hasPrefix("not an upgrade") { return "Not an upgrade" }
         if lower.contains("not wanted") { return "Quality not in profile" }
         if lower.contains("does not match") { return "Wrong title or year" }

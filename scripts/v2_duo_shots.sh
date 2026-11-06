@@ -36,7 +36,7 @@ sleep 15
 shoot() {  # shoot <name> [env…]
   local name=$1; shift
   if [ -n "$ONLY" ] && ! echo "$name" | grep -qE "$ONLY"; then return 0; fi
-  env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=open \
+  env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER="$S" SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_FRAME=${FRAME:-open} \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_LAYOUT=${LAYOUT:-spread} SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=library "$@" \
     xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" > /dev/null
   sleep "${WAIT:-12}"
@@ -45,7 +45,9 @@ shoot() {  # shoot <name> [env…]
   local px scale
   px=$(sips -g pixelWidth "$raw" | awk '/pixelWidth/{print $2}')
   scale=$(python3 -c "import sys; px=int(sys.argv[1]); print(round(px / (1032 if px % 1032 == 0 else 1024)))" "$px")
-  sips --cropToHeightWidth $((669 * scale)) $((951 * scale)) "$raw" --out "$OUT/v2-$name.png" > /dev/null
+  local h=669 w=951
+  [ "${FRAME:-open}" = folded ] && h=678 w=466
+  sips --cropToHeightWidth $((h * scale)) $((w * scale)) "$raw" --out "$OUT/v2-$name.png" > /dev/null
   rm -f "$raw"
   echo "v2-$name"
 }
@@ -61,6 +63,14 @@ for theme in dark daylight; do
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_4K=1 SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_SCROLL=versions
   WAIT=18 shoot "add-after$SUF" $ADD $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_PICK=438631 \
     SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ADD_COMMIT=1
+  # Release groups on a title (series 8): the sheet, Block <GROUP>?, and the
+  # search with its blocked rows (mock: FLUX for this title, EPSiLON everywhere).
+  G=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_GROUPS; I=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_ITEM=8
+  WAIT=16 shoot "groups-list$SUF" $I $T $G=list
+  WAIT=16 FRAME=folded shoot "groups-list-folded$SUF" $I $T $G=list
+  WAIT=16 shoot "groups-block$SUF" $I $T $G=NTb
+  WAIT=20 shoot "groups-search$SUF" $I $T $G=search
+  WAIT=20 FRAME=folded shoot "groups-search-folded$SUF" $I $T $G=search
 done
 # Activity (live queue wide): the Web layout, the owner's setting; held Interstellar = 103.
 A=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TAB=activity
