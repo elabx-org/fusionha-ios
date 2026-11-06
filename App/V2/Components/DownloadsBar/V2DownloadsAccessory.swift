@@ -9,6 +9,9 @@ import FusionhaKit
 /// slot, its visibility and the pill space are v1's (`DownloadsBarSlot`).
 struct V2DownloadsAccessory: View {
     let state: DownloadsBarState
+    /// False on the Duo's floating capsule (`DuoDownloadsCapsule`), which
+    /// isn't the tab bar's pill and must not move the tabs' reserve.
+    var publishesFrame = true
     @Environment(AppModel.self) private var model
     @Environment(\.tabViewBottomAccessoryPlacement) private var placement
     @Environment(\.motionEnabled) private var motion
@@ -25,7 +28,7 @@ struct V2DownloadsAccessory: View {
             }
         }
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)
-        .publishesDownloadsPillFrame(inline: inline)
+        .modifier(V2PillFrame(on: publishesFrame, inline: inline))
         .confirmationDialog("Pause fusionha's downloads?", isPresented: $confirmPause, titleVisibility: .visible) {
             Button("Pause downloads") { Task { await model.toggleQueuePause() } }
         } message: {
@@ -115,5 +118,14 @@ struct V2DownloadsTicket: View {
             }
         }
         .fixedSize()
+    }
+}
+
+private struct V2PillFrame: ViewModifier {
+    let on: Bool
+    let inline: Bool
+
+    func body(content: Content) -> some View {
+        if on { content.publishesDownloadsPillFrame(inline: inline) } else { content }
     }
 }

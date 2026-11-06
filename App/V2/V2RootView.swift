@@ -9,7 +9,10 @@ import SwiftUI
 /// and the downloads bar is `V2DownloadsAccessory`. Slice S10: Activity's
 /// other scopes (`V2ScopeTabs`). Slice S9: Manual Import for held downloads
 /// is `V2ManualImportView` (grouped by problem). Slice S11 (Add): the shared
-/// Add flow in v2's dress (`V2AddLook`). Every other tab is still v1's.
+/// Add flow in v2's dress (`V2AddLook`). Slice S14: the shell chrome
+/// (`V2ShellChrome`: the open Duo's sidebar, the column's own minimize,
+/// Activity's needs-you badge, the Duo's downloads capsule). Every other tab
+/// is still v1's.
 struct V2RootView: View {
     var body: some View {
         RootView()
@@ -18,6 +21,8 @@ struct V2RootView: View {
                 AnyView(V2TitleView(store: store, onClose: onClose))
             }, flatOpenListShare: 1.0 / 3, seamHandle: { context in
                 AnyView(V2SplitHandle(context: context))
+            }, shellGround: { id in
+                AnyView(V2TitleShellGround(itemId: id))
             }))
             .environment(\.activityQueueTab, ActivityQueueTabOverride { search in AnyView(V2QueueView(search: search)) })
             .environment(\.activityScopeTab, V2ScopeTabs.override)
@@ -26,5 +31,13 @@ struct V2RootView: View {
             })
             .environment(\.manualImportSheet, V2ManualImportView.override)
             .environment(\.addLook, V2AddLook.override)
+            .environment(\.shellChrome, V2ShellChrome.override)
     }
+}
+
+/// v2's shell chrome (plan S14, mock minimize.js).
+enum V2ShellChrome {
+    static let override = ShellChromeOverride(
+        sidebar: { toggle in AnyView(ShellSidebar(toggle: toggle)) },
+        downloadsCapsule: { state in AnyView(DuoDownloadsCapsule(state: state)) })
 }

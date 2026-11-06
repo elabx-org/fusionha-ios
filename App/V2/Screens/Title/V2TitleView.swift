@@ -73,6 +73,8 @@ struct V2TitleView: View {
             .environment(store)
             .environment(\.detailReduceMotion, reduceMotion)
             .environment(\.detailCompact, compactLayout)
+            // v1 cards on this page (History's insights) take its W1 card.
+            .environment(\.detailCardSurface, { radius in AnyView(ModuleSurface(radius: radius)) })
             .presentationDetents([.large])
             .presentationCornerRadius(34)
             .task {

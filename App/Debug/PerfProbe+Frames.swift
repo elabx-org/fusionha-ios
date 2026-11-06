@@ -29,6 +29,9 @@ extension PerfProbe {
             mark("\(mode)-0rest")
             try? await Task.sleep(for: .seconds(1))
             await framesStep("\(mode)-1open") { [model] in model.open(1) }
+            // A title opened while another is open (build 805: the new page
+            // showed its own toolbar and stopped short of the column).
+            await framesStep("\(mode)-1swap") { [model] in model.open(2) }
             await framesStep("\(mode)-2close") { NotificationCenter.default.post(name: .perfCloseTitle, object: nil) }
             await framesStep("\(mode)-3open") { [model] in model.open(8) }
             await framesStep("\(mode)-4close") { NotificationCenter.default.post(name: .perfCloseTitle, object: nil) }
