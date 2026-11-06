@@ -51,6 +51,9 @@ struct AddConfigView: View {
                 // edge effect only comes in once the title takes over.
                 .ignoresSafeArea(.container, edges: .top)
                 .scrollEdgeEffectHidden(!compact, for: .top)
+                // Scrolled past the hero, the page fades out at the top so no
+                // row runs sharp under the grabber or the Duo's empty bar.
+                .mask { AddTopFade(active: compact) }
                 .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y > 200 } action: { _, new in
                     withAnimation(motion ? .easeOut(duration: 0.2) : nil) { compact = new }
                 }
