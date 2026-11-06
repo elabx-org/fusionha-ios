@@ -15,13 +15,13 @@ struct V2ReleaseCard: View {
     /// The version's tier when this release is its current file.
     var currentTier: QualityTier?
     /// Where the release's group is blocked ("This title" / "Everywhere"):
-    /// the card stays, dimmed, and says so.
+    /// the card stays, flipped to rejected ("Blocked group", Grab anyway), dimmed.
     var groupBlock: String?
     /// "Block <GROUP>" in ⋯, handed the group.
     var blockGroup: ((String) -> Void)?
     let onGrab: () -> Void
 
-    private var anyway: Bool { release.rejected || release.blocklisted == true }
+    private var anyway: Bool { release.rejected || release.blocklisted == true || groupBlock != nil }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -38,8 +38,8 @@ struct V2ReleaseCard: View {
                 .padding(.top, -1)
             if let tier = currentTier {
                 why("checkmark.circle", "This is your current \(tier.badgeLetters) file", color: Theme.doneText)
-            } else if let groupBlock {
-                why("nosign", "Blocked group · \(groupBlock)", color: Theme.mut)
+            } else if groupBlock != nil {
+                why("nosign", "Blocked group", color: Theme.mut)
             } else if release.rejected, let reason = release.reason, !reason.isEmpty {
                 why("exclamationmark.circle", reason, color: Theme.stuck)
                 LearnEditionAliasButton(release: release)

@@ -1,12 +1,14 @@
 import SwiftUI
 import FusionhaKit
 
-/// Title › More › Release groups: the groups blocked for this title, then
-/// the global blocks that apply to it too ("Everywhere"), each with
-/// Unblock; then "Block a group" (`V2BlockGroupForm`, this title unless
-/// "Everywhere" is on). A sheet folded, a page cover on the open Duo.
+/// Title › More › Release groups (web 0.4.239): the groups blocked for this
+/// title, then the global blocks that apply to it too ("Everywhere"), each
+/// with "Unblock <GROUP>" (confirmed in place); then "Block a group"
+/// (`V2BlockGroupForm`, this title unless "Everywhere" is on) and the
+/// Blocklist link. A sheet folded, a page cover on the open Duo.
 struct V2ReleaseGroupsSheet: View {
     @Environment(DetailStore.self) private var store
+    @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
     @Environment(\.detailReduceMotion) private var reduce
     let detail: ItemDetail
@@ -18,7 +20,12 @@ struct V2ReleaseGroupsSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     blocked
-                    V2BlockGroupForm(title: detail.title) { _, _ in error = nil }
+                    V2BlockGroupForm(title: detail.title) {
+                        dismiss()
+                        model.presentedItem = nil
+                        model.pendingActivityTab = .blocklist
+                        model.tab = .activity
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
@@ -65,7 +72,7 @@ struct V2ReleaseGroupsSheet: View {
                     .padding(.bottom, 14)
             } else {
                 ForEach(rows) { block in
-                    if block.id != rows.first?.id { Divider().padding(.leading, 58) }
+                    if block.id != rows.first?.id { Divider().padding(.leading, 14) }
                     V2GroupBlockRow(block: block, busy: removing.contains(block.id)) {
                         Task { await unblock(block) }
                     }

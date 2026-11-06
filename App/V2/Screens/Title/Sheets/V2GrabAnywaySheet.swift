@@ -10,6 +10,8 @@ struct V2GrabAnywaySheet: View {
     @Environment(\.dismiss) private var dismiss
     let release: ReleasePreview
     let model: InteractiveSearchModel
+    /// The problem when it isn't the server's: a group blocked since the search.
+    var problemOverride: String? = nil
 
     private var blocklisted: Bool { release.blocklisted == true }
     private var edition: DetailEdition? { model.edition }
@@ -102,6 +104,7 @@ struct V2GrabAnywaySheet: View {
     }
 
     private var problem: String {
+        if let problemOverride { return problemOverride }
         if blocklisted { return release.blocklistReason ?? "It is on the blocklist, so fusionha never grabs it." }
         return release.reason.map { V2GrabAnywaySheet.sentence($0) } ?? "It does not meet this version's rules."
     }
