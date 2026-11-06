@@ -32,6 +32,10 @@ on:
         description: "Only the simulator screenshots whose name matches this regex (e.g. ^palette-); skips iPhone Duo and adds to the published set"
         type: string
         default: ""
+      v2_widgets:
+        description: "v2 widget and Live Activity screenshots only (about 20 min; artifact v2-widget-shots)"
+        type: boolean
+        default: false
       duo_only:
         description: "Quick iPhone Duo check (about 15 min): only the folded Duo shots whose name matches this regex (e.g. detail|library, or . for all); skips tests, the IPA and the other screenshots"
         type: string
@@ -798,6 +802,80 @@ jobs:
           mkdir -p duo/shots
           cp duo/probe.txt duo/shots/ 2>/dev/null || true
           scripts/publish_shots.sh duo/shots ${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || 'main' }}/duo
+
+  # v2's widgets and Live Activity (App/V2/Gallery/V2WidgetGalleryView.swift),
+  # hosted in the v2 app against the mock server, in dark and Daylight, full
+  # colour and tinted. Manual runs only (`v2_widgets`); uploaded as an artifact.
+  v2-widget-shots:
+    name: v2 widget screenshots
+    if: github.event_name == 'workflow_dispatch' && inputs.v2_widgets
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode 27.1
+        run: |
+          sudo xcode-select -s /Applications/Xcode_27.1.app
+          xcodebuild -version
+
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      # v2: its own target's V2 condition is overridden by the command line, so pass it too.
+      - name: Build v2 for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Fusionha.xcodeproj \
+            -scheme FusionhaV2 \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            ONLY_ACTIVE_ARCH=YES ARCHS=arm64 \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS="DEBUG V2" \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee xcodebuild.log || {
+            grep -E ": error: " xcodebuild.log | sort -u | head -40 | sed 's/^/::error::/'
+            exit 1
+          }
+
+      - name: Take v2 widget screenshots
+        run: |
+          python3 scripts/mock_server.py 8765 &
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = [d for rt, ds in sorted(json.load(sys.stdin)["devices"].items(), reverse=True) if "iOS-27" in rt for d in ds]
+          pick = next((d for d in devices if d["name"] in ("iPhone 18 Pro", "iPhone 17 Pro")), None) or next(d for d in devices if d["name"].startswith("iPhone") and "Duo" not in d["name"])
+          print(pick["udid"])')
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --wifiBars 3
+          APP=build/Build/Products/Debug-iphonesimulator/FusionhaV2.app
+          BID=$(/usr/libexec/PlistBuddy -c "Print CFBundleIdentifier" "$APP/Info.plist")
+          xcrun simctl install "$UDID" "$APP"
+          mkdir -p shots
+          S=http://127.0.0.1:8765
+          for v in home medium live; do
+            for P in aurora daylight; do
+              env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_V2WIDGETS=$v SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=$P \
+                xcrun simctl launch --terminate-running-process "$UDID" "$BID" > /dev/null
+              sleep 9
+              xcrun simctl io "$UDID" screenshot "shots/v2-widgets-$v-$P.png" > /dev/null
+            done
+          done
+          env SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SERVER=$S SIMCTL_CHILD_FUSIONHA_SCREENSHOT_V2WIDGETS=home SIMCTL_CHILD_FUSIONHA_SCREENSHOT_WIDGET_ACCENTED=1 \
+            xcrun simctl launch --terminate-running-process "$UDID" "$BID" > /dev/null
+          sleep 9
+          xcrun simctl io "$UDID" screenshot "shots/v2-widgets-home-accented.png" > /dev/null
+          ls -l shots
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v2-widget-shots
+          path: shots/*.png
 
   # Drives the app through Activity (History at 1000+ events, Queue, Blocklist,
   # Tasks, Audit, Indexers) and Wanted against the mock server in volume mode,

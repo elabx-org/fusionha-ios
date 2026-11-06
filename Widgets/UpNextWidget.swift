@@ -58,9 +58,10 @@ struct UpNextProvider: TimelineProvider {
             return UpNextEntry(date: .now, rows: [], signedIn: false, failed: false)
         }
         run.stage("calendar")
-        let limit = family == .systemSmall ? 1 : 4
+        let limit = V2UpNextLayout.limit(family) ?? (family == .systemSmall ? 1 : 4)
+        let posterSize = V2UpNextLayout.posterSize(family) ?? (family == .systemMedium ? "w154" : "w92")
         do {
-            let feed = try await WidgetLoader.upNextFeed(client, limit: limit, posterSize: family == .systemMedium ? "w154" : "w92",
+            let feed = try await WidgetLoader.upNextFeed(client, limit: limit, posterSize: posterSize,
                                                          deadline: run.deadline)
             return UpNextEntry(date: .now, rows: feed.rows, signedIn: true, failed: false, weekCount: feed.week)
         } catch {

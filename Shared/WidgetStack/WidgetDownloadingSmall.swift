@@ -9,6 +9,14 @@ struct WidgetDownloadingSmall: View {
     let entry: DownloadsEntry
 
     var body: some View {
+        #if V2
+        V2DownloadsSmall(entry: entry)
+        #else
+        v1
+        #endif
+    }
+
+    private var v1: some View {
         VStack(alignment: .leading, spacing: 0) {
             WidgetTopBar(title: "Downloading")
             if let row = entry.rows.first {

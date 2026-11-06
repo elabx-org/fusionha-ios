@@ -16,6 +16,8 @@ struct UpNextWidgetView: View {
                 WidgetUpNextSmall(row: next)
             } else if family == .systemSmall, entry.failed {
                 WidgetSmallFailure(title: "Up next")
+            } else if V2UpNextLayout.isOn, !entry.failed, !entry.rows.isEmpty {
+                V2UpNextLayout(entry: entry, family: family)
             } else {
                 VStack(alignment: .leading, spacing: WidgetStyle.headerGap) {
                     WidgetTopBar(title: "Up next", figure: entry.weekCount.flatMap { $0 > 0 ? "\($0) this week" : nil })

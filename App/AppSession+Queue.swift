@@ -49,6 +49,9 @@ extension AppSession {
                 lastQueueIds = ids
                 WidgetCenter.shared.reloadTimelines(ofKind: "Downloads")
                 WidgetCenter.shared.reloadTimelines(ofKind: WidgetStack.downloading.kind)
+                #if V2
+                WidgetCenter.shared.reloadTimelines(ofKind: NeedsYouEntry.kind)
+                #endif
             }
         } catch {
             queueError = error.localizedDescription

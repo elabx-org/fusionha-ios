@@ -17,7 +17,11 @@ struct LiveActivityLockScreen: View {
         VStack(alignment: .leading, spacing: 10) {
             switch state.mode {
             case .downloading:
+                #if V2
+                V2LiveActivityDownloading(state: state)
+                #else
                 if state.downloading > 1 && state.rows.count > 1 { several } else { single }
+                #endif
             case .held: LiveActivityHeldView(state: state)
             case .problem: problem
             case .steps: steps

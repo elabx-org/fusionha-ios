@@ -9,6 +9,14 @@ struct WidgetTierPill: View {
     var status: EditionStatus?
 
     var body: some View {
+        #if V2
+        WidgetEditionTickets(editions: [(tier: tier, status: status)])
+        #else
+        v1
+        #endif
+    }
+
+    private var v1: some View {
         HStack(spacing: 3) {
             if let status {
                 StatusDot(token: status.monoToken, size: 6, color: status.color)
@@ -31,12 +39,17 @@ struct WidgetTierPills: View {
     let editions: [(tier: QualityTier, status: EditionStatus?)]
 
     var body: some View {
+        #if V2
+        // v2: the monochrome HD / 4K tickets (CLAUDE.md, A1 + T5).
+        WidgetEditionTickets(editions: editions)
+        #else
         HStack(spacing: 3) {
             ForEach(Array(editions.enumerated()), id: \.offset) { _, edition in
                 WidgetTierPill(tier: edition.tier, status: edition.status)
             }
         }
         .fixedSize()
+        #endif
     }
 }
 

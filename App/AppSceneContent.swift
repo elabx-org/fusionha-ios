@@ -17,6 +17,9 @@ struct AppSceneContent<Root: View>: View {
             } else if let stack = WidgetStackGalleryView.screenshotVariant {
                 // CI screenshots of one Smart Stack widget, every size.
                 WidgetStackGalleryView(variant: stack)
+            } else if let v2 = V2GalleryHost.view {
+                // CI screenshots of v2's widgets and Live Activity.
+                v2
             } else if let gallery = WidgetGalleryView.screenshotVariant {
                 // CI screenshots of the home-screen widgets.
                 WidgetGalleryView(variant: gallery)
