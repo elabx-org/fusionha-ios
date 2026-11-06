@@ -7,16 +7,15 @@ import FusionhaKit
 struct DetailSimilarRail: View {
     let similar: [SimilarTitle]
     @Environment(AppModel.self) private var model
+    @Environment(\.posterRail) private var rail
     @State private var preview: PreviewRoute?
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(alignment: .top, spacing: 16) {
+            LazyHStack(alignment: .top, spacing: rail.spacing) {
                 ForEach(Array(similar.enumerated()), id: \.offset) { index, title in
                     card(title)
-                        // Web SimilarRail: 3-up on a phone (≤540: (100% - 32px) / 3),
-                        // 128pt up to 720, 158pt wider (same as the Library grid).
-                        .containerRelativeFrame(.horizontal) { width, _ in Self.cardWidth(width) }
+                        .containerRelativeFrame(.horizontal) { width, _ in rail.cardWidth(width) }
                         .detailReveal(delay: Double(min(index, 8)) * 0.04, y: 8, duration: 0.4)
                 }
             }
@@ -25,11 +24,6 @@ struct DetailSimilarRail: View {
         .duoPageSheet(item: $preview) { route in
             PreviewSheet(route: route, onOpenLibrary: openLibrary)
         }
-    }
-
-    static func cardWidth(_ rail: CGFloat) -> CGFloat {
-        if rail <= 540 { return (rail - 32) / 3 }
-        return rail <= 720 ? 128 : 158
     }
 
     @ViewBuilder
@@ -50,7 +44,7 @@ struct DetailSimilarRail: View {
             Color.clear
                 .aspectRatio(2 / 3, contentMode: .fit)
                 .overlay { DiscoverArt(url: TMDBImage.resized(title.posterUrl, to: "w500")) }
-                .shelfPoster()
+                .shelfPoster(radius: rail.radius)
                 .padding(.bottom, 8)
             Text(title.title ?? "").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
             // Nothing on the art: "in library" sits in the caption line.

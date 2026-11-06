@@ -17,6 +17,8 @@ struct V2RootView: View {
                 AnyView(V2TitleView(store: store, onClose: onClose))
             }, flatOpenListShare: 1.0 / 3, seamHandle: { context in
                 AnyView(V2SplitHandle(context: context))
+            }, shellGround: { id in
+                AnyView(V2TitleShellGround(itemId: id))
             }))
             .environment(\.activityQueueTab, ActivityQueueTabOverride { search in AnyView(V2QueueView(search: search)) })
             .environment(\.activityScopeTab, V2ScopeTabs.override)

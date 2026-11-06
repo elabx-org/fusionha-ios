@@ -105,4 +105,18 @@ enum V2LibraryColumns {
         let gap = CGFloat(V2LibraryGrid.spacing)
         return max(4, Int(((width + gap) / (targetPoster + gap)).rounded()))
     }
+
+    /// A poster's width in a row `width` wide laid out as the grid would be:
+    /// the title page's rails use it, so their cards match the Library's.
+    static func posterWidth(for width: CGFloat) -> CGFloat {
+        let n = CGFloat(count(for: width))
+        let gap = CGFloat(V2LibraryGrid.spacing)
+        return max(1, (width - gap * (n - 1)) / n)
+    }
+}
+
+extension PosterRailMetrics {
+    /// The v2 Library grid's cards (`V2LibraryColumns`, 14 apart, 12pt corners).
+    static let v2Library = PosterRailMetrics(cardWidth: { V2LibraryColumns.posterWidth(for: $0) },
+                                             spacing: CGFloat(V2LibraryGrid.spacing), radius: 12)
 }

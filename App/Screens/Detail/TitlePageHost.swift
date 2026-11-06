@@ -19,6 +19,11 @@ struct TitlePageOverride {
     /// A handle on that seamless split's seam (v2's `V2SplitHandle`); nil
     /// keeps the open Duo's leading-edge swipe (`DuoPageEdge`).
     var seamHandle: (@MainActor (DuoSeamContext) -> AnyView)?
+    /// The open title's ground for the shell behind that seamless split
+    /// (v2's `V2TitleShellGround`), so the system column and the display's
+    /// foot are in the title's colours from its first frame; nil keeps the
+    /// shell's plain ground.
+    var shellGround: (@MainActor (Int) -> AnyView)?
 }
 
 /// Where the shell puts the open title: the override's page when one is

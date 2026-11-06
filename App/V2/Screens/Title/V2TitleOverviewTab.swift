@@ -33,8 +33,7 @@ struct V2TitleOverviewTab: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             if detail.collection != nil, let collection = store.collection {
-                DetailCollectionRail(collection: collection)
-                    .padding(.top, 22)
+                V2CollectionRail(collection: collection, detail: detail)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if !similar.isEmpty {
@@ -47,6 +46,8 @@ struct V2TitleOverviewTab: View {
                 EmptyBox(message: "No trailer, cast or similar titles for this one yet.")
             }
         }
+        // The rails' posters are the Library grid's size (owner, build 805).
+        .environment(\.posterRail, .v2Library)
     }
 }
 

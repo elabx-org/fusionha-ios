@@ -126,9 +126,24 @@ struct RootView: View {
     /// itself doesn't animate there), a slide elsewhere, a plain fade under
     /// Reduce Motion.
     private var detailTransition: AnyTransition {
-        if fold.isDuoOpen { return DuoPageMotion.transition(motion: !reduceMotion && model.animationsEnabled) }
+        if fold.isDuoOpen {
+            return DuoPageMotion.transition(motion: !reduceMotion && model.animationsEnabled,
+                                            flat: titlePage?.seamHandle != nil)
+        }
         if reduceMotion { return .opacity.animation(.easeOut(duration: 0.2)) }
         return .move(edge: .trailing).combined(with: .opacity)
+    }
+
+    /// The shell's ground: v2's open title's colours behind the flat open
+    /// Duo's split (`TitlePageOverride.shellGround`), else the plain ground.
+    @ViewBuilder
+    private func shellBackground(_ split: ShellSplit) -> some View {
+        if let make = titlePage?.shellGround, split.shown, fold.isDuoOpen, fold.vertical == nil,
+           let id = model.presentedItem?.id {
+            make(id)
+        } else {
+            Theme.bg.ignoresSafeArea()
+        }
     }
 
     /// Whether an open title would be a column (not a sheet) in this geometry.
@@ -171,7 +186,7 @@ struct RootView: View {
         .overlay(alignment: .topLeading) {
             if let make = titlePage?.seamHandle, let context = seamContext(split) { make(context) }
         }
-        .background(Theme.bg)
+        .background { shellBackground(split) }
         // Measured without the keyboard: typing in inner landscape must not
         // drop the height under the split rule and fold the title into a sheet
         // (`steadied(after:)`: on the open Duo the keyboard still got through).

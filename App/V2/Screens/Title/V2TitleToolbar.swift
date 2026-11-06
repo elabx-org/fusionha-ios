@@ -22,8 +22,13 @@ struct V2TitleToolbar: ToolbarContent {
             ToolbarActionButton(title: "Refresh", systemImage: "arrow.clockwise", busy: store.refreshing) {
                 Task { await store.load() }
             }
-            if canEdit && store.detail != nil {
+            // There from the first frame (disabled until the title loads):
+            // a bar whose items change as it loads is rebuilt, and on the
+            // open Duo it showed in the page until the system column took it
+            // again (owner, build 805).
+            if canEdit {
                 Button("Edit", systemImage: "pencil") { store.showingEdit = true }
+                    .disabled(store.detail == nil)
             }
             ItemDetailMoreMenu(store: store, canEdit: canEdit, canSearch: canSearch, compact: true, openWeb: openWeb)
         }
