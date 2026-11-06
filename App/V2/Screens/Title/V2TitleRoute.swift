@@ -39,6 +39,7 @@ struct V2TitleDestination: View {
         }
         .environment(store)
         .environment(\.detailReduceMotion, reduceMotion)
+        .v2TitleLiveImport(store)
         .onAppear { visible(true) }
         .onDisappear { visible(false) }
     }
