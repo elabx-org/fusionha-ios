@@ -12,7 +12,10 @@ struct V2LibraryFilterRow: View {
     let filters: V2LibraryFilters
     /// The library has anime (the Anime chip's kind).
     var showsAnime = true
+    @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
+    /// The library's services for the Service chip, rebuilt when the library changes.
+    @State private var services: [V2LibraryService] = []
 
     private var anime: Bool { filters.kind == LibraryKind.anime.rawValue }
     private var feedbackKey: String { "\(filters.tier.rawValue)|\(filters.status.rawValue)|\(filters.kind)|\(filters.network)" }
@@ -29,7 +32,9 @@ struct V2LibraryFilterRow: View {
                     chip("HD", on: filters.tier == .hd) { filters.tier = filters.tier == .hd ? .all : .hd }
                     chip("4K", on: filters.tier == .uhd) { filters.tier = filters.tier == .uhd ? .all : .uhd }
                     chip("Missing", on: filters.status == .missing) { toggle(.missing) }
-                    V2LibraryServiceChip(filters: filters)
+                    if !services.isEmpty || !filters.network.isEmpty {
+                        V2LibraryServiceChip(filters: filters, services: services)
+                    }
                     if showsAnime || anime {
                         chip("Anime", symbol: "sparkle", on: anime) {
                             filters.kind = anime ? "all" : LibraryKind.anime.rawValue
@@ -40,6 +45,16 @@ struct V2LibraryFilterRow: View {
             }
         }
         .scrollClipDisabled()
+        .task(id: "\(model.libraryVersion)|\(filters.network)") {
+            let next = V2LibraryServices.from(model.library, keeping: filters.network)
+            if next != services { services = next }
+        }
+        #if DEBUG
+        // CI screenshots: `FUSIONHA_SCREENSHOT_NETWORK=<name>` picks that service.
+        .onAppear {
+            if let name = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_NETWORK"] { filters.network = name }
+        }
+        #endif
         .sensoryFeedback(.selection, trigger: feedbackKey)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Filters")

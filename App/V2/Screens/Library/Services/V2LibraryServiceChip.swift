@@ -8,12 +8,12 @@ import FusionhaKit
 ///   titles first (`V2LibraryServices`).
 /// - One picked: the accent chip with that service's mark, its name and an
 ///   ✕; a tap clears it, a long press opens the menu to switch.
-/// Nothing at all until library rows carry a network (servers before 0.4.238).
+/// The row leaves it out until library rows carry a network (servers before 0.4.238).
 struct V2LibraryServiceChip: View {
     let filters: V2LibraryFilters
-    @Environment(AppModel.self) private var model
+    /// The library's services (`V2LibraryServices.from`, kept by the row).
+    let services: [V2LibraryService]
     @Environment(\.motionEnabled) private var motion
-    @State private var services: [V2LibraryService] = []
     @State private var marks = V2ServiceMarks()
 
     private var picked: V2LibraryService? {
@@ -22,17 +22,9 @@ struct V2LibraryServiceChip: View {
 
     var body: some View {
         Group {
-            if !services.isEmpty || !filters.network.isEmpty {
-                if filters.network.isEmpty { idleChip } else { pickedChip }
-            }
+            if filters.network.isEmpty { idleChip } else { pickedChip }
         }
-        .task(id: "\(model.libraryVersion)|\(filters.network)") { rebuild() }
         .task(id: services.map(\.name)) { await marks.load(services) }
-    }
-
-    private func rebuild() {
-        let next = V2LibraryServices.from(model.library, keeping: filters.network)
-        if next != services { services = next }
     }
 
     // MARK: Chips
