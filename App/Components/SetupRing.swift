@@ -7,11 +7,13 @@ struct SetupRing: View {
     var track: Color = Theme.ringTrack
     var hole: Color = Theme.ringHole
     var inset: CGFloat = 2.5
+    /// The sweep: `--grab` by default; v2's setup pill passes the accent.
+    var tint: Color = Theme.grab
 
     var body: some View {
         ZStack {
             Circle().fill(track)
-            RingSector(fraction: max(0, min(1, fraction))).fill(Theme.grab)
+            RingSector(fraction: max(0, min(1, fraction))).fill(tint)
             Circle().fill(hole).padding(inset)
         }
         .animation(motion ? .easeOut(duration: 0.45) : nil, value: fraction)

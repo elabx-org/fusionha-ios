@@ -77,7 +77,7 @@ struct SetupProgressPill: View {
                     DoneBadge()
                 } else {
                     SetupRing(fraction: primary.progressFraction, track: Theme.txt.opacity(0.14),
-                              hole: Theme.panel2, inset: 3)
+                              hole: Theme.panel2, inset: 3, tint: Theme.i1)
                 }
             }
             .frame(width: ring, height: ring)

@@ -26,7 +26,7 @@ struct V2TitleSummary: View {
         let needs = V2TitleNeed.all(store: store, detail: detail)
         VStack(alignment: .leading, spacing: 0) {
             if let setup = model.setupProgress.activeSetup(for: detail.id) {
-                SetupStepStrip(setup: setup)
+                V2SetupStrip(setup: setup)
                     .padding(.bottom, 10)
             }
             if !detail.isSeries {
