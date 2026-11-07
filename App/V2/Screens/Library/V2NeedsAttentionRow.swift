@@ -38,7 +38,7 @@ struct V2NeedsAttentionRow: View {
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundStyle(page?.ink ?? Theme.txt)
                         .lineLimit(1)
-                    Text(reason(item))
+                    Text(Self.reason(item, held: held))
                         .font(.system(size: 12.5))
                         .foregroundStyle(page?.inkMuted ?? Theme.mut)
                         .lineLimit(2)
@@ -55,7 +55,7 @@ struct V2NeedsAttentionRow: View {
     }
 
     /// What is wrong, in the owner's words.
-    private func reason(_ item: MediaItem) -> String {
+    static func reason(_ item: MediaItem, held: Set<Int>) -> String {
         if held.contains(item.id) { return "A download is held · review it in Activity" }
         let flagged = item.editions.filter { $0.attention == true }
         let dead = flagged.reduce(0) { $0 + ($1.deadLinkCount ?? 0) }

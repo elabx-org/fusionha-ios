@@ -170,9 +170,12 @@ for theme in dark daylight; do
   WAIT=16 FRAME=folded shoot "home-folded-scrolled$SUF" $T $HS=recent
   WAIT=16 FRAME=folded shoot "home-folded-kinds$SUF" $T $HS=kinds
   WAIT=14 shoot "home-open$SUF" $T
+  # Coming up as the open Duo's hero (2026-11-07): Posters is home-open, Backdrops here.
+  WAIT=14 shoot "home-open-backdrops$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HOME_WIDE=backdrops
   WAIT=16 shoot "home-open-scrolled$SUF" $T $HS=recent
   WAIT=16 shoot "home-open-kinds$SUF" $T $HS=kinds
 done
+WAIT=14 shoot home-book-top SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book
 WAIT=14 shoot home-book SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book $HS=recent
 curl -s -X POST "$S/__mock/big-library?on=1" > /dev/null || true
 WAIT=20 shoot home-big-open
