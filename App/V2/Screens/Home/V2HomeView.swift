@@ -76,10 +76,10 @@ struct V2HomeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .v2PageGround(art: besideArt ?? comingUpArt ?? data.groundArt, recipe: besideArt == nil ? .page : .listPane,
                       showsArt: besideArt == nil, artHeight: 760, artOpacity: .ambient)
-        // The page draws "Home" with the mark itself (`V2HomeHeading`); the
-        // bar keeps the title for the back button and VoiceOver only.
-        .shellPage("Home") { AddTitleToolbarItem(model: model) }
-        .toolbar(removing: .title)
+        // The page draws "Home" with the mark itself (`V2HomeHeading`), so
+        // the bar has no title (on the folded Duo `.toolbar(removing: .title)`
+        // still drew a second "Home" above the page's, build 982).
+        .shellPage("") { AddTitleToolbarItem(model: model) }
         // Home spans both pages of a Spread; All titles keeps the grid's rule.
         .spreadSpansBothPages(.library, !model.allTitlesShown || density != "compact")
         .navigationDestination(isPresented: allTitlesBinding) { V2LibraryView(entry: entry) }

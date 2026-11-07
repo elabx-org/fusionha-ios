@@ -68,7 +68,16 @@ struct V2ComingUpRow: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .animation(motion ? .snappy : nil, value: cards)
-        .onChange(of: leadURL, initial: true) { _, url in leadArt = url }
+        // The page's ground follows the focused card once the swipe settles:
+        // set on every card passing the centre, it rebuilt the whole Home and
+        // re-blurred the ground several times a second, and a long swipe lagged.
+        .task(id: leadURL) {
+            if leadArt != nil, leadURL != nil {
+                try? await Task.sleep(for: .milliseconds(450))
+                guard !Task.isCancelled else { return }
+            }
+            if leadArt != leadURL { leadArt = leadURL }
+        }
         .task(id: window) { await feed() }
         .onChange(of: RebuildKey(entries: entries, kinds: kindsRaw, window: window, version: model.libraryVersion),
                   initial: true) { rebuild() }
