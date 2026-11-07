@@ -17,8 +17,29 @@ struct YouTubePlayer: UIViewRepresentable {
         view.isOpaque = false
         view.backgroundColor = .black
         view.scrollView.isScrollEnabled = false
-        view.load(URLRequest(url: url))
+        view.loadHTMLString(Self.page(url), baseURL: Self.origin)
         return view
+    }
+
+    /// The app as the embed's origin. YouTube refuses an embed that names no
+    /// app (Error 153, "Video player configuration error"), and a web view
+    /// that loads the embed URL directly sends no Referer. Hosting the
+    /// player in a page whose base is `https://<bundle id>` gives the iframe
+    /// that Referer, as YouTube asks of native apps.
+    static var origin: URL? {
+        URL(string: "https://\((Bundle.main.bundleIdentifier ?? "org.elabx.fusionha").lowercased())/")
+    }
+
+    static func page(_ url: URL) -> String {
+        """
+        <!doctype html><html><head>
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <style>html,body{margin:0;height:100%;background:#000}iframe{border:0;width:100%;height:100%}</style>
+        </head><body>
+        <iframe src="\(url.absoluteString)" referrerpolicy="strict-origin-when-cross-origin"
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+        </body></html>
+        """
     }
 
     func updateUIView(_ view: WKWebView, context: Context) {}
