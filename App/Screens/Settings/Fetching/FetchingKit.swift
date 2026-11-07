@@ -113,6 +113,23 @@ struct FetchIconTile: View {
     }
 }
 
+/// A resource's own logo on the same tile as `FetchIconTile` (download
+/// clients: the SABnzbd and qBittorrent marks, from dashboard-icons).
+struct FetchLogoTile: View {
+    let image: String
+    var size: CGFloat = 40
+
+    var body: some View {
+        Image(image)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size * 0.62, height: size * 0.62)
+            .frame(width: size, height: size)
+            .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+            .accessibilityHidden(true)
+    }
+}
+
 /// The resource card's status pill (`Connected` / `Failed` / `Disabled` …).
 struct FetchPill: View {
     enum Tone { case ok, err, off, warn, accent }

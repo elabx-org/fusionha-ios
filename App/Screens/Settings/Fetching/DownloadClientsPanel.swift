@@ -50,7 +50,7 @@ struct DownloadClientsPanel: View {
     private func card(_ client: DownloadClientInfo) -> some View {
         let result = results[client.id]
         return HStack(alignment: .center, spacing: 14) {
-            FetchIconTile(systemName: "arrow.down.to.line")
+            FetchLogoTile(image: client.isTorrent ? "client-qbittorrent" : "client-sabnzbd")
             VStack(alignment: .leading, spacing: 2) {
                 FetchFlow(spacing: 8, lineSpacing: 4) {
                     Text(client.name).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
