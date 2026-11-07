@@ -24,8 +24,12 @@ final class DownloadsBarTests: XCTestCase {
         let items = [try item(1, size: 2e9, left: 1e9), try item(2, size: 8e9, left: 4e9),
                      try item(3, status: "queued", size: 50e9, left: 50e9, progress: 0)]
         XCTAssertEqual(DownloadsBar.lead(items)?.id, 2)
-        let waiting = [try item(5, status: "queued", age: 900), try item(6, status: "completed", progress: 100, age: 60)]
+        let waiting = [try item(5, status: "queued", left: 1e9, progress: 0, age: 900),
+                       try item(6, status: "completed", progress: 100, age: 60)]
         XCTAssertEqual(DownloadsBar.lead(waiting)?.id, 6)
+        // The stored-state queue keeps "queued" while bytes move: progress makes it active.
+        let moving = [try item(7, status: "queued", age: 900), try item(8, status: "completed", progress: 100, age: 60)]
+        XCTAssertEqual(DownloadsBar.lead(moving)?.id, 7)
         XCTAssertNil(DownloadsBar.lead([]))
     }
 
