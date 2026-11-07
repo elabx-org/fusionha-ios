@@ -54,8 +54,14 @@ struct V2HomeView: View {
                 guard !model.allTitlesShown else { return }
                 model.updateChrome(old: old, new: new)
             }
+            // Tapping the Home tab: under All titles it goes back to Home
+            // (the system's pop-to-root); on Home it scrolls to the top.
             .onChange(of: model.scrollToTopTick) {
-                withAnimation(motion ? .smooth : nil) { proxy.scrollTo("home-top", anchor: .top) }
+                if model.allTitlesShown {
+                    withAnimation(motion ? .smooth : nil) { model.allTitlesShown = false }
+                } else {
+                    withAnimation(motion ? .smooth : nil) { proxy.scrollTo("home-top", anchor: .top) }
+                }
             }
             #if DEBUG
             // CI screenshots: `FUSIONHA_SCREENSHOT_HOME_SCROLL=recent|kinds`.
