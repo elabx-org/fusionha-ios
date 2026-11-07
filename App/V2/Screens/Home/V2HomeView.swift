@@ -138,6 +138,9 @@ struct V2HomeView: View {
         try? await Task.sleep(for: .milliseconds(80))
         guard !Task.isCancelled else { return false }
         if let how { entry = how }
+        // Kept here, not only in onChange: a Home rebuilt in the same
+        // update (the shell settling its layout) restores from it.
+        allTitlesKept = true
         showsAllTitles = true
         return true
     }
