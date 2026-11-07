@@ -86,7 +86,7 @@ struct V2HomeView: View {
                 Self.screenshotReset = true
                 allTitlesKept = false
             }
-            if allTitlesKept && !showsAllTitles { await push(nil) }
+            if allTitlesKept && !showsAllTitles { await push(nil, animated: false) }
         }
         .task { await model.loadLibraryIfNeeded() }
         .onQueueChange(model, initial: true) { queue in
@@ -111,12 +111,12 @@ struct V2HomeView: View {
             // Let Home lay out the loaded library before the push.
             if waited { try? await Task.sleep(for: .milliseconds(600)) }
             guard !Task.isCancelled, model.pendingAllTitles else { return }
-            if await push(.asLeft) { model.pendingAllTitles = false }
+            if await push(.asLeft, animated: false) { model.pendingAllTitles = false }
         }
     }
 
     private func openAllTitles(_ how: V2AllTitlesEntry) {
-        Task { await push(how) }
+        Task { await push(how, animated: true) }
     }
 
     /// CI screenshots start on Home unless a shot asks for All titles.
@@ -133,15 +133,20 @@ struct V2HomeView: View {
     @MainActor private static var screenshotReset = false
 
     /// False when this Home went away before the push (nothing was set).
+    /// Only a tap on Home animates; routes and restores land in place (an
+    /// animated push over a Home still laying out Coming up stalled the
+    /// folded Duo in CI).
     @discardableResult
-    private func push(_ how: V2AllTitlesEntry?) async -> Bool {
+    private func push(_ how: V2AllTitlesEntry?, animated: Bool) async -> Bool {
         try? await Task.sleep(for: .milliseconds(80))
         guard !Task.isCancelled else { return false }
         if let how { entry = how }
         // Kept here, not only in onChange: a Home rebuilt in the same
         // update (the shell settling its layout) restores from it.
         allTitlesKept = true
-        showsAllTitles = true
+        var transaction = Transaction()
+        transaction.disablesAnimations = !animated
+        withTransaction(transaction) { showsAllTitles = true }
         return true
     }
 
