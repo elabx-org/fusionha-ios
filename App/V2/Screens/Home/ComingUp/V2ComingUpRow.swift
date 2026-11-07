@@ -115,6 +115,14 @@ struct V2ComingUpRow: View {
                                         days: window)
         if next != cards { cards = next }
         if let focused, !next.contains(where: { $0.id == focused }) { self.focused = nil }
+        if focused == nil, !next.isEmpty { focused = next[min(openingIndex, next.count - 1)].id }
+    }
+
+    /// The row opens centred, with neighbours on both sides (owner, 2026-11-07):
+    /// the soonest titles sit to the left of the focused card, not off an empty
+    /// edge. Two a side on the open Duo's poster hero, one elsewhere.
+    private var openingIndex: Int {
+        hero && V2ComingUpWideStyle(stored: wideRaw) == .posters ? 2 : 1
     }
 
     /// Today − 1 (a network's air date can trail the viewer's day) to the
