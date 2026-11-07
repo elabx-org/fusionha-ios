@@ -7,8 +7,11 @@ extension EnvironmentValues {
     @Entry var libraryTabRoot: LibraryTabRootOverride?
 }
 
-/// The view a product puts at the Library tab's root.
+/// The view a product puts at the Library tab's root, and optionally the
+/// tab's own name and SF Symbol (v2 calls it Home, `house`).
 struct LibraryTabRootOverride {
+    var title: String? = nil
+    var systemImage: String? = nil
     let make: @MainActor () -> AnyView
 }
 

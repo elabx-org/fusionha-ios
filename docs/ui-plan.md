@@ -61,6 +61,14 @@ Built with Xcode 27.1 (earlier builds run letterboxed on the inner display). Eve
 ## 3. Screen by screen
 
 ### Library (`/`)
+
+**v2 deviation (owner-approved Home mock, 2026-11-06):** v2's first tab is
+**Home** (house icon): counts, Needs you, Coming up (centre-focus
+carousel), Recently added (timeline; the zipper on the open Duo), a row per
+kind with its count, and the All titles card. The web's Library page is
+**All titles**, pushed from Home, with its filters, sort and scrubber
+unchanged. Deep links and "This library" land in All titles. The web still
+says Library; see `docs/v2.md` › Home.
 - **Layout:** large title "Library", with a `LazyVGrid` poster grid. Edition chips sit below each poster, never on the art. A compact list is available as the second density, mirroring `grid | compact`.
 - **Library stats sheet (LibraryPulse mobile sheet):** the chart button opens a sheet with a glass close button: the connection line, the five stat chips (titles in the neutral grey, flowing 2 then 3), the health, 4K coverage and on-disk meters, then **In progress** (the operations feed: running commands, live downloads, runs, with the bulk Refresh & Scan grouped; "Nothing in progress.") and **Needs attention** (the unavailable-indexers group with its expandable per-indexer list and amber Manage → Settings › Indexers, then file, held-import and no-grab rows with their Replace / View / Review / Set type / Manual import / See why actions and per-row dismiss), then "View all activity ›". Polls every 2s while open.
 - **Library pulse:** a horizontally scrolling row of glass capsule chips in a `GlassEffectContainer`: All · Downloading · Missing · Upcoming · Complete · Needs attention. Each has a count, and the selected chip morphs with `glassEffectID`.

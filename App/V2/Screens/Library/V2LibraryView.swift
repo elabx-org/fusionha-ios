@@ -1,11 +1,14 @@
 import SwiftUI
 import FusionhaKit
 
-/// v2's Library tab (slice S4; mocks browse.js home, browse-lib.js, F1 of
-/// filters-alt.js, on the S3 ground and W1 cards). One scroll: the home
-/// (`V2LibraryPageTop`) then "All titles" as the A–Z poster grid with the
-/// scroll thumb, the status-grouped grid, a plain grid for other sorts, or
-/// the compact list. The ground comes from the first hero's art.
+/// v2's All titles (slice S4; mocks browse-lib.js, F1 of filters-alt.js, on
+/// the S3 ground and W1 cards), pushed from Home (`V2HomeView`, owner-approved
+/// 2026-11-06; it was the Library tab's root). One scroll: the header
+/// (`V2LibraryPageTop`: counts, kind control, filter chips, sort) then the
+/// A–Z poster grid with the scroll thumb, the status-grouped grid, a plain
+/// grid for other sorts, or the compact list. The ground comes from the
+/// newest title's art. `entry` says how Home opened it (a kind, Needs you,
+/// Recently added); it is applied to the window's filters once.
 ///
 /// It reuses v1's store and logic: the model's library, `LibraryInputs`
 /// (filtering, counting, rows), the filters (per window, seeded from v1's keys), the
@@ -14,12 +17,14 @@ import FusionhaKit
 /// the grid simply widens across the seamless display; book pose keeps the
 /// fold in a gutter.
 struct V2LibraryView: View {
+    /// Read once, never written back: writing Home's state from inside
+    /// the push that presents this page hung SwiftUI (CI, Home builds).
+    let entry: V2AllTitlesEntry?
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @Environment(\.spread) private var spread
     @Environment(\.bookPose) private var bookPose
     @Environment(\.duoOpen) private var duoOpen
-    @Environment(\.horizontalSizeClass) private var sizeClass
     // The filters follow the window (split screen), seeded from the ones
     // used last (`V2LibrarySceneFilters`). Show › Not monitored is v2's own.
     @SceneStorage("v2.library.kind") private var kindRaw = V2LibraryFilterSeed.kind
@@ -31,22 +36,16 @@ struct V2LibraryView: View {
     @SceneStorage("v2.library.group") private var group = V2LibraryFilterSeed.group
     @SceneStorage("v2.library.unmonitored") private var unmonitoredOnly = V2LibraryFilterSeed.unmonitored
     @SceneStorage("v2.library.network") private var network = V2LibraryFilterSeed.network
-    @AppStorage("v2.library.shelf") private var shelf: V2LibraryShelfSource = .recentlyAdded
     @State private var compactSort = CompactSort()
     @State private var derived = LibraryDerived()
     /// What `derived` was built from, but its columns (`V2LibraryDeriveKey`).
     @State private var derivedKey: V2LibraryDeriveKey?
-    @State private var home = V2LibraryHome()
-    /// Titles with a held download in the queue (read only when it changes).
-    @State private var held: Set<Int> = []
     @State private var scrubber = ScrubberState()
     @State private var posterSheet: MediaItem?
     @State private var pane = LibraryPane()
     @State private var onScreen = LibraryOnScreen()
     @State private var entrance = LibraryEntrance()
     @State private var gridFold = LibraryGridFold()
-    /// The Coming up row's lead card art: the ground follows the first card.
-    @State private var comingUpArt: URL?
 
     private var compact: Bool { density == "compact" }
     private var alphaMode: Bool { sort == .title && !group && !compact }
@@ -59,8 +58,6 @@ struct V2LibraryView: View {
     private var fold: ClosedRange<CGFloat>? { bookPose ? gridFold.fold : nil }
     /// The mock's side gutter: 20 on the phone and folded Duo, 24 open.
     private var gutter: CGFloat { pane.width >= 700 ? 24 : 20 }
-    /// The home (heroes and shelf) shows above the grid.
-    private var showsHome: Bool { !compact && query.isEmpty }
 
     /// Flat open beside an open title (slice S5): the list pane takes the
     /// title's palette in the deeper list-pane wash, with no art of its own,
@@ -71,9 +68,10 @@ struct V2LibraryView: View {
         return PageArtSource.url(backdrop: item.backdropUrl, poster: item.posterUrl)
     }
 
-    /// The lead card's art while the Coming up row shows (V2LibraryPageTop's rule).
-    private var homeArt: URL? {
-        showsHome && !home.heroes.isEmpty ? comingUpArt : nil
+    /// The newest title's art, for the ground.
+    private var groundArt: URL? {
+        guard let first = derived.recent.first else { return nil }
+        return PageArtSource.url(backdrop: first.backdropUrl, poster: first.posterUrl)
     }
 
     private var filters: V2LibraryFilters {
@@ -92,16 +90,6 @@ struct V2LibraryView: View {
         PosterTracks.tracks(count: derived.columns, width: Double(gridFold.width),
                             fold: fold.map { Double($0.lowerBound)...Double($0.upperBound) },
                             spans: spread.spans, spacing: V2LibraryGrid.spacing)
-    }
-
-    /// The grid's poster width and gap, for the home's shelf to match (nil
-    /// before the grid is measured; the shelf then keeps its own sizes).
-    private var gridPoster: (width: CGFloat, gap: CGFloat)? {
-        if let first = gridTracks?.first { return (CGFloat(first.width), CGFloat(V2LibraryGrid.spacing)) }
-        let width = gridFold.width
-        guard let cell = V2LibraryGrid.cellWidth(width: width, columns: derived.columns, sizeClass: sizeClass)
-        else { return nil }
-        return (cell, V2LibraryGrid.columnGap(width: width, sizeClass: sizeClass))
     }
 
     private var inputs: LibraryInputs {
@@ -137,17 +125,14 @@ struct V2LibraryView: View {
         .overlay(alignment: .bottom) {
             if !model.requestScoped { SetupProgressPill(barHeight: 0).padding(.bottom, 76) }
         }
-        // The kit's ambient art, not W1's: full strength under the home,
-        // browse-lib.js's shorter, softer layer over the grid or list alone.
-        .v2PageGround(art: besideArt ?? homeArt ?? home.groundArt, recipe: besideArt == nil ? .page : .listPane,
-                      showsArt: besideArt == nil, artHeight: showsHome ? 760 : 520,
-                      artOpacity: showsHome ? .ambient : .libraryList)
+        // The kit's ambient art in browse-lib.js's shorter, softer layer.
+        .v2PageGround(art: besideArt ?? groundArt, recipe: besideArt == nil ? .page : .listPane,
+                      showsArt: besideArt == nil, artHeight: 520, artOpacity: .libraryList)
         .modifier(V2LibrarySearch())
         .modifier(V2LibraryToolbar(derived: derived, filters: filters))
         // Wide, the page draws the title beside its counts and kind control.
-        .shellPage(V2LibraryPageHeader.titleInPage(paneWidth: pane.width) ? "" : "Library",
+        .shellPage(V2LibraryPageHeader.titleInPage(paneWidth: pane.width) ? "" : "All titles",
                    accountInPageWhenFolded: true)
-        .spreadSpansBothPages(.library, !compact)
         .toolbarVisibility(model.selectMode ? .hidden : .automatic, for: .tabBar)
         .librarySelectBar(active: model.selectMode, visibleIds: derived.visibleIds)
         .animation(motion ? .snappy(duration: 0.3) : nil, value: model.selectMode)
@@ -156,12 +141,14 @@ struct V2LibraryView: View {
         .task {
             await model.loadLibraryIfNeeded()
         }
-        .onQueueChange(model, initial: true) { queue in
-            let next = Set(queue.filter { QueueProgress($0).held }.map(\.mediaItemId))
-            if next != held { held = next }
+        .onChange(of: entry, initial: true) { _, how in
+            guard let how else { return }
+            apply(how)
         }
         .onChange(of: derived.visibleIds, initial: true) { _, ids in model.duoGestures.libraryOrder = ids }
+        .onDisappear { model.allTitlesOnScreen = false }
         .onAppear {
+            model.allTitlesOnScreen = true
             let gestures = model.duoGestures
             scrubber.onVisibility = { [weak gestures] shown in gestures?.edgeBusy = shown }
         }
@@ -171,7 +158,6 @@ struct V2LibraryView: View {
         .modifier(V2LibraryFilterWriteThrough(kind: kindRaw, tier: tier, status: status, sort: sort,
                                               recency: recency, group: group, unmonitored: unmonitoredOnly,
                                               network: network))
-        .onChange(of: held) { rebuildHome() }
     }
 
     // MARK: Scroll
@@ -179,11 +165,7 @@ struct V2LibraryView: View {
     private func scroll(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                V2LibraryPageTop(derived: derived, home: home, held: held, filters: filters, paneWidth: pane.width,
-                                 gridPoster: gridPoster, gutter: gutter, showsHome: showsHome, shelf: $shelf,
-                                 comingUpArt: $comingUpArt) {
-                    withAnimation(motion ? .smooth : nil) { proxy.scrollTo("library-grid", anchor: .top) }
-                }
+                V2LibraryPageTop(derived: derived, filters: filters, paneWidth: pane.width)
                 // The grid runs to the page gutter; the A–Z thumb floats over
                 // its trailing edge only while scrolling (Photos' scroller), so
                 // no width is kept for it (owner, build 854).
@@ -230,7 +212,7 @@ struct V2LibraryView: View {
         }
     }
 
-    /// The grid and home from the library, narrowed first to the titles
+    /// The grid from the library, narrowed first to the titles
     /// switched off when Show › Not monitored is on and to the Service
     /// chip's network (v1's inputs untouched).
     private func rederive() {
@@ -246,15 +228,25 @@ struct V2LibraryView: View {
         let mine = unmonitoredOnly ? model.library.filter { $0.monitored == false } : model.library
         let source = V2LibraryServices.narrow(mine, to: network)
         derived = PerfCount.time("V2Library.derive") { inputs.derive(from: source) }
-        PerfCount.time("V2Library.rebuildHome") { rebuildHome() }
         startEntrance()
     }
 
-    /// The home's heroes, shelves and attention titles, from the same set.
-    private func rebuildHome() {
-        let ids = Set(derived.visibleIds)
-        let visible = model.library.filter { ids.contains($0.id) }
-        home = V2LibraryHome(visible: visible, recent: derived.recent, held: held)
+    /// How Home opened All titles, onto the window's filters.
+    private func apply(_ how: V2AllTitlesEntry) {
+        switch how {
+        case .asLeft:
+            return
+        case .everything:
+            kindRaw = "all"
+        case .kind(let kind):
+            kindRaw = kind.rawValue
+        case .needsYou:
+            status = .attention
+        case .recent(let lastMonth):
+            status = .all
+            recency = lastMonth ? .added : .all
+            sort = .addedDesc
+        }
     }
 
     /// A new kind, tier, filter or sort plays the grid's entrance (v1's rule).

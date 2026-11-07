@@ -20,6 +20,7 @@ extension PerfProbe {
 
     func runSession(warmup: Double) async {
         UserDefaults.standard.set(true, forKey: "v2.splitHandle.used")
+        model.pendingAllTitles = true  // v2: the grid is All titles, over Home
         model.tab = .library
         let start = CACurrentMediaTime()
         while !(model.libraryLoaded && model.library.count > 100), CACurrentMediaTime() - start < 60 {

@@ -93,7 +93,6 @@ done
 for theme in dark daylight; do
   T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_UNUSED=1; SUF=""
   [ "$theme" = daylight ] && T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE=daylight && SUF="-daylight"
-  FRAME=folded shoot "library-folded$SUF" $T
   FRAME=folded shoot "library-folded-thumb$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=thumb
   FRAME=folded shoot "library-folded-scrub$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=S
   shoot "library-open-thumb$SUF" $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SCRUB=thumb
@@ -157,6 +156,28 @@ for theme in dark daylight; do
   WAIT=14 shoot "collection$SUF" $COLL $T
   WAIT=14 FRAME=folded shoot "collection-folded$SUF" $COLL $T
 done
+
+# Home (owner-approved mock, 2026-11-06): the first tab, folded and open,
+# scrolled to Recently added and to the kinds; dark and Daylight. (The
+# All titles shots via the launch route are off until it lands reliably:
+# docs/v2.md, Home, open issues.) Then the same on the owner's real library
+# (scripts/mock_big_library.py, 3,785 titles in four kinds).
+HS=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_HOME_SCROLL
+for theme in dark daylight; do
+  T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_UNUSED=1; SUF=""
+  [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
+  WAIT=14 FRAME=folded shoot "home-folded$SUF" $T
+  WAIT=16 FRAME=folded shoot "home-folded-scrolled$SUF" $T $HS=recent
+  WAIT=16 FRAME=folded shoot "home-folded-kinds$SUF" $T $HS=kinds
+  WAIT=14 shoot "home-open$SUF" $T
+  WAIT=16 shoot "home-open-scrolled$SUF" $T $HS=recent
+  WAIT=16 shoot "home-open-kinds$SUF" $T $HS=kinds
+done
+WAIT=14 shoot home-book SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book $HS=recent
+curl -s -X POST "$S/__mock/big-library?on=1" > /dev/null || true
+WAIT=20 shoot home-big-open
+WAIT=18 FRAME=folded shoot home-big-folded-kinds $HS=kinds
+curl -s -X POST "$S/__mock/big-library?on=0" > /dev/null || true
 
 # Fold continuity (owner 2026-11-06): one launch per scenario, the harness
 # frame switched in-process (FUSIONHA_SCREENSHOT_DUO_REFOLD, a fold is a

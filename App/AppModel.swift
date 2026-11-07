@@ -78,6 +78,16 @@ final class AppModel {
     /// `activity/history?item_id=`: History scoped to one title.
     var pendingHistoryFilter: HistoryItemFilter?
     var pendingDiscoverTab: DiscoverTab?
+    /// v2: a route that opens the Library or filters it lands in All titles
+    /// (pushed over Home); Home takes and clears it. v1 has no Home.
+    var pendingAllTitles = false
+    /// v2: All titles is pushed over Home in this window. Per window, not
+    /// per view: the shell can rebuild Home (settling at launch, a fold) and
+    /// the new one must see the push the old one made.
+    var allTitlesShown = false
+    /// v2: All titles has appeared (its page is on screen), so a route can
+    /// tell a push that landed from one the stack dropped.
+    var allTitlesOnScreen = false
     var showingAdd = false
     /// The Account sheet (avatar menu → Account), owned by AccountView.swift.
     var showingAccount = false
@@ -133,6 +143,11 @@ final class AppModel {
             showingAdd = env["FUSIONHA_SCREENSHOT_ADD"] != nil
             showingAccount = env["FUSIONHA_SCREENSHOT_ACCOUNT"] != nil
             searchText = env["FUSIONHA_SCREENSHOT_SEARCH"] ?? ""
+            // v2: the Library's grid shots open All titles over Home.
+            pendingAllTitles = ["FUSIONHA_SCREENSHOT_ALLTITLES", "FUSIONHA_SCREENSHOT_SEARCH",
+                                "FUSIONHA_SCREENSHOT_SCRUB", "FUSIONHA_SCREENSHOT_NETWORK",
+                                "FUSIONHA_SCREENSHOT_LIST", "FUSIONHA_SCREENSHOT_SELECT"]
+                .contains { env[$0] != nil }
             if let omni = env["FUSIONHA_SCREENSHOT_OMNI"] {
                 searchQuery = omni
                 tab = .search

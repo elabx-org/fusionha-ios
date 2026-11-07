@@ -12,6 +12,7 @@ extension PerfProbe {
     func runLibrary(warmup: Double) async {
         let label = ProcessInfo.processInfo.environment["FUSIONHA_PERF_LABEL"] ?? "library"
         prefersTallest = true
+        model.pendingAllTitles = true  // v2: the grid is All titles, over Home
         model.tab = .library
         // The library first: a cold mock takes a few seconds to serve 3,785 titles.
         let start = CACurrentMediaTime()
