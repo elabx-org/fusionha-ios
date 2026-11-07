@@ -79,6 +79,14 @@ struct V2HomeView: View {
         .spreadSpansBothPages(.library, !showsAllTitles || density != "compact")
         .navigationDestination(isPresented: $showsAllTitles) { V2LibraryView(entry: $entry) }
         .onChange(of: showsAllTitles) { _, shown in allTitlesKept = shown }
+        // Home on screen while the push is set: the tab's stack was rebuilt
+        // under it (the shell settling at launch, a fold) and dropped All
+        // titles. Push it again. A pop clears the flag before Home appears.
+        .onAppear {
+            guard showsAllTitles else { return }
+            showsAllTitles = false
+            Task { await push(nil, animated: false) }
+        }
         // Restores All titles on relaunch and when a fold rebuilds the shell
         // (a new Home whose push state starts false).
         .task {
