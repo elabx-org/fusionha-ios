@@ -45,6 +45,7 @@ struct V2HomeView: View {
                 .padding(.bottom, Theme.pageBottom)
             }
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+            .readsScreenCentre()
             .refreshable { await model.loadLibrary() }
             .onScrollGeometryChange(for: CGFloat.self) { geo in
                 geo.contentOffset.y + geo.contentInsets.top

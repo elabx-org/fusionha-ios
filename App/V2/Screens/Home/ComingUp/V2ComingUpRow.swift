@@ -38,6 +38,7 @@ struct V2ComingUpRow: View {
     @SceneStorage("v2.home.comingUpFocus") private var keptFocus = -1
 
     /// Wide and flat (one panel): Coming up spans the page.
+    @Environment(\.screenCentreSkew) private var skew
     private var hero: Bool { wide && !bookPose }
     private var window: Int { V2ComingUpSettings.window(days) }
     private var current: V2ComingUpCard? { cards.first { $0.id == focused } ?? cards.first }
@@ -66,7 +67,9 @@ struct V2ComingUpRow: View {
                 } else {
                     VStack(alignment: .leading, spacing: 4) {
                         header.padding(.horizontal, gutter)
+                        // Centred on the screen, not left of the folded Duo's column.
                         carousel(cardWidth: min(260, max(160, width - 140)), showsMeta: true)
+                            .centresOnScreen(skew)
                     }
                     .padding(.top, topGap)
                 }
