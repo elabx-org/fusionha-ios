@@ -5,8 +5,8 @@ import FusionhaKit
 /// the capitals' height just before "Home", then the counts line. Drawn
 /// in the page at every width; the bar keeps "Home" only for the back
 /// button and VoiceOver (`V2HomeView`).
-struct V2HomeHeading: View {
-    let stats: V2LibraryStatsLine
+struct V2HomeHeading<Stats: View>: View {
+    let stats: Stats
     @Environment(\.pagePalette) private var page
     @ScaledMetric(relativeTo: .largeTitle) private var mark: CGFloat = 30
 
