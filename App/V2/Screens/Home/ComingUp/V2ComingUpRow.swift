@@ -33,6 +33,9 @@ struct V2ComingUpRow: View {
     /// The card to open on, until the carousel has moved there (once).
     @State private var opening: Int?
     @State private var opened = false
+    /// The focused card across the fold: folded and open Home are two rows,
+    /// so the new one opens on the card the other had (−1 = none yet).
+    @SceneStorage("v2.home.comingUpFocus") private var keptFocus = -1
 
     /// Wide and flat (one panel): Coming up spans the page.
     private var hero: Bool { wide && !bookPose }
@@ -81,6 +84,7 @@ struct V2ComingUpRow: View {
             }
             if leadArt != leadURL { leadArt = leadURL }
         }
+        .onChange(of: focused) { if let focused, opening == nil { keptFocus = focused } }
         .task(id: window) { await feed() }
         .onChange(of: RebuildKey(entries: entries, kinds: kindsRaw, window: window, version: model.libraryVersion),
                   initial: true) { rebuild() }
@@ -120,7 +124,8 @@ struct V2ComingUpRow: View {
         if let focused, !next.contains(where: { $0.id == focused }) { self.focused = nil }
         if !opened, focused == nil, !next.isEmpty {
             opened = true
-            opening = next[min(openingIndex, next.count - 1)].id
+            opening = next.contains { $0.id == keptFocus }
+                ? keptFocus : next[min(openingIndex, next.count - 1)].id
         }
     }
 

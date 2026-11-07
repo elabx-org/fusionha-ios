@@ -4,21 +4,21 @@ import SwiftUI
 /// (owner, 2026-11-07: the row opens centred, with neighbours on both
 /// sides). Setting the scroll position before the first layout doesn't
 /// hold: the scroll view reports its first card as the centre on appear and
-/// overwrites it, so the move waits a beat and scrolls there itself, once.
+/// overwrites it, so the move waits a beat, once. It goes through the
+/// scroll position, as a tap on a side card does, so it lands where a swipe
+/// settles (a `ScrollViewReader` centre ignored the content margins and
+/// sat the card off centre).
 struct V2CarouselOpening: ViewModifier {
     @Binding var opening: Int?
     @Binding var focused: Int?
 
     func body(content: Content) -> some View {
-        ScrollViewReader { proxy in
-            content.task(id: opening) {
-                guard let id = opening else { return }
-                try? await Task.sleep(for: .milliseconds(80))
-                guard !Task.isCancelled else { return }
-                proxy.scrollTo(id, anchor: .center)
-                focused = id
-                opening = nil
-            }
+        content.task(id: opening) {
+            guard let id = opening else { return }
+            try? await Task.sleep(for: .milliseconds(80))
+            guard !Task.isCancelled else { return }
+            focused = id
+            opening = nil
         }
     }
 }
