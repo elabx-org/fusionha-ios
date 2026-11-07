@@ -1,11 +1,11 @@
 import SwiftUI
 import FusionhaKit
 
-/// A title's HD and 4K media badges side by side (owner 2026-11-06). When
-/// both say the same thing with nothing beside them (both on disk, both
-/// missing, both downloading or both held) they sit 1pt apart and read as
-/// one mark; otherwise 4pt apart, each with its count, so the gap itself
-/// says "these differ". Changes animate (`.smooth`) unless Reduce Motion is
+/// A title's HD and 4K media badges (owner 2026-11-06). When both say the
+/// same thing with nothing beside them (both on disk, both missing or both
+/// downloading) they are one combined badge (`CombinedMediaBadge`, owner
+/// 2026-11-07); both held sit 1pt apart; otherwise 4pt apart, each with
+/// its count, so the gap itself says "these differ". Changes animate (`.smooth`) unless Reduce Motion is
 /// on. A title with one version shows one badge.
 struct EditionTicketPair: View {
     var hd: EditionBadgeState?
@@ -39,7 +39,21 @@ struct EditionTicketPair: View {
             && BadgeAccessory.isEmpty(a, showsCount: showsCount)
             && BadgeAccessory.isEmpty(b, showsCount: showsCount)
         let gap = joined ? MediaBadgeMetrics.joinedGap : MediaBadgeMetrics.apartGap
-        return HStack(spacing: 0) {
+        return Group {
+            // Alike: one combined badge (owner, 2026-11-07, option B).
+            if joined && CombinedMediaBadge.combines(a, b) {
+                CombinedMediaBadge(hd: a, uhd: b, scale: scale, ink: ink)
+            } else {
+                apart(a, b, ink: ink, gap: gap)
+            }
+        }
+        .animation(reduceMotion ? nil : .smooth, value: joined)
+        .animation(reduceMotion ? nil : .smooth, value: a)
+        .animation(reduceMotion ? nil : .smooth, value: b)
+    }
+
+    private func apart(_ a: EditionBadgeState, _ b: EditionBadgeState, ink: BadgeInk, gap: CGFloat) -> some View {
+        HStack(spacing: 0) {
             MediaBadgeView(letters: QualityTier.hd.badgeLetters, state: a, scale: scale, ink: ink)
             BadgeAccessory(state: a, showsCount: showsCount, scale: scale, ink: ink)
             // A gap with no height of its own: a bare Color takes every point the
@@ -48,9 +62,6 @@ struct EditionTicketPair: View {
             MediaBadgeView(letters: QualityTier.uhd.badgeLetters, state: b, scale: scale, ink: ink)
             BadgeAccessory(state: b, showsCount: showsCount, scale: scale, ink: ink)
         }
-        .animation(reduceMotion ? nil : .smooth, value: joined)
-        .animation(reduceMotion ? nil : .smooth, value: a)
-        .animation(reduceMotion ? nil : .smooth, value: b)
     }
 
     /// How a badge draws, ignoring progress and counts: solid, outline,
