@@ -52,6 +52,9 @@ struct V2HomeView: View {
             .onScrollGeometryChange(for: CGFloat.self) { geo in
                 geo.contentOffset.y + geo.contentInsets.top
             } action: { old, new in
+                // Under All titles, Home stays mounted: only the page on top
+                // drives the chrome, or the two scroll views fight over it.
+                guard !showsAllTitles else { return }
                 model.updateChrome(old: old, new: new)
             }
             .onChange(of: model.scrollToTopTick) {
