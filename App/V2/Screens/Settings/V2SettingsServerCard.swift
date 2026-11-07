@@ -43,12 +43,12 @@ struct V2SettingsServerCard: View {
 
     private var identity: some View {
         HStack(spacing: 13) {
-            Image(systemName: "doc.on.doc.fill")
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundStyle(.white)
+            // The fusionha mark, as on Home's heading.
+            Image("BrandLogo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 44, height: 44)
                 .frame(width: 52, height: 52)
-                .background(Theme.isMono ? AnyShapeStyle(Color(hex: 0x6E6E73).gradient) : AnyShapeStyle(Theme.fusion),
-                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(server)
