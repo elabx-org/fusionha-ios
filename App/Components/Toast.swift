@@ -20,10 +20,19 @@ enum ToastVariant: Sendable {
 
     var symbol: String {
         switch self {
-        case .success: return "checkmark"
-        case .error: return "exclamationmark.circle"
-        case .warning: return "exclamationmark.triangle"
-        case .info: return "info.circle"
+        case .success: return "checkmark.circle.fill"
+        case .error: return "exclamationmark.circle.fill"
+        case .warning: return "exclamationmark.triangle.fill"
+        case .info: return "info.circle.fill"
+        }
+    }
+
+    /// The symbol's ink on glass: the label colour, orange only when it
+    /// needs the owner (CLAUDE.md's colour rule; no green or red tiles).
+    var ink: Color {
+        switch self {
+        case .success, .info: return .primary
+        case .error, .warning: return Theme.stuck
         }
     }
 }
@@ -39,22 +48,22 @@ struct ToastMessage: Identifiable, Equatable {
     static func == (lhs: ToastMessage, rhs: ToastMessage) -> Bool { lhs.id == rhs.id }
 }
 
-/// The toast viewport: stacked, centred cards (placed by `ToastLayer`: above
-/// the tab bar, or on the trailing side of a split or fold). Each card is
-/// `icon | body (+ action) | dismiss` on the panel washed with its variant's
-/// status (`actWash`), with a 2.5pt timer bar that drains while it isn't held.
+/// The toast viewport: stacked glass capsules at the top of the page
+/// (placed by `ToastLayer`; owner, 2026-11-07, option A). Each is
+/// `symbol | message (+ action)` on clear Liquid Glass; it goes with its
+/// clock, a swipe up, or VoiceOver's Dismiss.
 struct ToastHost: View {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             ForEach(model.toasts) { toast in
                 ToastCard(toast: toast, clock: model.toastClock) { model.dismissToast(toast.id) }
-                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .offset(y: 14)))
+                    .transition(reduceMotion ? .opacity : .opacity.combined(with: .offset(y: -18)))
             }
         }
-        .frame(maxWidth: 420)
+        .frame(maxWidth: 440)
         .padding(.horizontal, 16)
         .animation(reduceMotion ? nil : .spring(duration: 0.35, bounce: 0.2), value: model.toasts)
     }
@@ -65,50 +74,50 @@ private struct ToastCard: View {
     let clock: ToastClock
     let dismiss: () -> Void
     @AccessibilityFocusState private var voiceOverFocused: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// One line is a capsule; a title or an action makes a rounded card.
+    private var shape: AnyShape {
+        toast.title == nil
+            ? AnyShape(Capsule())
+            : AnyShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
 
     var body: some View {
-        let vc = toast.variant.color
-        HStack(alignment: .top, spacing: 12) {
+        HStack(spacing: 10) {
             Image(systemName: toast.variant.symbol)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(vc)
-                .frame(width: 30, height: 30)
-                .background(vc.opacity(0.15), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            VStack(alignment: .leading, spacing: 2) {
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(toast.variant.ink)
+            VStack(alignment: .leading, spacing: 1) {
                 if let title = toast.title {
-                    Text(title).font(.system(size: 13.5, weight: .bold)).foregroundStyle(Theme.txt)
-                    Text(toast.message).font(.system(size: 13)).foregroundStyle(Theme.mut)
+                    Text(title).font(.subheadline.weight(.semibold))
+                    Text(toast.message).font(.footnote).foregroundStyle(.secondary)
                 } else {
-                    Text(toast.message).font(.system(size: 13, weight: .medium)).foregroundStyle(Theme.txt)
+                    Text(toast.message).font(.subheadline.weight(.semibold))
                 }
-                if let action = toast.action { actionButton(action) }
             }
-            .frame(maxWidth: .infinity, minHeight: 30, alignment: .leading)
+            .lineLimit(3)
             .fixedSize(horizontal: false, vertical: true)
-            Button(action: dismiss) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Theme.mut)
-                    .frame(width: 26, height: 26)
-                    .contentShape(Rectangle())
+            if let action = toast.action {
+                Rectangle().fill(.primary.opacity(0.2)).frame(width: 1, height: 18)
+                Button(action.label) { run(action) }
+                    .font(.subheadline.weight(.semibold))
+                    .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Dismiss notification")
         }
-        .padding(.top, 13)
-        .padding(.trailing, 13)
-        .padding(.bottom, 15)
-        .padding(.leading, 15)
-        .overlay(alignment: .bottomLeading) { timerBar(vc) }
-        .actWash(vc, mono: toast.variant.token, radius: Theme.radius, base: Theme.panel)
-        .clipShape(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-        .shadow(color: .black.opacity(0.55), radius: 22, y: 18)
-        // A finger on the card holds its clock (the web's hover pause).
+        .foregroundStyle(.primary)
+        .padding(.vertical, 11)
+        .padding(.leading, 13)
+        .padding(.trailing, 18)
+        .glassEffect(.regular, in: shape)
+        // A finger on the capsule holds its clock (the web's hover pause); a
+        // swipe up sends it away.
         .simultaneousGesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in clock.hold(toast.id, by: "press", true) }
-                .onEnded { _ in clock.hold(toast.id, by: "press", false) }
+                .onEnded { value in
+                    clock.hold(toast.id, by: "press", false)
+                    if value.translation.height < -16 { dismiss() }
+                }
         )
         .accessibilityElement(children: .combine)
         .accessibilityFocused($voiceOverFocused)
@@ -125,34 +134,8 @@ private struct ToastCard: View {
         }
     }
 
-    private func actionButton(_ action: ToastAction) -> some View {
-        Button { run(action) } label: {
-            HStack(spacing: 5) {
-                Text(action.label)
-                Image(systemName: "arrow.right").font(.system(size: 11, weight: .bold))
-            }
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(Theme.accentText)
-            .padding(.top, 6)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
     private func run(_ action: ToastAction) {
         dismiss()
         action.handler()
-    }
-
-    /// Drains with the clock; a still, full bar under Reduce Motion (web).
-    private func timerBar(_ color: Color) -> some View {
-        let fraction = reduceMotion ? 1 : (clock.remaining[toast.id] ?? 1)
-        return GeometryReader { geo in
-            Rectangle().fill(color.opacity(0.55))
-                .frame(width: geo.size.width * fraction, height: 2.5)
-                .frame(maxHeight: .infinity, alignment: .bottom)
-                .animation(reduceMotion ? nil : .linear(duration: ToastCountdown.tick), value: fraction)
-        }
-        .accessibilityHidden(true)
     }
 }

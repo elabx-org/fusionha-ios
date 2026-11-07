@@ -231,14 +231,13 @@ struct RootView: View {
         .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: split.primaryHidden)
         // The moving seam is left out: v2's handle animates it itself.
         .animation(reduceMotion || fold.isDuoOpen ? nil : .smooth(duration: 0.3), value: split.atRest)
-        // Toasts: above the tab bar when folded; on the trailing column when
-        // split, so they never straddle the fold (DC14); on the right page
-        // while a Spread's tab spans both pages.
+        // Toasts: at the top of the page; on the trailing column when split,
+        // so they never straddle the fold (DC14); on the right page while a
+        // Spread's tab spans both pages.
         // v2: the downloads bar floats on the left page where the system's can't show.
         .overlay(alignment: .bottomLeading) { downloadsCapsule }
         .overlay {
-            ToastLayer(region: ToastRegion.shell(split, spread: spread, size: fold.size),
-                       clearsAbove: split.shown || spread.spans ? nil : toastAnchor.floor, gap: 16)
+            ToastLayer(region: ToastRegion.shell(split, spread: spread, size: fold.size))
         }
         .environment(toastAnchor)
         .environment(selectBars)

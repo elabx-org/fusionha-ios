@@ -77,7 +77,7 @@ struct SettingsShellLink: ViewModifier {
         content
             // The trailing side of the fold in Book pose (DC14); flat open and
             // split, the panel pane; above any bottom bar.
-            .overlay { FoldToastLayer(pane: pane, clearsAbove: anchor.floor) }
+            .overlay { FoldToastLayer(pane: pane) }
             .environment(anchor)
             .onChange(of: path, initial: true) { model.avatar.settingsShown = path.last ?? "" }
             .onChange(of: model.avatar.settingsJump) {

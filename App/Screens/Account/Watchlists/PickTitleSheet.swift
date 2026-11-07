@@ -57,7 +57,7 @@ struct PickTitleSheet: View {
         }
         .onChange(of: pick.finished) { if pick.finished { dismiss() } }
         .onDisappear { Task { await store.refreshProgress(model.client) } }
-        .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
+        .overlay(alignment: .top) { ToastHost().padding(.top, 12) }
         .presentationDragIndicator(.visible)
         .sheetBackground(Theme.bg)
     }

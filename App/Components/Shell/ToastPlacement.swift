@@ -2,11 +2,12 @@ import SwiftUI
 
 // MARK: - Where toasts sit (DC14)
 //
-// Folded, toasts float centred above the tab bar, as on the web. Whenever the
-// screen is split (the Duo half open in Book pose, or the web's wide list |
-// detail layout) they sit on the trailing side, never across the fold
-// (owner ruling; the HIG's Book-pose destination for alerts). The gap above
-// the tab bar is read from the tab's own safe area, not a constant.
+// Toasts drop in at the top of the page they belong to, as glass capsules
+// (owner, 2026-11-07, option A: the bottom of a page is where its actions
+// live, and a toast there covered one). Whenever the screen is split (the Duo
+// half open in Book pose, or the wide list | detail layout) they sit on the
+// trailing side, never across the fold (owner ruling; the HIG's Book-pose
+// destination for alerts).
 
 /// The top of the tab bar, published by the visible tab (`TabRoot`) so the
 /// shell's toasts can clear it.
@@ -109,40 +110,33 @@ enum ToastRegion {
     }
 }
 
-/// The toast viewport placed in `region` of its container, bottom-aligned,
-/// `gap` above the container's bottom safe area, or above `clearsAbove` (a
-/// global y, the tab bar's top) when given.
+/// The toast viewport placed in `region` of its container, top-aligned,
+/// `gap` below the container's top safe area.
 struct ToastLayer: View {
     var region: CGRect?
-    var clearsAbove: CGFloat?
     var gap: CGFloat = 12
-    @State private var containerBottom: CGFloat = 0
 
     var body: some View {
-        let lift = clearsAbove.map { max(containerBottom - $0, 0) } ?? 0
         ToastHost()
-            .padding(.bottom, lift + gap)
+            .padding(.top, gap)
             .frame(width: region?.width)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: region == nil ? .bottom : .bottomLeading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: region == nil ? .top : .topLeading)
             .padding(.leading, region?.minX ?? 0)
             .padding(.top, region?.minY ?? 0)
-            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).maxY } action: { containerBottom = $0 }
     }
 }
 
 /// A `ToastLayer` for a screen without the shell that reads the fold itself.
 /// `pane` (global) is the screen's own trailing pane while it is split.
 struct FoldToastLayer: View {
-    var gap: CGFloat = 24
+    var gap: CGFloat = 12
     var pane: CGRect?
-    /// A bottom bar's top (global) the toasts must clear, if one is showing.
-    var clearsAbove: CGFloat?
 
     var body: some View {
         GeometryReader { proxy in
             let origin = proxy.frame(in: .global).origin
             let local = pane?.offsetBy(dx: -origin.x, dy: -origin.y)
-            ToastLayer(region: ToastRegion.trailing(FoldInfo(proxy), pane: local), clearsAbove: clearsAbove, gap: gap)
+            ToastLayer(region: ToastRegion.trailing(FoldInfo(proxy), pane: local), gap: gap)
         }
     }
 }
