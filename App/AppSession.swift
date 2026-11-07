@@ -61,6 +61,8 @@ final class AppSession {
     var queueHeldIds: [Int] = []
     var queueError: String?
     @ObservationIgnored var lastQueueIds: [Int] = []
+    /// A library reload waiting for the queue to settle (`AppSession+Queue`).
+    @ObservationIgnored var libraryAfterQueue: Task<Void, Never>?
 
     /// The pollers and the windows holding them (AppSession+Polling).
     @ObservationIgnored var polling = SessionPolling()

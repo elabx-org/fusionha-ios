@@ -46,12 +46,26 @@ extension AppSession {
             LiveActivityController.sync(with: items, paused: page.paused == true)
             let ids = items.map(\.id)
             if ids != lastQueueIds {
+                if !Set(lastQueueIds).isSubset(of: ids) { reloadLibraryAfterQueue() }
                 lastQueueIds = ids
                 WidgetCenter.shared.reloadTimelines(ofKind: "Downloads")
                 WidgetCenter.shared.reloadTimelines(ofKind: WidgetStack.downloading.kind)
             }
         } catch {
             queueError = error.localizedDescription
+        }
+    }
+
+    /// A download left the queue (imported, failed or removed): the title's
+    /// versions and its Needs you flag changed on the server, so the library
+    /// reloads once the queue has been quiet for 3 s (a season pack leaving
+    /// item by item reloads once). Home, All titles and their cards follow.
+    private func reloadLibraryAfterQueue() {
+        libraryAfterQueue?.cancel()
+        libraryAfterQueue = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, let self else { return }
+            await self.loadLibrary()
         }
     }
 }
