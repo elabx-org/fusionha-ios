@@ -26,17 +26,9 @@ struct V2HomeContent: View {
         V2LibraryStatsLine(derived: data.stats, kind: "all")
     }
 
-    /// Wide, the page draws "Home" with the counts under it (the bar's
-    /// title has no room beside the tabs), as All titles does.
-    private var heading: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Home")
-                .font(.system(size: 34, weight: .bold))
-                .foregroundStyle(page?.ink ?? Theme.txt)
-                .accessibilityAddTraits(.isHeader)
-            stats
-        }
-    }
+    /// The page draws "Home" with the mark and the counts under it, at
+    /// every width (`V2HomeHeading`).
+    private var heading: some View { V2HomeHeading(stats: stats) }
 
     @ViewBuilder
     private var attention: some View {
@@ -47,7 +39,7 @@ struct V2HomeContent: View {
 
     private var narrowBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            stats.padding(.horizontal, gutter)
+            heading.padding(.horizontal, gutter).padding(.top, 4)
             if !data.attention.isEmpty {
                 attention.padding(.horizontal, gutter).padding(.top, 14)
             }

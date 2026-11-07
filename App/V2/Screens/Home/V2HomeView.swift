@@ -70,8 +70,10 @@ struct V2HomeView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .v2PageGround(art: besideArt ?? comingUpArt ?? data.groundArt, recipe: besideArt == nil ? .page : .listPane,
                       showsArt: besideArt == nil, artHeight: 760, artOpacity: .ambient)
-        // Wide, the page draws "Home" itself (`V2HomeContent.heading`).
-        .shellPage(width >= 700 ? "" : "Home") { AddTitleToolbarItem(model: model) }
+        // The page draws "Home" with the mark itself (`V2HomeHeading`); the
+        // bar keeps the title for the back button and VoiceOver only.
+        .shellPage("Home") { AddTitleToolbarItem(model: model) }
+        .toolbar(removing: .title)
         // Home spans both pages of a Spread; All titles keeps the grid's rule.
         .spreadSpansBothPages(.library, !model.allTitlesShown || density != "compact")
         .navigationDestination(isPresented: allTitlesBinding) { V2LibraryView(entry: entry) }
