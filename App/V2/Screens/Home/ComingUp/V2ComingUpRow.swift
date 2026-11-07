@@ -129,12 +129,9 @@ struct V2ComingUpRow: View {
         }
     }
 
-    /// The row opens centred, with neighbours on both sides (owner, 2026-11-07):
-    /// the soonest titles sit to the left of the focused card, not off an empty
-    /// edge. Two a side on the open Duo's poster hero, one elsewhere.
-    private var openingIndex: Int {
-        hero && V2ComingUpWideStyle(stored: wideRaw) == .posters ? 2 : 1
-    }
+    /// The row opens on the third title (owner, 2026-11-07), folded and open
+    /// alike, so both start on the same card with neighbours on both sides.
+    private var openingIndex: Int { 2 }
 
     /// Today − 1 (a network's air date can trail the viewer's day) to the
     /// window's end + 1; the last answer this phone saw comes first.
