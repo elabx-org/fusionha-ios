@@ -59,8 +59,7 @@ public enum DownloadsBar {
     /// Transferring bytes now (not waiting, importing or held).
     static func isActive(_ item: QueueItem) -> Bool {
         guard need(item) == nil, !item.stalled else { return false }
-        let status = item.status.lowercased()
-        return !["queued", "delay", "pending", "paused", "completed"].contains(status) && item.progress < 100
+        return item.rowState == .downloading
     }
 
     /// Needs you (held › failed › stuck) › the largest active download › the most recent.
@@ -77,7 +76,7 @@ public enum DownloadsBar {
         let moving = items.filter { need($0) == nil }
         let sized = moving.filter { $0.size > 0 }
         let total = sized.reduce(0) { $0 + $1.size }
-        let done = sized.reduce(0) { $0 + max(0, $1.size - $1.sizeleft) }
+        let done = sized.reduce(0) { $0 + $1.size * $1.doneFraction }
         let percent: Int
         if total > 0 {
             percent = clampPercent(done / total * 100)

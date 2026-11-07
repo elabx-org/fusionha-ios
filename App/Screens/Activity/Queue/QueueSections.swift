@@ -34,19 +34,21 @@ enum QueueSection: String, CaseIterable {
     /// Only In progress and Downloading fold a title's 4K + HD into one pair card.
     var pairsVersions: Bool { self == .progress || self == .downloading }
 
-    /// Which section one download's card renders in (`queueCardGroup`).
+    /// Which section one download's card renders in (`queueCardGroup`, from
+    /// the shared `QueueItem.rowState`, so the strip's counts, the section
+    /// and the row's words agree). A finished download waiting for the
+    /// import sits under Importing; a grabbed-but-not-yet-in-the-client row
+    /// (`warning`) stays a card reading "Waiting for the client" rather than
+    /// a silent Up next slot.
     static func of(_ item: QueueItem) -> QueueSection {
-        let status = item.status.lowercased()
-        if status == "held" || item.needsAttention == true { return .needs }
-        if item.phaseTerminal == true, let phase = item.phase, phase != "complete" { return .failed }
-        if item.phase == "importing" || item.phase == "complete" || status == "completed" { return .importing }
-        if item.phase == "queued" { return .upnext }
-        let phaseMode = item.stages.map { $0.mode == "phase" } ?? (item.phase != nil && item.phase != "downloading")
-        if phaseMode { return .progress }
-        // A grabbed-but-not-yet-in-the-client row (`warning`) stays a card
-        // reading "Waiting for the client" rather than a silent Up next slot.
-        if ["queued", "delay", "pending", "paused"].contains(status), item.warning == nil, !item.stalled { return .upnext }
-        return .downloading
+        switch item.rowState {
+        case .held, .stuck: return .needs
+        case .failed: return .failed
+        case .importing, .awaitingImport: return .importing
+        case .queued: return .upnext
+        case .processing: return .progress
+        case .downloading, .waitingForClient: return .downloading
+        }
     }
 }
 
