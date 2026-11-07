@@ -30,10 +30,19 @@ struct InstanceCard: View {
         return ("\(p.count) profile\(p.count == 1 ? "" : "s") · \(r.count) root\(r.count == 1 ? "" : "s")", true)
     }
 
+    /// The arr it speaks, in its 4K or anime variant (selfh.st): 4K wins
+    /// over anime, so a 4K anime instance reads as the 4K one.
+    private var logo: String {
+        let base = instance.isRadarr ? "svc-radarr" : "svc-sonarr"
+        if instance.tier == .uhd { return base + "-4k" }
+        if instance.scope == "anime" { return base + "-anime" }
+        return base
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
-                FetchLogoTile(image: instance.isRadarr ? "svc-radarr" : "svc-sonarr")
+                FetchLogoTile(image: logo)
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 8) {
                         Text(instance.instanceName).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
