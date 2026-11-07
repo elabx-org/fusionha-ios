@@ -150,6 +150,14 @@ extension APIClient {
                                               body: MonitorToggle(monitored: monitored))
     }
 
+    /// `POST /api/v1/library/{id}/episodes/monitor` (0.4.240): one call for
+    /// many episodes. Ids that are unknown or another title's come back skipped.
+    public func setEpisodesMonitored(itemId: Int, episodeIds: [Int], monitored: Bool) async throws -> EpisodesMonitorResult {
+        try await sendJSON("POST", "/api/v1/library/\(itemId)/episodes/monitor", .object([
+            "episode_ids": .array(episodeIds.map { .int($0) }), "monitored": .bool(monitored),
+        ]))
+    }
+
     // Versions: `/versions` since 0.4.122 (the old `/editions` routes are deprecated).
 
     public func updateEdition(itemId: Int, editionId: Int, _ body: EditionUpdate) async throws {

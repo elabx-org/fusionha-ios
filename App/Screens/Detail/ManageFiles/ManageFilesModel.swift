@@ -14,6 +14,11 @@ final class ManageFilesModel {
     var client: APIClient?
 
     private(set) var items: [ManagedFileItem] = []
+    /// The title's whole file list, outside the sheet's scope (v2's
+    /// "Stop monitoring" default reads the other versions' files).
+    private(set) var allRows: [ManagedFileRow] = []
+    /// Episodes unmonitored from this sheet; `detail` is a snapshot.
+    private var unmonitored: Set<Int> = []
     private(set) var loaded = false
     private(set) var loadFailed = false
     var selected: Set<Int> = []
@@ -67,7 +72,10 @@ final class ManageFilesModel {
         guard let client else { return }
         do {
             let rows = try await client.managedFiles(itemId: detail.id)
-            items = ManagedFileRules.items(rows, detail: detail, scopeVersionIds: scopeVersionIds, season: season)
+            allRows = rows
+            items = ManageEpisodes.unmonitoring(
+                ManagedFileRules.items(rows, detail: detail, scopeVersionIds: scopeVersionIds, season: season),
+                episodeIds: unmonitored, detail: detail)
             selected.formIntersection(Set(items.map(\.id)))
             loadFailed = false
         } catch {
@@ -191,40 +199,56 @@ final class ManageFilesModel {
     }
 
     /// v2's clear-out: one bulk delete (searching only when the episodes
-    /// stay monitored), then, with `stopMonitoring`, each covered episode
-    /// unmonitored. Returns the failure to show, nil when everything went.
-    func clearOut(_ targets: [ManagedFileItem], stopMonitoring: Bool, episodeIds: [Int]) async -> String? {
+    /// stay monitored), then, with `stopMonitoring`, one bulk unmonitor of
+    /// every episode the files that really went covered (web
+    /// `use-unmonitor-after-delete`). Returns the failure to show, nil when
+    /// everything went.
+    func clearOut(_ targets: [ManagedFileItem], stopMonitoring: Bool) async -> String? {
         guard let client, !targets.isEmpty else { return nil }
         deleting = targets.count
         defer { deleting = nil }
-        var failure: String?
-        do {
-            let start = try await client.bulkDeleteFiles(itemId: detail.id, fileIds: targets.map(\.id), search: !stopMonitoring)
-            if let runId = start.runId {
-                var state = try await client.run(id: runId)
-                while state.isRunning {
-                    try await Task.sleep(for: .seconds(1))
-                    state = try await client.run(id: runId)
-                }
-                if state.failed { failure = "The delete didn’t finish. Some files may still be on disk." }
-            }
-        } catch {
-            failure = ErrorCopy.message(for: error, fallback: "Couldn’t delete the files. Try again.")
-        }
-        if failure == nil, stopMonitoring {
-            var missed = 0
-            for id in episodeIds {
-                do { try await client.setEpisodeMonitored(itemId: detail.id, episodeId: id, monitored: false) } catch { missed += 1 }
-            }
-            if missed > 0 {
-                failure = "Files deleted, but \(missed == 1 ? "1 episode is" : "\(missed) episodes are") still monitored. Try again from the season page."
-            }
-        }
+        var failure = await bulkDelete(targets, search: !stopMonitoring, client: client)
         selected.subtract(targets.map(\.id))
-        note = Note(text: failure ?? "Deleted \(targets.count == 1 ? "1 file" : "\(targets.count) files").", failed: failure != nil)
         changed = true
         await load()
+        if stopMonitoring {
+            let problem = await unmonitorGone(targets, client: client)
+            failure = [failure, problem].compactMap { $0 }.joined(separator: " ").nilIfEmpty
+        }
+        note = Note(text: failure ?? "Deleted \(targets.count == 1 ? "1 file" : "\(targets.count) files").", failed: failure != nil)
         return failure
+    }
+
+    private func bulkDelete(_ targets: [ManagedFileItem], search: Bool, client: APIClient) async -> String? {
+        do {
+            let start = try await client.bulkDeleteFiles(itemId: detail.id, fileIds: targets.map(\.id), search: search)
+            guard let runId = start.runId else { return nil }
+            var state = try await client.run(id: runId)
+            while state.isRunning {
+                try await Task.sleep(for: .seconds(1))
+                state = try await client.run(id: runId)
+            }
+            return state.failed ? "The delete didn’t finish. Some files may still be on disk." : nil
+        } catch {
+            return ErrorCopy.message(for: error, fallback: "Couldn’t delete the files. Try again.")
+        }
+    }
+
+    /// Unmonitors only the episodes whose file is gone from the re-read list;
+    /// a file that failed to delete keeps its episodes monitored.
+    private func unmonitorGone(_ targets: [ManagedFileItem], client: APIClient) async -> String? {
+        guard !loadFailed else { return "Couldn’t confirm which files were removed, so no episode was unmonitored." }
+        let live = Set(allRows.map(\.fileId))
+        let ids = ManageEpisodes.episodeIds(targets.filter { !live.contains($0.id) }, detail: detail)
+        guard !ids.isEmpty else { return nil }
+        do {
+            let result = try await client.setEpisodesMonitored(itemId: detail.id, episodeIds: ids, monitored: false)
+            unmonitored.formUnion(result.updatedIds)
+            items = ManageEpisodes.unmonitoring(items, episodeIds: unmonitored, detail: detail)
+            return nil
+        } catch {
+            return "The files were deleted, but the episodes are still monitored. Try again."
+        }
     }
 
     // MARK: Move and re-scan
@@ -269,4 +293,8 @@ final class ManageFilesModel {
             note = Note(text: "Couldn’t re-scan the files. Try again.", failed: true)
         }
     }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }

@@ -84,7 +84,9 @@ struct V2ManageEpisodesSheet: View {
         V2ManageActions(
             edit: { editing = ManageFilesEditTarget(items: $0) },
             delete: { items in
-                deleting = V2ManageDeleteTarget(items: items, groups: groups, detail: model.detail)
+                // Always the clear-out confirmation on a series, even for one
+                // file: a season pack is a whole season (web d6390a48).
+                deleting = V2ManageDeleteTarget(items: items, groups: groups, model: model)
             },
             confirm: { confirm = $0 },
             recheck: { season in Task { await model.rescan(season: season) } }

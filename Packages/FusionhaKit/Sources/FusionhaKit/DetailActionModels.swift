@@ -170,6 +170,12 @@ public struct MonitorToggle: Encodable, Sendable {
     public init(monitored: Bool) { self.monitored = monitored }
 }
 
+/// The bulk episode monitor answer: which ids were set, which were skipped.
+public struct EpisodesMonitorResult: Decodable, Sendable, Equatable {
+    public let updatedIds: [Int]
+    public let skippedIds: [Int]
+}
+
 public struct TagCreate: Encodable, Sendable {
     public let label: String
     public init(label: String) { self.label = label }

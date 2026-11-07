@@ -20,6 +20,7 @@ instead of from scratch.
 | Manual Import safety | B1 batch synced to **v0.4.233** (`ad01ec6f`, 2026-11-01), see the 0.4.233 section (branch `mi-b1`); **shipped in build 657** |
 | Manual Import UX test | MI and held downloads checked against **v0.4.233** (`ad01ec6f`, 2026-11-01); owner decisions D1–D9 and batches B2–B8 shipped in build 660, see the UX test section |
 | Watchlists & lists 10b slices 2–3 | synced to **v0.4.237** (`473dd68b`, 2026-11-02): follow MDBList / Trakt / Letterboxd lists by address, admin Import lists; see the 0.4.237 section (branch `requests-10b-lists`) |
+| 0.4.240 | spec re-pinned to **v0.4.240** (`c73627e5`, 2026-11-07; additive: `POST /api/v1/library/{id}/episodes/monitor`). v2 Manage episodes uses it for "Stop monitoring" (one call, every episode the gone files covered), the toggle reads "… in every version" and defaults off when another monitored version keeps or wants those episodes (web `cross-version.ts`), a series Delete always opens the confirmation (web `d6390a48`) (branch `fix/v2-manage-monitor-bulk`). Nothing open |
 | 0.4.238 | spec re-pinned to **v0.4.238** (`1608cb74`, 2026-11-05): `EpisodeRead.still_url` (v2 season and wide episode rows use it, series art as fallback) and `LibraryItemRead.network_name` / `network_logo_url` (v2 Coming up marks read the row; the detail fetch stays for older servers) and the v2 Library Service chip + network filter (branch `feat/v2-library-networks`). Nothing open |
 | 0.4.236 | synced to **v0.4.236** (`0322d9b6`, 2026-11-02): spec and palettes re-pinned, `/search/unified`, file probe facts, stalled at 100%; see the 0.4.236 section (branch `api-0436`) |
 | Manual Import / held 0.4.234–0.4.235 | synced to **v0.4.235** (`7f4b1b2c`, 2026-11-01), spec re-pinned; see the 0.4.234–0.4.235 section (branch `api-0435`) |
@@ -29,7 +30,8 @@ instead of from scratch.
 Since 0.4.201 releases are tagged `v0.4.N`; `frontend/openapi.json` at the tag
 is the spec.
 
-`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.237`** (`473dd68b`;
+`Packages/FusionhaKit/openapi.json` is pinned at **`v0.4.240`** (`c73627e5`, 2026-11-07,
+for the bulk episode monitor; before that `v0.4.238`; before that `v0.4.237` (`473dd68b`;
 re-pinned 2026-11-02 for requests phase 10b slices 2–3, see the 0.4.237 section;
 before that `v0.4.236` (`0322d9b6`, 2026-11-02) for `/search/unified` and the file probe facts, see the 0.4.236
 section; before that `v0.4.235` (`7f4b1b2c`, 2026-11-01) for `held_target`; before that
