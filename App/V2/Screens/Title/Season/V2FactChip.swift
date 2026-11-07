@@ -20,9 +20,9 @@ struct V2FactChip: View {
             .lineLimit(1)
             .fixedSize()
             .padding(.horizontal, 4.5 * scale)
-            .frame(height: TicketMetrics.height * scale)
+            .frame(height: MediaBadgeMetrics.height * scale)
             .overlay {
-                RoundedRectangle(cornerRadius: TicketMetrics.radius * scale, style: .circular)
+                RoundedRectangle(cornerRadius: MediaBadgeMetrics.radius * scale, style: .continuous)
                     .strokeBorder(tone, lineWidth: 1)
             }
             .accessibilityElement(children: .ignore)
@@ -42,7 +42,7 @@ struct V2FactTierLabel: View {
             .font(.system(size: 9.5 * scale, weight: .bold))
             .foregroundStyle((inkOverride ?? .page).secondary)
             .fixedSize()
-            .frame(height: TicketMetrics.height * scale)
+            .frame(height: MediaBadgeMetrics.height * scale)
             .accessibilityHidden(true)
     }
 }

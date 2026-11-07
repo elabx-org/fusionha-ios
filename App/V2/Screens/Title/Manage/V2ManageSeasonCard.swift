@@ -73,9 +73,9 @@ struct V2ManageFactChip: View {
             .lineLimit(1)
             .fixedSize()
             .padding(.horizontal, 4.5 * scale)
-            .frame(height: TicketMetrics.height * scale)
+            .frame(height: MediaBadgeMetrics.height * scale)
             .overlay {
-                RoundedRectangle(cornerRadius: TicketMetrics.radius * scale, style: .circular)
+                RoundedRectangle(cornerRadius: MediaBadgeMetrics.radius * scale, style: .continuous)
                     .strokeBorder(fact.differs ? ink.held : ink.secondary, lineWidth: 1)
             }
             .accessibilityHidden(true)

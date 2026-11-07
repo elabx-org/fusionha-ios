@@ -92,7 +92,7 @@ struct V2EpisodeFactsLine<Leading: View>: View {
             .foregroundStyle((inkOverride ?? .page).secondary)
             .lineLimit(1)
             .fixedSize()
-            .frame(height: TicketMetrics.height * scale)
+            .frame(height: MediaBadgeMetrics.height * scale)
         if let onFile, let first = parts.first {
             Button { onFile(first) } label: { text }
                 .buttonStyle(.borderless)
