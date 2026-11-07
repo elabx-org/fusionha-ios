@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// v2's Badge gallery (plan S2): every badge, ticket pair and rail state on
+/// v2's Badge gallery (plan S2): every media badge, HD/4K pair and rail state on
 /// every palette (Daylight included), at the default text size and at a
 /// large Dynamic Type size, plus the joined ⇄ apart animation. Each palette
 /// card draws in that palette's own tokens, whichever palette is active.
@@ -54,14 +54,14 @@ struct BadgeGalleryView: View {
                       systemImage: "paintpalette")
             }
             .buttonStyle(.glass)
-            Text("Filled = on disk · outline = missing · ring = downloading · orange \u{201C}!\u{201D} = held. HD and 4K plug together only when they say the same thing.")
+            Text("Solid = on disk · outline = missing · accent fill = downloading, left to right · orange \u{201C}!\u{201D} = held. HD and 4K sit together only when they say the same thing.")
                 .font(.footnote)
                 .foregroundStyle(Theme.mut)
         }
     }
 }
 
-/// Tap to step a pair through joined and apart states (`.snappy`, or no
+/// Tap to step a pair through joined and apart states (`.smooth`, or no
 /// motion with Reduce Motion on).
 private struct BadgeGalleryAnimationDemo: View {
     @State private var step = 0

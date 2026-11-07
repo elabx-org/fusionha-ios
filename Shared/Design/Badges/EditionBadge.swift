@@ -1,8 +1,8 @@
 import SwiftUI
 import FusionhaKit
 
-/// One version's v2 badge (A1 monochrome): an 18pt piece (23 with "!"),
-/// then the ring while it downloads or the quiet "n/m" while it is partly
+/// One version's v2 media badge (option A, owner 2026-11-06): a 25pt
+/// rounded rectangle (30 when held), then the quiet "n/m" while it is partly
 /// on disk. For a title with both versions use `EditionTicketPair`.
 struct EditionBadge: View {
     let tier: QualityTier
@@ -15,8 +15,7 @@ struct EditionBadge: View {
     var body: some View {
         let ink = inkOverride ?? .page
         HStack(spacing: 0) {
-            TicketPieceView(side: nil, letters: tier.badgeLetters, state: state,
-                            width: TicketMetrics.width(held: state.isHeld), scale: scale, ink: ink)
+            MediaBadgeView(letters: tier.badgeLetters, state: state, scale: scale, ink: ink)
             BadgeAccessory(state: state, showsCount: showsCount, scale: scale, ink: ink)
         }
         .accessibilityElement(children: .ignore)
@@ -24,8 +23,8 @@ struct EditionBadge: View {
     }
 }
 
-/// What sits beside a piece: the download ring (2pt in, the mock's -1 margin
-/// on a 3pt gap) or the "n/m" count (4pt in). Nothing for the other states.
+/// What sits beside a badge: the "n/m" count of a partly owned version.
+/// Downloading shows its progress inside the badge, so nothing else does.
 struct BadgeAccessory: View {
     let state: EditionBadgeState
     var showsCount = true
@@ -33,11 +32,7 @@ struct BadgeAccessory: View {
     let ink: BadgeInk
 
     var body: some View {
-        if case let .downloading(progress) = state {
-            DownloadRing(progress: progress, scale: scale)
-                .badgeInk(ink)
-                .padding(.leading, (TicketMetrics.itemGap - 1) * scale)
-        } else if showsCount, let count = state.count {
+        if showsCount, let count = state.count {
             Text(verbatim: count)
                 .font(.system(size: 10 * scale, weight: .semibold))
                 .tracking(-0.2 * scale)
@@ -45,12 +40,12 @@ struct BadgeAccessory: View {
                 .foregroundStyle(ink.secondary)
                 .lineLimit(1)
                 .fixedSize()
-                .padding(.leading, (TicketMetrics.itemGap + 1) * scale)
+                .padding(.leading, MediaBadgeMetrics.itemGap * scale)
         }
     }
 
     /// Whether anything is drawn (the pair's spacing depends on it).
     static func isEmpty(_ state: EditionBadgeState, showsCount: Bool) -> Bool {
-        !state.showsRing && !(showsCount && state.count != nil)
+        !(showsCount && state.count != nil)
     }
 }

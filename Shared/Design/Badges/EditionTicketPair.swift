@@ -1,12 +1,12 @@
 import SwiftUI
 import FusionhaKit
 
-/// A title's HD and 4K badges as the two halves of one T5 ticket (owner
-/// 2026-11-04). When both halves draw the same and carry nothing beside
-/// them (both filled, or both outlined, with no ring, count or "!") they plug together with a
-/// 2pt gap; otherwise they sit apart, each with its ring or count, so the
-/// shape itself says "these differ". The change animates (`.snappy`)
-/// unless Reduce Motion is on. A title with one version shows one badge.
+/// A title's HD and 4K media badges side by side (owner 2026-11-06). When
+/// both say the same thing with nothing beside them (both on disk, both
+/// missing, both downloading or both held) they sit 1pt apart and read as
+/// one mark; otherwise 4pt apart, each with its count, so the gap itself
+/// says "these differ". Changes animate (`.smooth`) unless Reduce Motion is
+/// on. A title with one version shows one badge.
 struct EditionTicketPair: View {
     var hd: EditionBadgeState?
     var uhd: EditionBadgeState?
@@ -35,40 +35,30 @@ struct EditionTicketPair: View {
 
     private func pair(_ a: EditionBadgeState, _ b: EditionBadgeState) -> some View {
         let ink = inkOverride ?? .page
-        // Joined when both halves draw alike with nothing beside them (the
-        // mock's rule): with counts hidden, partial and on disk look the same.
-        let joined = !a.isHeld && !b.isHeld && a.isFilled == b.isFilled
+        let joined = Self.look(a) == Self.look(b)
             && BadgeAccessory.isEmpty(a, showsCount: showsCount)
             && BadgeAccessory.isEmpty(b, showsCount: showsCount)
-        let m = TicketMetrics.self
-        // Joined: body, 2pt gap, body. Apart: the left half keeps room for
-        // its scallops, then the row gap, 2pt more, and the right half's own
-        // offset (seam to seam 1.2 + 3 + 2 + 1 with nothing between).
-        let afterLeft = joined ? m.joinedGap : m.leftOverhang
-        let beforeRight = joined ? 0 : m.itemGap + m.apartExtra + m.rightOverhang
+        let gap = joined ? MediaBadgeMetrics.joinedGap : MediaBadgeMetrics.apartGap
         return HStack(spacing: 0) {
-            TicketPieceView(side: .left, letters: QualityTier.hd.badgeLetters, state: a,
-                            width: m.width(held: a.isHeld) + m.leftExtra, scale: scale, ink: ink)
-            Color.clear.frame(width: snap(afterLeft))
-            if !joined {
-                BadgeAccessory(state: a, showsCount: showsCount, scale: scale, ink: ink)
-                    .transition(.opacity)
-            }
-            Color.clear.frame(width: snap(beforeRight))
-            TicketPieceView(side: .right, letters: QualityTier.uhd.badgeLetters, state: b,
-                            width: m.width(held: b.isHeld) + m.rightExtra, scale: scale, ink: ink)
-            if !joined {
-                BadgeAccessory(state: b, showsCount: showsCount, scale: scale, ink: ink)
-                    .transition(.opacity)
-            }
+            MediaBadgeView(letters: QualityTier.hd.badgeLetters, state: a, scale: scale, ink: ink)
+            BadgeAccessory(state: a, showsCount: showsCount, scale: scale, ink: ink)
+            Color.clear.frame(width: MediaBadgeMetrics.snap(gap * scale, displayScale))
+            MediaBadgeView(letters: QualityTier.uhd.badgeLetters, state: b, scale: scale, ink: ink)
+            BadgeAccessory(state: b, showsCount: showsCount, scale: scale, ink: ink)
         }
-        .frame(height: m.height * scale)
-        .animation(reduceMotion ? nil : .snappy, value: joined)
-        .animation(reduceMotion ? nil : .snappy, value: a)
-        .animation(reduceMotion ? nil : .snappy, value: b)
+        .animation(reduceMotion ? nil : .smooth, value: joined)
+        .animation(reduceMotion ? nil : .smooth, value: a)
+        .animation(reduceMotion ? nil : .smooth, value: b)
     }
 
-    private func snap(_ points: CGFloat) -> CGFloat {
-        TicketMetrics.snap(points * scale, displayScale)
+    /// How a badge draws, ignoring progress and counts: solid, outline,
+    /// filling or held.
+    private static func look(_ s: EditionBadgeState) -> Int {
+        switch s {
+        case .onDisk, .partial: return 0
+        case .missing: return 1
+        case .downloading: return 2
+        case .held: return 3
+        }
     }
 }
