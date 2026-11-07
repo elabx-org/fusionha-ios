@@ -76,8 +76,14 @@ struct V2HomeView: View {
         .spreadSpansBothPages(.library, !showsAllTitles || density != "compact")
         .navigationDestination(isPresented: $showsAllTitles) { V2LibraryView(entry: $entry) }
         .onChange(of: showsAllTitles) { _, shown in allTitlesKept = shown }
+        // Restores All titles on relaunch and when a fold rebuilds the shell
+        // (a new Home whose push state starts false).
         .task {
-            if allTitlesKept && !showsAllTitles && !Self.freshForScreenshots { await push(nil) }
+            if Self.freshForScreenshots && !Self.screenshotReset {
+                Self.screenshotReset = true
+                allTitlesKept = false
+            }
+            if allTitlesKept && !showsAllTitles { await push(nil) }
         }
         .task { await model.loadLibraryIfNeeded() }
         .onQueueChange(model, initial: true) { queue in
@@ -90,14 +96,19 @@ struct V2HomeView: View {
         // Routes that open the Library land in All titles. At launch the
         // push waits for the first library load (up to 3 s): pushed while
         // it was loading, the stack stalled on Home (CI, small library).
+        // The route is consumed only once the push lands: a fold that
+        // rebuilds the shell mid-wait leaves it for the new Home.
         .task(id: model.pendingAllTitles) {
             guard model.pendingAllTitles else { return }
+            var waited = false
             for _ in 0..<30 where !model.libraryLoaded {
+                waited = true
                 try? await Task.sleep(for: .milliseconds(100))
             }
+            // Let Home lay out the loaded library before the push.
+            if waited { try? await Task.sleep(for: .milliseconds(600)) }
             guard !Task.isCancelled, model.pendingAllTitles else { return }
-            model.pendingAllTitles = false
-            await push(.asLeft)
+            if await push(.asLeft) { model.pendingAllTitles = false }
         }
     }
 
@@ -114,10 +125,18 @@ struct V2HomeView: View {
         #endif
     }
 
-    private func push(_ how: V2AllTitlesEntry?) async {
+    /// Once per launch, screenshots forget a kept All titles (each shot
+    /// starts on Home unless it asks for All titles).
+    @MainActor private static var screenshotReset = false
+
+    /// False when this Home went away before the push (nothing was set).
+    @discardableResult
+    private func push(_ how: V2AllTitlesEntry?) async -> Bool {
         try? await Task.sleep(for: .milliseconds(80))
+        guard !Task.isCancelled else { return false }
         if let how { entry = how }
         showsAllTitles = true
+        return true
     }
 
     private struct DataKey: Equatable {
