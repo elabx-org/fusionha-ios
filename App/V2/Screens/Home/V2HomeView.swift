@@ -17,9 +17,6 @@ struct V2HomeView: View {
     @AppStorage("fusionha.library.density") private var density = "grid"
     /// All titles was open in this window (restored on relaunch).
     @SceneStorage("v2.home.allTitles") private var allTitlesKept = false
-    /// The push itself, set a beat after Home is up: a destination
-    /// presented in the stack's first pass came up blank (CI, build 1).
-    @State private var showsAllTitles = false
     @State private var entry: V2AllTitlesEntry?
     @State private var data = V2HomeData()
     /// Titles with a held download in the queue (read only when it changes).
@@ -54,7 +51,7 @@ struct V2HomeView: View {
             } action: { old, new in
                 // Under All titles, Home stays mounted: only the page on top
                 // drives the chrome, or the two scroll views fight over it.
-                guard !showsAllTitles else { return }
+                guard !model.allTitlesShown else { return }
                 model.updateChrome(old: old, new: new)
             }
             .onChange(of: model.scrollToTopTick) {
@@ -76,15 +73,15 @@ struct V2HomeView: View {
         // Wide, the page draws "Home" itself (`V2HomeContent.heading`).
         .shellPage(width >= 700 ? "" : "Home") { AddTitleToolbarItem(model: model) }
         // Home spans both pages of a Spread; All titles keeps the grid's rule.
-        .spreadSpansBothPages(.library, !showsAllTitles || density != "compact")
-        .navigationDestination(isPresented: $showsAllTitles) { V2LibraryView(entry: $entry) }
-        .onChange(of: showsAllTitles) { _, shown in allTitlesKept = shown }
+        .spreadSpansBothPages(.library, !model.allTitlesShown || density != "compact")
+        .navigationDestination(isPresented: allTitlesBinding) { V2LibraryView(entry: $entry) }
+        .onChange(of: model.allTitlesShown) { _, shown in allTitlesKept = shown }
         // Home on screen while the push is set: the tab's stack was rebuilt
         // under it (the shell settling at launch, a fold) and dropped All
         // titles. Push it again. A pop clears the flag before Home appears.
         .onAppear {
-            guard showsAllTitles else { return }
-            showsAllTitles = false
+            guard model.allTitlesShown else { return }
+            model.allTitlesShown = false
             Task { await push(nil, animated: false) }
         }
         // Restores All titles on relaunch and when a fold rebuilds the shell
@@ -94,7 +91,7 @@ struct V2HomeView: View {
                 Self.screenshotReset = true
                 allTitlesKept = false
             }
-            if allTitlesKept && !showsAllTitles { await push(nil, animated: false) }
+            if allTitlesKept && !model.allTitlesShown { await push(nil, animated: false) }
         }
         .task { await model.loadLibraryIfNeeded() }
         .onQueueChange(model, initial: true) { queue in
@@ -121,6 +118,13 @@ struct V2HomeView: View {
             guard !Task.isCancelled, model.pendingAllTitles else { return }
             if await push(.asLeft, animated: false) { model.pendingAllTitles = false }
         }
+    }
+
+    /// The push lives on the window's model (`AppModel.allTitlesShown`),
+    /// set a beat after Home is up: a destination presented in the stack's
+    /// first pass came up blank (CI, build 1).
+    private var allTitlesBinding: Binding<Bool> {
+        Binding { model.allTitlesShown } set: { model.allTitlesShown = $0 }
     }
 
     private func openAllTitles(_ how: V2AllTitlesEntry) {
@@ -154,7 +158,7 @@ struct V2HomeView: View {
         allTitlesKept = true
         var transaction = Transaction()
         transaction.disablesAnimations = !animated
-        withTransaction(transaction) { showsAllTitles = true }
+        withTransaction(transaction) { model.allTitlesShown = true }
         return true
     }
 

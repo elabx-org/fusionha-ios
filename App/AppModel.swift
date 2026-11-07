@@ -81,6 +81,10 @@ final class AppModel {
     /// v2: a route that opens the Library or filters it lands in All titles
     /// (pushed over Home); Home takes and clears it. v1 has no Home.
     var pendingAllTitles = false
+    /// v2: All titles is pushed over Home in this window. Per window, not
+    /// per view: the shell can rebuild Home (settling at launch, a fold) and
+    /// the new one must see the push the old one made.
+    var allTitlesShown = false
     var showingAdd = false
     /// The Account sheet (avatar menu → Account), owned by AccountView.swift.
     var showingAccount = false

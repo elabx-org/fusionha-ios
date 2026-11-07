@@ -62,6 +62,7 @@ extension AppModel {
     func resetUI() {
         searchText = ""
         tab = .library
+        allTitlesShown = false
         selectMode = false
         selection = []
     }
