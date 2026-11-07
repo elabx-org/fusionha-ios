@@ -77,8 +77,11 @@ struct V2HomeView: View {
         .shellPage(width >= 700 ? "" : "Home") { AddTitleToolbarItem(model: model) }
         // Home spans both pages of a Spread; All titles keeps the grid's rule.
         .spreadSpansBothPages(.library, !model.allTitlesShown || density != "compact")
-        .navigationDestination(isPresented: allTitlesBinding) { V2LibraryView(entry: $entry) }
-        .onChange(of: model.allTitlesShown) { _, shown in allTitlesKept = shown }
+        .navigationDestination(isPresented: allTitlesBinding) { V2LibraryView(entry: entry) }
+        .onChange(of: model.allTitlesShown) { _, shown in
+            allTitlesKept = shown
+            if !shown { entry = nil }
+        }
         // Home on screen while the push is set: the tab's stack was rebuilt
         // under it (the shell settling at launch, a fold) and dropped All
         // titles. Push it again. A pop clears the flag before Home appears.

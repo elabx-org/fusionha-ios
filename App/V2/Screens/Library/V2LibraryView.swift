@@ -17,7 +17,9 @@ import FusionhaKit
 /// the grid simply widens across the seamless display; book pose keeps the
 /// fold in a gutter.
 struct V2LibraryView: View {
-    @Binding var entry: V2AllTitlesEntry?
+    /// Read once, never written back: writing Home's state from inside
+    /// the push that presents this page hung SwiftUI (CI, Home builds).
+    let entry: V2AllTitlesEntry?
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @Environment(\.spread) private var spread
@@ -142,7 +144,6 @@ struct V2LibraryView: View {
         .onChange(of: entry, initial: true) { _, how in
             guard let how else { return }
             apply(how)
-            entry = nil
         }
         .onChange(of: derived.visibleIds, initial: true) { _, ids in model.duoGestures.libraryOrder = ids }
         .onDisappear { model.allTitlesOnScreen = false }
