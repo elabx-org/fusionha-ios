@@ -145,7 +145,9 @@ struct V2LibraryView: View {
             entry = nil
         }
         .onChange(of: derived.visibleIds, initial: true) { _, ids in model.duoGestures.libraryOrder = ids }
+        .onDisappear { model.allTitlesOnScreen = false }
         .onAppear {
+            model.allTitlesOnScreen = true
             let gestures = model.duoGestures
             scrubber.onVisibility = { [weak gestures] shown in gestures?.edgeBusy = shown }
         }

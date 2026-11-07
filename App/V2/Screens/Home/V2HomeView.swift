@@ -104,19 +104,23 @@ struct V2HomeView: View {
         // Routes that open the Library land in All titles. At launch the
         // push waits for the first library load (up to 3 s): pushed while
         // it was loading, the stack stalled on Home (CI, small library).
-        // The route is consumed only once the push lands: a fold that
-        // rebuilds the shell mid-wait leaves it for the new Home.
+        // The push is checked, not trusted: the shell can rebuild the stack
+        // under it while it settles at launch, so it is pushed again until
+        // All titles is on screen (five tries a second apart). The route is
+        // consumed only then: a Home torn down mid-way leaves it for the next.
         .task(id: model.pendingAllTitles) {
             guard model.pendingAllTitles else { return }
-            var waited = false
             for _ in 0..<30 where !model.libraryLoaded {
-                waited = true
                 try? await Task.sleep(for: .milliseconds(100))
             }
-            // Let Home lay out the loaded library before the push.
-            if waited { try? await Task.sleep(for: .milliseconds(600)) }
-            guard !Task.isCancelled, model.pendingAllTitles else { return }
-            if await push(.asLeft, animated: false) { model.pendingAllTitles = false }
+            for _ in 0..<5 where !model.allTitlesOnScreen {
+                guard !Task.isCancelled, model.pendingAllTitles else { return }
+                model.allTitlesShown = false
+                guard await push(.asLeft, animated: false) else { return }
+                try? await Task.sleep(for: .seconds(1))
+            }
+            guard !Task.isCancelled else { return }
+            model.pendingAllTitles = false
         }
     }
 
