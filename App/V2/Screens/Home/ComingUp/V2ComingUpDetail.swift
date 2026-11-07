@@ -2,7 +2,7 @@ import SwiftUI
 import FusionhaKit
 
 /// Wide Home: the focused Coming up title beside the carousel (Home mock,
-/// open): when, the title, what is coming, its HD/4K tickets, then Open
+/// open): when, the title, what is coming (led by the network mark), its HD/4K tickets, then Open
 /// (the primary action, in the accent) and Calendar. Follows the swipe.
 struct V2ComingUpDetail: View {
     let card: V2ComingUpCard
@@ -22,10 +22,12 @@ struct V2ComingUpDetail: View {
                 .foregroundStyle(page?.ink ?? Theme.txt)
                 .lineLimit(3)
                 .minimumScaleFactor(0.7)
-            Text(card.what)
-                .font(.system(size: 17))
-                .foregroundStyle(page?.inkMuted ?? Theme.mut)
-                .lineLimit(1)
+            V2ItemMarkLine(item: card.item, spacing: 8) {
+                Text(card.what)
+                    .font(.system(size: 17))
+                    .foregroundStyle(page?.inkMuted ?? Theme.mut)
+                    .lineLimit(1)
+            }
             V2ItemTickets(item: card.item)
             GlassEffectContainer(spacing: 10) {
                 HStack(spacing: 10) {

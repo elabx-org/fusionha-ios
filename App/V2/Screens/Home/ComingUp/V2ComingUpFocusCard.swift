@@ -2,8 +2,9 @@ import SwiftUI
 import FusionhaKit
 
 /// One Coming up card: the clean 2:3 poster (nothing on the art) and, under
-/// it, the title, the reason ("Digital · Sun") and the HD/4K tickets, which
-/// fade in only as the card reaches the centre. Content, not glass.
+/// it, the title, the reason ("Digital · Sun") led by the network mark and
+/// the HD/4K tickets, which fade in only as the card reaches the centre.
+/// Content, not glass.
 struct V2ComingUpFocusCard: View {
     let card: V2ComingUpCard
     let width: CGFloat
@@ -43,9 +44,11 @@ struct V2ComingUpFocusCard: View {
                 .font(.system(size: 17, weight: .semibold))
                 .tracking(-0.2)
                 .foregroundStyle(page?.ink ?? Theme.txt)
-            Text(card.reason)
-                .font(.system(size: 14))
-                .foregroundStyle(page?.inkMuted ?? Theme.mut)
+            V2ItemMarkLine(item: card.item, spacing: 6) {
+                Text(card.reason)
+                    .font(.system(size: 14))
+                    .foregroundStyle(page?.inkMuted ?? Theme.mut)
+            }
             V2ItemTickets(item: card.item)
                 .padding(.top, 4)
         }
