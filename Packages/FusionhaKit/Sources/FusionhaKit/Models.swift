@@ -204,7 +204,7 @@ public struct QueueItem: Decodable, Sendable, Identifiable, Hashable {
     /// The download client's time left (0.4.216); nil when it doesn't know.
     public let etaSeconds: Int?
 
-    public var fraction: Double { min(max(progress / 100, 0), 1) }
+    public var fraction: Double { doneFraction }
 }
 
 // MARK: - Library  (GET /api/v1/library)

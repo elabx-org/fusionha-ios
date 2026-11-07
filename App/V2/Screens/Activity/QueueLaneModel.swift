@@ -50,8 +50,11 @@ struct QueueLaneModel: Equatable {
             amount = nil
             bar = Bar.none
         case .importing:
+            // Downloaded, and the import poll hasn't picked it up yet: the
+            // same Importing section and full badge, without claiming the
+            // import already runs.
             badge = .downloading(progress: 1)
-            label = "Importing into your library"
+            label = item.rowState == .awaitingImport ? "Downloaded · waiting to import" : "Importing into your library"
             amount = nil
             bar = Bar.none
         case .phase:

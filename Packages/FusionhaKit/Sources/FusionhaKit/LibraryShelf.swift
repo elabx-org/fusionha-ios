@@ -80,8 +80,7 @@ public struct QueueProgress: Equatable, Sendable {
     }
 
     public init(_ q: QueueItem) {
-        let pct = q.size > 0 ? (q.size - q.sizeleft) / q.size * 100 : q.progress
-        percent = min(100, max(0, Int(pct.rounded())))
+        percent = q.percentDone
         held = q.heldReason != nil || q.heldDetail != nil || q.held != nil
     }
 }

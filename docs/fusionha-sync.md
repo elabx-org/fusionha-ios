@@ -791,6 +791,18 @@ Still open from 0.4.187:
 - Live Activity pushes (push-to-start and throttled progress updates) and the
   pause/resume endpoints the Live Activity's Pause button needs. Until then the
   activity only updates while the app runs, and shows "updated … ago" when stale.
+- **Queue state on the stored-state `/api/v1/queue`** (found 2026-11-07, at
+  `c73627e5`). `_list_queue_sync` serves `Download.status`, and nothing on the
+  server moves a row from `QUEUED` to `DOWNLOADING` or `COMPLETED`, so every
+  in-flight row reads `status: "queued"`; `sizeleft` is always 0.0 there. The
+  web's `queueCardGroup` therefore puts byte downloads in Up next ("Queued"),
+  and `queueProgressPct` reads any sized row as 100%. iOS works around both
+  in `QueueItem.rowState` / `doneFraction` (FusionhaKit `QueueRowState.swift`):
+  progress > 0 is downloading, 100% without the import marker is "Downloaded ·
+  waiting to import" under Importing, and the percent comes from `progress`
+  when `sizeleft` is missing. Ask: persist the live status (or a
+  `downloaded` flag) and `sizeleft` with the import poll, and the web can
+  drop the same guesses.
 
 ## Asks for fusionha
 

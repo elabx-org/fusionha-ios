@@ -25,10 +25,13 @@ extension QueueItem {
         let s = status.lowercased()
         if s == "held" { return .held }
         if needsAttention == true { return .stuck }
+        switch rowState {
+        case .importing, .awaitingImport: return .importing
+        default: break
+        }
         if stalled { return .stalled }
-        if s == "completed" { return .importing }
         if warning != nil { return .awaiting }
-        if ["queued", "delay", "pending", "paused"].contains(s) { return .queued }
+        if ["queued", "delay", "pending", "paused"].contains(s), !hasStarted { return .queued }
         return .downloading
     }
 
@@ -60,14 +63,11 @@ extension QueueItem {
         return .working
     }
 
-    var pct: Int {
-        let value: Double
-        if size > 0 { value = (1 - sizeleft / size) * 100 } else { value = progress <= 1 ? progress * 100 : progress }
-        guard value.isFinite else { return 0 }
-        return Int(min(100, max(0, value.rounded())))
-    }
+    /// The shared figure (`QueueItem.percentDone`): never 100% just because
+    /// the stored-state queue sends no `sizeleft`.
+    var pct: Int { percentDone }
 
-    var bytesDone: Double { size > 0 ? max(0, size - sizeleft) : 0 }
+    var bytesDone: Double { size * doneFraction }
 
     var isByteTransferring: Bool {
         guard !isPhaseMode else { return false }
