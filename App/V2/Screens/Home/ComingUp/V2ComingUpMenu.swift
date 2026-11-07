@@ -1,11 +1,14 @@
 import SwiftUI
 
 /// The "Coming up" header's menu, a glass pill naming the preset ("Mix"):
-/// the presets, then the movie and series toggles, then the window. The
-/// toggles keep the menu open so several can change in one visit.
+/// the presets, then the movie and series toggles, then the window, and on
+/// the open Duo its look (Posters or Backdrops). The toggles keep the menu
+/// open so several can change in one visit.
 struct V2ComingUpMenu: View {
     @Binding var kindsRaw: String
     @Binding var days: Int
+    /// The open Duo's look (`V2ComingUpWideStyle`); nil leaves the section out.
+    var wideStyle: Binding<String>?
     @Environment(\.pagePalette) private var page
 
     private var kinds: Set<V2ComingUpKind> { V2ComingUpSettings.decode(kindsRaw) }
@@ -31,6 +34,12 @@ struct V2ComingUpMenu: View {
                 }
             }
             .pickerStyle(.inline)
+            if let wideStyle {
+                Picker("Open Duo", selection: wideStyle) {
+                    ForEach(V2ComingUpWideStyle.allCases) { Text($0.title).tag($0.rawValue) }
+                }
+                .pickerStyle(.inline)
+            }
         } label: {
             HStack(spacing: 5) {
                 Text(preset?.title ?? "Custom")

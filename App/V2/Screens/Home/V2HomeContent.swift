@@ -5,8 +5,9 @@ import FusionhaKit
 /// the counts line, Needs you, Coming up, Recently added, a row per kind
 /// and the All titles card. Narrow (the phone, the folded Duo, a list
 /// pane) everything stacks; wide (700 and up: the open Duo, an iPad) the
-/// counts sit beside Needs you, the carousel beside its detail, Recently
-/// added is the zipper and the kinds are side-by-side columns.
+/// counts sit beside Needs you as one line (`V2NeedsYouLine`), Coming up
+/// spans the page (`V2ComingUpRow`), Recently added is the zipper and the
+/// kinds are side-by-side columns.
 struct V2HomeContent: View {
     let data: V2HomeData
     let held: Set<Int>
@@ -73,7 +74,8 @@ struct V2HomeContent: View {
             V2HomePair {
                 heading
             } trailing: {
-                attention
+                V2NeedsYouLine(items: data.attention, held: held) { open(.needsYou) }
+                    .frame(maxWidth: .infinity, alignment: .topTrailing)
             }
             .padding(.top, 8)
             V2ComingUpRow(width: width, gutter: gutter, wide: true, topGap: 22, leadArt: $comingUpArt)

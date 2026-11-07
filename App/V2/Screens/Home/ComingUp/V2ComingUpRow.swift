@@ -4,8 +4,11 @@ import FusionhaKit
 /// Home's "Coming up" (owner-approved Home mock, 2026-11-06): the header with
 /// the preset menu (`V2ComingUpMenu`, "Mix"), then the centre-focus carousel
 /// (`V2ComingUpCarousel`) of library titles with a release or airing in the
-/// window. Wide (a page of 700 or more) the carousel takes the left column
-/// and the focused title's detail the right (`V2ComingUpDetail`). The
+/// window. Wide and flat (a page of 700 or more: the open Duo, an iPad)
+/// Coming up is the page's hero across its whole width
+/// (`V2ComingUpWideCarousel`, Posters or Backdrops by `V2ComingUpWideStyle`).
+/// In book pose it keeps the split at the fold: the carousel on the left
+/// page, the focused title's detail on the right (`V2ComingUpDetail`). The
 /// calendar feed is read here (cached first, then every ten minutes); with
 /// nothing in the window the row hides (Recently added sits right under it).
 struct V2ComingUpRow: View {
@@ -20,12 +23,16 @@ struct V2ComingUpRow: View {
     @Environment(AppModel.self) private var model
     @Environment(\.pagePalette) private var page
     @Environment(\.motionEnabled) private var motion
+    @Environment(\.bookPose) private var bookPose
+    @AppStorage(V2ComingUpWideStyle.key) private var wideRaw = V2ComingUpWideStyle.posters.rawValue
     @AppStorage(V2ComingUpSettings.kindsKey) private var kindsRaw = V2ComingUpSettings.defaultKinds
     @AppStorage(V2ComingUpSettings.daysKey) private var days = V2ComingUpSettings.defaultDays
     @State private var entries: [CalendarEntry]?
     @State private var cards: [V2ComingUpCard] = []
     @State private var focused: Int?
 
+    /// Wide and flat (one panel): Coming up spans the page.
+    private var hero: Bool { wide && !bookPose }
     private var window: Int { V2ComingUpSettings.window(days) }
     private var current: V2ComingUpCard? { cards.first { $0.id == focused } ?? cards.first }
 
@@ -33,7 +40,14 @@ struct V2ComingUpRow: View {
         // A real container even while empty: its feed task must still run.
         VStack(alignment: .leading, spacing: 0) {
             if !cards.isEmpty {
-                if wide {
+                if hero {
+                    VStack(alignment: .leading, spacing: 4) {
+                        header
+                        V2ComingUpWideCarousel(cards: cards, style: V2ComingUpWideStyle(stored: wideRaw),
+                                               focused: $focused)
+                    }
+                    .padding(.top, topGap)
+                } else if wide {
                     V2HomePair {
                         VStack(alignment: .leading, spacing: 4) {
                             header
@@ -72,7 +86,7 @@ struct V2ComingUpRow: View {
                 .foregroundStyle(page?.ink ?? Theme.txt)
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 8)
-            V2ComingUpMenu(kindsRaw: $kindsRaw, days: $days)
+            V2ComingUpMenu(kindsRaw: $kindsRaw, days: $days, wideStyle: hero ? $wideRaw : nil)
         }
     }
 

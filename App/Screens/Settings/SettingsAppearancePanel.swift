@@ -50,6 +50,9 @@ struct AppearanceSettingsPanel: View {
             if tab == "theme" {
                 AppPaletteSection()
                 DuoOpenLayoutSection()
+                #if V2
+                V2ComingUpWideSection()
+                #endif
             }
             if store.loaded {
                 Group {
