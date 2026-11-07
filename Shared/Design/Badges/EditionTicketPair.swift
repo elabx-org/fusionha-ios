@@ -42,7 +42,9 @@ struct EditionTicketPair: View {
         return HStack(spacing: 0) {
             MediaBadgeView(letters: QualityTier.hd.badgeLetters, state: a, scale: scale, ink: ink)
             BadgeAccessory(state: a, showsCount: showsCount, scale: scale, ink: ink)
-            Color.clear.frame(width: MediaBadgeMetrics.snap(gap * scale, displayScale))
+            // A gap with no height of its own: a bare Color takes every point the
+            // row offers, which stretched the caption and shrank the poster.
+            Color.clear.frame(width: MediaBadgeMetrics.snap(gap * scale, displayScale), height: 0)
             MediaBadgeView(letters: QualityTier.uhd.badgeLetters, state: b, scale: scale, ink: ink)
             BadgeAccessory(state: b, showsCount: showsCount, scale: scale, ink: ink)
         }
