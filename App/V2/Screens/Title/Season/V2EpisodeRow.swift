@@ -6,10 +6,12 @@ import FusionhaKit
 /// series art; the number block when there is no art),
 /// the title, "E4 · 48m · Oct 20", two lines
 /// of overview, one T5 badge per version and the status circle on the title
-/// line. Episodes not out yet dim their lead. Content, not glass.
+/// line. Episodes not out yet dim their lead. Content, not glass. The
+/// badge line carries the file's fact chips and size (`V2EpisodeFactsLine`).
 struct V2EpisodeRow: View {
     @Environment(\.pagePalette) private var page
     @Environment(DetailStore.self) private var store
+    @Environment(AppModel.self) private var model
     let detail: ItemDetail
     let episode: Episode
     let state: V2EpisodeState
@@ -18,6 +20,10 @@ struct V2EpisodeRow: View {
     var stillURL: URL?
     /// Shorter rows (the open Duo's list beside an episode): no overview.
     var showsOverview = true
+    /// The season's file facts per version (`SeasonFileFacts.perVersion`).
+    var fileFacts: [SeasonVersionFileFacts] = []
+    /// Set: the chips open Release groups / the file's sheet in this season.
+    var factsSeason: Int?
 
     static let stillWidth: CGFloat = 112
 
@@ -52,7 +58,9 @@ struct V2EpisodeRow: View {
                     .foregroundStyle(muted)
                     .padding(.top, 1)
                 if showsOverview { overview }
-                HStack(spacing: 5) {
+                V2EpisodeFactsLine(parts: facts, labelsTiers: fileFacts.count > 1,
+                                   onGroup: factsSeason != nil && model.mayBlockGroups ? openGroups : nil,
+                                   onFile: factsSeason != nil ? openFile : nil) {
                     ForEach(state.badges.indices, id: \.self) { i in
                         EditionBadge(tier: state.badges[i].tier, state: state.badges[i].state)
                     }
@@ -77,7 +85,27 @@ struct V2EpisodeRow: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(spokenLabel)
+        .accessibilityActions { factsActions }
         .v2SearchHaptics(search)
+    }
+
+    private var facts: [V2EpisodeFactsPart] { V2EpisodeFactsPart.parts(episode, versions: fileFacts) }
+
+    private func openFile(_ part: V2EpisodeFactsPart) {
+        guard let factsSeason else { return }
+        store.fileSheet = EpisodeFileTarget(fileId: part.fileId, editionId: part.editionId, seasonNumber: factsSeason)
+    }
+
+    private func openGroups() { store.showingReleaseGroups = true }
+
+    @ViewBuilder
+    private var factsActions: some View {
+        if factsSeason != nil, let part = facts.first {
+            Button("Show file") { openFile(part) }
+            if model.mayBlockGroups, facts.contains(where: { $0.line.chips.contains { $0.kind == .group } }) {
+                Button("Release groups") { openGroups() }
+            }
+        }
     }
 
     @ViewBuilder
@@ -127,5 +155,11 @@ struct V2EpisodeRow: View {
         let badges = state.badges.map { "\($0.tier.badgeLetters) \($0.state.spoken)" }.joined(separator: ", ")
         return "\(V2EpisodeText.meta(episode, anime: detail.isAnime == true)), \(title). \(state.spoken). \(badges)"
             + (monitored ? "" : ". Not monitored") + (search.map { ". \($0.label)" } ?? "")
+            + factsSpoken
+    }
+
+    private var factsSpoken: String {
+        let line = V2EpisodeFactsPart.spoken(facts, labelsTiers: fileFacts.count > 1)
+        return line.isEmpty ? "" : ". \(line)"
     }
 }
