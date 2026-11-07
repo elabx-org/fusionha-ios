@@ -3,8 +3,9 @@ import FusionhaKit
 
 /// The sheets over a v2 title (slice S6b). The mock (browse-sheets.js)
 /// restyles Interactive search, the Grab anyway decision and Delete; those
-/// are v2's here. Edit, Add version and Manage files are already native
-/// forms in system sheets, the mock's look, so they stay v1's, as does
+/// are v2's here, as is Manage episodes (a series' files by season on the
+/// title's wash, `V2ManageEpisodesSheet`). Edit, Add version and a movie's
+/// Manage files are already native forms in system sheets, so they stay v1's, as does
 /// every other sheet (`DetailActionSheets`). The episode sheet never shows:
 /// v2 pushes the episode page instead (`v2TitleDestinations`).
 struct V2TitleSheets: ViewModifier {
@@ -45,8 +46,19 @@ struct V2TitleSheets: ViewModifier {
                         .presentationDetents([.medium, .large])
                 }
             }
+            .duoPageSheet(item: presenter.item(\.manageFiles)) { target in
+                if let detail = store.detail {
+                    if detail.isSeries {
+                        V2ManageEpisodesSheet(detail: detail, target: target)
+                            .environment(store)
+                    } else {
+                        ManageFilesSheet(detail: detail, target: target)
+                            .environment(store)
+                    }
+                }
+            }
             .modifier(V2TitleGroupSheets(presenter: presenter))
             .modifier(V2SearchScreenshot(store: presenter.store))
-            .modifier(DetailActionSheets(presenter: presenter, episodeInline: true))
+            .modifier(DetailActionSheets(presenter: presenter, episodeInline: true, ownsManageFiles: true))
     }
 }

@@ -55,6 +55,8 @@ struct DetailChildSheets: ViewModifier {
 struct DetailActionSheets: ViewModifier {
     let presenter: DetailPresenter
     let episodeInline: Bool
+    /// v2 presents Manage files / Manage episodes itself (`V2TitleSheets`).
+    var ownsManageFiles = false
     private var store: DetailStore { presenter.store }
 
     func body(content: Content) -> some View {
@@ -77,7 +79,7 @@ struct DetailActionSheets: ViewModifier {
                         .environment(store)
                 }
             }
-            .duoPageSheet(item: presenter.item(\.manageFiles)) { target in
+            .duoPageSheet(item: ownsManageFiles ? .constant(nil) : presenter.item(\.manageFiles)) { target in
                 if let detail = store.detail {
                     ManageFilesSheet(detail: detail, target: target)
                         .environment(store)
