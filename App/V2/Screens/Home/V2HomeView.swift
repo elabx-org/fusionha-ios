@@ -68,9 +68,6 @@ struct V2HomeView: View {
             #endif
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        #if DEBUG
-        .overlay(alignment: .center) { if V2HomeDebugReadout.enabled { V2HomeDebugReadout() } }
-        #endif
         .v2PageGround(art: besideArt ?? comingUpArt ?? data.groundArt, recipe: besideArt == nil ? .page : .listPane,
                       showsArt: besideArt == nil, artHeight: 760, artOpacity: .ambient)
         // Wide, the page draws "Home" itself (`V2HomeContent.heading`).
