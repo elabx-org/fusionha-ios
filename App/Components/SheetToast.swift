@@ -12,39 +12,29 @@ struct CalToast: Equatable, Identifiable {
     var isError = false
 }
 
-/// A bottom toast, like the web's `useToast`. Glass, since it is chrome.
+/// The sheet's toast, at the top of the sheet: the app's one glass toast.
 struct CalToastHost: ViewModifier {
     @Binding var toast: CalToast?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
-        content.overlay(alignment: .bottom) {
+        content.overlay(alignment: .top) {
             if let toast {
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: toast.isError ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
-                        .foregroundStyle(toast.isError ? Theme.danger : Theme.done)
-                    VStack(alignment: .leading, spacing: 2) {
-                        if let title = toast.title {
-                            Text(title).font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt)
-                        }
-                        Text(toast.message).font(.system(size: 13)).foregroundStyle(toast.title == nil ? Theme.txt : Theme.mut)
-                    }
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 11)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                GlassToastView(symbol: toast.isError ? GlassToastSymbol.error : GlassToastSymbol.success,
+                               tint: toast.isError ? Theme.danger : Theme.done,
+                               title: toast.title, message: toast.message,
+                               dismiss: { withAnimation(reduceMotion ? nil : .smooth) { self.toast = nil } })
+                .padding(.top, 12)
+                .transition(.glassToast(reduceMotion: reduceMotion))
                 .id(toast.id)
                 .task(id: toast.id) {
                     try? await Task.sleep(for: .seconds(3.2))
-                    withAnimation(.smooth) { self.toast = nil }
+                    guard !Task.isCancelled else { return }
+                    withAnimation(reduceMotion ? nil : .smooth) { self.toast = nil }
                 }
-                .onTapGesture { withAnimation(.smooth) { self.toast = nil } }
             }
         }
-        .animation(.smooth(duration: 0.25), value: toast)
+        .animation(reduceMotion ? nil : .smooth(duration: 0.25), value: toast)
     }
 }
 

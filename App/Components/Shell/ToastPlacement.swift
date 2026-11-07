@@ -2,75 +2,11 @@ import SwiftUI
 
 // MARK: - Where toasts sit (DC14)
 //
-// Folded, toasts float centred above the tab bar, as on the web. Whenever the
-// screen is split (the Duo half open in Book pose, or the web's wide list |
-// detail layout) they sit on the trailing side, never across the fold
-// (owner ruling; the HIG's Book-pose destination for alerts). The gap above
-// the tab bar is read from the tab's own safe area, not a constant.
-
-/// The top of the tab bar, published by the visible tab (`TabRoot`) so the
-/// shell's toasts can clear it.
-@Observable
-final class ToastAnchor {
-    /// The bottom of the visible tab's safe area (just above the tab bar), in
-    /// global coordinates. `nil` until a tab has been laid out.
-    var tabSafeBottom: CGFloat?
-    /// The tops of the bottom bars on screen (Library select, Activity bulk),
-    /// in global coordinates, by bar.
-    var barTops: [String: CGFloat] = [:]
-
-    /// The line toasts sit above: the highest of the tab bar and any visible
-    /// bottom bar.
-    var floor: CGFloat? {
-        ([tabSafeBottom].compactMap { $0 } + barTops.values).min()
-    }
-}
-
-extension View {
-    /// Publishes this tab's safe-area bottom (the tab bar's top) to the shell's toasts.
-    func publishesToastAnchor() -> some View {
-        modifier(ToastAnchorWriter())
-    }
-
-    /// Publishes this bottom bar's top to the shell's toasts while it is on
-    /// screen, so they float above it rather than over it.
-    func publishesBottomBarTop(_ id: String) -> some View {
-        modifier(BottomBarTopWriter(id: id))
-    }
-}
-
-private struct BottomBarTopWriter: ViewModifier {
-    @Environment(ToastAnchor.self) private var anchor: ToastAnchor?
-    let id: String
-
-    func body(content: Content) -> some View {
-        content
-            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY } action: { top in
-                if anchor?.barTops[id] != top { anchor?.barTops[id] = top }
-            }
-            .onDisappear { anchor?.barTops[id] = nil }
-            // A bulk bar: the downloads bar steps aside while it shows.
-            .publishesSelectBar(id)
-    }
-}
-
-private struct ToastAnchorWriter: ViewModifier {
-    @Environment(ToastAnchor.self) private var anchor: ToastAnchor?
-
-    func body(content: Content) -> some View {
-        content.background {
-            // The background is laid out inside the tab's safe area, so its
-            // bottom edge is already the tab bar's top. (`safeAreaInsets` still
-            // reports the bar's inset here; subtracting it again lifted toasts
-            // ~85pt too high in screenshot run 39365805012.)
-            Color.clear.onGeometryChange(for: CGFloat.self) { proxy in
-                proxy.frame(in: .global).maxY
-            } action: { bottom in
-                if anchor?.tabSafeBottom != bottom { anchor?.tabSafeBottom = bottom }
-            }
-        }
-    }
-}
+// Toasts sit at the top of the page they belong to (owner, 2026-11-07: at the
+// bottom they covered page actions such as Search). Whenever the screen is
+// split (the Duo half open in Book pose, or the web's wide list | detail
+// layout) they sit at the top of the trailing side, never across the fold
+// (owner ruling; the HIG's Book-pose destination for alerts).
 
 /// The part of a container toasts may use. `nil` means the whole container.
 enum ToastRegion {
@@ -109,40 +45,33 @@ enum ToastRegion {
     }
 }
 
-/// The toast viewport placed in `region` of its container, bottom-aligned,
-/// `gap` above the container's bottom safe area, or above `clearsAbove` (a
-/// global y, the tab bar's top) when given.
+/// The toast viewport placed in `region` of its container, top-aligned, `gap`
+/// below the container's top safe area.
 struct ToastLayer: View {
     var region: CGRect?
-    var clearsAbove: CGFloat?
-    var gap: CGFloat = 12
-    @State private var containerBottom: CGFloat = 0
+    var gap: CGFloat = 8
 
     var body: some View {
-        let lift = clearsAbove.map { max(containerBottom - $0, 0) } ?? 0
         ToastHost()
-            .padding(.bottom, lift + gap)
+            .padding(.top, gap)
             .frame(width: region?.width)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: region == nil ? .bottom : .bottomLeading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: region == nil ? .top : .topLeading)
             .padding(.leading, region?.minX ?? 0)
             .padding(.top, region?.minY ?? 0)
-            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).maxY } action: { containerBottom = $0 }
     }
 }
 
 /// A `ToastLayer` for a screen without the shell that reads the fold itself.
 /// `pane` (global) is the screen's own trailing pane while it is split.
 struct FoldToastLayer: View {
-    var gap: CGFloat = 24
+    var gap: CGFloat = 12
     var pane: CGRect?
-    /// A bottom bar's top (global) the toasts must clear, if one is showing.
-    var clearsAbove: CGFloat?
 
     var body: some View {
         GeometryReader { proxy in
             let origin = proxy.frame(in: .global).origin
             let local = pane?.offsetBy(dx: -origin.x, dy: -origin.y)
-            ToastLayer(region: ToastRegion.trailing(FoldInfo(proxy), pane: local), clearsAbove: clearsAbove, gap: gap)
+            ToastLayer(region: ToastRegion.trailing(FoldInfo(proxy), pane: local), gap: gap)
         }
     }
 }

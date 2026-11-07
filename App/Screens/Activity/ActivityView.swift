@@ -152,7 +152,7 @@ struct ActivityView: View {
                         .disabled(action.disabled)
                     }
                 }
-                .publishesBottomBarTop("activity.bulk")
+                .publishesSelectBar("activity.bulk")
             }
         }
         // D7-A: inline on the folded Duo and in compact height, so Needs you starts on the first screen.

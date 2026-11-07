@@ -6,14 +6,13 @@ import FusionhaKit
 /// the native Liquid Glass tab bar, plus the iOS 26 search tab, which hides on scroll like the
 /// web's floating bar. Requester accounts get Discover, My requests and You.
 /// Item details, Add, the omni search and the Delete confirmation open as
-/// sheets, and toasts float above the tab bar, as they do on the web (on the
-/// trailing column when the shell is split).
+/// sheets, and toasts drop in at the top of the page (on the trailing column
+/// when the shell is split).
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var fold = FoldInfo()
-    @State private var toastAnchor = ToastAnchor()
     /// Bulk-select bars on screen: the downloads bar steps aside for them.
     @State private var selectBars = SelectBarPresence()
     /// iPhone Duo open: Spread (two pages at the fold) or the Web layout. Per device.
@@ -231,16 +230,14 @@ struct RootView: View {
         .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: split.primaryHidden)
         // The moving seam is left out: v2's handle animates it itself.
         .animation(reduceMotion || fold.isDuoOpen ? nil : .smooth(duration: 0.3), value: split.atRest)
-        // Toasts: above the tab bar when folded; on the trailing column when
-        // split, so they never straddle the fold (DC14); on the right page
-        // while a Spread's tab spans both pages.
+        // Toasts: at the top of the page; at the top of the trailing column
+        // when split, so they never straddle the fold (DC14); on the right
+        // page while a Spread's tab spans both pages.
         // v2: the downloads bar floats on the left page where the system's can't show.
         .overlay(alignment: .bottomLeading) { downloadsCapsule }
         .overlay {
-            ToastLayer(region: ToastRegion.shell(split, spread: spread, size: fold.size),
-                       clearsAbove: split.shown || spread.spans ? nil : toastAnchor.floor, gap: 16)
+            ToastLayer(region: ToastRegion.shell(split, spread: spread, size: fold.size))
         }
-        .environment(toastAnchor)
         .environment(selectBars)
         .environment(pillSpace)
         .environment(\.spread, spread)

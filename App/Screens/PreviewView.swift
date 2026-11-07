@@ -27,7 +27,7 @@ struct PreviewSheet: View {
         .sheetBackground(Theme.bg)
         .presentationCornerRadius(14)
         // Sheets hide the shell's toasts.
-        .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
+        .overlay(alignment: .top) { ToastHost().padding(.top, 12) }
         .duoPageSheet(item: $addPick) { pick in
             AddTitleSheet(initialPick: .tmdb(pick), hideViewDetails: true,
                           providerOverride: DiscoverSession.shared.providerOverride) { id in

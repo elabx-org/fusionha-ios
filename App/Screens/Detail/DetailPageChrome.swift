@@ -13,7 +13,7 @@ struct DetailPageChrome: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .overlay(alignment: .bottom) { toast }
+            .overlay(alignment: .top) { toast }
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: compact)
             .animation(reduceMotion ? nil : .snappy(duration: 0.3), value: store.toast)
             .background { AmbientBackdrop(url: store.detail.flatMap { $0.backdropUrl ?? $0.posterUrl }) }
@@ -26,8 +26,8 @@ struct DetailPageChrome: ViewModifier {
     private var toast: some View {
         if let toast = store.toast {
             DetailToastView(toast: toast) { store.toast = nil }
-                .padding(.bottom, 12)
-                .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                .padding(.top, 8)
+                .transition(.glassToast(reduceMotion: reduceMotion))
                 .id(toast.id)
                 .task(id: toast.id) {
                     try? await Task.sleep(for: .seconds(toast.action == nil ? 3.5 : 6))

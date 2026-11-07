@@ -24,39 +24,21 @@ struct DetailToast: Identifiable, Equatable {
 
     var symbol: String {
         switch variant {
-        case .success: return "checkmark.circle.fill"
-        case .info: return "info.circle.fill"
-        case .warning: return "exclamationmark.triangle.fill"
-        case .error: return "xmark.octagon.fill"
+        case .success: return GlassToastSymbol.success
+        case .info: return GlassToastSymbol.info
+        case .warning: return GlassToastSymbol.warning
+        case .error: return GlassToastSymbol.error
         }
     }
 }
 
+/// The title page's toast: the app's one toast card (`GlassToastView`).
 struct DetailToastView: View {
     let toast: DetailToast
     let dismiss: () -> Void
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: toast.symbol).foregroundStyle(toast.color).font(.system(size: 16))
-            VStack(alignment: .leading, spacing: 2) {
-                if let title = toast.title {
-                    Text(title).font(.system(size: 13.5, weight: .bold)).foregroundStyle(Theme.txt)
-                }
-                Text(toast.message).font(.system(size: 13)).foregroundStyle(toast.title == nil ? Theme.txt : Theme.mut)
-            }
-            Spacer(minLength: 0)
-            if let label = toast.actionLabel, let action = toast.action {
-                Button(label) { action(); dismiss() }
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(Theme.i2)
-                    .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .glassEffect(.regular, in: .rect(cornerRadius: 14))
-        .padding(.horizontal, 16)
-        .onTapGesture(perform: dismiss)
+        GlassToastView(symbol: toast.symbol, tint: toast.color, title: toast.title, message: toast.message,
+                       actionLabel: toast.actionLabel, action: toast.action, dismiss: dismiss)
     }
 }

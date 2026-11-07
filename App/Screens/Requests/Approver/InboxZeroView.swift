@@ -88,10 +88,10 @@ struct InboxUndoToast: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: decision.kind == .approve ? "checkmark" : "xmark")
-                .font(.system(size: 13, weight: .bold))
+            Image(systemName: decision.kind == .approve ? GlassToastSymbol.success : "xmark.circle.fill")
+                .font(.system(size: 16))
                 .foregroundStyle(decision.kind == .approve ? Theme.accentText : Theme.danger)
-            message.font(.system(size: 13.5)).foregroundStyle(Theme.txt).lineLimit(2)
+            message.font(.system(size: 13)).foregroundStyle(Theme.txt).lineLimit(2)
             Spacer(minLength: 4)
             if decision.kind == .decline {
                 Button(action: onChangeReason) {
@@ -102,11 +102,10 @@ struct InboxUndoToast: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Change reason, now \(decision.reason.title)")
             }
-            Button("Undo", action: onUndo).font(.system(size: 14, weight: .bold))
+            Button("Undo", action: onUndo).font(.system(size: 13, weight: .bold))
         }
-        .padding(.horizontal, 16).padding(.vertical, 12)
-        .glassEffect(.regular, in: Capsule())
-        .padding(.horizontal, 12)
+        // The app's toast card; it alone stays at the bottom, by its deck.
+        .glassToastCard()
         .accessibilityElement(children: .contain)
     }
 

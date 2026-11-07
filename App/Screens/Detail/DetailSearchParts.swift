@@ -7,22 +7,18 @@ import FusionhaKit
 struct SearchToast: Identifiable, Equatable {
     let id = UUID()
     let text: String
+    var isError = false
 }
 
-/// `.toast`: the in-sheet confirmation, centred above the bottom edge.
+/// `.toast`: the in-sheet confirmation at the top of the sheet, the app's one
+/// glass toast.
 struct SearchToastView: View {
-    let text: String
+    let toast: SearchToast
+    let dismiss: () -> Void
+
     var body: some View {
-        Text(text)
-            .font(.system(size: 13))
-            .foregroundStyle(Theme.txt)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 11)
-            .background(Theme.panel, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Theme.radius, style: .continuous).strokeBorder(Theme.line))
-            .shadow(color: .black.opacity(0.5), radius: 20, y: 16)
-            .padding(.horizontal, 24)
+        GlassToastView(symbol: toast.isError ? GlassToastSymbol.error : GlassToastSymbol.success,
+                       tint: toast.isError ? Theme.danger : Theme.done, message: toast.text, dismiss: dismiss)
             .accessibilityAddTraits(.updatesFrequently)
     }
 }

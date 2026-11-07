@@ -3,8 +3,8 @@ import FusionhaKit
 
 // MARK: Toasts
 
-/// The web's toast: a glass capsule near the bottom with a success / error /
-/// warning tint, gone after a few seconds.
+/// The web's toast: the app's one glass toast at the top of the panel, with a
+/// success / error / warning symbol, gone after a few seconds.
 @MainActor
 @Observable
 final class FetchToaster {
@@ -39,11 +39,12 @@ private struct FetchToastOverlay: ViewModifier {
     @Environment(\.settingsMotionOff) private var motionOff
 
     func body(content: Content) -> some View {
-        content.overlay(alignment: .bottom) {
+        content.overlay(alignment: .top) {
             ZStack {
                 if let toast = toaster.current {
                     toastView(toast)
-                        .transition(motionOff ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                        .padding(.top, 12)
+                        .transition(.glassToast(reduceMotion: motionOff))
                         .id(toast.id)
                 }
             }
@@ -59,30 +60,13 @@ private struct FetchToastOverlay: ViewModifier {
         case .info: Theme.cyan
         }
         let icon: String = switch toast.tone {
-        case .success: "checkmark.circle.fill"
-        case .error: "xmark.octagon.fill"
-        case .warning: "exclamationmark.triangle.fill"
-        case .info: "info.circle.fill"
+        case .success: GlassToastSymbol.success
+        case .error: GlassToastSymbol.error
+        case .warning: GlassToastSymbol.warning
+        case .info: GlassToastSymbol.info
         }
-        return HStack(alignment: .top, spacing: 10) {
-            Image(systemName: icon).foregroundStyle(tint).font(.system(size: 15))
-            VStack(alignment: .leading, spacing: 2) {
-                if let title = toast.title {
-                    Text(title).font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt)
-                }
-                Text(toast.message).font(.system(size: 13, weight: .medium)).foregroundStyle(Theme.txt)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-            Button { toaster.dismiss() } label: { Image(systemName: "xmark").font(.system(size: 12, weight: .bold)) }
-                .foregroundStyle(Theme.mut)
-                .accessibilityLabel("Dismiss")
-        }
-        .padding(12)
-        .background(tint.opacity(0.10), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .padding(.horizontal, 16)
-        .padding(.bottom, 14)
+        return GlassToastView(symbol: icon, tint: tint, title: toast.title, message: toast.message,
+                              dismiss: { toaster.dismiss() })
     }
 }
 

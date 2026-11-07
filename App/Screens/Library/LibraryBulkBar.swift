@@ -7,8 +7,7 @@ import FusionhaKit
 /// it into the iPhone Duo's vertical bar; the tab bar steps aside while
 /// selecting (a task-focused view). Selection ("N selected · of M filtered",
 /// Select all, Clear), the web's "N selected" as plain text between the glass
-/// groups, the bulk Actions, and Done. The bar sits in the tab's safe
-/// area, so the shell's toasts clear it (`ToastAnchor`).
+/// groups, the bulk Actions, and Done.
 struct LibrarySelectBar: ViewModifier {
     @Environment(AppModel.self) private var model
     @Environment(\.accessibilityReduceMotion) private var reduceMotion

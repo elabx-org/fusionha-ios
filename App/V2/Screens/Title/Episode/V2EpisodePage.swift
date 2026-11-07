@@ -45,7 +45,7 @@ struct V2EpisodePage: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackgroundVisibility(compact ? .visible : .hidden, for: .navigationBar)
         .animation(reduce ? nil : .easeInOut(duration: 0.2), value: compact)
-        .overlay(alignment: .bottom) { V2TitleToast(store: store, reduceMotion: reduce) }
+        .overlay(alignment: .top) { V2TitleToast(store: store, reduceMotion: reduce) }
         .onChange(of: tab) { _, new in
             guard new == .search, search == nil, let detail, let episode else { return }
             search = makeSearch(detail, episode)

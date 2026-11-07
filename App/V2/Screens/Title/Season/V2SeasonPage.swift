@@ -39,7 +39,7 @@ struct V2SeasonPage: View {
         .v2PageGroundUnlessWideChild(art: groundArt)
         .navigationTitle(season?.title ?? "")
         .navigationBarTitleDisplayMode(.inline)
-        .overlay(alignment: .bottom) { V2TitleToast(store: store, reduceMotion: reduce) }
+        .overlay(alignment: .top) { V2TitleToast(store: store, reduceMotion: reduce) }
     }
 
     private func list(_ detail: ItemDetail, _ season: Season, _ facts: V2SeasonFacts) -> some View {

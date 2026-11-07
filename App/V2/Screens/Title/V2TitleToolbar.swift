@@ -35,7 +35,7 @@ struct V2TitleToolbar: ToolbarContent {
     }
 }
 
-/// The page's toast, over the foot of the page (v1's `DetailPageChrome`).
+/// The page's toast, at the top of the page (v1's `DetailPageChrome`).
 struct V2TitleToast: View {
     let store: DetailStore
     let reduceMotion: Bool
@@ -44,8 +44,8 @@ struct V2TitleToast: View {
         ZStack {
             if let toast = store.toast {
                 DetailToastView(toast: toast) { store.toast = nil }
-                    .padding(.bottom, 12)
-                    .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
+                    .padding(.top, 8)
+                    .transition(.glassToast(reduceMotion: reduceMotion))
                     .id(toast.id)
                     .task(id: toast.id) {
                         try? await Task.sleep(for: .seconds(toast.action == nil ? 3.5 : 6))

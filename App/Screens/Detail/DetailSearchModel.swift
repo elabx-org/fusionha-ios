@@ -162,7 +162,7 @@ final class InteractiveSearchModel {
                 grabbed.remove(guid)
                 triggers[guid] = nil
             }
-            toast = SearchToast(text: message ?? "Grab failed")
+            toast = SearchToast(text: message ?? "Grab failed", isError: true)
         }
     }
 

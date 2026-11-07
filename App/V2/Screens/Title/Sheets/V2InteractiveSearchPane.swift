@@ -29,7 +29,7 @@ struct V2InteractiveSearchPane: View {
                         .padding(.bottom, 28)
                 }
                 .scrollDismissesKeyboard(.immediately)
-                .overlay(alignment: .bottom) { toast }
+                .overlay(alignment: .top) { toast.padding(.top, 12) }
             }
         }
         .animation(reduce ? nil : .easeOut(duration: 0.2), value: model.toast)
@@ -67,9 +67,8 @@ struct V2InteractiveSearchPane: View {
     @ViewBuilder
     private var toast: some View {
         if let toast = model.toast {
-            SearchToastView(text: toast.text)
-                .padding(.bottom, 22)
-                .transition(reduce ? .opacity : .opacity.combined(with: .offset(y: 12)))
+            SearchToastView(toast: toast) { model.toast = nil }
+                .transition(.glassToast(reduceMotion: reduce))
                 .id(toast.id)
         }
     }

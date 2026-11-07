@@ -60,7 +60,7 @@ struct V2TitleView: View {
         let _ = PerfCount.mark("title.body")
         scroll
             .v2PageGround(art: groundArt, showsArt: false)
-            .overlay(alignment: .bottom) { V2TitleToast(store: store, reduceMotion: reduceMotion) }
+            .overlay(alignment: .top) { V2TitleToast(store: store, reduceMotion: reduceMotion) }
             .navigationTitle(compact ? (store.detail?.title ?? "") : "")
             .navigationSubtitle(compact ? subtitle : "")
             .navigationBarTitleDisplayMode(.inline)

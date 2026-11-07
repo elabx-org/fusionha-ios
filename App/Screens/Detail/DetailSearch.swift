@@ -130,11 +130,11 @@ struct InteractiveSearchPane: View {
             }
         }
         .background(Theme.panel)
-        .overlay(alignment: .bottom) {
+        .overlay(alignment: .top) {
             if let toast = model.toast {
-                SearchToastView(text: toast.text)
-                    .padding(.bottom, 22)
-                    .transition(reduce ? .opacity : .opacity.combined(with: .offset(y: 12)))
+                SearchToastView(toast: toast) { model.toast = nil }
+                    .padding(.top, 12)
+                    .transition(.glassToast(reduceMotion: reduce))
                     .id(toast.id)
             }
         }

@@ -48,19 +48,17 @@ final class DiscoverToasts {
     func dismiss() { current = nil }
 }
 
+/// Discover's own toasts when no shell sink is set, at the top of the page.
 struct DiscoverToastOverlay: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    var bottomInset: CGFloat = 72
 
     func body(content: Content) -> some View {
         let toasts = DiscoverToasts.shared
-        content.overlay(alignment: .bottom) {
+        content.overlay(alignment: .top) {
             if let toast = toasts.current {
-                DiscoverToastView(toast: toast)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, bottomInset)
-                    .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-                    .onTapGesture { toasts.dismiss() }
+                DiscoverToastView(toast: toast) { toasts.dismiss() }
+                    .padding(.top, 8)
+                    .transition(.glassToast(reduceMotion: reduceMotion))
                     .id(toast.id)
             }
         }
@@ -69,13 +67,15 @@ struct DiscoverToastOverlay: ViewModifier {
 }
 
 extension View {
-    func discoverToastOverlay(bottomInset: CGFloat = 72) -> some View {
-        modifier(DiscoverToastOverlay(bottomInset: bottomInset))
+    func discoverToastOverlay() -> some View {
+        modifier(DiscoverToastOverlay())
     }
 }
 
+/// A Discover toast: the app's one glass toast.
 struct DiscoverToastView: View {
     let toast: DiscoverToastMessage
+    let dismiss: () -> Void
 
     private var color: Color {
         switch toast.variant {
@@ -87,28 +87,13 @@ struct DiscoverToastView: View {
 
     private var icon: String {
         switch toast.variant {
-        case .success: return "checkmark.circle.fill"
-        case .info: return "info.circle.fill"
-        case .error: return "exclamationmark.circle.fill"
+        case .success: return GlassToastSymbol.success
+        case .info: return GlassToastSymbol.info
+        case .error: return GlassToastSymbol.error
         }
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon).font(.system(size: 15)).foregroundStyle(color)
-            VStack(alignment: .leading, spacing: 3) {
-                if let title = toast.title {
-                    Text(title).font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.txt)
-                }
-                Text(toast.message).font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(toast.title == nil ? Theme.txt : Theme.mut)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.leading, 15).padding(.trailing, 13).padding(.top, 13).padding(.bottom, 15)
-        .frame(maxWidth: 420)
-        .statusWash(color, base: Theme.panel.opacity(0.92), radius: Theme.radius)
-        .shadow(color: Theme.shelfShadow.opacity(0.6), radius: 22, y: 18)
-        .accessibilityElement(children: .combine)
+        GlassToastView(symbol: icon, tint: color, title: toast.title, message: toast.message, dismiss: dismiss)
     }
 }

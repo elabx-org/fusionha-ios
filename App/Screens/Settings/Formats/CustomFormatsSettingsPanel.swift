@@ -41,7 +41,7 @@ struct CustomFormatsSettingsPanel: View {
             CustomFormatEditorSheet(target: target, profiles: profiles) { await load() }
         }
         .safeAreaInset(edge: .bottom) {
-            if selecting && !selected.isEmpty { bulkBar.publishesBottomBarTop("settings.formats.bulk") }
+            if selecting && !selected.isEmpty { bulkBar.publishesSelectBar("settings.formats.bulk") }
         }
         .confirmationDialog("Delete \(selected.count) custom format\(selected.count == 1 ? "" : "s")?",
                             isPresented: $confirmBulk, titleVisibility: .visible) {

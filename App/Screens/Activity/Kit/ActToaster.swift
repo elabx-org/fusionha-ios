@@ -31,7 +31,7 @@ final class ActToaster {
     private var undo: (() -> Void)?
     private var dismissTask: Task<Void, Never>?
     /// The shell's toasts (`AppModel.toast`). Set on a page under the shell, so
-    /// its toasts get the shell's placement (above the tab bar, off the hinge);
+    /// its toasts get the shell's placement (at the top, off the hinge);
     /// sheets leave it nil and draw their own `ActToastOverlay`.
     @ObservationIgnored weak var shell: AppModel?
 
@@ -69,35 +69,22 @@ final class ActToaster {
     func dismiss() { current = nil }
 }
 
+/// A sheet's own toasts, at the top of the sheet: the app's one glass toast.
 struct ActToastOverlay: View {
     let toaster: ActToaster
     @Environment(\.actReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack {
-            Spacer()
             if let toast = toaster.current {
-                HStack(spacing: 10) {
-                    Circle().fill(color(toast.tone)).frame(width: 7, height: 7)
-                    Text(toast.text)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(Theme.txt)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    if let undo = toast.undoLabel {
-                        Button(undo) { toaster.runUndo() }
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Theme.cyan)
-                    }
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 11)
-                .glassEffect(.regular, in: .rect(cornerRadius: 12))
-                .padding(.horizontal, 12)
-                .padding(.bottom, 12)
-                .onTapGesture { toaster.dismiss() }
-                .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-                .id(toast.id)
+                GlassToastView(symbol: toast.tone.variant.symbol, tint: color(toast.tone), message: toast.text,
+                               actionLabel: toast.undoLabel, action: { toaster.runUndo() },
+                               dismiss: { toaster.dismiss() })
+                    .padding(.top, 12)
+                    .transition(.glassToast(reduceMotion: reduceMotion))
+                    .id(toast.id)
             }
+            Spacer()
         }
         .animation(reduceMotion ? nil : .snappy, value: toaster.current)
         .allowsHitTesting(toaster.current != nil)

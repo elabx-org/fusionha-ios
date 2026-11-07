@@ -215,7 +215,7 @@ struct AccountSheet: View {
                 .closeOnlyBars()
         }
         // Sheets hide the shell's toasts.
-        .overlay(alignment: .bottom) { ToastHost().padding(.bottom, 24) }
+        .overlay(alignment: .top) { ToastHost().padding(.top, 12) }
         // Unfolded: a form sheet, near the web's ~520 panel (DC19). Centred,
         // not trailing: see the D4 notes in the parity audit.
         .formSheet(!onPages)
