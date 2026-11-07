@@ -30,6 +30,9 @@ struct AboutSettingsPanel: View {
          "Custom formats, quality profiles and size definitions imported from the community guides.", "CC BY-SA 4.0."),
         ("FFmpeg / ffprobe", "ffmpeg.org", "https://ffmpeg.org",
          "Media analysis & file verification on import.", "LGPL/GPL — bundled binary, source available."),
+        ("selfh.st icons", "selfh.st/icons", "https://selfh.st/icons/",
+         "The logos of the apps and services fusionha works with, bundled in the app.",
+         "Service icons by selfh.st (CC BY 4.0)."),
     ]
 
     var body: some View {

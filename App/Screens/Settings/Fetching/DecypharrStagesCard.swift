@@ -14,9 +14,12 @@ struct DecypharrStagesCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("decypharr stages")
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(Theme.txt)
+            HStack(spacing: 8) {
+                ServiceLogoMark(asset: "svc-decypharr", size: 18)
+                Text("decypharr stages")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.txt)
+            }
             row(\.probing, "decypharr runs a probing step",
                 "Turn on if your decypharr probes files after linking them (skip_post_symlink_probe is off). Probing is off by default.")
             row(\.validating, "decypharr runs a validating step",

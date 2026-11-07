@@ -33,12 +33,7 @@ struct InstanceCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: instance.isRadarr ? "film" : "tv")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(instance.tier.color)
-                    .frame(width: 40, height: 40)
-                    .background(instance.tier.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(instance.tier.color.opacity(0.3)))
+                FetchLogoTile(image: instance.isRadarr ? "svc-radarr" : "svc-sonarr")
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 8) {
                         Text(instance.instanceName).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)

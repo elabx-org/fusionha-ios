@@ -32,7 +32,10 @@ struct IssueThreadBannerView: View {
                 .font(.system(size: 17, weight: .semibold)).foregroundStyle(banner.tone.color).frame(width: 22)
             VStack(alignment: .leading, spacing: 4) {
                 Text(banner.text).font(.system(size: 14.5, weight: .bold)).foregroundStyle(Theme.txt)
-                if banner.verified { Label("Verified by decypharr", systemImage: "server.rack").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.done) }
+                if banner.verified {
+                    Label { Text("Verified by decypharr") } icon: { ServiceLogoMark(asset: "svc-decypharr", size: 13) }
+                        .font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.done)
+                }
                 Text(banner.detail).font(.system(size: 12.5)).foregroundStyle(Theme.mut)
             }
             Spacer(minLength: 0)

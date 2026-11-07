@@ -57,11 +57,10 @@ struct IndexerCard: View {
                 FetchFlow(spacing: 6, lineSpacing: 5) {
                     Text(indexer.displayName).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
                     if indexer.source == "prowlarr" {
-                        Text("P")
-                            .font(.system(size: 11, weight: .heavy))
-                            .foregroundStyle(Theme.onBrand(0xE66001))
+                        Image("svc-prowlarr")
+                            .resizable()
+                            .scaledToFit()
                             .frame(width: 16, height: 16)
-                            .background(Theme.brand(0xE66001), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
                             .accessibilityLabel("Synced from Prowlarr")
                     }
                     let tint = indexer.isTorrent ? Theme.grab : Theme.indigo

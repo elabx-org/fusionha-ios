@@ -57,7 +57,11 @@ struct ConnectPanel: View {
         let meta = AgentKindMeta(agent.agentKind)
         return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 14) {
-                FetchIconTile(systemName: "bell")
+                if let logo = ServiceLogo.asset(for: agent.agentKind.rawValue) {
+                    FetchLogoTile(image: logo)
+                } else {
+                    FetchIconTile(systemName: "bell")
+                }
                 VStack(alignment: .leading, spacing: 2) {
                     FetchFlow(spacing: 8, lineSpacing: 4) {
                         Text(agent.name).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt).lineLimit(1)
@@ -136,6 +140,9 @@ struct ConnectPanel: View {
         return HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
+                    if let logo = ServiceLogo.asset(for: webhook.source, webhook.name) {
+                        ServiceLogoMark(asset: logo, size: 16)
+                    }
                     Text(webhook.name).font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
                     if let source = webhook.source { FetchChip(text: source, color: Theme.i2, border: Theme.i2.opacity(0.35)) }
                 }

@@ -84,11 +84,15 @@ struct NotificationAgentSheet: View {
                         let meta = AgentKindMeta(k)
                         Button { set(k) } label: {
                             HStack(spacing: 12) {
-                                Text(String(meta.label.prefix(1)))
-                                    .font(.system(size: 15, weight: .heavy))
-                                    .foregroundStyle(meta.color)
-                                    .frame(width: 40, height: 40)
-                                    .background(meta.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                if let logo = ServiceLogo.asset(for: k.rawValue) {
+                                    FetchLogoTile(image: logo)
+                                } else {
+                                    Text(String(meta.label.prefix(1)))
+                                        .font(.system(size: 15, weight: .heavy))
+                                        .foregroundStyle(meta.color)
+                                        .frame(width: 40, height: 40)
+                                        .background(meta.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                }
                                 VStack(alignment: .leading, spacing: 3) {
                                     Text(meta.label).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
                                     Text(meta.sub).font(.system(size: 12)).foregroundStyle(Theme.mut)

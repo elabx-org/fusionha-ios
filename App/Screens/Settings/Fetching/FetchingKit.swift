@@ -114,7 +114,7 @@ struct FetchIconTile: View {
 }
 
 /// A resource's own logo on the same tile as `FetchIconTile` (download
-/// clients: the SABnzbd and qBittorrent marks, from dashboard-icons).
+/// clients, notification agents, virtual instances: a bundled `ServiceLogo`).
 struct FetchLogoTile: View {
     let image: String
     var size: CGFloat = 40

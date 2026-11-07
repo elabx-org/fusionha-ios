@@ -64,13 +64,13 @@ struct DownloadClientSheet: View {
         NavigationStack {
             Form {
                 Section {
-                    pickCard(.sab, badge: "SAB", tint: Theme.miss,
+                    pickCard(.sab, logo: "svc-sabnzbd", tint: Theme.miss,
                              description: "The free usenet downloader. Also works with SAB-compatible APIs (decypharr, nzbget-sab shims).",
                              proto: "usenet")
                 } header: { pickHeader("Usenet") }
                 .listRowBackground(Theme.card)
                 Section {
-                    pickCard(.qbit, badge: "qB", tint: Theme.unaired,
+                    pickCard(.qbit, logo: "svc-qbittorrent", tint: Theme.unaired,
                              description: "Also works with qBit-compatible APIs (decypharr, rdt-client for Real-Debrid).",
                              proto: "torrent")
                 } header: { pickHeader("Torrent / Debrid") }
@@ -95,14 +95,10 @@ struct DownloadClientSheet: View {
         Text(text).font(.system(size: 11, weight: .heavy)).tracking(0.6).foregroundStyle(Theme.dim)
     }
 
-    private func pickCard(_ t: ClientType, badge: String, tint: Color, description: String, proto: String) -> some View {
+    private func pickCard(_ t: ClientType, logo: String, tint: Color, description: String, proto: String) -> some View {
         Button { setType(t) } label: {
             HStack(alignment: .top, spacing: 12) {
-                Text(badge)
-                    .font(.system(size: 12, weight: .heavy))
-                    .foregroundStyle(tint)
-                    .frame(width: 40, height: 40)
-                    .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                FetchLogoTile(image: logo)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(t.label).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.txt)
                     Text(description).font(.system(size: 12)).foregroundStyle(Theme.mut)

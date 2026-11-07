@@ -2,9 +2,9 @@ import SwiftUI
 import FusionhaKit
 
 /// The provider tile of a followed source or an import list (web
-/// `ProviderTile`, fusionha 0.4.237): Letterboxd's three circles, Plex's list
-/// mark, MDBList's M and Trakt's T. MDBList and Trakt have no official mark in
-/// the app, so the tile carries the web's letter in the site's colour.
+/// `ProviderTile`, fusionha 0.4.237): the bundled Plex, Letterboxd and Trakt
+/// logos (`ServiceLogo`), and MDBList's M, which has no bundled logo, in the
+/// site's colour.
 /// `small` is the round chip of the Works with row and the Recognised line.
 struct ProviderTile: View {
     let provider: SourceProvider
@@ -22,13 +22,10 @@ struct ProviderTile: View {
     }
 
     @ViewBuilder private var glyph: some View {
-        switch provider {
-        case .plex:
-            WatchlistMarkGlyph(mark: .list, size: size * 0.55).foregroundStyle(WatchlistMark.list.ink)
-        case .letterboxd:
-            WatchlistMarkGlyph(mark: .letterboxd, size: size * 0.58).foregroundStyle(WatchlistMark.letterboxd.ink)
-        case .mdblist, .trakt:
-            Text(provider == .mdblist ? "M" : "T")
+        if let logo = ServiceLogo.asset(for: provider.rawValue) {
+            ServiceLogoMark(asset: logo, size: size * 0.62)
+        } else {
+            Text(String(provider.word.prefix(1)))
                 .font(.system(size: size * 0.45, weight: .heavy))
                 .foregroundStyle(Self.brand(provider))
         }
@@ -37,7 +34,7 @@ struct ProviderTile: View {
     /// The web's `color-mix(--pc 16%, --panel2)`: a quiet wash of the site's colour.
     private var fill: some ShapeStyle {
         switch provider {
-        case .mdblist, .trakt: return AnyShapeStyle(Theme.panel2.mix(with: Self.brand(provider), by: 0.16))
+        case .mdblist: return AnyShapeStyle(Theme.panel2.mix(with: Self.brand(provider), by: 0.16))
         default: return AnyShapeStyle(Theme.panel2)
         }
     }
