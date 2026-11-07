@@ -11,6 +11,7 @@ struct V2ComingUpWideCarousel: View {
     let cards: [V2ComingUpCard]
     let style: V2ComingUpWideStyle
     @Binding var focused: Int?
+    @Binding var opening: Int?
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @State private var width: CGFloat = 0
@@ -52,6 +53,7 @@ struct V2ComingUpWideCarousel: View {
         .contentMargins(.horizontal, max(0, (width - m.size.width) / 2), for: .scrollContent)
         .scrollTargetBehavior(.viewAligned)
         .scrollPosition(id: $focused, anchor: .center)
+        .v2CarouselOpening($opening, focused: $focused)
         .scrollClipDisabled()
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .sensoryFeedback(.selection, trigger: focused)

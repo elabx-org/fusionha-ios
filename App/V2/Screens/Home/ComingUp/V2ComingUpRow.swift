@@ -30,6 +30,9 @@ struct V2ComingUpRow: View {
     @State private var entries: [CalendarEntry]?
     @State private var cards: [V2ComingUpCard] = []
     @State private var focused: Int?
+    /// The card to open on, until the carousel has moved there (once).
+    @State private var opening: Int?
+    @State private var opened = false
 
     /// Wide and flat (one panel): Coming up spans the page.
     private var hero: Bool { wide && !bookPose }
@@ -44,7 +47,7 @@ struct V2ComingUpRow: View {
                     VStack(alignment: .leading, spacing: 4) {
                         header
                         V2ComingUpWideCarousel(cards: cards, style: V2ComingUpWideStyle(stored: wideRaw),
-                                               focused: $focused)
+                                               focused: $focused, opening: $opening)
                     }
                     .padding(.top, topGap)
                 } else if wide {
@@ -84,7 +87,7 @@ struct V2ComingUpRow: View {
     }
 
     private func carousel(cardWidth: CGFloat, showsMeta: Bool) -> some View {
-        V2ComingUpCarousel(cards: cards, cardWidth: cardWidth, showsMeta: showsMeta, clips: wide, focused: $focused)
+        V2ComingUpCarousel(cards: cards, cardWidth: cardWidth, showsMeta: showsMeta, clips: wide, focused: $focused, opening: $opening)
     }
 
     private var header: some View {
@@ -115,7 +118,10 @@ struct V2ComingUpRow: View {
                                         days: window)
         if next != cards { cards = next }
         if let focused, !next.contains(where: { $0.id == focused }) { self.focused = nil }
-        if focused == nil, !next.isEmpty { focused = next[min(openingIndex, next.count - 1)].id }
+        if !opened, focused == nil, !next.isEmpty {
+            opened = true
+            opening = next[min(openingIndex, next.count - 1)].id
+        }
     }
 
     /// The row opens centred, with neighbours on both sides (owner, 2026-11-07):

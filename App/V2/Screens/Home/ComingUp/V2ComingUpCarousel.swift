@@ -16,6 +16,7 @@ struct V2ComingUpCarousel: View {
     /// Clip the row to its column (wide); else neighbours run to the screen edge.
     let clips: Bool
     @Binding var focused: Int?
+    @Binding var opening: Int?
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @State private var width: CGFloat = 0
@@ -55,6 +56,7 @@ struct V2ComingUpCarousel: View {
         .contentMargins(.horizontal, max(0, (width - w) / 2), for: .scrollContent)
         .scrollTargetBehavior(.viewAligned)
         .scrollPosition(id: $focused, anchor: .center)
+        .v2CarouselOpening($opening, focused: $focused)
         .scrollClipDisabled(!clips)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .sensoryFeedback(.selection, trigger: focused)
