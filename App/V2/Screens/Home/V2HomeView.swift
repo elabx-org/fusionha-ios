@@ -126,7 +126,7 @@ struct V2HomeView: View {
                 try? await Task.sleep(for: .milliseconds(100))
             }
             for _ in 0..<5 where !model.allTitlesOnScreen {
-                guard !Task.isCancelled, model.pendingAllTitles else { return }
+                guard !Task.isCancelled, model.pendingAllTitles, !model.allTitlesOnScreen else { return }
                 model.allTitlesShown = false
                 guard await push(.asLeft, animated: false) else { return }
                 try? await Task.sleep(for: .seconds(1))
