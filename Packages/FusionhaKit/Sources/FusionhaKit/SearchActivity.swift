@@ -35,6 +35,10 @@ public enum SearchActivity: Equatable, Sendable {
     case nothingNew
     /// The request itself failed.
     case failed
+    /// A Replace's search finished; what it grabbed shows in Activity.
+    case searched
+    /// The app stopped waiting; the server is probably still searching.
+    case stillSearching
 
     public var isSearching: Bool { self == .searching }
 
@@ -45,6 +49,8 @@ public enum SearchActivity: Equatable, Sendable {
         case .grabbed(let n): return n > 1 ? "Grabbed \(n)" : "Grabbed"
         case .nothingNew: return "Nothing new"
         case .failed: return "Couldn't search"
+        case .searched: return "Searched"
+        case .stillSearching: return "Still searching on the server"
         }
     }
 
@@ -55,6 +61,8 @@ public enum SearchActivity: Equatable, Sendable {
         case .grabbed(let n): return n > 1 ? "Grabbed \(n) releases" : "Grabbed a release"
         case .nothingNew: return "Search finished, nothing new"
         case .failed: return "Couldn't search"
+        case .searched: return "Search finished"
+        case .stillSearching: return "Still searching on the server"
         }
     }
 
@@ -65,6 +73,8 @@ public enum SearchActivity: Equatable, Sendable {
         case .grabbed: return "checkmark"
         case .nothingNew: return "minus"
         case .failed: return "exclamationmark.triangle"
+        case .searched: return "checkmark"
+        case .stillSearching: return "clock"
         }
     }
 

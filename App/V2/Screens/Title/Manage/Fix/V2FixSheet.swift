@@ -57,8 +57,9 @@ struct V2FixSheet: View {
                     .v2PageGround(art: art)
             }
             .sheet(item: $replacing) { t in
-                V2FixReplaceSheet(model: model, target: t)
+                V2FixReplaceSheet(model: model, target: t, onStarted: { dismiss() })
                     .environment(app)
+                    .environment(store)
                     .v2PageGround(art: art)
             }
             .sheet(item: $picking) { t in

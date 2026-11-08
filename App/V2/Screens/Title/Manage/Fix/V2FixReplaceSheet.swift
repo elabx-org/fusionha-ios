@@ -20,21 +20,24 @@ struct V2FixReplaceTarget: Identifiable {
 /// ones; greyed with the reason as its subtitle when no file has a release
 /// on record, and the Release card left out), then Cancel and the accent Replace. With the toggle on, files with
 /// a release on record are deleted with it blocklisted and searched; the rest
-/// go through the model's replace.
+/// are replaced. Both run in the background (`V2ReplaceRun`).
 struct V2FixReplaceSheet: View {
     let model: ManageFilesModel
     let target: V2FixReplaceTarget
+    /// Replace has been handed to the server: the Fix sheet closes too.
+    var onStarted: () -> Void = {}
     @Environment(AppModel.self) private var app
+    @Environment(DetailStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Environment(\.pagePalette) private var page
     @State private var blocklist: Bool
     @State private var releases: [Int: FileBlocklistTarget] = [:]
     @State private var loaded = false
-    @State private var running = false
 
-    init(model: ManageFilesModel, target: V2FixReplaceTarget) {
+    init(model: ManageFilesModel, target: V2FixReplaceTarget, onStarted: @escaping () -> Void = {}) {
         self.model = model
         self.target = target
+        self.onStarted = onStarted
         _blocklist = State(initialValue: target.blocklistByDefault)
     }
 
@@ -64,7 +67,6 @@ struct V2FixReplaceSheet: View {
         .scrollBounceBehavior(.basedOnSize)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-        .interactiveDismissDisabled(running)
         .task { await loadReleases() }
     }
 
@@ -114,7 +116,7 @@ struct V2FixReplaceSheet: View {
             }
         }
         .tint(Theme.primary)
-        .disabled(running || !canBlocklist)
+        .disabled(!canBlocklist)
         .padding(14)
         .background { ModuleSurface(radius: 14) }
     }
@@ -125,10 +127,8 @@ struct V2FixReplaceSheet: View {
                 Text("Cancel").frame(maxWidth: .infinity, minHeight: 44)
             }
             .buttonStyle(.glass)
-            .disabled(running)
-            Button { Task { await run() } } label: {
+            Button { run() } label: {
                 HStack(spacing: 8) {
-                    if running { ProgressView().tint(Theme.onAccent) }
                     Text(ManageFix.confirmAction(target.action, count: target.items.count))
                 }
                 .foregroundStyle(Theme.onAccent)
@@ -136,7 +136,7 @@ struct V2FixReplaceSheet: View {
             }
             .buttonStyle(.glassProminent)
             .tint(Theme.primary)
-            .disabled(running || (!loaded && !target.candidates.isEmpty))
+            .disabled(!loaded && !target.candidates.isEmpty)
         }
         .font(.system(size: 15.5, weight: .semibold))
     }
@@ -152,11 +152,13 @@ struct V2FixReplaceSheet: View {
         loaded = true
     }
 
-    private func run() async {
-        running = true
+    /// Hands the files to `V2ReplaceRun` and closes: the server works while
+    /// you carry on, and the title page and toasts say how it went.
+    private func run() {
+        guard let client = app.client else { return }
         let ids = blocklist ? Set(releases.keys) : []
-        await model.fixReplace(target.items, blocklisting: ids)
-        running = false
+        V2ReplaceRun.start(target.items, blocklisting: ids, detail: model.detail, client: client, app: app, store: store)
         dismiss()
+        onStarted()
     }
 }
