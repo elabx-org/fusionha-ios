@@ -31,7 +31,7 @@ struct RequestModalArt: View {
         }
     }
 
-    private var bodyV1: some View {
+    @ViewBuilder private var bodyV1: some View {
         let kindColor = pick.kind == .movie ? Theme.kindMovie : Theme.kindSeries
         VStack(spacing: 12) {
             Text(pick.kind == .movie ? "MOVIE · REQUEST" : "SERIES · REQUEST")
