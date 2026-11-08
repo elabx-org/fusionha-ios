@@ -40,6 +40,9 @@ enum V2SettingsLook {
         "database": "cylinder.split.1x2.fill", "versions": "film.fill",
     ]
 
+    /// A panel's own hue (nil when it has none of its own).
+    static func hue(_ id: String) -> UInt32? { hues[SettingsNav.canonical(id)] ?? hues[id] }
+
     static func symbol(_ id: String) -> String {
         symbols[id] ?? SettingsNav.panel(id)?.icon ?? "gearshape"
     }

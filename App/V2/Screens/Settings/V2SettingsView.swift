@@ -3,8 +3,10 @@ import FusionhaKit
 
 /// v2 Settings (S1, owner-approved 2026-11-04; mock settings-v2.js): on a
 /// phone and the folded Duo, the home of hued rows under the server card;
-/// on the open Duo, a sidebar of every panel beside the Overview. The
-/// panels themselves are v1's (`settingsPanel(_:)`), so every setting,
+/// on the open Duo, a sidebar of every panel beside the Overview. Download
+/// Clients and Indexers are rebuilt in the S1 look (`V2DownloadClientsPanel`,
+/// `V2IndexersPanel`); every other panel is v1's (`settingsPanel(_:)`) on
+/// its section-tinted ground (`settingsGround`), so every setting,
 /// Maintenance › Performance reports included, stays where it was. Same
 /// container as v1's `SettingsView`: one split that collapses into the
 /// phone's push list, so folding and unfolding keep the open panel.
@@ -65,6 +67,7 @@ struct V2SettingsView: View {
         .environment(flash)
         .environment(\.settingsMotionOff, motionOff)
         .environment(\.settingsPush, push)
+        .environment(\.settingsGround, Self.tintedGround)
         .task { await store.load() }
         .task { await summary.load(model.client) }
         .modifier(SettingsShellLink(path: $path, pane: wide ? paneFrame : nil))
@@ -78,8 +81,17 @@ struct V2SettingsView: View {
         } else if V2SettingsNav.isGroup(slug) {
             V2SettingsGroupPage(id: slug, summary: summary)
         } else {
-            settingsPanel(slug)
+            switch SettingsNav.canonical(slug) {
+            case "clients": V2DownloadClientsPanel()
+            case "indexers": V2IndexersPanel()
+            default: settingsPanel(slug)
+            }
         }
+    }
+
+    /// v1 panels' ground in v2: the palette ground with the section tint.
+    private static func tintedGround(_ slug: String) -> AnyView {
+        AnyView(V2SettingsTintedGround(slug: slug))
     }
 
     private var detailPath: Binding<[String]> {

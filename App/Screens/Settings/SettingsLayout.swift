@@ -28,6 +28,22 @@ extension EnvironmentValues {
     }
 }
 
+extension EnvironmentValues {
+    /// The ground a panel page draws behind itself, by slug. nil (v1): the
+    /// flat `Theme.bg`. v2 sets it to its section-tinted ground (S1).
+    @Entry var settingsGround: (@MainActor (String) -> AnyView)? = nil
+}
+
+/// A panel page's ground: the product's override for `slug`, else `Theme.bg`.
+struct SettingsPanelGround: View {
+    let slug: String
+    @Environment(\.settingsGround) private var ground
+
+    var body: some View {
+        if let ground { ground(slug) } else { Theme.bg.ignoresSafeArea() }
+    }
+}
+
 private struct SettingsLayoutReader: ViewModifier {
     @Environment(\.horizontalSizeClass) private var sizeClass
 
