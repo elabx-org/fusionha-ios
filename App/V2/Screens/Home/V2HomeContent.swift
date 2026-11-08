@@ -7,7 +7,8 @@ import FusionhaKit
 /// pane) everything stacks; wide (700 and up: the open Duo, an iPad) the
 /// counts sit beside Needs you as one line (`V2NeedsYouLine`), Coming up
 /// spans the page (`V2ComingUpRow`), Recently added is the zipper and the
-/// kinds are side-by-side columns.
+/// kinds are side-by-side columns. The sections are the anchors Home keeps
+/// at its top across a fold (`foldRow`): the same ids in both layouts.
 struct V2HomeContent: View {
     let data: V2HomeData
     let held: Set<Int>
@@ -41,23 +42,26 @@ struct V2HomeContent: View {
     private var narrowBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             heading.padding(.horizontal, gutter).padding(.top, 4)
+                .foldRow(FoldAnchorTop.header)
             if !data.attention.isEmpty {
                 attention.padding(.horizontal, gutter).padding(.top, 14)
             }
             V2ComingUpRow(width: width, gutter: gutter, wide: false, topGap: 22, leadArt: $comingUpArt)
+                .foldRow("home-comingup")
             V2RecentSection(data: data, width: width, gutter: gutter, wide: false) { open(.recent(lastMonth: data.recentCount > 0)) }
                 .padding(.top, 18)
-                .id("home-recent")
+                .foldRow("home-recent")
             VStack(alignment: .leading, spacing: 26) {
                 ForEach(data.kinds) { kind in
                     V2KindStrip(kind: kind, gutter: gutter) { open(.kind(kind.kind)) }
                 }
             }
             .padding(.top, 26)
-            .id("home-kinds")
+            .foldRow("home-kinds")
             V2AllTitlesCard(data: data) { open(.everything) }
                 .padding(.horizontal, gutter)
                 .padding(.top, 28)
+                .foldRow("home-all")
         }
     }
 
@@ -70,13 +74,15 @@ struct V2HomeContent: View {
                     .frame(maxWidth: .infinity, alignment: .topTrailing)
             }
             .padding(.top, 8)
+            .foldRow(FoldAnchorTop.header)
             V2ComingUpRow(width: width, gutter: gutter, wide: true, topGap: 22, leadArt: $comingUpArt)
+                .foldRow("home-comingup")
             V2RecentSection(data: data, width: width, gutter: gutter, wide: true) { open(.recent(lastMonth: data.recentCount > 0)) }
                 .padding(.top, 26)
-                .id("home-recent")
+                .foldRow("home-recent")
             V2HomeKinds(data: data, open: open)
                 .padding(.top, 30)
-                .id("home-kinds")
+                .foldRow("home-kinds")
         }
         .padding(.horizontal, gutter)
     }

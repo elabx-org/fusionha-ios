@@ -47,6 +47,7 @@ struct V2WantedList: View {
                     .contentShape(Rectangle())
                     .onTapGesture { open(item) }
                     .v2ModuleRow(index, of: items.count, selected: item.id == picked)
+                    .foldRow("wanted.\(item.id)")
             }
             ActFooter(total: feed.total, loaded: items.count, hasMore: feed.hasMore, loading: feed.loadingMore,
                       noun: data.tab.noun, query: data.search) { Task { await feed.loadMore() } }
@@ -85,6 +86,7 @@ struct V2WantedFourKList: View {
                     .contentShape(Rectangle())
                     .onTapGesture { open(item) }
                     .v2ModuleRow(index, of: items.count, selected: item.id == picked)
+                    .foldRow("fourk.\(item.id)")
             }
             ActFooter(total: feed.total, loaded: items.count, hasMore: feed.hasMore, loading: feed.loadingMore,
                       noun: WantedTab.fourk.noun, query: data.search) { Task { await feed.loadMore() } }

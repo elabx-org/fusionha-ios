@@ -151,18 +151,21 @@ struct V2TasksScope: View {
                 SearchRunCard(run: run) { Task { await store.refresh(model.client) } }
                     .taskFocusFlash(run.id == focusRunId)
                     .v2ScopeBlock(9)
+                    .foldRow("search.\(run.id)")
             }
         }
         if !scanning.isEmpty {
             V2ScopeSectionHead(title: "Scanning", systemImage: "waveform").v2ScopeBlock(8)
             ForEach(scanning) { run in
                 RunningRow(run: run, queued: false, playful: store.playful, focused: run.id == focusRunId).v2ScopeBlock(9)
+                    .foldRow("scan.\(run.id)")
             }
         }
         if !queued.isEmpty {
             V2ScopeSectionHead(title: "Queued (\(queued.count))", systemImage: "hourglass").v2ScopeBlock(8)
             ForEach(queued) { run in
                 RunningRow(run: run, queued: true, playful: store.playful, focused: run.id == focusRunId).v2ScopeBlock(9)
+                    .foldRow("queued.\(run.id)")
             }
         }
     }
@@ -181,6 +184,7 @@ struct V2TasksScope: View {
                          points: split.splits, open: { show(entry.run) },
                          toggleEarlier: entry.earlier > 0 ? { toggle(entry.groupKey) } : nil)
                 .v2ModuleRow(index, of: rows.count, selected: split.splits && entry.run.id == pickedRun?.id)
+                .foldRow("recent.\(entry.id)")
         }
     }
 

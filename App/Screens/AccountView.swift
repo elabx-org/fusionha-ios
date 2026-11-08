@@ -21,6 +21,10 @@ struct AccountView: View {
     /// Account's left page in a Spread: Watchlists & lists opens on the right
     /// page (`AccountSpreadSheet`) instead of pushing here.
     var openListsOnPage: ((String?) -> Void)?
+    /// v2: Watchlists & lists rides across a fold (`AccountFoldPlace`).
+    @Environment(\.accountFoldPlace) private var foldPlace
+    @State private var foldHost = UUID()
+    @State private var foldRestored = false
 
     var body: some View {
         List {
@@ -43,6 +47,12 @@ struct AccountView: View {
         .automaticRequestsLoading(watchlists, client: model.client)
         .navigationDestination(isPresented: $showingLists) {
             WatchlistsPage(store: watchlists, initialSource: listsSource)
+        }
+        .onAppear { restoreFromFold() }
+        .onChange(of: showingLists) { _, open in
+            guard let foldPlace, foldPlace.listsHost == foldHost else { return }
+            foldPlace.listsOpen = open
+            if !open { foldPlace.source = nil }
         }
         // `fusionha://account/lists[/<source-id>]` and `account#watchlist`.
         .onChange(of: model.pendingLists, initial: true) {
@@ -160,6 +170,14 @@ struct AccountView: View {
     }
 
     // MARK: Watchlists & lists
+
+    /// v2, after a fold: Watchlists & lists (and its source) as the other host had it.
+    private func restoreFromFold() {
+        guard let foldPlace, !foldRestored else { return }
+        foldRestored = true
+        foldPlace.listsHost = foldHost
+        if foldPlace.reopensLists { openLists(foldPlace.source) }
+    }
 
     /// Pushes Watchlists & lists, opening `sourceId` when a link named one.
     private func openLists(_ sourceId: String?) {

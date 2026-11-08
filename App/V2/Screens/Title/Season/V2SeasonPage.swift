@@ -12,6 +12,8 @@ struct V2SeasonPage: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     @Environment(\.detailReduceMotion) private var reduce
+    /// The window's kept stacks: the season keeps its place across a fold.
+    @Environment(V2TitleStacks.self) private var stacks: V2TitleStacks?
     let seasonNumber: Int
     @State private var width: CGFloat = 0
 
@@ -51,45 +53,53 @@ struct V2SeasonPage: View {
         let still = TMDBImage.resized(detail.backdropUrl ?? detail.posterUrl, to: "w300")
         // What the season's files share, said once under the bar (option B).
         let fileFacts = SeasonFileFacts.perVersion(season, editions: editions)
-        return List {
-            if !fileFacts.isEmpty {
-                V2SeasonFileFactsHeader(versions: fileFacts)
-                    .listRowInsets(EdgeInsets(top: 0, leading: gutter, bottom: 0, trailing: gutter))
+        // Fold continuity: the episode row under the eye line comes back in the new host.
+        let place = stacks?.place(.season(seasonNumber), on: store.itemId)
+        return ScrollViewReader { proxy in
+            List {
+                if !fileFacts.isEmpty {
+                    V2SeasonFileFactsHeader(versions: fileFacts)
+                        .foldPlaceRow(FoldAnchorTop.header)
+                        .listRowInsets(EdgeInsets(top: 0, leading: gutter, bottom: 0, trailing: gutter))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+                V2SeasonPageHeader(detail: detail, season: season, facts: facts, canSearch: canSearch)
+                    .foldPlaceRow(FoldAnchorTop.header)
+                    .listRowInsets(EdgeInsets(top: 8, leading: gutter, bottom: 16, trailing: gutter))
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
+                ForEach(Array(episodes.enumerated()), id: \.element.id) { index, episode in
+                    V2EpisodeRow(detail: detail, episode: episode,
+                                 state: V2EpisodeState(episode: episode, editions: editions),
+                                 monitored: store.episodeMonitored(episode), stillURL: V2EpisodeRow.still(episode, series: still),
+                                 fileFacts: fileFacts, factsSeason: seasonNumber)
+                        .foldPlaceRow(episode.id)
+                        .background {
+                            NavigationLink(value: V2TitleRoute.episode(season: seasonNumber, episodeId: episode.id)) { EmptyView() }
+                                .opacity(0)
+                        }
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint("Opens the episode")
+                        // Inside the episode card: the gutter plus the card's inset.
+                        .listRowInsets(EdgeInsets(top: 0, leading: gutter + ModuleMetrics.inset, bottom: 0,
+                                                  trailing: gutter + ModuleMetrics.inset))
+                        .listRowBackground(ModuleListSegment(
+                            position: .init(index: index, count: episodes.count), gutter: gutter,
+                            hairlineLeading: ModuleMetrics.inset + V2EpisodeRow.textLeading(hasStill: still != nil)))
+                        .listRowSeparator(.hidden)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            swipe(detail, episode)
+                        }
+                        .contextMenu { V2EpisodeContextMenu(detail: detail, seasonNumber: seasonNumber, episode: episode) }
+                }
             }
-            V2SeasonPageHeader(detail: detail, season: season, facts: facts, canSearch: canSearch)
-                .listRowInsets(EdgeInsets(top: 8, leading: gutter, bottom: 16, trailing: gutter))
-                .listRowBackground(Color.clear)
-                .listRowSeparator(.hidden)
-            ForEach(Array(episodes.enumerated()), id: \.element.id) { index, episode in
-                V2EpisodeRow(detail: detail, episode: episode,
-                             state: V2EpisodeState(episode: episode, editions: editions),
-                             monitored: store.episodeMonitored(episode), stillURL: V2EpisodeRow.still(episode, series: still),
-                             fileFacts: fileFacts, factsSeason: seasonNumber)
-                    .background {
-                        NavigationLink(value: V2TitleRoute.episode(season: seasonNumber, episodeId: episode.id)) { EmptyView() }
-                            .opacity(0)
-                    }
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityHint("Opens the episode")
-                    // Inside the episode card: the gutter plus the card's inset.
-                    .listRowInsets(EdgeInsets(top: 0, leading: gutter + ModuleMetrics.inset, bottom: 0,
-                                              trailing: gutter + ModuleMetrics.inset))
-                    .listRowBackground(ModuleListSegment(
-                        position: .init(index: index, count: episodes.count), gutter: gutter,
-                        hairlineLeading: ModuleMetrics.inset + V2EpisodeRow.textLeading(hasStill: still != nil)))
-                    .listRowSeparator(.hidden)
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        swipe(detail, episode)
-                    }
-                    .contextMenu { V2EpisodeContextMenu(detail: detail, seasonNumber: seasonNumber, episode: episode) }
-            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .contentMargins(.bottom, 32, for: .scrollContent)
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+            .keepsFoldPlace(place, proxy: proxy)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .contentMargins(.bottom, 32, for: .scrollContent)
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
     }
 
     private var gutter: CGFloat { width >= 560 ? 24 : 16 }

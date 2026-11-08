@@ -79,12 +79,14 @@ final class AppModel {
     var pendingHistoryFilter: HistoryItemFilter?
     var pendingDiscoverTab: DiscoverTab?
     /// v2: a route that opens the Library or filters it lands in All titles
-    /// (pushed over Home); Home takes and clears it. v1 has no Home.
+    /// (pushed over Home); Home (or All titles, when it is already up) takes
+    /// and clears it. v1 has no Home.
     var pendingAllTitles = false
-    /// v2: All titles is pushed over Home in this window. Per window, not
-    /// per view: the shell can rebuild Home (settling at launch, a fold) and
-    /// the new one must see the push the old one made.
-    var allTitlesShown = false
+    /// v2: All titles pushed over Home in this window (`AllTitlesPush`: one
+    /// idempotent open / close). Per window, not per view: the shell can
+    /// rebuild Home (settling at launch, a fold) and the new one must see
+    /// the push the old one made.
+    var allTitles = AllTitlesPush()
     /// v2: All titles has appeared (its page is on screen), so a route can
     /// tell a push that landed from one the stack dropped.
     var allTitlesOnScreen = false

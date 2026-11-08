@@ -36,6 +36,11 @@ struct V2ComingUpRow: View {
     /// The focused card across the fold: folded and open Home are two rows,
     /// so the new one opens on the card the other had (−1 = none yet).
     @SceneStorage("v2.home.comingUpFocus") private var keptFocus = -1
+    /// The same, timed (`FoldAnchorLog`, per window): the resize that swaps
+    /// the rows can re-centre the old one on its first card just before it
+    /// goes, so the new row opens on the card focused before the resize.
+    @Environment(\.foldKeep) private var foldKeep
+    @State private var bornAt = ProcessInfo.processInfo.systemUptime
 
     /// Wide and flat (one panel): Coming up spans the page.
     @Environment(\.screenCentreSkew) private var skew
@@ -87,7 +92,11 @@ struct V2ComingUpRow: View {
             }
             if leadArt != leadURL { leadArt = leadURL }
         }
-        .onChange(of: focused) { if let focused, opening == nil { keptFocus = focused } }
+        .onChange(of: focused) {
+            guard let focused, opening == nil else { return }
+            keptFocus = focused
+            focusLog?.record(AnyHashable(focused))
+        }
         .task(id: window) { await feed() }
         .onChange(of: RebuildKey(entries: entries, kinds: kindsRaw, window: window, version: model.libraryVersion),
                   initial: true) { rebuild() }
@@ -127,9 +136,16 @@ struct V2ComingUpRow: View {
         if let focused, !next.contains(where: { $0.id == focused }) { self.focused = nil }
         if !opened, focused == nil, !next.isEmpty {
             opened = true
-            opening = next.contains { $0.id == keptFocus }
-                ? keptFocus : next[min(openingIndex, next.count - 1)].id
+            let carried = focusLog?.log.anchor(before: bornAt)?.base as? Int
+            let kept = carried ?? keptFocus
+            opening = next.contains { $0.id == kept }
+                ? kept : next[min(openingIndex, next.count - 1)].id
         }
+    }
+
+    /// The window's focus log, shared by the folded and open rows.
+    private var focusLog: FoldAnchorTracker? {
+        foldKeep?.object("v2.home.comingUpFocus") { FoldAnchorTracker() }
     }
 
     /// The row opens on the third title (owner, 2026-11-07), folded and open

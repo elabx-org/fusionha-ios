@@ -9,6 +9,12 @@ import FusionhaKit
 /// Library or filters it (`AppModel.pendingAllTitles`). Whether All titles
 /// is open is kept per window, as the Library's filters are. Home has no
 /// filter chips or search field; those live in All titles.
+///
+/// The push is one idempotent path (`AppModel.allTitles`, `AllTitlesPush`):
+/// a tap, a route or a restore opens it once, Back closes it once, and a
+/// push the stack dropped under a kept one (a fold, the launch settling) is
+/// put back while Home is on screen (`keepPushed`). Across a fold Home keeps
+/// the section at its top (`FoldAnchor`) and Coming up its centred card.
 struct V2HomeView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
@@ -24,6 +30,10 @@ struct V2HomeView: View {
     @State private var width: CGFloat = 0
     /// The focused Coming up card's art: the ground follows it.
     @State private var comingUpArt: URL?
+    /// The section at the top, kept across a fold (`FoldAnchor`).
+    @State private var anchor = FoldAnchorTracker()
+    /// A kept All titles was put back once for this Home (relaunch).
+    @State private var restored = false
 
     /// Flat open beside an open title: the list pane takes the title's
     /// palette with no art of its own (the Library's rule, slice S5).
@@ -52,14 +62,15 @@ struct V2HomeView: View {
             } action: { old, new in
                 // Under All titles, Home stays mounted: only the page on top
                 // drives the chrome, or the two scroll views fight over it.
-                guard !model.allTitlesShown else { return }
+                guard !model.allTitles.wanted else { return }
                 model.updateChrome(old: old, new: new)
             }
+            .keepsFoldAnchor(anchor, proxy: proxy)
             // Tapping the Home tab: under All titles it goes back to Home
             // (the system's pop-to-root); on Home it scrolls to the top.
             .onChange(of: model.scrollToTopTick) {
-                if model.allTitlesShown {
-                    withAnimation(motion ? .smooth : nil) { model.allTitlesShown = false }
+                if model.allTitles.wanted {
+                    withAnimation(motion ? .smooth : nil) { closeAllTitles() }
                 } else {
                     withAnimation(motion ? .smooth : nil) { proxy.scrollTo("home-top", anchor: .top) }
                 }
@@ -82,29 +93,11 @@ struct V2HomeView: View {
         // still drew a second "Home" above the page's, build 982).
         .shellPage("") { AddTitleToolbarItem(model: model) }
         // Home spans both pages of a Spread; All titles keeps the grid's rule.
-        .spreadSpansBothPages(.library, !model.allTitlesShown || density != "compact")
+        .spreadSpansBothPages(.library, !model.allTitles.wanted || density != "compact")
         .navigationDestination(isPresented: allTitlesBinding) { V2LibraryView(entry: entry) }
-        .onChange(of: model.allTitlesShown) { _, shown in
-            allTitlesKept = shown
-            if !shown { entry = nil }
-        }
-        // Home on screen while the push is set: the tab's stack was rebuilt
-        // under it (the shell settling at launch, a fold) and dropped All
-        // titles. Push it again. A pop clears the flag before Home appears.
-        .onAppear {
-            guard model.allTitlesShown else { return }
-            model.allTitlesShown = false
-            Task { await push(nil, animated: false) }
-        }
-        // Restores All titles on relaunch and when a fold rebuilds the shell
-        // (a new Home whose push state starts false).
-        .task {
-            if Self.freshForScreenshots && !Self.screenshotReset {
-                Self.screenshotReset = true
-                allTitlesKept = false
-            }
-            if allTitlesKept && !model.allTitlesShown { await push(nil, animated: false) }
-        }
+        .task { await restoreKept() }
+        // While Home is on screen with the push kept (it went: the page covers Home).
+        .task(id: model.allTitles.wanted) { await keepPushed() }
         .task { await model.loadLibraryIfNeeded() }
         .onQueueChange(model, initial: true) { queue in
             let next = Set(queue.filter { QueueProgress($0).held }.map(\.mediaItemId))
@@ -113,38 +106,97 @@ struct V2HomeView: View {
         .onChange(of: DataKey(version: model.libraryVersion, held: held), initial: true) {
             data = PerfCount.time("V2Home.data") { V2HomeData(library: model.library, held: held) }
         }
-        // Routes that open the Library land in All titles. At launch the
-        // push waits for the first library load (up to 3 s): pushed while
-        // it was loading, the stack stalled on Home (CI, small library).
-        // The push is checked, not trusted: the shell can rebuild the stack
-        // under it while it settles at launch, so it is pushed again until
-        // All titles is on screen (five tries a second apart). The route is
-        // consumed only then: a Home torn down mid-way leaves it for the next.
-        .task(id: model.pendingAllTitles) {
-            guard model.pendingAllTitles else { return }
-            for _ in 0..<30 where !model.libraryLoaded {
-                try? await Task.sleep(for: .milliseconds(100))
-            }
-            for _ in 0..<5 where !model.allTitlesOnScreen {
-                guard !Task.isCancelled, model.pendingAllTitles, !model.allTitlesOnScreen else { return }
-                model.allTitlesShown = false
-                guard await push(.asLeft, animated: false) else { return }
-                try? await Task.sleep(for: .seconds(1))
-            }
-            guard !Task.isCancelled else { return }
-            model.pendingAllTitles = false
+        // Routes that open the Library land in All titles (`takeRoute`).
+        .task(id: model.pendingAllTitles) { await takeRoute() }
+    }
+
+    /// The push lives on the window's model (`AppModel.allTitles`). The
+    /// stack writes only pops (`AllTitlesPush.stackSet`).
+    private var allTitlesBinding: Binding<Bool> {
+        Binding { model.allTitles.presented } set: { shown in
+            if model.allTitles.stackSet(shown) { forgetAllTitles() }
         }
     }
 
-    /// The push lives on the window's model (`AppModel.allTitlesShown`),
-    /// set a beat after Home is up: a destination presented in the stack's
-    /// first pass came up blank (CI, build 1).
-    private var allTitlesBinding: Binding<Bool> {
-        Binding { model.allTitlesShown } set: { model.allTitlesShown = $0 }
+    private func openAllTitles(_ how: V2AllTitlesEntry) {
+        show(how, animated: true)
     }
 
-    private func openAllTitles(_ how: V2AllTitlesEntry) {
-        Task { await push(how, animated: true) }
+    /// The one way in: pushes All titles unless it is already pushed (or on
+    /// its way), so a second tap or a repeated route pushes nothing. Only a
+    /// tap on Home animates; routes and restores land in place (an animated
+    /// push over a Home still laying out Coming up stalled the folded Duo in CI).
+    private func show(_ how: V2AllTitlesEntry?, animated: Bool) {
+        guard !model.allTitles.wanted else { return }
+        if let how { entry = how }
+        allTitlesKept = true
+        var transaction = Transaction()
+        transaction.disablesAnimations = !animated
+        withTransaction(transaction) { _ = model.allTitles.open() }
+    }
+
+    /// The one way out besides Back: the Home tab tapped under All titles.
+    private func closeAllTitles() {
+        model.allTitles.close()
+        forgetAllTitles()
+    }
+
+    private func forgetAllTitles() {
+        allTitlesKept = false
+        entry = nil
+    }
+
+    /// Once per Home: All titles open in this window before a relaunch
+    /// comes back. A beat after Home is up: a destination presented in the
+    /// stack's first pass came up blank (CI, build 1).
+    private func restoreKept() async {
+        guard !restored else { return }
+        restored = true
+        if Self.freshForScreenshots && !Self.screenshotReset {
+            Self.screenshotReset = true
+            allTitlesKept = false
+        }
+        guard allTitlesKept, !model.allTitles.wanted else { return }
+        try? await Task.sleep(for: .milliseconds(80))
+        guard !Task.isCancelled else { return }
+        show(nil, animated: false)
+    }
+
+    /// Home on screen while the push is kept: the shell rebuilt the tab's
+    /// stack under it (a fold, the launch settling) and dropped the page,
+    /// or the push stalled. Put the same push back (binding false, a beat,
+    /// true), checked a few times; never closes it. A pop clears the push
+    /// first, so Back stays on Home.
+    private func keepPushed() async {
+        guard model.allTitles.wanted else { return }
+        for wait in [600, 1000, 1000, 1000, 1000] {
+            // The first wait outlasts an animated push, whose page appears as it starts.
+            try? await Task.sleep(for: .milliseconds(wait))
+            guard !Task.isCancelled, model.allTitles.wanted else { return }
+            guard model.allTitles.dropped(pageOnScreen: model.allTitlesOnScreen) else { continue }
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) { model.allTitles.withdraw() }
+            try? await Task.sleep(for: .milliseconds(80))
+            // Even when cancelled: never leave the push withdrawn.
+            withTransaction(instant) { _ = model.allTitles.reassert() }
+        }
+    }
+
+    /// A route that opens the Library: All titles, once. At launch it waits
+    /// for the first library load (up to 3 s): pushed while it was loading,
+    /// the stack stalled on Home (CI, small library). Taken here, or by All
+    /// titles when it is already up (`V2LibraryView`); a Home torn down
+    /// before it was taken leaves it for the next.
+    private func takeRoute() async {
+        guard model.pendingAllTitles else { return }
+        for _ in 0..<30 where !model.libraryLoaded {
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        try? await Task.sleep(for: .milliseconds(80))
+        guard !Task.isCancelled, model.pendingAllTitles else { return }
+        model.pendingAllTitles = false
+        show(.asLeft, animated: false)
     }
 
     /// CI screenshots start on Home unless a shot asks for All titles.
@@ -159,24 +211,6 @@ struct V2HomeView: View {
     /// Once per launch, screenshots forget a kept All titles (each shot
     /// starts on Home unless it asks for All titles).
     @MainActor private static var screenshotReset = false
-
-    /// False when this Home went away before the push (nothing was set).
-    /// Only a tap on Home animates; routes and restores land in place (an
-    /// animated push over a Home still laying out Coming up stalled the
-    /// folded Duo in CI).
-    @discardableResult
-    private func push(_ how: V2AllTitlesEntry?, animated: Bool) async -> Bool {
-        try? await Task.sleep(for: .milliseconds(80))
-        guard !Task.isCancelled else { return false }
-        if let how { entry = how }
-        // Kept here, not only in onChange: a Home rebuilt in the same
-        // update (the shell settling its layout) restores from it.
-        allTitlesKept = true
-        var transaction = Transaction()
-        transaction.disablesAnimations = !animated
-        withTransaction(transaction) { model.allTitlesShown = true }
-        return true
-    }
 
     private struct DataKey: Equatable {
         let version: Int
