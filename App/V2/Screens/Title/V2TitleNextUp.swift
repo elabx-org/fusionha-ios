@@ -69,8 +69,8 @@ struct V2TitleNextUp {
     }
 }
 
-/// The Next up card: the series art until episode stills arrive, the
-/// episode, when it aired or airs, its versions' badges, and an automatic
+/// The Next up card: the episode's still (the series art when it has
+/// none), the episode, when it aired or airs, its versions' badges, and an automatic
 /// search for it. Tapping the card opens the episode.
 struct V2TitleNextUpCard: View {
     @Environment(DetailStore.self) private var store
@@ -115,7 +115,7 @@ struct V2TitleNextUpCard: View {
 
     private var card: some View {
         HStack(spacing: 12) {
-            PosterImage(url: TMDBImage.resized(detail.backdropUrl ?? detail.posterUrl, to: "w300"))
+            PosterImage(url: V2EpisodeRow.still(next.episode, in: detail))
                 .frame(width: stillWidth, height: (stillWidth * 9 / 16).rounded())
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .accessibilityHidden(true)

@@ -31,6 +31,12 @@ struct V2EpisodeRow: View {
     static func still(_ episode: Episode, series: URL?) -> URL? {
         episode.stillUrl.flatMap(URL.init(string:)) ?? series
     }
+
+    /// A small still for one episode of `detail`: its own, else the series
+    /// backdrop (or poster) at w300.
+    static func still(_ episode: Episode, in detail: ItemDetail) -> URL? {
+        still(episode, series: TMDBImage.resized(detail.backdropUrl ?? detail.posterUrl, to: "w300"))
+    }
     static let numberSide: CGFloat = 44
     static let leadSpacing: CGFloat = 12
     /// Where the text column starts inside the row, for the card's hairline.

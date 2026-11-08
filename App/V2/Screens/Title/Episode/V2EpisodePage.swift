@@ -2,8 +2,8 @@ import SwiftUI
 import FusionhaKit
 
 /// An episode, pushed from its season (mock browse.js `episodePhone`,
-/// browse-sheets.js `BRS.episode`, slice S6): the art (the series backdrop
-/// until episode stills arrive) with the episode's title in white on its
+/// browse-sheets.js `BRS.episode`, slice S6): the art (the episode's still,
+/// else the series backdrop) with the episode's title in white on its
 /// darkened foot and "S1 · E4 · Oct 20 '26 · 48m", then Details | History |
 /// Search. The bar carries Automatic search, Interactive search and the
 /// file's actions. Everything runs v1's episode code on the title's store.
@@ -141,6 +141,12 @@ struct V2EpisodeHero: View {
     let seasonNumber: Int
 
     private var light: Bool { page?.isLight ?? Theme.isLight }
+    /// The episode's still at full size (TMDB `original`; another provider's
+    /// as stored), else the series backdrop.
+    private var art: URL? {
+        TMDBImage.resized(episode.stillUrl, to: "original")
+            ?? ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl)
+    }
 
     var body: some View {
         Color.clear
@@ -148,7 +154,7 @@ struct V2EpisodeHero: View {
             .frame(maxWidth: .infinity)
             .background {
                 ZStack {
-                    PosterImage(url: ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl))
+                    PosterImage(url: art)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipped()
                     V2HeroShade(light: light, tint: page?.tint)
