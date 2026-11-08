@@ -57,7 +57,7 @@ jobs:
     steps:
       # Shallow: a full clone drags in the screenshots branch's PNG history.
       # A diff needs only the two trees, so the push case fetches `before`.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - id: plan
         env:
           EVENT: ${{ github.event_name }}
@@ -101,7 +101,7 @@ jobs:
     if: inputs.duo_only == ''
     runs-on: xcode-27
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       # iPhone Duo needs apps built with Xcode 27.1 or later (older builds run
       # letterboxed on its inner display). GitHub ships it on the `xcode-27` image.
@@ -138,7 +138,7 @@ jobs:
           # so they are readable from the API without the artifact.
           grep -E ": error: |error: .*\.swift" tests.log | sort -u | head -40 | sed 's/^/::error::/' || true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: fusionhakit-tests
@@ -162,7 +162,7 @@ jobs:
       matrix:
         scheme: [Fusionha, FusionhaV2]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       # iPhone Duo needs apps built with Xcode 27.1 or later (older builds run
       # letterboxed on its inner display). GitHub ships it on the `xcode-27` image.
@@ -210,7 +210,7 @@ jobs:
           zip -qry ${{ matrix.scheme }}.ipa Payload
           ls -lh ${{ matrix.scheme }}.ipa
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ matrix.scheme }}-unsigned-ipa
           path: ${{ matrix.scheme }}.ipa
@@ -228,7 +228,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Select Xcode 27.1
         run: |
@@ -292,18 +292,19 @@ jobs:
   # release's v2 entry is carried forward (scripts/release_source.sh).
   release:
     name: Publish release
-    needs: build
+    needs: [build, test]
+    # `!cancelled()` would also run after failed tests, so they are required explicitly.
     if: >-
-      !cancelled() && github.event_name == 'push' &&
+      !cancelled() && github.event_name == 'push' && needs.test.result == 'success' &&
       (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       # Each leg's IPA, if it built (Fusionha.ipa, FusionhaV2.ipa).
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         continue-on-error: true
         with:
           pattern: "*-unsigned-ipa"
@@ -318,7 +319,7 @@ jobs:
 
       - name: Publish release
         if: steps.release.outputs.tag != ''
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           tag_name: ${{ steps.release.outputs.tag }}
           name: ${{ steps.release.outputs.name }}
@@ -347,7 +348,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       # iPhone Duo needs apps built with Xcode 27.1 or later (older builds run
       # letterboxed on its inner display). GitHub ships it on the `xcode-27` image.
@@ -715,7 +716,7 @@ jobs:
           sleep 2
           scripts/duo_harness_shots.sh build/Build/Products/Debug-iphonesimulator/Fusionha.app shots http://127.0.0.1:8768 "${ONLY:-}"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: screenshots
@@ -724,6 +725,8 @@ jobs:
 
       - name: Publish to the screenshots branch
         if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        env:
+          SHOTS_ONLY: ${{ inputs.shots_only }}
         run: |
           # pr-N for a PR, main for main and tags, branch-<name> for a manual run on
           # a branch (so it never overwrites the main baseline).
@@ -732,7 +735,7 @@ jobs:
           else DIR="branch-$(echo "$GITHUB_REF_NAME" | tr '/' '-' | tr -cd 'A-Za-z0-9._-')"; fi
           # Keep the iPhone Duo job's $DIR/duo/ (published separately).
           # A filtered run (shots_only) adds its shots without removing the rest.
-          if [ -n "${{ inputs.shots_only }}" ]; then scripts/publish_shots.sh shots "$DIR" --add
+          if [ -n "$SHOTS_ONLY" ]; then scripts/publish_shots.sh shots "$DIR" --add
           else scripts/publish_shots.sh shots "$DIR" --keep-subdirs; fi
 
   # iPhone Duo: the main screens folded, unfolded and half open, in portrait
@@ -752,7 +755,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Select Xcode 27.1
         run: |
@@ -855,7 +858,7 @@ jobs:
           scripts/duo_proxy.sh build/Build/Products/Debug-iphonesimulator/Fusionha.app duo/shots || true
           cat duo/shots/duo-poses.log || true
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: duo-screenshots
@@ -888,7 +891,7 @@ jobs:
     env:
       SCOPE: ${{ inputs.perf_scope || 'all' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       # iPhone Duo needs apps built with Xcode 27.1 or later (older builds run
       # letterboxed on its inner display). GitHub ships it on the `xcode-27` image.
@@ -1031,7 +1034,7 @@ jobs:
             | xcrun swift-demangle --simplified | cut -c1-240 | tee perf/summary.txt
           { echo '## Activity perf'; echo '```'; cat perf/summary.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: perf
