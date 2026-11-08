@@ -17,7 +17,8 @@ struct V2FixReplaceTarget: Identifiable {
 /// The Replace confirmation (mock frame 2): what happens in one sentence,
 /// the release that would be blocklisted (`blocklist-target`), the
 /// "Blocklist this release" toggle (on for damaged files, off for gone
-/// ones; hidden when no file has a release on record), then Cancel and the accent Replace. With the toggle on, files with
+/// ones; greyed with the reason as its subtitle when no file has a release
+/// on record, and the Release card left out), then Cancel and the accent Replace. With the toggle on, files with
 /// a release on record are deleted with it blocklisted and searched; the rest
 /// go through the model's replace.
 struct V2FixReplaceSheet: View {
@@ -52,9 +53,9 @@ struct V2FixReplaceSheet: View {
                     .foregroundStyle(muted)
                     .fixedSize(horizontal: false, vertical: true)
                 if !target.candidates.isEmpty {
-                    releaseCard
-                    // Only when there's a release to blocklist: a dead switch reads as broken.
-                    if loaded && canBlocklist { toggle }
+                    // No release on record: the switch stays, greyed, and says why itself.
+                    if !loaded || canBlocklist { releaseCard }
+                    toggle
                 }
                 buttons
             }
@@ -76,11 +77,6 @@ struct V2FixReplaceSheet: View {
                 .foregroundStyle(muted)
             if !loaded {
                 ProgressView().frame(maxWidth: .infinity, alignment: .leading)
-            } else if shown.isEmpty {
-                Text("No release on record (the file wasn’t grabbed by fusionha), so there’s nothing to blocklist.")
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(muted)
-                    .fixedSize(horizontal: false, vertical: true)
             } else {
                 ForEach(Array(shown.prefix(3).enumerated()), id: \.offset) { _, r in
                     Text(r.releaseTitle)
@@ -109,13 +105,16 @@ struct V2FixReplaceSheet: View {
                 Text(target.candidates.count > 1 ? "Blocklist these releases" : "Blocklist this release")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(ink)
-                Text("So the same copy isn’t grabbed again")
+                Text(loaded && !canBlocklist
+                     ? (target.candidates.count > 1 ? "Nothing to blocklist: fusionha didn’t grab these files"
+                                                   : "Nothing to blocklist: fusionha didn’t grab this file")
+                     : "So the same copy isn’t grabbed again")
                     .font(.system(size: 12.5))
                     .foregroundStyle(muted)
             }
         }
         .tint(Theme.primary)
-        .disabled(running)
+        .disabled(running || !canBlocklist)
         .padding(14)
         .background { ModuleSurface(radius: 14) }
     }
