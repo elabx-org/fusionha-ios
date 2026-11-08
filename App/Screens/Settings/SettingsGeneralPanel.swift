@@ -286,7 +286,7 @@ struct AppApiKeyRow: View {
 
     private func copy() {
         guard let shown else { return }
-        UIPasteboard.general.string = shown
+        SecretPasteboard.copy(shown)
         copied = true
         Task {
             try? await Task.sleep(for: .seconds(1.6))

@@ -76,7 +76,7 @@ struct SecurityRecoveryKeySheet: View {
         }
         Section {
             Button(copied ? "Copied" : "Copy", systemImage: "doc.on.doc") {
-                UIPasteboard.general.string = key.key
+                SecretPasteboard.copy(key.key)
                 copied = true
             }
             Button("Download .txt", systemImage: "arrow.down.circle") { share(key) }

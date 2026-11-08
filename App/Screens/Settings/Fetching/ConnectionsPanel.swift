@@ -173,14 +173,14 @@ struct ConnectionsPanel: View {
 
     private func copyKey(_ instance: VirtualInstance) {
         if let key = revealed[instance.id] {
-            copy(key, field: "\(instance.id):key", message: "API key copied")
+            copy(key, field: "\(instance.id):key", message: "API key copied", secret: true)
         } else {
-            reveal(instance) { copy($0, field: "\(instance.id):key", message: "API key copied") }
+            reveal(instance) { copy($0, field: "\(instance.id):key", message: "API key copied", secret: true) }
         }
     }
 
-    private func copy(_ text: String, field: String, message: String) {
-        UIPasteboard.general.string = text
+    private func copy(_ text: String, field: String, message: String, secret: Bool = false) {
+        if secret { SecretPasteboard.copy(text) } else { UIPasteboard.general.string = text }
         copied = field
         toaster.show(message)
         Task {

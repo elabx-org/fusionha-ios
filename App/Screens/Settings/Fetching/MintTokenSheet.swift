@@ -31,7 +31,7 @@ struct MintTokenSheet: View {
                         .foregroundStyle(Theme.txt)
                         .textSelection(.enabled)
                     Button(copied ? "Copied" : "Copy") {
-                        UIPasteboard.general.string = minted
+                        SecretPasteboard.copy(minted)
                         copied = true
                     }
                     .buttonStyle(.web())

@@ -83,7 +83,7 @@ struct SecuritySettingsPanel: View {
 
     private func copy() {
         guard let revealed else { return }
-        UIPasteboard.general.string = revealed
+        SecretPasteboard.copy(revealed)
         copied = true
         Task {
             try? await Task.sleep(for: .seconds(1.6))

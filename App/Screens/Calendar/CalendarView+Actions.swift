@@ -62,7 +62,7 @@ extension CalendarView {
                 parts.scheme = "webcal"
                 if let webcal = parts.url { _ = await UIApplication.shared.open(webcal) }
             } else {
-                UIPasteboard.general.string = url.absoluteString
+                SecretPasteboard.copy(url.absoluteString) // the feed URL carries the API key
                 model.toast("iCal feed URL copied — paste it into your calendar app.")
             }
         } catch {
