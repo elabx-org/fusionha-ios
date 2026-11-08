@@ -41,7 +41,6 @@ struct V2LibraryView: View {
     /// What `derived` was built from, but its columns (`V2LibraryDeriveKey`).
     @State private var derivedKey: V2LibraryDeriveKey?
     @State private var scrubber = ScrubberState()
-    @State private var posterSheet: MediaItem?
     @State private var pane = LibraryPane()
     @State private var onScreen = LibraryOnScreen()
     @State private var entrance = LibraryEntrance()
@@ -136,8 +135,8 @@ struct V2LibraryView: View {
         .toolbarVisibility(model.selectMode ? .hidden : .automatic, for: .tabBar)
         .librarySelectBar(active: model.selectMode, visibleIds: derived.visibleIds)
         .animation(motion ? .snappy(duration: 0.3) : nil, value: model.selectMode)
-        .environment(\.openPosterSheet, OpenPosterSheet { posterSheet = $0 })
-        .sheet(item: $posterSheet) { item in LibraryPosterSheet(item: item) }
+        // Turns on the posters' context menu (`V2PosterMenu`); v2 has no poster sheet.
+        .environment(\.openPosterSheet, OpenPosterSheet { _ in })
         .task {
             await model.loadLibraryIfNeeded()
         }

@@ -6,7 +6,8 @@ import FusionhaKit
 /// (Monitored, Refresh and scan, Sort) and View (Season history, Rename
 /// preview). Every item is v1's season action (`SeasonActionsSheet`), for
 /// all versions. The mock's "Columns…" is a desktop table option and has
-/// no iOS counterpart.
+/// no iOS counterpart. Look Pass family 2: Sort is an inline picker, and the
+/// v1 sheet's hints are the items' subtitles.
 struct V2SeasonActionsMenu: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
@@ -29,7 +30,8 @@ struct V2SeasonActionsMenu: View {
                     let seasonRun = store.activity(.season(n))
                     let missingRun = store.activity(.seasonMissing(n))
                     // Menu items show only text and a symbol: the season header shows the spinner.
-                    Button(seasonRun?.label ?? "Search season", systemImage: seasonRun?.symbol ?? "magnifyingglass") {
+                    hinted(seasonRun?.label ?? "Search season", hint: "One decision — prefers a season pack",
+                           symbol: seasonRun?.symbol ?? "magnifyingglass") {
                         store.v2Search(.season(n), label: label, season: n)
                     }
                     .disabled(seasonRun?.isSearching == true)
@@ -38,7 +40,8 @@ struct V2SeasonActionsMenu: View {
                         store.v2GradualSearch(.seasonMissing(n), label: label, season: n, missingOnly: true)
                     }
                     .disabled(missing == 0 || missingRun?.isSearching == true)
-                    Button("Search each episode", systemImage: "list.bullet.indent") {
+                    hinted("Search each episode", hint: "One at a time, ~\(store.seasonInterval)s apart",
+                           symbol: "list.bullet.indent") {
                         store.v2GradualSearch(.season(n), label: label, season: n, missingOnly: false)
                     }
                     .disabled(seasonRun?.isSearching == true)
@@ -58,9 +61,16 @@ struct V2SeasonActionsMenu: View {
                         Task { await store.refreshSeason(n) }
                     }
                 }
-                Button(oldest ? "Sort: oldest first" : "Sort: newest first", systemImage: "arrow.up.arrow.down") {
-                    if oldest { store.oldestFirst.remove(n) } else { store.oldestFirst.insert(n) }
+                // Look Pass family 2: Sort is an inline picker with its two choices.
+                Picker(selection: Binding(get: { oldest }, set: { on in
+                    if on { store.oldestFirst.insert(n) } else { store.oldestFirst.remove(n) }
+                })) {
+                    Text("Newest first").tag(false)
+                    Text("Oldest first").tag(true)
+                } label: {
+                    Label("Sort", systemImage: "arrow.up.arrow.down")
                 }
+                .pickerStyle(.menu)
             }
             Section("View") {
                 Button("Season history", systemImage: "clock.arrow.circlepath") {
@@ -77,5 +87,17 @@ struct V2SeasonActionsMenu: View {
             Label("Season actions", systemImage: "ellipsis")
         }
         .accessibilityLabel("\(season.title) actions")
+    }
+
+    /// A menu item with its hint as the item's subtitle (v1's sheet showed it under the row).
+    private func hinted(_ title: String, hint: String, symbol: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label {
+                Text(title)
+                Text(hint)
+            } icon: {
+                Image(systemName: symbol)
+            }
+        }
     }
 }

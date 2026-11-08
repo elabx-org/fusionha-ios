@@ -36,7 +36,7 @@ struct EditionAliasesSheet: View {
                         .foregroundStyle(Theme.mut)
                 }
                 .listRowBackground(Color.clear)
-                Section("Aliases") { list }
+                Section { list } header: { Text("Aliases").textCase(nil) }
                     .listRowBackground(Theme.card)
                 if editionNames.isEmpty {
                     Section {
@@ -50,14 +50,14 @@ struct EditionAliasesSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Theme.bg)
+            .dialogGround(Theme.bg)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton(title: "Close") { dismiss() } }
             }
             .closeOnlyBars()
         }
         .presentationDragIndicator(.visible)
-        .sheetBackground(Theme.bg)
+        .dialogSheetBackground(Theme.bg)
         .task { await load() }
         .retainsDraft("aliases.term", $term)
         .retainsDraft("aliases.edition", $edition)
@@ -74,6 +74,17 @@ struct EditionAliasesSheet: View {
                 HStack(spacing: 8) {
                     Text(alias.term).foregroundStyle(Theme.txt)
                     Text("→").foregroundStyle(Theme.dim)
+                    #if V2
+                    // v2 (Look Pass family 1): one ink; "guarded" is a quiet tag, not amber.
+                    Text(alias.edition).foregroundStyle(Theme.txt)
+                    if alias.guarded == true {
+                        Text("guarded")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Theme.mut)
+                            .padding(.horizontal, 7).padding(.vertical, 2)
+                            .background(Theme.txt.opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    }
+                    #else
                     Text(alias.edition).foregroundStyle(Theme.edition)
                     if alias.guarded == true {
                         Text("guarded")
@@ -82,6 +93,7 @@ struct EditionAliasesSheet: View {
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .overlay(Capsule().strokeBorder(Theme.miss.opacity(0.5)))
                     }
+                    #endif
                     Spacer(minLength: 4)
                     Button { Task { await remove(alias) } } label: { Image(systemName: "trash") }
                         .buttonStyle(.borderless)
@@ -121,7 +133,7 @@ struct EditionAliasesSheet: View {
                 .bold()
                 .disabled(!canAdd)
         } header: {
-            Text("Release term")
+            Text("Release term").textCase(nil)
         }
         .listRowBackground(Theme.card)
     }

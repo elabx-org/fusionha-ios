@@ -31,10 +31,18 @@ struct AddCollectionSheet: View {
                 VStack(alignment: .leading, spacing: 12) {
                     if let detail, look != nil {
                         v2Films(detail)
+                        #if V2
+                        // Look Pass family 1: each edition one form card, native pickers.
+                        V2FormLabel(text: "Editions").padding(.top, 8)
+                        V2CollectionEditionCard(tier: .hd, config: $hd, roots: roots, profiles: profiles, tag: "default")
+                        V2CollectionEditionCard(tier: .uhd, config: $uhd, roots: roots, profiles: profiles)
+                        V2CollectionSearchToggle(isOn: $searchOnAdd)
+                        #else
                         DialogSectionLabel(text: "Add them as").padding(.top, 8)
                         VStack(alignment: .leading, spacing: 12) { editions }
                             .padding(12)
                             .browseCard(look, radius: 20)
+                        #endif
                     } else if let detail {
                         ForEach(detail.parts, id: \.tmdbId) { part in
                             let owned = part.inLibrary == true
@@ -106,8 +114,13 @@ struct AddCollectionSheet: View {
     @ViewBuilder
     private func v2Films(_ detail: CollectionDetail) -> some View {
         let missing = detail.parts.filter { $0.owned != true }.map(\.tmdbId)
+        #if V2
+        V2SheetHeading(title: detail.name,
+                       subtitle: "\(detail.totalCount) films · \(detail.ownedCount) in your library · \(missing.count) to add")
+        #else
         CollectionSheetHeader(name: detail.name, backdrop: summary.backdropUrl ?? detail.posterUrl,
                               total: detail.totalCount, owned: detail.ownedCount, missing: missing.count)
+        #endif
         HStack(spacing: 8) {
             Button("Select all missing") { selected = Set(missing) }
                 .buttonStyle(.glass)
