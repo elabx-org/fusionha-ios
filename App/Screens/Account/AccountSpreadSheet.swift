@@ -16,6 +16,8 @@ struct AccountSpreadSheet: View {
     @State private var lists: ListsLink?
     /// A new value resets the right page's stack.
     @State private var rightKey = 0
+    /// v2: the right page's lists ride across a fold (`AccountFoldPlace`).
+    @Environment(\.accountFoldPlace) private var foldPlace
 
     var body: some View {
         Group {
@@ -43,6 +45,7 @@ struct AccountSpreadSheet: View {
     }
 
     private func open(_ sourceId: String?) {
+        foldPlace?.listsOpen = true
         lists = ListsLink(sourceId: sourceId)
         rightKey += 1
     }

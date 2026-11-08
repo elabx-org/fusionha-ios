@@ -25,6 +25,11 @@ struct ShellPresentations: ViewModifier {
                 set: { if measured && accountOnPages == paged { model.showingAccount = $0 } })
     }
 
+    /// v2: Account's inner page across a fold (`AccountFoldPlace`); nil in v1.
+    private var accountPlace: AccountFoldPlace? {
+        foldKeep?.object(AccountFoldPlace.key) { AccountFoldPlace() }
+    }
+
     func body(content: Content) -> some View {
         content
         // On the open Duo, both pages (Duo Add, part A): Find on the left,
@@ -38,14 +43,18 @@ struct ShellPresentations: ViewModifier {
         .sheet(isPresented: account(paged: false),
                onDismiss: { model.avatar.openPending(model) }) {
             AccountSheet().presentationBackground(Theme.bg)
+                .environment(\.accountFoldPlace, accountPlace)
         }
         .duoPageSheet(isPresented: account(paged: true),
                       placement: .twoPages, onPages: true) {
             AccountSpreadSheet()
+                .environment(\.accountFoldPlace, accountPlace)
         }
         // v2: Add closed for good, so what it typed doesn't ride into the next one.
         .onChange(of: model.showingAdd) { if !model.showingAdd { foldKeep?.drop("add-find") } }
         .onChange(of: model.showingAccount) {
+            // v2: Account closed for good, so its inner page doesn't come back next time.
+            if !model.showingAccount { foldKeep?.drop(AccountFoldPlace.key) }
             // The page cover has no onDismiss: open what the hub queued once it is gone.
             guard accountOnPages, !model.showingAccount else { return }
             Task {

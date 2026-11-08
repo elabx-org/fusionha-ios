@@ -140,6 +140,7 @@ struct V2HistoryScope: View {
                 .contentShape(Rectangle())
                 .onTapGesture { select(story) }
                 .v2ModuleRow(index, of: shown.count, selected: story.key == open)
+                .foldRow("story.\(story.id)")
             }
         }
     }
@@ -153,6 +154,7 @@ struct V2HistoryScope: View {
                 .contentShape(Rectangle())
                 .onTapGesture { if let id = entry.mediaItemId { model.open(id) } }
                 .v2ModuleRow(index, of: rows.count)
+                .foldRow("event.\(entry.id)")
         }
     }
 

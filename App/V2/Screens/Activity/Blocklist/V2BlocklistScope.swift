@@ -133,11 +133,13 @@ struct V2BlocklistScope: View {
                                      points: split.splits, selected: split.splits && group.key == openGroup?.key,
                                      toggle: { tap(group) }, row: { row($0, nested: true) })
                     .v2ScopeBlock(10)
+                    .foldRow("title.\(group.key)")
             }
         } else {
             let releases = BlocklistGrouping.releases(rows)
             ForEach(Array(releases.enumerated()), id: \.element.key) { index, release in
                 row(release, nested: false).v2ModuleRow(index, of: releases.count)
+                    .foldRow("release.\(release.key)")
             }
         }
         ActFooter(total: data.feed.total, loaded: data.feed.items.count, hasMore: data.feed.hasMore,

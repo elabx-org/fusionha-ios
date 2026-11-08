@@ -32,6 +32,11 @@ extension View {
         modifier(FoldAnchorRow(id: AnyHashable(id)))
     }
 
+    /// `.id(id)` and `.foldAnchor(id)` together: a list row kept across a fold.
+    func foldRow<ID: Hashable>(_ id: ID) -> some View {
+        self.id(id).foldAnchor(id)
+    }
+
     /// The scroll view keeps its top row across a resize (inside a
     /// `ScrollViewReader`); `active` false while a drag resizes it.
     func keepsFoldAnchor(_ tracker: FoldAnchorTracker, proxy: ScrollViewProxy, active: Bool = true) -> some View {
@@ -65,10 +70,12 @@ private struct FoldAnchorScroll: ViewModifier {
     let proxy: ScrollViewProxy
     let active: Bool
     @State private var width: CGFloat = 0
+    @State private var height: CGFloat = 0
 
     func body(content: Content) -> some View {
         content
             .environment(\.foldAnchor, tracker)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height.rounded() } action: { height = $0 }
             .onGeometryChange(for: CGFloat.self) { $0.size.width.rounded() } action: { new in
                 let old = width
                 width = new
@@ -85,8 +92,11 @@ private struct FoldAnchorScroll: ViewModifier {
             }
     }
 
+    /// The row goes back under the eye line, not to the very top: with the
+    /// top at the line, the next fold would find the row below it.
     private func scroll(to anchor: AnyHashable) {
         guard let id = anchor.base as? any Hashable else { return }
-        proxy.scrollTo(id, anchor: .top)
+        let line = height > 0 ? min(120, height * 0.2) / height : 0.2
+        proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: line))
     }
 }

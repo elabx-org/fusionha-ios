@@ -147,11 +147,16 @@ struct V2LibraryView: View {
         }
         .onChange(of: derived.visibleIds, initial: true) { _, ids in model.duoGestures.libraryOrder = ids }
         .onDisappear { model.allTitlesOnScreen = false }
+        // A route while this page is up is already here: take it, so Back
+        // onto Home doesn't push All titles again.
+        .onChange(of: model.pendingAllTitles) {
+            if model.pendingAllTitles && model.allTitlesOnScreen { model.pendingAllTitles = false }
+        }
         .onAppear {
             model.allTitlesOnScreen = true
-            // The route that brought us here is done. Cleared here, not by
-            // Home: Home's task is cancelled the moment this covers it, so
-            // the flag stayed set and every Back re-pushed All titles (IMG_7891).
+            // The route that brought us here is done. Cleared here too, not
+            // only by Home: Home's task is cancelled the moment this covers
+            // it, so the flag stayed set and every Back re-pushed All titles (IMG_7891).
             model.pendingAllTitles = false
             let gestures = model.duoGestures
             scrubber.onVisibility = { [weak gestures] shown in gestures?.edgeBusy = shown }

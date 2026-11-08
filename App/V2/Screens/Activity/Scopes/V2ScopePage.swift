@@ -44,29 +44,36 @@ struct V2ScopeColumns<List: View, Right: View>: View {
 
 /// The scrolling list: caption and scopes, then the scope's rows as direct
 /// children of one lazy stack (blocks pad themselves; module rows touch).
+/// Fold continuity: the row at the list's top stays there across a fold
+/// (`FoldAnchor`, as the queue): rows mark themselves with `.foldRow(id)`.
 struct V2ScopeList<Caption: View, Content: View>: View {
     let gutter: CGFloat
     @ViewBuilder var caption: () -> Caption
     @ViewBuilder var content: () -> Content
     @Environment(AppModel.self) private var model
+    @State private var anchor = FoldAnchorTracker()
 
     var body: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                VStack(alignment: .leading, spacing: 12) {
-                    caption()
-                        .font(.system(size: 13).monospacedDigit())
-                        .lineLimit(3)
-                    V2ActivityScopes(queueCount: model.queueTotal)
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    VStack(alignment: .leading, spacing: 12) {
+                        caption()
+                            .font(.system(size: 13).monospacedDigit())
+                            .lineLimit(3)
+                        V2ActivityScopes(queueCount: model.queueTotal)
+                    }
+                    .padding(.bottom, 14)
+                    .foldRow(FoldAnchorTop.header)
+                    content()
                 }
-                .padding(.bottom, 14)
-                content()
+                .padding(.horizontal, gutter)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
             }
-            .padding(.horizontal, gutter)
-            .padding(.top, 8)
-            .padding(.bottom, 24)
+            .scrollDismissesKeyboard(.immediately)
+            .keepsFoldAnchor(anchor, proxy: proxy)
         }
-        .scrollDismissesKeyboard(.immediately)
     }
 }
 

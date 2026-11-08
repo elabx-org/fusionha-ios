@@ -14,6 +14,8 @@ struct V2EpisodePage: View {
     /// Beside the season's list on the flat open Duo (`V2TitleWideChild`):
     /// the band above carries the art, so a short header instead of the hero.
     @Environment(\.v2WideChild) private var wideChild
+    /// The window's kept stacks: the page keeps its place across a fold.
+    @Environment(V2TitleStacks.self) private var stacks: V2TitleStacks?
     let seasonNumber: Int
     let episodeId: Int
     @State private var tab: EpisodeSheetTab = .details
@@ -21,6 +23,8 @@ struct V2EpisodePage: View {
     @State private var search: InteractiveSearchModel?
     @State private var compact = false
     @State private var width: CGFloat = 0
+    /// The hero's (or the wide header's) height, for the kept offset.
+    @State private var headerHeight: CGFloat = 0
 
     private var detail: ItemDetail? { store.detail }
     private var episode: Episode? {
@@ -55,13 +59,16 @@ struct V2EpisodePage: View {
     private func page(_ detail: ItemDetail, _ episode: Episode) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if wideChild {
-                    V2EpisodeWideHeader(detail: detail, episode: episode, seasonNumber: seasonNumber)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 14)
-                } else {
-                    V2EpisodeHero(detail: detail, episode: episode, seasonNumber: seasonNumber)
+                Group {
+                    if wideChild {
+                        V2EpisodeWideHeader(detail: detail, episode: episode, seasonNumber: seasonNumber)
+                            .padding(.horizontal, 24)
+                            .padding(.top, 14)
+                    } else {
+                        V2EpisodeHero(detail: detail, episode: episode, seasonNumber: seasonNumber)
+                    }
                 }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
                 VStack(alignment: .leading, spacing: 14) {
                     Picker("Episode", selection: $tab) {
                         ForEach(EpisodeSheetTab.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -80,6 +87,8 @@ struct V2EpisodePage: View {
             .pinnedToProposedWidth()
         }
         .scrollIndicators(.hidden)
+        .v2EpisodeKeepsPlace(stacks?.place(.episode(season: seasonNumber, episodeId: episodeId), on: store.itemId),
+                             header: $headerHeight, tab: $tab, versionId: $versionId)
         .scrollEdgeEffectStyle(.soft, for: .top)
         .scrollEdgeEffectHidden(!compact, for: .top)
         .ignoresSafeArea(.container, edges: .top)

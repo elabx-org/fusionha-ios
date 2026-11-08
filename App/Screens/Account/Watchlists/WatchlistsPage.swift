@@ -23,6 +23,9 @@ struct WatchlistsPage: View {
     @State private var importing = false
     @State private var remembered = false
     @State private var told = false
+    /// v2: the pushed source rides across a fold (`AccountFoldPlace`).
+    @Environment(\.accountFoldPlace) private var foldPlace
+    @State private var foldHost = UUID()
 
     private var admin: Bool { model.me?.isAdmin == true && !model.requestScoped }
     private var unavailable: Bool { model.me.map { !$0.hasCapability("request") } ?? false }
@@ -39,6 +42,11 @@ struct WatchlistsPage: View {
             SourceDetailView(store: store, sourceId: id) { pushed = nil }
         }
         .navigationDestination(isPresented: $remembered) { RememberedMatchesView(store: store) }
+        .onAppear { foldPlace?.pageHost = foldHost }
+        .onChange(of: pushed) { _, id in
+            guard let foldPlace, foldPlace.pageHost == foldHost else { return }
+            foldPlace.source = id
+        }
         // On the open Duo these take the right page, never the fold (S3).
         .duoPageSheet(isPresented: $following) { FollowSheet(store: store) }
         .duoPageSheet(isPresented: $profile) { LetterboxdProfileSheet(store: store) }
