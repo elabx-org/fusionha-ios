@@ -36,7 +36,7 @@ struct MIGroupCard: View {
                             .padding(.top, 6)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    Text(MIProblemCopy.files(group.rows))
+                    Text(V2MIEpisodeNames.files(group.rows, session))
                         .font(.system(size: 12))
                         .foregroundStyle(muted)
                         .padding(.top, 4)

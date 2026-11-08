@@ -60,7 +60,9 @@ struct V2MIRoutePage: View {
     }
 
     private func fileTitle(_ id: Int) -> String {
-        session.rows.first { $0.rowId == id }.map { ManualImportBulk.shortCode($0) } ?? "File"
+        guard let row = session.rows.first(where: { $0.rowId == id }) else { return "File" }
+        let code = ManualImportBulk.shortCode(row)
+        return V2MIEpisodeNames.title(row, session).map { "\(code) · \($0)" } ?? code
     }
 }
 
