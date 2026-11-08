@@ -85,14 +85,17 @@ extension SignInView {
                             server = recent.url.absoluteString
                             Task { await connect() }
                         } label: {
-                            Label(recent.label, systemImage: "clock.arrow.circlepath")
-                                .font(.system(size: 13, weight: .semibold))
-                                .lineLimit(1)
-                                .padding(.horizontal, 12)
-                                .frame(minHeight: 36)
+                            HStack(spacing: 8) {
+                                Label(recent.label, systemImage: "clock.arrow.circlepath")
+                                UnencryptedMark(server: recent.url)
+                            }
+                            .font(.system(size: 13, weight: .semibold))
+                            .lineLimit(1)
+                            .padding(.horizontal, 12)
+                            .frame(minHeight: 36)
                         }
                         .buttonStyle(.glass)
-                        .accessibilityLabel("Connect to \(recent.label)")
+                        .accessibilityLabel("Connect to \(recent.label)\(ServerAddress.isUnencrypted(recent.url) ? ", not encrypted" : "")")
                         .contextMenu {
                             Button("Forget this server", systemImage: "trash", role: .destructive) {
                                 memory.forget(recent.url)

@@ -127,6 +127,7 @@ extension SignInView {
                 HStack(spacing: 6) {
                     Image(systemName: "server.rack")
                     Text(verbatim: connected.host)
+                    UnencryptedMark(server: connected.url, size: 13)
                     Text(verbatim: "· \(connected.version)").foregroundStyle(Theme.dim)
                     Text("·")
                     Text("Change").foregroundStyle(Theme.txt)
@@ -137,7 +138,7 @@ extension SignInView {
                 .minimumScaleFactor(0.8)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Connected to \(connected.host), version \(connected.version). Change server")
+            .accessibilityLabel("Connected to \(connected.host)\(ServerAddress.isUnencrypted(connected.url) ? ", not encrypted" : ""), version \(connected.version). Change server")
         }
     }
 }

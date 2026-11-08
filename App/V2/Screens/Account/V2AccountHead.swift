@@ -19,6 +19,7 @@ struct V2AccountHead: View {
                 HStack(spacing: 6) {
                     Circle().fill(Theme.done).frame(width: 7, height: 7).accessibilityHidden(true)
                     Text(line).font(.subheadline).foregroundStyle(Theme.mut).lineLimit(1)
+                    UnencryptedMark(server: server)
                 }
             }
             Spacer(minLength: 0)

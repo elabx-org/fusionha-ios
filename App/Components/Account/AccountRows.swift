@@ -60,6 +60,7 @@ struct AccountHeader: View {
                         if let host = server?.host {
                             Text(host).font(.subheadline).foregroundStyle(Theme.mut).lineLimit(1)
                         }
+                        UnencryptedMark(server: server)
                     }
                 }
             }
