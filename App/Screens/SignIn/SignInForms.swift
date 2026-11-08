@@ -39,22 +39,25 @@ extension SignInView {
 
     func passwordForm(url: URL) -> some View {
         VStack(spacing: 0) {
-            LoginField(label: "Username") {
-                TextField("", text: $username)
-                    .textContentType(.username)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.next)
-                    .focused($field, equals: .username)
-                    .onSubmit { field = .password }
-            } focused: { field == .username }
-            LoginField(label: "Password") {
-                SecureField("", text: $password)
-                    .textContentType(.password)
-                    .submitLabel(.go)
-                    .focused($field, equals: .password)
-                    .onSubmit { Task { await passwordSignIn(url: url) } }
-            } focused: { field == .password }
+            LoginFieldGroup {
+                LoginField(label: "Username") {
+                    TextField("", text: $username)
+                        .textContentType(.username)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.next)
+                        .focused($field, equals: .username)
+                        .onSubmit { field = .password }
+                } focused: { field == .username }
+                LoginGroupDivider()
+                LoginField(label: "Password") {
+                    SecureField("", text: $password)
+                        .textContentType(.password)
+                        .submitLabel(.go)
+                        .focused($field, equals: .password)
+                        .onSubmit { Task { await passwordSignIn(url: url) } }
+                } focused: { field == .password }
+            }
             errorText
             GradientSubmit(title: "Sign in", workingTitle: "Signing in…", working: working,
                            enabled: !username.isEmpty && !password.isEmpty) {
@@ -123,22 +126,25 @@ extension SignInView {
             let needsCredentials = status.demoRequireCredentials == true
             VStack(spacing: 0) {
                 if demoOpen && needsCredentials {
-                    LoginField(label: "Demo username") {
-                        TextField("", text: $demoUser)
-                            .textContentType(.username)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .submitLabel(.next)
-                            .focused($field, equals: .demoUser)
-                            .onSubmit { field = .demoPass }
-                    } focused: { field == .demoUser }
-                    LoginField(label: "Demo password") {
-                        SecureField("", text: $demoPass)
-                            .textContentType(.password)
-                            .submitLabel(.go)
-                            .focused($field, equals: .demoPass)
-                            .onSubmit { Task { await enterDemo(url: url, credentials: true) } }
-                    } focused: { field == .demoPass }
+                    LoginFieldGroup {
+                        LoginField(label: "Demo username") {
+                            TextField("", text: $demoUser)
+                                .textContentType(.username)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .submitLabel(.next)
+                                .focused($field, equals: .demoUser)
+                                .onSubmit { field = .demoPass }
+                        } focused: { field == .demoUser }
+                        LoginGroupDivider()
+                        LoginField(label: "Demo password") {
+                            SecureField("", text: $demoPass)
+                                .textContentType(.password)
+                                .submitLabel(.go)
+                                .focused($field, equals: .demoPass)
+                                .onSubmit { Task { await enterDemo(url: url, credentials: true) } }
+                        } focused: { field == .demoPass }
+                    }
                     if method == nil { errorText }
                     GradientSubmit(title: "Enter demo", workingTitle: "Entering…", working: working,
                                    enabled: !demoUser.isEmpty && !demoPass.isEmpty) {
@@ -155,13 +161,7 @@ extension SignInView {
                             Task { await enterDemo(url: url, credentials: false) }
                         }
                     } label: {
-                        Text(working && method == nil ? "Entering…" : "Explore the demo")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Theme.txt)
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(.white.opacity(0.08)))
-                            .contentShape(Rectangle())
+                        demoLabel
                     }
                     .buttonStyle(PressScaleStyle())
                 }
@@ -170,6 +170,27 @@ extension SignInView {
             .padding(.horizontal, demoOpen && needsCredentials ? 0 : 1)
             .transition(.opacity.combined(with: .offset(y: 8)))
             .loginEntrance(.fadeUp(0.7), delay: 0.74)
+        }
+    }
+
+    /// "Explore the demo": v1's quiet outlined bar, v2's glass capsule.
+    @ViewBuilder
+    private var demoLabel: some View {
+        let text = Text(working && method == nil ? "Entering…" : "Explore the demo")
+        if ProductLook.isV2 {
+            text
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(Theme.txt)
+                .frame(maxWidth: .infinity)
+                .loginGlassCapsule(height: 46)
+        } else {
+            text
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Theme.txt)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).strokeBorder(.white.opacity(0.08)))
+                .contentShape(Rectangle())
         }
     }
 

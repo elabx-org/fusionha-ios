@@ -16,16 +16,33 @@ struct RequestSeasonPicker: View {
     @State private var openSeasons: Set<Int> = []
     @State private var episodeTitles: [Int: [Int: String]] = [:]
 
+    static let hint = "Tick a whole season, or expand for specific episodes. Select nothing to request the whole series."
+    private var v2: Bool { ProductLook.isV2 }
+
     @ViewBuilder
     var body: some View {
         if !loaded {
             Text("Loading seasons…").font(.system(size: 12.5)).foregroundStyle(Theme.dim)
         } else if let list = preview?.seasons, !list.isEmpty {
-            VStack(alignment: .leading, spacing: 7) {
-                ForEach(list) { season in seasonRow(season) }
-                Text("Tick a whole season, or expand for specific episodes. Select nothing to request the whole series.")
-                    .font(.system(size: 11.5)).foregroundStyle(Theme.dim)
-                    .padding(.top, 1)
+            if ProductLook.isV2 {
+                // v2: one inset-grouped card of season rows (look pass family 5).
+                VStack(alignment: .leading, spacing: 8) {
+                    RequestGroupCard {
+                        ForEach(Array(list.enumerated()), id: \.element.id) { index, season in
+                            if index > 0 { RequestRowDivider() }
+                            seasonRow(season)
+                        }
+                    }
+                    Text(Self.hint).font(.system(size: 13)).foregroundStyle(Theme.mut)
+                        .padding(.horizontal, 12).padding(.top, 2)
+                }
+            } else {
+                VStack(alignment: .leading, spacing: 7) {
+                    ForEach(list) { season in seasonRow(season) }
+                    Text(Self.hint)
+                        .font(.system(size: 11.5)).foregroundStyle(Theme.dim)
+                        .padding(.top, 1)
+                }
             }
         } else {
             Text("No season data available.").font(.system(size: 12.5)).foregroundStyle(Theme.dim)
@@ -40,7 +57,10 @@ struct RequestSeasonPicker: View {
         return VStack(spacing: 0) {
             HStack(spacing: 0) {
                 Button { toggleSeason(season) } label: {
-                    WebCheckSquare(checked: full).frame(width: 44, height: 44).contentShape(Rectangle())
+                    Group {
+                        if v2 { RequestCheckCircle(checked: full) } else { WebCheckSquare(checked: full) }
+                    }
+                    .frame(width: v2 ? 54 : 44, height: v2 ? 56 : 44).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Select \(label)")
@@ -50,14 +70,23 @@ struct RequestSeasonPicker: View {
                     }
                 } label: {
                     HStack(spacing: 8) {
-                        Text(label).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
-                        Spacer(minLength: 0)
-                        Text("\(season.episodeCount) eps").font(.system(size: 11)).foregroundStyle(Theme.dim)
-                        Image(systemName: "chevron.right").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.mut)
+                        if v2 {
+                            // v2: "Season 1" over "8 eps", as a list row.
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(label).font(.system(size: 16)).foregroundStyle(Theme.txt)
+                                Text("\(season.episodeCount) eps").font(.system(size: 13)).foregroundStyle(Theme.mut)
+                            }
+                            Spacer(minLength: 0)
+                        } else {
+                            Text(label).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Theme.txt)
+                            Spacer(minLength: 0)
+                            Text("\(season.episodeCount) eps").font(.system(size: 11)).foregroundStyle(Theme.dim)
+                        }
+                        Image(systemName: "chevron.right").font(.system(size: v2 ? 13 : 11, weight: .bold)).foregroundStyle(Theme.mut)
                             .rotationEffect(.degrees(open ? 90 : 0))
                     }
-                    .padding(.trailing, 13)
-                    .frame(minHeight: 44)
+                    .padding(.trailing, v2 ? 16 : 13)
+                    .frame(minHeight: v2 ? 56 : 44)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -69,7 +98,11 @@ struct RequestSeasonPicker: View {
                         let selected = full || selEpisodes.contains(EpisodeRef(season: n, episode: e))
                         Button { toggleEpisode(season, e) } label: {
                             HStack(spacing: 10) {
-                                WebCheckSquare(checked: selected, size: 18)
+                                if v2 {
+                                    RequestCheckCircle(checked: selected, size: 20)
+                                } else {
+                                    WebCheckSquare(checked: selected, size: 18)
+                                }
                                 Text(EpisodeCode.episode(season: n, episode: e)).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(Theme.mut)
                                     .frame(minWidth: 56, alignment: .leading)
                                 Text(episodeTitles[n]?[e] ?? "Episode \(e)")
@@ -77,13 +110,13 @@ struct RequestSeasonPicker: View {
                                     .lineLimit(1)
                                 Spacer(minLength: 0)
                             }
-                            .padding(.leading, 38).padding(.trailing, 13).padding(.vertical, 8)
+                            .padding(.leading, v2 ? 56 : 38).padding(.trailing, 13).padding(.vertical, v2 ? 10 : 8)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .background(Theme.panel2)
+                .background(v2 ? Theme.txt.opacity(0.03) : Theme.panel2)
                 .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }
                 .transition(.opacity)
                 .task {
@@ -95,10 +128,7 @@ struct RequestSeasonPicker: View {
                 }
             }
         }
-        .background(Theme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
-            .strokeBorder(full ? Theme.indigo.opacity(0.4) : Theme.line))
+        .modifier(RequestSeasonSurface(full: full, v2: v2))
     }
 
     private func toggleSeason(_ season: PreviewSeason) {
@@ -128,6 +158,25 @@ struct RequestSeasonPicker: View {
                 selSeasons.insert(n)
                 selEpisodes = selEpisodes.filter { $0.season != n }
             }
+        }
+    }
+}
+
+/// A season row's surface: v1's own bordered card (accent edge when the
+/// whole season is ticked); v2's row inside the shared grouped card.
+private struct RequestSeasonSurface: ViewModifier {
+    let full: Bool
+    let v2: Bool
+
+    func body(content: Content) -> some View {
+        if v2 {
+            content
+        } else {
+            content
+                .background(Theme.card)
+                .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .strokeBorder(full ? Theme.indigo.opacity(0.4) : Theme.line))
         }
     }
 }
