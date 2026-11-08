@@ -5,7 +5,9 @@ import FusionhaKit
 struct ManageFilesTarget: Identifiable {
     var versionIds: Set<Int>?
     var season: Int?
-    var id: String { "\(versionIds?.sorted() ?? [])|\(season ?? -1)" }
+    /// Opened from Needs you's Review: dead and unreadable files start selected.
+    var problems = false
+    var id: String { "\(versionIds?.sorted() ?? [])|\(season ?? -1)|\(problems)" }
 }
 
 /// Manage files / Manage episodes (web `ManageExistingFilesDialog`): the
@@ -23,7 +25,8 @@ struct ManageFilesSheet: View {
     @State private var confirm: ManageFilesConfirm?
 
     init(detail: ItemDetail, target: ManageFilesTarget) {
-        _model = State(initialValue: ManageFilesModel(detail: detail, scopeVersionIds: target.versionIds, season: target.season))
+        _model = State(initialValue: ManageFilesModel(detail: detail, scopeVersionIds: target.versionIds, season: target.season,
+                                                        selectsProblems: target.problems))
     }
 
     var body: some View {

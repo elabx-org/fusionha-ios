@@ -21,7 +21,8 @@ struct V2ManageEpisodesSheet: View {
     @State private var confirm: ManageFilesConfirm?
 
     init(detail: ItemDetail, target: ManageFilesTarget) {
-        _model = State(initialValue: ManageFilesModel(detail: detail, scopeVersionIds: target.versionIds, season: target.season))
+        _model = State(initialValue: ManageFilesModel(detail: detail, scopeVersionIds: target.versionIds, season: target.season,
+                                                        selectsProblems: target.problems))
     }
 
     private var art: URL? { PageArtSource.url(backdrop: model.detail.backdropUrl, poster: model.detail.posterUrl) }
@@ -56,7 +57,12 @@ struct V2ManageEpisodesSheet: View {
         }
         .onChange(of: model.items, initial: true) { _, items in
             groups = ManageEpisodes.groups(items, detail: model.detail)
-            if expanded == nil, model.loaded { expanded = groups.count == 1 ? [groups[0].season] : [] }
+            if expanded == nil, model.loaded {
+                // A lone season opens; so does every season holding a file Review brought you to.
+                let problems = Set(model.problemItems.map(\.id))
+                let flagged = groups.filter { !model.selected.isDisjoint(with: $0.fileIds) && !problems.isDisjoint(with: $0.fileIds) }
+                expanded = groups.count == 1 ? [groups[0].season] : Set(flagged.map(\.season))
+            }
         }
         .onDisappear { if model.changed { Task { await store.reload() } } }
         .retainsDraft("manage.model", $model)
