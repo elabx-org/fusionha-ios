@@ -18,11 +18,12 @@ final class ManageFilesModel {
     /// "Stop monitoring" default reads the other versions' files).
     private(set) var allRows: [ManagedFileRow] = []
     /// Episodes unmonitored from this sheet; `detail` is a snapshot.
-    private var unmonitored: Set<Int> = []
+    var unmonitored: Set<Int> = []
     private(set) var loaded = false
     private(set) var loadFailed = false
     var selected: Set<Int> = []
-    private(set) var busy = false
+    /// Internal setter: Fix mode's actions (`ManageFilesModel+Fix`) set it too.
+    var busy = false
     private(set) var deleting: Int?
     private(set) var rescanning = false
     var note: Note?
@@ -154,11 +155,11 @@ final class ManageFilesModel {
         do { try await client.cleanupLink(fileId: t.id); count += 1 } catch { tally(error, standDown: 422, &stood, &failed) }
     }
 
-    private func tally(_ error: Error, standDown status: Int, _ stood: inout Int, _ failed: inout Int) {
+    func tally(_ error: Error, standDown status: Int, _ stood: inout Int, _ failed: inout Int) {
         if case APIError.http(status, _) = error { stood += 1 } else { failed += 1 }
     }
 
-    private func finish(_ ok: String?, stood: String?, failed: Int, failedText: String) async {
+    func finish(_ ok: String?, stood: String?, failed: Int, failedText: String) async {
         selected = []
         if failed > 0 {
             note = Note(text: failedText, failed: true)

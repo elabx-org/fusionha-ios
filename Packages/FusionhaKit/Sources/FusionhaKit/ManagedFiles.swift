@@ -26,6 +26,8 @@ public struct ManagedFileRow: Decodable, Sendable, Hashable, Identifiable {
     public let unresolved: Bool?
     public let analysis: String?
     public let runtimeSeconds: Double?
+    /// When a scan first found the file absent (`missing_since`, naive UTC).
+    public let missingSince: String?
     /// False for a stray extra file on a version that already has its current file.
     public let isPrimary: Bool?
 
