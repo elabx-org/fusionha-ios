@@ -209,7 +209,8 @@ Header "Activity" with the live caption and a **Manual import** button, the shar
      `https://fusionha.example.com`; there is no default server and nothing connects on its own (fusionha #65).
      Servers this phone reached before appear only as "Recent" chips (`ServerMemory`, long-press to forget).
      Input is forgiving (`ServerAddress`): a pasted web-app link keeps just the server part; a bare domain
-     tries https then http; a LAN host tries http then fusionha's default port 8000. Errors say what failed and
+     tries https only (plain http only when typed as `http://`, marked "Not encrypted"; a certificate failure
+     stops instead of trying another address); a LAN host tries http then fusionha's default port 8000. Errors say what failed and
      what to try (`ConnectFailure`: unreachable, timed out, certificate, not fusionha, Local Network off). Before
      the first connect to a home-network address one line explains the iOS Local Network prompt; if it was
      denied, a row opens Settings. The Living mark ticks a pin per typed character, draws sparks in while

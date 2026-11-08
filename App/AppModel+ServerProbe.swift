@@ -19,7 +19,7 @@ struct ServerProbeError: Error {
 
 extension AppModel {
     /// Step 1: tries each address `ServerAddress.candidates` offers for the
-    /// input (https before http for a domain; the default port for a LAN host),
+    /// input (https only for a domain; the default port for a LAN host),
     /// with a short timeout, and keeps the first that answers as fusionha.
     func probe(_ input: String) async throws -> ServerProbe {
         let candidates = ServerAddress.candidates(input)
@@ -37,8 +37,9 @@ extension AppModel {
             } catch {
                 let failure = ConnectFailure.classify(error, host: url)
                 failures.append(failure)
-                // iOS refused the LAN outright; another port won't help.
-                if failure == .localNetworkDenied { break }
+                // iOS refused the LAN outright; another port won't help. A failed
+                // certificate stops too: no other address may stand in for it.
+                if ConnectFailure.stopsProbing(failure) { break }
             }
         }
         throw ServerProbeError(failure: ConnectFailure.mostTelling(failures), tried: candidates.first)

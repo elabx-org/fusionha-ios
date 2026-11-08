@@ -39,6 +39,13 @@ public enum ConnectFailure: Equatable, Sendable {
         }
     }
 
+    /// The probe tries no further address after this failure: iOS refused the
+    /// home network, or the secure connection failed (a bad certificate must
+    /// never be answered by trying another address).
+    public static func stopsProbing(_ failure: ConnectFailure) -> Bool {
+        failure == .localNetworkDenied || failure == .tls
+    }
+
     /// When several addresses were tried, the one worth telling: anything that
     /// answered beats "no answer".
     public static func mostTelling(_ failures: [ConnectFailure]) -> ConnectFailure {

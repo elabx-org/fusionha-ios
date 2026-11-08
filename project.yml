@@ -69,7 +69,12 @@ targets:
         UIBackgroundModes:
           - remote-notification
           - fetch
-        # fusionha is self-hosted and often reached over plain http on a LAN.
+        # ATS stays open on purpose: fusionha is self-hosted on any host, often over
+        # plain http on a LAN, and an address typed as http:// must still work, so no
+        # fixed exception-domain list can describe it. The rule is in code instead
+        # (ServerAddress.candidates): a host that isn't local is tried over https
+        # only, a failed certificate never falls back, and http to such a host is
+        # used only when typed explicitly and is marked "Not encrypted".
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
         NSLocalNetworkUsageDescription: fusionha connects to your fusionha server on your local network.
@@ -116,6 +121,7 @@ targets:
         # set condensed and heavy in code (Theme.display).
         UIAppFonts:
           - MonaSansVF.ttf
+        # Open for self-hosted servers; see the app target above (ServerAddress.candidates).
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     entitlements:
@@ -147,6 +153,7 @@ targets:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.usernotifications.service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+        # Open for self-hosted servers; see the app target above (ServerAddress.candidates).
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     entitlements:
@@ -215,6 +222,7 @@ targets:
         UIBackgroundModes:
           - remote-notification
           - fetch
+        # Open for self-hosted servers; see the app target above (ServerAddress.candidates).
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
         NSLocalNetworkUsageDescription: fusionha connects to your fusionha server on your local network.
@@ -260,6 +268,7 @@ targets:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
         UIAppFonts:
           - MonaSansVF.ttf
+        # Open for self-hosted servers; see the app target above (ServerAddress.candidates).
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     entitlements:
@@ -298,6 +307,7 @@ targets:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.usernotifications.service
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
+        # Open for self-hosted servers; see the app target above (ServerAddress.candidates).
         NSAppTransportSecurity:
           NSAllowsArbitraryLoads: true
     entitlements:

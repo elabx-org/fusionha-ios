@@ -62,9 +62,46 @@ final class ServerAddressTests: XCTestCase {
         XCTAssertEqual(ServerAddress.clean("https://home.example/fusionha/"), "https://home.example/fusionha")
     }
 
-    func testCandidatesForPublicDomainTryHttpsFirst() {
+    func testCandidatesForPublicDomainAreHttpsOnly() {
         XCTAssertEqual(ServerAddress.candidates("fusionha.example.com").map(\.absoluteString),
-                       ["https://fusionha.example.com", "http://fusionha.example.com"])
+                       ["https://fusionha.example.com"])
+        XCTAssertEqual(ServerAddress.candidates("fusionha.example.com:8443/proxy").map(\.absoluteString),
+                       ["https://fusionha.example.com:8443/proxy"])
+        XCTAssertEqual(ServerAddress.candidates("8.8.8.8").map(\.absoluteString), ["https://8.8.8.8"])
+    }
+
+    func testCandidatesForLocalHostsStayHttp() {
+        XCTAssertEqual(ServerAddress.candidates("localhost").map(\.absoluteString),
+                       ["http://localhost", "http://localhost:8000"])
+        XCTAssertEqual(ServerAddress.candidates("fusionha").map(\.absoluteString),
+                       ["http://fusionha", "http://fusionha:8000"])
+        XCTAssertEqual(ServerAddress.candidates("tower.local:8000").map(\.absoluteString), ["http://tower.local:8000"])
+        XCTAssertEqual(ServerAddress.candidates("169.254.1.2").map(\.absoluteString),
+                       ["http://169.254.1.2", "http://169.254.1.2:8000"])
+    }
+
+    func testExplicitHttpForPublicHostIsKept() {
+        XCTAssertEqual(ServerAddress.candidates("http://fusionha.example.com").map(\.absoluteString),
+                       ["http://fusionha.example.com"])
+    }
+
+    func testUnencryptedMeansHttpToANonLocalHost() {
+        XCTAssertTrue(ServerAddress.isUnencrypted(URL(string: "http://fusionha.example.com")!))
+        XCTAssertTrue(ServerAddress.isUnencrypted(URL(string: "HTTP://8.8.8.8:8000")!))
+        XCTAssertFalse(ServerAddress.isUnencrypted(URL(string: "https://fusionha.example.com")!))
+        XCTAssertFalse(ServerAddress.isUnencrypted(URL(string: "http://192.168.1.10:8000")!))
+        XCTAssertFalse(ServerAddress.isUnencrypted(URL(string: "http://nas")!))
+        XCTAssertFalse(ServerAddress.isUnencrypted(URL(string: "http://tower.local")!))
+    }
+
+    func testTlsAndLocalNetworkFailuresStopTheProbe() {
+        XCTAssertTrue(ConnectFailure.stopsProbing(.tls))
+        XCTAssertTrue(ConnectFailure.stopsProbing(.localNetworkDenied))
+        for failure in [ConnectFailure.unreachable, .timedOut, .notFusionha, .server(500), .invalid] {
+            XCTAssertFalse(ConnectFailure.stopsProbing(failure), "\(failure)")
+        }
+        let untrusted = URLError(.serverCertificateUntrusted)
+        XCTAssertEqual(ConnectFailure.classify(untrusted, host: URL(string: "https://fusionha.example.com")), .tls)
     }
 
     func testCandidatesForLanHostAddDefaultPort() {

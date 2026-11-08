@@ -37,8 +37,9 @@ public enum ServerAddress {
     }
 
     /// The addresses to try, best first. An explicit scheme is used as typed. A
-    /// public domain tries https, then http. A LAN host or IP tries http, then
-    /// fusionha's default port when none was given.
+    /// public domain tries https only: plain http for it must be typed as
+    /// `http://`, never reached by falling back after https failed. A LAN host
+    /// or IP tries http, then fusionha's default port when none was given.
     public static func candidates(_ input: String) -> [URL] {
         let text = clean(input)
         guard !text.isEmpty else { return [] }
@@ -53,7 +54,6 @@ public enum ServerAddress {
             if !hasPort { out.append("http://\(host):\(defaultPort)\(probe.path)") }
         } else {
             out.append("https://" + text)
-            out.append("http://" + text)
         }
         return out.compactMap(APIClient.normalisedServerURL)
     }
@@ -83,6 +83,13 @@ public enum ServerAddress {
 
     public static func isLocal(_ url: URL) -> Bool {
         url.host().map { isLocal(host: $0) } ?? false
+    }
+
+    /// Plain http to a host that isn't on this network: the password, the
+    /// session and the token cross the internet unencrypted. Shown as
+    /// "Not encrypted" next to the server.
+    public static func isUnencrypted(_ url: URL) -> Bool {
+        url.scheme?.lowercased() == "http" && !isLocal(url)
     }
 
     /// The host as the person knows it, for "Recent: <host>" and the reached line.

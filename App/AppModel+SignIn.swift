@@ -10,15 +10,6 @@ enum PlexSignInError: Error {
 extension AppModel {
     // MARK: Sign-in
 
-    /// Step 1: check the server is a reachable fusionha and see which sign-in
-    /// methods it offers (`GET /health`, `GET /api/v1/setup-status`).
-    func connect(server: String) async throws -> (URL, SetupStatus) {
-        guard let url = APIClient.normalisedServerURL(server) else { throw APIError.invalidServerURL }
-        let anonymous = APIClient(baseURL: url, token: nil)
-        _ = try await anonymous.health()
-        return (url, try await anonymous.setupStatus())
-    }
-
     /// Step 2a: username and password (sets the session cookie).
     /// `beforeEnter` runs once the password is accepted and the token minted,
     /// just before the app switches over (the Living logo's unlock plays there).
