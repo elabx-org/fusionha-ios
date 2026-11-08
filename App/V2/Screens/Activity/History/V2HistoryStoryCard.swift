@@ -83,10 +83,25 @@ struct V2HistoryStoryCard: View {
         }
     }
 
+    /// The events line and the actions on one line when they fit; in a narrow
+    /// column (the open Duo's list) the actions drop to their own line, whole.
     private var foot: some View {
+        let events = Text(V2StoryCopy.events(story)).font(.system(size: 12)).foregroundStyle(muted).lineLimit(1)
+        return ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) {
+                events
+                Spacer(minLength: 4)
+                footActions
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                events
+                footActions
+            }
+        }
+    }
+
+    private var footActions: some View {
         HStack(spacing: 8) {
-            Text(V2StoryCopy.events(story)).font(.system(size: 12)).foregroundStyle(muted).lineLimit(1)
-            Spacer(minLength: 4)
             if story.type == .failed {
                 blocklistMenu
                 if story.mediaItemId != nil {
@@ -106,6 +121,8 @@ struct V2HistoryStoryCard: View {
                 .accessibilityLabel("More for \(story.title)")
             }
         }
+        .lineLimit(1)
+        .fixedSize()
     }
 
     /// Tap: blocklist with a replacement search (Undo in the toast); the
