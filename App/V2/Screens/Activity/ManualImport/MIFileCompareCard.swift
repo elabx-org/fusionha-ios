@@ -25,12 +25,20 @@ struct MIFileCompareCard: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(ManualImportBulk.shortCode(row)).font(.system(size: 15, weight: .bold))
                     .foregroundStyle(page?.ink ?? Theme.txt)
-                Text(row.filename).font(.system(size: 12)).foregroundStyle(Theme.mut).lineLimit(1).truncationMode(.middle)
+                if let title = V2MIEpisodeNames.title(row, session) {
+                    Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(page?.ink ?? Theme.txt)
+                        .lineLimit(1)
+                } else {
+                    Text(row.filename).font(.system(size: 12)).foregroundStyle(Theme.mut).lineLimit(1).truncationMode(.middle)
+                }
                 Spacer(minLength: 0)
                 NavigationLink(value: V2MIRoute.file(row.rowId)) {
                     Image(systemName: "info.circle").font(.system(size: 15))
                 }
                 .accessibilityLabel("File details")
+            }
+            if V2MIEpisodeNames.title(row, session) != nil {
+                Text(row.filename).font(.system(size: 12)).foregroundStyle(Theme.mut).lineLimit(1).truncationMode(.middle)
             }
             MICompareFacts(row: row)
             if let error = session.rowErrors[row.rowId] {

@@ -17,12 +17,15 @@ public struct IndexerStat: Decodable, Sendable, Identifiable, Hashable {
     public let successRateRange: Double?
     public let queriesToday: Int?
     public let activitySeries: [Int]?
+    public let lastUsedAt: String?
 }
 
 public struct IndexerHealth: Decodable, Sendable, Hashable {
     public let state: String
     public let failureCount: Int?
     public let lastFailureReason: String?
+    /// The end of a backoff cool-off.
+    public let disabledTill: String?
 }
 
 public struct ActivityIndexerSummary: Decodable, Sendable {
