@@ -49,20 +49,19 @@ extension CalendarView {
         }
     }
 
-    /// Reveal the app API key, build `…/api/v1/calendar/feed.ics?apikey=` and copy
-    /// it (or hand its `webcal://` form to the Calendar app).
+    /// Fetch the feed link (its feed-only token, on this phone's server address) and copy
+    /// it, or hand its `webcal://` form to the Calendar app.
     func feedURL(subscribe: Bool) async {
         guard let client = model.client else { return }
         copyingFeed = true
         defer { copyingFeed = false }
         do {
-            let key = try await client.appApiKey()
-            guard let url = client.calendarFeedURL(apiKey: key) else { throw APIError.invalidServerURL }
+            let url = try await client.calendarFeedLink()
             if subscribe, var parts = URLComponents(url: url, resolvingAgainstBaseURL: false) {
                 parts.scheme = "webcal"
                 if let webcal = parts.url { _ = await UIApplication.shared.open(webcal) }
             } else {
-                SecretPasteboard.copy(url.absoluteString) // the feed URL carries the API key
+                SecretPasteboard.copy(url.absoluteString) // the feed URL carries a token
                 model.toast("iCal feed URL copied — paste it into your calendar app.")
             }
         } catch {

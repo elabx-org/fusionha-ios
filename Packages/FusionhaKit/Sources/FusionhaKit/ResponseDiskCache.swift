@@ -9,7 +9,8 @@ import CryptoKit
 /// out and Reset cache remove everything.
 public enum ResponseDiskCache {
     private static let skipped = ["/api/v1/auth", "/api/v1/tokens", "/api/v1/library", "/api/v1/search",
-                                  "/api/v1/backup", "/api/v1/users", "/api/v1/settings/api-key"]
+                                  "/api/v1/backup", "/api/v1/users", "/api/v1/settings/api-key",
+                                  "/api/v1/calendar/feed-url"]
     private static let lock = NSLock()
     nonisolated(unsafe) private static var lastWrite: [String: Date] = [:]
     /// A polled answer (the queue every 2s) is written at most this often.

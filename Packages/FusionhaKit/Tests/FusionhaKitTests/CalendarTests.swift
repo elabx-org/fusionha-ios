@@ -101,6 +101,21 @@ final class CalendarTests: XCTestCase {
         XCTAssertEqual(url.absoluteString, "http://nas:8787/api/v1/calendar/feed.ics?apikey=a%2Bb%2Fc")
     }
 
+    func testFeedTokenKeepsOnlyTheToken() throws {
+        let client = APIClient(baseURL: URL(string: "https://fusion.example.org")!, token: nil)
+        let server = "http://10.0.0.5:8000/api/v1/calendar/feed.ics?token=Ab-_c9"
+        XCTAssertEqual(APIClient.feedToken(in: server), "Ab-_c9")
+        let url = try XCTUnwrap(client.calendarFeedURL(token: "Ab-_c9"))
+        XCTAssertEqual(url.absoluteString, "https://fusion.example.org/api/v1/calendar/feed.ics?token=Ab-_c9")
+        XCTAssertNil(APIClient.feedToken(in: "http://x/api/v1/calendar/feed.ics"))
+        XCTAssertNil(APIClient.feedToken(in: "http://x/api/v1/calendar/feed.ics?token="))
+    }
+
+    func testFeedURLIsNotCachedOnDisk() throws {
+        XCTAssertFalse(ResponseDiskCache.cacheable(URL(string: "http://nas/api/v1/calendar/feed-url")!))
+        XCTAssertTrue(ResponseDiskCache.cacheable(URL(string: "http://nas/api/v1/calendar?start=a")!))
+    }
+
     func testMeAccountFields() throws {
         let d = JSONDecoder()
         d.keyDecodingStrategy = .convertFromSnakeCase

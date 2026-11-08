@@ -39,6 +39,11 @@ public struct AppApiKey: Decodable, Sendable {
     public let apiKey: String
 }
 
+/// `GET /api/v1/calendar/feed-url` and its `/regenerate`: the feed link with its feed-only token.
+public struct CalendarFeedLink: Decodable, Sendable {
+    public let url: String
+}
+
 /// `PUT /api/v1/settings {"calendar_week_card_style": …}`.
 public struct WeekCardStylePatch: Encodable, Sendable {
     public let calendarWeekCardStyle: String
