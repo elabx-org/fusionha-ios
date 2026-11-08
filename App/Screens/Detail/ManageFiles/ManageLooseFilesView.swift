@@ -25,20 +25,23 @@ struct ManageLooseFilesView: View {
                         Text(VersionLabel.text(tier: e.tier, edition: e.movieEdition) ?? e.tier.chipLabel).tag(e.id)
                     }
                 }
+                .looseRowSurface()
             }
-            if let error { Text(error).font(.footnote).foregroundStyle(Theme.danger) }
+            if let error { Text(error).font(.footnote).foregroundStyle(Theme.danger).looseRowSurface() }
             if !loaded {
                 HStack(spacing: 10) { ProgressView(); Text("Scanning for loose files…").foregroundStyle(Theme.mut) }
+                    .looseRowSurface()
             } else if files.isEmpty {
-                Text("No loose files under this title’s root folders.").foregroundStyle(Theme.mut)
+                Text("No loose files under this title’s root folders.").foregroundStyle(Theme.mut).looseRowSurface()
             } else {
                 Section {
-                    ForEach(files) { f in row(f) }
+                    ForEach(files) { f in row(f).looseRowSurface() }
                 } footer: {
                     Text("Import attaches the file where it is. Nothing is moved or downloaded.")
                 }
             }
         }
+        .looseListGround()
         .task { await load() }
         .refreshable { await load() }
         .confirmationDialog("Delete \(deleting?.name ?? "this file")?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
@@ -53,8 +56,7 @@ struct ManageLooseFilesView: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(f.name).font(.subheadline.weight(.medium)).foregroundStyle(Theme.txt).lineLimit(2).truncationMode(.middle)
-                Text([parsedCode(f), f.quality.map { DetailText.quality($0) }].compactMap { $0 }.joined(separator: " · "))
-                    .font(.caption).foregroundStyle(Theme.mut)
+                meta(f).font(.caption).foregroundStyle(Theme.mut)
             }
             Spacer(minLength: 0)
             if working == f.path {
@@ -62,7 +64,7 @@ struct ManageLooseFilesView: View {
             } else {
                 importControl(f)
                 Button("Delete", systemImage: "trash", role: .destructive) { deleting = f }
-                    .labelStyle(.iconOnly).buttonStyle(.borderless).tint(Theme.danger)
+                    .labelStyle(.iconOnly).looseDeleteStyle().tint(Theme.danger)
             }
         }
         .disabled(working != nil)
@@ -70,9 +72,9 @@ struct ManageLooseFilesView: View {
 
     @ViewBuilder private func importControl(_ f: LooseFile) -> some View {
         if detail.kind != .series {
-            Button("Import") { Task { await attach(f, episodeId: nil) } }.buttonStyle(.bordered)
+            Button("Import") { Task { await attach(f, episodeId: nil) } }.looseButtonStyle()
         } else if let ep = parsedEpisode(f) {
-            Button("Import") { Task { await attach(f, episodeId: ep.id) } }.buttonStyle(.bordered)
+            Button("Import") { Task { await attach(f, episodeId: ep.id) } }.looseButtonStyle()
         } else {
             Menu("Import as…") {
                 ForEach(detail.seasons ?? []) { s in
@@ -85,8 +87,19 @@ struct ManageLooseFilesView: View {
                     }
                 }
             }
-            .buttonStyle(.bordered)
+            .looseButtonStyle()
         }
+    }
+
+    /// "S01E07 · WEBDL-1080p" (v2 sets the episode code in the label colour).
+    private func meta(_ f: LooseFile) -> Text {
+        let quality = f.quality.map { DetailText.quality($0) }
+        #if V2
+        if let code = parsedCode(f) {
+            return Text(code).fontWeight(.semibold).foregroundColor(Theme.txt) + Text(quality.map { " · \($0)" } ?? "")
+        }
+        #endif
+        return Text([parsedCode(f), quality].compactMap { $0 }.joined(separator: " · "))
     }
 
     private func parsedCode(_ f: LooseFile) -> String? {
@@ -133,5 +146,44 @@ struct ManageLooseFilesView: View {
         } catch {
             self.error = ErrorCopy.message(for: error, fallback: "Couldn’t delete that file.")
         }
+    }
+}
+
+// v2 (Look Pass family 1): solid rows on the sheet's wash, glass buttons.
+private extension View {
+    @ViewBuilder
+    func looseRowSurface() -> some View {
+        #if V2
+        self.listRowBackground(Theme.card)
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
+    func looseListGround() -> some View {
+        #if V2
+        self.scrollContentBackground(.hidden)
+        #else
+        self
+        #endif
+    }
+
+    @ViewBuilder
+    func looseButtonStyle() -> some View {
+        #if V2
+        self.buttonStyle(.glass)
+        #else
+        self.buttonStyle(.bordered)
+        #endif
+    }
+
+    @ViewBuilder
+    func looseDeleteStyle() -> some View {
+        #if V2
+        self.buttonStyle(.glass).buttonBorderShape(.circle)
+        #else
+        self.buttonStyle(.borderless)
+        #endif
     }
 }

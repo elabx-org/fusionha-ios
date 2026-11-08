@@ -35,7 +35,7 @@ struct NumberingFixSheet: View {
                 }
                 .padding(16)
             }
-            .background(Theme.bg)
+            .dialogGround(Theme.bg)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -50,7 +50,7 @@ struct NumberingFixSheet: View {
             }
         }
         .presentationDragIndicator(.visible)
-        .sheetBackground(Theme.bg)
+        .dialogSheetBackground(Theme.bg)
         // A fold / unfold keeps the preview and its confirmation together.
         .task { if preview == nil { await load() } }
         .retainsDraft("numbering.preview", $preview)
@@ -69,7 +69,11 @@ struct NumberingFixSheet: View {
             if !isAdmin {
                 DialogBanner(text: "Only an admin can apply this fix. You can still review the changes below.", tint: Theme.i2)
             }
+            #if V2
+            V2NumberingDiffList(preview: preview, sourceLabel: sourceLabel)
+            #else
             NumberingDiffList(preview: preview, sourceLabel: sourceLabel)
+            #endif
             if let applyError {
                 DialogBanner(text: applyError.message, tint: Theme.danger)
                 if applyError.recoverable {
@@ -77,17 +81,25 @@ struct NumberingFixSheet: View {
                 }
             }
             if isAdmin && !blocked {
-                Toggle(isOn: $confirmed) {
-                    Text("I understand this renumbers episodes and re-links files in place (no re-download, no files deleted).")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.txt)
-                }
-                .tint(Theme.indigo)
-                .padding(.top, 4)
+                #if V2
+                // v2: the confirmation is a Toggle row on its own card.
+                V2FormCard { confirmToggle.v2FormRow() }
+                #else
+                confirmToggle.padding(.top, 4)
+                #endif
             }
         } else {
             DialogNote("Building the numbering preview…")
         }
+    }
+
+    private var confirmToggle: some View {
+        Toggle(isOn: $confirmed) {
+            Text("I understand this renumbers episodes and re-links files in place (no re-download, no files deleted).")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.txt)
+        }
+        .tint(Theme.indigo)
     }
 
     private func load() async {
