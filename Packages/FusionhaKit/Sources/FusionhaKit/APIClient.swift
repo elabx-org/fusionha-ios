@@ -80,6 +80,11 @@ public final class APIClient: @unchecked Sendable {
     /// The same client, answering from this phone's cache only.
     var cacheReader: APIClient { APIClient(cacheReaderFor: self) }
 
+    /// How this client's requests authenticate (nil without a token), and this
+    /// process's hash of the token, for `UnauthorizedSignOut`.
+    var sentAuth: AuthMethod? { token == nil ? nil : authMethod }
+    var sentTokenHash: Int? { token?.hashValue }
+
     /// The session token from the cookie `POST /api/v1/auth/login` set, if any.
     public func sessionTokenFromCookie() -> String? {
         let cookies = session.configuration.httpCookieStorage?.cookies(for: baseURL) ?? []
@@ -329,6 +334,7 @@ public final class APIClient: @unchecked Sendable {
         guard let http, (200..<300).contains(status) else {
             let error = APIError.http(status: status, body: String(decoding: data.prefix(8192), as: UTF8.self))
             SecretsLockedBus.report(method: req.httpMethod, error: error)
+            reportUnauthorized(req, error: error)
             throw error
         }
         if req.httpMethod == "GET", let url = req.url { ResponseDiskCache.write(data, for: url, response: http) }

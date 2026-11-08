@@ -30,6 +30,7 @@ extension SignInView {
                     if cleaned != new { server = cleaned }
                 }
             }
+            signedOutNote
             localNetworkNote
             errorText
             if failure == .localNetworkDenied { localNetworkFix }
@@ -38,6 +39,19 @@ extension SignInView {
                 Task { await connect() }
             }
             recentChips
+        }
+    }
+
+    /// After the server signed this phone out (a 401): why, quietly.
+    @ViewBuilder
+    private var signedOutNote: some View {
+        if let signedOutMessage, error == nil {
+            Label(signedOutMessage, systemImage: "info.circle")
+                .font(.system(size: 12.5))
+                .foregroundStyle(Theme.mut)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 14)
+                .transition(.opacity)
         }
     }
 

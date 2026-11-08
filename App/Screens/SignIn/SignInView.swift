@@ -13,8 +13,10 @@ enum SignInMethod: Hashable {
 /// server's own login look.
 struct SignInView: View {
     @Environment(AppModel.self) var model
-    /// Never pre-filled and never a default server (fusionha #65).
+    /// Never pre-filled and never a default server (fusionha #65), except
+    /// after the server signed this phone out: then its address, and a note.
     @State var server = ServerMemory().initialAddress
+    @State var signedOutMessage: String?
     @State var connected: ServerProbe?
     @State var failure: ConnectFailure?
     @State var recents: [RememberedServer] = []
@@ -106,6 +108,11 @@ struct SignInView: View {
         .onAppear {
             memory.dropLegacyAddress()
             recents = memory.recents
+            if let notice = model.session.signedOutNotice {
+                model.session.signedOutNotice = nil
+                server = notice.server.absoluteString
+                signedOutMessage = notice.message
+            }
             living.setMedia(recents.first?.livingMedia == true)
         }
         #if DEBUG

@@ -116,10 +116,12 @@ extension AppModel {
     // MARK: Sign-out
 
     /// Log out: end the server session and revoke this device's token, then
-    /// forget the credentials.
+    /// forget the credentials and every trace of the sign-in (`AppSession.signOut`).
     func logOut() async {
         if let client, let creds = credentials {
-            // Stop pushes to this phone for the account that is leaving.
+            // Stop pushes to this phone for the account that is leaving: the
+            // Live Activity tokens first, then the device itself.
+            await LiveActivityPushTokens.reset(client: client)
             await PushRegistration.unregister(with: client)
             try? await client.logout()
             if let tokenId = creds.tokenId { try? await client.revokeToken(id: tokenId) }

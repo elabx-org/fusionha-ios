@@ -16,7 +16,9 @@ extension APIClient {
         let (data, response) = try await session.data(for: req)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(status) else {
-            throw APIError.http(status: status, body: String(decoding: data.prefix(500), as: UTF8.self))
+            let error = APIError.http(status: status, body: String(decoding: data.prefix(500), as: UTF8.self))
+            reportUnauthorized(req, error: error)
+            throw error
         }
         guard !data.isEmpty else { return .null }
         return JSONValue(any: try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed]))

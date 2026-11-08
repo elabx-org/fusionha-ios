@@ -28,6 +28,7 @@ extension SignInView {
         working = true
         error = nil
         failure = nil
+        signedOutMessage = nil
         if isLiving { living.connecting() }
         defer { working = false }
         let lan = ServerAddress.candidates(input).first.map(ServerAddress.isLocal) ?? false

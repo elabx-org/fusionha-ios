@@ -19,6 +19,10 @@ struct FusionhaApp: App {
     var body: some Scene {
         WindowGroup {
             AppSceneContent(model: model) { RootView() }
+                // A sign-out the server caused (a 401) resets the screens too.
+                .onChange(of: model.credentials == nil) { _, signedOut in
+                    if signedOut { model.resetUI() }
+                }
         }
     }
 }

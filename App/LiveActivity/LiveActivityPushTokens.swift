@@ -16,20 +16,42 @@ enum LiveActivityPushTokens {
     /// The last registration answer, for Account › Live Activity.
     private(set) static var lastStatus: String?
 
+    /// The watching tasks, cancelled by `reset` so a signed-out account's
+    /// client never registers again.
+    private static var tasks: [Task<Void, Never>] = []
+
     /// Starts watching tokens; call once signed in.
     static func start(client: APIClient?) {
         guard !started, let client else { return }
         started = true
         self.client = client
-        Task {
+        tasks.append(Task {
             for await data in Activity<DownloadsActivityAttributes>.pushToStartTokenUpdates {
                 await register(client: client, kind: "start", token: data, activityId: nil)
             }
-        }
-        Task {
+        })
+        tasks.append(Task {
             for activity in Activity<DownloadsActivityAttributes>.activities { watch(activity, client: client) }
             for await activity in Activity<DownloadsActivityAttributes>.activityUpdates { watch(activity, client: client) }
-        }
+        })
+    }
+
+    /// Sign-out: forgets this account's registration. With `client` (before
+    /// the credentials go) the activities' update tokens are deleted on the
+    /// server; then the watchers stop, and the cached APNs device id is
+    /// dropped so the next account registers its own.
+    static func reset(client: APIClient?) async {
+        let activityIds = known.values.compactMap(\.activityId)
+        for task in tasks { task.cancel() }
+        tasks = []
+        known = [:]
+        watched = []
+        started = false
+        self.client = nil
+        lastStatus = nil
+        UserDefaults.standard.removeObject(forKey: "apnsDeviceId")
+        guard let client else { return }
+        for id in activityIds { try? await client.deleteLiveActivityToken(activityId: id) }
     }
 
     /// The tokens seen this launch, so a change in Account › Live Activity
@@ -49,22 +71,24 @@ enum LiveActivityPushTokens {
         guard !watched.contains(activity.id) else { return }
         watched.insert(activity.id)
         let id = activity.id
-        Task {
+        tasks.append(Task {
             for await data in activity.pushTokenUpdates {
                 await register(client: client, kind: "update", token: data, activityId: id)
             }
-        }
-        Task {
+        })
+        tasks.append(Task {
             for await state in activity.activityStateUpdates where state == .ended || state == .dismissed {
                 try? await client.deleteLiveActivityToken(activityId: id)
                 watched.remove(id)
                 known[id] = nil
                 break
             }
-        }
+        })
     }
 
     private static func register(client: APIClient, kind: String, token data: Data, activityId: String?) async {
+        // A watcher left from a signed-out account (`reset`) registers nothing.
+        guard client === self.client else { return }
         known[activityId ?? "start"] = (kind, data, activityId)
         let token = data.map { String(format: "%02x", $0) }.joined()
         guard let deviceId = await deviceId(client) else {

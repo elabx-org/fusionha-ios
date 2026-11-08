@@ -77,6 +77,11 @@ final class AppSession {
     @ObservationIgnored private var librarySoon: Task<Void, Never>?
     /// A link no window could take yet (`routeLink`); the next window to come forward opens it.
     @ObservationIgnored var pendingLink: URL?
+    /// Why the app signed itself out (a 401), for the sign-in screen, which
+    /// takes it once with the server address prefilled (`AppSession+SignOut`).
+    var signedOutNotice: SignedOutNotice?
+    /// A burst of 401s signs out once (`UnauthorizedSignOut.Gate`).
+    @ObservationIgnored var unauthorizedGate = UnauthorizedSignOut.Gate()
 
     init() {
         #if DEBUG
@@ -89,6 +94,7 @@ final class AppSession {
         }
         #endif
         observePush()
+        observeUnauthorized()
         // Re-save on launch so sign-ins from older builds also land in the
         // keychain record the widgets read, then let the widgets refresh.
         if let credentials, ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_SERVER"] == nil {
@@ -205,9 +211,10 @@ final class AppSession {
 
     // MARK: Sign-out and cache
 
-    /// Forgets the sign-in and everything fetched with it. Each window resets
-    /// its own screens (`AppModel.resetUI`).
-    func signOut() {
+    /// Forgets the sign-in and everything fetched with it (`AppSession+SignOut`
+    /// adds the cookies, caches and push traces). Each window resets its own
+    /// screens (`AppModel.resetUI`).
+    func forgetSignIn() {
         CredentialStore.clear()
         WebSessionStore.clear()
         credentials = nil
