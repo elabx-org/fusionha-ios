@@ -48,7 +48,7 @@ struct V2IndexerGroups: View {
     private func card(_ list: [IndexerMetric]) -> some View {
         VStack(spacing: 0) {
             ForEach(Array(list.enumerated()), id: \.element.id) { index, metric in
-                V2IndexerRow(metric: metric, color: colorFor(metric.id), result: model.results[metric.id],
+                V2SettingsIndexerRow(metric: metric, color: colorFor(metric.id), result: model.results[metric.id],
                              testing: model.testing.contains(metric.id), selected: selected == metric.id,
                              chevron: chevrons, roomy: roomy,
                              onToggle: { onToggle(metric.indexer, $0) },

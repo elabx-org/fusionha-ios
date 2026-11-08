@@ -7,7 +7,7 @@ import FusionhaKit
 /// today, or why it is backing off. A test in flight or its result shows
 /// on the line. The trailing switch is v1's (search and RSS together); on
 /// the open Duo's list the row is selected instead and shows a chevron.
-struct V2IndexerRow: View {
+struct V2SettingsIndexerRow: View {
     let metric: IndexerMetric
     let color: Color
     let result: ConnectionTestResult?
