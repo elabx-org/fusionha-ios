@@ -94,6 +94,9 @@ final class DetailStore {
     var gradual: GradualJob?
     var refreshing = false
     var deleted = false
+    /// Bumped by every re-fetch after an action (not the first load): the
+    /// host refreshes the library so Home's Needs you and the badges follow.
+    private(set) var changes = 0
 
     /// Optimistic monitor flips while the PATCH is in flight.
     var seasonMonitorOverride: [Int: Bool] = [:]
@@ -244,6 +247,7 @@ final class DetailStore {
     /// Re-fetches the item (after an action), keeping the page in place.
     func reload() async {
         guard let client else { return }
+        let wasLoaded = detail != nil
         do {
             let item: ItemDetail
             #if V2
@@ -258,6 +262,7 @@ final class DetailStore {
             #endif
             detail = item
             loadError = nil
+            if wasLoaded { changes &+= 1 }
             seasonMonitorOverride = [:]
             editionMonitorOverride = [:]
             episodeMonitorOverride = [:]
