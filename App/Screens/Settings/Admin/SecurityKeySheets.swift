@@ -103,7 +103,12 @@ struct SecurityRecoveryKeySheet: View {
     }
 
     private func share(_ key: SecretsRecoveryKey) {
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent(key.filename)
+        // The filename comes from the server: only a plain name, kept inside tmp.
+        guard let url = SafeFileName.file(named: key.filename, in: FileManager.default.temporaryDirectory,
+                                          fallback: "fusionha-recovery-key.txt") else {
+            error = CocoaError(.fileWriteInvalidFileName)
+            return
+        }
         do {
             try key.key.write(to: url, atomically: true, encoding: .utf8)
             shareItem = FetchShareItem(url: url)

@@ -99,7 +99,10 @@ final class BackupDownloader {
                 let data = try await client.downloadBackup(id: record.id, password: password, grant: grant)
                 let dir = FileManager.default.temporaryDirectory.appendingPathComponent("backups", isDirectory: true)
                 try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-                let url = dir.appendingPathComponent(record.id)
+                // The id comes from the server: only a plain name, kept inside `backups`.
+                guard let url = SafeFileName.file(named: record.id, in: dir, fallback: "fusionha-backup") else {
+                    throw CocoaError(.fileWriteInvalidFileName)
+                }
                 try? FileManager.default.removeItem(at: url)
                 try data.write(to: url, options: .atomic)
                 shareItem = FetchShareItem(url: url)

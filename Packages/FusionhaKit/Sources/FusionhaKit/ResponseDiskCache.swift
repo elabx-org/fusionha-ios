@@ -4,11 +4,12 @@ import CryptoKit
 /// The last answer of each page-level GET (queue, calendar, wanted, history,
 /// discover rails…), kept on this phone so a screen can draw at once on a
 /// cold launch while the real request runs, as the web's query cache does.
-/// Only JSON answers under `/api/v1/` are kept; sign-in, tokens and searches
-/// never are. Signing out and Reset cache remove everything.
+/// Only JSON answers under `/api/v1/` are kept; sign-in, tokens, searches and
+/// revealed secrets (the app API key, an instance's key) never are. Signing
+/// out and Reset cache remove everything.
 public enum ResponseDiskCache {
     private static let skipped = ["/api/v1/auth", "/api/v1/tokens", "/api/v1/library", "/api/v1/search",
-                                  "/api/v1/backup", "/api/v1/users"]
+                                  "/api/v1/backup", "/api/v1/users", "/api/v1/settings/api-key"]
     private static let lock = NSLock()
     nonisolated(unsafe) private static var lastWrite: [String: Date] = [:]
     /// A polled answer (the queue every 2s) is written at most this often.
@@ -23,7 +24,15 @@ public enum ResponseDiskCache {
         let path = url.path
         guard path.hasPrefix("/api/v1/") || url.path.contains("/api/v1/") else { return false }
         let tail = path.range(of: "/api/v1/").map { String(path[$0.lowerBound...]) } ?? path
-        return !skipped.contains { tail.hasPrefix($0) } && !tail.contains("/search")
+        return !skipped.contains { tail.hasPrefix($0) } && !tail.contains("/search") && !revealsSecret(tail)
+    }
+
+    /// A path that hands back a secret (`/instances/{id}/reveal-key`, any
+    /// reveal of a key or secret): its answer stays off the disk.
+    static func revealsSecret(_ path: String) -> Bool {
+        let lower = path.lowercased()
+        guard lower.contains("reveal") else { return false }
+        return lower.contains("key") || lower.contains("secret")
     }
 
     static func key(_ url: URL) -> String {
