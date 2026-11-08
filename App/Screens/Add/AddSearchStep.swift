@@ -14,7 +14,7 @@ extension AddTitleSheet {
         if !model.requestScoped { sourceSegment }
         searchField
         if !model.requestScoped { providerNote }
-        sectionRow
+        if look != nil { v2SectionRow } else { sectionRow }
         resultsBody
     }
 
@@ -36,7 +36,10 @@ extension AddTitleSheet {
 
     func header(title: String, sub: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.txt)
+            Text(title)
+                .font(.system(size: look == nil ? 17 : 28, weight: look == nil ? .bold : .heavy))
+                .tracking(look == nil ? 0 : -0.5)
+                .foregroundStyle(Theme.txt)
             Text(sub).font(.system(size: 13)).foregroundStyle(Theme.mut)
         }
         .padding(.trailing, 30)
@@ -166,8 +169,14 @@ extension AddTitleSheet {
                     if tvdbResults.isEmpty {
                         note("No TVDB matches for “\(term)”.")
                     } else {
-                        LazyVStack(spacing: 8) {
-                            ForEach(tvdbResults) { result in TvdbRow(result: result) { pickTvdb(result) } }
+                        if look != nil {
+                            v2Results(tvdbResults.map { result in
+                                V2AddEntry(card: AddResultCard(result), pick: { pickTvdb(result) }, preview: nil)
+                            })
+                        } else {
+                            LazyVStack(spacing: 8) {
+                                ForEach(tvdbResults) { result in TvdbRow(result: result) { pickTvdb(result) } }
+                            }
                         }
                     }
                 }
@@ -185,15 +194,10 @@ extension AddTitleSheet {
 
     @ViewBuilder
     func tmdbList(_ list: [MediaSearchResult]) -> some View {
-        if let look, gridView {
-            // v2: the Library's own card, at its width.
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: look.tileWidth.lowerBound, maximum: look.tileWidth.upperBound),
-                                         spacing: 14, alignment: .top)], spacing: 18) {
-                ForEach(Array(list.enumerated()), id: \.element.id) { index, result in
-                    look.tile(result, { pick(result) }, { preview(result) })
-                        .reveal(index, y: 10, duration: 0.4)
-                }
-            }
+        if look != nil {
+            v2Results(list.map { result in
+                V2AddEntry(card: card(result), pick: { pick(result) }, preview: { preview(result) })
+            })
         } else if gridView {
             // Three across on a phone and the folded Duo, more on a wider page.
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 104, maximum: 150), spacing: 10, alignment: .top)], spacing: 14) {

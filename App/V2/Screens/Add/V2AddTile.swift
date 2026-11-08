@@ -3,22 +3,20 @@ import FusionhaKit
 
 /// One Add result as a v2 Library card (mock discover-add.js): clean 2:3 art,
 /// the title, then what you own (its HD and 4K tickets) or the year and kind
-/// with an Add (+) on that row. Preview is the press-and-hold menu, so
-/// nothing sits on the poster.
+/// with an Add (+) on that row. TMDB and TVDB results look the same (owner,
+/// Add results mock 2026-11-08). Preview is the press-and-hold menu, so
+/// nothing sits on the poster; TVDB results have no preview.
 struct V2AddTile: View {
-    let result: MediaSearchResult
+    let card: AddResultCard
     let pick: () -> Void
-    let preview: () -> Void
+    let preview: (() -> Void)?
     @Environment(AppModel.self) private var model
     @Environment(\.pagePalette) private var page
 
     private var ink: Color { page?.ink ?? Theme.txt }
     private var muted: Color { page?.inkMuted ?? Theme.mut }
-    /// The library's own item when the result is already there. Trending
-    /// rows carry `in_library` without an id: the library resolves it.
     private var owned: MediaItem? {
-        guard result.inLibrary || result.libraryItemId != nil,
-              let id = model.libraryItemId(for: result) else { return nil }
+        guard let id = card.libraryItemId else { return nil }
         return model.library.first { $0.id == id }
     }
 
@@ -26,7 +24,7 @@ struct V2AddTile: View {
         VStack(alignment: .leading, spacing: 7) {
             Color.clear
                 .aspectRatio(2 / 3, contentMode: .fit)
-                .overlay { PosterImage(url: TMDBImage.resized(result.posterUrl, to: "w500")) }
+                .overlay { PosterImage(url: TMDBImage.resized(card.posterUrl, to: "w500")) }
                 .shelfPosterPlated(radius: 12)
             if let owned {
                 V2PosterCaption(item: owned).padding(.horizontal, 1)
@@ -37,47 +35,66 @@ struct V2AddTile: View {
         .contentShape(Rectangle())
         .onTapGesture(perform: pick)
         .contextMenu {
-            Button("Preview", systemImage: "eye", action: preview)
-            Button(result.inLibrary ? "Open" : "Add", systemImage: result.inLibrary ? "arrow.up.right" : "plus",
+            if let preview { Button("Preview", systemImage: "eye", action: preview) }
+            Button(card.inLibrary ? "Open" : "Add", systemImage: card.inLibrary ? "chevron.right" : "plus",
                    action: pick)
         }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isButton)
-        .accessibilityAction(named: "Preview", preview)
-    }
-
-    private var subline: String {
-        ([result.year.map { String($0) }, kindName(result)] as [String?]).compactMap { $0 }.joined(separator: " · ")
+        .modifier(V2AddPreviewAction(preview: preview))
     }
 
     private var caption: some View {
         HStack(alignment: .top, spacing: 6) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(TitleYear.display(result.title, nil).title)
+                Text(TitleYear.display(card.title, nil).title)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(ink)
                     .lineLimit(1)
-                Text(result.inLibrary ? "In library" : subline)
+                Text(card.inLibrary ? "In library" : card.subline)
                     .font(.system(size: 11.5))
                     .foregroundStyle(muted)
                     .lineLimit(1)
             }
             Spacer(minLength: 0)
-            if !result.inLibrary {
-                Button(action: pick) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 28, height: 28)
-                        .background(Theme.primary, in: Circle())
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(PressScaleStyle(scale: 0.9))
-                .padding(-8)
-                .accessibilityLabel("Add \(result.title)")
+            if !card.inLibrary {
+                V2AddPlus(title: card.title, size: 28, action: pick).padding(-8)
             }
         }
         .padding(.horizontal, 1)
+    }
+}
+
+/// The Add (+): the accent circle in a 44pt target.
+struct V2AddPlus: View {
+    let title: String
+    var size: CGFloat = 30
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "plus")
+                .font(.system(size: size * 0.46, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: size, height: size)
+                .background(Theme.primary, in: Circle())
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PressScaleStyle(scale: 0.9))
+        .accessibilityLabel("Add \(title)")
+    }
+}
+
+/// VoiceOver's Preview action, only where there is a preview.
+struct V2AddPreviewAction: ViewModifier {
+    let preview: (() -> Void)?
+
+    func body(content: Content) -> some View {
+        if let preview {
+            content.accessibilityAction(named: "Preview", preview)
+        } else {
+            content
+        }
     }
 }

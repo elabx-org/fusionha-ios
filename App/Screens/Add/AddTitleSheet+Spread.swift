@@ -13,7 +13,7 @@ import FusionhaKit
 extension AddTitleSheet {
     func spread(_ panes: FoldColumns.Panes) -> some View {
         HStack(spacing: 0) {
-            findPage
+            findPage()
                 .frame(width: CGFloat(panes.lead))
                 .overlay(alignment: .trailing) {
                     // Flat: the pages meet at the hinge line, nothing on it.

@@ -108,7 +108,9 @@ struct AddTitleSheet: View {
                 // has its own Close, then Back to search (D4); the request
                 // modal brings its own Close.
                 .toolbar {
-                    if flow == nil && requestPick == nil {
+                    // v2 draws Close on its own line above the title instead
+                    // (it covered "Add title" on the folded Duo, IMG_7893).
+                    if flow == nil && requestPick == nil && look == nil {
                         ToolbarItem(placement: .cancellationAction) {
                             SheetCancelButton(title: "Close") { dismiss() }
                         }
@@ -138,17 +140,19 @@ struct AddTitleSheet: View {
             RequestModal(pick: requestPick, formSized: false) { Task { await model.refreshShell() } }
                 .id(requestPick.id)
         } else {
-            findPage
+            findPage(closeRow: look != nil)
                 // Close alone: horizontal bars (Q-DC6). The configure step has
                 // Close and Back, so it keeps the system default.
                 .closeOnlyBars()
+                .toolbar(look == nil ? .automatic : .hidden, for: .navigationBar)
         }
     }
 
     /// Find: kinds, source, search and the results or trending grid.
-    var findPage: some View {
+    func findPage(closeRow: Bool = false) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
+                if closeRow { v2CloseRow }
                 searchStep
             }
             .padding(.horizontal, 20)
