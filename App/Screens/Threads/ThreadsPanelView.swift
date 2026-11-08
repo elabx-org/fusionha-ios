@@ -97,6 +97,19 @@ struct ThreadsPanelView: View {
             ThreadsSplitView(items: shown, hasMore: cursor != nil, onLoadMore: { Task { await loadMore() } },
                              onChanged: { Task { await load() } }, selected: $selected)
         } else {
+            #if V2
+            // v2 (approved Inbox): one grouped card of rows, no status washes.
+            VStack(spacing: 12) {
+                RequestsGroup {
+                    ForEach(shown) { item in
+                        Button { open = item } label: { V2ThreadRow(item: item) }.buttonStyle(.plain)
+                    }
+                }
+                if cursor != nil {
+                    Button("Load more") { Task { await loadMore() } }.buttonStyle(.discover(.subtle))
+                }
+            }
+            #else
             LazyVStack(spacing: 8) {
                 ForEach(shown) { item in
                     Button { open = item } label: { ThreadRowView(item: item) }.buttonStyle(.plain)
@@ -105,6 +118,7 @@ struct ThreadsPanelView: View {
                     Button("Load more") { Task { await loadMore() } }.buttonStyle(.discover(.subtle))
                 }
             }
+            #endif
         }
     }
 

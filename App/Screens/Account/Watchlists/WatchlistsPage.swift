@@ -85,6 +85,9 @@ struct WatchlistsPage: View {
             if unavailable {
                 Text(AutomaticRequestsCopy.unavailable).foregroundStyle(Theme.mut).listRowBackground(AccountStyle.cell)
             } else if let views = store.views {
+                #if V2
+                V2WatchlistsLede()
+                #endif
                 WatchlistsSourceList(views: views, selectedId: nil,
                                      admin: admin, remembered: store.matches.count,
                                      onOpen: open, onFollow: { following = true }, onProfile: { profile = true },

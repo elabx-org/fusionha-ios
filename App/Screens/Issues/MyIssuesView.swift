@@ -87,7 +87,13 @@ struct IssueCardRow: View {
                     HStack(spacing: 6) {
                         Label(IssueFormat.problemLabel(report.problem), systemImage: IssueFormat.problemSymbol(report.problem))
                             .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
-                        if let tier = report.version.tier { ActTierChip(tier: tier) }
+                        if let tier = report.version.tier {
+                            #if V2
+                            RequestTierBadges(tiers: [tier], states: [tier: .onDisk])
+                            #else
+                            ActTierChip(tier: tier)
+                            #endif
+                        }
                     }
                 }
                 if (issue.participantsCount ?? 0) > 1 {
@@ -99,7 +105,11 @@ struct IssueCardRow: View {
             }
             Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 6) {
+                #if V2
+                V2IssueStateChip(state: state, reopenCount: reopen)
+                #else
                 IssueStateChip(state: state, reopenCount: reopen)
+                #endif
                 HStack(spacing: 4) {
                     if unread { Circle().fill(Theme.i2).frame(width: 7, height: 7).accessibilityLabel("Unread") }
                     Text(ActFmt.relative(issue.thread?.lastEventAt ?? issue.createdAt)).font(.system(size: 11.5)).foregroundStyle(Theme.dim)
@@ -107,7 +117,7 @@ struct IssueCardRow: View {
             }
         }
         .padding(12)
-        .actWash(IssueFormat.stateTone(state, reopenCount: reopen).color, radius: 14, base: Theme.card)
+        .requestCardSurface(IssueFormat.stateTone(state, reopenCount: reopen).color, v1Radius: 14)
         .accessibilityElement(children: .combine)
     }
 }

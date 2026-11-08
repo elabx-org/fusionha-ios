@@ -32,10 +32,16 @@ struct RequestCardView: View {
             HStack(alignment: .top, spacing: 12) {
                 ActPoster(url: request.poster, title: title, size: .md)
                 VStack(alignment: .leading, spacing: 5) {
-                    (Text(title).fontWeight(.bold) + Text(verbatim: request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
-                        .font(.system(size: 16))
-                        .foregroundStyle(Theme.txt)
-                        .lineLimit(2)
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        (Text(title).fontWeight(.bold) + Text(verbatim: request.year.map { " (\($0))" } ?? "").foregroundColor(Theme.mut))
+                            .font(.system(size: 16))
+                            .foregroundStyle(Theme.txt)
+                            .lineLimit(2)
+                        #if V2
+                        Spacer(minLength: 4)
+                        V2RequestStatusPill(status: request.status)
+                        #endif
+                    }
                     metaLine
                     whoLine(joined: joined)
                     ForEach(Array(lagging.enumerated()), id: \.offset) { _, e in
@@ -53,7 +59,7 @@ struct RequestCardView: View {
         .padding(16)
         .contentShape(Rectangle())
         .onTapGesture(perform: onOpenThread)
-        .actWash(RequestLifecycle.wash(status: request.status, lifecycle: lifecycle).color, radius: 16, base: Theme.card)
+        .requestCardSurface(RequestLifecycle.wash(status: request.status, lifecycle: lifecycle).color)
         .sheet(isPresented: $reporting) {
             if let id = request.mediaItemId {
                 IssueModal(mediaItemId: id, title: title, isSeries: request.kind == .series, seasons: nil, year: request.year, poster: request.poster)
@@ -66,7 +72,11 @@ struct RequestCardView: View {
 
     private var metaLine: some View {
         HStack(spacing: 6) {
+            #if V2
+            RequestTierBadges(request: request, showsResolution: true)
+            #else
             ForEach(request.tiers, id: \.self) { ActTierChip(tier: $0) }
+            #endif
             Text("·").foregroundStyle(Theme.dim)
             Text(RequestLifecycle.kindLabel(request))
             if let at = request.requestedAt.flatMap(ServerTime.parse) {
@@ -253,5 +263,21 @@ struct RequestPersonChip: View {
         }
         .font(.system(size: 12))
         .lineLimit(1)
+    }
+}
+
+extension View {
+    /// A request card's ground. v1 washes it in the status colour; v2
+    /// (approved My requests) keeps content solid on the card colour with a
+    /// hairline and its 22pt corners: the status pill carries the state.
+    @ViewBuilder
+    func requestCardSurface(_ wash: Color, v1Radius: CGFloat = 16) -> some View {
+        #if V2
+        self
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: ModuleMetrics.radius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: ModuleMetrics.radius, style: .continuous).strokeBorder(Theme.line))
+        #else
+        self.actWash(wash, radius: v1Radius, base: Theme.card)
+        #endif
     }
 }

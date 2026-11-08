@@ -15,10 +15,17 @@ struct RequestsGroup<Content: View>: View {
                 }
             }
         }
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: Self.radius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Self.radius, style: .continuous).strokeBorder(Theme.line))
+        .clipShape(RoundedRectangle(cornerRadius: Self.radius, style: .continuous))
     }
+
+    /// v2 rounds the group like its W1 cards (22); v1 keeps 14.
+    #if V2
+    private static var radius: CGFloat { ModuleMetrics.radius }
+    #else
+    private static var radius: CGFloat { 14 }
+    #endif
 }
 
 /// A grouped list's section label: a stage dot (optional), the name, its
@@ -28,6 +35,8 @@ struct RequestsSectionHeader: View {
     var count: Int?
     var dot: Color?
     var facts: String?
+    /// A quiet right-hand count ("3 decided", v2 History).
+    var trailing: String? = nil
 
     var body: some View {
         HStack(spacing: 7) {
@@ -40,6 +49,9 @@ struct RequestsSectionHeader: View {
                 Text("· \(facts)").font(.system(size: 13)).foregroundStyle(Theme.dim).lineLimit(1)
             }
             Spacer(minLength: 0)
+            if let trailing {
+                Text(trailing).font(.system(size: 13, weight: .semibold).monospacedDigit()).foregroundStyle(Theme.mut)
+            }
         }
         .padding(.horizontal, 4)
         .padding(.top, 14)

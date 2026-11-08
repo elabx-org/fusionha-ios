@@ -29,6 +29,11 @@ struct WatchlistsSourceList: View {
                 .listRowBackground(AccountStyle.cell)
             }
         }
+        #if V2
+        if !views.contains(where: { $0.source.group == .lists }) {
+            V2FollowListPlaceholder(onFollow: onFollow)
+        }
+        #endif
         if admin {
             Section {
                 Button(action: onRemembered) {

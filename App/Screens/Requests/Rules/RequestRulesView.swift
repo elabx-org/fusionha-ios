@@ -52,9 +52,21 @@ struct RequestRulesView: View {
     @ViewBuilder
     private var ruleLists: some View {
         if rules.isEmpty && loaded {
+            #if V2
+            // v2 (approved Rules): the empty state as a dashed placeholder card.
+            (Text("No rules yet. ").fontWeight(.semibold).foregroundColor(Theme.txt)
+             + Text("Requests wait for an approver unless a user has their own auto-approve."))
+                .font(.system(size: 14)).foregroundStyle(Theme.mut)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .strokeBorder(Theme.line, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+            #else
             Text("No rules yet. Requests wait for an approver unless a user has their own auto-approve.")
                 .font(.system(size: 14)).foregroundStyle(Theme.mut)
                 .fixedSize(horizontal: false, vertical: true)
+            #endif
         }
         if !approve.isEmpty {
             section("Approve rules · first match wins") {
@@ -87,8 +99,13 @@ struct RequestRulesView: View {
 
     private func section<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
+            #if V2
+            Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.mut)
+                .accessibilityAddTraits(.isHeader)
+            #else
             Text(title.uppercased()).font(.system(size: 11, weight: .bold)).tracking(0.8).foregroundStyle(Theme.dim)
                 .accessibilityAddTraits(.isHeader)
+            #endif
             content()
         }
     }

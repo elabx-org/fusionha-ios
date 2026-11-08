@@ -18,7 +18,16 @@ struct IssueThreadSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    if let issue { loaded(issue) } else { DiscoverEmptyState(message: "Loading…") }
+                    if let issue {
+                        #if V2
+                        // v2: the reporter's thread laid out like the request thread (look pass, family 4).
+                        V2IssueThreadContent(issue: issue, events: events) { tick += 1 }
+                        #else
+                        loaded(issue)
+                        #endif
+                    } else {
+                        DiscoverEmptyState(message: "Loading…")
+                    }
                 }
                 .padding(16)
             }
@@ -31,7 +40,7 @@ struct IssueThreadSheet: View {
                 }
             }
             .background(Theme.bg)
-            .navigationTitle(issue?.mediaTitle ?? "Report")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { SheetDoneButton(escapeCloses: true) { dismiss() } } }
             .closeOnlyBars()
@@ -40,6 +49,15 @@ struct IssueThreadSheet: View {
         .formSheet() // R7: a form sheet when unfolded
         .task(id: tick) { await pollIssue() }
         .task { await pollLines() }
+    }
+
+    /// v2's header names the title, so its bar stays empty.
+    private var navigationTitle: String {
+        #if V2
+        return ""
+        #else
+        return issue?.mediaTitle ?? "Report"
+        #endif
     }
 
     @ViewBuilder

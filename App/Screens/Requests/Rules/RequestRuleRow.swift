@@ -47,7 +47,7 @@ struct RequestRuleRow: View {
             }
         }
         .padding(10)
-        .actWash(rule.enabled ? (isGuard ? Theme.danger : Theme.done) : nil, radius: 12, base: Theme.card)
+        .rulesSurface(wash: rule.enabled ? (isGuard ? Theme.danger : Theme.done) : nil, v1Radius: 12, v1Panel: false)
     }
 
     @ViewBuilder
@@ -90,7 +90,11 @@ struct RequestRuleRow: View {
     private var chips: some View {
         ActFlow(spacing: 5, lineSpacing: 5) {
             quiet(RuleRowCopy.audience(rule))
+            #if V2
+            if let tier = rule.tier { RequestTierBadges(tiers: [tier]) } else { quiet("Every version") }
+            #else
             if let tier = rule.tier { ActTierChip(tier: tier) } else { quiet("Every version") }
+            #endif
             if watchlist { quiet("Sources: \(RuleSource.words(RuleSource.of(rule.params)))") }
         }
     }

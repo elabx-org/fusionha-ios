@@ -24,7 +24,7 @@ struct SourceChecksCard: View {
             if !isAdmin { Text(SourceChecksCopy.adminOnly).font(.caption).foregroundStyle(Theme.dim) }
         }
         .padding(14)
-        .background(Theme.panel, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .rulesSurface()
         .disabled(!isAdmin)
         .task { await load() }
     }
