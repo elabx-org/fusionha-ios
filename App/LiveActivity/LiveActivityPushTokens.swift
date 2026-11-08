@@ -41,7 +41,7 @@ enum LiveActivityPushTokens {
     /// server; then the watchers stop, and the cached APNs device id is
     /// dropped so the next account registers its own.
     static func reset(client: APIClient?) async {
-        let activityIds = known.values.compactMap(\.activityId)
+        let activityIds = known.values.compactMap { $0.activityId }
         for task in tasks { task.cancel() }
         tasks = []
         known = [:]
