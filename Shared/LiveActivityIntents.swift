@@ -8,6 +8,8 @@ import FusionhaKit
 struct LiveActivitySearchAgainIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Search again"
     static var description = IntentDescription("Blocklist this release and search for another.")
+    /// It removes and blocklists a download: never from a locked phone or watch.
+    static var authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
 
     @Parameter(title: "Download") var downloadId: Int
 
