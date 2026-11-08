@@ -35,11 +35,18 @@ final class ManageFilesModel {
         let id = UUID()
     }
 
-    init(detail: ItemDetail, scopeVersionIds: Set<Int>?, season: Int?) {
+    /// Select the dead and unreadable files on the first load (Needs you's Review).
+    private var selectsProblems: Bool
+
+    init(detail: ItemDetail, scopeVersionIds: Set<Int>?, season: Int?, selectsProblems: Bool = false) {
         self.detail = detail
         self.scopeVersionIds = scopeVersionIds
         self.season = season
+        self.selectsProblems = selectsProblems
     }
+
+    /// The files Needs you is about.
+    var problemItems: [ManagedFileItem] { items.filter { $0.dead || $0.unreadable } }
 
     var isSeries: Bool { detail.kind == .series }
     var selectedItems: [ManagedFileItem] { items.filter { selected.contains($0.id) } }
@@ -77,6 +84,10 @@ final class ManageFilesModel {
                 ManagedFileRules.items(rows, detail: detail, scopeVersionIds: scopeVersionIds, season: season),
                 episodeIds: unmonitored, detail: detail)
             selected.formIntersection(Set(items.map(\.id)))
+            if selectsProblems {
+                selected = Set(problemItems.map(\.id))
+                selectsProblems = false
+            }
             loadFailed = false
         } catch {
             loadFailed = true

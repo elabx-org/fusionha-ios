@@ -89,8 +89,12 @@ struct V2TitleSummary: View {
         case .queue(let id):
             model.openInQueue(downloadId: id)
         case .files(let edition):
+            // Straight to the files that need you, already selected, so
+            // Replace or Delete is one tap (it used to only switch tabs,
+            // which did nothing when Files was already showing).
             store.scope = DetailScope(tier: edition.tier.rawValue, version: edition.versionKey)
             store.tab = .files
+            store.manageFiles = ManageFilesTarget(versionIds: [edition.id], season: nil, problems: true)
         }
     }
 }
