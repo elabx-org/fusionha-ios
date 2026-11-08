@@ -40,6 +40,7 @@ extension AppModel {
     func loadMe() async { await session.loadMe() }
     func restoreLibrary() async { await session.restoreLibrary() }
     func loadLibrary() async { await session.loadLibrary() }
+    func refreshLibrarySoon() { session.refreshLibrarySoon() }
     func loadLibraryIfNeeded() async { await session.loadLibraryIfNeeded() }
     func refreshQueue() async { await session.refreshQueue() }
     func refreshShell() async { await session.refreshShell() }

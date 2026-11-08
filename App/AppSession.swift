@@ -74,6 +74,7 @@ final class AppSession {
     @ObservationIgnored private var accountLoading = false
     /// The first library fetch, shared by every screen that waits for it (`loadLibraryIfNeeded`).
     @ObservationIgnored private var initialLibraryLoad: Task<Void, Never>?
+    @ObservationIgnored private var librarySoon: Task<Void, Never>?
     /// A link no window could take yet (`routeLink`); the next window to come forward opens it.
     @ObservationIgnored var pendingLink: URL?
 
@@ -165,6 +166,17 @@ final class AppSession {
         initialLibraryLoad = load
         await load.value
         if initialLibraryLoad == load { initialLibraryLoad = nil }
+    }
+
+    /// One library fetch a moment after a burst of title actions (a fix
+    /// re-fetches the item several times), so Home's Needs you clears.
+    func refreshLibrarySoon() {
+        librarySoon?.cancel()
+        librarySoon = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(800))
+            guard !Task.isCancelled else { return }
+            await self.loadLibrary()
+        }
     }
 
     func loadLibrary() async {

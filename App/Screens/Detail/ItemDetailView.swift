@@ -96,6 +96,7 @@ struct ItemDetailView: View {
                 let mine = queue.filter { $0.mediaItemId == store.itemId }
                 if store.queue != mine { store.queue = mine }
             }
+            .onChange(of: store.changes) { model.refreshLibrarySoon() }
             .onChange(of: store.deleted) {
                 guard store.deleted else { return }
                 Task { await model.loadLibrary() }

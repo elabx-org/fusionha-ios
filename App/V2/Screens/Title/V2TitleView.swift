@@ -91,6 +91,7 @@ struct V2TitleView: View {
             .onChange(of: model.pendingDetailTab) { applyPendingTab() }
             // Only this title's rows; a finished download re-fetches the item.
             .v2TitleLiveImport(store)
+            .onChange(of: store.changes) { model.refreshLibrarySoon() }
             .onChange(of: store.deleted) {
                 guard store.deleted else { return }
                 Task { await model.loadLibrary() }
