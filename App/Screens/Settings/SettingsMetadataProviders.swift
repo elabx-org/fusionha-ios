@@ -165,10 +165,10 @@ struct ProviderCard: View {
             ApiKeyCell(key: "tvdb_api_key", configuredKey: "tvdb_configured", label: "TVDB API key",
                        sub: "BYO TVDB v4 · stored redacted")
         case .tvmaze:
-            NumberFieldRow(label: "Search delay after air", description: "Wait before auto-searching", unit: "min",
-                           value: store.double("search_air_delay_minutes", 15)) { n in
-                store.save("search_air_delay_minutes", .number(n))
-            }
+            SettingDuration(key: "search_air_delay_minutes", label: "Search delay after air",
+                            description: "Wait before auto-searching",
+                            unit: .minutes, presets: [300, 900, 1800, 3600, 7200, 21600], zero: "Straight away",
+                            columns: [.hours, .minutes], fallback: 15)
         }
     }
 

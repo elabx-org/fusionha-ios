@@ -82,9 +82,9 @@ struct MetadataSettingsPanel: View {
         }
 
         SettingsSection("Metadata refresh") {
-            SettingNumber(key: "metadata_refresh_interval_seconds", label: "Full refresh interval",
-                          description: "How often the full library metadata sweep re-pulls titles, runtimes and artwork from TMDB.",
-                          unit: "sec")
+            SettingDuration(key: "metadata_refresh_interval_seconds", label: "Full refresh interval",
+                            description: "How often the full library metadata sweep re-pulls titles, runtimes and artwork from TMDB.",
+                            unit: .seconds, presets: [21600, 43200, 86400, 172800, 604800], floor: 60, fallback: 43200)
             SettingValueRow(label: "Advanced cadences",
                             description: "Fast active-series sweep, episode-title watch, and TVmaze air-time refresh timings.") {
                 Button {
@@ -96,24 +96,24 @@ struct MetadataSettingsPanel: View {
                 .accessibilityLabel(advancedOpen ? "Hide advanced cadences" : "Show advanced cadences")
             }
             if advancedOpen {
-                SettingNumber(key: "metadata_refresh_active_interval_seconds", label: "Active-series refresh interval",
-                              description: "Faster sweep that re-syncs only series with a monitored episode airing inside the active window below.",
-                              unit: "sec")
-                SettingNumber(key: "metadata_refresh_active_window_days", label: "Active window",
-                              description: "How near an episode's air date a series counts as active for the faster sweep (± this many days).",
-                              unit: "days")
-                SettingNumber(key: "title_watch_interval_seconds", label: "Episode-title watch interval",
-                              description: "Cheap tick that refreshes only episodes still carrying a placeholder title and due per an air-age backoff.",
-                              unit: "sec")
-                SettingNumber(key: "tvmaze_air_times_imminent_interval_seconds", label: "Air-time refresh — imminent",
-                              description: "How often TVmaze air times refresh for a series whose next episode is imminent (≤ 3 days away).",
-                              unit: "sec")
-                SettingNumber(key: "tvmaze_air_times_soon_interval_seconds", label: "Air-time refresh — soon",
-                              description: "Refresh cadence for a series whose next episode is soon (≤ 14 days away).",
-                              unit: "sec")
-                SettingNumber(key: "tvmaze_air_times_default_interval_seconds", label: "Air-time refresh — default",
-                              description: "Refresh cadence for everything else (next episode far off, or none scheduled).",
-                              unit: "sec")
+                SettingDuration(key: "metadata_refresh_active_interval_seconds", label: "Active-series refresh interval",
+                                description: "Faster sweep that re-syncs only series with a monitored episode airing inside the active window below.",
+                                unit: .seconds, presets: [900, 1800, 3600, 10800, 21600, 43200], floor: 60, fallback: 3600)
+                SettingDuration(key: "metadata_refresh_active_window_days", label: "Active window",
+                                description: "How near an episode's air date a series counts as active for the faster sweep (± this many days).",
+                                unit: .days, presets: [86400, 259200, 604800, 1209600, 2592000], floor: 86400, columns: [.days], fallback: 7)
+                SettingDuration(key: "title_watch_interval_seconds", label: "Episode-title watch interval",
+                                description: "Cheap tick that refreshes only episodes still carrying a placeholder title and due per an air-age backoff.",
+                                unit: .seconds, presets: [900, 1800, 3600, 10800, 21600], floor: 60)
+                SettingDuration(key: "tvmaze_air_times_imminent_interval_seconds", label: "Air-time refresh — imminent",
+                                description: "How often TVmaze air times refresh for a series whose next episode is imminent (≤ 3 days away).",
+                                unit: .seconds, presets: [3600, 10800, 21600, 43200, 86400], floor: 60, fallback: 21600)
+                SettingDuration(key: "tvmaze_air_times_soon_interval_seconds", label: "Air-time refresh — soon",
+                                description: "Refresh cadence for a series whose next episode is soon (≤ 14 days away).",
+                                unit: .seconds, presets: [21600, 43200, 86400, 172800], floor: 60, fallback: 86400)
+                SettingDuration(key: "tvmaze_air_times_default_interval_seconds", label: "Air-time refresh — default",
+                                description: "Refresh cadence for everything else (next episode far off, or none scheduled).",
+                                unit: .seconds, presets: [86400, 259200, 604800, 1209600], floor: 60, fallback: 604800)
             }
         }
 

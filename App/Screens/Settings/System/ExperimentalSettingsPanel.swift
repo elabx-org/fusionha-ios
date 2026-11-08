@@ -31,18 +31,18 @@ struct ExperimentalSettingsPanel: View {
                     .settingsField("Smarter automatic searches")
                 }
                 SettingsSection("Fine-tuning") {
-                    SettingNumber(key: "usenet_cross_indexer_retry_budget", label: "Usenet retry budget",
-                                  description: "How many different copies of the same release to try across indexers before giving that title a rest (0 = don't retry across indexers).",
-                                  unit: "copies", disabled: !enabled)
-                    SettingNumber(key: "usenet_title_condemn_cooldown_seconds", label: "Condemned-title cool-off",
-                                  description: "How long a title that used up its retry budget stays out of the automatic search rotation before it's tried again.",
-                                  unit: "seconds", disabled: !enabled)
-                    SettingNumber(key: "failed_research_burst_threshold", label: "Rapid-failure guard",
-                                  description: "After this many quick failures in a row, hold off on the immediate replacement search and let things settle first.",
-                                  unit: "failures", disabled: !enabled)
-                    SettingNumber(key: "failed_research_min_interval_seconds", label: "Retry pacing",
-                                  description: "Minimum time between replacement searches for one slot once the rapid-failure guard trips (0 = no pacing).",
-                                  unit: "seconds", disabled: !enabled)
+                    SettingStepper(key: "usenet_cross_indexer_retry_budget", label: "Usenet retry budget",
+                                   description: "How many different copies of the same release to try across indexers before giving that title a rest (0 = don't retry across indexers).",
+                                   min: 0, max: 20, disabled: !enabled)
+                    SettingDuration(key: "usenet_title_condemn_cooldown_seconds", label: "Condemned-title cool-off",
+                                    description: "How long a title that used up its retry budget stays out of the automatic search rotation before it's tried again.",
+                                    unit: .seconds, presets: [3600, 10800, 21600, 43200, 86400, 172800], floor: 60, fallback: 21600, disabled: !enabled)
+                    SettingStepper(key: "failed_research_burst_threshold", label: "Rapid-failure guard",
+                                   description: "After this many quick failures in a row, hold off on the immediate replacement search and let things settle first.",
+                                   min: 1, max: 20, disabled: !enabled)
+                    SettingDuration(key: "failed_research_min_interval_seconds", label: "Retry pacing",
+                                    description: "Minimum time between replacement searches for one slot once the rapid-failure guard trips (Off = no pacing).",
+                                    unit: .seconds, presets: [30, 60, 120, 300, 600, 1800], zero: "Off", columns: [.minutes, .seconds], fallback: 120, disabled: !enabled)
                     SettingText(key: "failed_grab_cooldown_schedule_seconds", label: "Failed-grab cool-off schedule",
                                 description: "Escalating per-slot cool-offs after consecutive failed grabs — a comma-separated list of seconds, e.g. 0,300,900,1800. Empty disables it.")
                         .disabled(!enabled)

@@ -40,12 +40,20 @@ struct SettingsSection<Content: View>: View {
 struct FieldLabel: View {
     let label: String
     var description: String?
+    /// A worded value under the title ("5 days before").
+    var value: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label)
                 .font(.system(size: 13.5, weight: .semibold))
                 .foregroundStyle(Theme.txt)
+            if let value {
+                Text(value)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.txt)
+                    .contentTransition(.numericText())
+            }
             if let description {
                 Text(description)
                     .font(.system(size: 12))
@@ -108,11 +116,13 @@ struct SettingNumber: View {
     var max: Double?
     var integer = true
     var disabled = false
+    /// Stored units per shown unit (1024 shows a value stored in MB as GB).
+    var scale: Double = 1
 
     var body: some View {
         NumberFieldRow(label: label, description: description, unit: unit,
-                       value: store.double(key), signed: signed, min: min, max: max, integer: integer) { n in
-            store.save(key, .number(n))
+                       value: store.double(key) / scale, signed: signed, min: min, max: max, integer: integer) { n in
+            store.save(key, .number((n * scale).rounded()))
         }
         .disabled(disabled)
     }
@@ -160,7 +170,8 @@ struct NumberFieldRow: View {
     }
 
     private func format(_ n: Double) -> String {
-        integer || n.rounded() == n ? String(Int(n)) : String(n)
+        if integer || n.rounded() == n { return String(Int(n)) }
+        return n.formatted(.number.precision(.fractionLength(0...2)).grouping(.never))
     }
 
     private func commit() {

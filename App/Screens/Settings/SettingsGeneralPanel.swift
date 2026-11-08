@@ -62,74 +62,74 @@ struct GeneralSettingsPanel: View {
         }
 
         SettingsSection("Search") {
-            SettingNumber(key: "availability_delay_days", label: "Availability delay",
-                          description: "Search this many days before (−) or after (+) a movie becomes available. 0 = exactly on the available date.",
-                          unit: "days", signed: true)
+            SettingStepper(key: "availability_delay_days", label: "Availability delay",
+                           description: "When to start searching for a movie, counted from the day it becomes available.",
+                           min: -60, max: 60, words: DayOffsetFormat.text)
             EarlyReleaseSettingRows()
             SettingToggle(key: "search_on_add", label: "Search on add",
                           description: "When adding a title, immediately search for its monitored versions (a per-add choice can still override this).",
                           fallback: true)
-            SettingNumber(key: "season_search_interval_seconds", label: "Season episode-search interval",
-                          description: "Seconds between each episode when a season uses 'Search each episode (gradual)' instead of a season-pack search.",
-                          unit: "sec")
+            SettingDuration(key: "season_search_interval_seconds", label: "Season episode-search interval",
+                            description: "Pause between each episode when a season uses 'Search each episode (gradual)' instead of a season-pack search.",
+                            unit: .seconds, presets: [5, 10, 30, 60, 120, 300], zero: "No pause", columns: [.minutes, .seconds], fallback: 5)
         }
 
         SettingsSection("Missing (Wanted) search") {
             SettingToggle(key: "missing_search_enabled", label: "Automatic missing search",
                           description: "Periodically search for monitored titles still missing a file for a monitored version.")
-            SettingNumber(key: "missing_search_interval_seconds", label: "Search interval",
-                          description: "How often the missing-search sweep runs. Clamped to a safe floor to avoid indexer bans.",
-                          unit: "sec")
-            SettingNumber(key: "missing_search_max_items", label: "Items per run",
-                          description: "Cap on how many titles one missing-search sweep works through (oldest first), so a big backlog drains across runs.",
-                          unit: "items")
+            SettingDuration(key: "missing_search_interval_seconds", label: "Search interval",
+                            description: "How often the missing-search sweep runs. Clamped to a safe floor to avoid indexer bans.",
+                            unit: .seconds, presets: [3600, 10800, 21600, 43200, 86400, 172800, 604800], floor: 3600, columns: [.days, .hours, .minutes], fallback: 43200)
+            SettingStepper(key: "missing_search_max_items", label: "Items per run",
+                           description: "Cap on how many titles one missing-search sweep works through (oldest first), so a big backlog drains across runs.",
+                           min: 1, max: 1000, step: 5, fallback: 25)
         }
 
         SettingsSection("Cutoff upgrade search") {
             SettingToggle(key: "cutoff_unmet_search_enabled", label: "Automatic cutoff-unmet search",
                           description: "Periodically re-search monitored versions whose file is below the profile cutoff, looking for an upgrade. Heavier on indexers — off by default.")
-            SettingNumber(key: "cutoff_unmet_search_interval_seconds", label: "Search interval",
-                          description: "How often the cutoff-upgrade sweep runs. Clamped to a safe floor to avoid indexer bans.",
-                          unit: "sec")
-            SettingNumber(key: "missing_search_max_items", label: "Cutoff items per run",
-                          description: "Cap on how many below-cutoff versions one cutoff-upgrade sweep works through (oldest first), so a big backlog drains across runs.",
-                          unit: "items")
+            SettingDuration(key: "cutoff_unmet_search_interval_seconds", label: "Search interval",
+                            description: "How often the cutoff-upgrade sweep runs. Clamped to a safe floor to avoid indexer bans.",
+                            unit: .seconds, presets: [3600, 10800, 21600, 43200, 86400, 172800, 604800], floor: 3600, columns: [.days, .hours, .minutes], fallback: 86400)
+            SettingStepper(key: "missing_search_max_items", label: "Cutoff items per run",
+                           description: "Cap on how many below-cutoff versions one cutoff-upgrade sweep works through (oldest first), so a big backlog drains across runs.",
+                           min: 1, max: 1000, step: 5, fallback: 25)
         }
 
         SettingsSection("Recent-upgrade retry") {
             SettingToggle(key: "active_upgrade_search_enabled", label: "Retry recent grabs for an upgrade",
                           description: "A gentle, small lane that re-checks recently imported versions still below cutoff for a better release — so a fresh episode's upgrade isn't starved behind the big oldest-first backlog.")
-            SettingNumber(key: "active_upgrade_window_days", label: "Recent window",
-                          description: "Only versions imported within this many days are eligible for the recent-upgrade lane; older ones hand back to the daily cutoff sweep.",
-                          unit: "days")
-            SettingNumber(key: "active_upgrade_search_interval_seconds", label: "Search interval",
-                          description: "How often the recent-upgrade lane runs. Clamped to a safe floor to avoid indexer bans (kept gentle by default).",
-                          unit: "sec")
-            SettingNumber(key: "active_upgrade_max_items", label: "Items per run",
-                          description: "Cap on how many recently imported versions the recent-upgrade lane works through (newest first).",
-                          unit: "items")
+            SettingDuration(key: "active_upgrade_window_days", label: "Recent window",
+                            description: "Only versions imported within this many days are eligible for the recent-upgrade lane; older ones hand back to the daily cutoff sweep.",
+                            unit: .days, presets: [259200, 604800, 1209600, 2592000, 5184000, 7776000], floor: 86400, columns: [.days], fallback: 14)
+            SettingDuration(key: "active_upgrade_search_interval_seconds", label: "Search interval",
+                            description: "How often the recent-upgrade lane runs. Clamped to a safe floor to avoid indexer bans (kept gentle by default).",
+                            unit: .seconds, presets: [3600, 7200, 14400, 21600, 43200, 86400], floor: 3600, columns: [.days, .hours, .minutes], fallback: 14400)
+            SettingStepper(key: "active_upgrade_max_items", label: "Items per run",
+                           description: "Cap on how many recently imported versions the recent-upgrade lane works through (newest first).",
+                           min: 0, max: 1000, step: 5)
         }
 
         SettingsSection("4K discovery") {
             SettingToggle(key: "uhd_available_observer_enabled", label: "Observe 4K availability",
                           description: "Learn where 4K exists for HD titles from searches you already run — no extra queries.")
-            SettingNumber(key: "uhd_available_staleness_days", label: "Keep 4K sightings fresh for (days)",
-                          description: "An observed 2160p sighting older than this is treated as stale and dropped from the 4K Available tab.",
-                          unit: "days")
+            SettingDuration(key: "uhd_available_staleness_days", label: "Keep 4K sightings fresh for",
+                            description: "An observed 2160p sighting older than this is treated as stale and dropped from the 4K Available tab.",
+                            unit: .days, presets: [604800, 1209600, 2592000, 5184000, 7776000], floor: 86400, columns: [.days], fallback: 30)
             SettingToggle(key: "discovery_probe_enabled", label: "Actively probe for 4K",
                           description: "Spend indexer queries to check HD titles that searches never touch. Off by default; only queries indexers you've flagged unlimited or given a daily cap.")
-            SettingNumber(key: "discovery_probe_max_items_per_run", label: "Titles per probe run",
-                          description: "Cap on how many titles one discovery-probe sweep works through, so a big library drains across runs.",
-                          unit: "items")
-            SettingNumber(key: "discovery_probe_interval_seconds", label: "Probe interval (seconds)",
-                          description: "How often the discovery-probe sweep runs. Clamped to a safe floor to avoid indexer bans.",
-                          unit: "sec")
+            SettingStepper(key: "discovery_probe_max_items_per_run", label: "Titles per probe run",
+                           description: "Cap on how many titles one discovery-probe sweep works through, so a big library drains across runs.",
+                           min: 1, max: 1000, step: 5)
+            SettingDuration(key: "discovery_probe_interval_seconds", label: "Probe interval",
+                            description: "How often the discovery-probe sweep runs. Clamped to a safe floor to avoid indexer bans.",
+                            unit: .seconds, presets: [3600, 10800, 21600, 43200, 86400, 172800], floor: 3600, columns: [.days, .hours, .minutes], fallback: 21600)
         }
 
         SettingsSection("Activity & run history") {
-            SettingNumber(key: "run_retention_days", label: "Keep run history for",
-                          description: "How long completed search, RSS and import runs are kept before they're pruned from Activity. The most recent runs are always retained regardless of age.",
-                          unit: "days")
+            SettingDuration(key: "run_retention_days", label: "Keep run history for",
+                            description: "How long completed search, RSS and import runs are kept before they're pruned from Activity. The most recent runs are always retained regardless of age.",
+                            unit: .days, presets: [604800, 1209600, 2592000, 5184000, 7776000, 15552000, 31536000], floor: 86400, columns: [.days], fallback: 30)
         }
 
         SettingsSection("Download handling") {
@@ -141,21 +141,21 @@ struct GeneralSettingsPanel: View {
                 .buttonStyle(.web(.ghost))
             }
             if advancedOpen {
-                SettingNumber(key: "stale_download_grace_minutes", label: "Vanished download grace",
-                              description: "Minutes after grab before a download the client no longer knows about is declared vanished, then failed and re-searched.",
-                              unit: "min")
-                SettingNumber(key: "queue_stalled_after_minutes", label: "Stalled display threshold",
-                              description: "Minutes a frozen 0% download sits before it's flagged as stalled in the queue (a display signal only).",
-                              unit: "min")
-                SettingNumber(key: "stalled_download_timeout_minutes", label: "Stalled download timeout",
-                              description: "Minutes a download may stay queued at 0% before it's failed and re-searched. 0 disables the timeout.",
-                              unit: "min")
-                SettingNumber(key: "regrab_cooldown_hours", label: "Re-grab cooldown",
-                              description: "How long a removed/failed release stays excluded before it can be re-grabbed. 0 disables the cooldown.",
-                              unit: "hrs", max: 168)
-                SettingNumber(key: "grab_client_call_timeout_seconds", label: "Download client add timeout",
-                              description: "Seconds (10–120) to wait for the download client to accept a grab. A slower add is kept as pending and reconciled, not failed.",
-                              unit: "sec", min: 10, max: 120)
+                SettingDuration(key: "stale_download_grace_minutes", label: "Vanished download grace",
+                                description: "How long after a grab a download the client no longer knows about waits before it's declared vanished, then failed and re-searched.",
+                                unit: .minutes, presets: [120, 300, 600, 900, 1800, 3600], floor: 60, columns: [.hours, .minutes], fallback: 5)
+                SettingDuration(key: "queue_stalled_after_minutes", label: "Stalled display threshold",
+                                description: "How long a frozen 0% download sits before it's flagged as stalled in the queue (a display signal only).",
+                                unit: .minutes, presets: [60, 180, 300, 600, 900, 1800], floor: 60, columns: [.hours, .minutes], fallback: 3)
+                SettingDuration(key: "stalled_download_timeout_minutes", label: "Stalled download timeout",
+                                description: "How long a download may stay queued at 0% before it's failed and re-searched. Off disables the timeout.",
+                                unit: .minutes, presets: [1800, 3600, 7200, 21600, 43200, 86400], zero: "Off", columns: [.days, .hours, .minutes], fallback: 60)
+                SettingDuration(key: "regrab_cooldown_hours", label: "Re-grab cooldown",
+                                description: "How long a removed/failed release stays excluded before it can be re-grabbed. Off disables the cooldown.",
+                                unit: .hours, presets: [3600, 21600, 43200, 86400, 172800, 259200, 604800], zero: "Off", ceiling: 604800, columns: [.days, .hours], fallback: 24)
+                SettingDuration(key: "grab_client_call_timeout_seconds", label: "Download client add timeout",
+                                description: "How long (10 seconds to 2 minutes) to wait for the download client to accept a grab. A slower add is kept as pending and reconciled, not failed.",
+                                unit: .seconds, presets: [10, 15, 30, 45, 60, 90, 120], floor: 10, ceiling: 120, columns: [.minutes, .seconds], fallback: 30)
             }
         }
     }

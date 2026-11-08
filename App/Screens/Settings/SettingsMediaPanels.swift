@@ -63,8 +63,9 @@ private struct FileManagementForm: View {
             SettingText(key: "recycle_bin", label: "Recycle bin",
                         description: "Deleted files move here instead of being permanently removed. Empty = permanent delete.",
                         placeholder: "/data/.recycle", trims: false)
-            SettingNumber(key: "recycle_bin_cleanup_days", label: "Recycle bin cleanup",
-                          description: "Delete files from the recycle bin after this many days (0 = never).", unit: "days")
+            SettingDuration(key: "recycle_bin_cleanup_days", label: "Recycle bin cleanup",
+                            description: "Delete files from the recycle bin after this long.",
+                            unit: .days, presets: [86400, 604800, 1209600, 2592000, 5184000, 7776000], zero: "Never", columns: [.days])
             SettingToggle(key: "import_extra_files", label: "Import extra files",
                           description: "Import matching subtitle/metadata files alongside the video.")
             SettingText(key: "extra_file_extensions", label: "Extra file extensions",
@@ -73,9 +74,9 @@ private struct FileManagementForm: View {
                           description: "Read MediaInfo (codecs / HDR / audio) for naming + custom formats.")
             SettingToggle(key: "probe_verify_resolution", label: "Verify resolution from probe",
                           description: "When the media probe measures a different resolution than the release name claims (e.g. a “4k to 1080p” downscale), correct the file's quality to what the pixels actually are. Keeps the source; only the resolution changes.")
-            SettingNumber(key: "probe_timeout_seconds", label: "Media analysis timeout",
-                          description: "How long one media-info read may run. Raise it for cold debrid/rclone mounts — a large 4K remux can take a minute to read. A wedged mount is still abandoned at this bound.",
-                          unit: "s")
+            SettingDuration(key: "probe_timeout_seconds", label: "Media analysis timeout",
+                            description: "How long one media-info read may run. Raise it for cold debrid/rclone mounts — a large 4K remux can take a minute to read. A wedged mount is still abandoned at this bound.",
+                            unit: .seconds, presets: [15, 30, 60, 90, 120, 300], floor: 1, columns: [.minutes, .seconds])
             SettingText(key: "rejected_file_extensions", label: "Rejected file extensions",
                         description: "Comma-separated extensions to reject at import (e.g. exe, lnk, iso). A downloaded file with one of these is skipped and flagged, never silently imported. Empty = allow all.",
                         placeholder: "exe,lnk,iso", trims: false)
@@ -97,15 +98,17 @@ private struct FileManagementForm: View {
                     .disabled(requeueing)
             }
             SettingNumber(key: "minimum_free_space_mb", label: "Minimum free space",
-                          description: "Don't import if the destination has less than this free.", unit: "MB")
+                          description: "Don't import if the destination has less than this free.", unit: "GB",
+                          integer: false, scale: 1024)
         }
 
         SettingsSection("Self-heal",
                         footer: "Detect broken symlinks (decypharr/zurg mounts), converge a confirmation window, and — only when a kind is opted in below — clean the dead file and re-search through the monitored gate. A mount outage stands the whole sweep down; a good file is never deleted.") {
             SettingToggle(key: "dangling_reconcile_enabled", label: "Background sweep",
                           description: "Periodically re-check tracked files for broken links. Off = detection stops refreshing; manual rescan + Replace/Clean-up still work.")
-            SettingNumber(key: "dangling_reconcile_interval_hours", label: "Sweep interval",
-                          description: "How often the background sweep runs (1–168 hours).", unit: "hours", min: 1, max: 168)
+            SettingDuration(key: "dangling_reconcile_interval_hours", label: "Sweep interval",
+                            description: "How often the background sweep runs (1 hour to 1 week).",
+                            unit: .hours, presets: [3600, 10800, 21600, 43200, 86400, 172800, 604800], floor: 3600, ceiling: 604800, columns: [.days, .hours])
             SelfHealMatrixHeader().settingsField("Search after loss")
             ForEach(SelfHealMatrix.kinds) { kind in
                 SelfHealMatrixRow(kind: kind)
@@ -114,19 +117,23 @@ private struct FileManagementForm: View {
         }
 
         SettingsSection("Confirmation") {
-            SettingNumber(key: "dangling_reconcile_min_scans", label: "Confirmation scans",
-                          description: "Consecutive sweeps a link must read dangling before it's eligible to clean.", unit: "scans", min: 1)
-            SettingNumber(key: "dangling_reconcile_grace_hours", label: "Grace period",
-                          description: "Time a link must stay dangling (accrued across sweeps) before it's eligible.", unit: "hours", min: 1)
-            SettingNumber(key: "dangling_outage_min_count", label: "Outage minimum count",
-                          description: "Dangling links into one mount above this count reads as an outage — stand down.", unit: "files", min: 1)
-            SettingNumber(key: "dangling_outage_fraction", label: "Outage fraction",
-                          description: "Fraction of a mount's files going dangling at once that reads as an outage.",
-                          unit: "ratio", min: 0, max: 1, integer: false)
-            SettingNumber(key: "dangling_probe_timeout_seconds", label: "Probe timeout",
-                          description: "Per-file stat timeout before a target read is treated as unknown.", unit: "s", min: 1)
-            SettingNumber(key: "dangling_probe_max_workers", label: "Probe workers",
-                          description: "Max concurrent target probes per sweep.", unit: "workers", min: 1)
+            SettingStepper(key: "dangling_reconcile_min_scans", label: "Confirmation scans",
+                           description: "Consecutive sweeps a link must read dangling before it's eligible to clean.",
+                           min: 1, max: 50)
+            SettingDuration(key: "dangling_reconcile_grace_hours", label: "Grace period",
+                            description: "Time a link must stay dangling (accrued across sweeps) before it's eligible.",
+                            unit: .hours, presets: [3600, 21600, 43200, 86400, 172800, 259200, 604800], floor: 3600, columns: [.days, .hours])
+            SettingStepper(key: "dangling_outage_min_count", label: "Outage minimum count",
+                           description: "Dangling links into one mount above this count reads as an outage — stand down.",
+                           min: 1, max: 10000, step: 5)
+            SettingPercent(key: "dangling_outage_fraction", label: "Outage fraction",
+                           description: "Fraction of a mount's files going dangling at once that reads as an outage.")
+            SettingDuration(key: "dangling_probe_timeout_seconds", label: "Probe timeout",
+                            description: "Per-file stat timeout before a target read is treated as unknown.",
+                            unit: .seconds, presets: [1, 2, 5, 10, 15, 30, 60], floor: 1, columns: [.minutes, .seconds])
+            SettingStepper(key: "dangling_probe_max_workers", label: "Probe workers",
+                           description: "Max concurrent target probes per sweep.",
+                           min: 1, max: 64)
         }
     }
 
