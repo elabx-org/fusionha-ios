@@ -117,7 +117,8 @@ struct InboxPanesView: View {
             }
             #if V2
             // The pane sits on the focused title's art ground (mock `decisionPane`).
-            .v2PageGround(art: PageArtSource.url(backdrop: nil, poster: request.poster), artHeight: 420)
+            .v2PageGround(art: PageArtSource.url(backdrop: PreviewCache.shared.get(request.previewKind, request.tmdbId)?.backdropUrl,
+                                                 poster: request.poster), artHeight: 420)
             .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
             #endif
             .scrollIndicators(.hidden)

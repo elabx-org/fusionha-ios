@@ -65,7 +65,12 @@ struct TriageInboxView: View {
             .inboxUndoHost(inbox, viewerId: viewerId, declining: $noting)
             .sheet(item: $details) { request in detailsSheet(request).sheetEscapeRoot() }
             .sheet(item: $adjusting) { request in
+                #if V2
+                V2ApproveSheet(request: request, triage: inbox.triage[request.id]) { Task { await inbox.refresh() } }
+                    .sheetEscapeRoot()
+                #else
                 ApproveDialog(request: request) { Task { await inbox.refresh() } }.sheetEscapeRoot()
+                #endif
             }
     }
 
@@ -160,7 +165,8 @@ struct TriageInboxView: View {
                 #endif
             }
             #if V2
-            .v2PageGround(art: PageArtSource.url(backdrop: nil, poster: request.poster), artHeight: 420)
+            .v2PageGround(art: PageArtSource.url(backdrop: PreviewCache.shared.get(request.previewKind, request.tmdbId)?.backdropUrl,
+                                                 poster: request.poster), artHeight: 420)
             #endif
             .triageKeys(on: .card) { cardKey($0, request) }
             .environment(\.triageKeysEnabled, true)

@@ -23,6 +23,10 @@ struct SwipeDeckView: View {
     @State private var feedback = 0
     /// v2's fold continuity (`FoldKeep`); nil in v1.
     @Environment(\.foldKeep) private var foldKeep
+    #if V2
+    /// The folded Duo adds "Up next" under the card.
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    #endif
 
     static let threshold: CGFloat = 110
 
@@ -64,6 +68,10 @@ struct SwipeDeckView: View {
                               onDecline: { onDeclineWithReason(top) },
                               onNotYet: { fly(top, right: false, canApprove: approvable(top)) },
                               onApprove: { fly(top, right: true, canApprove: approvable(top)) })
+                if OuterDisplay.isFoldedDuo(sizeClass: sizeClass), deck.count > 1 {
+                    V2DeckUpNext(rest: Array(deck.dropFirst()), onOpen: onDetails)
+                        .padding(.top, 6)
+                }
                 #else
                 buttons(top)
                 #endif

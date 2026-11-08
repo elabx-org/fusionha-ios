@@ -12,16 +12,24 @@ struct RequestsDrawer: View {
     private var canIssues: Bool { nav.panes.contains(.issues) }
 
     var body: some View {
-        RequestsViewMenuSheet(counts: counts, panes: nav.panes,
-                              needYou: canIssues ? store.issueCounts.needYou : nil,
-                              breakdown: RequestsNeedYou.line(pending: canApprove ? store.pendingCount : nil,
-                                                              issues: canIssues ? store.issueCounts.needYou : nil),
-                              showsRules: canApprove) {
-            nav.menuOpen = false
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(350))
-                nav.rulesOpen = true
-            }
+        let needYou = canIssues ? store.issueCounts.needYou : nil
+        let breakdown = RequestsNeedYou.line(pending: canApprove ? store.pendingCount : nil,
+                                             issues: canIssues ? store.issueCounts.needYou : nil)
+        #if V2
+        V2RequestsDrawerSheet(counts: counts, panes: nav.panes, needYou: needYou, breakdown: breakdown,
+                              showsRules: canApprove, onRules: openRules)
+        #else
+        RequestsViewMenuSheet(counts: counts, panes: nav.panes, needYou: needYou, breakdown: breakdown,
+                              showsRules: canApprove, onRules: openRules)
+        #endif
+    }
+
+    /// Rules closes the drawer, then opens Settings › Requests.
+    private func openRules() {
+        nav.menuOpen = false
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+            nav.rulesOpen = true
         }
     }
 
