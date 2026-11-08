@@ -45,6 +45,8 @@ public struct ItemDetail: Decodable, Sendable, Identifiable {
     /// Series: the TMDB networks; movies: the production companies (absent on
     /// an older server).
     public let studios: [Studio]?
+    /// A movie proven out before its listed date (fusionha 0.4.242; detail only).
+    public let earlyRelease: EarlyRelease?
 
     private enum CodingKeys: String, CodingKey {
         case id, title, kind, year, isAnime, overview, runtime, status, tagline, voteAverage
@@ -53,7 +55,7 @@ public struct ItemDetail: Decodable, Sendable, Identifiable {
         case legacyEditions = "editions"
         case seasons, history, tmdbId, seriesType, metadataProvider, resolvedMetadataProvider
         case episodeNumberingSource, numberingMismatch, releaseDate, inCinemas, digitalRelease
-        case physicalRelease, releaseWindows, cast, similar, trailerKey, collection, tags, studios
+        case physicalRelease, releaseWindows, cast, similar, trailerKey, collection, tags, studios, earlyRelease
     }
 }
 
@@ -99,6 +101,8 @@ public struct DetailEdition: Decodable, Sendable, Identifiable, Hashable {
     public let hasUnresolvedLinks: Bool?
     public let attentionKind: String?
     public let attentionMessage: String?
+    /// Set only when the proof unlocks this version (0.4.242), with its own spotted releases.
+    public let earlyRelease: EarlyRelease?
 
     private enum CodingKeys: String, CodingKey {
         case id, tier, edition
@@ -106,7 +110,7 @@ public struct DetailEdition: Decodable, Sendable, Identifiable, Hashable {
         case monitored, rootFolderId, fullPath, qualityProfileId, downloadState, movieFile, progress
         case monitor, folderName, needsEditionFolder, minimumAvailability, releaseTitle, client, indexer
         case grabbable, availableFrom, availableStage, unresolvedFileCount, missingFileCount
-        case hasUnresolvedLinks, attentionKind, attentionMessage
+        case hasUnresolvedLinks, attentionKind, attentionMessage, earlyRelease
     }
 }
 

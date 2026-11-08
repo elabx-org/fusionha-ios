@@ -9,14 +9,23 @@ import FusionhaKit
 /// where a dot marks where things stand, and each step says how long ago or
 /// how far off it is ("5 days ago", "in 12 weeks"), under a one-line status.
 struct V2ReleaseTimeline: View {
-    @Environment(\.pagePalette) private var page
+    @Environment(\.pagePalette) var page
     let detail: ItemDetail
 
     struct Step: Hashable {
         let kind: String
         let date: Date
         let estimated: Bool
+        /// The server proved it out before this listed date (`early_release`).
+        var early = false
+        /// The listed date as the server sent it ("YYYY-MM-DD"), for the early copy.
+        var iso: String? = nil
+
+        func reached(_ now: Date) -> Bool { early || date <= now }
     }
+
+    /// A movie's proof that it is out before its listed dates.
+    var early: EarlyRelease? { detail.kind == .movie ? detail.earlyRelease : nil }
 
     private var ink: Color { page?.ink ?? Theme.txt }
     private var muted: Color { page?.inkMuted ?? Theme.mut }
@@ -25,13 +34,18 @@ struct V2ReleaseTimeline: View {
         var byKind: [String: Step] = [:]
         for w in detail.releaseWindows ?? [] {
             guard let kind = w.kind, let date = DetailText.instant(w.date) else { continue }
-            byKind[kind] = Step(kind: kind, date: date, estimated: w.estimated ?? false)
+            byKind[kind] = Step(kind: kind, date: date, estimated: w.estimated ?? false, iso: w.date)
         }
         for (kind, raw) in [("cinema", detail.inCinemas), ("digital", detail.digitalRelease),
                             ("physical", detail.physicalRelease)] {
-            if let date = DetailText.instant(raw) { byKind[kind] = Step(kind: kind, date: date, estimated: false) }
+            if let date = DetailText.instant(raw) { byKind[kind] = Step(kind: kind, date: date, estimated: false, iso: raw) }
         }
-        return ["cinema", "digital", "physical"].compactMap { byKind[$0] }
+        let proof = self.early
+        return ["cinema", "digital", "physical"].compactMap { kind in
+            guard var step = byKind[kind] else { return nil }
+            step.early = EarlyReleaseCopy.covers(proof, kind: kind)
+            return step
+        }
     }
 
     var body: some View {
@@ -46,6 +60,9 @@ struct V2ReleaseTimeline: View {
                     column(steps, i, now: now)
                 }
             }
+            if let early, steps.contains(where: \.early) {
+                evidence(early, steps: steps)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .v2CardStyle()
@@ -53,35 +70,54 @@ struct V2ReleaseTimeline: View {
 
     private func column(_ steps: [Step], _ i: Int, now: Date) -> some View {
         let step = steps[i]
-        let past = step.date <= now
+        let past = step.reached(now)
         return VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 0) {
                 disc(step.kind, past: past)
                 if i < steps.count - 1 {
-                    segment(fill: ReleaseTimelineCopy.progress(from: step.date, to: steps[i + 1].date, now: now))
+                    let next = steps[i + 1]
+                    segment(fill: next.early ? 1 : ReleaseTimelineCopy.progress(from: step.date, to: next.date, now: now))
                 }
             }
             Text(ReleaseTimelineCopy.label(step.kind))
                 .font(.system(size: 11.5, weight: .bold))
                 .foregroundStyle(past ? ink : muted)
-            if let near = ReleaseTimelineCopy.near(step.date, now: now) {
-                Text(near)
-                    .font(.system(size: 11.5, weight: past ? .regular : .semibold))
-                    .foregroundStyle(past ? muted : ink)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
+            if step.early, let early {
+                earlyLines(step, early: early)
+            } else {
+                dates(step, past: past, now: now)
             }
-            Text(step.date.formatted(.dateTime.month(.abbreviated).day().year()) + (step.estimated ? " · est." : ""))
-                .font(.system(size: 10.5, design: .monospaced))
-                .foregroundStyle(muted)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(ReleaseTimelineCopy.label(step.kind)), \(past ? "released" : "coming"), "
-            + (ReleaseTimelineCopy.near(step.date, now: now)
-                ?? step.date.formatted(.dateTime.month(.wide).day().year())))
+        .accessibilityLabel(spoken(step, now: now))
+    }
+
+    @ViewBuilder
+    private func dates(_ step: Step, past: Bool, now: Date) -> some View {
+        if let near = ReleaseTimelineCopy.near(step.date, now: now) {
+            Text(near)
+                .font(.system(size: 11.5, weight: past ? .regular : .semibold))
+                .foregroundStyle(past ? muted : ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        Text(step.date.formatted(.dateTime.month(.abbreviated).day().year()) + (step.estimated ? " · est." : ""))
+            .font(.system(size: 10.5, design: .monospaced))
+            .foregroundStyle(muted)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+    }
+
+    private func spoken(_ step: Step, now: Date) -> String {
+        let label = ReleaseTimelineCopy.label(step.kind)
+        if step.early, let early {
+            let listed = step.iso.map { ", listed \(EarlyReleaseCopy.shortDate($0, ref: early.provenAt))" } ?? ""
+            return "\(label), out early, \(EarlyReleaseCopy.shortDate(early.provenAt, ref: early.provenAt))\(listed). "
+                + EarlyReleaseCopy.evidence(early, listed: step.iso)
+        }
+        return "\(label), \(step.date <= now ? "released" : "coming"), "
+            + (ReleaseTimelineCopy.near(step.date, now: now) ?? step.date.formatted(.dateTime.month(.wide).day().year()))
     }
 
     /// Filled with the icon knocked out once it has happened; an outline before.
@@ -174,6 +210,11 @@ enum ReleaseTimelineCopy {
 
     /// One line on where things stand: "Out on digital · physical in 12 weeks".
     static func status(_ steps: [V2ReleaseTimeline.Step], now: Date) -> String {
+        // Proven out early: "Out early on disc · listed 17 Nov".
+        if let early = steps.last(where: \.early) {
+            let listed = early.iso.map { " · listed \(EarlyReleaseCopy.shortDate($0, ref: $0))" } ?? ""
+            return "Out early \(place(early.kind))\(listed)"
+        }
         let out = steps.last { $0.date <= now }
         let next = steps.first { $0.date > now }
         switch (out, next) {

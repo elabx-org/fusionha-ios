@@ -3,7 +3,7 @@
   "info": {
     "title": "fusionha",
     "description": "fusionha replaces both Sonarr and Radarr with a single app that adds\nfirst-class multi-quality tracking (e.g. 1080p *and* 4K per title) and\ntreats anime as a first-class citizen. It exposes **two API surfaces**:\n\n* **fusionha-native, `/api/v1/*`** -- the app's own REST API: library items\n  (with all their quality editions), settings, config resources (root\n  folders, quality profiles, custom formats, indexers, download clients),\n  history, queue, health, and blocklist. This is what the fusionha UI (and\n  any other fusionha-aware client) talks to.\n* **arr v3 mirrors, `/<instance-slug>/api/v3/*`** -- faithful Radarr/Sonarr\n  v3 API surfaces (`radarr-hd`, `radarr-4k`, `sonarr-hd`, `sonarr-4k`), each\n  its own virtual instance with its own `X-Api-Key`. Add these to\n  Overseerr/Seer (their native 4K-service slots map to the `-4k`\n  instances) or Prowlarr exactly as you would a real Radarr/Sonarr -- they\n  are externally indistinguishable. All virtual instances are views over\n  the SAME shared item store; there is no data duplication.\n\nAuthenticate against the arr surface with the `X-Api-Key` header (per\nvirtual instance); see the Authorize button above.",
-    "version": "0.4.240"
+    "version": "0.4.243"
   },
   "paths": {
     "/api/v1/setup-status": {
@@ -25164,6 +25164,26 @@
             "title": "Default Movie Minimum Availability"
           },
           "availability_delay_days": { "type": "integer", "title": "Availability Delay Days" },
+          "early_release_detection_enabled": {
+            "type": "boolean",
+            "title": "Early Release Detection Enabled",
+            "default": true
+          },
+          "early_release_min_groups": {
+            "type": "integer",
+            "title": "Early Release Min Groups",
+            "default": 2
+          },
+          "early_release_min_indexers": {
+            "type": "integer",
+            "title": "Early Release Min Indexers",
+            "default": 2
+          },
+          "early_release_min_age_hours": {
+            "type": "integer",
+            "title": "Early Release Min Age Hours",
+            "default": 6
+          },
           "stale_download_grace_minutes": {
             "type": "integer",
             "title": "Stale Download Grace Minutes"
@@ -25890,6 +25910,22 @@
           "availability_delay_days": {
             "anyOf": [{ "type": "integer" }, { "type": "null" }],
             "title": "Availability Delay Days"
+          },
+          "early_release_detection_enabled": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Early Release Detection Enabled"
+          },
+          "early_release_min_groups": {
+            "anyOf": [{ "type": "integer", "maximum": 100.0, "minimum": 1.0 }, { "type": "null" }],
+            "title": "Early Release Min Groups"
+          },
+          "early_release_min_indexers": {
+            "anyOf": [{ "type": "integer", "maximum": 100.0, "minimum": 1.0 }, { "type": "null" }],
+            "title": "Early Release Min Indexers"
+          },
+          "early_release_min_age_hours": {
+            "anyOf": [{ "type": "integer", "maximum": 720.0, "minimum": 0.0 }, { "type": "null" }],
+            "title": "Early Release Min Age Hours"
           },
           "stale_download_grace_minutes": {
             "anyOf": [{ "type": "integer" }, { "type": "null" }],
@@ -29438,6 +29474,50 @@
         "title": "DuplicatesRead",
         "description": "`GET /api/v1/users/duplicates` -- the merge-candidate suggestions."
       },
+      "EarlyReleaseRead": {
+        "properties": {
+          "stage": { "type": "string", "enum": ["digital", "physical"], "title": "Stage" },
+          "proven_at": { "type": "string", "format": "date", "title": "Proven At" },
+          "groups": { "type": "integer", "title": "Groups", "default": 0 },
+          "indexers": { "type": "integer", "title": "Indexers", "default": 0 },
+          "releases": { "type": "integer", "title": "Releases", "default": 0 },
+          "spotted": {
+            "items": { "$ref": "#/components/schemas/EarlySpottedRead" },
+            "type": "array",
+            "title": "Spotted"
+          },
+          "first_posted_at": {
+            "anyOf": [{ "type": "string", "format": "date" }, { "type": "null" }],
+            "title": "First Posted At"
+          }
+        },
+        "type": "object",
+        "required": ["stage", "proven_at"],
+        "title": "EarlyReleaseRead"
+      },
+      "EarlyReleaseSummaryRead": {
+        "properties": {
+          "stage": { "type": "string", "enum": ["digital", "physical"], "title": "Stage" },
+          "proven_at": { "type": "string", "format": "date", "title": "Proven At" },
+          "groups": { "type": "integer", "title": "Groups", "default": 0 },
+          "indexers": { "type": "integer", "title": "Indexers", "default": 0 },
+          "releases": { "type": "integer", "title": "Releases", "default": 0 }
+        },
+        "type": "object",
+        "required": ["stage", "proven_at"],
+        "title": "EarlyReleaseSummaryRead"
+      },
+      "EarlySpottedRead": {
+        "properties": {
+          "title": { "type": "string", "title": "Title" },
+          "indexers": { "type": "integer", "title": "Indexers" },
+          "size": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Size" }
+        },
+        "type": "object",
+        "required": ["title", "indexers"],
+        "title": "EarlySpottedRead",
+        "description": "One corroborating release: its name as last seen, how many distinct\nindexers carried it, and its size in bytes (null when unknown)."
+      },
       "EditionDefinitionCreate": {
         "properties": {
           "name": { "type": "string", "title": "Name" },
@@ -32802,6 +32882,9 @@
             "type": "array",
             "title": "Release Windows"
           },
+          "early_release": {
+            "anyOf": [{ "$ref": "#/components/schemas/EarlyReleaseRead" }, { "type": "null" }]
+          },
           "genres": { "items": { "type": "string" }, "type": "array", "title": "Genres" },
           "cast": {
             "items": { "$ref": "#/components/schemas/CastMemberRead" },
@@ -32993,6 +33076,9 @@
           "available_stage": {
             "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Available Stage"
+          },
+          "early_release": {
+            "anyOf": [{ "$ref": "#/components/schemas/EarlyReleaseRead" }, { "type": "null" }]
           },
           "has_unresolved_links": {
             "type": "boolean",
@@ -33691,6 +33777,12 @@
           },
           "monitored": { "type": "boolean", "title": "Monitored", "default": true },
           "has_attention": { "type": "boolean", "title": "Has Attention", "default": false },
+          "early_release": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/EarlyReleaseSummaryRead" },
+              { "type": "null" }
+            ]
+          },
           "metadata_provider": {
             "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Metadata Provider"
@@ -44285,6 +44377,12 @@
           "tmdb_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Tmdb Id" },
           "tvdb_id": { "anyOf": [{ "type": "integer" }, { "type": "null" }], "title": "Tvdb Id" },
           "imdb_id": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Imdb Id" },
+          "early_release": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/EarlyReleaseSummaryRead" },
+              { "type": "null" }
+            ]
+          },
           "versions": {
             "items": { "$ref": "#/components/schemas/WantedVersion" },
             "type": "array",

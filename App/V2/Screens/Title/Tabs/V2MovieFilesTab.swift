@@ -143,6 +143,9 @@ struct V2MovieWantedCard: View {
                 .font(.system(size: 12.5))
                 .foregroundStyle(page?.inkMuted ?? Theme.mut)
                 .lineLimit(1)
+            if !downloading, let early = edition.earlyRelease {
+                V2EarlySpottedList(early: early)
+            }
             if model.me?.can("search") ?? true {
                 HStack(spacing: 8) {
                     Button {

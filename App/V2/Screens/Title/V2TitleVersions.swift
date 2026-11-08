@@ -41,7 +41,13 @@ struct V2TitleVersion: Identifiable {
             count = nil
             let size = Format.bytes(file?.size)
             let quality = file?.quality.map { DetailText.quality($0) } ?? summary?.status.text
-            line = [size == "—" ? nil : size, quality].compactMap { $0 }.joined(separator: " · ")
+            // No file and nothing in flight, but proven out early: say so
+            // instead of "Missing" (web `version-early.ts`).
+            if file == nil, live.isEmpty, state == .missing, let early = edition.earlyRelease {
+                line = EarlyReleaseCopy.headline(early)
+            } else {
+                line = [size == "—" ? nil : size, quality].compactMap { $0 }.joined(separator: " · ")
+            }
         }
     }
 

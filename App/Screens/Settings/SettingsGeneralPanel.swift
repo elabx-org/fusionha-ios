@@ -65,6 +65,7 @@ struct GeneralSettingsPanel: View {
             SettingNumber(key: "availability_delay_days", label: "Availability delay",
                           description: "Search this many days before (−) or after (+) a movie becomes available. 0 = exactly on the available date.",
                           unit: "days", signed: true)
+            EarlyReleaseSettingRows()
             SettingToggle(key: "search_on_add", label: "Search on add",
                           description: "When adding a title, immediately search for its monitored versions (a per-add choice can still override this).",
                           fallback: true)
