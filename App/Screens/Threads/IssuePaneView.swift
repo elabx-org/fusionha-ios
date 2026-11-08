@@ -67,7 +67,11 @@ struct IssuePaneView: View {
                     .font(.system(size: 17)).foregroundStyle(Theme.txt)
                 HStack(spacing: 6) {
                     IssueStateChip(state: current.state ?? "OPEN", reopenCount: current.reopenCount ?? 0)
+                    #if V2
+                    RequestTierBadges(tiers: tiers, states: RequestBadgeStates.onDisk(tiers))
+                    #else
                     ForEach(tiers, id: \.self) { ActTierChip(tier: $0) }
+                    #endif
                     Text("\(reports.count == 1 ? "1 report" : "\(reports.count) reports") · \(people) \(people == 1 ? "person" : "people")")
                         .font(.system(size: 12)).foregroundStyle(Theme.mut)
                 }
@@ -83,7 +87,11 @@ struct IssuePaneView: View {
             Image(systemName: "tray").foregroundStyle(Theme.mut)
             ActFlow(spacing: 6, lineSpacing: 4) {
                 Text("Linked request ").font(.system(size: 12.5)) + Text(verbatim: "#\(r.id)").bold().font(.system(size: 12.5))
+                #if V2
+                RequestTierBadges(request: r)
+                #else
                 ForEach(r.tiers, id: \.self) { ActTierChip(tier: $0) }
+                #endif
                 if let who = r.requester?.displayName {
                     (Text("· asked by ").foregroundColor(Theme.mut) + Text(who).bold()).font(.system(size: 12.5)).lineLimit(1)
                 }

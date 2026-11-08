@@ -59,7 +59,16 @@ struct RequestThreadView: View {
         .onDisappear(perform: onChanged)
     }
 
+    @ViewBuilder
     private var header: some View {
+        #if V2
+        V2RequestThreadHeader(request: request, title: title, isOwner: isOwner, joinedView: joinedView)
+        #else
+        v1Header
+        #endif
+    }
+
+    private var v1Header: some View {
         HStack(alignment: .top, spacing: 12) {
             ActPoster(url: request.poster, title: title, size: .md)
             VStack(alignment: .leading, spacing: 6) {
@@ -80,11 +89,18 @@ struct RequestThreadView: View {
         }
     }
 
+    @ViewBuilder
     private func sectionLabel(_ text: String) -> some View {
+        #if V2
+        // v2: sentence-case section labels, as every v2 grouped page.
+        Text(text).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.mut)
+            .accessibilityAddTraits(.isHeader)
+        #else
         Text(text.uppercased())
             .font(.system(size: 11, weight: .bold))
             .tracking(0.8)
             .foregroundStyle(Theme.dim)
+        #endif
     }
 
     // MARK: Polling

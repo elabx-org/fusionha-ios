@@ -199,7 +199,11 @@ struct InboxQueueRow: View {
             HStack(spacing: 6) {
                 RequestAvatar(name: name)
                 Text("\(TriageFacts.firstName(name))\(own ? " (you)" : "")").lineLimit(1)
+                #if V2
+                RequestTierBadges(request: request)
+                #else
                 ForEach(request.tiers, id: \.self) { RequestRowTierChip(tier: $0) }
+                #endif
                 Text("\(RequestOrigin.word(request.source)) · \(TriageFacts.compactAge(request.requestedAt))").lineLimit(1)
             }
             .font(.system(size: 12.5)).foregroundStyle(Theme.mut)

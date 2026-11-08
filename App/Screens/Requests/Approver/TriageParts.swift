@@ -64,7 +64,11 @@ struct ApproveSetupRow: View {
             }
             ForEach(compact ? Array(versions.prefix(1)) : versions, id: \.tier) { v in
                 HStack(spacing: 8) {
+                    #if V2
+                    RequestTierBadges(tiers: [v.tier])
+                    #else
                     ActTierChip(tier: v.tier)
+                    #endif
                     Group {
                         if v.configured {
                             Text(v.rootPath ?? "").fontWeight(.semibold) + Text(" · \(v.profileName ?? "") · \(v.existing == true ? "already tracked" : "monitored")")

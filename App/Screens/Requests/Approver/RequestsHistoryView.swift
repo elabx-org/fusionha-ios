@@ -68,7 +68,11 @@ struct RequestsHistoryView: View {
             let byId = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
             LazyVStack(alignment: .leading, spacing: 0) {
                 ForEach(RequestHistoryDays.group(items), id: \.title) { day in
+                    #if V2
+                    RequestsSectionHeader(title: day.title, trailing: "\(day.ids.count) decided")
+                    #else
                     RequestsSectionHeader(title: day.title)
+                    #endif
                     RequestsGroup {
                         ForEach(day.ids.compactMap { byId[$0] }) { r in
                             Button { onOpenThread(r) } label: { row(r) }.buttonStyle(.plain)
@@ -87,6 +91,14 @@ struct RequestsHistoryView: View {
     }
 
     private func row(_ r: MediaRequest) -> some View {
+        #if V2
+        return V2HistoryRow(request: r)
+        #else
+        return v1Row(r)
+        #endif
+    }
+
+    private func v1Row(_ r: MediaRequest) -> some View {
         let word = HistoryWord(r)
         return RequestsListRow(request: r, compact: false) {
             HStack(spacing: 6) {

@@ -76,7 +76,7 @@ struct RequestInsightsView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.panel, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .insightsSurface()
     }
 }
 
@@ -110,7 +110,7 @@ private struct StatTile: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 110, alignment: .topLeading)
-        .background(Theme.panel, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .insightsSurface()
     }
 }
 
@@ -166,5 +166,17 @@ private struct RankList: View {
                 }
             }
         }
+    }
+}
+
+private extension View {
+    /// v1: the panel colour. v2 (approved Insights): the W1 card, 22pt corners.
+    @ViewBuilder
+    func insightsSurface() -> some View {
+        #if V2
+        self.background { ModuleSurface() }
+        #else
+        self.background(Theme.panel, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        #endif
     }
 }
