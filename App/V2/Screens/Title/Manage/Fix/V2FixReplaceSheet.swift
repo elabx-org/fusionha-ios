@@ -17,7 +17,7 @@ struct V2FixReplaceTarget: Identifiable {
 /// The Replace confirmation (mock frame 2): what happens in one sentence,
 /// the release that would be blocklisted (`blocklist-target`), the
 /// "Blocklist this release" toggle (on for damaged files, off for gone
-/// ones), then Cancel and the accent Replace. With the toggle on, files with
+/// ones; hidden when no file has a release on record), then Cancel and the accent Replace. With the toggle on, files with
 /// a release on record are deleted with it blocklisted and searched; the rest
 /// go through the model's replace.
 struct V2FixReplaceSheet: View {
@@ -53,7 +53,8 @@ struct V2FixReplaceSheet: View {
                     .fixedSize(horizontal: false, vertical: true)
                 if !target.candidates.isEmpty {
                     releaseCard
-                    toggle
+                    // Only when there's a release to blocklist: a dead switch reads as broken.
+                    if loaded && canBlocklist { toggle }
                 }
                 buttons
             }
@@ -114,7 +115,7 @@ struct V2FixReplaceSheet: View {
             }
         }
         .tint(Theme.primary)
-        .disabled(running || !canBlocklist)
+        .disabled(running)
         .padding(14)
         .background { ModuleSurface(radius: 14) }
     }
