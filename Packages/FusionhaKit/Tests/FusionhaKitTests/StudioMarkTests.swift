@@ -65,4 +65,15 @@ final class StudioMarkTests: XCTestCase {
         XCTAssertEqual(episodes?.first?.stillUrl, "https://image.tmdb.org/t/p/w300/e1.jpg")
         XCTAssertNil(episodes?.last?.stillUrl)
     }
+
+    func testEpisodeFromAnOlderServerWithoutStillsDecodes() throws {
+        let detail = try decode("""
+        {"id": 7, "title": "Andor", "kind": "series", "seasons": [{"season_number": 1, "episodes": [
+          {"id": 11, "episode_number": 1, "title": "Kassa", "air_date": "2022-09-21", "monitored": true, "files": []}
+        ]}]}
+        """)
+        let episode = try XCTUnwrap(detail.seasons?.first?.episodes.first)
+        XCTAssertEqual(episode.title, "Kassa")
+        XCTAssertNil(episode.stillUrl)
+    }
 }
