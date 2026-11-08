@@ -149,6 +149,10 @@ struct V2LibraryView: View {
         .onDisappear { model.allTitlesOnScreen = false }
         .onAppear {
             model.allTitlesOnScreen = true
+            // The route that brought us here is done. Cleared here, not by
+            // Home: Home's task is cancelled the moment this covers it, so
+            // the flag stayed set and every Back re-pushed All titles (IMG_7891).
+            model.pendingAllTitles = false
             let gestures = model.duoGestures
             scrubber.onVisibility = { [weak gestures] shown in gestures?.edgeBusy = shown }
         }
