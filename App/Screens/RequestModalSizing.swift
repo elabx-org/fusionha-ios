@@ -17,3 +17,24 @@ struct RequestModalSizing: ViewModifier {
         }
     }
 }
+
+/// The request sheet's surface. v1: the solid panel, 14pt corners. v2: the
+/// system's glass sheet (look pass family 5); inside the Add sheet, which
+/// has no glass of its own under it, the page's panel stays.
+struct RequestModalChrome: ViewModifier {
+    let formSized: Bool
+
+    func body(content: Content) -> some View {
+        if ProductLook.isV2 {
+            content
+                .background(formSized ? Color.clear : Theme.panel)
+                .presentationDragIndicator(.visible)
+        } else {
+            content
+                .background(Theme.panel)
+                .presentationDragIndicator(.visible)
+                .sheetBackground(Theme.panel)
+                .presentationCornerRadius(14)
+        }
+    }
+}

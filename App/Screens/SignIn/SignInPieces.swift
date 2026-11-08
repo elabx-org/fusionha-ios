@@ -11,6 +11,15 @@ struct LoginField<Input: View>: View {
 
     var body: some View {
         let isFocused = focused()
+        if ProductLook.isV2 {
+            // v2: a row of the step's grouped card (`LoginFieldGroup`).
+            LoginFieldRowV2(label: label, input: input, focused: isFocused)
+        } else {
+            stacked(isFocused)
+        }
+    }
+
+    private func stacked(_ isFocused: Bool) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(label)
                 .font(.system(size: 13, weight: .semibold))
@@ -39,6 +48,15 @@ struct GradientSubmit: View {
     let action: () -> Void
 
     var body: some View {
+        if ProductLook.isV2 {
+            // v2: the accent capsule instead of the cream sheen (look pass family 6).
+            AccentSubmit(title: title, workingTitle: workingTitle, working: working, enabled: enabled, action: action)
+        } else {
+            gradient
+        }
+    }
+
+    private var gradient: some View {
         Button(action: action) {
             ZStack {
                 if !enabled && !working {

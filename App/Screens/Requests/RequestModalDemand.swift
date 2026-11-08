@@ -37,7 +37,7 @@ struct RequestDemandBanner: View {
             Spacer(minLength: 0)
         }
         .padding(12)
-        .actWash(Theme.premiere, radius: 12, base: Theme.card)
+        .modifier(RequestDemandSurface())
         .accessibilityElement(children: .combine)
     }
 }
@@ -53,10 +53,16 @@ struct RequestTierTag: View {
             Text(RequestOffer.tag(act, asked: asked))
         }
         .font(.system(size: 11.5, weight: .semibold))
-        .foregroundStyle(act == .join ? Theme.i2 : Theme.mut)
+        .foregroundStyle(tone)
         .padding(.horizontal, 8).padding(.vertical, 3)
-        .background((act == .join ? Theme.i2 : Theme.mut).opacity(0.12), in: Capsule())
+        .background(tone.opacity(0.12), in: Capsule())
         .fixedSize()
+    }
+
+    /// v1 marks a join in its accent; v2 keeps the tag in the quiet ink
+    /// (the accent is the selection's and the primary's).
+    private var tone: Color {
+        act == .join && !ProductLook.isV2 ? Theme.i2 : Theme.mut
     }
 }
 
@@ -69,7 +75,9 @@ struct RequestQuotaMini: View {
             HStack(spacing: 6) {
                 HStack(spacing: 2) {
                     ForEach(0..<limit, id: \.self) { i in
-                        Capsule().fill(i < quota.used ? Theme.i1 : Theme.line).frame(width: 8, height: 4)
+                        // v2: one ink, an empty track for what's left.
+                        Capsule().fill(i < quota.used ? (ProductLook.isV2 ? Theme.txt : Theme.i1) : Theme.line)
+                            .frame(width: 8, height: 4)
                     }
                 }
                 Text("\(max(0, limit - quota.used)) of \(limit) requests left this week")
@@ -103,23 +111,61 @@ struct RequestQuotaPrompt: View {
                     .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
             }
             ActFlow(spacing: 8, lineSpacing: 8) {
-                Button("Add to wishlist", action: onWishlist)
-                    .buttonStyle(.discover(.primary))
-                    .disabled(pending || wishlistDisabled)
-                if !joinTiers.isEmpty {
-                    Button("Me too on \(joinTiers.map { $0 == .uhd ? "4K" : "HD" }.joined(separator: " + ")) only", action: onJoinOnly)
-                        .buttonStyle(.discover(.subtle))
+                if ProductLook.isV2 {
+                    // v2: the accent glass primary, the rest plain glass.
+                    Button("Add to wishlist", action: onWishlist)
+                        .buttonStyle(.glassProminent).tint(Theme.primary)
+                        .disabled(pending || wishlistDisabled)
+                    if !joinTiers.isEmpty {
+                        Button(joinOnlyTitle, action: onJoinOnly).buttonStyle(.glass).disabled(pending)
+                    }
+                    Button("Cancel", action: onCancel).buttonStyle(.glass).disabled(pending)
+                } else {
+                    Button("Add to wishlist", action: onWishlist)
+                        .buttonStyle(.discover(.primary))
+                        .disabled(pending || wishlistDisabled)
+                    if !joinTiers.isEmpty {
+                        Button(joinOnlyTitle, action: onJoinOnly)
+                            .buttonStyle(.discover(.subtle))
+                            .disabled(pending)
+                    }
+                    Button("Cancel", action: onCancel)
+                        .buttonStyle(.discover(.ghost))
                         .disabled(pending)
                 }
-                Button("Cancel", action: onCancel)
-                    .buttonStyle(.discover(.ghost))
-                    .disabled(pending)
             }
             .padding(.top, 2)
         }
         .padding(14)
-        .actWash(Theme.miss, radius: 12, base: Theme.card)
+        .modifier(RequestQuotaSurface())
         .padding(.horizontal, 16).padding(.vertical, 12)
         .accessibilityAddTraits(.isHeader)
+    }
+
+    private var joinOnlyTitle: String {
+        "Me too on \(joinTiers.map { $0 == .uhd ? "4K" : "HD" }.joined(separator: " + ")) only"
+    }
+}
+
+/// The demand banner's surface: v1's premiere wash, v2's grouped card.
+private struct RequestDemandSurface: ViewModifier {
+    func body(content: Content) -> some View {
+        if ProductLook.isV2 {
+            content.background(Theme.txt.opacity(0.06), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        } else {
+            content.actWash(Theme.premiere, radius: 12, base: Theme.card)
+        }
+    }
+}
+
+/// The quota prompt's surface: v1's amber wash, v2's glass card (it takes
+/// the footer bar's place, and the bar is glass).
+private struct RequestQuotaSurface: ViewModifier {
+    func body(content: Content) -> some View {
+        if ProductLook.isV2 {
+            content.glassEffect(.regular, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        } else {
+            content.actWash(Theme.miss, radius: 12, base: Theme.card)
+        }
     }
 }

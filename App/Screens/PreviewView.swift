@@ -62,8 +62,10 @@ struct PreviewPage: View {
     @State private var failed = false
     @State private var compact = false
     @State private var requestPick: MediaSearchResult?
-    @State private var playing = false
     @State private var entered = false
+    /// v2's browse look (look pass family 5): the art's page ground and its
+    /// inks instead of v1's ambient bleed (`PreviewBody`).
+    @Environment(\.browseLook) private var look
 
     private var me: Me? { model.me }
     private var canAdd: Bool { me.map { $0.hasCapability("add") } ?? !model.requestScoped }
@@ -71,12 +73,14 @@ struct PreviewPage: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            ambient
+            if look == nil { ambient }
             if let detail {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
                         hero(detail)
-                        content(detail)
+                        PreviewBody(detail: detail, canAdd: canAdd, canRequest: canRequest,
+                                    continueAdding: continueAdding, onAdd: onAdd,
+                                    onRequest: { requestPick = $0 }, onOpenLibrary: onOpenLibrary)
                     }
                     .opacity(entered || DiscoverMotion.reduced(reduceMotion) ? 1 : 0)
                     .offset(y: entered || DiscoverMotion.reduced(reduceMotion) ? 0 : 24)
@@ -107,7 +111,8 @@ struct PreviewPage: View {
                 PreviewSkeleton()
             }
         }
-        .background(Theme.bg)
+        .background(look == nil ? Theme.bg : Color.clear)
+        .browseGround(look, backdrop: detail?.backdropUrl, poster: detail?.posterUrl)
         // The system bar, clear over the hero: Close, the system Back on a
         // pushed page, then Add. Scrolled past the hero, it takes the title.
         .navigationTitle(compact ? (detail?.title ?? "") : "")
@@ -165,7 +170,7 @@ struct PreviewPage: View {
 
     private func hero(_ d: MediaPreviewDetail) -> some View {
         PreviewHero(art: d.posterUrl ?? d.backdropUrl, status: d.status, title: d.title, year: d.year,
-                    tagline: d.tagline, meta: heroMeta(d), genres: d.genres ?? [])
+                    tagline: d.tagline, meta: heroMeta(d), genres: d.genres ?? [], oneInk: look != nil)
     }
 
     private func heroMeta(_ d: MediaPreviewDetail) -> [PreviewHero.Meta] {
@@ -174,135 +179,5 @@ struct PreviewPage: View {
         if let vote = d.voteAverage, vote > 0 { items.append(.rating(vote)) }
         if let cert = d.certification, !cert.isEmpty { items.append(.cert(cert)) }
         return items
-    }
-
-    // MARK: Body
-
-    private func content(_ d: MediaPreviewDetail) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if let overview = d.overview, !overview.isEmpty {
-                Text(overview)
-                    .font(.system(size: 14))
-                    .lineSpacing(14 * 0.55 - 3)
-                    .foregroundStyle(Theme.txt.opacity(0.9))
-                    .shadow(color: .black.opacity(0.4), radius: 6)
-                    .readableWidth()
-                    .padding(.top, 8)
-                    .padding(.bottom, 4)
-            }
-            actions(d).padding(.top, 14)
-            if d.kind == .series, let seasons = d.seasons, !seasons.isEmpty {
-                section("Seasons") {
-                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                        ForEach(seasons) { season in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(season.seasonNumber == 0 ? "Specials" : "Season \(season.seasonNumber)")
-                                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt)
-                                Text(season.episodeCount == 1 ? "1 episode" : "\(season.episodeCount) episodes")
-                                    .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16).padding(.vertical, 14)
-                            .panel(Theme.panel2, radius: 12)
-                        }
-                    }
-                }
-            }
-            if let key = d.trailerKey, !key.isEmpty {
-                section("Trailer") { trailer(key) }
-            }
-            if let similar = d.similar, !similar.isEmpty {
-                section("More like this") { similarRail(similar) }
-            }
-            if let cast = d.cast, !cast.isEmpty {
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("CAST").font(.system(size: 12, weight: .bold)).tracking(0.72).foregroundStyle(Theme.mut)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        LazyHStack(alignment: .top, spacing: 16) {
-                            ForEach(Array(cast.enumerated()), id: \.offset) { _, member in CastCard(member: member) }
-                        }
-                    }
-                    .scrollClipDisabled()
-                }
-                .padding(.top, 26)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 6)
-        .padding(.bottom, 24)
-    }
-
-    private func section<C: View>(_ title: String, @ViewBuilder content: () -> C) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text(title).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.txt)
-            content()
-        }
-        .padding(.top, 30)
-    }
-
-    @ViewBuilder
-    private func actions(_ d: MediaPreviewDetail) -> some View {
-        if d.inLibrary {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 8) {
-                    PosterStatusBadge(kind: .inLibrary)
-                    Text("Already in your library").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.txt)
-                }
-                if let id = d.libraryItemId {
-                    Button("Open in library") { onOpenLibrary(id) }
-                        .buttonStyle(.discover(.primary))
-                }
-            }
-        } else if canAdd {
-            // The Add sheet opens on its configure step for this title.
-            Button { onAdd(d.asSearchResult) } label: {
-                if continueAdding {
-                    Text("Continue adding")
-                } else {
-                    Label("Add to library", systemImage: "plus")
-                }
-            }
-            .buttonStyle(.discover(.primary))
-        } else if canRequest {
-            Button("Request") { requestPick = d.asSearchResult }
-                .buttonStyle(.discover(.primary))
-        }
-    }
-
-    @ViewBuilder
-    private func trailer(_ key: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ZStack {
-                if playing, let url = URL(string: "https://www.youtube-nocookie.com/embed/\(key)?autoplay=1&rel=0&playsinline=1") {
-                    YouTubePlayer(url: url)
-                } else {
-                    Button { playing = true } label: {
-                        Color.clear
-                            .overlay { DiscoverArt(url: URL(string: "https://i.ytimg.com/vi/\(key)/hqdefault.jpg")) }
-                            .overlay {
-                                Image(systemName: "play.fill")
-                                    .font(.system(size: 24))
-                                    .foregroundStyle(.white)
-                                    .frame(width: 66, height: 66)
-                                    .background(Theme.scrim.opacity(0.62), in: Circle())
-                                    .overlay(Circle().strokeBorder(.white.opacity(0.85), lineWidth: 2))
-                            }
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(DiscoverPressStyle())
-                    .accessibilityLabel("Play trailer")
-                }
-            }
-            .aspectRatio(16 / 9, contentMode: .fit)
-            .frame(maxWidth: 640)
-            .background(Theme.panel2)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Theme.line))
-            if let url = URL(string: "https://www.youtube.com/watch?v=\(key)") {
-                Link("Watch on YouTube", destination: url)
-                    .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(Theme.i2)
-            }
-        }
     }
 }
