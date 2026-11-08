@@ -15,8 +15,10 @@ struct AddLookOverride {
     let setupGround: (AnyView, String?, String?) -> AnyView
     /// A section card (details, versions, when to grab, monitor) at `radius`.
     let card: (AnyView, CGFloat) -> AnyView
-    /// One result in Find's grid: the result, pick, preview.
-    let tile: (MediaSearchResult, @escaping () -> Void, @escaping () -> Void) -> AnyView
+    /// One result in Find's grid (TMDB or TVDB): the card, pick, preview.
+    let tile: (AddResultCard, @escaping () -> Void, (() -> Void)?) -> AnyView
+    /// One result in Find's list: the card, first, last, pick, preview.
+    let row: (AddResultCard, Bool, Bool, @escaping () -> Void, (() -> Void)?) -> AnyView
     /// The grid's column width range (the Library card's).
     let tileWidth: ClosedRange<CGFloat>
     /// Find | setup across a page this wide with no fold through it (the flat

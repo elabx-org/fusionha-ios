@@ -18,7 +18,10 @@ enum V2AddLook {
                                          recipe: .page, showsArt: false))
         },
         card: { content, radius in AnyView(content.v2CardStyle(padding: 0, radius: radius)) },
-        tile: { result, pick, preview in AnyView(V2AddTile(result: result, pick: pick, preview: preview)) },
+        tile: { card, pick, preview in AnyView(V2AddTile(card: card, pick: pick, preview: preview)) },
+        row: { card, first, last, pick, preview in
+            AnyView(V2AddRow(card: card, first: first, last: last, pick: pick, preview: preview))
+        },
         // The Library grid's poster (`V2LibraryColumns`: nearest 130pt).
         tileWidth: 112...148,
         flatSpread: panes(width:height:))
