@@ -6,8 +6,9 @@ import FusionhaKit
 /// (`V2PosterCaption`). Attention draws an orange ring, the title open on
 /// the right page the accent ring. Select mode puts a checkbox in the
 /// art's bottom-right corner and a tap toggles; otherwise a tap opens the
-/// title (v2's title page, through `TitlePageHost`) and press-and-hold opens the poster
-/// sheet. Content, not glass.
+/// title (v2's title page, through `TitlePageHost`) and press-and-hold opens the poster's
+/// context menu (`V2PosterMenu`, Look Pass family 2) where the Library
+/// offers one (`openPosterSheet`). Content, not glass.
 struct V2PosterCard: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
@@ -17,9 +18,7 @@ struct V2PosterCard: View {
     /// The card's width when the grid knows it.
     var artWidth: CGFloat?
     var showsMeta = true
-    @State private var pressing = false
     @State private var pressDelay: Task<Void, Never>?
-    @State private var longPresses = 0
 
     private var monitored: Bool { item.monitored ?? true }
     private var selecting: Bool { model.selectMode }
@@ -32,31 +31,23 @@ struct V2PosterCard: View {
         let _ = PerfCount.hit("V2PosterCard.body")
         VStack(alignment: .leading, spacing: 0) {
             art
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(.black.opacity(pressing ? 0.14 : 0))
-                        .allowsHitTesting(false)
-                }
-                .scaleEffect(pressing ? 0.95 : 1)
-                .animation(motion ? .easeOut(duration: 0.18) : nil, value: pressing)
             V2PosterCaption(item: item, showsMeta: showsMeta)
                 .padding(.top, 7)
                 .padding(.horizontal, 1)
         }
         .contentShape(Rectangle())
         .onTapGesture { tapped() }
-        .onLongPressGesture(minimumDuration: 0.45, maximumDistance: 10) {
-            guard !selecting, let openSheet else { return }
-            longPresses += 1
-            openSheet(item)
+        // Only tracks the press (prefetch, the menu's detail) and never
+        // completes: the system context menu below owns the hold, its lift
+        // and its haptic.
+        .onLongPressGesture(minimumDuration: 10, maximumDistance: 10) {
         } onPressingChanged: { pressChanged($0) }
+        .contextMenu {
+            if openSheet != nil && !selecting { V2PosterMenu(item: item) }
+        }
         .sensoryFeedback(.selection, trigger: selected)
-        .sensoryFeedback(.selection, trigger: longPresses)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits((selecting && selected) || picked ? [.isButton, .isSelected] : [.isButton])
-        .accessibilityAction(named: "Actions") {
-            if !selecting, let openSheet { openSheet(item) }
-        }
     }
 
     private func tapped() {
@@ -67,19 +58,18 @@ struct V2PosterCard: View {
         }
     }
 
-    /// The poster sinks only once a touch has stayed put (as v1's card).
+    /// A press starts the title's prefetch; one that stays put also fetches
+    /// what the context menu drills into.
     private func pressChanged(_ down: Bool) {
         pressDelay?.cancel()
         pressDelay = nil
         // A press is most likely a tap: start fetching what its page needs.
         if down, !selecting { V2TitlePrefetch.start(item.id, model: model) }
-        guard down, !selecting, openSheet != nil else {
-            if pressing { pressing = false }
-            return
-        }
+        guard down, !selecting, openSheet != nil else { return }
+        // A press that stays put is likely a hold: fetch what the context menu drills into.
         pressDelay = Task {
             try? await Task.sleep(for: .milliseconds(120))
-            if !Task.isCancelled { pressing = true }
+            if !Task.isCancelled { V2PosterMenuDetails.shared.load(item.id, client: model.client) }
         }
     }
 

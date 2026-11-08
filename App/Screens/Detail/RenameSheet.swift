@@ -27,7 +27,7 @@ struct RenameSheet: View {
                 }
                 .padding(16)
             }
-            .background(Theme.bg)
+            .dialogGround(Theme.bg)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { SheetCancelButton { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -42,7 +42,7 @@ struct RenameSheet: View {
             }
         }
         .presentationDragIndicator(.visible)
-        .sheetBackground(Theme.bg)
+        .dialogSheetBackground(Theme.bg)
         .task { await load() }
     }
 
@@ -55,20 +55,29 @@ struct RenameSheet: View {
         } else if split.movable.isEmpty && split.blocked.isEmpty {
             DialogEmpty("Every file already matches the naming scheme.")
         } else {
-            ForEach(split.movable) { row in
-                RenameRowCard(row: row, toTag: "Proposed", reason: nil)
-            }
-            if !split.blocked.isEmpty {
-                Text(RenameCopy.blockedHeading(split.blocked.count))
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(Theme.miss)
-                    .padding(.top, 8)
-                Text("fusionha never overwrites a file it owns, so these are left where they are.")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.mut)
-                ForEach(split.blocked) { row in
-                    RenameRowCard(row: row, toTag: "Wanted", reason: RenameCopy.blockReason(row))
-                }
+            #if V2
+            V2RenameList(movable: split.movable, blocked: split.blocked, editions: store.detail?.orderedEditions ?? [])
+            #else
+            v1Rows
+            #endif
+        }
+    }
+
+    @ViewBuilder
+    private var v1Rows: some View {
+        ForEach(split.movable) { row in
+            RenameRowCard(row: row, toTag: "Proposed", reason: nil)
+        }
+        if !split.blocked.isEmpty {
+            Text(RenameCopy.blockedHeading(split.blocked.count))
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(Theme.miss)
+                .padding(.top, 8)
+            Text("fusionha never overwrites a file it owns, so these are left where they are.")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.mut)
+            ForEach(split.blocked) { row in
+                RenameRowCard(row: row, toTag: "Wanted", reason: RenameCopy.blockReason(row))
             }
         }
     }

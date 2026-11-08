@@ -63,7 +63,11 @@ struct InboxAsideView: View {
                  + Text(age.isEmpty ? "" : " · \(age) ago"))
                     .font(.system(size: 12.5)).foregroundStyle(Theme.mut)
                 ActFlow(spacing: 8, lineSpacing: 6) {
+                    #if V2
+                    RequestTierBadges(request: request)
+                    #else
                     ForEach(request.tiers, id: \.self) { ActTierChip(tier: $0) }
+                    #endif
                     Text(RequestSourceWords.phrase(request.source, mine: false))
                         .font(.system(size: 13)).foregroundStyle(Theme.mut)
                 }

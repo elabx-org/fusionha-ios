@@ -26,7 +26,11 @@ struct SwipeCardView: View {
                 requestedBy
                     .padding(.top, 3).padding(.bottom, 10)
                 HStack(spacing: 8) {
+                    #if V2
+                    RequestTierBadges(request: request)
+                    #else
                     ForEach(request.tiers, id: \.self) { ActTierChip(tier: $0) }
+                    #endif
                     Text(RequestLifecycle.sourceText(request.source)).lineLimit(1)
                 }
                 .font(.system(size: 13))

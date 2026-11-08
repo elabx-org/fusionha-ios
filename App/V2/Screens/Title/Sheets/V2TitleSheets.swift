@@ -7,7 +7,9 @@ import FusionhaKit
 /// title's wash, `V2ManageEpisodesSheet`) and Needs you's Fix mode
 /// (`V2ReviewFilesSheet`). Edit, Add version and a movie's
 /// Manage files are already native forms in system sheets, so they stay v1's, as does
-/// every other sheet (`DetailActionSheets`). The episode sheet never shows:
+/// every other sheet (`DetailActionSheets`), restyled under v2 as one form
+/// sheet (Look Pass family 1). Season actions are v2's menu
+/// (`V2SeasonActionsMenu`), so v1's season sheet never shows. The episode sheet never shows:
 /// v2 pushes the episode page instead (`v2TitleDestinations`).
 struct V2TitleSheets: ViewModifier {
     let presenter: DetailPresenter
@@ -31,13 +33,6 @@ struct V2TitleSheets: ViewModifier {
                 if let detail = store.detail {
                     AddEditionSheet(detail: detail, preset: preset)
                         .environment(store)
-                }
-            }
-            .duoPageSheet(item: presenter.item(\.seasonSheet)) { ref in
-                if let detail = store.detail, let season = detail.seasons?.first(where: { $0.seasonNumber == ref.number }) {
-                    SeasonActionsSheet(detail: detail, season: season)
-                        .environment(store)
-                        .presentationDetents([.medium, .large])
                 }
             }
             .duoPageSheet(isPresented: presenter.flag(\.showingDelete)) {

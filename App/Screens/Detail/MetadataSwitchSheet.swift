@@ -44,20 +44,32 @@ struct MetadataSwitchSheet: View {
                     if let failure { DialogBanner(text: failure, tint: Theme.danger) }
                     switch step {
                     case .match: matchStep
-                    case .review: MetadataSwitchReview(plan: plan, files: preview?.files ?? [], renameCount: preview?.renameCount ?? 0,
-                                                       blocked: blocked, excluded: $excluded)
+                    case .review:
+                        #if V2
+                        V2MetadataSwitchReview(plan: plan, files: preview?.files ?? [], renameCount: preview?.renameCount ?? 0,
+                                               blocked: blocked, excluded: $excluded)
+                        #else
+                        MetadataSwitchReview(plan: plan, files: preview?.files ?? [], renameCount: preview?.renameCount ?? 0,
+                                             blocked: blocked, excluded: $excluded)
+                        #endif
                     case .done: doneStep
                     }
                 }
                 .padding(16)
             }
-            .background(Theme.bg)
+            .dialogGround(Theme.bg)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
-            .safeAreaInset(edge: .bottom) { footer }
+            .safeAreaInset(edge: .bottom) {
+                #if V2
+                v2Footer
+                #else
+                footer
+                #endif
+            }
         }
         .presentationDragIndicator(.visible)
-        .sheetBackground(Theme.bg)
+        .dialogSheetBackground(Theme.bg)
         .interactiveDismissDisabled(committing)
         .task { await load(targetId: nil) }
     }
@@ -76,6 +88,32 @@ struct MetadataSwitchSheet: View {
 
     @ViewBuilder
     private var matchStep: some View {
+        #if V2
+        if let preview {
+            V2MetadataSwitchMatch(preview: preview, plan: plan, target: target, label: label, renameCount: renameable.count,
+                                  blocked: blocked, isAdmin: isAdmin, manualId: $manualId) {
+                Task { await load(targetId: Int(manualId)) }
+            }
+        } else {
+            matchWaiting
+        }
+        #else
+        v1MatchStep
+        #endif
+    }
+
+    @ViewBuilder
+    private var matchWaiting: some View {
+        if failure == nil {
+            DialogNote("Matching on \(label)…")
+        } else {
+            Button("Try again", systemImage: "arrow.clockwise") { Task { await load(targetId: Int(manualId)) } }
+                .buttonStyle(.glass)
+        }
+    }
+
+    @ViewBuilder
+    private var v1MatchStep: some View {
         if let preview {
             if let match = preview.matched {
                 HStack(spacing: 12) {
@@ -111,11 +149,8 @@ struct MetadataSwitchSheet: View {
                         .disabled(Int(manualId) == nil)
                 }
             }
-        } else if failure == nil {
-            DialogNote("Matching on \(label)…")
         } else {
-            Button("Try again", systemImage: "arrow.clockwise") { Task { await load(targetId: Int(manualId)) } }
-                .buttonStyle(.glass)
+            matchWaiting
         }
     }
 
@@ -157,6 +192,45 @@ struct MetadataSwitchSheet: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    #if V2
+    /// v2: the step's line and action in one glass bar (Look Pass family 1).
+    @ViewBuilder
+    private var v2Footer: some View {
+        switch step {
+        case .match:
+            V2MetadataSwitchBar(title: "Step 1 of 2 · Match", detail: "Nothing changes until you apply") {
+                Button("Continue") { step = .review }
+                    .buttonStyle(.glassProminent).tint(Theme.primary)
+                    .disabled(preview?.matched == nil && target != "hybrid" || plan == nil)
+            }
+        case .review:
+            V2MetadataSwitchBar(title: nil, detail: MetadataSwitchLogic.why(plan, blocked: blocked)) {
+                applyMenu
+            }
+        case .done:
+            V2MetadataSwitchBar(title: nil, detail: "") {
+                Button(undone ? "Reverted" : "Undo switch") { Task { await undo() } }
+                    .buttonStyle(.glass)
+                    .disabled(undone || !isAdmin)
+            }
+        }
+    }
+    #endif
+
+    /// Apply, with its two choices (the same in v1 and v2).
+    private var applyMenu: some View {
+        Menu {
+            Button("Switch & rename \(renameable.count - excluded.count) files", systemImage: "checkmark") {
+                Task { await commit(rename: true) }
+            }
+            Button("Switch only, keep filenames", systemImage: "tag") { Task { await commit(rename: false) } }
+        } label: {
+            Text(committing ? "Applying…" : "Apply")
+        } primaryAction: { Task { await commit(rename: true) } }
+        .buttonStyle(.glassProminent).tint(Theme.i1)
+        .disabled(!isAdmin || blocked || committing || plan == nil)
     }
 
     private func load(targetId: Int?) async {

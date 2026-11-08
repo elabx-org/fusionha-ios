@@ -15,27 +15,56 @@ struct BoardStageRow: View {
     private var lead: RequestLifecycleEntry? { RequestLifecycle.lead(request.lifecycle ?? []) }
 
     var body: some View {
-        RequestsListRow(request: request, compact: compact) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 6) {
-                    // Downloading shows the release quality ("WEBDL-1080p") in place of the tier (0.4.217).
-                    if column == .downloading, let quality = lead?.quality, let tier = request.tiers.first {
-                        Text(quality)
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(tier.color)
-                            .padding(.horizontal, 6).frame(height: 20)
-                            .background(tier.color.opacity(0.16), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                    } else if let tier = request.tiers.first {
-                        ActTierChip(tier: tier)
-                    }
-                    facts
+        RequestsListRow(request: request, compact: compact, meta: { meta }, trailing: { trailing })
+            .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder
+    private var meta: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                #if V2
+                // v2: the media badges in their live states, the release quality quiet beside them.
+                RequestTierBadges(request: request)
+                if column == .downloading, let quality = lead?.quality {
+                    Text(quality).fontWeight(.semibold).lineLimit(1)
                 }
-                if column == .downloading, let pct = lead?.progressPct, lead?.needsManualImport != true {
-                    ActProgressBar(fraction: Double(pct) / 100, height: 4, fill: AnyShapeStyle(Theme.grab), shimmer: true)
+                #else
+                // Downloading shows the release quality ("WEBDL-1080p") in place of the tier (0.4.217).
+                if column == .downloading, let quality = lead?.quality, let tier = request.tiers.first {
+                    Text(quality)
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(tier.color)
+                        .padding(.horizontal, 6).frame(height: 20)
+                        .background(tier.color.opacity(0.16), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                } else if let tier = request.tiers.first {
+                    ActTierChip(tier: tier)
                 }
+                #endif
+                facts
+            }
+            if column == .downloading, let pct = lead?.progressPct, lead?.needsManualImport != true {
+                ActProgressBar(fraction: Double(pct) / 100, height: 4, fill: AnyShapeStyle(Theme.grab), shimmer: true)
             }
         }
-        .accessibilityElement(children: .combine)
+    }
+
+    /// v2 (approved Board): settled stages say their state as the status
+    /// pill; Pending rows lead on to the decision with a chevron.
+    @ViewBuilder
+    private var trailing: some View {
+        #if V2
+        if column == .pending {
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Theme.dim)
+                .accessibilityHidden(true)
+        } else if column != .downloading {
+            V2RequestStatusPill(status: request.status)
+        }
+        #else
+        EmptyView()
+        #endif
     }
 
     @ViewBuilder

@@ -10,17 +10,20 @@ import FusionhaKit
 extension SignInView {
     var serverForm: some View {
         VStack(spacing: 0) {
-            LoginField(label: "Server address") {
-                TextField("", text: $server,
-                          prompt: Text(verbatim: "https://fusionha.example.com").foregroundStyle(Theme.dim))
-                    .textContentType(.URL)
-                    .keyboardType(.URL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .submitLabel(.go)
-                    .focused($field, equals: .server)
-                    .onSubmit { Task { await connect() } }
-            } focused: { field == .server }
+            LoginFieldGroup {
+                // v2's row label is "Server" (the mock's), beside the field.
+                LoginField(label: ProductLook.isV2 ? "Server" : "Server address") {
+                    TextField("", text: $server,
+                              prompt: Text(verbatim: "https://fusionha.example.com").foregroundStyle(Theme.dim))
+                        .textContentType(.URL)
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.go)
+                        .focused($field, equals: .server)
+                        .onSubmit { Task { await connect() } }
+                } focused: { field == .server }
+            }
             .onChange(of: server) { old, new in
                 failure = nil
                 error = nil

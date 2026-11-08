@@ -124,18 +124,35 @@ extension SignInView {
             Button {
                 withAnimation(motionOff ? nil : .snappy) { reset() }
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "server.rack")
-                    Text(verbatim: connected.host)
-                    UnencryptedMark(server: connected.url, size: 13)
-                    Text(verbatim: "· \(connected.version)").foregroundStyle(Theme.dim)
-                    Text("·")
-                    Text("Change").foregroundStyle(Theme.txt)
+                if ProductLook.isV2 {
+                    // v2: the server on a glass capsule, Change in the accent.
+                    HStack(spacing: 6) {
+                        Image(systemName: "server.rack")
+                        Text(verbatim: connected.host).foregroundStyle(Theme.txt)
+                        UnencryptedMark(server: connected.url, size: 13)
+                        Text(verbatim: "· \(connected.version) ·")
+                        Text("Change").foregroundStyle(Theme.accentText)
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.mut)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .padding(.horizontal, 14)
+                    .loginGlassCapsule(height: 36)
+                } else {
+                    HStack(spacing: 6) {
+                        Image(systemName: "server.rack")
+                        Text(verbatim: connected.host)
+                        UnencryptedMark(server: connected.url, size: 13)
+                        Text(verbatim: "· \(connected.version)").foregroundStyle(Theme.dim)
+                        Text("·")
+                        Text("Change").foregroundStyle(Theme.txt)
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.mut)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 }
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Theme.mut)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Connected to \(connected.host)\(ServerAddress.isUnencrypted(connected.url) ? ", not encrypted" : ""), version \(connected.version). Change server")

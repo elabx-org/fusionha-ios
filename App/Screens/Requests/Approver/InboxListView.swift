@@ -100,7 +100,11 @@ struct InboxListView: View {
         return VStack(alignment: .leading, spacing: 5) {
             Text(title).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.txt).lineLimit(1)
             HStack(spacing: 5) {
+                #if V2
+                RequestTierBadges(request: r)
+                #else
                 ForEach(r.tiers, id: \.self) { RequestRowTierChip(tier: $0) }
+                #endif
                 Text(RequestLifecycle.kindLabel(r)).font(.system(size: 12.5)).foregroundStyle(Theme.mut).lineLimit(1)
             }
             HStack(spacing: 6) {

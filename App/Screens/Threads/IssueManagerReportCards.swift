@@ -66,7 +66,11 @@ struct IssueManagerReportCards: View {
                 if manager, let who = r.reporter { RequestPersonChip(name: who.displayName, prefix: nil) }
                 Label(IssueFormat.problemLabel(r.problem), systemImage: IssueFormat.problemSymbol(r.problem))
                     .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Theme.txt)
+                #if V2
+                if let tier = r.version.tier { RequestTierBadges(tiers: [tier], states: [tier: .onDisk]) }
+                #else
                 if let tier = r.version.tier { ActTierChip(tier: tier) }
+                #endif
                 Spacer(minLength: 4)
                 statePill(r)
             }

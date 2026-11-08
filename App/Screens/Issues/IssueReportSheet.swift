@@ -45,18 +45,27 @@ struct IssueModal: View {
                         Text("We’ll message you when something changes.")
                             .font(.system(size: 12)).foregroundStyle(Theme.dim)
                     } else {
+                        #if V2
+                        V2IssueForm(isSeries: isSeries, seasons: seasons, versions: versions, needVersion: needVersion,
+                                    problem: $problem, versionId: $versionId, picked: $picked, scope: $scope,
+                                    season: $season, episode: $episode, note: $note)
+                        #else
                         form
+                        #endif
                     }
                 }
                 .padding(16)
             }
-            .background(Theme.panel)
+            .dialogGround(Theme.panel)
+            #if !V2
+            // v2 carries the title in the body (`V2IssueHeader`).
             .navigationTitle("Report an issue")
+            #endif
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
         }
         .presentationDragIndicator(.visible)
-        .sheetBackground(Theme.panel)
+        .dialogSheetBackground(Theme.panel)
         .formSheet() // R7: a form sheet when unfolded
         .task { await loadVersions() }
         // Kept across a fold / unfold when opened from a title (no-op elsewhere).
@@ -72,7 +81,17 @@ struct IssueModal: View {
 
     // MARK: Header
 
+    @ViewBuilder
     private var header: some View {
+        #if V2
+        V2IssueHeader(title: title, year: year, poster: poster,
+                      tiers: Array(Set(versions.compactMap(\.tier))).sorted { $0.rawValue < $1.rawValue })
+        #else
+        v1Header
+        #endif
+    }
+
+    private var v1Header: some View {
         HStack(spacing: 12) {
             ActPoster(url: poster, title: title, size: .sm)
             VStack(alignment: .leading, spacing: 4) {

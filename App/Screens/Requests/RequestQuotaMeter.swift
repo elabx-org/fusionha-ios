@@ -19,7 +19,7 @@ struct RequestQuotaMeter: View {
                 HStack(spacing: 4) {
                     ForEach(0..<limit, id: \.self) { i in
                         Capsule()
-                            .fill(i < quota.used ? (left == 0 ? Theme.miss : Theme.i1) : Theme.line)
+                            .fill(i < quota.used ? (left == 0 ? Theme.miss : usedInk) : Theme.line)
                             .frame(height: 5)
                     }
                 }
@@ -32,6 +32,9 @@ struct RequestQuotaMeter: View {
             .accessibilityElement(children: .combine)
         }
     }
+
+    /// A used request: v1's accent, v2's one ink (the accent is for selection).
+    private var usedInk: Color { ProductLook.isV2 ? Theme.txt : Theme.i1 }
 
     private var footnote: String {
         var parts: [String] = []

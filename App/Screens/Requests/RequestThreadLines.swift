@@ -35,7 +35,11 @@ struct RequestStatusTimeline: View {
                          sub: "Each version is tracked separately")
                     ForEach(Array(lifecycle.enumerated()), id: \.offset) { _, e in
                         HStack(spacing: 8) {
+                            #if V2
+                            RequestTierBadges(tiers: [e.tier], states: [e.tier: RequestBadgeStates.state(e)])
+                            #else
                             ActTierChip(tier: e.tier)
+                            #endif
                             Text(RequestLifecycle.versionWord(e))
                                 .font(.system(size: 12.5, weight: .semibold))
                                 .foregroundStyle(e.needsManualImport ? Theme.stuck : (e.step == .available ? Theme.done : Theme.txt))

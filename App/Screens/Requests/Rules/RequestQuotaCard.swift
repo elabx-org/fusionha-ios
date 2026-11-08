@@ -36,7 +36,7 @@ struct RequestQuotaCard: View {
             if loaded && quotas.isEmpty { Text("No one has requested yet.").font(.subheadline).foregroundStyle(Theme.mut) }
         }
         .padding(14)
-        .background(Theme.panel, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .rulesSurface()
         .task { await load() }
     }
 
@@ -111,7 +111,11 @@ struct RequestAutoApprovedStrip: View {
                         }
                         Spacer(minLength: 0)
                         // Stacked, so two chips don't squeeze the reason off the line.
+                        #if V2
+                        RequestTierBadges(request: r)
+                        #else
                         VStack(alignment: .trailing, spacing: 4) { ForEach(r.tiers, id: \.self) { ActTierChip(tier: $0) } }
+                        #endif
                     }
                     .contentShape(Rectangle())
                 }
@@ -119,7 +123,7 @@ struct RequestAutoApprovedStrip: View {
             }
         }
         .padding(14)
-        .background(Theme.panel, in: RoundedRectangle(cornerRadius: Theme.radius, style: .continuous))
+        .rulesSurface()
         .task {
             guard let client = model.client else { return }
             requests = (try? await client.autoApprovedRequests()) ?? []

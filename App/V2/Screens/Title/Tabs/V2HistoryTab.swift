@@ -8,7 +8,7 @@ import FusionhaKit
 /// per day a label on the ground over one W1 card of `V2HistoryEventRow`s,
 /// newest first (owner 2026-11-05: content on the art ground sits on a card,
 /// like the version, season and Next up cards).
-/// The view choice shares v1's stored key. Insights is v1's.
+/// The view choice shares v1's stored key. Insights is `V2HistoryInsights`.
 struct V2HistoryTab: View {
     @Environment(DetailStore.self) private var store
     @Environment(\.pagePalette) private var page
@@ -50,7 +50,7 @@ struct V2HistoryTab: View {
                 switch mode {
                 case .timeline: V2HistoryTimeline(detail: detail, entries: shown)
                 case .lifecycle: V2HistoryLifecycle(detail: detail, entries: shown)
-                case .insights: HistoryInsightsView(versions: store.scopedEditions, entries: shown)
+                case .insights: V2HistoryInsights(versions: store.scopedEditions, entries: shown)
                 }
             }
         }
