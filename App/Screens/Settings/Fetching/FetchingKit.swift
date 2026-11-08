@@ -45,7 +45,7 @@ struct FetchingPage<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(Theme.bg)
+        .background { SettingsPanelGround(slug: slug) }
         .settingsLayout()
         .refreshable { await refresh?() }
         .navigationTitle(info?.title ?? slug)

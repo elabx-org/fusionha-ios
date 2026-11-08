@@ -3,7 +3,8 @@ import FusionhaKit
 
 /// The open Duo's first Settings page (mock settings-v2.js `homeInner`):
 /// "Overview", the server card, then the most used sections as cards in two
-/// columns. The sidebar beside it reaches every panel.
+/// columns, with the search schedule and calendar as quick values (each
+/// opens General on its row). The sidebar beside it reaches every panel.
 struct V2SettingsOverview: View {
     let summary: V2SettingsSummary
     let select: (String) -> Void
@@ -13,10 +14,11 @@ struct V2SettingsOverview: View {
 
     private var leading: [V2SettingsNav.Section] {
         [.init(id: "general", header: "General", rows: SettingsNav.top), V2SettingsNav.home[1]]
+            + V2SettingsNav.home.filter { $0.id == "requests" }
     }
 
     private var trailing: [V2SettingsNav.Section] {
-        V2SettingsNav.home.filter { $0.id == "fetching" || $0.id == "requests" }
+        V2SettingsNav.home.filter { $0.id == "fetching" }
     }
 
     var body: some View {
@@ -32,10 +34,11 @@ struct V2SettingsOverview: View {
                 if width >= 560 {
                     HStack(alignment: .top, spacing: 18) {
                         column(leading)
-                        column(trailing)
+                        column(trailing, quickValues: true)
                     }
                 } else {
-                    column(leading + trailing)
+                    column(leading)
+                    column(trailing, quickValues: true)
                 }
             }
             .padding(.horizontal, 24)
@@ -45,11 +48,12 @@ struct V2SettingsOverview: View {
         }
         .navigationTitle("Overview")
         .toolbarTitleDisplayMode(.inlineLarge)
-        .v2PageGround(art: nil)
+        .v2SettingsGround("overview")
     }
 
-    private func column(_ sections: [V2SettingsNav.Section]) -> some View {
+    private func column(_ sections: [V2SettingsNav.Section], quickValues: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 4) {
+            if quickValues { V2SettingsQuickValues(select: select) }
             ForEach(sections) { section in
                 V2SettingsSectionCard(section: section, summary: summary, open: select)
             }
@@ -74,6 +78,6 @@ struct V2SettingsGroupPage: View {
         }
         .navigationTitle(V2SettingsNav.label(id))
         .toolbarTitleDisplayMode(.inlineLarge)
-        .v2PageGround(art: nil)
+        .v2SettingsGround(id)
     }
 }

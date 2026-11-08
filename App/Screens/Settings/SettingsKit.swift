@@ -29,7 +29,7 @@ struct SettingsForm<Content: View>: View {
             }
             .scrollContentBackground(.hidden)
             .scrollDismissesKeyboard(.interactively)
-            .background(Theme.bg)
+            .background { SettingsPanelGround(slug: slug) }
             .environment(\.settingsPanelSlug, slug)
             .settingsLayout()
             .task(id: flash.target(in: slug)) {
