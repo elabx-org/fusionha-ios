@@ -59,11 +59,16 @@ enum V2TimelineEntries {
     /// full Recently added page ("See all N" counts the same titles).
     static func lastMonth(_ library: [MediaItem], now: Date = Date()) -> [MediaItem] {
         let since = now.addingTimeInterval(-30 * 86_400)
-        return library
-            .compactMap { item in V2RecentWords.added(item).map { (item, $0) } }
-            .filter { $0.1 <= now && $0.1 >= since }
-            .sorted { $0.1 != $1.1 ? $0.1 > $1.1 : $0.0.id < $1.0.id }
-            .map(\.0)
+        var dated: [(item: MediaItem, at: Date)] = []
+        for item in library {
+            guard let at = V2RecentWords.added(item), at <= now, at >= since else { continue }
+            dated.append((item, at))
+        }
+        dated.sort { a, b in
+            if a.at != b.at { return a.at > b.at }
+            return a.item.id < b.item.id
+        }
+        return dated.map { $0.item }
     }
 }
 
