@@ -12,14 +12,14 @@ public struct ArrivalRow: Sendable, Hashable, Identifiable {
     /// The newest import of the group.
     public let latest: Date
     /// Season and episode numbers, newest first as they came in; empty for a movie.
-    public let episodes: [EpisodeRef]
+    public let episodes: [ArrivalEpisode]
     /// The versions that received a file, HD before 4K.
     public let tiers: [QualityTier]
     public let imports: Int
     public var id: String { "\(itemId)-\(Int(day.timeIntervalSince1970))" }
 }
 
-public struct EpisodeRef: Sendable, Hashable {
+public struct ArrivalEpisode: Sendable, Hashable {
     public let season: Int
     public let episode: Int
     public init(season: Int, episode: Int) {
@@ -48,7 +48,7 @@ public enum RecentArrivals {
         }
         return order.compactMap { key in
             guard let g = groups[key], let head = g.first, let id = head.0.mediaItemId else { return nil }
-            var seen = Set<EpisodeRef>()
+            var seen = Set<ArrivalEpisode>()
             let episodes = g.compactMap { episode(in: $0.0) }.filter { seen.insert($0).inserted }
             let tiers = [QualityTier.hd, .uhd].filter { t in g.contains { $0.0.tier == t } }
             return ArrivalRow(itemId: id, day: calendar.startOfDay(for: head.1), latest: head.1,
@@ -100,7 +100,7 @@ public enum RecentArrivals {
 
     /// The episode from the imported file's path (a pack's release name has
     /// only the season), else from the release name.
-    static func episode(in h: HistoryEntry) -> EpisodeRef? {
+    static func episode(in h: HistoryEntry) -> ArrivalEpisode? {
         for text in [h.data?["relative_path"]?.text, h.sourceTitle] {
             guard let text, let ref = code(in: text) else { continue }
             return ref
@@ -110,10 +110,10 @@ public enum RecentArrivals {
 
     private static let pattern = try? NSRegularExpression(pattern: #"S(\d{1,2})E(\d{1,3})"#, options: .caseInsensitive)
 
-    private static func code(in text: String) -> EpisodeRef? {
+    private static func code(in text: String) -> ArrivalEpisode? {
         guard let m = pattern?.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
               let sr = Range(m.range(at: 1), in: text), let er = Range(m.range(at: 2), in: text),
               let s = Int(text[sr]), let e = Int(text[er]) else { return nil }
-        return EpisodeRef(season: s, episode: e)
+        return ArrivalEpisode(season: s, episode: e)
     }
 }
