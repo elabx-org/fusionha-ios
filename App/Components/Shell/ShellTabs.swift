@@ -20,10 +20,11 @@ struct ShellTabs: View {
     /// The tabs' own width (the list pane's on the open Duo).
     @State private var width: CGFloat = 0
 
-    /// v2 in the open Duo's narrow list pane (owner 2026-11-09, option C):
-    /// the bar takes the phone's form, so Search stands apart as its own
-    /// circle, and the tabs show their icons only (the five labels were cut
-    /// off at about 290pt). The phone and the folded Duo keep their labels.
+    /// v2 in the open Duo's narrow list pane (owner 2026-11-09): the tabs
+    /// show their icons only (the five labels were cut off at about 290pt).
+    /// The owner chose Search apart (option C), but the system keeps a
+    /// regular-width bar's search tab inline, so it is an icon like the rest.
+    /// The phone and the folded Duo keep their labels.
     private var narrowColumn: Bool {
         chrome != nil && splitShown && sizeClass == .regular && width > 0 && width < 420
     }
@@ -50,7 +51,10 @@ struct ShellTabs: View {
                     .accessibilityLabel(Text("My requests"))
                 Tab(title("You"), image: "nav-you", value: AppTab.you) { TabRoot { YouView() } }
                     .accessibilityLabel(Text("You"))
-                Tab(value: AppTab.search, role: .search) { TabRoot { SearchTabView() } }
+                Tab(title("Search"), systemImage: "magnifyingglass", value: AppTab.search, role: .search) {
+                    TabRoot { SearchTabView() }
+                }
+                .accessibilityLabel(Text("Search"))
             } else {
                 if let title = libraryRoot?.title, let symbol = libraryRoot?.systemImage {
                     Tab(self.title(title), systemImage: symbol, value: AppTab.library) { TabRoot { LibraryTabRoot() } }
@@ -68,12 +72,12 @@ struct ShellTabs: View {
                 Tab(title("Activity"), image: "nav-activity", value: AppTab.activity) { TabRoot { ActivityView() } }
                     .accessibilityLabel(Text("Activity"))
                     .badge(BadgeCount.text(activityBadge).map { Text(verbatim: $0) })
-                Tab(value: AppTab.search, role: .search) { TabRoot { SearchTabView() } }
+                Tab(title("Search"), systemImage: "magnifyingglass", value: AppTab.search, role: .search) {
+                    TabRoot { SearchTabView() }
+                }
+                .accessibilityLabel(Text("Search"))
             }
         }
-        // The bar's form only: the pages keep the display's real size class (`TabRoot`).
-        .environment(\.horizontalSizeClass, narrowColumn ? .compact : sizeClass)
-        .environment(\.tabContentSizeClass, sizeClass)
         .onGeometryChange(for: CGFloat.self) { $0.size.width.rounded() } action: { width = $0 }
         .tint(Theme.indigo)
         // Count badges in the accent, as on the web, not the system red; the
