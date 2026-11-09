@@ -81,6 +81,13 @@ struct RootView: View {
         DuoSeamContext(titlePage: titlePage, fold: fold, split: split, toggle: listToggle(split), drag: seam, model: model)
     }
 
+    /// Book pose with a title beside the list: where v2 draws its strip in the fold.
+    private func foldSeamContext(_ split: ShellSplit) -> FoldSeamContext? {
+        guard split.shown, !split.primaryHidden, let gap = fold.vertical,
+              let id = model.presentedItem?.id else { return nil }
+        return FoldSeamContext(size: fold.size, gap: gap, itemId: id)
+    }
+
     /// A Spread with an episode open from the title: the title's tabs on the
     /// left page, the episode on the right, the list hidden until it closes.
     private func episodeBeside(_ split: ShellSplit, spread: SpreadContext) -> Bool {
@@ -201,6 +208,10 @@ struct RootView: View {
         // v2's split handle on the seam (`V2SplitHandle`).
         .overlay(alignment: .topLeading) {
             if let make = titlePage?.seamHandle, let context = seamContext(split) { make(context) }
+        }
+        // v2's strip in the fold in book pose (`V2FoldSeam`): drawn, never touched.
+        .overlay(alignment: .topLeading) {
+            if let make = titlePage?.foldSeam, let context = foldSeamContext(split) { make(context) }
         }
         .background { shellBackground(split) }
         // Measured without the keyboard: typing in inner landscape must not

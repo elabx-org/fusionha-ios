@@ -36,6 +36,8 @@ struct V2RootView: View {
                 AnyView(V2TitleShellGround(itemId: id))
             }, stackPath: { [stacks, model] id, host in
                 stacks.path(id) { model.detailHostAccepts(host) }
+            }, foldSeam: { context in
+                AnyView(V2FoldSeam(context: context))
             }))
             .environment(stacks)
             .environment(\.foldKeep, keep)

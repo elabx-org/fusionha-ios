@@ -19,13 +19,16 @@ struct V2TitleShellGround: View {
             .accessibilityHidden(true)
     }
 
-    private var palette: PagePalette {
+    private var palette: PagePalette { Self.look(model, itemId).palette }
+
+    /// The open title's palette and art, as its page paints them (`V2TitleView`).
+    static func look(_ model: AppModel, _ itemId: Int) -> (palette: PagePalette, art: URL?) {
         let tokens = Theme.palette
         let store = model.detailStore(for: itemId)
         let seed = model.library.first { $0.id == itemId }
         let art = PageArtSource.url(backdrop: store.detail?.backdropUrl ?? seed?.backdropUrl,
                                     poster: store.detail?.posterUrl ?? seed?.posterUrl)
-        guard let art, let colors = ArtPaletteExtractor.shared.cached(art) else { return .tokens(tokens) }
-        return PagePalette.art(colors, tokens: tokens)
+        guard let art, let colors = ArtPaletteExtractor.shared.cached(art) else { return (.tokens(tokens), art) }
+        return (PagePalette.art(colors, tokens: tokens), art)
     }
 }

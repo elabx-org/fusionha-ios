@@ -30,6 +30,9 @@ struct TitlePageOverride {
     /// fold (`TitleStack`); the host passes itself so only the host on
     /// screen writes. nil keeps each host's own stack.
     var stackPath: (@MainActor (_ itemId: Int, _ host: DetailHost) -> Binding<NavigationPath>)?
+    /// The strip drawn in the fold in book pose while a title is open beside
+    /// the list (v2's `V2FoldSeam`); nil leaves the fold empty with a hairline.
+    var foldSeam: (@MainActor (FoldSeamContext) -> AnyView)?
 }
 
 /// The open title's navigation stack, in the sheet and the column alike:

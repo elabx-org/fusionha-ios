@@ -174,6 +174,12 @@ struct ShellDetailColumn: View {
         titlePage?.flatOpenListShare != nil && duoOpen && !bookPose && model.presentedItem != nil
     }
 
+    /// v2 draws a strip in the fold in book pose (`V2FoldSeam`) that blends
+    /// into this page's edge, so no hairline there either.
+    private var foldSeamDrawn: Bool {
+        bookPose && titlePage?.foldSeam != nil && model.presentedItem != nil
+    }
+
     /// Which page is up: a new title or preview swings in over the last one.
     private var pageKey: String {
         if let ref = model.presentedItem { return "title-\(ref.id)" }
@@ -203,7 +209,7 @@ struct ShellDetailColumn: View {
         .perfCloseTitleHook { closePage() }
         .animation(duoOpen ? DuoPageMotion.animation(motion: motion) : nil, value: pageKey)
         .overlay(alignment: .leading) {
-            if !seamless { Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea() }
+            if !seamless && !foldSeamDrawn { Rectangle().fill(Theme.line).frame(width: 1).ignoresSafeArea() }
         }
         // Gestures 1 and 2: swipe the page away, or the list off and back.
         // v2's split handle takes the seamless seam instead (`V2SplitHandle`).
