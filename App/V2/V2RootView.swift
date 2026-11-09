@@ -22,6 +22,8 @@ struct V2RootView: View {
     @Environment(AppModel.self) private var model
     @State private var stacks = V2TitleStacks()
     @State private var keep = FoldKeep()
+    /// The pages' grounds, for the book-pose gutter (`V2FoldSeam`).
+    @State private var paneGrounds = PaneGrounds()
 
     var body: some View {
         RootView()
@@ -41,6 +43,7 @@ struct V2RootView: View {
             }))
             .environment(stacks)
             .environment(\.foldKeep, keep)
+            .environment(\.paneGrounds, paneGrounds)
             .onChange(of: model.presentedItem?.id) { old, _ in
                 if let old { stacks.close(old) }
             }

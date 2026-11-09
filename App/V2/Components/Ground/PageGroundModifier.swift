@@ -27,6 +27,11 @@ struct PageGroundModifier: ViewModifier {
     var artOpacity: GroundArtOpacity = .w1
     let tokens: PaletteTokens?
     @State private var loaded: (key: String, colors: [HSLColor])?
+    /// Book pose: this page's ground is offered to the fold's gutter (`PaneGrounds`).
+    @Environment(\.paneGrounds) private var grounds
+    @Environment(\.bookPose) private var bookPose
+    @State private var groundId = UUID()
+    @State private var frame: CGRect = .zero
 
     func body(content: Content) -> some View {
         let _ = PerfCount.hit("PageGroundModifier.body")
@@ -41,6 +46,19 @@ struct PageGroundModifier: ViewModifier {
                            artOpacity: artOpacity, tokens: t)
             }
             .task(id: art) { await load() }
+            .onGeometryChange(for: CGRect.self) { proxy in
+                let f = proxy.frame(in: .global)
+                return CGRect(x: f.minX.rounded(), y: f.minY.rounded(), width: f.width.rounded(), height: f.height.rounded())
+            } action: { frame = $0 }
+            .onChange(of: report(palette), initial: true) { _, next in grounds?.set(groundId, next) }
+            .onDisappear { grounds?.set(groundId, nil) }
+    }
+
+    /// What the gutter needs to paint this ground; nil off book pose.
+    private func report(_ palette: PagePalette) -> PaneGrounds.Report? {
+        guard bookPose, grounds != nil, frame.width > 0 else { return nil }
+        return PaneGrounds.Report(palette: palette, recipe: recipe, art: showsArt ? art : nil,
+                                  artHeight: artHeight, artOpacity: artOpacity, frame: frame)
     }
 
     private var dominant: [HSLColor]? {
