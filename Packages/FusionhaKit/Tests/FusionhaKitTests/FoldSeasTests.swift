@@ -14,7 +14,9 @@ final class FoldSeasTests: XCTestCase {
 
     func testTheLineMeanders() {
         let f = FoldSeas.field(width: 70, height: 400, meeting: 0.5)
-        let crossings = (0..<400).map { y in (0..<70).first { f.sea[y * 70 + $0] >= 128 } ?? 70 }
+        let crossings: [Int] = (0..<400).map { y -> Int in
+            (0..<70).first(where: { f.sea[y * 70 + $0] >= 128 }) ?? 70
+        }
         XCTAssertGreaterThan((crossings.max() ?? 0) - (crossings.min() ?? 0), 4)
     }
 
