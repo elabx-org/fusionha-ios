@@ -118,10 +118,15 @@ struct V2ComingUpRow: View {
         }
     }
 
-    /// The focused card's art (nil while the row is hidden).
+    /// The focused card's art (nil while the row is hidden): the art the
+    /// card shows, so the ground's colour matches the card in the middle.
+    /// The poster everywhere but the open Duo's Backdrops style.
     private var leadURL: URL? {
         guard let item = current?.item else { return nil }
-        return PageArtSource.url(backdrop: item.backdropUrl, poster: item.posterUrl)
+        if hero, V2ComingUpWideStyle(stored: wideRaw) == .backdrops {
+            return PageArtSource.url(backdrop: item.backdropUrl, poster: item.posterUrl)
+        }
+        return ArtPaletteExtractor.sampleURL(item.posterUrl ?? item.backdropUrl)
     }
 
     private func rebuild() {
