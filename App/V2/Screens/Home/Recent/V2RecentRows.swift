@@ -1,58 +1,117 @@
 import SwiftUI
 import FusionhaKit
 
-/// Recently added on the phone and the folded Duo (Home mock): a timeline
-/// with its spine down the left edge, day headings, and compact rows (a
-/// 16:9 backdrop thumb, the title, its note and the HD/4K tickets).
+/// Home's timelines on the phone and the folded Duo (Home mock): the spine
+/// down the left edge, day headings, and compact rows (a 16:9 backdrop
+/// thumb, the title, its note and the HD/4K tickets). `more` ends it with
+/// a row on the spine ("27 more this month ›") that opens the full page.
 struct V2RecentRows: View {
-    let items: [MediaItem]
+    let entries: [V2TimelineEntry]
     let width: CGFloat
-    @Environment(\.pagePalette) private var page
+    var more: (label: String, open: () -> Void)?
 
     /// The spine's centre from the page's leading edge (mock: 31).
     static let spineX: CGFloat = 31
-    private static let slot: CGFloat = 44
+    static let slot: CGFloat = 44
 
-    private var thumb: CGFloat { min(150, max(128, (width * 0.32).rounded())) }
+    static func thumb(_ width: CGFloat) -> CGFloat { min(150, max(128, (width * 0.32).rounded())) }
 
     var body: some View {
-        let ink = page?.ink ?? Theme.txt
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
-                let day = V2RecentWords.day(V2RecentWords.added(item))
-                if i == 0 || V2RecentWords.day(V2RecentWords.added(items[i - 1])) != day {
-                    Text(day.uppercased())
-                        .font(.system(size: 11, weight: .semibold))
-                        .tracking(0.6)
-                        .foregroundStyle(page?.inkMuted ?? Theme.mut)
-                        .padding(.leading, Self.slot + 12)
-                        .padding(.top, 10)
-                        .padding(.bottom, 2)
+            ForEach(Array(entries.enumerated()), id: \.element.id) { i, entry in
+                if i == 0 || entries[i - 1].day != entry.day {
+                    V2TimelineDayLabel(day: entry.day)
                 }
-                V2RecentTimelineRow(item: item, thumb: thumb, slot: Self.slot)
+                V2RecentTimelineRow(entry: entry, thumb: Self.thumb(width), slot: Self.slot)
+            }
+            if let more {
+                V2TimelineMoreRow(label: more.label, open: more.open)
             }
         }
         .padding(.top, 8)
-        .background(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 1)
-                .fill(ink.opacity(0.18))
-                .frame(width: 2)
-                .padding(.top, 14)
-                .padding(.bottom, 20)
-                .offset(x: Self.spineX - 1)
+        .background(alignment: .topLeading) { V2TimelineSpine() }
+    }
+}
+
+/// A day heading on the spine's right ("TODAY", "SAT", "3 NOV").
+struct V2TimelineDayLabel: View {
+    let day: String
+    @Environment(\.pagePalette) private var page
+
+    var body: some View {
+        Text(day.uppercased())
+            .font(.system(size: 11, weight: .semibold))
+            .tracking(0.6)
+            .foregroundStyle(page?.inkMuted ?? Theme.mut)
+            .padding(.leading, V2RecentRows.slot + 12)
+            .padding(.top, 10)
+            .padding(.bottom, 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// The timeline's spine, behind its rows.
+struct V2TimelineSpine: View {
+    @Environment(\.pagePalette) private var page
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 1)
+            .fill((page?.ink ?? Theme.txt).opacity(0.18))
+            .frame(width: 2)
+            .padding(.top, 14)
+            .padding(.bottom, 20)
+            .offset(x: V2RecentRows.spineX - 1)
+    }
+}
+
+/// The timeline's last row: a small dot on the spine and a capsule
+/// naming what else there is.
+struct V2TimelineMoreRow: View {
+    let label: String
+    let open: () -> Void
+    @Environment(\.pagePalette) private var page
+
+    var body: some View {
+        let ink = page?.ink ?? Theme.txt
+        Button(action: open) {
+            HStack(spacing: 12) {
+                ZStack(alignment: .leading) {
+                    Color.clear.frame(width: V2RecentRows.slot, height: 8)
+                    Circle().fill(ink.opacity(0.7)).frame(width: 8, height: 8)
+                        .offset(x: V2RecentRows.spineX - 4)
+                }
+                HStack(spacing: 4) {
+                    Text(label).monospacedDigit()
+                    Image(systemName: "chevron.right").font(.system(size: 12, weight: .semibold)).opacity(0.6)
+                }
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(ink)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 7)
+                .background(Capsule().fill(ink.opacity(0.11)))
+                .overlay(Capsule().strokeBorder(ink.opacity(0.25), lineWidth: 0.5))
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 8)
+            .padding(.bottom, 6)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
     }
 }
 
 /// One timeline row: the spine's dot, the thumb, the words.
 struct V2RecentTimelineRow: View {
-    let item: MediaItem
+    let entry: V2TimelineEntry
     let thumb: CGFloat
     let slot: CGFloat
     @Environment(AppModel.self) private var model
     @Environment(\.pagePalette) private var page
     @Environment(\.motionEnabled) private var motion
     @State private var shown = false
+
+    private var item: MediaItem { entry.item }
 
     var body: some View {
         let ink = page?.ink ?? Theme.txt
@@ -72,7 +131,7 @@ struct V2RecentTimelineRow: View {
                         .font(.system(size: 16, weight: .semibold))
                         .tracking(-0.2)
                         .foregroundStyle(ink)
-                    Text(V2RecentWords.note(item))
+                    Text(entry.note)
                         .font(.system(size: 13))
                         .foregroundStyle(page?.inkMuted ?? Theme.mut)
                     V2ItemTickets(item: item).padding(.top, 4)

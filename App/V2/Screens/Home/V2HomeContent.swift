@@ -14,7 +14,11 @@ struct V2HomeContent: View {
     let held: Set<Int>
     let width: CGFloat
     @Binding var comingUpArt: URL?
+    /// Recently arrived's rows and the timeline page shown (`V2RecentSection`).
+    let arrived: [V2TimelineEntry]
+    @Binding var recentPage: V2TimelinePage
     let open: (V2AllTitlesEntry) -> Void
+    let openTimeline: (V2TimelinePage) -> Void
     @Environment(\.pagePalette) private var page
 
     private var wide: Bool { width >= 700 }
@@ -48,7 +52,8 @@ struct V2HomeContent: View {
             }
             V2ComingUpRow(width: width, gutter: gutter, wide: false, topGap: 22, leadArt: $comingUpArt)
                 .foldRow("home-comingup")
-            V2RecentSection(data: data, width: width, gutter: gutter, wide: false) { open(.recent(lastMonth: data.recentCount > 0)) }
+            V2RecentSection(data: data, arrived: arrived, width: width, gutter: gutter, wide: false,
+                            page: $recentPage, seeAll: openTimeline)
                 .padding(.top, 18)
                 .foldRow("home-recent")
             VStack(alignment: .leading, spacing: 26) {
@@ -77,7 +82,8 @@ struct V2HomeContent: View {
             .foldRow(FoldAnchorTop.header)
             V2ComingUpRow(width: width, gutter: gutter, wide: true, topGap: 22, leadArt: $comingUpArt)
                 .foldRow("home-comingup")
-            V2RecentSection(data: data, width: width, gutter: gutter, wide: true) { open(.recent(lastMonth: data.recentCount > 0)) }
+            V2RecentSection(data: data, arrived: arrived, width: width, gutter: gutter, wide: true,
+                            page: $recentPage, seeAll: openTimeline)
                 .padding(.top, 26)
                 .foldRow("home-recent")
             V2HomeKinds(data: data, open: open)

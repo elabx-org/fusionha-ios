@@ -75,6 +75,11 @@ extension APIClient {
                                                   ("item_id", itemId.map(String.init))]))
     }
 
+    /// One page of imports, newest first (Home's Recently arrived).
+    public func importsPage(page: Int = 1, pageSize: Int = RecentArrivals.pageSize) async throws -> HistoryPage {
+        try await get("/api/v1/history", query: q([("page", "\(page)"), ("page_size", "\(pageSize)"), ("event_type", "imported")]))
+    }
+
     public func historySparkline(days: Int = 14) async throws -> [HistorySparklineDay] {
         try await get("/api/v1/history/sparkline", query: [URLQueryItem(name: "days", value: "\(days)")])
     }

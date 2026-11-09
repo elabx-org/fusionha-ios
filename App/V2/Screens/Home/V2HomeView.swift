@@ -34,6 +34,12 @@ struct V2HomeView: View {
     @State private var anchor = FoldAnchorTracker()
     /// A kept All titles was put back once for this Home (relaunch).
     @State private var restored = false
+    /// Recently arrived (imports from History) and the timeline page shown,
+    /// kept across launches; the full timeline page is pushed over Home.
+    @State private var arrivals = V2ArrivalsFeed()
+    @State private var arrived: [V2TimelineEntry] = []
+    @AppStorage("v2.home.recentPage") private var recentPageRaw = 0
+    @State private var timelineShown = false
 
     /// Flat open beside an open title: the list pane takes the title's
     /// palette with no art of its own (the Library's rule, slice S5).
@@ -49,7 +55,11 @@ struct V2HomeView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     Color.clear.frame(height: 0).id("home-top")
-                    V2HomeContent(data: data, held: held, width: width, comingUpArt: $comingUpArt, open: openAllTitles)
+                    V2HomeContent(data: data, held: held, width: width, comingUpArt: $comingUpArt,
+                                  arrived: arrived, recentPage: recentPage, open: openAllTitles) { page in
+                        recentPage.wrappedValue = page
+                        timelineShown = true
+                    }
                 }
                 .padding(.top, 4)
                 .padding(.bottom, Theme.pageBottom)
@@ -95,6 +105,12 @@ struct V2HomeView: View {
         // Home spans both pages of a Spread; All titles keeps the grid's rule.
         .spreadSpansBothPages(.library, !model.allTitles.wanted || density != "compact")
         .navigationDestination(isPresented: allTitlesBinding) { V2LibraryView(entry: entry) }
+        .navigationDestination(isPresented: $timelineShown) { V2RecentTimelinePage(feed: arrivals, page: recentPage) }
+        .task { await arrivals.watch(model.client) }
+        .onChange(of: ArrivedKey(rows: arrivals.rows, version: model.libraryVersion), initial: true) {
+            let library = Dictionary(model.library.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+            arrived = V2TimelineEntries.arrived(arrivals.rows, library: library)
+        }
         .task { await restoreKept() }
         // While Home is on screen with the push kept (it went: the page covers Home).
         .task(id: model.allTitles.wanted) { await keepPushed() }
@@ -116,6 +132,10 @@ struct V2HomeView: View {
         Binding { model.allTitles.presented } set: { shown in
             if model.allTitles.stackSet(shown) { forgetAllTitles() }
         }
+    }
+
+    private var recentPage: Binding<V2TimelinePage> {
+        Binding { V2TimelinePage(rawValue: recentPageRaw) ?? .added } set: { recentPageRaw = $0.rawValue }
     }
 
     private func openAllTitles(_ how: V2AllTitlesEntry) {
@@ -211,6 +231,11 @@ struct V2HomeView: View {
     /// Once per launch, screenshots forget a kept All titles (each shot
     /// starts on Home unless it asks for All titles).
     @MainActor private static var screenshotReset = false
+
+    private struct ArrivedKey: Equatable {
+        let rows: [ArrivalRow]
+        let version: Int
+    }
 
     private struct DataKey: Equatable {
         let version: Int

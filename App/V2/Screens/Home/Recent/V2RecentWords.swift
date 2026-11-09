@@ -21,6 +21,19 @@ enum V2RecentWords {
         }
     }
 
+    /// The more row's "since …": "today", "yesterday", "Saturday", "3 Nov".
+    static func since(_ date: Date?, now: Date = Date(), calendar: Calendar = .current) -> String {
+        guard let date else { return "earlier" }
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date),
+                                           to: calendar.startOfDay(for: now)).day ?? 0
+        switch days {
+        case ..<1: return "today"
+        case 1: return "yesterday"
+        case 2...6: return date.formatted(.dateTime.weekday(.wide))
+        default: return date.formatted(.dateTime.day().month(.abbreviated))
+        }
+    }
+
     static func note(_ item: MediaItem, now: Date = Date(), calendar: Calendar = .current) -> String {
         let added = added(item)
         if let added, calendar.isDate(added, inSameDayAs: now) {

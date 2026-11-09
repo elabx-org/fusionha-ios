@@ -8,7 +8,7 @@ import FusionhaKit
 /// design element: the tiles sit the ordinary 20pt from it and nothing is
 /// kept for the hinge. In book pose the spine sits on the fold.
 struct V2RecentZipper: View {
-    let items: [MediaItem]
+    let entries: [V2TimelineEntry]
     @Environment(\.pagePalette) private var page
     @State private var panes: FoldColumns.Panes?
     @State private var width: CGFloat = 0
@@ -26,12 +26,12 @@ struct V2RecentZipper: View {
 
     var body: some View {
         let ink = page?.ink ?? Theme.txt
-        let total = items.isEmpty ? 0 : CGFloat(items.count - 1) * step + tileHeight
+        let total = entries.isEmpty ? 0 : CGFloat(entries.count - 1) * step + tileHeight
         ZStack(alignment: .topLeading) {
             LinearGradient(colors: [ink.opacity(0.28), ink.opacity(0.06)], startPoint: .top, endPoint: .bottom)
                 .frame(width: 2, height: max(0, total - 40))
                 .offset(x: spine - 1)
-            ForEach(Array(items.enumerated()), id: \.element.id) { k, item in
+            ForEach(Array(entries.enumerated()), id: \.element.id) { k, entry in
                 let left = k.isMultiple(of: 2)
                 let y = CGFloat(k) * step
                 Rectangle()
@@ -43,7 +43,7 @@ struct V2RecentZipper: View {
                     .frame(width: 10, height: 10)
                     .background(Circle().fill(ink.opacity(0.12)).padding(-4))
                     .offset(x: spine - 5, y: y + dotY)
-                V2RecentTile(item: item, width: tile, leading: left)
+                V2RecentTile(entry: entry, width: tile, leading: left)
                     .offset(x: left ? lead - tile : lead + gap, y: y)
             }
         }
@@ -56,7 +56,7 @@ struct V2RecentZipper: View {
 /// One zipper tile: the day, the 16:9 art, the title and note with the
 /// tickets at the far end. Slides out from the spine when it comes into view.
 struct V2RecentTile: View {
-    let item: MediaItem
+    let entry: V2TimelineEntry
     let width: CGFloat
     /// Left of the spine (its day label aligns to the spine side).
     let leading: Bool
@@ -65,10 +65,12 @@ struct V2RecentTile: View {
     @Environment(\.motionEnabled) private var motion
     @State private var shown = false
 
+    private var item: MediaItem { entry.item }
+
     var body: some View {
         Button { model.open(item.id) } label: {
             VStack(alignment: .leading, spacing: 0) {
-                Text(V2RecentWords.day(V2RecentWords.added(item)).uppercased())
+                Text(entry.day.uppercased())
                     .font(.system(size: 11, weight: .semibold))
                     .tracking(0.6)
                     .foregroundStyle(page?.inkMuted ?? Theme.mut)
@@ -82,7 +84,7 @@ struct V2RecentTile: View {
                             .font(.system(size: 16, weight: .semibold))
                             .tracking(-0.2)
                             .foregroundStyle(page?.ink ?? Theme.txt)
-                        Text(V2RecentWords.note(item))
+                        Text(entry.note)
                             .font(.system(size: 13))
                             .foregroundStyle(page?.inkMuted ?? Theme.mut)
                     }
