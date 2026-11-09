@@ -56,10 +56,13 @@ struct AddTitleSheet: View {
     /// The open Duo's two pages (`AddTitleSheet+Spread`): Find on the left,
     /// the pick's setup on the right. `nil`: one flow, search then configure.
     @State var foldPanes: FoldColumns.Panes?
-    /// The right page shows the top result on its own, not a pick.
+    /// Carried across a fold (`AddFoldCarry`); always false now that the
+    /// open Duo waits for a tap before opening a setup.
     @State var autoPicked = false
     /// A pick waiting on "Discard this title's setup?".
     @State var pendingPick: AddPick?
+    /// The setup's Close waiting on "Discard this title's setup?".
+    @State var pendingClose = false
 
     enum LoadState { case idle, loading, loaded, failed }
 
@@ -98,7 +101,6 @@ struct AddTitleSheet: View {
         .onChange(of: tvdbConfigured) { if !tvdbConfigured { source = .tmdb } }
         .task(id: kind) { await loadTrending() }
         .task(id: "\(term)|\(kind.rawValue)|\(source == .tvdb)") { await search() }
-        .task(id: spreadCandidateKey) { await previewTopResult() }
         .task { settings = try? await model.client?.addSettings() }
     }
 

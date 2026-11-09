@@ -153,6 +153,8 @@ for theme in dark daylight; do
   WAIT=14 FRAME=folded shoot "calendar-folded$SUF" $CAL $T
   WAIT=14 shoot "search$SUF" $SRCH $T
   WAIT=14 FRAME=folded shoot "search-folded$SUF" $SRCH $T
+  # A result tapped: its preview slides in, the results move to the left page.
+  WAIT=18 shoot "search-picked$SUF" $SRCH $T SIMCTL_CHILD_FUSIONHA_SCREENSHOT_SEARCH_PREVIEW=438631
   WAIT=14 shoot "collection$SUF" $COLL $T
   WAIT=14 FRAME=folded shoot "collection-folded$SUF" $COLL $T
 done

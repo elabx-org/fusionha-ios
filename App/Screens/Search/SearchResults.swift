@@ -7,6 +7,7 @@ import FusionhaKit
 struct SearchResults: View {
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
+    @Environment(\.spread) private var spread
     let term: String
     let kind: SearchKind
     let search: UnifiedSearchModel
@@ -22,19 +23,33 @@ struct SearchResults: View {
         let owned = ownedRows
         let hits = addHits
         let exact = lanes.exact.filter(kind.matches)
-        VStack(alignment: .leading, spacing: 0) {
-            if !exact.isEmpty && !stale {
-                SearchLaneLabel(text: "Exact match", count: exact.count)
-                SearchLaneCard {
-                    ForEach(Array(exact.enumerated()), id: \.element.id) { i, result in
-                        SearchAddRow(hit: UnifiedAddHit(tmdb: result), actions: actions).searchStagger(i)
-                    }
-                }
-                .transition(.searchRow(motion: motion))
+        if spread.spans {
+            // Spanning both pages: your library on the left half, Available to add on the right.
+            FoldSpanRow(spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) { leadLanes(exact: exact, owned: owned) }
+            } trailing: {
+                VStack(alignment: .leading, spacing: 0) { addLane(hits) }
             }
-            if !model.requestScoped && !lanes.libraryForbidden { ownedLane(owned) }
-            addLane(hits)
+        } else {
+            VStack(alignment: .leading, spacing: 0) {
+                leadLanes(exact: exact, owned: owned)
+                addLane(hits)
+            }
         }
+    }
+
+    @ViewBuilder
+    private func leadLanes(exact: [MediaSearchResult], owned: (rows: [MediaItem], total: Int)) -> some View {
+        if !exact.isEmpty && !stale {
+            SearchLaneLabel(text: "Exact match", count: exact.count)
+            SearchLaneCard {
+                ForEach(Array(exact.enumerated()), id: \.element.id) { i, result in
+                    SearchAddRow(hit: UnifiedAddHit(tmdb: result), actions: actions).searchStagger(i)
+                }
+            }
+            .transition(.searchRow(motion: motion))
+        }
+        if !model.requestScoped && !lanes.libraryForbidden { ownedLane(owned) }
     }
 
     // MARK: In your library

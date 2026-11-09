@@ -10,9 +10,10 @@ import FusionhaKit
 /// you type ("Available to add", deduped and merged, `UnifiedSearchModel`). The field is focused when
 /// the tab opens on the phone; wide, it opens on Trending.
 ///
-/// On the open iPhone Duo: in a Spread the results stay on the left page and a
-/// tapped result's preview opens on the right page; in the Web layout the list
-/// stays before the fold (the web's palette would sit on it).
+/// On the open iPhone Duo, as the Library: with nothing picked Search spans
+/// both pages (your library on the left half, Available to add on the right);
+/// a tapped result's preview slides in on the right and the results move to
+/// the left page. In the Web layout the list stays before the fold.
 struct SearchTabView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.spread) private var spread
@@ -34,10 +35,6 @@ struct SearchTabView: View {
 
     private var trimmed: String { model.searchQuery.trimmingCharacters(in: .whitespaces) }
     private var kind: SearchKind { SearchKind(rawValue: kindRaw) ?? .all }
-    /// In a Spread with nothing open the kind filter sits on the right page.
-    private var pickerOnRightPage: Bool {
-        spread.isActive && model.spreadPreview == nil && model.presentedItem == nil
-    }
 
     private var filter: Binding<UnifiedSearchSourceFilter> {
         Binding { UnifiedSearchSourceFilter(rawValue: sourcesRaw) ?? .all } set: { sourcesRaw = $0.rawValue }
@@ -52,9 +49,7 @@ struct SearchTabView: View {
                     SearchBeforeTyping(kind: kind, search: search, recent: recent.terms,
                                        run: { model.searchQuery = $0 }, forget: forget)
                 } else {
-                    if !pickerOnRightPage {
-                        SearchKindPicker().padding(.horizontal, Theme.pageGutter).padding(.bottom, 2)
-                    }
+                    picker
                     SearchResults(term: trimmed, kind: kind, search: search, filter: filter, actions: actions)
                 }
             }
@@ -87,8 +82,9 @@ struct SearchTabView: View {
         .onChange(of: scope) { _, picked in
             if picked == .library { handToLibrary() }
         }
-        // Before you type, Trending spans both pages of a Spread.
-        .spreadSpansBothPages(.search, trimmed.isEmpty)
+        // As the Library (owner, 2026-11-09): nothing picked, Search spans
+        // both pages; a tapped result slides in and the results move left.
+        .spreadSpansBothPages(.search)
         // A result picked: the words join the recent searches and the keyboard
         // goes, so closing the result comes back to the results, not the keyboard.
         .onChange(of: store.preview) { if store.preview != nil { picked() } }
@@ -123,6 +119,23 @@ struct SearchTabView: View {
         .task(id: UnifiedSearchModel.key(trimmed, kind)) {
             await search.run(trimmed, kind: kind, source: model.client.map { ServerUnifiedSearchSource(client: $0, tmdb: .always) },
                              motion: motion)
+        }
+    }
+
+    /// The kind filter: on the right half while the results span both pages
+    /// (where "Available to add" sits), above the results otherwise.
+    @ViewBuilder
+    private var picker: some View {
+        if spread.spans {
+            FoldSpanRow {
+                Color.clear.frame(height: 1)
+            } trailing: {
+                SearchKindPicker()
+            }
+            .padding(.horizontal, Theme.pageGutter)
+            .padding(.bottom, 2)
+        } else {
+            SearchKindPicker().padding(.horizontal, Theme.pageGutter).padding(.bottom, 2)
         }
     }
 

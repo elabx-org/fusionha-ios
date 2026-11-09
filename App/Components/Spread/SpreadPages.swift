@@ -12,8 +12,6 @@ struct SpreadRightPage: View {
         case .you:
             // Account (S6, first part): Watchlists & lists or Sign-in methods.
             AccountRightPage()
-        case .search:
-            SearchRightPageHint()
         case .activity:
             // Activity (F6): the first download that needs you, else the first moving one.
             ActivityRightPage()
