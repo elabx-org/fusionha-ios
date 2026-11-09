@@ -77,10 +77,18 @@ struct AddTitleSheet: View {
                 singleStack
             }
         }
-        .onGeometryChange(for: FoldColumns.Panes?.self) { [flat = look?.flatSpread] proxy in
-            DiscoverFold.requestPanes(width: Double(proxy.size.width), fold: GridFold(proxy).foldRange)
-                ?? flat?(Double(proxy.size.width), Double(proxy.size.height))
-        } action: { foldPanes = $0 }
+        // Measured under the keyboard: the keyboard shortening the sheet must
+        // not fold the spread into one stack. That rebuilt the search field,
+        // dropped its focus, hid the keyboard and spread again, in a loop
+        // (owner's recording, open Duo, build 1097).
+        .background {
+            Color.clear
+                .ignoresSafeArea(.keyboard)
+                .onGeometryChange(for: FoldColumns.Panes?.self) { [flat = look?.flatSpread] proxy in
+                    DiscoverFold.requestPanes(width: Double(proxy.size.width), fold: GridFold(proxy).foldRange)
+                        ?? flat?(Double(proxy.size.width), Double(proxy.size.height))
+                } action: { foldPanes = $0 }
+        }
         .presentationDetents([.fraction(0.88), .large], selection: $detent)
         // On the open Duo's pages: a title picked from search and mid-setup asks before the pull-down closes it.
         .duoPageDismiss(setupAtRisk ? .confirm("Discard this title's setup?") : .allowed)
