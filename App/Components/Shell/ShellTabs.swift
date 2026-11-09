@@ -16,6 +16,21 @@ struct ShellTabs: View {
     let downloadsBarAllowed: Bool
     /// What needs you on the queue, kept off the 2s poll's re-renders.
     @State private var needYou = 0
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// The tabs' own width (the list pane's on the open Duo).
+    @State private var width: CGFloat = 0
+
+    /// v2 in the open Duo's narrow list pane (owner 2026-11-09, option C):
+    /// the bar takes the phone's form, so Search stands apart as its own
+    /// circle, and the tabs show their icons only (the five labels were cut
+    /// off at about 290pt). The phone and the folded Duo keep their labels.
+    private var narrowColumn: Bool {
+        chrome != nil && splitShown && sizeClass == .regular && width > 0 && width < 420
+    }
+
+    /// A tab's title: empty in the narrow column, where the icon stands alone
+    /// and VoiceOver still reads the name (`.accessibilityLabel`).
+    private func title(_ name: String) -> String { narrowColumn ? "" : name }
 
     /// Activity's badge: the whole queue (v1) or what needs you (v2).
     private var activityBadge: Int {
@@ -29,30 +44,42 @@ struct ShellTabs: View {
         let selection = Binding(get: { model.tab }, set: { model.tab = $0 })
         return TabView(selection: selection) {
             if model.requestScoped {
-                Tab("Discover", image: "nav-discover", value: AppTab.discover) { TabRoot { DiscoverView() } }
-                Tab("My requests", image: "nav-requests", value: AppTab.requests) { TabRoot { RequestsView() } }
-                Tab("You", image: "nav-you", value: AppTab.you) { TabRoot { YouView() } }
+                Tab(title("Discover"), image: "nav-discover", value: AppTab.discover) { TabRoot { DiscoverView() } }
+                    .accessibilityLabel(Text("Discover"))
+                Tab(title("My requests"), image: "nav-requests", value: AppTab.requests) { TabRoot { RequestsView() } }
+                    .accessibilityLabel(Text("My requests"))
+                Tab(title("You"), image: "nav-you", value: AppTab.you) { TabRoot { YouView() } }
+                    .accessibilityLabel(Text("You"))
                 Tab(value: AppTab.search, role: .search) { TabRoot { SearchTabView() } }
             } else {
                 if let title = libraryRoot?.title, let symbol = libraryRoot?.systemImage {
-                    Tab(title, systemImage: symbol, value: AppTab.library) { TabRoot { LibraryTabRoot() } }
+                    Tab(self.title(title), systemImage: symbol, value: AppTab.library) { TabRoot { LibraryTabRoot() } }
+                        .accessibilityLabel(Text(title))
                 } else {
-                    Tab("Library", image: "nav-library", value: AppTab.library) { TabRoot { LibraryTabRoot() } }
+                    Tab(title("Library"), image: "nav-library", value: AppTab.library) { TabRoot { LibraryTabRoot() } }
+                        .accessibilityLabel(Text("Library"))
                 }
-                Tab("Discover", image: "nav-discover", value: AppTab.discover) { TabRoot { DiscoverView() } }
+                Tab(title("Discover"), image: "nav-discover", value: AppTab.discover) { TabRoot { DiscoverView() } }
+                    .accessibilityLabel(Text("Discover"))
                     // `needs_you`, capped at 99+ like the web's badge.
                     .badge(BadgeCount.text(model.requestsBadge).map { Text(verbatim: $0) })
-                Tab("Calendar", image: "nav-calendar", value: AppTab.calendar) { TabRoot { CalendarView() } }
-                Tab("Activity", image: "nav-activity", value: AppTab.activity) { TabRoot { ActivityView() } }
+                Tab(title("Calendar"), image: "nav-calendar", value: AppTab.calendar) { TabRoot { CalendarView() } }
+                    .accessibilityLabel(Text("Calendar"))
+                Tab(title("Activity"), image: "nav-activity", value: AppTab.activity) { TabRoot { ActivityView() } }
+                    .accessibilityLabel(Text("Activity"))
                     .badge(BadgeCount.text(activityBadge).map { Text(verbatim: $0) })
                 Tab(value: AppTab.search, role: .search) { TabRoot { SearchTabView() } }
             }
         }
+        // The bar's form only: the pages keep the display's real size class (`TabRoot`).
+        .environment(\.horizontalSizeClass, narrowColumn ? .compact : sizeClass)
+        .environment(\.tabContentSizeClass, sizeClass)
+        .onGeometryChange(for: CGFloat.self) { $0.size.width.rounded() } action: { width = $0 }
         .tint(Theme.indigo)
         // Count badges in the accent, as on the web, not the system red; the
         // shell's size re-tints them after the bar changes axis. v2's
         // Activity count is what needs you, in orange.
-        .tabBadgeTint(key: "\(model.requestsBadge)-\(activityBadge)-\(model.tab)-\(Int(fold.size.width))x\(Int(fold.size.height))-\(splitShown)",
+        .tabBadgeTint(key: "\(model.requestsBadge)-\(activityBadge)-\(model.tab)-\(Int(fold.size.width))x\(Int(fold.size.height))-\(splitShown)-\(narrowColumn)",
                       fills: chrome?.activityBadgeNeedsYou == true ? ["Activity": Theme.stuck] : [:])
         .tabBarMinimizeBehavior(.onScrollDown)
         // The downloads bar (iOS-only): while the queue has items, off Activity,

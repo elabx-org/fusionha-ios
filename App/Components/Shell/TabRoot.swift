@@ -12,6 +12,7 @@ import SwiftUI
 /// never inside this one.
 struct TabRoot<Content: View>: View {
     @ViewBuilder var content: Content
+    @Environment(\.tabContentSizeClass) private var contentClass
 
     var body: some View {
         NavigationStack {
@@ -19,5 +20,16 @@ struct TabRoot<Content: View>: View {
                 // Room for the downloads pill where it floats over the tab (D3).
                 .reservesDownloadsPillSpace()
         }
+        // The shell may give the tab bar a compact form (`ShellTabs`); the
+        // page keeps the display's own size class.
+        .transformEnvironment(\.horizontalSizeClass) { value in
+            if let contentClass { value = contentClass }
+        }
     }
+}
+
+extension EnvironmentValues {
+    /// The display's real horizontal size class, for a tab's pages while the
+    /// shell gives its tab bar another one (`ShellTabs.narrowColumn`).
+    @Entry var tabContentSizeClass: UserInterfaceSizeClass? = nil
 }
