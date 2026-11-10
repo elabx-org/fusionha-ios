@@ -20,6 +20,9 @@ extension PerfProbe {
 
     func runSession(warmup: Double) async {
         UserDefaults.standard.set(true, forKey: "v2.splitHandle.used")
+        // FUSIONHA_PERF_POSTER=1: the same session on the poster title page.
+        UserDefaults.standard.set(ProcessInfo.processInfo.environment["FUSIONHA_PERF_POSTER"] == "1",
+                                  forKey: "v2.titlePage.posterLook")  // TitleLook.posterKey (v2 only)
         model.pendingAllTitles = true  // v2: the grid is All titles, over Home
         model.tab = .library
         let start = CACurrentMediaTime()
