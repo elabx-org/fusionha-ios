@@ -37,7 +37,11 @@ struct V2TitleHero: View {
                             .frame(maxHeight: .infinity, alignment: .bottom)
                     }
                 }
+                // Clipped inside its extended frame, so the art runs under the
+                // Duo's system column and the glass bar floats over it (v1
+                // c3c9e0d8: clipping the hero's own frame left a dark strip).
                 .clipped()
+                .ignoresSafeArea(.container, edges: .horizontal)
                 .accessibilityHidden(true)
             }
             .overlay(alignment: .bottomLeading) {

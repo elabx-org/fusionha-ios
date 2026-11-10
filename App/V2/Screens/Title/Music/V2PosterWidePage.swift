@@ -105,6 +105,7 @@ struct V2PosterWideHero: View {
             V2HeroShade(light: light, tint: page?.tint)
         }
         .clipped()
+        .ignoresSafeArea(.container, edges: .horizontal)
         .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.7),
                                      .init(color: .clear, location: 1)],
                              startPoint: .top, endPoint: .bottom))
