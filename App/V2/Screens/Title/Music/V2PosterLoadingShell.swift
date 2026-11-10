@@ -9,6 +9,7 @@ import FusionhaKit
 /// `TitleLook.posterKey`.
 struct V2PosterLoadingShell: View {
     @Environment(\.v2TitleBarInset) private var barInset
+    @Environment(\.detailInColumn) private var inColumn
     let seed: MediaItem?
     let width: CGFloat
     let wide: Bool
@@ -25,7 +26,9 @@ struct V2PosterLoadingShell: View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear
                 .frame(maxWidth: .infinity)
-                .frame(height: V2PosterHero.height(width: width))
+                .containerRelativeFrame(.vertical) { length, _ in
+                    V2PosterHero.height(width: width, container: length, inColumn: inColumn)
+                }
                 .background { V2PosterHeroArt(poster: seed?.posterUrl, backdrop: seed?.backdropUrl) }
                 .overlay(alignment: .bottomLeading) {
                     heading(size: 30, centred: false)

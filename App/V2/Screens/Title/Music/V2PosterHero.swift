@@ -10,12 +10,22 @@ struct V2PosterHero: View {
     /// The page's width; the hero's height follows the poster's shape.
     let width: CGFloat
 
-    static func height(width: CGFloat) -> CGFloat { min(max(width, 300) * 1.5, 680) }
+    @Environment(\.detailInColumn) private var inColumn
+
+    /// The poster's own 2:3, never taller than 680pt. Beside the list on the
+    /// open Duo it also stops at 62% of the page, so the summary shows under
+    /// it: at its full height it filled the whole right page.
+    static func height(width: CGFloat, container: CGFloat, inColumn: Bool) -> CGFloat {
+        let full = min(max(width, 300) * 1.5, 680)
+        return inColumn ? min(full, max(300, container * 0.62)) : full
+    }
 
     var body: some View {
         Color.clear
             .frame(maxWidth: .infinity)
-            .frame(height: Self.height(width: width))
+            .containerRelativeFrame(.vertical) { length, _ in
+                Self.height(width: width, container: length, inColumn: inColumn)
+            }
             .background { V2PosterHeroArt(poster: detail.posterUrl, backdrop: detail.backdropUrl) }
             .overlay(alignment: .bottomLeading) {
                 V2TitleHeading(detail: detail, size: 30)
