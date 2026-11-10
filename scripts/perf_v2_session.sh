@@ -17,7 +17,7 @@ set -u
 APP=$1
 OUT=$2
 BUNDLE=org.elabx.fusionha.v2
-PORT=8768
+PORT=${PERF_PORT:-8768}
 SCRIPT=${PERF_SCRIPT:-v2session}
 S=http://127.0.0.1:$PORT
 mkdir -p "$OUT"
@@ -25,8 +25,13 @@ mkdir -p "$OUT"
 python3 scripts/mock_server.py $PORT perf > "$OUT/v2session-mock.log" 2>&1 &
 MOCK=$!
 trap 'kill $MOCK 2> /dev/null' EXIT
-sleep 2
-curl -s -X POST "$S/__mock/big-library?on=1&art=unique"; echo
+# The big library must be on before the app launches (a second session in
+# the same job once measured an almost empty one): wait for the mock.
+for _ in $(seq 1 20); do
+  curl -sf -X POST "$S/__mock/big-library?on=1&art=unique" && break
+  sleep 1
+done
+echo
 
 UDID=$(xcrun simctl list devices available -j | python3 -c '
 import json, sys

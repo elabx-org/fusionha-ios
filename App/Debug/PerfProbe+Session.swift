@@ -63,6 +63,10 @@ extension PerfProbe {
 
         let rest = sessionRest()
         await seamDrag("\(p).seam.full", dx: -rest + 30, velocity: -900)
+        // The list hidden (the owner's usual): a title closes and opens over
+        // the full-width Library, which should never re-flow.
+        await measureClose(label: "\(p).hidden.close")
+        await measureOpen(movie, label: "\(p).hidden.open")
         await seamDrag("\(p).seam.split", dx: rest - 30, velocity: 900)
         await measureOpen(series, label: "\(p).swap.series")
         await phase("\(p).swap.idle", 2)

@@ -983,7 +983,7 @@ jobs:
       - name: v2 owner session perf, poster title page on
         if: always() && env.SCOPE == 'v2session'
         timeout-minutes: 20
-        run: PERF_POSTER=1 scripts/perf_v2_session.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf/poster
+        run: PERF_POSTER=1 PERF_PORT=8769 scripts/perf_v2_session.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf/poster
 
       - name: v2 owner session report, poster title page on
         if: always() && env.SCOPE == 'v2session'
@@ -1056,6 +1056,7 @@ jobs:
             perf/*.json
             perf/*.log
             perf/*.out
+            perf/poster/*.log
             perf/*.png
             perf/*.jpg
             perf/*.mp4
