@@ -8,6 +8,8 @@ import FusionhaKit
 /// (option A: the TVDB mark + "only") and opens the Add sheet on its TVDB id.
 struct SearchAddRow: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.browseLook) private var look
+    @Environment(\.paneSize) private var pane
     let hit: UnifiedAddHit
     let actions: SearchAddActions
 
@@ -17,7 +19,7 @@ struct SearchAddRow: View {
     var body: some View {
         Button(action: primary) {
             SearchRow(posterUrl: hit.posterUrl, dot: dot, title: hit.title,
-                      meta: SearchRowText.meta(year: hit.year, kind: kindName), picked: picked) {
+                      meta: meta, picked: picked) {
                 if hit.isTvdbOnly {
                     HStack(spacing: 4) {
                         TvdbLogo(size: 10, label: "TheTVDB")
@@ -25,7 +27,7 @@ struct SearchAddRow: View {
                     }
                 }
             } accessory: {
-                rating
+                if !narrow { rating }
             } actions: {
                 HStack(spacing: 0) {
                     ForEach(rowActions, id: \.self) { action in
@@ -39,6 +41,17 @@ struct SearchAddRow: View {
             }
         }
         .buttonStyle(SearchRowStyle())
+    }
+
+    /// v2 in a narrow column: the rating rides in the meta line.
+    private var narrow: Bool { look != nil && pane.width < SearchRowText.wideRow }
+
+    private var meta: String {
+        let base = SearchRowText.meta(year: hit.year, kind: kindName)
+        guard narrow else { return base }
+        if let vote = hit.tmdb?.voteAverage, vote > 0 { return base + " · ★ " + String(format: "%.1f", vote) }
+        if let soon = upcoming { return base + " · " + soon }
+        return base
     }
 
     @ViewBuilder

@@ -15,6 +15,7 @@ struct SearchRow<Tag: View, Accessory: View, Actions: View>: View {
     /// A third line under the meta line (v2: the owned title's tickets).
     var footer: AnyView? = nil
     @Environment(\.pagePalette) private var page
+    @Environment(\.browseLook) private var look
     @ViewBuilder var tag: Tag
     @ViewBuilder var accessory: Accessory
     @ViewBuilder var actions: Actions
@@ -28,7 +29,8 @@ struct SearchRow<Tag: View, Accessory: View, Actions: View>: View {
                 Text(title)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(BrowseInks(page: page).ink)
-                    .lineLimit(1)
+                    // v2: two lines, so a narrow column keeps the name readable.
+                    .lineLimit(look != nil ? 2 : 1)
                 HStack(spacing: 6) {
                     Circle().fill(dot).frame(width: 7, height: 7)
                     Text(meta).font(.system(size: 12.5)).foregroundStyle(BrowseInks(page: page).muted).lineLimit(1)
@@ -49,6 +51,11 @@ struct SearchRow<Tag: View, Accessory: View, Actions: View>: View {
 }
 
 enum SearchRowText {
+    /// v2: from this column width a row has room for the "+ Add" capsule and
+    /// the rating beside its title; narrower (the folded Duo, a phone), Add
+    /// is the round + and the rating joins the meta line.
+    static let wideRow: CGFloat = 430
+
     /// "2024 · Movie", the year optional.
     static func meta(year: Int?, kind: String) -> String {
         [year.map { String($0) }, kind].compactMap { $0 }.joined(separator: " · ")
@@ -67,7 +74,7 @@ struct SearchRowButton: View {
     @Environment(\.paneSize) private var pane
 
     var body: some View {
-        if look != nil && kind == .add && pane.width >= 360 {
+        if look != nil && kind == .add && pane.width >= SearchRowText.wideRow {
             Button(action: action) {
                 Label("Add", systemImage: "plus")
                     .font(.system(size: 13, weight: .semibold))

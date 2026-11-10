@@ -65,6 +65,9 @@ struct SearchTabView: View {
         }
         // The open Duo's keyboard covers half the results: any scroll puts it away.
         .scrollDismissesKeyboard(duoOpen ? .immediately : .interactively)
+        // Rows pass under the floating field and scopes: the hard edge keeps
+        // their titles from reading through the glass.
+        .scrollEdgeEffectStyle(.hard, for: .top)
         // The rows' Add fits its word only where the list has room (v2).
         .publishesPaneSize()
         .background { if look == nil { Theme.bg.ignoresSafeArea() } }
