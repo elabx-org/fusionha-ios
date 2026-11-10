@@ -158,6 +158,10 @@ struct V2SplitHandle: View {
     private func begin() -> (x: Double, moved: Bool) {
         spring.cancel()
         hideHint()
+        // From full width over a parked list: the list keeps its width under
+        // the moving title (re-flowing it to the split here hitched the first
+        // frame of every drag, and twice for a drag let go where it started).
+        if context.fullWidth, context.listParked, seam.live == nil { seam.listFull = true }
         let from = x
         zone = DuoSeam.zone(from, width: width, split: rest)
         return (from, false)

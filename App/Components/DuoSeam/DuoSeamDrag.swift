@@ -40,6 +40,10 @@ struct DuoSeamContext {
     let rest: CGFloat
     /// The list is hidden (the sidebar button, or the handle at full width).
     let fullWidth: Bool
+    /// The hidden list is parked at the display's width (`ShellSplit.primaryParked`):
+    /// a drag that starts there moves the title over the list as it lies, as
+    /// opening and closing do, so nothing re-flows until the seam lands on the split.
+    let listParked: Bool
     /// Hide (true) or show (false) the list, as the sidebar button does.
     let setFullWidth: @MainActor (Bool) -> Void
     /// Close the title, as Close does.
@@ -57,6 +61,7 @@ struct DuoSeamContext {
         width = fold.size.width
         rest = (fold.size.width * CGFloat(share)).rounded()
         fullWidth = toggle.hidden
+        listParked = split.primaryParked
         setFullWidth = { hidden in if hidden != toggle.hidden { toggle.toggle() } }
         close = { [model] in
             model.presentedItem = nil
