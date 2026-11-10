@@ -20,6 +20,9 @@ struct V2HomeView: View {
     @Environment(\.motionEnabled) private var motion
     @Environment(\.duoOpen) private var duoOpen
     @Environment(\.bookPose) private var bookPose
+    @Environment(\.collapsedTabs) private var tabs
+    /// The Duo's column: the trailing safe-area inset.
+    @State private var column: CGFloat = 0
     @AppStorage("fusionha.library.density") private var density = "grid"
     /// All titles was open in this window (restored on relaunch).
     @SceneStorage("v2.home.allTitles") private var allTitlesKept = false
@@ -49,13 +52,21 @@ struct V2HomeView: View {
         return PageArtSource.url(backdrop: item.backdropUrl, poster: item.posterUrl)
     }
 
+    /// Collapsed tabs (owner, build 1132): Home runs under the Duo's column
+    /// to the display's edge. The lines that sit beside the clock and the
+    /// arrow at rest (the heading, Needs you, Coming up's menu) keep clear of
+    /// them (`V2HomeContent.columnReserve`); the rows below scroll under the
+    /// glass. Book pose keeps its pages either side of the fold.
+    private var fullWidth: Bool { tabs.on && !bookPose }
+
     var body: some View {
         let _ = PerfCount.hit("V2HomeView.body")
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
                     Color.clear.frame(height: 0).id("home-top")
-                    V2HomeContent(data: data, held: held, width: width, comingUpArt: $comingUpArt,
+                    V2HomeContent(data: data, held: held, width: width, columnReserve: fullWidth ? column : 0,
+                                  comingUpArt: $comingUpArt,
                                   arrived: arrived, recentPage: recentPage, open: openAllTitles) { page in
                         recentPage.wrappedValue = page
                         timelineShown = true
@@ -64,7 +75,9 @@ struct V2HomeView: View {
                 .padding(.top, 4)
                 .padding(.bottom, Theme.pageBottom)
             }
+            .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+            .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
             .readsScreenCentre()
             .refreshable { await model.loadLibrary() }
             .onScrollGeometryChange(for: CGFloat.self) { geo in

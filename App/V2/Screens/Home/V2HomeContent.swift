@@ -13,6 +13,9 @@ struct V2HomeContent: View {
     let data: V2HomeData
     let held: Set<Int>
     let width: CGFloat
+    /// The Duo's column, when Home runs under it (collapsed tabs): what the
+    /// page's top lines keep clear on the trailing side.
+    var columnReserve: CGFloat = 0
     @Binding var comingUpArt: URL?
     /// Recently arrived's rows and the timeline page shown (`V2RecentSection`).
     let arrived: [V2TimelineEntry]
@@ -46,11 +49,14 @@ struct V2HomeContent: View {
     private var narrowBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             heading.padding(.horizontal, gutter).padding(.top, 4)
+                .padding(.trailing, columnReserve)
                 .foldRow(FoldAnchorTop.header)
             if !data.attention.isEmpty {
                 attention.padding(.horizontal, gutter).padding(.top, 14)
+                    .padding(.trailing, columnReserve)
             }
-            V2ComingUpRow(width: width, gutter: gutter, wide: false, topGap: 22, leadArt: $comingUpArt)
+            V2ComingUpRow(width: width, gutter: gutter, wide: false, topGap: 22, headTrailing: columnReserve,
+                          leadArt: $comingUpArt)
                 .foldRow("home-comingup")
             V2RecentSection(data: data, arrived: arrived, width: width, gutter: gutter, wide: false,
                             page: $recentPage, seeAll: openTimeline)
@@ -79,8 +85,10 @@ struct V2HomeContent: View {
                     .frame(maxWidth: .infinity, alignment: .topTrailing)
             }
             .padding(.top, 8)
+            .padding(.trailing, columnReserve)
             .foldRow(FoldAnchorTop.header)
-            V2ComingUpRow(width: width, gutter: gutter, wide: true, topGap: 22, leadArt: $comingUpArt)
+            V2ComingUpRow(width: width, gutter: gutter, wide: true, topGap: 22, headTrailing: columnReserve,
+                          leadArt: $comingUpArt)
                 .foldRow("home-comingup")
             V2RecentSection(data: data, arrived: arrived, width: width, gutter: gutter, wide: true,
                             page: $recentPage, seeAll: openTimeline)

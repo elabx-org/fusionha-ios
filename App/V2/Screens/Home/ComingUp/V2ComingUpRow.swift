@@ -18,6 +18,9 @@ struct V2ComingUpRow: View {
     let wide: Bool
     /// Space above the row, only while it shows.
     var topGap: CGFloat = 0
+    /// Kept clear at the heading's trailing end (the Duo's column, when the
+    /// page runs under it), so the menu isn't under the clock.
+    var headTrailing: CGFloat = 0
     /// The focused card's art, for the page's ground (nil while hidden).
     @Binding var leadArt: URL?
     @Environment(AppModel.self) private var model
@@ -54,7 +57,7 @@ struct V2ComingUpRow: View {
             if !cards.isEmpty {
                 if hero {
                     VStack(alignment: .leading, spacing: 4) {
-                        header
+                        header.padding(.trailing, headTrailing)
                         V2ComingUpWideCarousel(cards: cards, style: V2ComingUpWideStyle(stored: wideRaw),
                                                focused: $focused, opening: $opening)
                     }
@@ -71,7 +74,7 @@ struct V2ComingUpRow: View {
                     .padding(.top, topGap)
                 } else {
                     VStack(alignment: .leading, spacing: 4) {
-                        header.padding(.horizontal, gutter)
+                        header.padding(.horizontal, gutter).padding(.trailing, headTrailing)
                         // Centred on the screen, not left of the folded Duo's column.
                         carousel(cardWidth: min(260, max(160, width - 140)), showsMeta: true)
                             .centresOnScreen(skew)
