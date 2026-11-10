@@ -36,8 +36,11 @@ struct V2TitleView: View {
     /// column's buttons float over art, and everything below starts clear of
     /// them. Today's page keeps the column's width: its shorter hero would
     /// put the overview and the version cards under those buttons.
-    private var edgeToEdge: Bool {
-        collapsedTabs && posterLook && (duoOpen || OuterDisplay.isFoldedDuo(sizeClass: sizeClass))
+    private var edgeToEdge: Bool { collapsedColumn && posterLook }
+
+    /// Collapsed tabs on the Duo: the column holds as few buttons as it can.
+    private var collapsedColumn: Bool {
+        collapsedTabs && (duoOpen || OuterDisplay.isFoldedDuo(sizeClass: sizeClass))
     }
 
     init(store: DetailStore, onClose: (() -> Void)? = nil) {
@@ -80,7 +83,7 @@ struct V2TitleView: View {
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: compact)
             .toolbar {
                 V2TitleToolbar(store: store, canEdit: canEdit, canSearch: canSearch, escapeCloses: !inColumn,
-                               close: close, openWeb: openWeb)
+                               collapsed: collapsedColumn, close: close, openWeb: openWeb)
             }
             .environment(store)
             .environment(\.detailReduceMotion, reduceMotion)
