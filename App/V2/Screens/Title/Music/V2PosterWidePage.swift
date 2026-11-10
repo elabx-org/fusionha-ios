@@ -2,10 +2,11 @@ import SwiftUI
 import FusionhaKit
 
 /// The poster-led title filling the flat open Duo (mock "Open, list
-/// hidden"): today's backdrop hero across the top, and over it two pages.
-/// The left page is the album cover: the poster, the title and meta line
-/// on the hero's dark foot, then today's summary. The right page is the
-/// tabs. One scroll. Behind `TitleLook.posterKey`.
+/// hidden"), on the spread rule: the backdrop is ONE band across both
+/// pages, the album cover with the title and meta line on its left, the
+/// right half left as art. Below the band both pages start on one line:
+/// today's summary on the left, the tabs on the right (never on the art).
+/// One scroll. Behind `TitleLook.posterKey`.
 struct V2PosterWidePage: View {
     @Environment(\.pagePalette) private var page
     @Environment(\.v2TitleBarInset) private var barInset
@@ -15,33 +16,34 @@ struct V2PosterWidePage: View {
 
     static let posterWidth: CGFloat = 218
     private var leftWidth: CGFloat { min(400, max(320, (width * 0.38).rounded())) }
-    /// The hero runs down to just under the meta line.
-    private var heroHeight: CGFloat { barInset + 8 + Self.posterWidth * 1.5 + 96 }
 
     var body: some View {
-        HStack(alignment: .top, spacing: V2TitleWide.columnGap) {
-            VStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(spacing: 16) {
                 V2PosterCover(detail: detail, width: Self.posterWidth)
                 V2PosterCoverHeading(detail: detail)
-                    .padding(.top, 16)
-                V2TitleSummary(detail: detail, small: true, stacksActions: true)
-                    .padding(.top, 22)
-                if detail.isSeries {
-                    V2TitleCredit(detail: detail).font(.system(size: 13)).padding(.top, 28)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
             }
             .frame(width: leftWidth)
-            V2TitleTabs(detail: detail)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(.horizontal, V2TitleWide.gutter)
-        .padding(.top, barInset + 8)
-        .padding(.bottom, 32)
-        .background(alignment: .top) {
-            V2PosterWideHero(detail: detail)
-                .frame(height: heroHeight)
-                .duoTitleSwipe(id: detail.id)
+            .padding(.leading, V2TitleWide.gutter)
+            .padding(.top, barInset + 8)
+            .padding(.bottom, 22)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background { V2PosterWideHero(detail: detail) }
+            .duoTitleSwipe(id: detail.id)
+            HStack(alignment: .top, spacing: V2TitleWide.columnGap) {
+                VStack(alignment: .leading, spacing: 0) {
+                    V2TitleSummary(detail: detail, small: true, stacksActions: true)
+                    if detail.isSeries {
+                        V2TitleCredit(detail: detail).font(.system(size: 13)).padding(.top, 28)
+                    }
+                }
+                .frame(width: leftWidth)
+                V2TitleTabs(detail: detail)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, V2TitleWide.gutter)
+            .padding(.top, 14)
+            .padding(.bottom, 32)
         }
         .foregroundStyle(page?.ink ?? Theme.txt)
     }
@@ -88,8 +90,8 @@ struct V2PosterCoverHeading: View {
     }
 }
 
-/// Today's backdrop hero, full width behind both pages, with the hero
-/// shade and a long fade into the page's ground at its foot.
+/// The band's art: today's backdrop full width behind both pages, under
+/// the hero shade, ending like `V2TitleBand`.
 struct V2PosterWideHero: View {
     let detail: ItemDetail
     @Environment(\.pagePalette) private var page
@@ -106,11 +108,13 @@ struct V2PosterWideHero: View {
                 .clipped()
                 .opacity(shown || !motion ? 1 : 0)
             V2HeroShade(light: light, tint: page?.tint)
-            // Painted into the page tint instead of a mask, which rendered
-            // the full-size backdrop offscreen on every scroll frame.
-            LinearGradient(stops: [.init(color: ground.opacity(0), location: 0.7),
-                                   .init(color: ground, location: 1)],
-                           startPoint: .top, endPoint: .bottom)
+            // Ends like today's band: a short fade into the page tint on dark
+            // palettes, the shade's warm dark edge on light ones (white title).
+            if !light {
+                LinearGradient(colors: [ground.opacity(0), ground.opacity(0.7)], startPoint: .top, endPoint: .bottom)
+                    .frame(height: 22)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+            }
         }
         .clipped()
         .ignoresSafeArea(.container, edges: .horizontal)

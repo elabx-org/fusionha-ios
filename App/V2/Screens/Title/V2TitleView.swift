@@ -158,7 +158,7 @@ struct V2TitleView: View {
         } action: { _, y in
             store.scrollY = y
             // The compact bar once the hero (or the shorter band) is gone.
-            let past = y > (wide ? (posterLook ? 300 : 96) : (posterLook ? 420 : 240))
+            let past = y > (wide ? (posterLook ? 400 : 96) : (posterLook ? 420 : 240))
             if compact != past { compact = past }
         }
     }
