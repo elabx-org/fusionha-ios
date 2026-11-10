@@ -17,17 +17,26 @@ enum TabsLook {
     static let collapsedKey = "v2.shell.collapsedTabs"
     /// The owner kept the look after turning it on (`CollapsedTabsConfirm`).
     static let confirmedKey = "v2.shell.collapsedTabs.confirmed"
+    /// The arrow sits at the bottom of the column, where the tabs were
+    /// (`CollapsedTabsFloatingButton`), not first in the page's bar.
+    static let bottomKey = "v2.shell.collapsedTabs.bottom"
 
     /// How far down the display the clock, the battery ring and the arrow
     /// button reach (measured on device shots: build 1115, folded 466 x 678
     /// and open 951 x 669). A full-width row starts below this, so its own
     /// trailing buttons never sit under the arrow.
-    static func clearance(folded: Bool) -> CGFloat { folded ? 232 : 180 }
+    /// With the arrow at the bottom only the clock and the ring are up there.
+    static func clearance(folded: Bool, bottom: Bool = false) -> CGFloat {
+        if bottom { return folded ? 168 : 116 }
+        return folded ? 232 : 180
+    }
 }
 
 /// What the tabs' pages need to know about the collapsed column.
 struct CollapsedTabsState: Equatable {
     var on = false
+    /// The arrow floats at the bottom of the column, not in the page's bar.
+    var bottom = false
     /// Activity's badge (what needs you, in v2).
     var activity = 0
     /// Discover's badge (requests that need you).
@@ -138,15 +147,15 @@ struct CollapsedTabsList: View {
         .frame(width: 48, height: 44)
         .overlay(alignment: .topTrailing) {
             if let text = BadgeCount.text(entry.badge) {
-                Text(verbatim: text)
-                    .font(.system(size: 10, weight: .bold))
-                    .monospacedDigit()
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 4)
-                    .frame(minWidth: 16, minHeight: 16)
-                    .background(entry.tab == .activity ? Theme.stuck : Theme.primary, in: Capsule())
-                    .offset(x: 2, y: 2)
-                    .accessibilityHidden(true)
+            Text(verbatim: text)
+                .font(.system(size: 10, weight: .bold))
+                .monospacedDigit()
+                .foregroundStyle(.white)
+                .padding(.horizontal, 4)
+                .frame(minWidth: 16, minHeight: 16)
+                .background(entry.tab == .activity ? Theme.stuck : Theme.primary, in: Capsule())
+                .offset(x: 2, y: 2)
+                .accessibilityHidden(true)
             }
         }
         .contentShape(Rectangle())
@@ -163,6 +172,55 @@ struct CollapsedTabsList: View {
             model.avatar.showingSheet = true
             #endif
         }
+    }
+}
+
+/// The arrow at the bottom of the Duo's column (owner, build 1129: "an option
+/// to move that button at the bottom"): the spot the tabs' pill held, which
+/// is free while they are collapsed. The column is the trailing safe-area
+/// inset, so the button is centred in it; the tabs rise from it.
+struct CollapsedTabsFloatingButton: View {
+    let model: AppModel
+    let state: CollapsedTabsState
+    let libraryRoot: LibraryTabRootOverride?
+    /// The column's width (the trailing safe-area inset).
+    let column: CGFloat
+    @State private var open = false
+
+    private static let side: CGFloat = 50
+
+    var body: some View {
+        // A frame, not a filled view: only the button takes touches.
+        Group {
+            Button { open = true } label: {
+                Image(systemName: "chevron.up")
+                    .font(.system(size: 19, weight: .semibold))
+                    .foregroundStyle(Theme.txt)
+                    .frame(width: Self.side, height: Self.side)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: Circle())
+            .overlay(alignment: .topTrailing) {
+                if state.activity > 0 {
+                    Circle().fill(Theme.stuck).frame(width: 11, height: 11)
+                        .overlay(Circle().strokeBorder(Theme.bg, lineWidth: 2))
+                        .offset(x: -2, y: 2)
+                        .accessibilityHidden(true)
+                }
+            }
+            .accessibilityLabel(state.activity > 0 ? "Tabs, \(state.activity) in Activity need you" : "Tabs")
+            .accessibilityHint("Shows the tabs")
+            .popover(isPresented: $open, arrowEdge: .bottom) {
+                CollapsedTabsList(model: model, state: state, libraryRoot: libraryRoot) { open = false }
+                    .presentationCompactAdaptation(.popover)
+            }
+            .padding(.trailing, max(8, (column - Self.side) / 2))
+            .padding(.bottom, 10)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+        // Into the column, which the tabs' own content keeps clear of.
+        .ignoresSafeArea(.container, edges: .trailing)
     }
 }
 

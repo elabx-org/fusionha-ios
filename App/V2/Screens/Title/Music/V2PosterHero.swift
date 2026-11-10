@@ -13,11 +13,12 @@ struct V2PosterHero: View {
     @Environment(\.detailInColumn) private var inColumn
 
     /// The poster's own 2:3, never taller than 680pt. Beside the list on the
-    /// open Duo it also stops at 62% of the page, so the summary shows under
-    /// it: at its full height it filled the whole right page.
+    /// open Duo it also stops at 68% of the page, so the summary shows under
+    /// it (at its full height it filled the whole right page) and still
+    /// starts below the column's buttons when the page runs edge to edge.
     static func height(width: CGFloat, container: CGFloat, inColumn: Bool) -> CGFloat {
         let full = min(max(width, 300) * 1.5, 680)
-        return inColumn ? min(full, max(300, container * 0.62)) : full
+        return inColumn ? min(full, max(300, container * 0.68)) : full
     }
 
     var body: some View {

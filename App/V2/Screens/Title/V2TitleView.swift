@@ -29,6 +29,16 @@ struct V2TitleView: View {
     @State private var barInset: CGFloat = 0
     /// The poster-led page on trial (Account › This iPhone).
     @AppStorage(TitleLook.posterKey) private var posterLook = false
+    @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = false
+
+    /// Collapsed tabs (owner, build 1129): the poster-led page runs under the
+    /// Duo's column to the display's edge. Its art is tall enough that the
+    /// column's buttons float over art, and everything below starts clear of
+    /// them. Today's page keeps the column's width: its shorter hero would
+    /// put the overview and the version cards under those buttons.
+    private var edgeToEdge: Bool {
+        collapsedTabs && posterLook && (duoOpen || OuterDisplay.isFoldedDuo(sizeClass: sizeClass))
+    }
 
     init(store: DetailStore, onClose: (() -> Void)? = nil) {
         self.store = store
@@ -151,7 +161,7 @@ struct V2TitleView: View {
         .scrollEdgeEffectHidden(!compact, for: .top)
         .scrollPosition($position)
         .duoColumnPullSource()
-        .ignoresSafeArea(.container, edges: .top)
+        .ignoresSafeArea(.container, edges: edgeToEdge ? [.top, .trailing] : .top)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { barInset = $0 }
         .environment(\.v2TitleBarInset, barInset)

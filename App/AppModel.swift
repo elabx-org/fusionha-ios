@@ -169,6 +169,7 @@ final class AppModel {
             let collapsedTabs = env["FUSIONHA_SCREENSHOT_COLLAPSED_TABS"]
             UserDefaults.standard.set(collapsedTabs != nil, forKey: TabsLook.collapsedKey)
             UserDefaults.standard.set(collapsedTabs != nil, forKey: TabsLook.confirmedKey)
+            UserDefaults.standard.set(collapsedTabs == "bottom", forKey: TabsLook.bottomKey)
             if let toast = env["FUSIONHA_SCREENSHOT_TOAST"] {
                 toasts = [ToastMessage(message: toast, duration: 60)]
             }

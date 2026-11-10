@@ -31,6 +31,7 @@ struct V2AccountContent: View {
     @AppStorage(TitleLook.posterKey) private var posterLook = false
     @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = false
     @AppStorage(TabsLook.confirmedKey) private var collapsedTabsKept = false
+    @AppStorage(TabsLook.bottomKey) private var tabsArrowAtBottom = false
 
     var body: some View {
         V2AccountHead(me: me, server: model.credentials?.serverURL)
@@ -129,6 +130,16 @@ struct V2AccountContent: View {
         .tint(Theme.primary)
         // Turned on again: ask once more whether to keep it (`CollapsedTabsConfirm`).
         .onChange(of: collapsedTabs) { _, on in if on { collapsedTabsKept = false } }
+        if collapsedTabs {
+            Picker(selection: $tabsArrowAtBottom) {
+                Text("Top").tag(false)
+                Text("Bottom").tag(true)
+            } label: {
+                V2AccountRow(icon: "arrow.up.and.down.circle.fill", tint: Theme.dim, title: "Tabs arrow",
+                             subtitle: "Where it sits in the side column", accessory: .none)
+            }
+            .tint(Theme.mut)
+        }
         Picker(selection: $openOn) {
             ForEach(AppStartTab.allCases) { Text($0.label).tag($0.rawValue) }
         } label: {

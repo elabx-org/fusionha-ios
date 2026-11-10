@@ -21,6 +21,9 @@ struct ShellTabs: View {
     @State private var width: CGFloat = 0
     /// v2, on trial (Account): the Duo's tabs collapse into an arrow button.
     @AppStorage(TabsLook.collapsedKey) private var collapsedPref = false
+    @AppStorage(TabsLook.bottomKey) private var arrowAtBottom = false
+    /// The Duo's column: the trailing safe-area inset.
+    @State private var column: CGFloat = 0
 
     /// Collapsed on the Duo's column (folded, or open with the tabs filling
     /// the display). Beside an open title the list pane keeps its own bar.
@@ -36,6 +39,10 @@ struct ShellTabs: View {
     /// The phone and the folded Duo keep their labels.
     private var narrowColumn: Bool {
         chrome != nil && splitShown && sizeClass == .regular && width > 0 && width < 420
+    }
+
+    private var tabsState: CollapsedTabsState {
+        CollapsedTabsState(on: collapsed, bottom: arrowAtBottom, activity: activityBadge, requests: model.requestsBadge)
     }
 
     /// A tab's title: empty in the narrow column, where the icon stands alone
@@ -88,8 +95,13 @@ struct ShellTabs: View {
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width.rounded() } action: { width = $0 }
-        .environment(\.collapsedTabs, CollapsedTabsState(on: collapsed, activity: activityBadge,
-                                                         requests: model.requestsBadge))
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { column = $0 }
+        .environment(\.collapsedTabs, tabsState)
+        .overlay {
+            if collapsed && arrowAtBottom {
+                CollapsedTabsFloatingButton(model: model, state: tabsState, libraryRoot: libraryRoot, column: column)
+            }
+        }
         .tint(Theme.indigo)
         // Count badges in the accent, as on the web, not the system red; the
         // shell's size re-tints them after the bar changes axis. v2's

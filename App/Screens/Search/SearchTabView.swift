@@ -43,7 +43,7 @@ struct SearchTabView: View {
     /// the arrow button (`TabsLook.clearance`), less the kind picker's row.
     private var lead: CGFloat {
         guard fullWidth, restTop > 0 else { return 0 }
-        return max(0, TabsLook.clearance(folded: !duoOpen) - restTop - (pickerOnRightPage ? 0 : 46))
+        return max(0, TabsLook.clearance(folded: !duoOpen, bottom: tabs.bottom) - restTop - (pickerOnRightPage ? 0 : 46))
     }
 
     private var trimmed: String { model.searchQuery.trimmingCharacters(in: .whitespaces) }

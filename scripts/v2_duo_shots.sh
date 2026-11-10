@@ -160,6 +160,8 @@ for theme in dark daylight; do
   WAIT=14 FRAME=folded shoot "tabs-collapsed-search-folded$SUF" $SRCH $T $CT=1
   WAIT=14 shoot "tabs-collapsed$SUF" $T $CT=1
   WAIT=14 shoot "tabs-collapsed-search$SUF" $SRCH $T $CT=1
+  WAIT=14 FRAME=folded shoot "tabs-collapsed-bottom-folded$SUF" $T $CT=bottom
+  WAIT=14 shoot "tabs-collapsed-bottom$SUF" $T $CT=bottom
   WAIT=14 shoot "collection$SUF" $COLL $T
   WAIT=14 FRAME=folded shoot "collection-folded$SUF" $COLL $T
 done

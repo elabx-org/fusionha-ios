@@ -45,7 +45,7 @@ struct ShellPage: ViewModifier {
             .navigationTitle(title)
             .toolbarTitleDisplayMode(inlineTitle ? .inline : .inlineLarge)
             .toolbar {
-                if tabs.on {
+                if tabs.on && !tabs.bottom {
                     CollapsedTabsItem(model: model, state: tabs, libraryRoot: libraryRoot, open: $tabsOpen)
                 }
                 StatusClusterItems(model: model, shown: showsCluster, open: $clusterPanel)
