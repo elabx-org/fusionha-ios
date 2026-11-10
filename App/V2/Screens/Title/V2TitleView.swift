@@ -27,6 +27,8 @@ struct V2TitleView: View {
     @State private var width: CGFloat = 0
     /// The bar's reach down the scroll view (`v2TitleBarInset`).
     @State private var barInset: CGFloat = 0
+    /// The poster-led page on trial (Account › This iPhone).
+    @AppStorage(TitleLook.posterKey) private var posterLook = false
 
     init(store: DetailStore, onClose: (() -> Void)? = nil) {
         self.store = store
@@ -126,10 +128,11 @@ struct V2TitleView: View {
         ScrollView {
             Group {
                 if let detail = store.detail {
-                    if wide {
-                        V2TitleWidePage(detail: detail, width: width)
-                    } else {
-                        V2TitlePage(detail: detail, width: width)
+                    switch (wide, posterLook) {
+                    case (true, true): V2PosterWidePage(detail: detail, width: width)
+                    case (true, false): V2TitleWidePage(detail: detail, width: width)
+                    case (false, true): V2PosterTitlePage(detail: detail, width: width)
+                    case (false, false): V2TitlePage(detail: detail, width: width)
                     }
                 } else if store.loadError != nil {
                     DetailLoadError(close: close)
@@ -155,7 +158,7 @@ struct V2TitleView: View {
         } action: { _, y in
             store.scrollY = y
             // The compact bar once the hero (or the shorter band) is gone.
-            let past = y > (wide ? 96 : 240)
+            let past = y > (wide ? (posterLook ? 300 : 96) : (posterLook ? 420 : 240))
             if compact != past { compact = past }
         }
     }

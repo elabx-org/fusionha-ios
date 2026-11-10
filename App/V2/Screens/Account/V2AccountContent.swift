@@ -28,6 +28,7 @@ struct V2AccountContent: View {
     @Environment(\.openURL) private var openURL
     @AppStorage(AppStartTab.key) private var openOn = AppStartTab.library.rawValue
     @AppStorage(LiveActivityPrefs.enabledKey) private var liveActivity = true
+    @AppStorage(TitleLook.posterKey) private var posterLook = false
 
     var body: some View {
         V2AccountHead(me: me, server: model.credentials?.serverURL)
@@ -113,6 +114,11 @@ struct V2AccountContent: View {
             V2AccountRow(icon: "circle.lefthalf.filled", tint: Theme.i1, title: "App colours",
                          value: PaletteStore.shared.active.name, accessory: .none)
         }
+        Toggle(isOn: $posterLook) {
+            V2AccountRow(icon: "rectangle.portrait.inset.filled", tint: Theme.i1, title: "Poster title page",
+                         subtitle: "Try the new title page. Off is today's.", accessory: .none)
+        }
+        .tint(Theme.primary)
         Picker(selection: $openOn) {
             ForEach(AppStartTab.allCases) { Text($0.label).tag($0.rawValue) }
         } label: {

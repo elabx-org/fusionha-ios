@@ -9,6 +9,7 @@ struct V2SeasonsTab: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     @Environment(\.pagePalette) private var page
+    @AppStorage(TitleLook.posterKey) private var posterLook = false
     let detail: ItemDetail
     var compact = false
 
@@ -36,11 +37,15 @@ struct V2SeasonsTab: View {
                     .background { ModuleSurface(radius: 18) }
             }
             ForEach(seasons) { season in
-                NavigationLink(value: V2TitleRoute.season(season.seasonNumber)) {
-                    V2SeasonCard(detail: detail, season: season,
-                                 facts: V2SeasonFacts(season: season, editions: editions), compact: compact)
+                if posterLook, season.id == seasons.first?.id, !season.episodes.isEmpty {
+                    V2SeasonEpisodesCard(detail: detail, season: season, editions: editions, compact: compact)
+                } else {
+                    NavigationLink(value: V2TitleRoute.season(season.seasonNumber)) {
+                        V2SeasonCard(detail: detail, season: season,
+                                     facts: V2SeasonFacts(season: season, editions: editions), compact: compact)
+                    }
+                    .buttonStyle(PressScaleStyle(scale: 0.98))
                 }
-                .buttonStyle(PressScaleStyle(scale: 0.98))
             }
         }
     }

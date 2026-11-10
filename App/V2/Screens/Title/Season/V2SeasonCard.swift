@@ -15,6 +15,8 @@ struct V2SeasonCard: View {
     var compact = false
     /// The season open beside this list (the wide child's left column).
     var selected = false
+    /// False inside a card that also lists the episodes (`V2SeasonEpisodesCard`).
+    var surface = true
 
     private var ink: Color { page?.ink ?? Theme.txt }
     private var muted: Color { page?.inkMuted ?? Theme.mut }
@@ -53,7 +55,7 @@ struct V2SeasonCard: View {
                 .accessibilityHidden(true)
         }
         .padding(12)
-        .background { ModuleSurface(radius: 20, selected: selected) }
+        .background { if surface { ModuleSurface(radius: 20, selected: selected) } }
         .opacity(season.monitored == false ? 0.6 : 1)
         .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .accessibilityElement(children: .combine)
