@@ -25,6 +25,7 @@ struct V2LibraryView: View {
     @Environment(\.spread) private var spread
     @Environment(\.bookPose) private var bookPose
     @Environment(\.duoOpen) private var duoOpen
+    @Environment(\.duoListToggle) private var listToggle
     // The filters follow the window (split screen), seeded from the ones
     // used last (`V2LibrarySceneFilters`). Show › Not monitored is v2's own.
     @SceneStorage("v2.library.kind") private var kindRaw = V2LibraryFilterSeed.kind
@@ -62,7 +63,9 @@ struct V2LibraryView: View {
     /// title's palette in the deeper list-pane wash, with no art of its own,
     /// so the display reads as one page. Book pose keeps the Library's own.
     private var besideArt: URL? {
-        guard duoOpen, !bookPose, let id = model.presentedItem?.id,
+        // Hidden behind a full-width title, the list keeps its own ground:
+        // repainting it in the title's colours was work nobody saw.
+        guard duoOpen, !bookPose, listToggle?.hidden != true, let id = model.presentedItem?.id,
               let item = model.library.first(where: { $0.id == id }) else { return nil }
         return PageArtSource.url(backdrop: item.backdropUrl, poster: item.posterUrl)
     }

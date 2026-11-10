@@ -11,6 +11,11 @@ struct V2TitleTabs: View {
     @Environment(DetailStore.self) private var store
     @Environment(\.detailReduceMotion) private var reduce
     let detail: ItemDetail
+    /// The pane on screen. It follows the picker a frame later, so a tap
+    /// moves the picker at once even when the new pane is slow to build
+    /// (History's charts, a long Files list): built in the same frame, the
+    /// picker sat still until the pane was ready and the tap read as missed.
+    @State private var shown: DetailTab?
 
     private var tabs: [(DetailTab, String)] {
         if detail.isSeries {
@@ -39,10 +44,21 @@ struct V2TitleTabs: View {
             .sensoryFeedback(.selection, trigger: store.tab)
             .v2FadesUnderTitleBar()
             pane
-                .id(current)
+                .id(paneTab)
                 .transition(.opacity)
         }
-        .animation(reduce ? nil : .easeInOut(duration: 0.25), value: current)
+        .animation(reduce ? nil : .easeInOut(duration: 0.25), value: paneTab)
+        .task(id: current) {
+            guard shown != current else { return }
+            try? await Task.sleep(for: .milliseconds(30))
+            if !Task.isCancelled { shown = current }
+        }
+    }
+
+    /// The pane's tab: the picker's, once it has had its frame.
+    private var paneTab: DetailTab {
+        guard let shown, tabs.contains(where: { $0.0 == shown }) else { return current }
+        return shown
     }
 
     private var selection: Binding<DetailTab> {
@@ -51,7 +67,7 @@ struct V2TitleTabs: View {
 
     @ViewBuilder
     private var pane: some View {
-        switch current {
+        switch paneTab {
         case .seasons: V2SeasonsTab(detail: detail)
         case .files:
             if detail.isSeries { V2SeriesFilesTab(detail: detail) } else { V2MovieFilesTab(detail: detail) }

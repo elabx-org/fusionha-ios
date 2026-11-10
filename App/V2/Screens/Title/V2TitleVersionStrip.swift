@@ -87,12 +87,16 @@ struct V2TitleVersionCard: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(muted)
                     .lineLimit(1)
+                    // A narrow column (the open Duo's summary) shrinks the
+                    // name a little before it cuts it to "HD-10…".
+                    .minimumScaleFactor(0.75)
                 Spacer(minLength: 4)
                 if let count = version.count {
                     Text(verbatim: count)
                         .font(.system(size: small ? 14 : 15, weight: .bold))
                         .monospacedDigit()
                         .foregroundStyle(ink)
+                        .fixedSize()
                 }
             }
             RailBarV2(have: version.have, aired: version.aired, total: version.total, rest: version.rest)
@@ -101,6 +105,7 @@ struct V2TitleVersionCard: View {
                 .font(.system(size: 12))
                 .foregroundStyle(muted)
                 .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .padding(.top, 5)
         }
         .padding(.horizontal, 12)

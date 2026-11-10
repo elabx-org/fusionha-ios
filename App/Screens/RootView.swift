@@ -23,6 +23,9 @@ struct RootView: View {
     @State private var pillSpace = DownloadsPillSpace()
     /// The tabs whose list the sidebar button hid (`DuoListMemory`). Per device.
     @AppStorage(DuoListMemory.storageKey) private var hiddenLists = ""
+    /// The remembered-hidden list is parked at full width (`ShellSplit.primaryParked`);
+    /// off while the sidebar button slides it in or out at its split width.
+    @State private var listParked = true
     /// v2's title page (`TitlePageHost`); nil in v1.
     @Environment(\.titlePage) private var titlePage
     /// v2's split handle moving the seam (`DuoSeamDrag`); never set in v1.
@@ -42,9 +45,11 @@ struct RootView: View {
         let spread = spreadContext(fold, hasItem: hasItem)
         var split = ShellSplit(fold: fold, hasItem: hasItem, spread: spread)
         // An episode open beside its title takes the list's place (`TitleSpread`).
-        split.primaryHidden = split.axis == .horizontal && (episodeBeside(split, spread: spread) || DuoSplit.hidesList(
+        let remembered = DuoSplit.hidesList(
             remembered: DuoListMemory(raw: hiddenLists).isHidden(model.tab.listMemoryKey),
-            posture: fold.posture, detailShown: split.shown && hasItem))
+            posture: fold.posture, detailShown: split.shown && hasItem)
+        split.primaryHidden = split.axis == .horizontal && (episodeBeside(split, spread: spread) || remembered)
+        split.primaryParked = listParked && split.axis == .horizontal && remembered
         applyFlatOpenShare(&split)
         if let live = seam.live, let context = seamContext(split) {
             split.seam = context.seam(live: live)
@@ -112,10 +117,41 @@ struct RootView: View {
               model.rightPageHasItem,
               !episodeBeside(split, spread: spreadContext(fold, hasItem: true)) else { return nil }
         let key = model.tab.listMemoryKey
+        let showing = split.primaryHidden
         return DuoListToggle(hidden: split.primaryHidden, key: key) {
-            var memory = DuoListMemory(raw: hiddenLists)
-            memory.toggle(key)
-            hiddenLists = memory.raw
+            // The list slides in and out at its split width: un-park it first,
+            // unanimated (off screen), and park it again once it is hidden.
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            let wasParked = listParked
+            withTransaction(instant) { listParked = false }
+            let flip = {
+                var memory = DuoListMemory(raw: hiddenLists)
+                memory.toggle(key)
+                hiddenLists = memory.raw
+            }
+            // The handle's own commit lands in one frame; the button waits a
+            // frame for the un-parked list to lay out before it slides in.
+            guard showing, wasParked, seam.live == nil else {
+                flip()
+                if !showing { parkListSoon(key) }
+                return
+            }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(40))
+                flip()
+            }
+        }
+    }
+
+    /// Once the list has slid away, park it at full width (if it is still hidden).
+    private func parkListSoon(_ key: String) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            guard DuoListMemory(raw: hiddenLists).isHidden(key) else { return }
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) { listParked = true }
         }
     }
 
@@ -188,7 +224,7 @@ struct RootView: View {
         let split = split
         let spread = spreadContext(fold, hasItem: model.rightPageHasItem)
         FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap, primaryHidden: split.primaryHidden,
-                        seam: split.seam) {
+                        primaryParked: split.primaryParked, seam: split.seam) {
             // Hidden (the sidebar button), the list keeps its width off screen.
             ShellTabs(fold: fold, splitShown: split.shown, downloadsBar: downloadsBar,
                       downloadsBarAllowed: !tabsCrossFold && !selectBars.isShowing)
@@ -232,6 +268,9 @@ struct RootView: View {
         // A preview on the right page goes back to its tab's sheet when the
         // Spread ends (`SpreadPreviewHost`); one left on another tab closes.
         .onChange(of: spread.isActive) { _, active in if !active { model.settleSpreadPreview() } }
+        // With nothing on the right page the list fills the display: the next
+        // title opens over a parked list again (`ShellSplit.primaryParked`).
+        .onChange(of: model.rightPageHasItem) { _, has in if !has { listParked = true } }
         // On the open Duo the tabs' column jumps to its new width (a Spread
         // span to the left page re-flows the whole Library grid, and animating
         // that relayout stuttered); only the title's column animates, through

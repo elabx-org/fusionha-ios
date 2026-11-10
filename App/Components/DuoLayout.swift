@@ -38,6 +38,8 @@ struct FoldSplitLayout: Layout {
     /// just off the leading edge (its grid never re-flows) and the second
     /// child fills the container.
     var primaryHidden = false
+    /// The hidden list is parked at the container's width (`ShellSplit.primaryParked`).
+    var primaryParked = false
     /// v2's split handle is moving the seam: both children around it (`FoldSeam`).
     var seam: FoldSeam?
 
@@ -54,7 +56,7 @@ struct FoldSplitLayout: Layout {
         case .horizontal where seam != nil:
             if let seam { placeSeam(seam, in: bounds, subviews: subviews) }
         case .horizontal where primaryHidden:
-            let first = min(max(primary, 0), bounds.width)
+            let first = primaryParked ? bounds.width : min(max(primary, 0), bounds.width)
             subviews[0].place(at: CGPoint(x: bounds.minX - first - gap, y: bounds.minY),
                               proposal: ProposedViewSize(width: first, height: bounds.height))
             subviews[1].place(at: bounds.origin, proposal: ProposedViewSize(bounds.size))
@@ -87,6 +89,13 @@ struct ShellSplit: Equatable {
     /// The list is hidden (the sidebar button, flat only): the trailing
     /// column fills the container.
     var primaryHidden = false
+    /// The list stays hidden across opens and closes (the sidebar button's
+    /// memory), so it is parked off screen at the width it has with no title:
+    /// a title then opens and closes over a list that never re-flows. At its
+    /// split width, every open re-flowed the whole Library grid as the title
+    /// landed, and every close re-flowed it back (perf run 42798509273). The
+    /// sidebar button un-parks it before sliding it in (`RootView.listToggle`).
+    var primaryParked = false
     /// v2's split handle is moving the seam (`DuoSeamDrag`); nil at rest.
     var seam: FoldSeam?
 
@@ -94,6 +103,7 @@ struct ShellSplit: Equatable {
     var atRest: ShellSplit {
         var rest = self
         rest.seam = nil
+        rest.primaryParked = false
         return rest
     }
 
