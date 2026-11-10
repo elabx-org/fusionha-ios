@@ -284,6 +284,7 @@ struct RootView: View {
             ToastLayer(region: ToastRegion.shell(split, spread: spread, size: fold.size))
         }
         .modifier(CollapsedTabsConfirm(duoOpen: fold.isDuoOpen))
+        .modifier(ColumnPillHost())
         .environment(selectBars)
         .environment(pillSpace)
         .environment(\.spread, spread)
@@ -301,6 +302,8 @@ struct RootView: View {
             // A stack of its own, so Close, Refresh and Open in the web app are
             // system toolbar items over the art (DC10, ruling Q-DC8).
             TitleStack(itemId: ref.id, host: .sheet) { TitlePageHost(store: model.detailStore(for: ref.id)) }
+                // The sheet covers the window's pill: it draws its own.
+                .modifier(ColumnPillHost())
                 .onAppear {
                     model.sheetPresence.shown()
                     DeepLinkProbe.log("detail \(ref.id) shown")

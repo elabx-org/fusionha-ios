@@ -36,6 +36,7 @@ struct V2SeasonPage: View {
                     .columnArrow(column.collapsed, actions: [
                         .control("Season actions", stamp: "\(facts.missing)") {
                             V2SeasonActionsMenu(detail: detail, season: season, missing: facts.missing)
+                                .environment(store)
                         },
                     ], beforeSwitch: column.close)
             } else {

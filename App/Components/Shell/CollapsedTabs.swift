@@ -6,8 +6,8 @@ import FusionhaKit
 // On the iPhone Duo the system keeps a column on the trailing edge for the
 // clock, the page's buttons and the tabs. With this on, the tabs leave the
 // column: one arrow button (the first item, so the system puts it in the
-// first free spot under the clock) opens them as a menu that drops down
-// from it, with the page's own buttons and Account under them, so the column
+// first free spot under the clock) grows the bar into a pill of their icons
+// (`ColumnPill`), with the page's own buttons and Account under them, so the column
 // holds the arrow (and Close or Back) and a page runs to the display's edge.
 // Folded and flat open only; beside an open title the tabs stay in the bar
 // under the list pane. A regular iPhone and iPad keep their tab bar.
@@ -48,13 +48,8 @@ extension EnvironmentValues {
     @Entry var collapsedTabs = CollapsedTabsState()
 }
 
-/// The arrow button, first in the bar: it opens the tabs and the page's
-/// own buttons (the column rule, `ColumnAction`).
-///
-/// A system menu, not the popover of build 1129: a page's Filter and More
-/// are menus themselves and open here as submenus, and a row that opens a
-/// sheet can do so once the menu has gone. In a popover neither worked
-/// (one presentation at a time).
+/// The arrow button, first in the bar: the column's bar grows from it
+/// (`ColumnPill`) with the tabs and the page's own buttons (`ColumnAction`).
 struct CollapsedTabsItem: ToolbarContent {
     let model: AppModel
     let state: CollapsedTabsState
@@ -66,101 +61,18 @@ struct CollapsedTabsItem: ToolbarContent {
 
     var body: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Menu {
-                CollapsedTabsList(model: model, state: state, libraryRoot: libraryRoot, actions: actions,
-                                  beforeSwitch: beforeSwitch)
-            } label: {
-                Label("Tabs", systemImage: "chevron.down")
-            }
-            .menuOrder(.fixed)
-            // The Activity badge can't be seen while the tabs are closed.
-            .badge(state.activity)
-            .accessibilityHint(actions.isEmpty ? "Shows the tabs" : "Shows the tabs and this page's buttons")
+            ColumnArrowButton(state: state, libraryRoot: libraryRoot, actions: actions, beforeSwitch: beforeSwitch)
         }
         .barPriority(true)
-    }
-}
-
-/// The menu's rows: the tabs (the current one ticked), this page's own
-/// buttons, then Account.
-struct CollapsedTabsList: View {
-    let model: AppModel
-    let state: CollapsedTabsState
-    let libraryRoot: LibraryTabRootOverride?
-    var actions: [ColumnAction] = []
-    var beforeSwitch: (@MainActor () -> Void)?
-
-    private struct Entry: Identifiable {
-        let tab: AppTab
-        let title: String
-        let image: String
-        var system = false
-        var badge = 0
-        var id: AppTab { tab }
-    }
-
-    private var entries: [Entry] {
-        let search = Entry(tab: .search, title: "Search", image: "magnifyingglass", system: true)
-        if model.requestScoped {
-            return [Entry(tab: .discover, title: "Discover", image: "nav-discover"),
-                    Entry(tab: .requests, title: "My requests", image: "nav-requests"),
-                    Entry(tab: .you, title: "You", image: "nav-you"), search]
-        }
-        let library: Entry
-        if let title = libraryRoot?.title, let symbol = libraryRoot?.systemImage {
-            library = Entry(tab: .library, title: title, image: symbol, system: true)
-        } else {
-            library = Entry(tab: .library, title: "Library", image: "nav-library")
-        }
-        return [library,
-                Entry(tab: .discover, title: "Discover", image: "nav-discover", badge: state.requests),
-                Entry(tab: .calendar, title: "Calendar", image: "nav-calendar"),
-                Entry(tab: .activity, title: "Activity", image: "nav-activity", badge: state.activity),
-                search]
-    }
-
-    private var attention: Bool { model.attentionCount > 0 && !model.requestScoped }
-
-    var body: some View {
-        Section {
-            ForEach(entries) { entry in
-                Toggle(isOn: Binding(get: { model.tab == entry.tab }, set: { _ in open(entry.tab) })) {
-                    Label {
-                        Text(verbatim: BadgeCount.text(entry.badge).map { "\(entry.title) · \($0)" } ?? entry.title)
-                    } icon: {
-                        if entry.system { Image(systemName: entry.image) } else { Image(entry.image).renderingMode(.template) }
-                    }
-                }
-            }
-        }
-        if !actions.isEmpty {
-            Section { ColumnActionRows(actions: actions) }
-        }
-        Section {
-            Button(attention ? "Account · \(model.attentionCount) need attention" : "Account",
-                   systemImage: "person.crop.circle", action: account)
-        }
-    }
-
-    private func open(_ tab: AppTab) {
-        beforeSwitch?()
-        model.tab = tab
-    }
-
-    private func account() {
-        #if V2
-        model.showingAccount = true
-        #else
-        model.avatar.showingSheet = true
-        #endif
     }
 }
 
 /// The arrow at the bottom of the Duo's column (owner, build 1129: "an option
 /// to move that button at the bottom"): the spot the tabs' pill held, which
 /// is free while they are collapsed. The column is the trailing safe-area
-/// inset, so the button is centred in it; the menu rises from it.
+/// inset, so the button is centred in it; the pill rises from it.
 struct CollapsedTabsFloatingButton: View {
+    @Environment(\.columnPill) private var pill
     let model: AppModel
     let state: CollapsedTabsState
     let libraryRoot: LibraryTabRootOverride?
@@ -168,31 +80,31 @@ struct CollapsedTabsFloatingButton: View {
     let column: CGFloat
     var actions: [ColumnAction] = []
     var beforeSwitch: (@MainActor () -> Void)?
+    @State private var frame: CGRect = .zero
 
     private static let side: CGFloat = 50
 
     var body: some View {
         // A frame, not a filled view: only the button takes touches.
         Group {
-            Menu {
-                CollapsedTabsList(model: model, state: state, libraryRoot: libraryRoot, actions: actions,
-                                  beforeSwitch: beforeSwitch)
+            Button {
+                pill?.request = ColumnPill.Request(anchor: frame, rises: true, state: state, libraryRoot: libraryRoot,
+                                                   actions: actions, beforeSwitch: beforeSwitch)
             } label: {
                 Image(systemName: "chevron.up")
                     .font(.system(size: 19, weight: .semibold))
                     .foregroundStyle(Theme.txt)
                     .frame(width: Self.side, height: Self.side)
                     .contentShape(Circle())
-                    .glassEffect(.regular.interactive(), in: Circle())
             }
-            .menuOrder(.fixed)
             .buttonStyle(.plain)
+            .glassEffect(.regular.interactive(), in: Circle())
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame = $0 }
             .overlay(alignment: .topTrailing) {
                 if state.activity > 0 {
                     Circle().fill(Theme.stuck).frame(width: 11, height: 11)
                         .overlay(Circle().strokeBorder(Theme.bg, lineWidth: 2))
                         .offset(x: -2, y: 2)
-                        .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
             }

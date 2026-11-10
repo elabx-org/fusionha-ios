@@ -14,9 +14,9 @@ import FusionhaKit
 struct ColumnAction: Identifiable, Equatable {
     enum Kind {
         case button(@MainActor () -> Void)
-        /// A menu of the page's own (it opens as a submenu), or plain
-        /// buttons. Nothing with a dialog or sheet attached to itself:
-        /// a menu's rows are gone before those could show.
+        /// A menu of the page's own, shown as a row of the pill. It is
+        /// drawn by the window's `ColumnPillHost`, outside the page: hand
+        /// it any environment object it reads.
         case control(AnyView)
     }
 
@@ -82,23 +82,6 @@ extension View {
     /// an episode), with that page's buttons.
     func columnArrow(_ on: Bool, actions: [ColumnAction?] = [], beforeSwitch: (@MainActor () -> Void)? = nil) -> some View {
         modifier(ColumnArrow(on: on, actions: actions.compactMap { $0 }, beforeSwitch: beforeSwitch))
-    }
-}
-
-/// The page's buttons as the menu's rows, under the tabs.
-struct ColumnActionRows: View {
-    let actions: [ColumnAction]
-
-    var body: some View {
-        ForEach(actions) { action in
-            switch action.kind {
-            case .button(let run):
-                Button(action.title, systemImage: action.systemImage) { run() }
-                    .disabled(action.disabled)
-            case .control(let view):
-                view
-            }
-        }
     }
 }
 
