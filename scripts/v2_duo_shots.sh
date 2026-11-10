@@ -153,6 +153,13 @@ for theme in dark daylight; do
   WAIT=14 FRAME=folded shoot "calendar-folded$SUF" $CAL $T
   WAIT=14 shoot "search$SUF" $SRCH $T
   WAIT=14 FRAME=folded shoot "search-folded$SUF" $SRCH $T
+  # Collapsed tabs (owner-approved 2026-11-10): the arrow button, its list, and Search at full width.
+  CT=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_COLLAPSED_TABS
+  WAIT=14 FRAME=folded shoot "tabs-collapsed-folded$SUF" $T $CT=1
+  WAIT=16 FRAME=folded shoot "tabs-collapsed-open-folded$SUF" $T $CT=open
+  WAIT=14 FRAME=folded shoot "tabs-collapsed-search-folded$SUF" $SRCH $T $CT=1
+  WAIT=14 shoot "tabs-collapsed$SUF" $T $CT=1
+  WAIT=14 shoot "tabs-collapsed-search$SUF" $SRCH $T $CT=1
   WAIT=14 shoot "collection$SUF" $COLL $T
   WAIT=14 FRAME=folded shoot "collection-folded$SUF" $COLL $T
 done

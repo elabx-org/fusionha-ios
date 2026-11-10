@@ -31,6 +31,20 @@ struct SearchTabView: View {
     @AppStorage(SearchKindPicker.storageKey) private var kindRaw = SearchKind.all.rawValue
     @State private var recent = RecentSearches.load(from: .standard)
     @FocusState private var focused: Bool
+    @Environment(\.collapsedTabs) private var tabs
+    /// Where the scroll's content starts on screen, and the column's width.
+    @State private var restTop: CGFloat = 0
+    @State private var column: CGFloat = 0
+
+    /// Collapsed tabs (v2): typed results run under the Duo's column to the
+    /// display's edge. Before typing, Trending keeps its place.
+    private var fullWidth: Bool { tabs.on && look != nil && !trimmed.isEmpty }
+    /// Room above the first lane so a row's own buttons never start under
+    /// the arrow button (`TabsLook.clearance`), less the kind picker's row.
+    private var lead: CGFloat {
+        guard fullWidth, restTop > 0 else { return 0 }
+        return max(0, TabsLook.clearance(folded: !duoOpen) - restTop - (pickerOnRightPage ? 0 : 46))
+    }
 
     private var trimmed: String { model.searchQuery.trimmingCharacters(in: .whitespaces) }
     private var kind: SearchKind { SearchKind(rawValue: kindRaw) ?? .all }
@@ -54,7 +68,10 @@ struct SearchTabView: View {
                 } else {
                     if !pickerOnRightPage {
                         SearchKindPicker().padding(.horizontal, Theme.pageGutter).padding(.bottom, 2)
+                            // Beside the column's clock and arrow, not under them.
+                            .padding(.trailing, fullWidth ? column : 0)
                     }
+                    if lead > 0 { Color.clear.frame(height: lead) }
                     SearchResults(term: trimmed, kind: kind, search: search, filter: filter, actions: actions)
                 }
             }
@@ -65,6 +82,9 @@ struct SearchTabView: View {
         }
         // The open Duo's keyboard covers half the results: any scroll puts it away.
         .scrollDismissesKeyboard(duoOpen ? .immediately : .interactively)
+        .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
+        .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY + $0.safeAreaInsets.top } action: { restTop = $0 }
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
         // Rows pass under the floating field and scopes: the hard edge keeps
         // their titles from reading through the glass.
         .scrollEdgeEffectStyle(.hard, for: .top)

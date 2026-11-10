@@ -11,6 +11,7 @@ import SwiftUI
 /// presented from a tab bring their own stacks only inside sheets and covers,
 /// never inside this one.
 struct TabRoot<Content: View>: View {
+    @Environment(\.collapsedTabs) private var tabs
     @ViewBuilder var content: Content
 
     var body: some View {
@@ -18,6 +19,9 @@ struct TabRoot<Content: View>: View {
             content
                 // Room for the downloads pill where it floats over the tab (D3).
                 .reservesDownloadsPillSpace()
+                // Collapsed (`CollapsedTabs.swift`): the arrow button in the
+                // page's bar opens the tabs instead.
+                .toolbarVisibility(tabs.on ? .hidden : .automatic, for: .tabBar)
         }
     }
 }

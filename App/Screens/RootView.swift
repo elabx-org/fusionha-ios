@@ -283,6 +283,7 @@ struct RootView: View {
         .overlay {
             ToastLayer(region: ToastRegion.shell(split, spread: spread, size: fold.size))
         }
+        .modifier(CollapsedTabsConfirm(duoOpen: fold.isDuoOpen))
         .environment(selectBars)
         .environment(pillSpace)
         .environment(\.spread, spread)

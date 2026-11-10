@@ -23,6 +23,9 @@ struct ShellPage: ViewModifier {
     /// The page's own width: past 900 the status cluster joins the bar (S3, as the web).
     @State private var width: CGFloat = 0
     @State private var clusterPanel: StatusClusterPanel?
+    @Environment(\.collapsedTabs) private var tabs
+    @Environment(\.libraryTabRoot) private var libraryRoot
+    @State private var tabsOpen = false
 
     private var accountInPage: Bool {
         accountInPageWhenFolded && OuterDisplay.isFoldedDuo(sizeClass: sizeClass)
@@ -42,11 +45,23 @@ struct ShellPage: ViewModifier {
             .navigationTitle(title)
             .toolbarTitleDisplayMode(inlineTitle ? .inline : .inlineLarge)
             .toolbar {
+                if tabs.on {
+                    CollapsedTabsItem(model: model, state: tabs, libraryRoot: libraryRoot, open: $tabsOpen)
+                }
                 StatusClusterItems(model: model, shown: showsCluster, open: $clusterPanel)
                 DuoLayoutToolbarItem(shown: duoOpen, layout: $duoLayout)
-                if !accountInPage { AccountToolbarItem(model: model) }
+                // Collapsed, Account is the last entry in the tabs' list.
+                if !accountInPage && !tabs.on { AccountToolbarItem(model: model) }
             }
             .task(id: model.me?.id) { await AccountBarArt.shared.load(model.me, client: model.client) }
+            #if DEBUG
+            // Screenshot hook: the tabs' list open on the current tab's page.
+            .task(id: tabs.on) {
+                guard tabs.on, ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_COLLAPSED_TABS"] == "open" else { return }
+                try? await Task.sleep(for: .seconds(4))
+                tabsOpen = true
+            }
+            #endif
             .task(id: showsCluster) {
                 while showsCluster && !Task.isCancelled {
                     await ShellStatusFeed.shared.refresh(model)

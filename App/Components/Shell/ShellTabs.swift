@@ -19,6 +19,15 @@ struct ShellTabs: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     /// The tabs' own width (the list pane's on the open Duo).
     @State private var width: CGFloat = 0
+    /// v2, on trial (Account): the Duo's tabs collapse into an arrow button.
+    @AppStorage(TabsLook.collapsedKey) private var collapsedPref = false
+
+    /// Collapsed on the Duo's column (folded, or open with the tabs filling
+    /// the display). Beside an open title the list pane keeps its own bar.
+    private var collapsed: Bool {
+        chrome != nil && collapsedPref && !splitShown
+            && (fold.isDuoOpen || OuterDisplay.isFoldedDuo(sizeClass: sizeClass))
+    }
 
     /// v2 in the open Duo's narrow list pane (owner 2026-11-09): the tabs
     /// show their icons only (the five labels were cut off at about 290pt).
@@ -79,6 +88,8 @@ struct ShellTabs: View {
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.width.rounded() } action: { width = $0 }
+        .environment(\.collapsedTabs, CollapsedTabsState(on: collapsed, activity: activityBadge,
+                                                         requests: model.requestsBadge))
         .tint(Theme.indigo)
         // Count badges in the accent, as on the web, not the system red; the
         // shell's size re-tints them after the bar changes axis. v2's

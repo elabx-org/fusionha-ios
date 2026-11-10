@@ -165,6 +165,10 @@ final class AppModel {
                 selectMode = true
                 selection = [1, 3]
             }
+            // `=1` collapsed and kept, `=open` also with the tabs' list showing (`ShellPage`).
+            let collapsedTabs = env["FUSIONHA_SCREENSHOT_COLLAPSED_TABS"]
+            UserDefaults.standard.set(collapsedTabs != nil, forKey: TabsLook.collapsedKey)
+            UserDefaults.standard.set(collapsedTabs != nil, forKey: TabsLook.confirmedKey)
             if let toast = env["FUSIONHA_SCREENSHOT_TOAST"] {
                 toasts = [ToastMessage(message: toast, duration: 60)]
             }

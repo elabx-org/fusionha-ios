@@ -29,6 +29,8 @@ struct V2AccountContent: View {
     @AppStorage(AppStartTab.key) private var openOn = AppStartTab.library.rawValue
     @AppStorage(LiveActivityPrefs.enabledKey) private var liveActivity = true
     @AppStorage(TitleLook.posterKey) private var posterLook = false
+    @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = false
+    @AppStorage(TabsLook.confirmedKey) private var collapsedTabsKept = false
 
     var body: some View {
         V2AccountHead(me: me, server: model.credentials?.serverURL)
@@ -119,6 +121,14 @@ struct V2AccountContent: View {
                          subtitle: "Try the new title page. Off is today's.", accessory: .none)
         }
         .tint(Theme.primary)
+        Toggle(isOn: $collapsedTabs) {
+            V2AccountRow(icon: "chevron.down.circle.fill", tint: Theme.i1, title: "Collapsed tabs",
+                         subtitle: "iPhone Duo: the tabs open from an arrow, top right. Search uses the full width.",
+                         accessory: .none)
+        }
+        .tint(Theme.primary)
+        // Turned on again: ask once more whether to keep it (`CollapsedTabsConfirm`).
+        .onChange(of: collapsedTabs) { _, on in if on { collapsedTabsKept = false } }
         Picker(selection: $openOn) {
             ForEach(AppStartTab.allCases) { Text($0.label).tag($0.rawValue) }
         } label: {

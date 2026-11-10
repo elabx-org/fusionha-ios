@@ -14,6 +14,7 @@ struct V2LibraryToolbar: ViewModifier {
     @Environment(AppModel.self) private var model
     @Environment(\.spread) private var spread
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.collapsedTabs) private var tabs
     @State private var showingStats = false
     /// Settings to open once the stats sheet has closed, and at which panel.
     @State private var pendingSettings = false
@@ -55,7 +56,7 @@ struct V2LibraryToolbar: ViewModifier {
     @ToolbarContentBuilder
     private var items: some ToolbarContent {
         if foldedDuo {
-            AccountToolbarItem(model: model)
+            if !tabs.on { AccountToolbarItem(model: model) }
             if canAdd && !model.selectMode {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Add", systemImage: "plus") { model.showingAdd = true }
