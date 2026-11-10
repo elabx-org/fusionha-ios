@@ -156,7 +156,6 @@ for theme in dark daylight; do
   # Collapsed tabs (owner-approved 2026-11-10): the arrow button, its list, and Search at full width.
   CT=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_COLLAPSED_TABS
   WAIT=14 FRAME=folded shoot "tabs-collapsed-folded$SUF" $T $CT=1
-  WAIT=16 FRAME=folded shoot "tabs-collapsed-open-folded$SUF" $T $CT=open
   WAIT=14 FRAME=folded shoot "tabs-collapsed-search-folded$SUF" $SRCH $T $CT=1
   WAIT=14 shoot "tabs-collapsed$SUF" $T $CT=1
   WAIT=14 shoot "tabs-collapsed-search$SUF" $SRCH $T $CT=1

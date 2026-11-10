@@ -105,6 +105,9 @@ extension EnvironmentValues {
 /// visible rows' flow layouts, every frame), which is what made long lists stall.
 struct ActivityView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.collapsedTabs) private var tabs
+    /// Pause, asked from the arrow's list (`QueuePauseButton` asks for itself in the bar).
+    @State private var confirmPause = false
     @State private var chrome = ActChrome(tab: ActivityView.initialTab)
     @State private var toaster = ActToaster()
     @State private var bulk = ActBulk()
@@ -155,15 +158,32 @@ struct ActivityView: View {
                 .publishesSelectBar("activity.bulk")
             }
         }
+        // Collapsed tabs: the page's buttons are in the arrow's list (the column rule).
+        .columnActions(tabs.on, [
+            .button("Manual import", "square.and.arrow.down") { router.manualImport() },
+            model.me?.isAdmin == true
+                ? .button(model.queuePaused ? "Resume downloads" : "Pause downloads",
+                          model.queuePaused ? "play.fill" : "pause.fill") {
+                    if model.queuePaused { Task { await model.toggleQueuePause() } } else { confirmPause = true }
+                }
+                : nil,
+        ])
+        .confirmationDialog("Pause fusionha's downloads?", isPresented: $confirmPause, titleVisibility: .visible) {
+            Button("Pause downloads") { Task { await model.toggleQueuePause() } }
+        } message: {
+            Text("Only the downloads fusionha tracks pause; anything else in your download clients keeps going. New grabs wait until you resume.")
+        }
         // D7-A: inline on the folded Duo and in compact height, so Needs you starts on the first screen.
         .shellPage("Activity", inlineWhenCompact: true) {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Manual import", systemImage: "square.and.arrow.down") { router.manualImport() }
-            }
-            .barPriority(true)
-            if model.me?.isAdmin == true {
-                ToolbarItem(placement: .primaryAction) { QueuePauseButton() }
-                    .barPriority(false)
+            if !tabs.on {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Manual import", systemImage: "square.and.arrow.down") { router.manualImport() }
+                }
+                .barPriority(true)
+                if model.me?.isAdmin == true {
+                    ToolbarItem(placement: .primaryAction) { QueuePauseButton() }
+                        .barPriority(false)
+                }
             }
         }
         .environment(\.actReduceMotion, systemReduceMotion || !animationsEnabled)

@@ -11,10 +11,10 @@ struct V2TitleToolbar: ToolbarContent {
     let canEdit: Bool
     let canSearch: Bool
     let escapeCloses: Bool
-    /// Collapsed tabs on the Duo: Refresh and Edit stay in More (its first
-    /// and last entries), so the column holds Close and one button, and the
-    /// page beside it has the room (owner, build 1132: five buttons ran down
-    /// over the tabs).
+    /// Collapsed tabs on the Duo (the column rule): only Close stays in the
+    /// column; Refresh, Edit and More are in the arrow's list
+    /// (`V2TitleView.columnItems`). Owner, build 1132: five buttons ran down
+    /// over the tabs and covered the episodes' badges.
     var collapsed = false
     let close: () -> Void
     let openWeb: () -> Void
@@ -23,21 +23,21 @@ struct V2TitleToolbar: ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
             SheetCancelButton(title: "Close", escapeCloses: escapeCloses, action: close)
         }
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            if !collapsed {
+        if !collapsed {
+            ToolbarItemGroup(placement: .topBarTrailing) {
                 ToolbarActionButton(title: "Refresh", systemImage: "arrow.clockwise", busy: store.refreshing) {
                     Task { await store.load() }
                 }
+                // There from the first frame (disabled until the title loads):
+                // a bar whose items change as it loads is rebuilt, and on the
+                // open Duo it showed in the page until the system column took it
+                // again (owner, build 805).
+                if canEdit {
+                    Button("Edit", systemImage: "pencil") { store.showingEdit = true }
+                        .disabled(store.detail == nil)
+                }
+                ItemDetailMoreMenu(store: store, canEdit: canEdit, canSearch: canSearch, compact: true, openWeb: openWeb)
             }
-            // There from the first frame (disabled until the title loads):
-            // a bar whose items change as it loads is rebuilt, and on the
-            // open Duo it showed in the page until the system column took it
-            // again (owner, build 805).
-            if canEdit && !collapsed {
-                Button("Edit", systemImage: "pencil") { store.showingEdit = true }
-                    .disabled(store.detail == nil)
-            }
-            ItemDetailMoreMenu(store: store, canEdit: canEdit, canSearch: canSearch, compact: true, openWeb: openWeb)
         }
     }
 }

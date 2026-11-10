@@ -28,6 +28,13 @@ struct V2LibraryToolbar: ViewModifier {
     func body(content: Content) -> some View {
         content
             .toolbar { items }
+            .columnActions(tabs.on, [
+                ColumnAction.add(model),
+                .control("Filter", stamp: "\(filters.tokens.count)|\(derived.attentionCount)") {
+                    V2LibraryFilterMenu(filters: filters, attentionCount: derived.attentionCount)
+                },
+                .button("Library stats", "chart.bar.xaxis") { showingStats = true },
+            ])
             .task {
                 if let client = model.client { await StatsSheetFeed.shared.load(client: client, queue: model.queue) }
             }
@@ -53,10 +60,17 @@ struct V2LibraryToolbar: ViewModifier {
             }
     }
 
+    /// Collapsed tabs (the column rule): Add, Filter (Select is in it) and
+    /// Library stats are in the arrow's list, not the bar.
     @ToolbarContentBuilder
     private var items: some ToolbarContent {
+        if !tabs.on { barItems }
+    }
+
+    @ToolbarContentBuilder
+    private var barItems: some ToolbarContent {
         if foldedDuo {
-            if !tabs.on { AccountToolbarItem(model: model) }
+            AccountToolbarItem(model: model)
             if canAdd && !model.selectMode {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Add", systemImage: "plus") { model.showingAdd = true }

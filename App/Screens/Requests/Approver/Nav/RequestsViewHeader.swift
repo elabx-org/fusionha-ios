@@ -11,6 +11,7 @@ import FusionhaKit
 struct RequestsViewHeader<Summary: View>: View {
     @Environment(RequestsNav.self) private var nav
     @Environment(\.requestsWide) private var wide
+    @Environment(\.collapsedTabs) private var tabs
     @ViewBuilder var summary: () -> Summary
 
     init(@ViewBuilder summary: @escaping () -> Summary = { EmptyView() }) {
@@ -23,10 +24,17 @@ struct RequestsViewHeader<Summary: View>: View {
             RequestsFilterChips()
         }
         .toolbar {
-            if !nav.pane.filters.isEmpty {
+            if !nav.pane.filters.isEmpty && !tabs.on {
                 ToolbarItem(placement: .primaryAction) { filterButton }
                     .barPriority(true)
             }
+        }
+        // Collapsed tabs: Filter is a row in the arrow's list, so its sheet hangs on the page.
+        .columnActions(tabs.on && !nav.pane.filters.isEmpty, [
+            .button(filterTitle, "line.3.horizontal.decrease") { nav.filterOpen = true },
+        ])
+        .sheet(isPresented: tabs.on ? Bindable(nav).filterOpen : .constant(false)) {
+            RequestsFilterSheet().environment(nav).environment(\.requestsWide, wide)
         }
     }
 
@@ -81,6 +89,11 @@ struct RequestsViewHeader<Summary: View>: View {
             Spacer(minLength: 0)
         }
         .frame(minHeight: 44)
+    }
+
+    /// "Filter", or "Filter · 2" with filters set.
+    private var filterTitle: String {
+        BadgeCount.text(nav.filter.activeCount(nav.pane)).map { "Filter · \($0)" } ?? "Filter"
     }
 
     private var filterButton: some View {

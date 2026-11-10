@@ -12,6 +12,7 @@ struct TriageInboxView: View {
     @Environment(AppModel.self) private var model
     @Environment(DiscoverStore.self) private var store
     @Environment(RequestsNav.self) private var nav
+    @Environment(\.collapsedTabs) private var tabs
     /// Wide: the web's `panes` layout, the queue beside the card (DU2).
     @Environment(\.requestsWide) private var wide
     @State private var inbox = InboxModel()
@@ -131,7 +132,7 @@ struct TriageInboxView: View {
             // Select belongs to the list (Proposal 2): cards decide one at a time.
             // Title and symbol, so it joins the iPhone Duo's vertical bar.
             // Wide, every queue row has its checkbox already (web `panes`).
-            if nav.inboxList && !queue.isEmpty && !wide {
+            if nav.inboxList && !queue.isEmpty && !wide && !tabs.on {
                 ToolbarItem(placement: .primaryAction) {
                     Button(nav.selecting ? "Done" : "Select", systemImage: nav.selecting ? "checkmark" : "checkmark.circle") {
                         nav.selecting.toggle()
@@ -140,6 +141,12 @@ struct TriageInboxView: View {
                 }
             }
         }
+        .columnActions(tabs.on && nav.inboxList && !queue.isEmpty && !wide, [
+            .button(nav.selecting ? "Done selecting" : "Select", nav.selecting ? "checkmark" : "checkmark.circle") {
+                nav.selecting.toggle()
+                if !nav.selecting { inbox.selected = [] }
+            },
+        ])
     }
 
     private func detailsSheet(_ request: MediaRequest) -> some View {

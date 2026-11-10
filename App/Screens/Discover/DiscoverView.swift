@@ -13,6 +13,7 @@ struct DiscoverView: View {
     @Environment(AppModel.self) private var model
     /// iPhone Duo Spread (S3): with nothing picked, Browse spans both pages.
     @Environment(\.spread) private var spread
+    @Environment(\.collapsedTabs) private var tabs
     /// v2 (S11): the art ground and the hero carousel over the rails.
     @Environment(\.browseLook) private var look
     @State private var store = DiscoverStore()
@@ -81,7 +82,8 @@ struct DiscoverView: View {
         }
         // Rails, Browse's controls and the filter fields follow the page's own width.
         .publishesPaneSize()
-        .shellPage(title) { AddTitleToolbarItem(model: model) }
+        .columnActions(tabs.on, [ColumnAction.add(model)])
+        .shellPage(title) { if !tabs.on { AddTitleToolbarItem(model: model) } }
         .spreadSpansBothPages(.discover, tab == .browse && !store.tmdbMissing)
         .environment(store)
         .discoverToastOverlay()

@@ -85,6 +85,7 @@ struct V2TitleView: View {
                 V2TitleToolbar(store: store, canEdit: canEdit, canSearch: canSearch, escapeCloses: !inColumn,
                                collapsed: collapsedColumn, close: close, openWeb: openWeb)
             }
+            .columnArrow(collapsedColumn, actions: columnItems, beforeSwitch: close)
             .environment(store)
             .environment(\.detailReduceMotion, reduceMotion)
             .environment(\.detailCompact, compactLayout)
@@ -114,8 +115,22 @@ struct V2TitleView: View {
                 close()
             }
             .v2TitleDestinations(store: store, reduceMotion: reduceMotion)
+            .environment(\.columnPage, ColumnPage(collapsed: collapsedColumn, close: close))
             .modifier(V2FoldScreenshot(store: store))
             .modifier(V2TitleSheets(presenter: presenter, reduceMotion: reduceMotion))
+    }
+
+    /// The title's buttons in the arrow's list (the column rule): the list
+    /// beside it, Refresh, Edit, then everything More holds.
+    private var columnItems: [ColumnAction?] {
+        [listToggle.map { toggle in
+            ColumnAction.button(toggle.hidden ? "Show the list" : "Hide the list", "sidebar.left") { toggle.toggle() }
+        },
+         .button("Reload", "arrow.clockwise") { Task { await store.load() } },
+         canEdit ? .button("Edit", "pencil", disabled: store.detail == nil) { store.showingEdit = true } : nil,
+         .control("More", stamp: "\(store.detail != nil)|\(store.refreshing)") {
+             ItemDetailMoreMenu(store: store, canEdit: canEdit, canSearch: canSearch, compact: true, openWeb: openWeb)
+         }]
     }
 
     /// The compact bar's second line (mock `cbar .tt small`): "2026 · HD 6/7 ·

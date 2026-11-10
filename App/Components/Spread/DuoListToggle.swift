@@ -35,17 +35,20 @@ extension AppTab {
 
 extension View {
     /// The sidebar button in this page's bar, while the shell offers it.
-    func duoListToggleToolbar() -> some View {
-        modifier(DuoListToggleToolbar())
+    /// `inArrow`: the page lists it under the tabs' arrow instead (v2's
+    /// title with the tabs collapsed, the column rule).
+    func duoListToggleToolbar(inArrow: Bool = false) -> some View {
+        modifier(DuoListToggleToolbar(inArrow: inArrow))
     }
 }
 
 private struct DuoListToggleToolbar: ViewModifier {
     @Environment(\.duoListToggle) private var toggle
+    let inArrow: Bool
 
     func body(content: Content) -> some View {
         content.toolbar {
-            if let toggle {
+            if let toggle, !inArrow {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(toggle.hidden ? "Show list" : "Hide list", systemImage: "sidebar.left") {
                         toggle.toggle()

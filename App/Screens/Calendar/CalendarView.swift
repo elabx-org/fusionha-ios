@@ -14,6 +14,7 @@ struct CalendarView: View {
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     /// Half open with the fold top to bottom: the week reads as a list (Q-DC5).
     @Environment(\.bookPose) var bookPose
+    @Environment(\.collapsedTabs) var tabs
     /// v2 (S11): the palette's tint ground.
     @Environment(\.browseLook) var look
     /// The Calendar's own width (`useCalendarWidth`), never the size class.
@@ -119,7 +120,8 @@ struct CalendarView: View {
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             .browseGround(look)
         }
-        .shellPage(title) { barItems }
+        .columnActions(tabs.on, columnItems)
+        .shellPage(title) { if !tabs.on { barItems } }
         .environment(\.calMotionOff, settings?.animationsEnabled == false)
         .task { await loadSettings() }
         .onChange(of: model.calendarTodayTick) { goToday() }

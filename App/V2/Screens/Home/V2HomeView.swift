@@ -114,7 +114,9 @@ struct V2HomeView: View {
         // The page draws "Home" with the mark itself (`V2HomeHeading`), so
         // the bar has no title (on the folded Duo `.toolbar(removing: .title)`
         // still drew a second "Home" above the page's, build 982).
-        .shellPage("") { AddTitleToolbarItem(model: model) }
+        // Collapsed tabs: Add is in the arrow's list (the column rule).
+        .columnActions(tabs.on, [ColumnAction.add(model)])
+        .shellPage("") { if !tabs.on { AddTitleToolbarItem(model: model) } }
         // Home spans both pages of a Spread; All titles keeps the grid's rule.
         .spreadSpansBothPages(.library, !model.allTitles.wanted || density != "compact")
         .navigationDestination(isPresented: allTitlesBinding) { V2LibraryView(entry: entry) }

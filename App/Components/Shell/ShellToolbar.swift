@@ -25,7 +25,10 @@ struct ShellPage: ViewModifier {
     @State private var clusterPanel: StatusClusterPanel?
     @Environment(\.collapsedTabs) private var tabs
     @Environment(\.libraryTabRoot) private var libraryRoot
-    @State private var tabsOpen = false
+    /// The page's own buttons, for the arrow's list (`ColumnAction`).
+    @State private var pageActions: [ColumnAction] = []
+    /// The Duo's column: the trailing safe-area inset.
+    @State private var column: CGFloat = 0
 
     /// The Spread / Web layout switch in the bar. v2 lays the open Duo out
     /// one way (a title beside the list at its own share, browse pages across
@@ -57,22 +60,23 @@ struct ShellPage: ViewModifier {
             .toolbarTitleDisplayMode(inlineTitle ? .inline : .inlineLarge)
             .toolbar {
                 if tabs.on && !tabs.bottom {
-                    CollapsedTabsItem(model: model, state: tabs, libraryRoot: libraryRoot, open: $tabsOpen)
+                    CollapsedTabsItem(model: model, state: tabs, libraryRoot: libraryRoot, actions: pageActions)
                 }
                 StatusClusterItems(model: model, shown: showsCluster, open: $clusterPanel)
                 DuoLayoutToolbarItem(shown: duoOpen && Self.offersLayoutSwitch, layout: $duoLayout)
                 // Collapsed, Account is the last entry in the tabs' list.
                 if !accountInPage && !tabs.on { AccountToolbarItem(model: model) }
             }
-            .task(id: model.me?.id) { await AccountBarArt.shared.load(model.me, client: model.client) }
-            #if DEBUG
-            // Screenshot hook: the tabs' list open on the current tab's page.
-            .task(id: tabs.on) {
-                guard tabs.on, ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_COLLAPSED_TABS"] == "open" else { return }
-                try? await Task.sleep(for: .seconds(4))
-                tabsOpen = true
+            .onPreferenceChange(ColumnActionsKey.self) { pageActions = $0 }
+            // Tabs arrow: Bottom. On the page, not over the tabs: each page lists its own buttons.
+            .overlay {
+                if tabs.on && tabs.bottom {
+                    CollapsedTabsFloatingButton(model: model, state: tabs, libraryRoot: libraryRoot, column: column,
+                                                actions: pageActions)
+                }
             }
-            #endif
+            .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
+            .task(id: model.me?.id) { await AccountBarArt.shared.load(model.me, client: model.client) }
             .task(id: showsCluster) {
                 while showsCluster && !Task.isCancelled {
                     await ShellStatusFeed.shared.refresh(model)

@@ -6,9 +6,9 @@ import FusionhaKit
 // On the iPhone Duo the system keeps a column on the trailing edge for the
 // clock, the page's buttons and the tabs. With this on, the tabs leave the
 // column: one arrow button (the first item, so the system puts it in the
-// first free spot under the clock) opens them as a short list that drops
-// down from it. Account moves into that list too, so the column holds one
-// button and a page can run its content to the display's edge (Search does).
+// first free spot under the clock) opens them as a menu that drops down
+// from it, with the page's own buttons and Account under them, so the column
+// holds the arrow (and Close or Back) and a page runs to the display's edge.
 // Folded and flat open only; beside an open title the tabs stay in the bar
 // under the list pane. A regular iPhone and iPad keep their tab bar.
 
@@ -48,37 +48,47 @@ extension EnvironmentValues {
     @Entry var collapsedTabs = CollapsedTabsState()
 }
 
-/// The arrow button, first in the bar: it opens the tabs.
+/// The arrow button, first in the bar: it opens the tabs and the page's
+/// own buttons (the column rule, `ColumnAction`).
+///
+/// A system menu, not the popover of build 1129: a page's Filter and More
+/// are menus themselves and open here as submenus, and a row that opens a
+/// sheet can do so once the menu has gone. In a popover neither worked
+/// (one presentation at a time).
 struct CollapsedTabsItem: ToolbarContent {
     let model: AppModel
     let state: CollapsedTabsState
     let libraryRoot: LibraryTabRootOverride?
-    @Binding var open: Bool
+    /// The page's own buttons, listed under the tabs.
+    var actions: [ColumnAction] = []
+    /// A page over the tabs (a title) closes before the tab changes.
+    var beforeSwitch: (@MainActor () -> Void)?
 
     var body: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button { open = true } label: {
+            Menu {
+                CollapsedTabsList(model: model, state: state, libraryRoot: libraryRoot, actions: actions,
+                                  beforeSwitch: beforeSwitch)
+            } label: {
                 Label("Tabs", systemImage: "chevron.down")
             }
+            .menuOrder(.fixed)
             // The Activity badge can't be seen while the tabs are closed.
             .badge(state.activity)
-            .accessibilityHint("Shows the tabs")
-            .popover(isPresented: $open) {
-                CollapsedTabsList(model: model, state: state, libraryRoot: libraryRoot) { open = false }
-                    .presentationCompactAdaptation(.popover)
-            }
+            .accessibilityHint(actions.isEmpty ? "Shows the tabs" : "Shows the tabs and this page's buttons")
         }
         .barPriority(true)
     }
 }
 
-/// The tabs as a short column of icons, the current one in the accent, then
-/// Account. Controls, so the system's popover glass carries them.
+/// The menu's rows: the tabs (the current one ticked), this page's own
+/// buttons, then Account.
 struct CollapsedTabsList: View {
     let model: AppModel
     let state: CollapsedTabsState
     let libraryRoot: LibraryTabRootOverride?
-    let close: () -> Void
+    var actions: [ColumnAction] = []
+    var beforeSwitch: (@MainActor () -> Void)?
 
     private struct Entry: Identifiable {
         let tab: AppTab
@@ -109,112 +119,85 @@ struct CollapsedTabsList: View {
                 search]
     }
 
-    private var dot: Bool { model.attentionCount > 0 && !model.requestScoped }
+    private var attention: Bool { model.attentionCount > 0 && !model.requestScoped }
 
     var body: some View {
-        VStack(spacing: 2) {
+        Section {
             ForEach(entries) { entry in
-                Button {
-                    model.tab = entry.tab
-                    close()
-                } label: {
-                    icon(entry)
+                Toggle(isOn: Binding(get: { model.tab == entry.tab }, set: { _ in open(entry.tab) })) {
+                    Label {
+                        Text(verbatim: BadgeCount.text(entry.badge).map { "\(entry.title) · \($0)" } ?? entry.title)
+                    } icon: {
+                        if entry.system { Image(systemName: entry.image) } else { Image(entry.image).renderingMode(.template) }
+                    }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(entry.badge > 0 ? "\(entry.title), \(entry.badge)" : entry.title)
-                .accessibilityAddTraits(model.tab == entry.tab ? [.isButton, .isSelected] : .isButton)
             }
-            Divider().frame(width: 26).padding(.vertical, 4)
-            Button(action: account) {
-                Image(uiImage: AccountBarArt.shared.glyph(me: model.me, dot: dot))
-                    .renderingMode(.original)
-                    .frame(width: 48, height: 44)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(dot ? "Account, \(model.attentionCount) need attention" : "Account")
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 6)
+        if !actions.isEmpty {
+            Section { ColumnActionRows(actions: actions) }
+        }
+        Section {
+            Button(attention ? "Account · \(model.attentionCount) need attention" : "Account",
+                   systemImage: "person.crop.circle", action: account)
+        }
     }
 
-    private func icon(_ entry: Entry) -> some View {
-        Group {
-            if entry.system { Image(systemName: entry.image) } else { Image(entry.image).renderingMode(.template) }
-        }
-        .font(.system(size: 21, weight: .medium))
-        .foregroundStyle(model.tab == entry.tab ? Theme.primary : Theme.txt)
-        .frame(width: 48, height: 44)
-        .overlay(alignment: .topTrailing) {
-            if let text = BadgeCount.text(entry.badge) {
-            Text(verbatim: text)
-                .font(.system(size: 10, weight: .bold))
-                .monospacedDigit()
-                .foregroundStyle(.white)
-                .padding(.horizontal, 4)
-                .frame(minWidth: 16, minHeight: 16)
-                .background(entry.tab == .activity ? Theme.stuck : Theme.primary, in: Capsule())
-                .offset(x: 2, y: 2)
-                .accessibilityHidden(true)
-            }
-        }
-        .contentShape(Rectangle())
+    private func open(_ tab: AppTab) {
+        beforeSwitch?()
+        model.tab = tab
     }
 
-    /// Account opens once the list has gone (one presentation at a time).
     private func account() {
-        close()
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(350))
-            #if V2
-            model.showingAccount = true
-            #else
-            model.avatar.showingSheet = true
-            #endif
-        }
+        #if V2
+        model.showingAccount = true
+        #else
+        model.avatar.showingSheet = true
+        #endif
     }
 }
 
 /// The arrow at the bottom of the Duo's column (owner, build 1129: "an option
 /// to move that button at the bottom"): the spot the tabs' pill held, which
 /// is free while they are collapsed. The column is the trailing safe-area
-/// inset, so the button is centred in it; the tabs rise from it.
+/// inset, so the button is centred in it; the menu rises from it.
 struct CollapsedTabsFloatingButton: View {
     let model: AppModel
     let state: CollapsedTabsState
     let libraryRoot: LibraryTabRootOverride?
     /// The column's width (the trailing safe-area inset).
     let column: CGFloat
-    @State private var open = false
+    var actions: [ColumnAction] = []
+    var beforeSwitch: (@MainActor () -> Void)?
 
     private static let side: CGFloat = 50
 
     var body: some View {
         // A frame, not a filled view: only the button takes touches.
         Group {
-            Button { open = true } label: {
+            Menu {
+                CollapsedTabsList(model: model, state: state, libraryRoot: libraryRoot, actions: actions,
+                                  beforeSwitch: beforeSwitch)
+            } label: {
                 Image(systemName: "chevron.up")
                     .font(.system(size: 19, weight: .semibold))
                     .foregroundStyle(Theme.txt)
                     .frame(width: Self.side, height: Self.side)
                     .contentShape(Circle())
+                    .glassEffect(.regular.interactive(), in: Circle())
             }
+            .menuOrder(.fixed)
             .buttonStyle(.plain)
-            .glassEffect(.regular.interactive(), in: Circle())
             .overlay(alignment: .topTrailing) {
                 if state.activity > 0 {
                     Circle().fill(Theme.stuck).frame(width: 11, height: 11)
                         .overlay(Circle().strokeBorder(Theme.bg, lineWidth: 2))
                         .offset(x: -2, y: 2)
+                        .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
             }
             .accessibilityLabel(state.activity > 0 ? "Tabs, \(state.activity) in Activity need you" : "Tabs")
-            .accessibilityHint("Shows the tabs")
-            .popover(isPresented: $open, arrowEdge: .bottom) {
-                CollapsedTabsList(model: model, state: state, libraryRoot: libraryRoot) { open = false }
-                    .presentationCompactAdaptation(.popover)
-            }
+            .accessibilityHint(actions.isEmpty ? "Shows the tabs" : "Shows the tabs and this page's buttons")
             .padding(.trailing, max(8, (column - Self.side) / 2))
             .padding(.bottom, 10)
         }

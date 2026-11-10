@@ -97,11 +97,6 @@ struct ShellTabs: View {
         .onGeometryChange(for: CGFloat.self) { $0.size.width.rounded() } action: { width = $0 }
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { column = $0 }
         .environment(\.collapsedTabs, tabsState)
-        .overlay {
-            if collapsed && arrowAtBottom {
-                CollapsedTabsFloatingButton(model: model, state: tabsState, libraryRoot: libraryRoot, column: column)
-            }
-        }
         .tint(Theme.indigo)
         // Count badges in the accent, as on the web, not the system red; the
         // shell's size re-tints them after the bar changes axis. v2's

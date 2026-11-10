@@ -12,6 +12,7 @@ struct V2SeasonPage: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     @Environment(\.detailReduceMotion) private var reduce
+    @Environment(\.columnPage) private var column
     /// The window's kept stacks: the season keeps its place across a fold.
     @Environment(V2TitleStacks.self) private var stacks: V2TitleStacks?
     let seasonNumber: Int
@@ -32,6 +33,11 @@ struct V2SeasonPage: View {
                 let facts = V2SeasonFacts(season: season, editions: detail.orderedEditions)
                 list(detail, season, facts)
                     .toolbar { toolbar(detail, season, facts) }
+                    .columnArrow(column.collapsed, actions: [
+                        .control("Season actions", stamp: "\(facts.missing)") {
+                            V2SeasonActionsMenu(detail: detail, season: season, missing: facts.missing)
+                        },
+                    ], beforeSwitch: column.close)
             } else {
                 EmptyBox(message: "This season is no longer in the library.")
                     .padding(20)
@@ -142,8 +148,10 @@ struct V2SeasonPage: View {
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
         }
-        ToolbarItem(placement: .topBarTrailing) {
-            V2SeasonActionsMenu(detail: detail, season: season, missing: facts.missing)
+        if !column.collapsed {
+            ToolbarItem(placement: .topBarTrailing) {
+                V2SeasonActionsMenu(detail: detail, season: season, missing: facts.missing)
+            }
         }
     }
 }

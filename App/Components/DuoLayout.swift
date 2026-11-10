@@ -165,6 +165,7 @@ struct ShellDetailColumn: View {
     @Environment(\.titleSpread) private var titleSpread
     @Environment(\.titlePage) private var titlePage
     @Environment(\.bookPose) private var bookPose
+    @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = false
     /// The page following a swipe from its leading edge (`DuoPageEdge`).
     @State private var dragOffset: CGFloat = 0
     @State private var width: CGFloat = 0
@@ -288,7 +289,7 @@ struct ShellDetailColumn: View {
                     // unfolding keeps the page, its child sheets and their drafts.
                     TitlePageHost(store: model.detailStore(for: ref.id), onClose: { closePage() })
                         .environment(\.detailInColumn, true)
-                        .duoListToggleToolbar()
+                        .duoListToggleToolbar(inArrow: titlePage != nil && collapsedTabs && duoOpen)
                 }
                 .id(ref.id)
             } else if let route = model.spreadPreview, spread.isActive {

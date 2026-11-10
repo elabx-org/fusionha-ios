@@ -37,6 +37,13 @@ extension CalendarView {
         }
     }
 
+    /// The same three for the arrow's list (collapsed tabs, the column rule).
+    var columnItems: [ColumnAction?] {
+        [.button("Today", "calendar.badge.clock") { goToday() },
+         isPhone ? .control("Filter media type", stamp: filter.label) { filterMenu } : nil,
+         showsOptionsMenu ? .control("Calendar options", stamp: "\(view)|\(copyingFeed)") { optionsMenu } : nil]
+    }
+
     var stepNoun: String {
         switch view {
         case .week: return "week"

@@ -16,6 +16,7 @@ import FusionhaKit
 struct V2QueueView: View {
     let search: String
     @Environment(AppModel.self) var model
+    @Environment(\.collapsedTabs) var tabs
     @Environment(ActToaster.self) var toaster
     @Environment(ActRouter.self) var router
     @Environment(ActChrome.self) var chrome
@@ -52,6 +53,13 @@ struct V2QueueView: View {
     var counts: V2QueueCounts { V2QueueCounts(items: store.items, total: store.total) }
     var selectedItems: [QueueItem] { store.items.filter { selected.contains($0.id) } }
 
+    /// Process, Select and Clear: in the bar, or under the tabs' arrow.
+    private var moreMenu: some View {
+        V2QueueMoreMenu(processing: processing, selecting: selecting,
+                        canClear: search.isEmpty && !store.hasMore, isEmpty: store.items.isEmpty,
+                        process: processNow, toggleSelect: toggleSelect, clear: { clearing = true })
+    }
+
     var body: some View {
         @Bindable var chrome = chrome
         HStack(spacing: 0) {
@@ -77,12 +85,15 @@ struct V2QueueView: View {
         .searchable(text: $chrome.searchInput, placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: "Search titles")
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                V2QueueMoreMenu(processing: processing, selecting: selecting,
-                                canClear: search.isEmpty && !store.hasMore, isEmpty: store.items.isEmpty,
-                                process: processNow, toggleSelect: toggleSelect, clear: { clearing = true })
+            if !tabs.on {
+                ToolbarItem(placement: .primaryAction) { moreMenu }
             }
         }
+        .columnActions(tabs.on, [
+            .control("Queue", stamp: "\(processing)|\(selecting)|\(store.items.isEmpty)|\(search.isEmpty && !store.hasMore)") {
+                moreMenu
+            },
+        ])
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if selecting {
                 V2QueueBulkBar(count: selected.count, busy: busy,

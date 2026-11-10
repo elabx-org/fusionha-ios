@@ -11,6 +11,7 @@ struct V2EpisodePage: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     @Environment(\.detailReduceMotion) private var reduce
+    @Environment(\.columnPage) private var column
     /// Beside the season's list on the flat open Duo (`V2TitleWideChild`):
     /// the band above carries the art, so a short header instead of the hero.
     @Environment(\.v2WideChild) private var wideChild
@@ -38,6 +39,9 @@ struct V2EpisodePage: View {
                 page(detail, episode)
                     .toolbar { V2EpisodeToolbar(detail: detail, episode: episode, seasonNumber: seasonNumber,
                                                 version: version(detail, episode)) }
+                    // Its own three buttons stay for now: the file menu asks before
+                    // deleting with a dialog of its own, which a menu's row can't show.
+                    .columnArrow(column.collapsed, beforeSwitch: column.close)
             } else {
                 EmptyBox(message: "This episode is no longer in the library.")
                     .padding(20)
