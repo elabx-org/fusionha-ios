@@ -36,15 +36,21 @@ struct V2TitleActionRow: View {
     var body: some View {
         Group {
             if stacked {
-                // The wide page's left column (mock `tabWide`): the searches,
-                // then Monitored on its own line.
-                VStack(alignment: .leading, spacing: 10) {
+                // The wide page's left column: one line while the buttons fit
+                // (Monitored alone on a second line read as misplaced, owner
+                // 2026-11-10); only a longer label ("Search missing 4K") in a
+                // narrow column drops Monitored under the searches.
+                ViewThatFits(in: .horizontal) {
                     HStack(spacing: 8) {
                         searches
-                        Spacer(minLength: 0)
+                        monitor
                     }
-                    monitor
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(spacing: 8) { searches }
+                        monitor
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 HStack(spacing: 8) {
                     searches
