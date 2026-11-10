@@ -27,6 +27,17 @@ struct ShellPage: ViewModifier {
     @Environment(\.libraryTabRoot) private var libraryRoot
     @State private var tabsOpen = false
 
+    /// The Spread / Web layout switch in the bar. v2 lays the open Duo out
+    /// one way (a title beside the list at its own share, browse pages across
+    /// the display), so there the switch changed nothing on screen and read
+    /// as a broken split-screen button (owner, build 1132). The choice stays
+    /// in Settings › Appearance.
+    #if V2
+    private static let offersLayoutSwitch = false
+    #else
+    private static let offersLayoutSwitch = true
+    #endif
+
     private var accountInPage: Bool {
         accountInPageWhenFolded && OuterDisplay.isFoldedDuo(sizeClass: sizeClass)
     }
@@ -49,7 +60,7 @@ struct ShellPage: ViewModifier {
                     CollapsedTabsItem(model: model, state: tabs, libraryRoot: libraryRoot, open: $tabsOpen)
                 }
                 StatusClusterItems(model: model, shown: showsCluster, open: $clusterPanel)
-                DuoLayoutToolbarItem(shown: duoOpen, layout: $duoLayout)
+                DuoLayoutToolbarItem(shown: duoOpen && Self.offersLayoutSwitch, layout: $duoLayout)
                 // Collapsed, Account is the last entry in the tabs' list.
                 if !accountInPage && !tabs.on { AccountToolbarItem(model: model) }
             }
