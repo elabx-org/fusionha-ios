@@ -47,9 +47,10 @@ struct V2PosterWidePage: View {
     }
 }
 
-/// The open page's poster: today's 14pt card corner and a deep shadow, so
+/// The open page's poster: today's 14pt card corner and the cards' pre-rendered shadow, so
 /// it sits on the hero like an album cover.
 struct V2PosterCover: View {
+    @Environment(\.pagePalette) private var page
     let detail: ItemDetail
     let width: CGFloat
 
@@ -59,7 +60,9 @@ struct V2PosterCover: View {
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(.white.opacity(0.12), lineWidth: 0.5))
-            .shadow(color: .black.opacity(0.45), radius: 22, y: 14)
+            // Pre-blurred nine-slice: a live `.shadow` re-blurs every frame
+            // of the scroll (open-Duo perf rule).
+            .background { ModuleShadow(radius: 14, light: page?.isLight ?? Theme.isLight) }
             .accessibilityHidden(true)
     }
 }
@@ -77,7 +80,6 @@ struct V2PosterCoverHeading: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
                 .minimumScaleFactor(0.7)
-                .shadow(color: .black.opacity(0.45), radius: 9, y: 2)
                 .accessibilityAddTraits(.isHeader)
             V2TitleMetaLine(detail: detail)
         }
@@ -95,6 +97,7 @@ struct V2PosterWideHero: View {
     @State private var shown = false
 
     private var light: Bool { page?.isLight ?? Theme.isLight }
+    private var ground: Color { page?.tint ?? Theme.bg }
 
     var body: some View {
         ZStack {
@@ -103,12 +106,14 @@ struct V2PosterWideHero: View {
                 .clipped()
                 .opacity(shown || !motion ? 1 : 0)
             V2HeroShade(light: light, tint: page?.tint)
+            // Painted into the page tint instead of a mask, which rendered
+            // the full-size backdrop offscreen on every scroll frame.
+            LinearGradient(stops: [.init(color: ground.opacity(0), location: 0.7),
+                                   .init(color: ground, location: 1)],
+                           startPoint: .top, endPoint: .bottom)
         }
         .clipped()
         .ignoresSafeArea(.container, edges: .horizontal)
-        .mask(LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.7),
-                                     .init(color: .clear, location: 1)],
-                             startPoint: .top, endPoint: .bottom))
         .allowsHitTesting(false)
         .accessibilityHidden(true)
         .onAppear {
