@@ -26,6 +26,9 @@ struct V2LibraryView: View {
     @Environment(\.bookPose) private var bookPose
     @Environment(\.duoOpen) private var duoOpen
     @Environment(\.duoListToggle) private var listToggle
+    @Environment(\.collapsedTabs) private var tabs
+    /// The Duo's column: the trailing safe-area inset.
+    @State private var column: CGFloat = 0
     // The filters follow the window (split screen), seeded from the ones
     // used last (`V2LibrarySceneFilters`). Show › Not monitored is v2's own.
     @SceneStorage("v2.library.kind") private var kindRaw = V2LibraryFilterSeed.kind
@@ -46,6 +49,12 @@ struct V2LibraryView: View {
     @State private var onScreen = LibraryOnScreen()
     @State private var entrance = LibraryEntrance()
     @State private var gridFold = LibraryGridFold()
+
+    /// Collapsed tabs: the grid runs under the Duo's column to the display's
+    /// edge (Home's rule, `V2HomeView.fullWidth`); the header, chips and the
+    /// grid's heading keep clear of the clock and the column's buttons.
+    private var fullWidth: Bool { tabs.on && !bookPose }
+    private var columnReserve: CGFloat { fullWidth ? column : 0 }
 
     private var compact: Bool { density == "compact" }
     private var alphaMode: Bool { sort == .title && !group && !compact }
@@ -176,14 +185,16 @@ struct V2LibraryView: View {
     private func scroll(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                V2LibraryPageTop(derived: derived, filters: filters, paneWidth: pane.width)
+                V2LibraryPageTop(derived: derived, filters: filters, paneWidth: pane.width - columnReserve)
+                    .padding(.trailing, columnReserve)
                 // The grid runs to the page gutter; the A–Z thumb floats over
                 // its trailing edge only while scrolling (Photos' scroller), so
                 // no width is kept for it (owner, build 854).
                 Color.clear.frame(height: 1)
                     .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
                         scrubber.setGridTop(frame.minY)
-                        scrubber.setGridTrailing(frame.maxX)
+                        // The A–Z thumb stays beside the column, not under its buttons.
+                        scrubber.setGridTrailing(frame.maxX - columnReserve)
                     }
                 VStack(alignment: .leading, spacing: 0) {
                     Color.clear.frame(height: 0)
@@ -201,6 +212,8 @@ struct V2LibraryView: View {
             .padding(.bottom, Theme.pageBottom)
         }
         .scrollDismissesKeyboard(.immediately)
+        .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
         .onGeometryChange(for: LibraryPane.self) { LibraryPane(width: $0.size.width) } action: {
             PerfCount.hit("V2Library.pane.\(Int($0.width))")
             pane = $0
