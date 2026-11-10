@@ -15,12 +15,13 @@ struct V2PosterWidePage: View {
     let width: CGFloat
 
     static let posterWidth: CGFloat = 218
-    private var leftWidth: CGFloat { min(400, max(320, (width * 0.38).rounded())) }
+    static func leftWidth(_ width: CGFloat) -> CGFloat { min(400, max(320, (width * 0.38).rounded())) }
+    private var leftWidth: CGFloat { Self.leftWidth(width) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(spacing: 16) {
-                V2PosterCover(detail: detail, width: Self.posterWidth)
+                V2PosterCover(poster: detail.posterUrl, backdrop: detail.backdropUrl, width: Self.posterWidth)
                 V2PosterCoverHeading(detail: detail)
             }
             .frame(width: leftWidth)
@@ -28,7 +29,7 @@ struct V2PosterWidePage: View {
             .padding(.top, barInset + 8)
             .padding(.bottom, 22)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background { V2PosterWideHero(detail: detail) }
+            .background { V2PosterWideHero(backdrop: detail.backdropUrl, poster: detail.posterUrl) }
             .duoTitleSwipe(id: detail.id)
             HStack(alignment: .top, spacing: V2TitleWide.columnGap) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -53,11 +54,12 @@ struct V2PosterWidePage: View {
 /// it sits on the hero like an album cover.
 struct V2PosterCover: View {
     @Environment(\.pagePalette) private var page
-    let detail: ItemDetail
+    let poster: String?
+    let backdrop: String?
     let width: CGFloat
 
     var body: some View {
-        PosterImage(url: TMDBImage.resized(detail.posterUrl ?? detail.backdropUrl, to: "w500"))
+        PosterImage(url: TMDBImage.resized(poster ?? backdrop, to: "w500"))
             .frame(width: width, height: width * 1.5)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -93,17 +95,26 @@ struct V2PosterCoverHeading: View {
 /// The band's art: today's backdrop full width behind both pages, under
 /// the hero shade, ending like `V2TitleBand`.
 struct V2PosterWideHero: View {
-    let detail: ItemDetail
+    let backdrop: String?
+    let poster: String?
     @Environment(\.pagePalette) private var page
     @Environment(\.motionEnabled) private var motion
-    @State private var shown = false
+    @State private var shown: Bool
+
+    init(backdrop: String?, poster: String?) {
+        self.backdrop = backdrop
+        self.poster = poster
+        // Eases in once per art: the loading shell already showed it.
+        _shown = State(initialValue: ItemDetailArt.hero(backdrop: backdrop, poster: poster)
+            .map { HeroArtReveal.shown.contains($0) } ?? false)
+    }
 
     private var light: Bool { page?.isLight ?? Theme.isLight }
     private var ground: Color { page?.tint ?? Theme.bg }
 
     var body: some View {
         ZStack {
-            PosterImage(url: ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl))
+            PosterImage(url: ItemDetailArt.hero(backdrop: backdrop, poster: poster))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .clipped()
                 .opacity(shown || !motion ? 1 : 0)
@@ -121,6 +132,7 @@ struct V2PosterWideHero: View {
         .allowsHitTesting(false)
         .accessibilityHidden(true)
         .onAppear {
+            if let url = ItemDetailArt.hero(backdrop: backdrop, poster: poster) { HeroArtReveal.shown.insert(url) }
             guard motion, !shown else { return }
             withAnimation(.easeOut(duration: 0.5)) { shown = true }
         }

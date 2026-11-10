@@ -9,45 +9,67 @@ struct V2PosterHero: View {
     let detail: ItemDetail
     /// The page's width; the hero's height follows the poster's shape.
     let width: CGFloat
-    @Environment(\.pagePalette) private var page
-    @Environment(\.motionEnabled) private var motion
-    @State private var shown = false
 
-    private var light: Bool { page?.isLight ?? Theme.isLight }
-    private var art: URL? { TMDBImage.resized(detail.posterUrl ?? detail.backdropUrl, to: "w780") }
-    private var height: CGFloat { min(max(width, 300) * 1.5, 680) }
+    static func height(width: CGFloat) -> CGFloat { min(max(width, 300) * 1.5, 680) }
 
     var body: some View {
         Color.clear
             .frame(maxWidth: .infinity)
-            .frame(height: height)
-            .background {
-                ZStack {
-                    PosterImage(url: art)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .clipped()
-                        .scaleEffect(shown || !motion ? 1 : 1.04)
-                        .opacity(shown || !motion ? 1 : 0)
-                    V2HeroShade(light: light, tint: page?.tint)
-                    V2PosterFoot(light: light, tint: page?.tint)
-                }
-                // Clipped inside its extended frame, so the art runs under the
-                // Duo's system column and the glass bar floats over it (v1
-                // c3c9e0d8: clipping the hero's own frame left a dark strip).
-                .clipped()
-                .ignoresSafeArea(.container, edges: .horizontal)
-                .accessibilityHidden(true)
-            }
+            .frame(height: Self.height(width: width))
+            .background { V2PosterHeroArt(poster: detail.posterUrl, backdrop: detail.backdropUrl) }
             .overlay(alignment: .bottomLeading) {
                 V2TitleHeading(detail: detail, size: 30)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 20)
             }
             .duoTitleSwipe(id: detail.id)
-            .onAppear {
-                guard motion, !shown else { return }
-                withAnimation(.easeOut(duration: 0.7)) { shown = true }
-            }
+    }
+}
+
+/// The hero's art, shared with the loading shell (`V2PosterLoadingShell`)
+/// so the page fills in where the shell stood: the poster, the hero shade
+/// and the deeper foot. Eases in once per poster (`HeroArtReveal`), so the
+/// loaded page never fades the shell's art out and in again.
+struct V2PosterHeroArt: View {
+    let poster: String?
+    let backdrop: String?
+    @Environment(\.pagePalette) private var page
+    @Environment(\.motionEnabled) private var motion
+    @State private var shown: Bool
+
+    init(poster: String?, backdrop: String?) {
+        self.poster = poster
+        self.backdrop = backdrop
+        _shown = State(initialValue: Self.url(poster, backdrop).map { HeroArtReveal.shown.contains($0) } ?? false)
+    }
+
+    static func url(_ poster: String?, _ backdrop: String?) -> URL? {
+        TMDBImage.resized(poster ?? backdrop, to: "w780")
+    }
+
+    private var light: Bool { page?.isLight ?? Theme.isLight }
+
+    var body: some View {
+        ZStack {
+            PosterImage(url: Self.url(poster, backdrop))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+                .scaleEffect(shown || !motion ? 1 : 1.04)
+                .opacity(shown || !motion ? 1 : 0)
+            V2HeroShade(light: light, tint: page?.tint)
+            V2PosterFoot(light: light, tint: page?.tint)
+        }
+        // Clipped inside its extended frame, so the art runs under the
+        // Duo's system column and the glass bar floats over it (v1
+        // c3c9e0d8: clipping the hero's own frame left a dark strip).
+        .clipped()
+        .ignoresSafeArea(.container, edges: .horizontal)
+        .accessibilityHidden(true)
+        .onAppear {
+            if let url = Self.url(poster, backdrop) { HeroArtReveal.shown.insert(url) }
+            guard motion, !shown else { return }
+            withAnimation(.easeOut(duration: 0.7)) { shown = true }
+        }
     }
 }
 

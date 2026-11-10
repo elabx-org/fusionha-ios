@@ -136,6 +136,8 @@ struct V2TitleView: View {
                     }
                 } else if store.loadError != nil {
                     DetailLoadError(close: close)
+                } else if posterLook {
+                    V2PosterLoadingShell(seed: model.library.first { $0.id == store.itemId }, width: width, wide: wide)
                 } else {
                     DetailLoadingShell(seed: model.library.first { $0.id == store.itemId })
                 }
