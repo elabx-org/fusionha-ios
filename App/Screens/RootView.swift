@@ -23,8 +23,8 @@ struct RootView: View {
     @State private var pillSpace = DownloadsPillSpace()
     /// The tabs whose list the sidebar button hid (`DuoListMemory`). Per device.
     @AppStorage(DuoListMemory.storageKey) private var hiddenLists = ""
-    /// The remembered-hidden list is parked at full width (`ShellSplit.primaryParked`);
-    /// off while the sidebar button slides it in or out at its split width.
+    /// The remembered-hidden list is parked at full width (`ShellSplit.primaryParked`):
+    /// on whenever the right page empties, off once the list has been shown.
     @State private var listParked = true
     /// v2's title page (`TitlePageHost`); nil in v1.
     @Environment(\.titlePage) private var titlePage
@@ -120,7 +120,10 @@ struct RootView: View {
         let showing = split.primaryHidden
         return DuoListToggle(hidden: split.primaryHidden, key: key) {
             // The list slides in and out at its split width: un-park it first,
-            // unanimated (off screen), and park it again once it is hidden.
+            // unanimated (off screen). It is parked again only when the right
+            // page empties (below): parking it after each hide re-flowed the
+            // grid once more than before (perf runs 42810163466 / 42810167912,
+            // seam.full hang 449 -> 979 ms).
             var instant = Transaction()
             instant.disablesAnimations = true
             let wasParked = listParked
@@ -134,24 +137,12 @@ struct RootView: View {
             // frame for the un-parked list to lay out before it slides in.
             guard showing, wasParked, seam.live == nil else {
                 flip()
-                if !showing { parkListSoon(key) }
                 return
             }
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(40))
                 flip()
             }
-        }
-    }
-
-    /// Once the list has slid away, park it at full width (if it is still hidden).
-    private func parkListSoon(_ key: String) {
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(450))
-            guard DuoListMemory(raw: hiddenLists).isHidden(key) else { return }
-            var instant = Transaction()
-            instant.disablesAnimations = true
-            withTransaction(instant) { listParked = true }
         }
     }
 
@@ -270,7 +261,11 @@ struct RootView: View {
         .onChange(of: spread.isActive) { _, active in if !active { model.settleSpreadPreview() } }
         // With nothing on the right page the list fills the display: the next
         // title opens over a parked list again (`ShellSplit.primaryParked`).
-        .onChange(of: model.rightPageHasItem) { _, has in if !has { listParked = true } }
+        // A list shown beside a title is un-parked, so hiding it later (the
+        // button, the handle, another tab's memory) slides it at its split width.
+        .onChange(of: [model.rightPageHasItem, split.primaryHidden]) { _, now in
+            if !now[0] { listParked = true } else if !now[1] { listParked = false }
+        }
         // On the open Duo the tabs' column jumps to its new width (a Spread
         // span to the left page re-flows the whole Library grid, and animating
         // that relayout stuttered); only the title's column animates, through
