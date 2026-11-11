@@ -10,13 +10,20 @@ struct SearchAddRow: View {
     @Environment(AppModel.self) private var model
     @Environment(\.browseLook) private var look
     @Environment(\.paneSize) private var pane
+    @Environment(\.pagePalette) var page
     let hit: UnifiedAddHit
     let actions: SearchAddActions
+    /// The grid's poster tile (`SearchAddRow+Tile`) instead of a row.
+    var tile = false
 
-    private var canAdd: Bool { model.me.map { $0.hasCapability("add") } ?? !model.requestScoped }
-    private var canRequest: Bool { model.me?.hasCapability("request") == true }
+    var canAdd: Bool { model.me.map { $0.hasCapability("add") } ?? !model.requestScoped }
+    var canRequest: Bool { model.me?.hasCapability("request") == true }
 
     var body: some View {
+        if tile { tileBody } else { rowBody }
+    }
+
+    private var rowBody: some View {
         Button(action: primary) {
             SearchRow(posterUrl: hit.posterUrl, dot: dot, title: hit.title,
                       meta: meta, picked: picked) {
@@ -67,7 +74,7 @@ struct SearchAddRow: View {
     }
 
     /// "Dec 2026" for a title not out yet.
-    private var upcoming: String? {
+    var upcoming: String? {
         guard let raw = hit.tmdb?.date, raw.count >= 10 else { return nil }
         let parser = DateFormatter()
         parser.locale = Locale(identifier: "en_US_POSIX")
@@ -76,34 +83,34 @@ struct SearchAddRow: View {
         return date.formatted(.dateTime.month(.abbreviated).year())
     }
 
-    private var dot: Color {
+    var dot: Color {
         if hit.tmdb?.isAnime == true { return Theme.kindAnime }
         return hit.kind == .movie ? Theme.kindMovie : Theme.kindSeries
     }
 
-    private var kindName: String {
+    var kindName: String {
         if hit.tmdb?.isAnime == true { return "Anime" }
         return hit.kind == .movie ? "Movie" : "Series"
     }
 
-    private var picked: Bool {
+    var picked: Bool {
         guard let result = hit.tmdb else { return false }
         return result.isPicked(in: model, libraryId: nil)
     }
 
     /// A TheTVDB-only title can be added but not requested (requests need a TMDB id).
-    private var rowActions: [OmniActions.Action] {
+    var rowActions: [OmniActions.Action] {
         OmniActions.addRowActions(openable: openable != nil, canAdd: canAdd,
                                   canRequest: canRequest && hit.tmdb != nil)
     }
 
     /// A requester's row for a title the server already has.
-    private var openable: Int? {
+    var openable: Int? {
         guard let result = hit.tmdb, result.inLibrary, !model.requestScoped else { return nil }
         return model.libraryItemId(for: result)
     }
 
-    private func primary() {
+    func primary() {
         switch OmniActions.addRowPrimary(openable: openable != nil, canAdd: canAdd,
                                          canRequest: canRequest && hit.tmdb != nil) {
         case .open: if let id = openable { model.open(id) }
@@ -114,11 +121,11 @@ struct SearchAddRow: View {
         }
     }
 
-    private func add() {
+    func add() {
         if let result = hit.tmdb { model.openAdd(result) } else if let tvdb = hit.tvdb { actions.addTvdb(tvdb) }
     }
 
-    private func request() {
+    func request() {
         if let result = hit.tmdb { actions.request(result) }
     }
 }

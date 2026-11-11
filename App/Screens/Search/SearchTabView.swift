@@ -29,6 +29,7 @@ struct SearchTabView: View {
     @State private var tvdbPick: TvdbSearchResult?
     @AppStorage("unifiedSearch.sources") private var sourcesRaw = UnifiedSearchSourceFilter.all.rawValue
     @AppStorage(SearchKindPicker.storageKey) private var kindRaw = SearchKind.all.rawValue
+    @AppStorage(SearchLayout.storageKey) private var layoutRaw = SearchLayout.rows.rawValue
     @State private var recent = RecentSearches.load(from: .standard)
     @FocusState private var focused: Bool
     @Environment(\.collapsedTabs) private var tabs
@@ -48,8 +49,13 @@ struct SearchTabView: View {
     /// the arrow button (`TabsLook.clearance`), less the kind picker's row.
     private var lead: CGFloat {
         guard fullWidth, restTop > 0 else { return 0 }
-        return max(0, TabsLook.clearance(folded: !duoOpen, bottom: tabs.bottom) - restTop - (pickerOnRightPage ? 0 : 46))
+        return max(0, TabsLook.clearance(folded: !duoOpen, bottom: tabs.bottom) - restTop - (pickerOnRightPage ? 0 : 46)
+                   - (tools ? SearchToolsRow.height : 0))
     }
+
+    /// v2: the tools row (source + rows/grid) above the results.
+    private var tools: Bool { look != nil }
+    private var grid: Bool { tools && SearchLayout(rawValue: layoutRaw) == .grid }
 
     private var trimmed: String { model.searchQuery.trimmingCharacters(in: .whitespaces) }
     private var kind: SearchKind { SearchKind(rawValue: kindRaw) ?? .all }
@@ -80,8 +86,14 @@ struct SearchTabView: View {
                             // Beside the column's clock and arrow, not under them.
                             .padding(.trailing, fullWidth ? column : 0)
                     }
+                    if tools {
+                        SearchToolsRow(filter: filter)
+                            .padding(.horizontal, Theme.pageGutter)
+                            .padding(.trailing, fullWidth ? column : 0)
+                    }
                     if lead > 0 { Color.clear.frame(height: lead) }
-                    SearchResults(term: trimmed, kind: kind, search: search, filter: filter, actions: actions)
+                    SearchResults(term: trimmed, kind: kind, search: search, filter: filter, actions: actions,
+                                  tools: tools, grid: grid)
                 }
             }
             .padding(.top, 4)

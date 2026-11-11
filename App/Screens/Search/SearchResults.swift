@@ -12,6 +12,9 @@ struct SearchResults: View {
     let search: UnifiedSearchModel
     @Binding var filter: UnifiedSearchSourceFilter
     let actions: SearchAddActions
+    /// v2: the tools row above picks the source and the layout.
+    var tools = false
+    var grid = false
 
     private var lanes: UnifiedSearchLanes { search.lanes }
     /// The lanes still show the previous term's answer while this one runs.
@@ -25,15 +28,25 @@ struct SearchResults: View {
         VStack(alignment: .leading, spacing: 0) {
             if !exact.isEmpty && !stale {
                 SearchLaneLabel(text: "Exact match", count: exact.count)
-                SearchLaneCard {
+                lane {
                     ForEach(Array(exact.enumerated()), id: \.element.id) { i, result in
-                        SearchAddRow(hit: UnifiedAddHit(tmdb: result), actions: actions).searchStagger(i)
+                        SearchAddRow(hit: UnifiedAddHit(tmdb: result), actions: actions, tile: grid).searchStagger(i)
                     }
                 }
                 .transition(.searchRow(motion: motion))
             }
             if !model.requestScoped && !lanes.libraryForbidden { ownedLane(owned) }
             addLane(hits)
+        }
+    }
+
+    /// A lane's results: rows in one card, or the poster grid.
+    @ViewBuilder
+    private func lane<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        if grid {
+            SearchTileGrid { content() }
+        } else {
+            SearchLaneCard { content() }
         }
     }
 
@@ -54,9 +67,12 @@ struct SearchResults: View {
     private func ownedLane(_ owned: (rows: [MediaItem], total: Int)) -> some View {
         if owned.total > 0 {
             SearchLaneLabel(text: "In your library", count: owned.total)
-            SearchLaneCard {
+            lane {
                 ForEach(Array(owned.rows.enumerated()), id: \.element.id) { i, item in
-                    SearchOwnedRow(item: item).searchStagger(i)
+                    Group {
+                        if grid { V2PosterCard(item: item) } else { SearchOwnedRow(item: item) }
+                    }
+                    .searchStagger(i)
                 }
             }
             if owned.total > owned.rows.count { moreInLibrary(owned.total - owned.rows.count) }
@@ -96,12 +112,16 @@ struct SearchResults: View {
     private func addLane(_ hits: [UnifiedAddHit]) -> some View {
         SearchLaneLabel(text: model.requestScoped ? "Available to request" : "Available to add",
                         count: hits.isEmpty ? nil : hits.count) {
-            SearchSourceMenu(filter: $filter, available: lanes.answered)
+            if tools {
+                SearchSourceMarks(filter: filter, available: lanes.answered)
+            } else {
+                SearchSourceMenu(filter: $filter, available: lanes.answered)
+            }
         }
         if !hits.isEmpty {
-            SearchLaneCard {
+            lane {
                 ForEach(Array(hits.enumerated()), id: \.element.id) { i, hit in
-                    SearchAddRow(hit: hit, actions: actions).searchStagger(i)
+                    SearchAddRow(hit: hit, actions: actions, tile: grid).searchStagger(i)
                 }
             }
             .opacity(stale ? 0.55 : 1)
