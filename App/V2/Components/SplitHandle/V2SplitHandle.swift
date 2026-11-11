@@ -122,7 +122,8 @@ struct V2SplitHandle: View {
             .accessibilityHint("Drag to resize, or drag right to close")
             .accessibilityAction { settle(DuoSeam.tapTarget(x: x, split: rest), velocity: 0) }
             .accessibilityAction(named: "Full width") { settle(.fullWidth, velocity: 0) }
-            .accessibilityAction(named: "Split") { settle(.split, velocity: 0) }
+            .accessibilityAction(named: "Split") { settle(.split, velocity: 0, share: DuoSeam.splitShares[0]) }
+            .accessibilityAction(named: "Half and half") { settle(.split, velocity: 0, share: DuoSeam.splitShares[1]) }
             .accessibilityAction(named: "Close") { settle(.closed, velocity: 0) }
             .accessibilityAdjustableAction { direction in
                 switch direction {
@@ -174,28 +175,34 @@ struct V2SplitHandle: View {
             settle(DuoSeam.tapTarget(x: touch.x, split: rest), velocity: 0)
             return
         }
-        settle(DuoSeam.target(x: x, velocity: velocity, width: width, split: rest), velocity: velocity)
+        let stop = DuoSeam.target(x: x, velocity: velocity, width: width, split: rest)
+        // Let go in the split: the nearer of its two widths, a third or a
+        // half (owner, 2026-11-11: two phone-width pages side by side).
+        settle(stop, velocity: velocity, share: stop == .split ? DuoSeam.splitShare(x: x, width: width) : nil)
     }
 
-    /// Spring to `stop`, then hand it to the shell.
-    private func settle(_ stop: DuoSeam.Stop, velocity: Double, tick: Bool = true, deferred: Bool = false) {
+    /// Spring to `stop`, then hand it to the shell. `share`: the list's
+    /// share of the display to rest the split at (else where it rests now).
+    private func settle(_ stop: DuoSeam.Stop, velocity: Double, tick: Bool = true, deferred: Bool = false,
+                        share: Double? = nil) {
         if tick { ticks += 1 }
         let from = x
-        let target = DuoSeam.position(of: stop, width: width, split: rest)
+        let target = share.map { ($0 * width).rounded() } ?? DuoSeam.position(of: stop, width: width, split: rest)
         let drag = context.drag
         let shell = context
         spring.run(from: from, velocity: velocity, to: target,
                    dampingRatio: motion ? DuoSeam.dampingRatio : 1, deferred: deferred,
                    step: { PerfCount.hit("V2SeamSpring.step"); drag.live = CGFloat($0) },
-                   done: { Self.commit(stop, context: shell) })
+                   done: { Self.commit(stop, context: shell, share: share) })
     }
 
     /// The seam is at `stop`: the shell takes over at rest, in one frame.
-    private static func commit(_ stop: DuoSeam.Stop, context: DuoSeamContext) {
+    private static func commit(_ stop: DuoSeam.Stop, context: DuoSeamContext, share: Double? = nil) {
         PerfCount.mark("seam.commit")
         var instant = Transaction()
         instant.disablesAnimations = true
         withTransaction(instant) {
+            if let share { context.setShare(share) }
             switch stop {
             case .fullWidth: context.setFullWidth(true)
             case .split: context.setFullWidth(false)

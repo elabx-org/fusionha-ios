@@ -26,6 +26,9 @@ struct RootView: View {
     /// The remembered-hidden list is parked at full width (`ShellSplit.primaryParked`):
     /// on whenever the right page empties, off once the list has been shown.
     @State private var listParked = true
+    /// v2: the list's share of the flat open Duo beside a title, chosen with
+    /// the split handle (a third or a half); 0 = the default.
+    @AppStorage("v2.duo.listShare") private var listShare = 0.0
     /// v2's title page (`TitlePageHost`); nil in v1.
     @Environment(\.titlePage) private var titlePage
     /// v2's split handle moving the seam (`DuoSeamDrag`); never set in v1.
@@ -74,8 +77,12 @@ struct RootView: View {
     /// v2 (`TitlePageOverride.flatOpenListShare`): the flat open Duo is one
     /// seamless display, so an open title takes the rest beside a list of
     /// that share, with no fold gutter. Book pose keeps the pages.
+    private var flatOpenShare: Double? {
+        titlePage?.flatOpenListShare.map { listShare > 0 ? listShare : $0 }
+    }
+
     private func applyFlatOpenShare(_ split: inout ShellSplit) {
-        guard let share = titlePage?.flatOpenListShare, fold.vertical == nil, fold.flatVertical != nil,
+        guard let share = flatOpenShare, fold.vertical == nil, fold.flatVertical != nil,
               split.shown, split.axis == .horizontal, !split.primaryHidden, model.presentedItem != nil else { return }
         split.primary = (fold.size.width * CGFloat(share)).rounded()
         split.gap = 0
@@ -83,7 +90,8 @@ struct RootView: View {
 
     /// v2's split handle, where it is offered (`DuoSeamContext`); nil in v1.
     private func seamContext(_ split: ShellSplit) -> DuoSeamContext? {
-        DuoSeamContext(titlePage: titlePage, fold: fold, split: split, toggle: listToggle(split), drag: seam, model: model)
+        DuoSeamContext(titlePage: titlePage, share: flatOpenShare, fold: fold, split: split, toggle: listToggle(split),
+                       drag: seam, model: model) { listShare = $0 }
     }
 
     /// Book pose with a title beside the list: where v2 draws its strip in the fold.

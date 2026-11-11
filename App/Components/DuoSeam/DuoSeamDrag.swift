@@ -48,13 +48,15 @@ struct DuoSeamContext {
     let setFullWidth: @MainActor (Bool) -> Void
     /// Close the title, as Close does.
     let close: @MainActor () -> Void
+    /// Keep the list's share of the display the seam landed on (a third or a half).
+    let setShare: @MainActor (Double) -> Void
 
     /// Offered only with v2's handle, on the flat open Duo's seamless split
     /// with a title open (the list hidden or not), where the list can hide.
     @MainActor
-    init?(titlePage: TitlePageOverride?, fold: FoldInfo, split: ShellSplit, toggle: DuoListToggle?,
-          drag: DuoSeamDrag, model: AppModel) {
-        guard titlePage?.seamHandle != nil, let share = titlePage?.flatOpenListShare,
+    init?(titlePage: TitlePageOverride?, share: Double?, fold: FoldInfo, split: ShellSplit, toggle: DuoListToggle?,
+          drag: DuoSeamDrag, model: AppModel, setShare: @escaping @MainActor (Double) -> Void) {
+        guard titlePage?.seamHandle != nil, let share,
               fold.vertical == nil, fold.flatVertical != nil, split.shown, split.axis == .horizontal,
               model.presentedItem != nil, let toggle, fold.size.width > 0 else { return nil }
         self.drag = drag
@@ -63,6 +65,7 @@ struct DuoSeamContext {
         fullWidth = toggle.hidden
         listParked = split.primaryParked
         setFullWidth = { hidden in if hidden != toggle.hidden { toggle.toggle() } }
+        self.setShare = setShare
         close = { [model] in
             model.presentedItem = nil
             model.spreadPreview = nil

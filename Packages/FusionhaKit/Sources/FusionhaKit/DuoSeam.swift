@@ -50,6 +50,17 @@ public enum DuoSeam {
     public static let stiffness = 170.0
     public static let dampingRatio = 0.82
 
+    /// The list's shares of the display the split can rest at (owner,
+    /// 2026-11-11): a third (the title three quarters-ish wide, as it always
+    /// was) and a half (two phone-width pages side by side).
+    public static let splitShares = [1.0 / 3, 0.5]
+
+    /// The split share nearest a seam let go at `x`.
+    public static func splitShare(x: Double, width: Double) -> Double {
+        guard width > 0 else { return splitShares[0] }
+        return splitShares.min { abs($0 * width - x) < abs($1 * width - x) } ?? splitShares[0]
+    }
+
     /// The seam's place at `stop`. `split`: the seam's place in the split.
     public static func position(of stop: Stop, width: Double, split: Double) -> Double {
         switch stop {

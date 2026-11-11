@@ -7,6 +7,14 @@ final class DuoSeamTests: XCTestCase {
     private let width = 951.0
     private let split = 317.0
 
+    func testTheSplitRestsAtAThirdOrAHalf() {
+        XCTAssertEqual(DuoSeam.splitShare(x: 300, width: 951), 1.0 / 3)
+        XCTAssertEqual(DuoSeam.splitShare(x: 380, width: 951), 1.0 / 3)
+        XCTAssertEqual(DuoSeam.splitShare(x: 410, width: 951), 0.5)
+        XCTAssertEqual(DuoSeam.splitShare(x: 520, width: 951), 0.5)
+        XCTAssertEqual(DuoSeam.splitShare(x: 10, width: 0), 1.0 / 3)
+    }
+
     func testStopsArePlaces() {
         XCTAssertEqual(DuoSeam.position(of: .fullWidth, width: width, split: split), 0)
         XCTAssertEqual(DuoSeam.position(of: .split, width: width, split: split), split)
