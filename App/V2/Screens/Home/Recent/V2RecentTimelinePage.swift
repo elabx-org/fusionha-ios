@@ -13,10 +13,22 @@ struct V2RecentTimelinePage: View {
     @Binding var page: V2TimelinePage
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
+    @Environment(\.collapsedTabs) private var tabs
+    @Environment(\.bookPose) private var bookPose
+    /// The Duo's column: the trailing safe-area inset.
+    @State private var column: CGFloat = 0
+    /// Where a pinned day sits: the lists' top safe edge, in the window.
+    @State private var pinTop: CGFloat = 0
     @State private var library: [Int: MediaItem] = [:]
     @State private var added: [V2TimelineEntry] = []
     @State private var arrived: [V2TimelineEntry] = []
     @State private var width: CGFloat = 0
+
+    /// Collapsed tabs: the lists run under the Duo's column to the display's
+    /// edge, so a pinned day's band doesn't stop short of it; the rows keep
+    /// clear of the clock and the column's buttons (they are text).
+    private var fullWidth: Bool { tabs.on && !bookPose }
+    private var reserve: CGFloat { fullWidth ? column : 0 }
 
     var body: some View {
         TabView(selection: $page) {
@@ -25,6 +37,10 @@ struct V2RecentTimelinePage: View {
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .animation(motion ? .smooth(duration: 0.3) : nil, value: page)
+        // To the display's bottom edge: the pager stopped at the safe area
+        // and cut the last row off above it (owner, build 1139).
+        .ignoresSafeArea(.container, edges: fullWidth ? [.bottom, .trailing] : .bottom)
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
         .overlay(alignment: .bottom) { dots }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .v2PageGround(art: groundArt)
@@ -50,12 +66,13 @@ struct V2RecentTimelinePage: View {
                     Section {
                         VStack(alignment: .leading, spacing: 0) {
                             ForEach(group.entries) { entry in
-                                V2RecentTimelineRow(entry: entry, thumb: V2RecentRows.thumb(width), slot: V2RecentRows.slot)
+                                V2RecentTimelineRow(entry: entry, thumb: V2RecentRows.thumb(width - reserve), slot: V2RecentRows.slot)
                             }
                         }
+                        .padding(.trailing, reserve)
                         .background(alignment: .topLeading) { V2TimelineSpine().padding(.top, -14) }
                     } header: {
-                        V2TimelinePinnedDay(day: group.day)
+                        V2TimelinePinnedDay(day: group.day, pinTop: pinTop)
                     }
                 }
                 if p == .arrived && feed.hasMore {
@@ -71,6 +88,7 @@ struct V2RecentTimelinePage: View {
             }
             .padding(.bottom, Theme.pageBottom + 56)
         }
+        .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY + $0.safeAreaInsets.top } action: { pinTop = $0 }
     }
 
     private func subtitle(_ p: V2TimelinePage, count: Int) -> String {
@@ -101,10 +119,15 @@ struct V2RecentTimelinePage: View {
     }
 }
 
-/// A full-page day heading, pinned while its rows scroll under it.
+/// A full-page day heading, pinned while its rows scroll under it. Its
+/// band shows only while it is pinned: on every heading it striped the
+/// page with dark bars (owner, build 1139).
 struct V2TimelinePinnedDay: View {
     let day: String
+    /// The lists' top safe edge in the window: a heading there is pinned.
+    let pinTop: CGFloat
     @Environment(\.pagePalette) private var page
+    @State private var pinned = false
 
     var body: some View {
         let tint = page?.tint ?? Theme.bg
@@ -113,7 +136,9 @@ struct V2TimelinePinnedDay: View {
             .background {
                 LinearGradient(colors: [tint.opacity(0.92), tint.opacity(0.75), tint.opacity(0)],
                                startPoint: .top, endPoint: .bottom)
+                    .opacity(pinned ? 1 : 0)
             }
+            .onGeometryChange(for: Bool.self) { [pinTop] in $0.frame(in: .global).minY <= pinTop + 1 } action: { pinned = $0 }
     }
 }
 
