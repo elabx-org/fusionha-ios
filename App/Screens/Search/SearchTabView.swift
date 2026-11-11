@@ -25,8 +25,10 @@ struct SearchTabView: View {
     @State private var store = DiscoverStore()
     @State private var search = UnifiedSearchModel()
     @State private var scope: SearchScope = .everything
-    /// A TheTVDB-only title's Add sheet.
-    @State private var tvdbPick: TvdbSearchResult?
+    /// The setup for a result's + (search + Add merge, approved 2026-11-10):
+    /// beside the results on the open Duo, a sheet when compact. After
+    /// adding you stay in the results; the title moves to In your library.
+    @State private var addPick: AddPick?
     @AppStorage("unifiedSearch.sources") private var sourcesRaw = UnifiedSearchSourceFilter.all.rawValue
     @AppStorage(SearchKindPicker.storageKey) private var kindRaw = SearchKind.all.rawValue
     @AppStorage(SearchLayout.storageKey) private var layoutRaw = SearchLayout.rows.rawValue
@@ -140,15 +142,18 @@ struct SearchTabView: View {
         // goes, so closing the result comes back to the results, not the keyboard.
         .onChange(of: store.preview) { if store.preview != nil { picked() } }
         .onChange(of: store.requestPick) { if store.requestPick != nil { picked() } }
-        .onChange(of: tvdbPick) { if tvdbPick != nil { picked() } }
+        .onChange(of: addPick) { if addPick != nil { picked() } }
         .onChange(of: model.presentedItem?.id) { if model.presentedItem != nil, model.tab == .search { picked() } }
         .environment(store)
         // A requester's pick: the request modal (web OmniResults → RequestModal).
         .duoPageSheet(item: $store.requestPick, placement: .twoPages) { pick in
             NavigationStack { RequestModal(pick: pick) {} }
         }
-        .duoPageSheet(item: $tvdbPick) { pick in
-            AddTitleSheet(initialPick: .tvdb(pick)) { id in model.open(id) }
+        .duoPageSheet(item: $addPick) { pick in
+            AddTitleSheet(initialPick: pick) { _ in
+                // Stay in the results: the right page closes, the list widens.
+                model.spreadPreview = nil
+            }
         }
         .spreadPreviewHost(.search, preview: $store.preview, onOpenLibrary: { model.open($0) })
         #if DEBUG
@@ -164,6 +169,15 @@ struct SearchTabView: View {
             focused = true
         }
         .onChange(of: model.searchFocusTick) { if sizeClass == .compact { focused = true } }
+        // + elsewhere (v2): keyboard up on every width.
+        .onChange(of: model.addViaSearch, initial: true) {
+            guard model.addViaSearch else { return }
+            model.addViaSearch = false
+            Task {
+                try? await Task.sleep(for: .milliseconds(350))
+                focused = true
+            }
+        }
         .task {
             if !model.requestScoped { await model.loadLibraryIfNeeded() }
         }
@@ -176,7 +190,10 @@ struct SearchTabView: View {
     private var actions: SearchAddActions {
         SearchAddActions(preview: { store.preview = PreviewRoute($0) },
                          request: { store.requestPick = $0 },
-                         addTvdb: { tvdbPick = $0 })
+                         add: { pick in
+                             store.preview = nil
+                             addPick = pick
+                         })
     }
 
     /// "This library" filters the Library grid in place (it keeps its filters),

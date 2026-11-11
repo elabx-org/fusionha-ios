@@ -20,6 +20,13 @@ extension AppModel {
         showingAdd = true
     }
 
+    /// v2's + (search + Add merge, approved 2026-11-10): Add is the Search
+    /// tab's search, keyboard up. A result's + opens the setup beside it.
+    func openAddSearch() {
+        addViaSearch = true
+        tab = .search
+    }
+
     func openPreview(_ result: MediaSearchResult) {
         if let previewHandler {
             previewHandler(result)

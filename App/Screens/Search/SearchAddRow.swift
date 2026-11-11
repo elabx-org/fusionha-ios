@@ -115,14 +115,14 @@ struct SearchAddRow: View {
                                          canRequest: canRequest && hit.tmdb != nil) {
         case .open: if let id = openable { model.open(id) }
         case .preview:
-            if let result = hit.tmdb { actions.preview(result) } else if let tvdb = hit.tvdb { actions.addTvdb(tvdb) }
+            if let result = hit.tmdb { actions.preview(result) } else if let tvdb = hit.tvdb { actions.add(.tvdb(tvdb)) }
         case .request: request()
         case .none: break
         }
     }
 
     func add() {
-        if let result = hit.tmdb { model.openAdd(result) } else if let tvdb = hit.tvdb { actions.addTvdb(tvdb) }
+        if let result = hit.tmdb { actions.add(.tmdb(result)) } else if let tvdb = hit.tvdb { actions.add(.tvdb(tvdb)) }
     }
 
     func request() {
@@ -134,5 +134,6 @@ struct SearchAddRow: View {
 struct SearchAddActions {
     var preview: (MediaSearchResult) -> Void
     var request: (MediaSearchResult) -> Void
-    var addTvdb: (TvdbSearchResult) -> Void
+    /// The setup for this pick, beside the results (search + Add merge).
+    var add: (AddPick) -> Void
 }

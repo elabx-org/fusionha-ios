@@ -2,7 +2,14 @@ import SwiftUI
 import FusionhaKit
 
 /// A pick on the Find step: a TMDB-identified title, or a TVDB-only series.
-enum AddPick: Hashable {
+enum AddPick: Hashable, Identifiable {
+    var id: String {
+        switch self {
+        case .tmdb(let r): return "tmdb-\(r.id)"
+        case .tvdb(let r): return "tvdb-\(r.tvdbId)"
+        }
+    }
+
     case tmdb(MediaSearchResult)
     case tvdb(TvdbSearchResult)
 

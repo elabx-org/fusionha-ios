@@ -357,7 +357,7 @@ struct AddTitleToolbarItem: ToolbarContent {
     var body: some ToolbarContent {
         if !model.requestScoped && model.me?.can("add") != false && !model.selectMode {
             ToolbarItem(placement: .primaryAction) {
-                Button("Add", systemImage: "plus") { model.showingAdd = true }
+                Button("Add", systemImage: "plus") { model.openAddSearch() }
             }
             .barPriority(true)
         }

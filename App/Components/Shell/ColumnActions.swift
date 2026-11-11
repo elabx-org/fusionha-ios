@@ -42,7 +42,7 @@ struct ColumnAction: Identifiable, Equatable {
     @MainActor
     static func add(_ model: AppModel) -> ColumnAction? {
         guard !model.requestScoped, model.me?.can("add") != false, !model.selectMode else { return nil }
-        return .button("Add", "plus") { model.showingAdd = true }
+        return .button("Add", "plus") { model.openAddSearch() }
     }
 
     // What it shows, not the closures (new on every render).

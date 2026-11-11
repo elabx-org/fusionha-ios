@@ -31,6 +31,9 @@ final class AppModel {
     var calendarTodayTick = 0
     /// Opening the Search tab, or tapping it again, puts the cursor in its field.
     var searchFocusTick = 0
+    /// v2's + (search + Add merge): the Search tab takes the keyboard on
+    /// arrival, on every width; the tab clears it.
+    var addViaSearch = false
 
     // Shell state shared by the top bar, the + button and every screen.
     var searchText = ""

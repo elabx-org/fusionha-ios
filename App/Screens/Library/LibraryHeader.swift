@@ -57,7 +57,7 @@ struct LibraryHeader: View {
                 AccountToolbarItem(model: model)
                 if canAdd && !model.selectMode {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("Add", systemImage: "plus") { model.showingAdd = true }
+                        Button("Add", systemImage: "plus") { model.openAddSearch() }
                             .buttonStyle(.glassProminent)
                             .tint(Theme.indigo)
                     }
@@ -170,7 +170,7 @@ struct LibraryHeader: View {
             Button("Select", systemImage: "checkmark.circle") { model.selectMode = true }
             Button("Library stats", systemImage: "chart.bar.xaxis") { showingStats = true }
             if canAdd {
-                Button("Add", systemImage: "plus") { model.showingAdd = true }
+                Button("Add", systemImage: "plus") { model.openAddSearch() }
             }
         } label: {
             Label("More", systemImage: "ellipsis")
