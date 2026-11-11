@@ -4,8 +4,8 @@ import FusionhaKit
 // MARK: - The arrow's pill (owner, build 1135: "the expand doesn't expand the bar")
 //
 // Tapping the arrow grows the column's own bar in place: a glass pill from
-// the arrow's spot holding the tabs as icons, then the page's buttons with
-// their names beside them, then Account (the approved prototype). Not a
+// the arrow's spot holding the tabs, the page's buttons and Account, all
+// as icons; the page under it still scrolls. Not a
 // system menu (build 1135) and not a popover (build 1129): it is drawn in
 // the window by `ColumnPillHost`, so a page's Filter or More still open as
 // real menus from it and a row can open a sheet (nothing is presented).
@@ -54,7 +54,7 @@ struct ColumnPillHost: ViewModifier {
                             .transition(.opacity)
                     }
                 }
-                .background { TouchSpotProbe { pill.probe = $0 } }
+                .background { TouchSpotProbe { pill.probe = $0 }.allowsHitTesting(false) }
                 .ignoresSafeArea()
                 .allowsHitTesting(pill.request != nil)
                 .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: pill.request != nil)
@@ -146,19 +146,14 @@ struct ColumnPillView: View {
         // From the trailing corner: the pill's trailing edge is the arrow's,
         // its top (or, rising, its bottom) the arrow's.
         let inset = max(0, size.width - (c.x + Self.width / 2))
-        Color.black.opacity(0.32)
-            .contentShape(Rectangle())
-            .onTapGesture(perform: close)
-            .accessibilityLabel("Close the tabs")
-            .accessibilityAddTraits(.isButton)
-            .frame(width: size.width, height: size.height)
-            .overlay(alignment: request.rises ? .bottomTrailing : .topTrailing) {
-                column
-                    .fixedSize()
-                    .padding(.trailing, inset)
-                    .padding(request.rises ? .bottom : .top,
-                             max(0, request.rises ? size.height - (c.y + Self.width / 2) : c.y - Self.width / 2))
-            }
+        // No scrim: the page under the open pill still scrolls and takes
+        // taps (owner, build 1139). An empty frame passes touches through.
+        column
+            .fixedSize()
+            .padding(.trailing, inset)
+            .padding(request.rises ? .bottom : .top,
+                     max(0, request.rises ? size.height - (c.y + Self.width / 2) : c.y - Self.width / 2))
+            .frame(width: size.width, height: size.height, alignment: request.rises ? .bottomTrailing : .topTrailing)
     }
 
     private var column: some View {
@@ -198,6 +193,8 @@ struct ColumnPillView: View {
             }
             .buttonStyle(.plain)
             .labelStyle(ColumnRowLabel())
+            .accessibilityLabel(model.attentionCount > 0 && !model.requestScoped
+                                ? "Account, \(model.attentionCount) need attention" : "Account")
             if request.rises { arrow }
         }
         .padding(.vertical, 2)
@@ -253,7 +250,7 @@ struct ColumnPillView: View {
     }
 }
 
-/// The page's buttons under the tabs: each one's name beside its icon.
+/// The page's buttons under the tabs, as icons.
 struct ColumnActionRows: View {
     let actions: [ColumnAction]
     let close: () -> Void
@@ -270,8 +267,9 @@ struct ColumnActionRows: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(action.disabled)
+                .accessibilityLabel(action.title)
             case .control(let view):
-                view.buttonStyle(.plain)
+                view.buttonStyle(.plain).accessibilityLabel(action.title)
             }
         }
         .labelStyle(ColumnRowLabel())
@@ -279,24 +277,16 @@ struct ColumnActionRows: View {
     }
 }
 
-/// "Name  [icon]": the icon in the pill, the name on a caption beside it.
+/// A page button's row: its icon alone, as the tabs' (owner, build 1139).
+/// The name stays for VoiceOver (`ColumnActionRows`).
 struct ColumnRowLabel: LabelStyle {
     @Environment(\.isEnabled) private var enabled
 
     func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 6) {
-            configuration.title
-                .font(.system(size: 12.5, weight: .semibold))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .padding(.horizontal, 10)
-                .frame(height: 26)
-                .background(Color.black.opacity(0.62), in: Capsule())
-            configuration.icon
-                .font(.system(size: 19, weight: .medium))
-                .foregroundStyle(enabled ? Theme.txt : Theme.dim)
-                .frame(width: ColumnPillView.width, height: ColumnPillView.row)
-        }
-        .contentShape(Rectangle())
+        configuration.icon
+            .font(.system(size: 19, weight: .medium))
+            .foregroundStyle(enabled ? Theme.txt : Theme.dim)
+            .frame(width: ColumnPillView.width, height: ColumnPillView.row)
+            .contentShape(Rectangle())
     }
 }
