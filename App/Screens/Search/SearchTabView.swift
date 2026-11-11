@@ -38,8 +38,12 @@ struct SearchTabView: View {
 
     /// Collapsed tabs (v2): typed results run under the Duo's column to the
     /// display's edge. Before typing, Trending keeps its place.
-    // `column > 0`: beside an open title the list pane isn't under the column.
-    private var fullWidth: Bool { tabs.on && look != nil && !trimmed.isEmpty && column > 0 }
+    // Beside an open title the list pane isn't under the column. Decided
+    // from the page's state, never from the inset it measures: the measure
+    // changes when the page ignores that inset, which fed back into itself.
+    private var fullWidth: Bool {
+        tabs.on && look != nil && !trimmed.isEmpty && !(duoOpen && model.rightPageHasItem)
+    }
     /// Room above the first lane so a row's own buttons never start under
     /// the arrow button (`TabsLook.clearance`), less the kind picker's row.
     private var lead: CGFloat {
@@ -49,9 +53,11 @@ struct SearchTabView: View {
 
     private var trimmed: String { model.searchQuery.trimmingCharacters(in: .whitespaces) }
     private var kind: SearchKind { SearchKind(rawValue: kindRaw) ?? .all }
-    /// In a Spread with nothing open the kind filter sits on the right page.
+    /// v1: in a Spread with nothing open the kind filter sits on the right
+    /// page. v2 keeps it above the results: Search spans the open Duo until
+    /// a result is tapped (owner, 2026-11-09: no automatic split).
     private var pickerOnRightPage: Bool {
-        spread.isActive && model.spreadPreview == nil && model.presentedItem == nil
+        look == nil && spread.isActive && model.spreadPreview == nil && model.presentedItem == nil
     }
 
     private var filter: Binding<UnifiedSearchSourceFilter> {
@@ -68,7 +74,9 @@ struct SearchTabView: View {
                                        run: { model.searchQuery = $0 }, forget: forget)
                 } else {
                     if !pickerOnRightPage {
-                        SearchKindPicker().padding(.horizontal, Theme.pageGutter).padding(.bottom, 2)
+                        SearchKindPicker().frame(maxWidth: 520, alignment: .leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, Theme.pageGutter).padding(.bottom, 2)
                             // Beside the column's clock and arrow, not under them.
                             .padding(.trailing, fullWidth ? column : 0)
                     }
@@ -85,7 +93,7 @@ struct SearchTabView: View {
         .scrollDismissesKeyboard(duoOpen ? .immediately : .interactively)
         .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
         .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY + $0.safeAreaInsets.top } action: { restTop = $0 }
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { column = $0 }
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
         // Rows pass under the floating field and scopes: the hard edge keeps
         // their titles from reading through the glass.
         .scrollEdgeEffectStyle(.hard, for: .top)
@@ -112,7 +120,10 @@ struct SearchTabView: View {
             if picked == .library { handToLibrary() }
         }
         // Before you type, Trending spans both pages of a Spread.
-        .spreadSpansBothPages(.search, trimmed.isEmpty)
+        // v2 spans while you type too: typed results use the whole open Duo
+        // and the right page opens only when a result is tapped (no "Pick a
+        // result" page). v1 keeps its split once you type.
+        .spreadSpansBothPages(.search, trimmed.isEmpty || look != nil)
         // A result picked: the words join the recent searches and the keyboard
         // goes, so closing the result comes back to the results, not the keyboard.
         .onChange(of: store.preview) { if store.preview != nil { picked() } }

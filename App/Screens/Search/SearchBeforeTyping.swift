@@ -29,6 +29,9 @@ struct SearchBeforeTyping: View {
                         Color.clear.frame(height: 1)
                         chips
                     }
+                    // The chips scroll within their half: unclipped they ran
+                    // under the kind filter on the flat open Duo.
+                    .clipShape(Rectangle().inset(by: -4))
                 } trailing: {
                     SearchKindPicker()
                 }
