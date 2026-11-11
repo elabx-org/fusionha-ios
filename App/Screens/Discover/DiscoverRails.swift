@@ -20,7 +20,12 @@ struct RailSection<Icon: View, Toggle: View, Track: View>: View {
         VStack(alignment: .leading, spacing: 0) {
             Group {
                 if spread.spans {
-                    FoldSpanRow(spacing: 8) { heading } trailing: { toggleRow }
+                    // The toggle itself, not in a sideways scroll: across both
+                    // pages it always fits, and inside a scroll view it moved
+                    // on its own when the page above it changed height (owner,
+                    // build 1151: Today / This Week drifted over the rows
+                    // above, or went missing).
+                    FoldSpanRow(spacing: 8) { heading } trailing: { toggle }
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
                         heading
@@ -28,6 +33,8 @@ struct RailSection<Icon: View, Toggle: View, Track: View>: View {
                     }
                 }
             }
+            // The heading and its toggle take their place at once, together.
+            .transaction { $0.animation = nil }
             .padding(.bottom, 14)
             track
         }
