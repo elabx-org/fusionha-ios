@@ -3,19 +3,49 @@ import UIKit
 import FusionhaKit
 
 /// The episode page's bar (mock `gcap`): Automatic search, Interactive
-/// search (person) and the file's ⋯, all for this episode.
+/// search (person) and the file's ⋯, all for this episode. With collapsed
+/// tabs they are rows under the column's arrow instead (`columnItems`).
 struct V2EpisodeToolbar: ToolbarContent {
     let detail: ItemDetail
     let episode: Episode
     let seasonNumber: Int
     /// The version the page shows: the ⋯ acts on its file.
     let version: DetailEdition?
+    /// The page's delete / replace question (`V2EpisodeFileConfirm`).
+    @Binding var confirm: V2EpisodeFileMenu.Confirm?
 
     var body: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             V2EpisodeSearchButtons(detail: detail, episode: episode, seasonNumber: seasonNumber)
-            V2EpisodeFileMenu(detail: detail, episode: episode, seasonNumber: seasonNumber, version: version)
+            V2EpisodeFileMenu(detail: detail, episode: episode, seasonNumber: seasonNumber, version: version,
+                              confirm: $confirm)
         }
+    }
+
+    /// The same three as rows of the arrow's list (the column rule). The
+    /// pill lives at the window's level, so the file menu takes the store
+    /// with it; its question stays on the page.
+    @MainActor
+    static func columnItems(store: DetailStore, model: AppModel, detail: ItemDetail, episode: Episode,
+                            seasonNumber: Int, version: DetailEdition?,
+                            confirm: Binding<V2EpisodeFileMenu.Confirm?>) -> [ColumnAction?] {
+        let canSearch = (model.me?.can("edit") ?? true) && (model.me?.can("search") ?? true)
+        let code = EpisodeCode.episode(season: seasonNumber, episode: episode.episodeNumber)
+        let searching = store.activity(.episode(episode.id))?.isSearching == true
+        return [
+            canSearch ? .button("Automatic search", "magnifyingglass", disabled: searching) {
+                store.v2Search(.episode(episode.id), label: "\(detail.title) \(code)", episodeId: episode.id)
+            } : nil,
+            canSearch ? .button("Interactive search", "person") {
+                store.interactive = InteractiveTarget(editionIds: detail.orderedEditions.map(\.id), episodeId: episode.id,
+                                                      subtitle: "S\(seasonNumber)·E\(episode.episodeNumber)")
+            } : nil,
+            .control("File actions", stamp: "\(version?.id ?? 0)|\(episode.id)") {
+                V2EpisodeFileMenu(detail: detail, episode: episode, seasonNumber: seasonNumber, version: version,
+                                  confirm: confirm)
+                    .environment(store)
+            },
+        ]
     }
 }
 
@@ -51,7 +81,9 @@ private struct V2EpisodeSearchButtons: View {
 
 /// The file's actions (mock browse-sheets.js `fileMenu`): Copy path,
 /// Replace (search again), Clean up a dead link, Delete file and Delete
-/// and blocklist, each v1's file call. Deleting asks first.
+/// and blocklist, each v1's file call. Deleting asks first: the question
+/// is the page's (`V2EpisodeFileConfirm`), so the menu can also sit in the
+/// arrow's list, which closes before the question shows.
 struct V2EpisodeFileMenu: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
@@ -59,7 +91,7 @@ struct V2EpisodeFileMenu: View {
     let episode: Episode
     let seasonNumber: Int
     let version: DetailEdition?
-    @State private var confirm: Confirm?
+    @Binding var confirm: Confirm?
 
     enum Confirm: Identifiable {
         case delete(blocklist: Bool), replace
@@ -104,7 +136,21 @@ struct V2EpisodeFileMenu: View {
         } label: {
             Label("File actions", systemImage: "ellipsis")
         }
-        .confirmationDialog(title, isPresented: presented, titleVisibility: .visible, presenting: confirm) { choice in
+    }
+}
+
+/// The file menu's question (delete, delete and blocklist, replace), held
+/// by the episode page.
+struct V2EpisodeFileConfirm: ViewModifier {
+    @Environment(DetailStore.self) private var store
+    let episode: Episode
+    let version: DetailEdition?
+    @Binding var confirm: V2EpisodeFileMenu.Confirm?
+
+    private var file: MovieFile? { version.flatMap { episode.file(for: $0.id) } }
+
+    func body(content: Content) -> some View {
+        content.confirmationDialog(title, isPresented: presented, titleVisibility: .visible, presenting: confirm) { choice in
             switch choice {
             case .delete(let blocklist):
                 Button(blocklist ? "Delete and blocklist" : "Delete", role: .destructive) { run(choice) }
@@ -133,7 +179,7 @@ struct V2EpisodeFileMenu: View {
         Binding(get: { confirm != nil }, set: { if !$0 { confirm = nil } })
     }
 
-    private func run(_ choice: Confirm) {
+    private func run(_ choice: V2EpisodeFileMenu.Confirm) {
         guard let file else { return }
         Task {
             switch choice {

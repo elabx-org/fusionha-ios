@@ -26,6 +26,9 @@ struct V2EpisodePage: View {
     @State private var width: CGFloat = 0
     /// The hero's (or the wide header's) height, for the kept offset.
     @State private var headerHeight: CGFloat = 0
+    /// The file menu's delete / replace question, asked by the page so the
+    /// menu also works from the arrow's list.
+    @State private var fileConfirm: V2EpisodeFileMenu.Confirm?
 
     private var detail: ItemDetail? { store.detail }
     private var episode: Episode? {
@@ -37,11 +40,21 @@ struct V2EpisodePage: View {
         Group {
             if let detail, let episode {
                 page(detail, episode)
-                    .toolbar { V2EpisodeToolbar(detail: detail, episode: episode, seasonNumber: seasonNumber,
-                                                version: version(detail, episode)) }
-                    // Its own three buttons stay for now: the file menu asks before
-                    // deleting with a dialog of its own, which a menu's row can't show.
-                    .columnArrow(column.collapsed, beforeSwitch: column.close)
+                    .toolbar {
+                        // Collapsed tabs: the three are rows under the arrow (the column rule).
+                        if !column.collapsed {
+                            V2EpisodeToolbar(detail: detail, episode: episode, seasonNumber: seasonNumber,
+                                             version: version(detail, episode), confirm: $fileConfirm)
+                        }
+                    }
+                    .columnArrow(column.collapsed,
+                                 actions: V2EpisodeToolbar.columnItems(store: store, model: model, detail: detail,
+                                                                       episode: episode, seasonNumber: seasonNumber,
+                                                                       version: version(detail, episode),
+                                                                       confirm: $fileConfirm),
+                                 beforeSwitch: column.close)
+                    .modifier(V2EpisodeFileConfirm(episode: episode, version: version(detail, episode),
+                                                   confirm: $fileConfirm))
             } else {
                 EmptyBox(message: "This episode is no longer in the library.")
                     .padding(20)
