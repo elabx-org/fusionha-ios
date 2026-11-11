@@ -30,6 +30,25 @@ final class ColumnPill {
     @ObservationIgnored weak var probe: TouchSpotProbe.ProbeView?
 
     func close() { request = nil }
+
+    /// The display changed size under an open pill (a fold or an unfold):
+    /// it was left where the arrow had been, in the middle of the new
+    /// display (owner, build 1146). It goes at once, and comes back on the
+    /// arrow's new spot once the bar has settled, if the arrow can be found.
+    func resized() {
+        guard let old = request else { return }
+        request = nil
+        // The floating arrow (Tabs arrow: Bottom) isn't a bar item: closed.
+        guard !old.rises else { return }
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(600))
+            guard let self, self.request == nil, let window = self.probe?.window,
+                  let frame = TouchSpot.barItem(labelled: "Tabs", in: window) else { return }
+            var next = old
+            next.anchor = frame
+            self.request = next
+        }
+    }
 }
 
 extension EnvironmentValues {
@@ -48,6 +67,7 @@ struct ColumnPillHost: ViewModifier {
             .environment(\.columnPill, pill)
             .overlay {
                 GeometryReader { proxy in
+                    Color.clear.onChange(of: proxy.size) { pill.resized() }
                     if let request = pill.request {
                         ColumnPillView(model: model, request: request, origin: pill.probe?.windowOrigin ?? .zero,
                                        size: proxy.size, close: { pill.close() })

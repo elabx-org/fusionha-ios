@@ -16,6 +16,26 @@ enum TouchSpot {
     /// The control under the last touch, in window coordinates (a 46pt
     /// square on the touch when no control-sized view was under it).
     static var last: CGRect = .zero
+
+    /// A bar item's frame in the window, found by its title (the arrow is
+    /// "Tabs"): the trailing-most visible, control-sized view that carries
+    /// it. Nil when there is none on screen.
+    static func barItem(labelled label: String, in window: UIWindow) -> CGRect? {
+        var best: CGRect?
+        func visit(_ view: UIView) {
+            guard !view.isHidden, view.alpha > 0.01 else { return }
+            if view.accessibilityLabel == label {
+                let f = view.convert(view.bounds, to: window)
+                if (30...80).contains(f.width), (30...80).contains(f.height), window.bounds.intersects(f),
+                   f.midX > (best?.midX ?? -1) {
+                    best = f
+                }
+            }
+            view.subviews.forEach(visit)
+        }
+        visit(window)
+        return best
+    }
 }
 
 extension Notification.Name {
