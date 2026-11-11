@@ -52,6 +52,8 @@ final class ColumnPill {
 }
 
 extension EnvironmentValues {
+    /// A row's height in the open pill (`ColumnPillView.rowHeight`).
+    @Entry var columnRowHeight: CGFloat = 42
     /// The window's (or a sheet's) pill; nil where there is no host.
     @Entry var columnPill: ColumnPill? = nil
 }
@@ -123,6 +125,17 @@ struct ColumnPillView: View {
 
     static let width: CGFloat = 50
     static let row: CGFloat = 42
+
+    /// A row's height here: 42pt, less when the pill would run off the
+    /// display (a title has ten rows; owner, build 1151: More and Account
+    /// were cut off at the bottom). Never under 28pt.
+    private var rowHeight: CGFloat {
+        let rows = CGFloat(entries.count + request.actions.count + 1)
+        let fixed = (Self.width - 4) + (request.actions.isEmpty ? 11 : 22) + 4
+        let c = centre
+        let room = (request.rises ? c.y + Self.width / 2 : size.height - (c.y - Self.width / 2)) - 10
+        return max(28, min(Self.row, ((room - fixed) / max(rows, 1)).rounded(.down)))
+    }
 
     private struct Entry: Identifiable {
         let tab: AppTab
@@ -222,6 +235,7 @@ struct ColumnPillView: View {
             if request.rises { arrow }
         }
         .padding(.vertical, 2)
+        .environment(\.columnRowHeight, rowHeight)
         // The bar itself, grown: glass behind the icons' column only.
         .background(alignment: .trailing) {
             Color.clear
@@ -256,7 +270,7 @@ struct ColumnPillView: View {
         }
         .font(.system(size: 21, weight: .medium))
         .foregroundStyle(model.tab == entry.tab ? Theme.primary : Theme.txt)
-        .frame(width: Self.width, height: Self.row)
+        .frame(width: Self.width, height: rowHeight)
         .overlay(alignment: .topTrailing) {
             if let text = BadgeCount.text(entry.badge) {
                 Text(verbatim: text)
@@ -305,12 +319,13 @@ struct ColumnActionRows: View {
 /// The name stays for VoiceOver (`ColumnActionRows`).
 struct ColumnRowLabel: LabelStyle {
     @Environment(\.isEnabled) private var enabled
+    @Environment(\.columnRowHeight) private var row
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.icon
             .font(.system(size: 19, weight: .medium))
             .foregroundStyle(enabled ? Theme.txt : Theme.dim)
-            .frame(width: ColumnPillView.width, height: ColumnPillView.row)
+            .frame(width: ColumnPillView.width, height: row)
             .contentShape(Rectangle())
     }
 }
