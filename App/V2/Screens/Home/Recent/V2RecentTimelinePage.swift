@@ -40,7 +40,7 @@ struct V2RecentTimelinePage: View {
         // To the display's bottom edge: the pager stopped at the safe area
         // and cut the last row off above it (owner, build 1139).
         .ignoresSafeArea(.container, edges: fullWidth ? [.bottom, .trailing] : .bottom)
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { column = $0 }
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
         .overlay(alignment: .bottom) { dots }
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .v2PageGround(art: groundArt)

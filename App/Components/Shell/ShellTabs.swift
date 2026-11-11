@@ -11,6 +11,8 @@ struct ShellTabs: View {
     @Environment(\.libraryTabRoot) private var libraryRoot
     let fold: FoldInfo
     let splitShown: Bool
+    /// The list shows beside an open title (not hidden or parked under it).
+    let listBesideTitle: Bool
     let downloadsBar: DownloadsBarState
     /// The system's downloads bar may show (not across the fold, not over a bulk bar).
     let downloadsBarAllowed: Bool
@@ -30,9 +32,13 @@ struct ShellTabs: View {
     /// list then brought the tab bar back and re-flowed the whole page
     /// under the title as it slid in (owner, build 1149: "resizing jitter
     /// and flicker"). The page under a full-width title now keeps its
-    /// layout; beside a title the list pane has its arrow like every page.
+    /// layout. With the list showing beside a title the tab bar comes back
+    /// in the list pane (as before 1151): hiding it there, with a search
+    /// field active in that pane, is the suspect for the freeze and crash on
+    /// opening a filtered or searched result (owner, build 1155).
     private var collapsed: Bool {
-        chrome != nil && collapsedPref && (fold.isDuoOpen || OuterDisplay.isFoldedDuo(sizeClass: sizeClass))
+        chrome != nil && collapsedPref && !listBesideTitle
+            && (fold.isDuoOpen || OuterDisplay.isFoldedDuo(sizeClass: sizeClass))
     }
 
     /// v2 in the open Duo's narrow list pane (owner 2026-11-09): the tabs

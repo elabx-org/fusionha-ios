@@ -77,7 +77,7 @@ struct V2HomeView: View {
             }
             .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-            .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { column = $0 }
+            .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
             .readsScreenCentre()
             .refreshable { await model.loadLibrary() }
             .onScrollGeometryChange(for: CGFloat.self) { geo in

@@ -225,7 +225,8 @@ struct RootView: View {
         FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap, primaryHidden: split.primaryHidden,
                         primaryParked: split.primaryParked, seam: split.seam) {
             // Hidden (the sidebar button), the list keeps its width off screen.
-            ShellTabs(fold: fold, splitShown: split.shown, downloadsBar: downloadsBar,
+            ShellTabs(fold: fold, splitShown: split.shown, listBesideTitle: split.shown && !split.primaryHidden,
+                      downloadsBar: downloadsBar,
                       downloadsBarAllowed: !tabsCrossFold && !selectBars.isShowing)
                 .allowsHitTesting(!split.primaryHidden)
                 .accessibilityHidden(split.primaryHidden)
