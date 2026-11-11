@@ -68,10 +68,16 @@ private final class TouchSpotRecognizer: UIGestureRecognizer {
         TouchSpot.last = frame
     }
 
+    // A scroll view's pan, once it began, failed this recognizer before the
+    // finger had moved 12pt, so the pill closed on some drags only (owner,
+    // build 1146). It neither blocks nor is blocked by any other.
+    override func canBePrevented(by preventingGestureRecognizer: UIGestureRecognizer) -> Bool { false }
+    override func canPrevent(_ preventedGestureRecognizer: UIGestureRecognizer) -> Bool { false }
+
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
         guard let start, let touch = touches.first, let window = touch.window else { return }
         let point = touch.location(in: window)
-        if abs(point.x - start.x) > 12 || abs(point.y - start.y) > 12 {
+        if abs(point.x - start.x) > 8 || abs(point.y - start.y) > 8 {
             NotificationCenter.default.post(name: .touchSpotDragged, object: nil)
             state = .failed
         }
