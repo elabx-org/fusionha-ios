@@ -61,6 +61,10 @@ struct ColumnPillHost: ViewModifier {
             }
             // Whatever a row did, the pill doesn't outlive the page it was opened on.
             .onChange(of: model.tab) { pill.close() }
+            // Scrolling the page closes it (owner, build 1139).
+            .onReceive(NotificationCenter.default.publisher(for: .touchSpotDragged)) { _ in
+                if pill.request != nil { pill.close() }
+            }
             .onChange(of: model.presentedItem?.id) { pill.close() }
             .onChange(of: model.showingAdd) { pill.close() }
     }

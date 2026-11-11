@@ -18,12 +18,23 @@ enum TouchSpot {
     static var last: CGRect = .zero
 }
 
-/// Never recognises: it only looks at where touches begin.
+extension Notification.Name {
+    /// A finger started dragging somewhere in the window (a scroll): the
+    /// open pill closes (owner, build 1139).
+    static let touchSpotDragged = Notification.Name("fusionha.touchSpot.dragged")
+}
+
+/// Never recognises: it notes where a touch begins and whether it drags.
 private final class TouchSpotRecognizer: UIGestureRecognizer {
+    private var start: CGPoint?
+
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
-        defer { state = .failed }
-        guard let touch = touches.first, let window = touch.window else { return }
+        guard let touch = touches.first, let window = touch.window else {
+            state = .failed
+            return
+        }
         let point = touch.location(in: window)
+        start = point
         var frame = CGRect(x: point.x - 23, y: point.y - 23, width: 46, height: 46)
         var view = touch.view
         while let candidate = view {
@@ -36,6 +47,19 @@ private final class TouchSpotRecognizer: UIGestureRecognizer {
         }
         TouchSpot.last = frame
     }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent) {
+        guard let start, let touch = touches.first, let window = touch.window else { return }
+        let point = touch.location(in: window)
+        if abs(point.x - start.x) > 12 || abs(point.y - start.y) > 12 {
+            NotificationCenter.default.post(name: .touchSpotDragged, object: nil)
+            state = .failed
+        }
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent) { state = .failed }
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent) { state = .failed }
+    override func reset() { start = nil }
 }
 
 /// Installs the recognizer on its window, and tells where this view's own
