@@ -31,12 +31,13 @@ struct V2TitleView: View {
     @AppStorage(TitleLook.posterKey) private var posterLook = false
     @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = false
 
-    /// Collapsed tabs (owner, build 1129): the poster-led page runs under the
-    /// Duo's column to the display's edge. Its art is tall enough that the
-    /// column's buttons float over art, and everything below starts clear of
-    /// them. Today's page keeps the column's width: its shorter hero would
-    /// put the overview and the version cards under those buttons.
-    private var edgeToEdge: Bool { collapsedColumn && posterLook }
+    /// Collapsed tabs (owner, build 1129): the page runs under the Duo's
+    /// column to the display's edge. Since the column rule (2026-11-10) the
+    /// column holds only the arrow and Close, which float over the hero's
+    /// (or the wide band's) art; everything below starts clear of them. The
+    /// poster page did this first; today's page follows (approved list,
+    /// 2026-11-11, item 3).
+    private var edgeToEdge: Bool { collapsedColumn }
 
     /// Collapsed tabs on the Duo: the column holds as few buttons as it can.
     private var collapsedColumn: Bool {

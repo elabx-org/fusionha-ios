@@ -16,6 +16,9 @@ struct DiscoverView: View {
     @Environment(\.collapsedTabs) private var collapsed
     /// v2 (S11): the art ground and the hero carousel over the rails.
     @Environment(\.browseLook) private var look
+    @Environment(\.bookPose) private var bookPose
+    /// The Duo's column: the trailing safe-area inset.
+    @State private var column: CGFloat = 0
     @State private var store = DiscoverStore()
     /// The hero card in view: the v2 ground takes its colours.
     @State private var heroArt: String?
@@ -41,6 +44,11 @@ struct DiscoverView: View {
     }
     /// Browse spanning a Spread: the controls on the left page, the tabs on the right.
     private var spansBrowse: Bool { spread.spans && tab == .browse }
+    /// Collapsed tabs (v2, the full-width rule): the page runs under the
+    /// Duo's column to the display's edge, as Home and the Library do. The
+    /// top line (the tabs, Browse's controls) keeps clear of the clock and
+    /// the arrow; the rails scroll under the glass. Book pose keeps its pages.
+    private var fullWidth: Bool { collapsed.on && look != nil && !bookPose }
 
     var body: some View {
         @Bindable var store = store
@@ -48,11 +56,14 @@ struct DiscoverView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        if spansBrowse {
-                            FoldSpanRow { browseControls } trailing: { tabs }
-                        } else {
-                            tabs
+                        Group {
+                            if spansBrowse {
+                                FoldSpanRow { browseControls } trailing: { tabs }
+                            } else {
+                                tabs
+                            }
                         }
+                        .padding(.trailing, fullWidth ? column : 0)
                         content
                     }
                     // Plex-app rhythm on phones: 16pt side margins, like Library.
@@ -61,6 +72,8 @@ struct DiscoverView: View {
                     .padding(.bottom, Theme.pageBottom)
                 }
                 .scrollDismissesKeyboard(.interactively)
+                .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
+                .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
                 .browseGround(look, backdrop: tab == .browse ? heroArt : nil)
                 // Wide Requests panes scroll on their own: no page scroll around them (D2a).
                 .requestsWidePageScroll()

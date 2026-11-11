@@ -45,6 +45,14 @@ struct V2QueueView: View {
     @State var anchor = FoldAnchorTracker()
     /// The open decision's choice and scroll, for its page and its sheet alike.
     @State var heldDraft = HeldDecisionDraft()
+    /// The Duo's column: the trailing safe-area inset.
+    @State var column: CGFloat = 0
+
+    /// Collapsed tabs (v2, the full-width rule): the queue runs under the
+    /// Duo's column. Alone, its header keeps clear of the clock and the
+    /// arrow; beside the right page, the right page keeps clear of them.
+    var fullWidth: Bool { tabs.on && !bookPose }
+    var columnReserve: CGFloat { fullWidth ? column : 0 }
 
     var ops: V2QueueOps { V2QueueOps(model: model, toaster: toaster, store: store) }
     var splits: Bool { QueueDuoRuleV2.splits(width: Double(pane.width), duoOpen: duoOpen) }
@@ -78,9 +86,12 @@ struct V2QueueView: View {
                         }
                 }
                 rightPage.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.trailing, columnReserve)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
         .v2PageGround(art: groundArt)
         .searchable(text: $chrome.searchInput, placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: "Search titles")

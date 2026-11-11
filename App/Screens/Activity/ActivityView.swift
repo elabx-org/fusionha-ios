@@ -256,11 +256,22 @@ struct ActivityView: View {
 struct ActivityPage<Content: View>: View {
     @ViewBuilder var content: Content
     @Environment(\.activityPageHeader) private var header
+    @Environment(\.collapsedTabs) private var tabs
+    @Environment(\.bookPose) private var bookPose
+    /// The Duo's column: the trailing safe-area inset.
+    @State private var column: CGFloat = 0
+
+    /// Collapsed tabs (v2, the full-width rule): the rows run under the
+    /// Duo's column; the header keeps clear of the clock and the arrow.
+    private var fullWidth: Bool { tabs.on && !bookPose }
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
-                if let header { header.make() } else { ActivityPageHeader() }
+                Group {
+                    if let header { header.make() } else { ActivityPageHeader() }
+                }
+                .padding(.trailing, fullWidth ? column : 0)
                 content
             }
             .padding(.horizontal, Theme.pageGutter)
@@ -268,5 +279,7 @@ struct ActivityPage<Content: View>: View {
             .padding(.bottom, Theme.pageBottom)
         }
         .scrollDismissesKeyboard(.immediately)
+        .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
     }
 }

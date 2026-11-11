@@ -11,6 +11,7 @@ extension V2QueueView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     V2QueueHeader(counts: counts, loaded: store.loaded)
+                        .padding(.trailing, splits ? 0 : columnReserve)
                         .id(FoldAnchorTop.header)
                         .foldAnchor(FoldAnchorTop.header)
                     content
