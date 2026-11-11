@@ -120,6 +120,10 @@ struct CalendarView: View {
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             .browseGround(look)
         }
+        // With no title open the calendar takes the whole open Duo (its wide,
+        // web layout), not a narrow list beside an empty page (owner, build
+        // 1143). Book pose keeps the pages: a month would run over the fold.
+        .spreadSpansBothPages(.calendar, !bookPose)
         .columnActions(tabs.on, columnItems)
         .shellPage(title) { if !tabs.on { barItems } }
         .environment(\.calMotionOff, settings?.animationsEnabled == false)
