@@ -10,6 +10,7 @@ import FusionhaKit
 struct SearchBeforeTyping: View {
     @Environment(AppModel.self) private var model
     @Environment(\.spread) private var spread
+    @Environment(\.browseLook) private var look
     let kind: SearchKind
     let search: UnifiedSearchModel
     let recent: [String]
@@ -21,7 +22,11 @@ struct SearchBeforeTyping: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if spread.spans {
+            // v1's Spread: chips on the left page, the kind filter on the right.
+            // v2 keeps the typed results' order on every width (owner, build
+            // 1162: the chips ran into the filter and the filter into the
+            // column): the filter at the leading edge, the chips under it.
+            if spread.spans && look == nil {
                 // The leading slot always exists (even with no recent searches), so
                 // the kind filter stays on the right page.
                 FoldSpanRow {
@@ -37,7 +42,9 @@ struct SearchBeforeTyping: View {
                 }
                     .padding(.horizontal, Theme.pageGutter)
             } else {
-                SearchKindPicker().padding(.horizontal, Theme.pageGutter)
+                SearchKindPicker().frame(maxWidth: 520, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Theme.pageGutter)
                 chips.padding(.horizontal, Theme.pageGutter).padding(.top, 12)
             }
             trending

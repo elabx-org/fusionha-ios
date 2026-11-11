@@ -34,6 +34,8 @@ struct SearchTabView: View {
     @AppStorage(SearchLayout.storageKey) private var layoutRaw = SearchLayout.rows.rawValue
     @State private var recent = RecentSearches.load(from: .standard)
     @FocusState private var focused: Bool
+    /// When the field last gave up the keyboard (its ✕, a scroll, a pick).
+    @State private var dismissedAt: Date?
     @Environment(\.collapsedTabs) private var tabs
     /// Where the scroll's content starts on screen, and the column's width.
     @State private var restTop: CGFloat = 0
@@ -168,7 +170,8 @@ struct SearchTabView: View {
             try? await Task.sleep(for: .milliseconds(350))
             focused = true
         }
-        .onChange(of: model.searchFocusTick) { if sizeClass == .compact { focused = true } }
+        .onChange(of: model.searchFocusTick) { if sizeClass == .compact, !justDismissed { focused = true } }
+        .onChange(of: focused) { was, now in if was && !now { dismissedAt = .now } }
         // + elsewhere (v2): keyboard up on every width.
         .onChange(of: model.addViaSearch, initial: true) {
             guard model.addViaSearch else { return }
@@ -185,6 +188,13 @@ struct SearchTabView: View {
             await search.run(trimmed, kind: kind, source: model.client.map { ServerUnifiedSearchSource(client: $0, tmdb: .always) },
                              motion: motion)
         }
+    }
+
+    /// The ✕ re-selects the Search tab on its way out (owner, build 1162:
+    /// the keyboard kept coming back): a request to focus that lands right
+    /// after the keyboard was put away is that echo, not a new ask.
+    private var justDismissed: Bool {
+        dismissedAt.map { Date.now.timeIntervalSince($0) < 1 } ?? false
     }
 
     private var actions: SearchAddActions {
