@@ -40,6 +40,11 @@ Target: **iOS / iPadOS 26+**, since that is where the Liquid Glass APIs live (`g
 
 ### iPhone Duo
 
+> **v2 (on trial, 2026-11-10/11):** with Account › Collapsed tabs on, the Duo's tabs
+> collapse into one arrow in the column, the column holds only that arrow and Close or
+> Back, and pages run to the display's edge; the split handle also rests at a half.
+> See docs/v2.md "Collapsed tabs, the column rule and full width" and "Split handle".
+
 Built with Xcode 27.1 (earlier builds run letterboxed on the inner display). Everything is container-relative: no screen sizes, idiom or orientation checks.
 
 - **Folded (outer display, compact width):** the phone layout, unchanged; landscape is now allowed and keeps one column (the Library and Discover grids gain columns as the width grows).

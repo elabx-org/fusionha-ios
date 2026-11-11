@@ -16,8 +16,10 @@ editions, anime first-class, arr emulation); this repo owns how they look on iOS
 - **Native controls are the point.** The web's "no native form controls" rule is a
   browser rule and does NOT apply here: use `Picker`, `Toggle`, `Menu`, `Form`.
 - **Multi-edition state is always visible.** Every card, row and widget shows its
-  HD/4K edition chips, coloured through `EditionStatus.color` (mirrors the web's
-  `status.ts`). HD chip = purple, 4K chip = cyan.
+  HD/4K edition chips. v1: coloured through `EditionStatus.color` (mirrors the web's
+  `status.ts`), HD chip = purple, 4K chip = cyan. **v2 and every mock:** the monochrome
+  media badge (owner, 2026-11-06/07): solid in the label ink on disk, a thin outline
+  when missing, a matching HD + 4K pair as one combined badge. Never purple and cyan.
 - **Icons:** Monitor = `bookmark`/`bookmark.fill` (never a checkmark) · automatic search =
   `magnifyingglass` · interactive search = `person` · edit = `pencil` · refresh =
   `arrow.clockwise` · delete = `trash`.
