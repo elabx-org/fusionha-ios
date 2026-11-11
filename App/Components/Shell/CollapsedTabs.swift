@@ -80,7 +80,6 @@ struct CollapsedTabsFloatingButton: View {
     let column: CGFloat
     var actions: [ColumnAction] = []
     var beforeSwitch: (@MainActor () -> Void)?
-    @State private var frame: CGRect = .zero
 
     private static let side: CGFloat = 50
 
@@ -88,8 +87,8 @@ struct CollapsedTabsFloatingButton: View {
         // A frame, not a filled view: only the button takes touches.
         Group {
             Button {
-                pill?.request = ColumnPill.Request(anchor: frame, rises: true, state: state, libraryRoot: libraryRoot,
-                                                   actions: actions, beforeSwitch: beforeSwitch)
+                pill?.request = ColumnPill.Request(anchor: TouchSpot.last, rises: true, state: state,
+                                                   libraryRoot: libraryRoot, actions: actions, beforeSwitch: beforeSwitch)
             } label: {
                 Image(systemName: "chevron.up")
                     .font(.system(size: 19, weight: .semibold))
@@ -99,7 +98,6 @@ struct CollapsedTabsFloatingButton: View {
             }
             .buttonStyle(.plain)
             .glassEffect(.regular.interactive(), in: Circle())
-            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame = $0 }
             .overlay(alignment: .topTrailing) {
                 if state.activity > 0 {
                     Circle().fill(Theme.stuck).frame(width: 11, height: 11)

@@ -26,6 +26,8 @@ final class ColumnPill {
     }
 
     var request: Request?
+    /// The host's own view, to place the pill from window coordinates.
+    @ObservationIgnored weak var probe: TouchSpotProbe.ProbeView?
 
     func close() { request = nil }
 }
@@ -47,11 +49,12 @@ struct ColumnPillHost: ViewModifier {
             .overlay {
                 GeometryReader { proxy in
                     if let request = pill.request {
-                        ColumnPillView(model: model, request: request, origin: proxy.frame(in: .global).origin,
+                        ColumnPillView(model: model, request: request, origin: pill.probe?.windowOrigin ?? .zero,
                                        size: proxy.size, close: { pill.close() })
                             .transition(.opacity)
                     }
                 }
+                .background { TouchSpotProbe { pill.probe = $0 } }
                 .ignoresSafeArea()
                 .allowsHitTesting(pill.request != nil)
                 .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: pill.request != nil)
@@ -70,16 +73,15 @@ struct ColumnArrowButton: View {
     let libraryRoot: LibraryTabRootOverride?
     let actions: [ColumnAction]
     let beforeSwitch: (@MainActor () -> Void)?
-    @State private var frame: CGRect = .zero
 
     var body: some View {
         Button {
-            pill?.request = ColumnPill.Request(anchor: frame, rises: false, state: state, libraryRoot: libraryRoot,
-                                               actions: actions, beforeSwitch: beforeSwitch)
+            // The bar item just touched, in the window (`TouchSpot`).
+            pill?.request = ColumnPill.Request(anchor: TouchSpot.last, rises: false, state: state,
+                                               libraryRoot: libraryRoot, actions: actions, beforeSwitch: beforeSwitch)
         } label: {
             Label("Tabs", systemImage: "chevron.down")
         }
-        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame = $0 }
         // The Activity badge can't be seen while the tabs are closed.
         .badge(state.activity)
         .accessibilityHint(actions.isEmpty ? "Shows the tabs" : "Shows the tabs and this page's buttons")
@@ -141,20 +143,22 @@ struct ColumnPillView: View {
 
     var body: some View {
         let c = centre
-        ZStack(alignment: .topLeading) {
-            Color.black.opacity(0.32)
-                .contentShape(Rectangle())
-                .onTapGesture(perform: close)
-                .accessibilityLabel("Close the tabs")
-                .accessibilityAddTraits(.isButton)
-            column
-                .fixedSize()
-                .alignmentGuide(.leading) { d in d.width - (c.x + Self.width / 2) }
-                .alignmentGuide(.top) { d in
-                    request.rises ? d.height - (c.y + Self.width / 2) : -(c.y - Self.width / 2)
-                }
-        }
-        .frame(width: size.width, height: size.height, alignment: .topLeading)
+        // From the trailing corner: the pill's trailing edge is the arrow's,
+        // its top (or, rising, its bottom) the arrow's.
+        let inset = max(0, size.width - (c.x + Self.width / 2))
+        Color.black.opacity(0.32)
+            .contentShape(Rectangle())
+            .onTapGesture(perform: close)
+            .accessibilityLabel("Close the tabs")
+            .accessibilityAddTraits(.isButton)
+            .frame(width: size.width, height: size.height)
+            .overlay(alignment: request.rises ? .bottomTrailing : .topTrailing) {
+                column
+                    .fixedSize()
+                    .padding(.trailing, inset)
+                    .padding(request.rises ? .bottom : .top,
+                             max(0, request.rises ? size.height - (c.y + Self.width / 2) : c.y - Self.width / 2))
+            }
     }
 
     private var column: some View {
