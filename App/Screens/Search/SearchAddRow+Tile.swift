@@ -86,12 +86,19 @@ struct SearchTileGrid<Content: View>: View {
     @State private var width: CGFloat = 0
 
     var body: some View {
-        let gap = V2LibraryGrid.columnGap(width: width, sizeClass: sizeClass)
-        let columns = Array(repeating: GridItem(.flexible(), spacing: gap, alignment: .top),
-                            count: max(V2LibraryColumns.count(for: width), 1))
+        let columns = Array(repeating: GridItem(.flexible(), spacing: gap, alignment: .top), count: count)
         LazyVGrid(columns: columns, alignment: .leading, spacing: 16) { content }
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             .padding(.horizontal, Theme.pageGutter)
             .padding(.bottom, 4)
     }
+
+    // The Library grid's sizing lives in v2; v1 (rows only) keeps three columns.
+    #if V2
+    private var gap: CGFloat { V2LibraryGrid.columnGap(width: width, sizeClass: sizeClass) }
+    private var count: Int { max(V2LibraryColumns.count(for: width), 1) }
+    #else
+    private var gap: CGFloat { 12 }
+    private var count: Int { 3 }
+    #endif
 }

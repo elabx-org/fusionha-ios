@@ -70,7 +70,11 @@ struct SearchResults: View {
             lane {
                 ForEach(Array(owned.rows.enumerated()), id: \.element.id) { i, item in
                     Group {
+                        #if V2
                         if grid { V2PosterCard(item: item) } else { SearchOwnedRow(item: item) }
+                        #else
+                        SearchOwnedRow(item: item)
+                        #endif
                     }
                     .searchStagger(i)
                 }
