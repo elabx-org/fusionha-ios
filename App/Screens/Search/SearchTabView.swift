@@ -38,7 +38,8 @@ struct SearchTabView: View {
 
     /// Collapsed tabs (v2): typed results run under the Duo's column to the
     /// display's edge. Before typing, Trending keeps its place.
-    private var fullWidth: Bool { tabs.on && look != nil && !trimmed.isEmpty }
+    // `column > 0`: beside an open title the list pane isn't under the column.
+    private var fullWidth: Bool { tabs.on && look != nil && !trimmed.isEmpty && column > 0 }
     /// Room above the first lane so a row's own buttons never start under
     /// the arrow button (`TabsLook.clearance`), less the kind picker's row.
     private var lead: CGFloat {
@@ -84,7 +85,7 @@ struct SearchTabView: View {
         .scrollDismissesKeyboard(duoOpen ? .immediately : .interactively)
         .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
         .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).minY + $0.safeAreaInsets.top } action: { restTop = $0 }
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { column = $0 }
         // Rows pass under the floating field and scopes: the hard edge keeps
         // their titles from reading through the glass.
         .scrollEdgeEffectStyle(.hard, for: .top)

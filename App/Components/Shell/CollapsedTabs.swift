@@ -9,8 +9,8 @@ import FusionhaKit
 // first free spot under the clock) grows the bar into a pill of their icons
 // (`ColumnPill`), with the page's own buttons and Account under them, so the column
 // holds the arrow (and Close or Back) and a page runs to the display's edge.
-// Folded and flat open only; beside an open title the tabs stay in the bar
-// under the list pane. A regular iPhone and iPad keep their tab bar.
+// On the Duo, folded and open, with or without a title open. A regular
+// iPhone and iPad keep their tab bar.
 
 enum TabsLook {
     /// Device-local: the Duo's tabs collapse into the arrow button.

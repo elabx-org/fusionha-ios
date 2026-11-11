@@ -25,11 +25,14 @@ struct ShellTabs: View {
     /// The Duo's column: the trailing safe-area inset.
     @State private var column: CGFloat = 0
 
-    /// Collapsed on the Duo's column (folded, or open with the tabs filling
-    /// the display). Beside an open title the list pane keeps its own bar.
+    /// Collapsed on the Duo, folded or open, with or without a title open.
+    /// It used to end while a title was open: opening one over a hidden
+    /// list then brought the tab bar back and re-flowed the whole page
+    /// under the title as it slid in (owner, build 1149: "resizing jitter
+    /// and flicker"). The page under a full-width title now keeps its
+    /// layout; beside a title the list pane has its arrow like every page.
     private var collapsed: Bool {
-        chrome != nil && collapsedPref && !splitShown
-            && (fold.isDuoOpen || OuterDisplay.isFoldedDuo(sizeClass: sizeClass))
+        chrome != nil && collapsedPref && (fold.isDuoOpen || OuterDisplay.isFoldedDuo(sizeClass: sizeClass))
     }
 
     /// v2 in the open Duo's narrow list pane (owner 2026-11-09): the tabs

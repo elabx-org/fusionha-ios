@@ -213,7 +213,7 @@ struct V2LibraryView: View {
         }
         .scrollDismissesKeyboard(.immediately)
         .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { column = $0 }
         .onGeometryChange(for: LibraryPane.self) { LibraryPane(width: $0.size.width) } action: {
             PerfCount.hit("V2Library.pane.\(Int($0.width))")
             pane = $0
