@@ -75,6 +75,10 @@ struct V2PosterHeroArt: View {
         // c3c9e0d8: clipping the hero's own frame left a dark strip).
         .clipped()
         .ignoresSafeArea(.container, edges: .horizontal)
+        // And to the band's own top and bottom: inside the extended frame
+        // the art still drew past them (owner, build 1143: it ran 40pt
+        // under the tabs and ended in a hard line).
+        .clipShape(HeroBleedClip())
         .accessibilityHidden(true)
         .onAppear {
             if let url = Self.url(poster, backdrop) { HeroArtReveal.shown.insert(url) }

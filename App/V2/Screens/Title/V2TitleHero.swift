@@ -42,6 +42,8 @@ struct V2TitleHero: View {
                 // c3c9e0d8: clipping the hero's own frame left a dark strip).
                 .clipped()
                 .ignoresSafeArea(.container, edges: .horizontal)
+                // And to the hero's own top and bottom (`HeroBleedClip`).
+                .clipShape(HeroBleedClip())
                 .accessibilityHidden(true)
             }
             .overlay(alignment: .bottomLeading) {
@@ -177,5 +179,13 @@ struct V2TitleMetaLine: View {
     /// 137 → "2h 17m".
     static func runtime(_ minutes: Int) -> String {
         minutes < 60 ? "\(minutes)m" : "\(minutes / 60)h \(minutes % 60)m"
+    }
+}
+
+/// A hero's art may run sideways under the Duo's column, never past the
+/// hero's own top or bottom: the view's height, any width.
+struct HeroBleedClip: Shape {
+    func path(in rect: CGRect) -> Path {
+        Path(rect.insetBy(dx: -600, dy: 0))
     }
 }

@@ -129,6 +129,10 @@ struct V2PosterWideHero: View {
         }
         .clipped()
         .ignoresSafeArea(.container, edges: .horizontal)
+        // And to the band's own top and bottom: inside the extended frame
+        // the art still drew past them (owner, build 1143: it ran 40pt
+        // under the tabs and ended in a hard line).
+        .clipShape(HeroBleedClip())
         .allowsHitTesting(false)
         .accessibilityHidden(true)
         .onAppear {
