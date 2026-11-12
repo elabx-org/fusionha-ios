@@ -94,7 +94,19 @@ struct V2TitleSummary: View {
             // which did nothing when Files was already showing).
             store.scope = DetailScope(tier: edition.tier.rawValue, version: edition.versionKey)
             store.tab = .files
-            store.manageFiles = ManageFilesTarget(versionIds: [edition.id], season: nil, problems: true)
+            let target = ManageFilesTarget(versionIds: [edition.id], season: nil, problems: true)
+            // A presentation left set with no sheet on screen (a sheet closed
+            // under another) would make this the same value and show nothing:
+            // clear it, then open on the next turn.
+            if store.manageFiles == nil {
+                store.manageFiles = target
+            } else {
+                store.manageFiles = nil
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(60))
+                    store.manageFiles = target
+                }
+            }
         }
     }
 }

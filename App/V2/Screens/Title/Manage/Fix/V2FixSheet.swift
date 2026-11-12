@@ -17,6 +17,10 @@ struct V2FixSheet: View {
     @State private var deleting: V2ManageDeleteTarget?
     @State private var confirm: ManageFilesConfirm?
     @State private var replacing: V2FixReplaceTarget?
+    /// A replace started: this sheet closes once the Replace sheet has gone.
+    /// Closing both in one go could leave this one's presentation set with
+    /// nothing on screen, so Review did nothing on the next tap (IMG_8001).
+    @State private var closeAfterReplace = false
     @State private var picking: InteractiveTarget?
     @State private var searching = false
 
@@ -56,8 +60,12 @@ struct V2FixSheet: View {
                     .environment(store)
                     .v2PageGround(art: art)
             }
-            .sheet(item: $replacing) { t in
-                V2FixReplaceSheet(model: model, target: t, onStarted: { dismiss() })
+            .sheet(item: $replacing, onDismiss: {
+                guard closeAfterReplace else { return }
+                closeAfterReplace = false
+                dismiss()
+            }) { t in
+                V2FixReplaceSheet(model: model, target: t, onStarted: { closeAfterReplace = true })
                     .environment(app)
                     .environment(store)
                     .v2PageGround(art: art)
