@@ -52,13 +52,14 @@ struct DuoSeamContext {
     let setShare: @MainActor (Double) -> Void
 
     /// Offered only with v2's handle, on the flat open Duo's seamless split
-    /// with a title open (the list hidden or not), where the list can hide.
+    /// with something on the right page (a title, or a Search / Discover
+    /// preview; `rightPageHasItem`), the list hidden or not.
     @MainActor
     init?(titlePage: TitlePageOverride?, share: Double?, fold: FoldInfo, split: ShellSplit, toggle: DuoListToggle?,
           drag: DuoSeamDrag, model: AppModel, setShare: @escaping @MainActor (Double) -> Void) {
         guard titlePage?.seamHandle != nil, let share,
               fold.vertical == nil, fold.flatVertical != nil, split.shown, split.axis == .horizontal,
-              model.presentedItem != nil, let toggle, fold.size.width > 0 else { return nil }
+              model.rightPageHasItem, let toggle, fold.size.width > 0 else { return nil }
         self.drag = drag
         width = fold.size.width
         rest = (fold.size.width * CGFloat(share)).rounded()

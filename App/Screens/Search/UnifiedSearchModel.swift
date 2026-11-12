@@ -22,6 +22,10 @@ final class UnifiedSearchModel {
     private(set) var trendingFailed = false
     /// 409 `tmdb_not_configured`: the KeyMissing notice instead of Trending.
     private(set) var trendingMissingKey = false
+    /// Kinds whose feed is the popular list, not Trending: the server's
+    /// trending list comes back empty for anime (fusionha, 2026-11-12), so
+    /// Anime shows `/discover/filter` by popularity instead of nothing.
+    private(set) var popularInstead: Set<SearchKind> = []
 
     var searching: Bool { !lanes.isSettled }
 
@@ -57,7 +61,12 @@ final class UnifiedSearchModel {
     func loadTrending(_ kind: SearchKind, client: APIClient?) async {
         guard trending[kind] == nil, let client else { return }
         do {
-            let rows = try await client.discover(kind: kind, list: .trending)
+            var rows = try await client.discover(kind: kind, list: .trending)
+            if rows.isEmpty, kind != .all,
+               let popular = try? await client.discoverFilter(kind: kind, filter: DiscoverFilter()), !popular.isEmpty {
+                rows = popular
+                popularInstead.insert(kind)
+            }
             trending[kind] = rows
             trendingFailed = false
             trendingMissingKey = false

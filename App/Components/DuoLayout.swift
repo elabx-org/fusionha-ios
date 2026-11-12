@@ -182,7 +182,7 @@ struct ShellDetailColumn: View {
     /// (`TitlePageOverride.flatOpenListShare`), so no hairline between them.
     /// v1 never sets `titlePage`; book pose keeps its gutter.
     private var seamless: Bool {
-        titlePage?.flatOpenListShare != nil && duoOpen && !bookPose && model.presentedItem != nil
+        titlePage?.flatOpenListShare != nil && duoOpen && !bookPose && model.rightPageHasItem
     }
 
     /// v2 draws a strip in the fold in book pose (`V2FoldSeam`) that blends

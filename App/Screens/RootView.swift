@@ -83,7 +83,7 @@ struct RootView: View {
 
     private func applyFlatOpenShare(_ split: inout ShellSplit) {
         guard let share = flatOpenShare, fold.vertical == nil, fold.flatVertical != nil,
-              split.shown, split.axis == .horizontal, !split.primaryHidden, model.presentedItem != nil else { return }
+              split.shown, split.axis == .horizontal, !split.primaryHidden, model.rightPageHasItem else { return }
         split.primary = (fold.size.width * CGFloat(share)).rounded()
         split.gap = 0
     }

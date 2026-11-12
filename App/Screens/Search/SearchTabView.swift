@@ -34,8 +34,9 @@ struct SearchTabView: View {
     @AppStorage(SearchLayout.storageKey) private var layoutRaw = SearchLayout.rows.rawValue
     @State private var recent = RecentSearches.load(from: .standard)
     @FocusState private var focused: Bool
-    /// When the field last gave up the keyboard (its ✕, a scroll, a pick).
-    @State private var dismissedAt: Date?
+    /// Whether the search is presented, and when its ✕ last ended it (`SearchCloseGuard`).
+    @State private var presented = false
+    @State private var closedAt: Date?
     @Environment(\.collapsedTabs) private var tabs
     /// Where the scroll's content starts on screen, and the column's width.
     @State private var restTop: CGFloat = 0
@@ -54,8 +55,12 @@ struct SearchTabView: View {
     private var lead: CGFloat {
         guard fullWidth, restTop > 0 else { return 0 }
         return max(0, TabsLook.clearance(folded: !duoOpen, bottom: tabs.bottom) - restTop - (pickerOnRightPage ? 0 : 46)
-                   - (tools ? SearchToolsRow.height : 0))
+                   - (tools ? SearchToolsRow.height : 0) - (showsAddAs ? SearchAddAs.height : 0))
     }
+
+    /// "Add as [provider] ⌄" (Discover's control): which metadata provider a
+    /// series added from here is built with. Movies are always TMDB.
+    private var showsAddAs: Bool { SearchAddAs.shown(model, kind: kind) }
 
     /// v2: the tools row (source + rows/grid) above the results.
     private var tools: Bool { look != nil }
@@ -95,6 +100,9 @@ struct SearchTabView: View {
                             .padding(.horizontal, Theme.pageGutter)
                             .padding(.trailing, fullWidth ? column : 0)
                     }
+                    if showsAddAs {
+                        SearchAddAs().padding(.trailing, fullWidth ? column : 0)
+                    }
                     if lead > 0 { Color.clear.frame(height: lead) }
                     SearchResults(term: trimmed, kind: kind, search: search, filter: filter, actions: actions,
                                   tools: tools, grid: grid)
@@ -118,7 +126,7 @@ struct SearchTabView: View {
         .background { if look == nil { Theme.bg.ignoresSafeArea() } }
         .browseGround(look)
         .shellPage("Search")
-        .searchable(text: $model.searchQuery,
+        .searchable(text: $model.searchQuery, isPresented: $presented,
                     prompt: SearchPrompt.text(requester: model.requestScoped, wide: duoOpen || sizeClass != .compact))
         .searchScopes($scope) {
             if !model.requestScoped {
@@ -129,6 +137,7 @@ struct SearchTabView: View {
         .searchFocused($focused)
         // Typing survives a fold, unfold or rotation (D5).
         .keepsFocusAcrossResize($focused)
+        .modifier(SearchCloseGuard(focused: $focused, presented: $presented, closedAt: $closedAt))
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
         .onSubmit(of: .search) { remember() }
@@ -152,7 +161,8 @@ struct SearchTabView: View {
             NavigationStack { RequestModal(pick: pick) {} }
         }
         .duoPageSheet(item: $addPick) { pick in
-            AddTitleSheet(initialPick: pick) { _ in
+            // The "Add as" provider chosen above the results (as Discover's).
+            AddTitleSheet(initialPick: pick, providerOverride: DiscoverSession.shared.providerOverride) { _ in
                 // Stay in the results: the right page closes, the list widens.
                 model.spreadPreview = nil
             }
@@ -170,8 +180,9 @@ struct SearchTabView: View {
             try? await Task.sleep(for: .milliseconds(350))
             focused = true
         }
-        .onChange(of: model.searchFocusTick) { if sizeClass == .compact, !justDismissed { focused = true } }
-        .onChange(of: focused) { was, now in if was && !now { dismissedAt = .now } }
+        .onChange(of: model.searchFocusTick) {
+            if sizeClass == .compact, !SearchCloseGuard.justClosed(closedAt) { focused = true }
+        }
         // + elsewhere (v2): keyboard up on every width.
         .onChange(of: model.addViaSearch, initial: true) {
             guard model.addViaSearch else { return }
@@ -184,17 +195,11 @@ struct SearchTabView: View {
         .task {
             if !model.requestScoped { await model.loadLibraryIfNeeded() }
         }
+        .task { await SearchAddAs.loadDefault(model) }
         .task(id: UnifiedSearchModel.key(trimmed, kind)) {
             await search.run(trimmed, kind: kind, source: model.client.map { ServerUnifiedSearchSource(client: $0, tmdb: .always) },
                              motion: motion)
         }
-    }
-
-    /// The ✕ re-selects the Search tab on its way out (owner, build 1162:
-    /// the keyboard kept coming back): a request to focus that lands right
-    /// after the keyboard was put away is that echo, not a new ask.
-    private var justDismissed: Bool {
-        dismissedAt.map { Date.now.timeIntervalSince($0) < 1 } ?? false
     }
 
     private var actions: SearchAddActions {

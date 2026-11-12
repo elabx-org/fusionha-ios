@@ -38,13 +38,6 @@ struct ColumnAction: Identifiable, Equatable {
         ColumnAction(id: title, title: title, systemImage: "", stamp: stamp, kind: .control(AnyView(view())))
     }
 
-    /// Add, where this user may add (as `AddTitleToolbarItem`).
-    @MainActor
-    static func add(_ model: AppModel) -> ColumnAction? {
-        guard !model.requestScoped, model.me?.can("add") != false, !model.selectMode else { return nil }
-        return .button("Add", "plus") { model.openAddSearch() }
-    }
-
     // What it shows, not the closures (new on every render).
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id && lhs.title == rhs.title && lhs.systemImage == rhs.systemImage

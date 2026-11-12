@@ -45,6 +45,7 @@ struct SearchBeforeTyping: View {
                 SearchKindPicker().frame(maxWidth: 520, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Theme.pageGutter)
+                if SearchAddAs.shown(model, kind: kind) { SearchAddAs().padding(.top, 4) }
                 chips.padding(.horizontal, Theme.pageGutter).padding(.top, 12)
             }
             trending
@@ -81,13 +82,17 @@ struct SearchBeforeTyping: View {
 
     @ViewBuilder
     private var trending: some View {
-        SearchLaneLabel(text: "Trending this week", count: nil) {
+        SearchLaneLabel(text: search.popularInstead.contains(kind) ? "Popular" : "Trending this week", count: nil) {
             HStack(spacing: 4) {
                 Text("·").foregroundStyle(Theme.dim)
                 TmdbLogo(size: 9, label: "TMDB")
             }
         }
-        if let rows = search.trending[kind] {
+        if let rows = search.trending[kind], rows.isEmpty {
+            Text(kind.noun.map { "No \($0) trending right now." } ?? "Nothing trending right now.")
+                .font(.system(size: 13)).foregroundStyle(Theme.mut)
+                .padding(.horizontal, Theme.pageGutter + 2)
+        } else if let rows = search.trending[kind] {
             let owned = ownedItems(rows)
             AdaptivePosterGrid {
                 ForEach(Array(rows.enumerated()), id: \.element.id) { i, result in

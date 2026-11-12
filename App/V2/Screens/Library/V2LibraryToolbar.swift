@@ -29,7 +29,6 @@ struct V2LibraryToolbar: ViewModifier {
         content
             .toolbar { items }
             .columnActions(tabs.on, [
-                ColumnAction.add(model),
                 .control("Filter", stamp: "\(filters.tokens.count)|\(derived.attentionCount)") {
                     V2LibraryFilterMenu(filters: filters, attentionCount: derived.attentionCount)
                 },
@@ -60,8 +59,9 @@ struct V2LibraryToolbar: ViewModifier {
             }
     }
 
-    /// Collapsed tabs (the column rule): Add, Filter (Select is in it) and
-    /// Library stats are in the arrow's list, not the bar.
+    /// Collapsed tabs (the column rule): Filter (Select is in it) and
+    /// Library stats are in the arrow's list, not the bar; you add from
+    /// Search, listed there too.
     @ToolbarContentBuilder
     private var items: some ToolbarContent {
         if !tabs.on { barItems }

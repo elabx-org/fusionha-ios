@@ -95,7 +95,6 @@ struct DiscoverView: View {
         }
         // Rails, Browse's controls and the filter fields follow the page's own width.
         .publishesPaneSize()
-        .columnActions(collapsed.on, [ColumnAction.add(model)])
         .shellPage(title) { if !collapsed.on { AddTitleToolbarItem(model: model) } }
         .spreadSpansBothPages(.discover, tab == .browse && !store.tmdbMissing)
         .environment(store)
