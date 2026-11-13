@@ -19,7 +19,7 @@ struct V2TitleWidePage: View {
                 .duoTitleSwipe(id: detail.id)
             HStack(alignment: .top, spacing: V2TitleWide.columnGap) {
                 VStack(alignment: .leading, spacing: 0) {
-                    V2TitleSummary(detail: detail, small: true, stacksActions: true)
+                    V2TitleSummary(detail: detail, small: true)
                     if detail.isSeries {
                         V2TitleCredit(detail: detail).font(.system(size: 13)).padding(.top, 28)
                     }

@@ -107,13 +107,15 @@ struct V2TitleHeading: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(detail.title)
-                .font(.system(size: size, weight: .heavy))
-                .tracking(-size * 0.03)
-                .lineLimit(2)
-                .minimumScaleFactor(0.7)
-                .shadow(color: .black.opacity(0.45), radius: 9, y: 2)
-                .accessibilityAddTraits(.isHeader)
+            V2TitleWithBookmark(detail: detail, size: size) {
+                Text(detail.title)
+                    .font(.system(size: size, weight: .heavy))
+                    .tracking(-size * 0.03)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            .shadow(color: .black.opacity(0.45), radius: 9, y: 2)
             V2TitleMetaLine(detail: detail)
             if showsTagline, !detail.isSeries, let tagline = detail.tagline, !tagline.isEmpty {
                 Text(tagline)

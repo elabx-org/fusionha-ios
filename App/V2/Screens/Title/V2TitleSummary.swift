@@ -15,9 +15,6 @@ struct V2TitleSummary: View {
     let detail: ItemDetail
     /// Narrow columns: the smaller version cards.
     var small = false
-    /// The wide page's left column: Monitored drops to its own line (mock
-    /// `tabWide`), so the row never runs past the column.
-    var stacksActions = false
     @State private var overviewOpen = false
 
     private var ink: Color { page?.ink ?? Theme.txt }
@@ -40,7 +37,7 @@ struct V2TitleSummary: View {
                 V2TitleVersionStrip(versions: versions, small: small)
                     .padding(.top, 14)
             }
-            V2TitleActionRow(detail: detail, stacked: stacksActions)
+            V2TitleActionRow(detail: detail)
                 .padding(.top, 14)
             ForEach(needs) { need in
                 V2TitleNeedsYouCard(item: need) { review(need) }

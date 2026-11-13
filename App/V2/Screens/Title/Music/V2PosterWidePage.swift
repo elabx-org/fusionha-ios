@@ -33,7 +33,7 @@ struct V2PosterWidePage: View {
             .duoTitleSwipe(id: detail.id)
             HStack(alignment: .top, spacing: V2TitleWide.columnGap) {
                 VStack(alignment: .leading, spacing: 0) {
-                    V2TitleSummary(detail: detail, small: true, stacksActions: true)
+                    V2TitleSummary(detail: detail, small: true)
                     if detail.isSeries {
                         V2TitleCredit(detail: detail).font(.system(size: 13)).padding(.top, 28)
                     }
@@ -78,13 +78,15 @@ struct V2PosterCoverHeading: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            Text(detail.title)
-                .font(.system(size: 26, weight: .heavy))
-                .tracking(-0.7)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.7)
-                .accessibilityAddTraits(.isHeader)
+            V2TitleWithBookmark(detail: detail, size: 26) {
+                Text(detail.title)
+                    .font(.system(size: 26, weight: .heavy))
+                    .tracking(-0.7)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.7)
+                    .accessibilityAddTraits(.isHeader)
+            }
             V2TitleMetaLine(detail: detail)
         }
         .foregroundStyle(.white)
