@@ -50,6 +50,10 @@ struct ShellTabs: View {
         chrome != nil && splitShown && sizeClass == .regular && width > 0 && width < 420
     }
 
+    /// The iPhone Duo, folded or open: the tabs and the page's buttons live
+    /// in the system column there.
+    private var onDuo: Bool { fold.isDuoOpen || OuterDisplay.isFoldedDuo(sizeClass: sizeClass) }
+
     private var tabsState: CollapsedTabsState {
         CollapsedTabsState(on: collapsed, bottom: arrowAtBottom, activity: activityBadge, requests: model.requestsBadge)
     }
@@ -112,7 +116,12 @@ struct ShellTabs: View {
         // Activity count is what needs you, in orange.
         .tabBadgeTint(key: "\(model.requestsBadge)-\(activityBadge)-\(model.tab)-\(Int(fold.size.width))x\(Int(fold.size.height))-\(splitShown)-\(narrowColumn)",
                       fills: chrome?.activityBadgeNeedsYou == true ? ["Activity": Theme.stuck] : [:])
-        .tabBarMinimizeBehavior(.onScrollDown)
+        // The phone's tab bar still tucks away on scroll. On the Duo the bar
+        // is the column, which the owner keeps always showing (2026-11-06):
+        // its minimize also folded away the title's buttons, and with them
+        // the More menu open from one of them (owner, build 1174 IMG_8020:
+        // scrolling the menu collapsed the bar and closed the menu).
+        .tabBarMinimizeBehavior(onDuo ? .never : .onScrollDown)
         // The downloads bar (iOS-only): while the queue has items, off Activity,
         // never across the iPhone Duo's fold (the Activity badge still counts),
         // and never over a select mode's bulk bar (`SelectBarPresence`).
