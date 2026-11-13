@@ -41,6 +41,7 @@ struct V2TitleTabs: View {
                 }
             }
             .pickerStyle(.segmented)
+            .v2ClearsColumn()
             .sensoryFeedback(.selection, trigger: store.tab)
             .v2FadesUnderTitleBar()
             pane

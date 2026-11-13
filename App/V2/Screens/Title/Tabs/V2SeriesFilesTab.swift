@@ -84,6 +84,7 @@ struct V2RenameFilesButton: View {
             .font(.system(size: 13.5, weight: .semibold))
             .foregroundStyle(page?.ink ?? Theme.txt)
             .buttonStyle(.glass)
+            .v2ClearsColumn()
     }
 }
 

@@ -31,6 +31,7 @@ struct V2TitleNeedsYouCard: View {
                 .font(.system(size: 13, weight: .bold))
                 .buttonStyle(.glassProminent)
                 .tint(Theme.stuck)
+                .v2ClearsColumn()
         }
         .padding(.vertical, 12)
         .padding(.leading, 14)

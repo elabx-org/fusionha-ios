@@ -27,6 +27,8 @@ struct V2TitleView: View {
     @State private var width: CGFloat = 0
     /// The bar's reach down the scroll view (`v2TitleBarInset`).
     @State private var barInset: CGFloat = 0
+    /// The Duo's column width, kept while the page runs under it.
+    @State private var columnWidth: CGFloat = 0
     /// The poster-led page on trial (Account › This iPhone).
     @AppStorage(TitleLook.posterKey) private var posterLook = false
     @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = false
@@ -181,6 +183,8 @@ struct V2TitleView: View {
         .scrollPosition($position)
         .duoColumnPullSource()
         .ignoresSafeArea(.container, edges: edgeToEdge ? [.top, .trailing] : .top)
+        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { columnWidth = $0 } }
+        .environment(\.v2ColumnClearance, edgeToEdge ? columnWidth : 0)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { barInset = $0 }
         .environment(\.v2TitleBarInset, barInset)
