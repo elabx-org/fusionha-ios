@@ -5,6 +5,7 @@ import FusionhaKit
 
 struct AddEditionSheet: View {
     @Environment(DetailStore.self) private var store
+    @Environment(AppModel.self) private var model: AppModel?
     @Environment(\.dismiss) private var dismiss
     let detail: ItemDetail
     let preset: AddEditionPreset
@@ -31,6 +32,10 @@ struct AddEditionSheet: View {
     @State private var seeded = false
 
     private var isSeries: Bool { detail.isSeries }
+    /// Names typed by hand on other titles, offered beside the Settings cuts.
+    private var usedNames: [String] {
+        AddEditionVocabulary.usedNames(in: model?.library ?? [], kind: detail.kind, excluding: presets)
+    }
     private var profiles: [QualityProfile] { DetailVocab.profiles(store.profiles, for: detail) }
 
     private var effectiveEdition: String? {
@@ -54,7 +59,17 @@ struct AddEditionSheet: View {
                         ForEach(QualityTier.ordered, id: \.self) { Text($0.chipLabel).tag($0) }
                     }
                     Picker("Edition", selection: $editionChoice) {
-                        ForEach([Self.standard] + presets, id: \.self) { Text($0).tag($0) }
+                        Text(Self.standard).tag(Self.standard)
+                        if !presets.isEmpty {
+                            Section("Cuts") {
+                                ForEach(presets, id: \.self) { Text($0).tag($0) }
+                            }
+                        }
+                        if !usedNames.isEmpty {
+                            Section("Used in your library") {
+                                ForEach(usedNames, id: \.self) { Text($0).tag($0) }
+                            }
+                        }
                         Text("Custom…").tag(Self.custom)
                     }
                     if editionChoice == Self.custom {
@@ -140,13 +155,15 @@ struct AddEditionSheet: View {
         }
         .presentationDragIndicator(.visible)
         .sheetBackground(Theme.bg)
-        .task { await seed() }
+        .task {
+            await loadVocabulary()
+            seed()
+        }
         // Survives a fold / unfold (data safety): `seeded` keeps seed() from overwriting it.
         .retainsDraft("add.seeded", $seeded)
         .retainsDraft("add.tier", $tier)
         .retainsDraft("add.editionChoice", $editionChoice)
         .retainsDraft("add.customEdition", $customEdition)
-        .retainsDraft("add.presets", $presets)
         .retainsDraft("add.rootFolderId", $rootFolderId)
         .retainsDraft("add.folderName", $folderName)
         .retainsDraft("add.profileId", $profileId)
@@ -154,7 +171,6 @@ struct AddEditionSheet: View {
         .retainsDraft("add.minimumAvailability", $minimumAvailability)
         .retainsDraft("add.monitored", $monitored)
         .retainsDraft("add.searchNow", $searchNow)
-        .retainsDraft("add.defaults", $defaults)
         .retainsDraft("add.fourK", $fourK)
     }
 
@@ -222,21 +238,31 @@ struct AddEditionSheet: View {
         profileId = slot?.qualityProfileId ?? DetailVocab.defaultProfile(next, profiles: profiles)
     }
 
-    private func seed() async {
-        guard !seeded else { return }
+    /// The Settings cuts and the Add defaults, fetched every time the sheet
+    /// appears. They used to ride the draft with `seeded`: a fold or a re-host
+    /// mid-fetch kept the empty lists for good, so Edition showed only
+    /// Standard and Custom… (owner, IMG_8014).
+    private func loadVocabulary() async {
+        guard let client = store.client else { return }
+        async let d = try? client.addDefaults()
+        async let e = try? client.editionDefinitions()
+        let (slots, definitions) = await (d, e)
+        if let slots { defaults = slots }
+        if let definitions {
+            presets = definitions.filter { $0.enabled != false }.map(\.name).filter { $0 != Self.standard }
+        }
+    }
+
+    /// The first-open choices, once per opening (a restored draft keeps the
+    /// user's). Waits for the vocabulary, so a cancelled fetch seeds next time.
+    private func seed() {
+        guard !seeded, !Task.isCancelled else { return }
         seeded = true
         minimumAvailability = store.settings?.defaultMovieMinimumAvailability ?? "released"
         let start = preset.tier ?? (detail.editions.contains { $0.tier == .uhd } ? .hd : .uhd)
         tier = start
-        if let client = store.client {
-            async let d = try? client.addDefaults()
-            async let e = try? client.editionDefinitions()
-            let (slots, definitions) = await (d, e)
-            defaults = slots ?? []
-            presets = (definitions ?? []).filter { $0.enabled != false }.map(\.name)
-        }
         if let version = preset.version, !version.isEmpty {
-            if presets.contains(version) { editionChoice = version } else {
+            if presets.contains(version) || usedNames.contains(version) { editionChoice = version } else {
                 editionChoice = Self.custom
                 customEdition = version
             }
