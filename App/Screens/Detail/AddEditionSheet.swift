@@ -61,6 +61,7 @@ struct AddEditionSheet: View {
                         LabeledContent("Custom edition name") {
                             TextField(isSeries ? "e.g. Remastered" : "e.g. Final Cut", text: $customEdition)
                                 .multilineTextAlignment(.trailing)
+                                .submitLabel(.done)
                         }
                     }
                 } header: {
@@ -83,6 +84,7 @@ struct AddEditionSheet: View {
                             .font(.system(size: 14, design: .monospaced))
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                            .submitLabel(.done)
                     }
                     Text(previewPath)
                         .font(.system(size: 12, design: .monospaced))
@@ -118,6 +120,9 @@ struct AddEditionSheet: View {
                 }
             }
             .scrollContentBackground(.hidden)
+            // The keyboard goes with a drag down or Done (owner, IMG_8010): on the
+            // folded Duo it shortens the column until Close and Add hide in ⋯.
+            .scrollDismissesKeyboard(.interactively)
             .background(Theme.bg)
             .navigationTitle("Add a version")
             .navigationBarTitleDisplayMode(.inline)
