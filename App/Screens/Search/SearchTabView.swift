@@ -137,7 +137,8 @@ struct SearchTabView: View {
         .searchFocused($focused)
         // Typing survives a fold, unfold or rotation (D5).
         .keepsFocusAcrossResize($focused)
-        .modifier(SearchCloseGuard(focused: $focused, presented: $presented, closedAt: $closedAt))
+        .modifier(SearchCloseGuard(focused: $focused, presented: $presented, closedAt: $closedAt,
+                                    active: model.tab == .search))
         .textInputAutocapitalization(.never)
         .autocorrectionDisabled()
         .onSubmit(of: .search) { remember() }
