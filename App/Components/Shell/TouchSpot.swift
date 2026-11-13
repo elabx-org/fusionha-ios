@@ -45,7 +45,25 @@ extension Notification.Name {
 }
 
 /// Never recognises: it notes where a touch begins and whether it drags.
-private final class TouchSpotRecognizer: UIGestureRecognizer {
+/// Touches inside a system menu are never delivered to it: scrolling a long
+/// menu (the title's More) closed the menu while this recognizer was
+/// watching the drag (owner, build 1171 IMG_8018: only on a scroll).
+private final class TouchSpotRecognizer: UIGestureRecognizer, UIGestureRecognizerDelegate {
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        !Self.inSystemMenu(touch.view)
+    }
+
+    /// The view is part of a system menu (UIKit's private `_UI…Menu…` views).
+    private static func inSystemMenu(_ view: UIView?) -> Bool {
+        var view = view
+        while let candidate = view {
+            let name = NSStringFromClass(type(of: candidate))
+            if name.hasPrefix("_UI"), name.contains("Menu") { return true }
+            view = candidate.superview
+        }
+        return false
+    }
+
     private var start: CGPoint?
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent) {
@@ -96,6 +114,7 @@ struct TouchSpotProbe: UIViewRepresentable {
             super.didMoveToWindow()
             guard let window, !(window.gestureRecognizers ?? []).contains(where: { $0 is TouchSpotRecognizer }) else { return }
             let recognizer = TouchSpotRecognizer()
+            recognizer.delegate = recognizer
             recognizer.cancelsTouchesInView = false
             recognizer.delaysTouchesBegan = false
             recognizer.delaysTouchesEnded = false
