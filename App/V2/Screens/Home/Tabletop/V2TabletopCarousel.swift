@@ -9,11 +9,14 @@ import FusionhaKit
 struct V2TabletopCarousel: View {
     let cards: [V2ComingUpCard]
     let posterHeight: CGFloat
+    /// The page's width, known from the first pass. Measured inside the scroll
+    /// view it started at 0 and changed the content margins after the opening
+    /// card was scrolled to, leaving the row one card off its focus.
+    let containerWidth: CGFloat
     @Binding var focused: Int?
     @Binding var opening: Int?
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
-    @State private var width: CGFloat = 0
 
     private var currentId: Int? { cards.contains { $0.id == focused } ? focused : cards.first?.id }
 
@@ -38,12 +41,11 @@ struct V2TabletopCarousel: View {
             .padding(.vertical, 14)
             .scrollTargetLayout()
         }
-        .contentMargins(.horizontal, max(0, (width - m.size.width) / 2), for: .scrollContent)
+        .contentMargins(.horizontal, max(0, (containerWidth - m.size.width) / 2), for: .scrollContent)
         .scrollTargetBehavior(.viewAligned)
         .scrollPosition(id: $focused, anchor: .center)
         .v2CarouselOpening($opening, focused: $focused)
         .scrollClipDisabled()
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .sensoryFeedback(.selection, trigger: focused)
         .accessibilityLabel("Coming up")
     }

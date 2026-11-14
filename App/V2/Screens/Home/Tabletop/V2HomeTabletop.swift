@@ -29,7 +29,7 @@ struct V2HomeTabletop: View {
         // the container itself runs under the bar.
         ScrollView {
             VStack(spacing: 0) {
-                V2TabletopStage(height: space.stageHeight(top: top), cards: cards, focused: $focused, opening: $opening)
+                V2TabletopStage(height: space.stageHeight(top: top), width: space.size.width, cards: cards, focused: $focused, opening: $opening)
                 // The fold and the clearance either side of it: empty.
                 Color.clear.frame(height: space.gapHeight)
                 floor.frame(height: space.floorHeight)

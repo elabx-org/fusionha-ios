@@ -6,6 +6,7 @@ import FusionhaKit
 struct V2TabletopStage: View {
     /// The stage's height: from under the bar to 20 pt above the fold.
     let height: CGFloat
+    let width: CGFloat
     let cards: [V2ComingUpCard]
     @Binding var focused: Int?
     @Binding var opening: Int?
@@ -28,7 +29,11 @@ struct V2TabletopStage: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .frame(height: 44, alignment: .topLeading)
-            V2TabletopCarousel(cards: cards, posterHeight: posterHeight, focused: $focused, opening: $opening)
+            V2TabletopCarousel(cards: cards, posterHeight: posterHeight, containerWidth: width,
+                               focused: $focused, opening: $opening)
+                // A new poster size is a new row, opened on the focused card:
+                // resized in place it kept its offset and sat off its focus.
+                .id(Int(posterHeight))
                 .frame(maxHeight: .infinity)
         }
         .frame(height: height, alignment: .top)
