@@ -86,12 +86,16 @@ capsule on the tabletop's bottom half, a toggle in the Coming up menu while on a
 table, and Settings › Appearance › "Home half folded on a table") the tabletop
 draws Coming up as a scene across both halves: the focused title
 stands on a ring on the bottom half as a glass slab, the others wait on the ring as
-small markers, lit in the focused title's own colour. The bottom half is the floor:
+small markers, lit in the focused title's own colour, in a room that takes the focused
+poster's colours (diffused on the wall and mirrored on the floor, dim on dark palettes
+and pale on Daylight, cross-fading as the focus changes). The bottom half is the floor:
 the rest of Home leaves, the Mix menu sits 30 pt below the fold and the title block,
 previous / next, Open and the dots sit at the front edge. The hinge angle only bends
 the picture. Switching lifts the flat carousel's posters into the scene over 1.3 s
 (and back); opened already on, the scene prints in once; at rest the slab sways and
-bobs. Reduce Motion: the two looks cross-fade and nothing moves. No web equivalent.
+bobs. Reduce Motion: the two looks cross-fade and nothing moves. VoiceOver reads the
+scene as one adjustable element ("Coming up, <title>, <when>, <what>, <n> of <m>";
+swipe up / down for the next / previous title, double tap to open). No web equivalent.
 See `docs/v2.md` › Home.
 - **Layout:** large title "Library", with a `LazyVGrid` poster grid. Edition chips sit below each poster, never on the art. A compact list is available as the second density, mirroring `grid | compact`.
 - **Library stats sheet (LibraryPulse mobile sheet):** the chart button opens a sheet with a glass close button: the connection line, the five stat chips (titles in the neutral grey, flowing 2 then 3), the health, 4K coverage and on-disk meters, then **In progress** (the operations feed: running commands, live downloads, runs, with the bulk Refresh & Scan grouped; "Nothing in progress.") and **Needs attention** (the unavailable-indexers group with its expandable per-indexer list and amber Manage → Settings › Indexers, then file, held-import and no-grab rows with their Replace / View / Review / Set type / Manual import / See why actions and per-row dismiss), then "View all activity ›". Polls every 2s while open.

@@ -26,8 +26,10 @@ struct V2TabletopFlat: View {
     var floorOpacity: Double = 1
     var live = true
     @Environment(AppModel.self) private var model
+    @Environment(\.motionEnabled) private var motion
 
     private static let space = "v2-tabletop-page"
+    private static let floorTop = "v2-tabletop-floor-top"
 
     var body: some View {
         // A scroll view that doesn't scroll: the system insets its content
@@ -54,13 +56,22 @@ struct V2TabletopFlat: View {
     }
 
     private var floor: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                V2TabletopControls(cards: cards, current: current, focused: $focused, kindsRaw: $kindsRaw, days: $days)
-                rest.padding(.top, 22)
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: 0) {
+                    Color.clear.frame(height: 0).id(Self.floorTop)
+                    V2TabletopControls(cards: cards, current: current, focused: $focused, kindsRaw: $kindsRaw, days: $days)
+                    rest.padding(.top, 22)
+                }
+                .padding(.bottom, Theme.pageBottom)
             }
-            .padding(.bottom, Theme.pageBottom)
+            .refreshable { await model.loadLibrary() }
+            // Tapping the Home tab scrolls the bottom half to its top, as on
+            // the ordinary Home.
+            .onChange(of: model.scrollToTopTick) {
+                guard live, !model.allTitles.wanted else { return }
+                withAnimation(motion ? .smooth : nil) { proxy.scrollTo(Self.floorTop, anchor: .top) }
+            }
         }
-        .refreshable { await model.loadLibrary() }
     }
 }

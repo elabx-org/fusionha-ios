@@ -202,6 +202,15 @@ for theme in dark daylight; do
   WAIT=16 FRAME=portrait shoot "home-tabletop-hologram$SUF" $T $TT $HOLO
 done
 WAIT=16 FRAME=portrait shoot home-tabletop-hologram-130 $TT $HOLO SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TABLETOP_HINGE=130
+# The coloured room (tabletop plan, slice 4) on the hue-less palettes (a grey
+# room; OLED's is black underneath), and on a title with a colourful poster
+# (the second card; the mock server's third, Game of Thrones, is near black).
+PAL=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_PALETTE
+SECOND=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_COMING_UP_INDEX=1
+WAIT=16 FRAME=portrait shoot home-tabletop-hologram-oled $PAL=oled $TT $HOLO
+WAIT=16 FRAME=portrait shoot home-tabletop-hologram-monochrome $PAL=monochrome $TT $HOLO
+WAIT=16 FRAME=portrait shoot home-tabletop-hologram-colour $TT $HOLO $SECOND
+WAIT=16 FRAME=portrait shoot home-tabletop-hologram-colour-daylight $DAY $TT $HOLO $SECOND
 # The lift between the two looks (tabletop plan, slice 3), held part of the
 # way: -start is the scene drawing the flat carousel's posters (they must sit
 # exactly where home-tabletop has them), then a quarter, half and three

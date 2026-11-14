@@ -71,7 +71,7 @@ struct V2ComingUpRow: View {
             if leadArt != leadURL { leadArt = leadURL }
         }
         .onChange(of: focused) {
-            guard let focused, opening == nil else { return }
+            guard let focused, opening == nil, Self.forcedOpening == nil else { return }
             keptFocus = focused
             focusLog?.record(AnyHashable(focused))
         }
@@ -166,9 +166,9 @@ struct V2ComingUpRow: View {
         if !opened, focused == nil, !next.isEmpty {
             opened = true
             let carried = focusLog?.log.anchor(before: bornAt)?.base as? Int
-            let kept = carried ?? keptFocus
+            let kept = Self.forcedOpening == nil ? carried ?? keptFocus : -1
             opening = next.contains { $0.id == kept }
-                ? kept : next[min(openingIndex, next.count - 1)].id
+                ? kept : next[min(Self.forcedOpening ?? openingIndex, next.count - 1)].id
         }
     }
 
@@ -180,6 +180,16 @@ struct V2ComingUpRow: View {
     /// The row opens on the third title (owner, 2026-11-07), folded and open
     /// alike, so both start on the same card with neighbours on both sides.
     private var openingIndex: Int { 2 }
+
+    /// CI screenshots: `FUSIONHA_SCREENSHOT_COMING_UP_INDEX=<n>` opens the
+    /// row on its n-th card (from 0) and keeps that shot's focus to itself.
+    private static let forcedOpening: Int? = {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_COMING_UP_INDEX"].flatMap { Int($0) }.map { max(0, $0) }
+        #else
+        return nil
+        #endif
+    }()
 
     /// Today − 1 (a network's air date can trail the viewer's day) to the
     /// window's end + 1; the last answer this phone saw comes first.

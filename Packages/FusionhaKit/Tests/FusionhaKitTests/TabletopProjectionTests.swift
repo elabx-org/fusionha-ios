@@ -126,6 +126,21 @@ final class TabletopProjectionTests: XCTestCase {
         let halo = card.halo.map { TabletopProjection.onScreen($0, phi: phi(105)) }
         assertPoint(halo[0], -325.306, 380.3375)
         assertPoint(halo[2], 307.68, -56.8045)
+        // The pool of shadow: the halo's plane, 470 either side, 210 over the slab's head.
+        let shade = card.shade
+        assertVec(shade[0], -470, -563.2, 64)
+        assertVec(shade[2], 470, 150, 64)
+        XCTAssertEqual(card.shadeOpacity, 1, accuracy: tolerance)
+    }
+
+    /// The reflection ends before the page dots: the eye sees the last of
+    /// the slab's mirror image on the table short of 297 pt from the hinge.
+    func testReflectionEndsBeforeTheDots() throws {
+        let card = try XCTUnwrap(TabletopScene.card(offset: 0, sway: 0))
+        let depth = card.lift + card.height * TabletopScene.reflectionReach
+        let end = TabletopProjection.onFloor(TabletopVec(0, depth, card.centerZ))
+        XCTAssertGreaterThan(end.y, 240)
+        XCTAssertLessThan(end.y, 285)
     }
 
     func testMarkersOnTheRing() throws {

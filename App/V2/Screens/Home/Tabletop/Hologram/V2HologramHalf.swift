@@ -27,7 +27,7 @@ struct V2HologramHalf: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            look.room.opacity(stages.floor)
+            // The room itself is behind the scene (`V2HologramRoom`).
             switch half {
             case .top: backdrop
             case .bottom: table
@@ -57,6 +57,14 @@ struct V2HologramHalf: View {
             .hologramPiece(rig.transform(TabletopScene.floorBehind, on: .top, from: pad), box: pad)
             .opacity(stages.floor)
         if let lead {
+            // The pool behind the slab, under everything that stands: the
+            // slab keeps its edge against a room in its own colours.
+            RadialGradient(stops: [.init(color: look.shade.opacity(look.shadeCore), location: 0.3),
+                                   .init(color: look.shade.opacity(look.shadeMid), location: 0.62),
+                                   .init(color: look.shade.opacity(0), location: 1)],
+                           center: .center, startRadius: 0, endRadius: light.width / 2)
+                .hologramPiece(rig.transform(lead.card.shade, on: .top, from: light), box: light)
+                .opacity(lead.card.shadeOpacity * moment.print.slab * stages.depth)
             RadialGradient(colors: [look.tint.opacity(look.haloGlow), look.tint.opacity(0)],
                            center: .center, startRadius: 0, endRadius: light.width / 2)
                 .hologramPiece(rig.transform(lead.card.halo, on: .top, from: light), box: light)
@@ -95,12 +103,14 @@ struct V2HologramHalf: View {
                 .interpolation(.high)
                 .frame(width: box.width, height: box.height)
                 .mask {
-                    // Soft at the feet and the sides (the mock blurs it once).
+                    // Soft at the feet and the sides (the mock blurs it once),
+                    // and gone before the page dots and the controls.
+                    let reach = TabletopScene.reflectionReach
                     LinearGradient(stops: [.init(color: .clear, location: 0),
-                                           .init(color: .black.opacity(0.8), location: 0.06),
-                                           .init(color: .black.opacity(0.42), location: 0.36),
-                                           .init(color: .black.opacity(0.12), location: 0.64),
-                                           .init(color: .clear, location: 0.88)],
+                                           .init(color: .black.opacity(0.8), location: reach * 0.16),
+                                           .init(color: .black.opacity(0.34), location: reach * 0.5),
+                                           .init(color: .black.opacity(0.1), location: reach * 0.78),
+                                           .init(color: .clear, location: reach)],
                                    startPoint: .bottom, endPoint: .top)
                 }
                 .mask { softSides }

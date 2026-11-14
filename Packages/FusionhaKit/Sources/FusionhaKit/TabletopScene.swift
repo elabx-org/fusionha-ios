@@ -25,6 +25,12 @@ public enum TabletopScene {
     public static let floorDepth = 440.0
     /// The square the beam and the halo are drawn in before projection.
     public static let lightSide = 200.0
+    /// How far up its mirror image a title's reflection on the table runs
+    /// (0 its feet, 1 its head). The eye sees the focused slab's image from
+    /// 140 pt in front of the hinge (its feet) to 500 pt (its head), past
+    /// the page dots (297 pt) and the controls; 0.31 ends it 270 pt out, on
+    /// the track's front edge.
+    public static let reflectionReach = 0.31
 
     /// 0 below 0, 1 above 1, eased between (the mock's `ss`).
     public static func smoothstep(_ t: Double) -> Double {
@@ -53,6 +59,7 @@ public enum TabletopScene {
         public var reflectionOpacity: Double { opacity * (0.22 + 0.6 * focus) }
         public var beamOpacity: Double { focus * 0.95 }
         public var haloOpacity: Double { focus * 0.85 }
+        public var shadeOpacity: Double { focus }
         /// Slices are drawn only for a card that is nearly the slab.
         public var hasSlices: Bool { focus >= 0.05 }
 
@@ -95,6 +102,15 @@ public enum TabletopScene {
             let top = -(lift + height + 90), z = centerZ - 46
             return [TabletopVec(centerX - 300, top, z), TabletopVec(centerX + 300, top, z),
                     TabletopVec(centerX + 300, 20, z), TabletopVec(centerX - 300, 20, z)]
+        }
+
+        /// The pool of shadow behind the slab, on the halo's plane and wider
+        /// and taller than it: it keeps the slab's edge against a room that
+        /// has taken the poster's own colours.
+        public var shade: [TabletopVec] {
+            let top = -(lift + height + 210), z = centerZ - 46
+            return [TabletopVec(centerX - 470, top, z), TabletopVec(centerX + 470, top, z),
+                    TabletopVec(centerX + 470, 150, z), TabletopVec(centerX - 470, 150, z)]
         }
     }
 

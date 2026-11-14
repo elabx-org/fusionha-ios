@@ -8,7 +8,8 @@ import FusionhaKit
 /// controls at the front edge (`V2HologramControls`). Everything you tap is
 /// on the bottom half and clear of the fold. A swipe anywhere turns the
 /// ring, a tap on a waiting title centres it and a tap on the slab opens
-/// it. The focus is the row's (`V2ComingUpRow`). `V2HomeTabletop` draws the
+/// it; VoiceOver has the scene as one adjustable element
+/// (`V2HologramVoice`). The focus is the row's (`V2ComingUpRow`). `V2HomeTabletop` draws the
 /// scene behind this page and lifts it; until the lift is done (`live`) the
 /// page takes no touches and its controls are on their way in (`chrome`).
 /// Both, and the heading's fade, are applied inside the page's scroll views,
@@ -38,6 +39,9 @@ struct V2HologramPage: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             heading
+            V2HologramVoice(space: space, hinge: hinge, cards: cards, current: current,
+                            turn: { turn(to: $0) }, open: { model.open(current.item.id) })
+                .accessibilityHidden(!live)
             controls
             corners
                 .opacity(chrome)
