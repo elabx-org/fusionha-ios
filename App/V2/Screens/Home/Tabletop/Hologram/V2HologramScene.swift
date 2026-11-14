@@ -68,6 +68,8 @@ struct V2HologramStage: View {
         let look = V2HologramLook(tint: V2HologramLook.tint(dominant, mono: page?.isMono ?? Theme.isMono),
                                   isLight: isLight)
         V2HologramScene(space: space, cards: cards, art: art, look: look, position: Double(index), hinge: hinge)
+            // The room carries on under the bars (the scene itself is Home's container).
+            .background { look.room.ignoresSafeArea() }
             .task(id: cards.map(\.id)) { await loadArt() }
             .task(id: sample) { await loadColors() }
     }

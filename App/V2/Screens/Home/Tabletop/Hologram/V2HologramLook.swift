@@ -27,8 +27,9 @@ struct V2HologramLook: Equatable {
     var padGlow: Double { isLight ? 0.26 : 0.4 }
     var spillGlow: Double { isLight ? 0.22 : 0.36 }
     var haloGlow: Double { isLight ? 0.34 : 0.58 }
-    /// The reflection goes quiet on a light floor.
-    var reflection: Double { isLight ? 0.67 : 1 }
+    /// The reflection goes quiet on a light floor; on a dark one it is
+    /// light on the floor (it adds), so a dark poster leaves no slab of black.
+    var reflection: Double { isLight ? 0.45 : 1 }
 
     /// The light for a title whose art's dominant colours are `dominant`
     /// (`ArtPaletteExtractor`, the colours Home's ground is built from): the

@@ -82,14 +82,18 @@ struct V2HologramHalf: View {
                 .interpolation(.high)
                 .frame(width: box.width, height: box.height)
                 .mask {
-                    LinearGradient(stops: [.init(color: .black.opacity(0.8), location: 0),
+                    // Soft at the feet and the sides (the mock blurs it once).
+                    LinearGradient(stops: [.init(color: .clear, location: 0),
+                                           .init(color: .black.opacity(0.8), location: 0.06),
                                            .init(color: .black.opacity(0.42), location: 0.36),
                                            .init(color: .black.opacity(0.12), location: 0.64),
                                            .init(color: .clear, location: 0.88)],
                                    startPoint: .bottom, endPoint: .top)
                 }
+                .mask { softSides }
                 .hologramPiece(rig.transform(item.card.corners(mirrored: true), on: .bottom, from: box), box: box)
                 .opacity(item.card.reflectionOpacity * look.reflection)
+                .blendMode(look.lightBlend)
         }
     }
 
@@ -116,17 +120,24 @@ struct V2HologramHalf: View {
             .zIndex(item.order)
     }
 
-    /// The beam from the emitter up to the slab: a gradient with soft sides.
+    /// A mask that fades a piece out toward its left and right edges.
+    private var softSides: some View {
+        LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.16),
+                               .init(color: .black, location: 0.84), .init(color: .clear, location: 1)],
+                       startPoint: .leading, endPoint: .trailing)
+    }
+
+    /// The beam from the emitter up to the slab: a gradient with soft edges.
     private func beam(_ item: V2HologramPlaced) -> some View {
         let hot = look.isLight ? look.tint.opacity(0.7) : look.tint.mix(with: .white, by: 0.4)
         let mid = look.tint.opacity(look.isLight ? 0.3 : 0.55)
         return LinearGradient(stops: [.init(color: hot, location: 0), .init(color: mid, location: 0.34),
                                       .init(color: look.tint.opacity(0), location: 1)],
                               startPoint: .bottom, endPoint: .top)
+            .mask { softSides }
             .mask {
-                LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.16),
-                                       .init(color: .black, location: 0.84), .init(color: .clear, location: 1)],
-                               startPoint: .leading, endPoint: .trailing)
+                LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.14),
+                                       .init(color: .black, location: 1)], startPoint: .bottom, endPoint: .top)
             }
             .hologramPiece(rig.transform(item.card.beam, on: half, from: light), box: light)
             .opacity(item.card.beamOpacity)
