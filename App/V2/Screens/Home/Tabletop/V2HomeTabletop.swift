@@ -46,22 +46,12 @@ struct V2HomeTabletop: View {
     }
 
     var body: some View {
-        liftedPage
+        V2TabletopLiftReader(progress: lift) { page(at: $0) }
             .readsTabletopHinge($hinge)
             .onChange(of: focused, initial: true) {
                 if let focused { lastFocus = focused }
             }
             .onChange(of: on) { play() }
-            .v2TabletopProbe(top: top, space: space)
-    }
-
-    @ViewBuilder
-    private var liftedPage: some View {
-        if V2TabletopProbe.variant == "noreader" {
-            page(at: lift)
-        } else {
-            V2TabletopLiftReader(progress: lift) { page(at: $0) }
-        }
     }
 
     /// The switch changed: lift, or let down.
@@ -75,24 +65,13 @@ struct V2HomeTabletop: View {
 
     /// The page with the lift at `progress`: the flat page until the lift is
     /// done, the hologram's page from its first frame, the scene behind both.
-    @ViewBuilder
+    /// The scene is a background, never a layer beside the pages: a
+    /// fixed-size layer next to the scroll views took Home's container out
+    /// of the safe area (build of 2026-11-14: the page slid under the bar).
     private func page(at progress: Double) -> some View {
-        if V2TabletopProbe.variant == "plain", progress <= 0 {
-            layers(at: progress)
-        } else if V2TabletopProbe.variant == "plain", progress >= 1 {
-            layers(at: progress)
-                .background(alignment: .topLeading) { scene(at: progress) }
-        } else if V2TabletopProbe.variant == "sibling" {
-            ZStack(alignment: .topLeading) {
-                layers(at: progress)
-                scene(at: progress)
-            }
+        ZStack(alignment: .topLeading) { layers(at: progress) }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        } else {
-            ZStack(alignment: .topLeading) { layers(at: progress) }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                .background(alignment: .topLeading) { scene(at: progress) }
-        }
+            .background(alignment: .topLeading) { scene(at: progress) }
     }
 
     @ViewBuilder

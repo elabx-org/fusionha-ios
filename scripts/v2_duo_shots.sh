@@ -213,12 +213,6 @@ WAIT=16 FRAME=portrait shoot home-tabletop-lift-25 $TT $LIFT=0.25
 WAIT=16 FRAME=portrait shoot home-tabletop-lift-50 $TT $LIFT=0.5
 WAIT=16 FRAME=portrait shoot home-tabletop-lift-75 $TT $LIFT=0.75
 WAIT=16 FRAME=portrait shoot home-tabletop-lift-50-daylight $DAY $TT $LIFT=0.5
-# TEMPORARY probes (slice 3 diagnosis).
-PROBE=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TABLETOP_PROBE
-for v in a sibling noreader plain; do
-  WAIT=14 FRAME=portrait shoot "home-tabletop-probe-$v" $TT $PROBE=$v
-  WAIT=14 FRAME=portrait shoot "home-tabletop-probe-$v-holo" $TT $HOLO $PROBE=$v
-done
 curl -s -X POST "$S/__mock/big-library?on=1" > /dev/null || true
 WAIT=20 shoot home-big-open
 WAIT=18 FRAME=folded shoot home-big-folded-kinds $HS=kinds
