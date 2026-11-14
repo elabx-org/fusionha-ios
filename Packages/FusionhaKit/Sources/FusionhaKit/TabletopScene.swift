@@ -68,9 +68,19 @@ public enum TabletopScene {
                     TabletopVec(x1, -bottom, z1), TabletopVec(x0, -bottom, z0)]
         }
 
-        /// The `index`-th glass slice behind the poster (0 the nearest).
-        public func slice(_ index: Int) -> [TabletopVec] {
-            corners(depth: -Double(index + 1) * TabletopScene.sliceGap * focus)
+        /// The `index`-th glass slice behind the poster (0 the nearest);
+        /// `thickness` 0 lays them all on the poster (the lift grows it).
+        public func slice(_ index: Int, thickness: Double = 1) -> [TabletopVec] {
+            corners(depth: -Double(index + 1) * TabletopScene.sliceGap * focus * thickness)
+        }
+
+        /// The print-in's scan bar across the slab, `reveal` of the way up
+        /// it (0 its foot, 1 its top), `half` tall either side of the line.
+        public func scanBar(reveal: Double, half: Double) -> [TabletopVec] {
+            let sn = sin(yaw), cs = cos(yaw), y = lift + height * reveal
+            let hx = cs * width / 2, hz = -sn * width / 2
+            return [TabletopVec(centerX - hx, -y - half, centerZ - hz + 2), TabletopVec(centerX + hx, -y - half, centerZ + hz + 2),
+                    TabletopVec(centerX + hx, -y + half, centerZ + hz + 2), TabletopVec(centerX - hx, -y + half, centerZ - hz + 2)]
         }
 
         /// The beam: from the emitter's rim up to the slab's lower fifth.

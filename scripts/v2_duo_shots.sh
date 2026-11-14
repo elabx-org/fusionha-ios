@@ -202,6 +202,17 @@ for theme in dark daylight; do
   WAIT=16 FRAME=portrait shoot "home-tabletop-hologram$SUF" $T $TT $HOLO
 done
 WAIT=16 FRAME=portrait shoot home-tabletop-hologram-130 $TT $HOLO SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TABLETOP_HINGE=130
+# The lift between the two looks (tabletop plan, slice 3), held part of the
+# way: -start is the scene drawing the flat carousel's posters (they must sit
+# exactly where home-tabletop has them), then a quarter, half and three
+# quarters of the way up. In the harness the scene holds still (no print-in,
+# sway, bob or spin).
+LIFT=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TABLETOP_LIFT
+WAIT=16 FRAME=portrait shoot home-tabletop-lift-start $TT $LIFT=0.02
+WAIT=16 FRAME=portrait shoot home-tabletop-lift-25 $TT $LIFT=0.25
+WAIT=16 FRAME=portrait shoot home-tabletop-lift-50 $TT $LIFT=0.5
+WAIT=16 FRAME=portrait shoot home-tabletop-lift-75 $TT $LIFT=0.75
+WAIT=16 FRAME=portrait shoot home-tabletop-lift-50-daylight $DAY $TT $LIFT=0.5
 curl -s -X POST "$S/__mock/big-library?on=1" > /dev/null || true
 WAIT=20 shoot home-big-open
 WAIT=18 FRAME=folded shoot home-big-folded-kinds $HS=kinds

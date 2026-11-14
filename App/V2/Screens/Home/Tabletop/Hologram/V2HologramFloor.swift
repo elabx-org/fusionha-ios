@@ -19,6 +19,9 @@ struct V2HologramFloor: View {
     /// The plate's size in the scene's points; the hinge is its top edge
     /// (front) or its bottom edge (behind).
     let size: CGSize
+    /// How far the ring has come on (the print-in) and the dashed ring's turn.
+    var ring: Double = 1
+    var spin: Double = 0
 
     /// The hinge's y in the plate.
     private var hingeY: CGFloat { part == .front ? 0 : size.height }
@@ -27,8 +30,9 @@ struct V2HologramFloor: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             ground.mask { fade }
-            V2HologramRing(look: look, glows: part == .front)
+            V2HologramRing(look: look, glows: part == .front, spin: spin)
                 .position(x: size.width / 2, y: ringY)
+                .opacity(ring)
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
         .clipped()
@@ -89,11 +93,13 @@ private struct V2HologramGrid: Shape {
 
 /// The emitter the focused title stands over and the track the others wait
 /// on, centred on the ring's centre, lit in the title's colour. The glow is
-/// a gradient, not a blur.
+/// a gradient, not a blur. The dashed inner ring turns while the scene idles.
 struct V2HologramRing: View {
     let look: V2HologramLook
     /// The track's glow (only on the half the ring lies on).
     let glows: Bool
+    /// The dashed inner ring's turn (radians): it goes slowly round.
+    var spin: Double = 0
 
     private let emitter = CGFloat(TabletopScene.emitterRadius)
     private let track = CGFloat(TabletopScene.trackRadius)
@@ -108,6 +114,7 @@ struct V2HologramRing: View {
                 .frame(width: emitter * 2, height: emitter * 2)
             Circle().strokeBorder(look.ring.opacity(0.8), style: StrokeStyle(lineWidth: 2.5, dash: [9, 7]))
                 .frame(width: (emitter - 24) * 2, height: (emitter - 24) * 2)
+                .rotationEffect(.radians(spin))
             RadialGradient(stops: [.init(color: look.core, location: 0),
                                    .init(color: look.tint.opacity(look.isLight ? 0.4 : 0.7), location: 0.55),
                                    .init(color: look.tint.opacity(0), location: 0.72)],

@@ -41,19 +41,42 @@ struct V2HologramArt {
 /// One poster plate of the scene, at the plate's own size (the scene's
 /// transform places it): the art with an optional colour laid over it (the
 /// waiting titles' light, the slab's glass slices) and a lit edge. Content,
-/// not glass: the art itself stays clean on the focused title.
+/// not glass: the art itself stays clean on the focused title. The print-in
+/// shows it from its foot up (`reveal`); the lift carries the carousel
+/// card's corner radius and shadow over (`radius`, `shadow`).
 struct V2HologramPlate: View {
     let image: UIImage?
     var wash: Color = .clear
     var washOpacity: Double = 0
     var washBlend: BlendMode = .normal
     var edge: Color = .clear
+    /// How much shows, from the foot up.
+    var reveal: Double = 1
+    var radius: CGFloat = V2HologramArt.cornerRadius
+    /// The carousel card's shadow (0 none, 1 whole) and its size on this plate.
+    var shadow: Double = 0
+    var shadowScale: CGFloat = 1
 
     private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: V2HologramArt.cornerRadius, style: .continuous)
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
     }
 
     var body: some View {
+        if reveal < 1 {
+            lit.mask(alignment: .bottom) {
+                Rectangle().frame(height: V2HologramArt.box.height * max(0, reveal))
+            }
+            .transition(.identity)
+        } else if shadow > 0 {
+            // `V2ComingUpWideCard`'s shadow, at the plate's size.
+            lit.shadow(color: .black.opacity(0.35 * shadow), radius: 14 * shadowScale, y: 12 * shadowScale)
+                .transition(.identity)
+        } else {
+            lit.transition(.identity)
+        }
+    }
+
+    private var lit: some View {
         ZStack {
             Theme.panel2
             if let image {

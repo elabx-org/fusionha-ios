@@ -1,15 +1,16 @@
 import SwiftUI
 import FusionhaKit
 
-/// Home half folded on a table with the hologram on (tabletop plan, slice
-/// 2; the approved mock's B2): the scene fills both halves behind the page
-/// (`V2HologramStage`) and the bottom half is its floor, so Home's sections
-/// leave. "Coming up" stays at the top left under the bar; the Mix menu
-/// sits 30 pt below the fold and the focused title's controls at the front
-/// edge (`V2HologramControls`), everything you tap on the bottom half and
-/// clear of the fold. A swipe anywhere turns the ring, a tap on a waiting
-/// title centres it and a tap on the slab opens it. The focus is the row's
-/// (`V2ComingUpRow`). The hinge angle only bends the picture.
+/// What lies over the hologram scene (tabletop plan, slices 2 and 3; the
+/// approved mock's B2): "Coming up" at the top left under the bar, and on
+/// the bottom half, which is the scene's floor, the Hologram switch (left)
+/// and the Mix menu (right) 30 pt below the fold and the focused title's
+/// controls at the front edge (`V2HologramControls`). Everything you tap is
+/// on the bottom half and clear of the fold. A swipe anywhere turns the
+/// ring, a tap on a waiting title centres it and a tap on the slab opens
+/// it. The focus is the row's (`V2ComingUpRow`). `V2HomeTabletop` draws the
+/// scene behind this page and lifts it; until the lift is done (`live`) the
+/// page takes no touches and its controls are on their way in (`chrome`).
 struct V2HologramPage: View {
     let space: V2TabletopSpace
     let cards: [V2ComingUpCard]
@@ -18,10 +19,15 @@ struct V2HologramPage: View {
     @Binding var opening: Int?
     @Binding var kindsRaw: String
     @Binding var days: Int
+    /// The hinge angle the scene is drawn for (a tap finds its title with it).
+    let hinge: Double
+    /// The hologram stands: the page takes touches and the row's opening card.
+    var live = true
+    /// How far the controls have come in (the lift's last stage).
+    var chrome: Double = 1
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @Environment(\.pagePalette) private var page
-    @State private var hinge = V2TabletopHologram.fixedHinge ?? TabletopProjection.restingHinge
 
     private var index: Int { cards.firstIndex { $0.id == current.id } ?? 0 }
 
@@ -29,26 +35,38 @@ struct V2HologramPage: View {
         ZStack(alignment: .topLeading) {
             heading
             controls
-            V2ComingUpMenu(kindsRaw: $kindsRaw, days: $days, wideStyle: nil)
-                .padding(.trailing, 20)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.top, space.fold.upperBound + 30)
+                .opacity(chrome)
+            corners
+                .opacity(chrome)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(alignment: .topLeading) {
-            V2HologramStage(space: space, cards: cards, current: current, hinge: hinge)
-        }
         .contentShape(Rectangle())
         .onTapGesture(coordinateSpace: .local) { tapped($0) }
         .simultaneousGesture(swipe)
-        .readsTabletopHinge($hinge)
-        // The row hands its opening card to a carousel; here there is none.
-        .onChange(of: opening, initial: true) {
-            guard let id = opening else { return }
-            focused = id
-            opening = nil
-        }
+        .allowsHitTesting(live)
+        // The row hands its opening card to a carousel; with the hologram
+        // standing there is none (during the lift the flat carousel takes it).
+        .onChange(of: opening, initial: true) { takeOpening() }
+        .onChange(of: live) { takeOpening() }
         .sensoryFeedback(.selection, trigger: current.id)
+    }
+
+    private func takeOpening() {
+        guard live, let id = opening else { return }
+        focused = id
+        opening = nil
+    }
+
+    /// The Hologram switch and the Mix menu, 30 pt below the fold (the
+    /// switch's 44 pt target starts 25 pt below it).
+    private var corners: some View {
+        HStack {
+            V2HologramSwitch()
+            Spacer(minLength: 0)
+            V2ComingUpMenu(kindsRaw: $kindsRaw, days: $days, wideStyle: nil, onTable: true)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, space.fold.upperBound + 25)
     }
 
     /// A scroll view that doesn't scroll, so the system sets the heading
@@ -83,7 +101,7 @@ struct V2HologramPage: View {
         DragGesture(minimumDistance: 24)
             .onEnded { value in
                 let across = value.translation.width
-                guard abs(across) > abs(value.translation.height), abs(across) >= 40 else { return }
+                guard live, abs(across) > abs(value.translation.height), abs(across) >= 40 else { return }
                 turn(to: index + (across < 0 ? 1 : -1))
             }
     }
@@ -95,6 +113,7 @@ struct V2HologramPage: View {
 
     /// A tap on the scene: the title drawn there, if any.
     private func tapped(_ point: CGPoint) {
+        guard live else { return }
         let rig = V2HologramRig(space: space, hingeDegrees: hinge)
         let placed = V2HologramPlaced.all(cards, position: Double(index), art: [:])
         guard let id = V2HologramPlaced.hit(point, in: placed, rig: rig) else { return }

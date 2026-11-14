@@ -52,8 +52,14 @@ struct V2HologramRig: Equatable {
     /// The transform that draws a `box`-sized view (at the layer's top-left)
     /// onto `corners` as the eye sees them on `half`.
     func transform(_ corners: [TabletopVec], on half: Half, from box: CGSize) -> ProjectionTransform {
+        transform(quad(corners, on: half), from: box)
+    }
+
+    /// The transform that draws a `box`-sized view onto `quad`, four points
+    /// of a half's layer (a poster part of the way through the lift).
+    func transform(_ quad: [TabletopPoint], from box: CGSize) -> ProjectionTransform {
         let k = TabletopProjection.homography(width: Double(box.width), height: Double(box.height),
-                                              quad: quad(corners, on: half)).map { CGFloat($0) }
+                                              quad: quad).map { CGFloat($0) }
         var m = CATransform3DIdentity
         m.m11 = k[0]
         m.m21 = k[1]
@@ -73,35 +79,6 @@ struct V2HologramRig: Equatable {
             return (Half.top, TabletopPoint(Double(point.x), Double(point.y)))
         }
         return (Half.bottom, TabletopPoint(Double(point.x), Double(point.y - hingeY)))
-    }
-}
-
-/// One title placed in the scene: its card, where it stands
-/// (`TabletopScene.Card`) and its art once loaded.
-struct V2HologramPlaced: Identifiable {
-    let id: Int
-    let card: TabletopScene.Card
-    let art: V2HologramArt?
-
-    /// Nearer the viewer draws over further away (the mock's z-index).
-    var order: Double { (500 + card.centerZ).rounded() }
-
-    /// The titles within reach of `position` (an index into `cards`,
-    /// fractional while the ring turns).
-    static func all(_ cards: [V2ComingUpCard], position: Double, art: [Int: V2HologramArt]) -> [V2HologramPlaced] {
-        cards.enumerated().compactMap { index, card in
-            TabletopScene.card(offset: Double(index) - position).map {
-                V2HologramPlaced(id: card.id, card: $0, art: art[card.id])
-            }
-        }
-    }
-
-    /// The title drawn at `point` of the container, the nearest first.
-    static func hit(_ point: CGPoint, in placed: [V2HologramPlaced], rig: V2HologramRig) -> Int? {
-        let at = rig.locate(point)
-        return placed.sorted { $0.order > $1.order }.first {
-            TabletopProjection.contains(rig.quad($0.card.corners(), on: at.half), at.point)
-        }?.id
     }
 }
 

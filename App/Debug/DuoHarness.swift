@@ -36,6 +36,7 @@ extension View {
 ///   FUSIONHA_SCREENSHOT_DUO_LIST=shown|hidden   (the sidebar button, every tab)
 ///   FUSIONHA_SCREENSHOT_TABLETOP_HOLOGRAM=1     (tabletop Home as the hologram, `V2TabletopHologram`)
 ///   FUSIONHA_SCREENSHOT_TABLETOP_HINGE=<deg>    (the hinge angle the hologram is drawn for)
+///   FUSIONHA_SCREENSHOT_TABLETOP_LIFT=<0…1>     (the hologram's lift held at that progress, `V2TabletopHologram`)
 ///
 /// Only read in DEBUG builds; the release app has no harness.
 enum DuoHarness {

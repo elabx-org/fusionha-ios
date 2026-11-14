@@ -4,8 +4,9 @@ import FusionhaKit
 /// The tabletop's bottom half, above Home's sections: the focused title's
 /// block (`V2ComingUpWideInfo`: date line, title, reason with the HD/4K
 /// badge), glass previous / next around the primary Open, the page dots and
-/// the Mix menu. Everything you tap for Coming up is here, within reach of
-/// the thumbs; the stage above only shows.
+/// the Mix menu, with the Hologram switch (`V2HologramSwitch`) at the left
+/// of the buttons' row, opposite Mix. Everything you tap for Coming up is
+/// here, within reach of the thumbs; the stage above only shows.
 struct V2TabletopControls: View {
     let cards: [V2ComingUpCard]
     let current: V2ComingUpCard
@@ -28,10 +29,11 @@ struct V2TabletopControls: View {
                     V2TabletopStep(by: 1, cards: cards, current: current, focused: $focused)
                 }
                 HStack {
+                    V2HologramSwitch()
                     Spacer(minLength: 0)
-                    V2ComingUpMenu(kindsRaw: $kindsRaw, days: $days, wideStyle: nil)
+                    V2ComingUpMenu(kindsRaw: $kindsRaw, days: $days, wideStyle: nil, onTable: true)
                 }
-                .padding(.trailing, 20)
+                .padding(.horizontal, 20)
             }
             V2CarouselDots(ids: cards.map(\.id), current: current.id)
         }

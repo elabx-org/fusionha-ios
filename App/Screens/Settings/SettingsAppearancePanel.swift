@@ -52,6 +52,7 @@ struct AppearanceSettingsPanel: View {
                 DuoOpenLayoutSection()
                 #if V2
                 V2ComingUpWideSection()
+                V2TabletopHologramSection()
                 #endif
             }
             if store.loaded {
