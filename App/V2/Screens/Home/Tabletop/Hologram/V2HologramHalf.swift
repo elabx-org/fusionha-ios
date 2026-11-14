@@ -64,6 +64,14 @@ struct V2HologramHalf: View {
                                    .init(color: look.shade.opacity(0), location: 1)],
                            center: .center, startRadius: 0, endRadius: light.width / 2)
                 .hologramPiece(rig.transform(lead.card.shade, on: .top, from: light), box: light)
+                .frame(width: rig.size.width, height: rig.hingeY, alignment: .topLeading)
+                // The pool is taller than the half. Cut off at the bar and at
+                // the hinge it left an edge at both, so it fades out before them.
+                .mask {
+                    LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.22),
+                                           .init(color: .black, location: 0.7), .init(color: .clear, location: 1)],
+                                   startPoint: .top, endPoint: .bottom)
+                }
                 .opacity(lead.card.shadeOpacity * moment.print.slab * stages.depth)
             RadialGradient(colors: [look.tint.opacity(look.haloGlow), look.tint.opacity(0)],
                            center: .center, startRadius: 0, endRadius: light.width / 2)

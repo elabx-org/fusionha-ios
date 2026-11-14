@@ -17,11 +17,12 @@ struct V2HologramLook: Equatable {
     /// The veil over the poster's colours on the wall: at the top, 46% of
     /// the way down, and at the hinge. Dark, the room stays dim (the mock's
     /// 0.8 / 0.56 / 0.6). Light, it is heavier than the mock's 0.7 / 0.3 /
-    /// 0.42, under which a near-black poster would leave Daylight a dark grey room.
-    var wallVeil: [Double] { isLight ? [0.8, 0.55, 0.62] : [0.8, 0.56, 0.6] }
+    /// 0.42: a near-black poster left Daylight a grey room even at 0.8 /
+    /// 0.55 / 0.62 (CI, Game of Thrones).
+    var wallVeil: [Double] { isLight ? [0.86, 0.64, 0.7] : [0.8, 0.56, 0.6] }
     /// The veil on the floor, past its first third (it starts at the wall's
     /// last value, so the two meet at the hinge).
-    var floorVeil: Double { isLight ? 0.6 : 0.5 }
+    var floorVeil: Double { isLight ? 0.68 : 0.5 }
     /// The floor's plates let the room's colour through.
     var floor: Color { isLight ? Color(hex: 0xECEEF2).opacity(0.5) : Color(hex: 0x0A090E).opacity(0.46) }
     var grid: Color { isLight ? Color(hex: 0x0F1115).opacity(0.07) : .white.opacity(0.055) }
