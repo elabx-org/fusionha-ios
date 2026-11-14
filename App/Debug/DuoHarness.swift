@@ -34,6 +34,8 @@ extension View {
 ///   FUSIONHA_SCREENSHOT_DUO_POSE=flat|book|tabletop (an inactive or an active fold;
 ///                                               tabletop = an active side-to-side fold, portrait frame only)
 ///   FUSIONHA_SCREENSHOT_DUO_LIST=shown|hidden   (the sidebar button, every tab)
+///   FUSIONHA_SCREENSHOT_TABLETOP_HOLOGRAM=1     (tabletop Home as the hologram, `V2TabletopHologram`)
+///   FUSIONHA_SCREENSHOT_TABLETOP_HINGE=<deg>    (the hinge angle the hologram is drawn for)
 ///
 /// Only read in DEBUG builds; the release app has no harness.
 enum DuoHarness {

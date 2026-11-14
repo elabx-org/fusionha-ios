@@ -8,7 +8,9 @@ import FusionhaKit
 /// (`V2TabletopControls`), then Home's sections. `V2ComingUpRow` owns the
 /// feed, the cards and the focus and hands them in; nothing here reads the
 /// calendar. With a title open the shell splits at the fold again and Home is
-/// its ordinary page in the top half.
+/// its ordinary page in the top half. With the hologram switched on
+/// (`V2TabletopHologram`, off by default) the two halves are the hologram
+/// scene instead (`V2HologramPage`).
 struct V2HomeTabletop: View {
     let space: V2TabletopSpace
     let cards: [V2ComingUpCard]
@@ -19,6 +21,7 @@ struct V2HomeTabletop: View {
     @Binding var days: Int
     let rest: AnyView
     @Environment(AppModel.self) private var model
+    @AppStorage(V2TabletopHologram.key) private var hologram = false
 
     private static let space = "v2-tabletop-page"
 
@@ -26,6 +29,15 @@ struct V2HomeTabletop: View {
     @State private var top: CGFloat = 0
 
     var body: some View {
+        if V2TabletopHologram.isOn(stored: hologram) {
+            V2HologramPage(space: space, cards: cards, current: current, focused: $focused, opening: $opening,
+                           kindsRaw: $kindsRaw, days: $days)
+        } else {
+            flat
+        }
+    }
+
+    private var flat: some View {
         // A scroll view that doesn't scroll: the system insets its content
         // below the bar (and fades it under it) as on every other Home page;
         // the container itself runs under the bar.

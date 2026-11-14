@@ -191,12 +191,17 @@ WAIT=14 shoot home-book SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book $HS=recen
 # stage on top, its controls and Home's sections below. home-portrait is the
 # same frame flat (no fold): Home as before.
 TT=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=tabletop
+HOLO=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TABLETOP_HOLOGRAM=1
 for theme in dark daylight; do
   T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_UNUSED=1; SUF=""
   [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
   WAIT=14 FRAME=portrait shoot "home-tabletop$SUF" $T $TT
   WAIT=14 FRAME=portrait shoot "home-portrait$SUF" $T
+  # The hologram (tabletop plan, slice 2): the stored switch forced on. The
+  # scene is drawn for a 105° hinge unless a shot gives another angle.
+  WAIT=16 FRAME=portrait shoot "home-tabletop-hologram$SUF" $T $TT $HOLO
 done
+WAIT=16 FRAME=portrait shoot home-tabletop-hologram-130 $TT $HOLO SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TABLETOP_HINGE=130
 curl -s -X POST "$S/__mock/big-library?on=1" > /dev/null || true
 WAIT=20 shoot home-big-open
 WAIT=18 FRAME=folded shoot home-big-folded-kinds $HS=kinds

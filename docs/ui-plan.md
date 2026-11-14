@@ -80,6 +80,14 @@ carousel on the top half, and on the bottom half the focused title's block, glas
 previous / next, the indigo Open, page dots and the Mix menu, then the rest of Home
 scrolling. Everything you tap is on the bottom half, 20 pt clear of the fold. With a
 title open the shell keeps its top / bottom split. See `docs/v2.md` › Home.
+**v2 deviation, tabletop hologram (2026-11-14, owner-approved mock B2):** with the
+stored switch `v2.home.tabletopHologram` on (off by default; no switch on screen
+yet) the tabletop draws Coming up as a scene across both halves: the focused title
+stands on a ring on the bottom half as a glass slab, the others wait on the ring as
+small markers, lit in the focused title's own colour. The bottom half is the floor:
+the rest of Home leaves, the Mix menu sits 30 pt below the fold and the title block,
+previous / next, Open and the dots sit at the front edge. The hinge angle only bends
+the picture. No web equivalent. See `docs/v2.md` › Home.
 - **Layout:** large title "Library", with a `LazyVGrid` poster grid. Edition chips sit below each poster, never on the art. A compact list is available as the second density, mirroring `grid | compact`.
 - **Library stats sheet (LibraryPulse mobile sheet):** the chart button opens a sheet with a glass close button: the connection line, the five stat chips (titles in the neutral grey, flowing 2 then 3), the health, 4K coverage and on-disk meters, then **In progress** (the operations feed: running commands, live downloads, runs, with the bulk Refresh & Scan grouped; "Nothing in progress.") and **Needs attention** (the unavailable-indexers group with its expandable per-indexer list and amber Manage → Settings › Indexers, then file, held-import and no-grab rows with their Replace / View / Review / Set type / Manual import / See why actions and per-row dismiss), then "View all activity ›". Polls every 2s while open.
 - **Library pulse:** a horizontally scrolling row of glass capsule chips in a `GlassEffectContainer`: All · Downloading · Missing · Upcoming · Complete · Needs attention. Each has a count, and the selected chip morphs with `glassEffectID`.

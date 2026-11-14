@@ -13,10 +13,6 @@ struct V2TabletopControls: View {
     @Binding var kindsRaw: String
     @Binding var days: Int
     @Environment(AppModel.self) private var model
-    @Environment(\.motionEnabled) private var motion
-    @Environment(\.pagePalette) private var page
-
-    private var index: Int { cards.firstIndex { $0.id == current.id } ?? 0 }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -24,12 +20,12 @@ struct V2TabletopControls: View {
                 .padding(.horizontal, 20)
             ZStack {
                 HStack(spacing: 18) {
-                    step(-1, symbol: "chevron.left", label: "Previous")
+                    V2TabletopStep(by: -1, cards: cards, current: current, focused: $focused)
                     Button("Open") { model.open(current.item.id) }
                         .buttonStyle(.glassProminent)
                         .tint(Theme.indigo)
                         .controlSize(.large)
-                    step(1, symbol: "chevron.right", label: "Next")
+                    V2TabletopStep(by: 1, cards: cards, current: current, focused: $focused)
                 }
                 HStack {
                     Spacer(minLength: 0)
@@ -41,25 +37,5 @@ struct V2TabletopControls: View {
         }
         .padding(.top, 8)
         .animation(.easeOut(duration: 0.2), value: current.id)
-    }
-
-    private func step(_ by: Int, symbol: String, label: String) -> some View {
-        let target = index + by
-        let enabled = cards.indices.contains(target)
-        return Button {
-            guard enabled else { return }
-            withAnimation(motion ? .smooth(duration: 0.4) : nil) { focused = cards[target].id }
-        } label: {
-            Image(systemName: symbol)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(page?.ink ?? Theme.txt)
-                .frame(width: 48, height: 48)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: Circle())
-        .disabled(!enabled)
-        .opacity(enabled ? 1 : 0.4)
-        .accessibilityLabel(label)
     }
 }
