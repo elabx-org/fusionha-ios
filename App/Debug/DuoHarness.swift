@@ -31,7 +31,8 @@ extension View {
 ///
 ///   FUSIONHA_SCREENSHOT_DUO_FRAME=open|portrait|folded
 ///   FUSIONHA_SCREENSHOT_DUO_LAYOUT=spread|web   (the "iPhone Duo, open" setting)
-///   FUSIONHA_SCREENSHOT_DUO_POSE=flat|book      (an inactive or an active fold)
+///   FUSIONHA_SCREENSHOT_DUO_POSE=flat|book|tabletop (an inactive or an active fold;
+///                                               tabletop = an active side-to-side fold, portrait frame only)
 ///   FUSIONHA_SCREENSHOT_DUO_LIST=shown|hidden   (the sidebar button, every tab)
 ///
 /// Only read in DEBUG builds; the release app has no harness.
@@ -39,6 +40,11 @@ enum DuoHarness {
     /// The window's width: the harness centres its frame in it.
     private static let screenWidth: CGFloat = MainActor.assumeIsolated {
         (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.width ?? 1032
+    }
+
+    /// The window's height: the harness centres its frame in it.
+    private static let screenHeight: CGFloat = MainActor.assumeIsolated {
+        (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.screen.bounds.height ?? 1376
     }
 
     enum Frame: String {
@@ -92,6 +98,11 @@ enum DuoHarness {
     /// folded, reserved); otherwise flat (inactive, nothing reserved).
     static let bookPose = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_DUO_POSE"] == "book"
 
+    /// `FUSIONHA_SCREENSHOT_DUO_POSE=tabletop` with the portrait frame: the fake
+    /// fold is an active, side-to-side one (half folded on a table). Without it
+    /// portrait stays flat, with no fold.
+    static let tabletopPose = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_DUO_POSE"] == "tabletop"
+
     /// `FUSIONHA_SCREENSHOT_DUO_LIST=hidden`: every tab's list hidden (the sidebar button).
     static let listHidden = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_DUO_LIST"] == "hidden"
 
@@ -140,6 +151,18 @@ enum DuoHarness {
         let originX = (screenWidth - frame.size.width) / 2
         let local = originX + x - proxy.frame(in: .global).minX
         guard proxy.size.height > 0, local > 0, local < proxy.size.width else { return nil }
+        return local...local
+    }
+
+    /// The tabletop pose's fake fold (`tabletopPose`, portrait frame): a
+    /// zero-height range at the frame's `horizontalFoldY`, in the container's
+    /// own coordinates, as `reservedRegions(kind: .division)` would report the
+    /// active region. `nil` otherwise, or when the fold isn't inside the container.
+    static func horizontalFold(in proxy: GeometryProxy) -> ClosedRange<CGFloat>? {
+        guard tabletopPose, let frame, let y = frame.horizontalFoldY else { return nil }
+        let originY = (screenHeight - frame.size.height) / 2
+        let local = originY + y - proxy.frame(in: .global).minY
+        guard proxy.size.width > 0, local > 0, local < proxy.size.height else { return nil }
         return local...local
     }
 }

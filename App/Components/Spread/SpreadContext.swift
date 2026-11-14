@@ -76,6 +76,8 @@ extension FoldInfo {
 @Observable
 final class SpreadSpanRequests {
     private(set) var tabs: Set<AppTab> = []
+    /// Tabs that ask to span both halves in tabletop (`.tabletopSpansBothHalves`).
+    private(set) var tabletopTabs: Set<AppTab> = []
 
     func set(_ tab: AppTab, spans: Bool) {
         if spans, !tabs.contains(tab) { tabs.insert(tab) }
@@ -83,6 +85,13 @@ final class SpreadSpanRequests {
     }
 
     func spans(_ tab: AppTab) -> Bool { tabs.contains(tab) }
+
+    func setTabletop(_ tab: AppTab, spans: Bool) {
+        if spans, !tabletopTabs.contains(tab) { tabletopTabs.insert(tab) }
+        if !spans, tabletopTabs.contains(tab) { tabletopTabs.remove(tab) }
+    }
+
+    func tabletopSpans(_ tab: AppTab) -> Bool { tabletopTabs.contains(tab) }
 }
 
 extension EnvironmentValues {
@@ -104,5 +113,25 @@ extension View {
     /// picked (Library now; Discover and Search in S3).
     func spreadSpansBothPages(_ tab: AppTab, _ enabled: Bool = true) -> some View {
         modifier(SpreadSpanRequest(tab: tab, enabled: enabled))
+    }
+}
+
+private struct TabletopSpanRequest: ViewModifier {
+    @Environment(\.spreadSpanRequests) private var requests
+    let tab: AppTab
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        content.onChange(of: enabled, initial: true) { requests?.setTabletop(tab, spans: enabled) }
+    }
+}
+
+extension View {
+    /// Tabletop (half folded, the fold side to side): a screen asks to fill
+    /// both halves while no title is open (v2 Home). The shell then doesn't
+    /// split on the fold; the screen keeps clear of it itself. With a title
+    /// open the shell keeps its split (the tab above the fold, the title below).
+    func tabletopSpansBothHalves(_ tab: AppTab, _ enabled: Bool = true) -> some View {
+        modifier(TabletopSpanRequest(tab: tab, enabled: enabled))
     }
 }

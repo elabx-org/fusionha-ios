@@ -46,7 +46,8 @@ struct RootView: View {
     private var split: ShellSplit {
         let hasItem = model.rightPageHasItem
         let spread = spreadContext(fold, hasItem: hasItem)
-        var split = ShellSplit(fold: fold, hasItem: hasItem, spread: spread)
+        var split = ShellSplit(fold: fold, hasItem: hasItem, spread: spread,
+                               tabletopSpans: spanRequests.tabletopSpans(model.tab))
         // An episode open beside its title takes the list's place (`TitleSpread`).
         let remembered = DuoSplit.hidesList(
             remembered: DuoListMemory(raw: hiddenLists).isHidden(model.tab.listMemoryKey),

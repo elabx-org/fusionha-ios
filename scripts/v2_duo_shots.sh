@@ -49,6 +49,7 @@ shoot() {  # shoot <name> [wait-seconds] [env…]
   scale=$(python3 -c "import sys; px=int(sys.argv[1]); print(round(px / (1032 if px % 1032 == 0 else 1024)))" "$px")
   local w=951 h=669  # the open inner display; folded: the outer one
   [ "${FRAME:-open}" = folded ] && w=466 && h=678
+  [ "${FRAME:-open}" = portrait ] && w=669 && h=951  # the inner display, portrait
   sips --cropToHeightWidth $((h * scale)) $((w * scale)) "$raw" --out "$OUT/v2-$name.png" > /dev/null
   rm -f "$raw"
   echo "v2-$name"
@@ -185,6 +186,17 @@ for theme in dark daylight; do
 done
 WAIT=14 shoot home-book-top SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book
 WAIT=14 shoot home-book SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=book $HS=recent
+# Tabletop (half folded, the fold side to side; the inner display in portrait
+# with an active fake horizontal fold): Home spans both halves, Coming up's
+# stage on top, its controls and Home's sections below. home-portrait is the
+# same frame flat (no fold): Home as before.
+TT=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_DUO_POSE=tabletop
+for theme in dark daylight; do
+  T=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_UNUSED=1; SUF=""
+  [ "$theme" = daylight ] && T=$DAY && SUF="-daylight"
+  WAIT=14 FRAME=portrait shoot "home-tabletop$SUF" $T $TT
+  WAIT=14 FRAME=portrait shoot "home-portrait$SUF" $T
+done
 curl -s -X POST "$S/__mock/big-library?on=1" > /dev/null || true
 WAIT=20 shoot home-big-open
 WAIT=18 FRAME=folded shoot home-big-folded-kinds $HS=kinds

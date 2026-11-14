@@ -109,8 +109,13 @@ struct ShellSplit: Equatable {
 
     /// The shell's split: a Spread's pages when `spread` is active, else the
     /// Web layout's (`init(fold:hasItem:)`).
-    init(fold: FoldInfo, hasItem: Bool, spread: SpreadContext) {
+    /// `tabletopSpans`: the selected tab asked to fill both halves in tabletop
+    /// (`.tabletopSpansBothHalves`): with a side-to-side fold and no title
+    /// open the tab gets the whole display, unsplit.
+    init(fold: FoldInfo, hasItem: Bool, spread: SpreadContext, tabletopSpans: Bool = false) {
         switch spread.mode {
+        case .off where tabletopSpans && fold.horizontal != nil && !hasItem:
+            self.init()
         case .off:
             self.init(fold: fold, hasItem: hasItem)
         case .span:

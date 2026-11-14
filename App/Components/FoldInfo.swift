@@ -32,6 +32,11 @@ struct FoldInfo: Equatable {
             }
         }
         #if DEBUG
+        // CI's Duo harness: tabletop is an active side-to-side fold.
+        if DuoHarness.frame != nil, horizontal == nil, let fake = DuoHarness.horizontalFold(in: proxy) {
+            horizontal = fake
+            return
+        }
         // CI's Duo harness: a fake fold, book (active) or flat (inactive).
         if DuoHarness.frame != nil, vertical == nil, let fake = DuoHarness.verticalFold(in: proxy) {
             if DuoHarness.bookPose { vertical = fake } else { flatVertical = fake }

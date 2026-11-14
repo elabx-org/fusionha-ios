@@ -74,6 +74,12 @@ kind with its count, and the All titles card. The web's Library page is
 **All titles**, pushed from Home, with its filters, sort and scrubber
 unchanged. Deep links and "This library" land in All titles. The web still
 says Library; see `docs/v2.md` › Home.
+**v2 deviation, tabletop (2026-11-14):** half folded on a table (inner portrait,
+fold side to side) with no title open, v2 Home spans both halves: Coming up's flat
+carousel on the top half, and on the bottom half the focused title's block, glass
+previous / next, the indigo Open, page dots and the Mix menu, then the rest of Home
+scrolling. Everything you tap is on the bottom half, 20 pt clear of the fold. With a
+title open the shell keeps its top / bottom split. See `docs/v2.md` › Home.
 - **Layout:** large title "Library", with a `LazyVGrid` poster grid. Edition chips sit below each poster, never on the art. A compact list is available as the second density, mirroring `grid | compact`.
 - **Library stats sheet (LibraryPulse mobile sheet):** the chart button opens a sheet with a glass close button: the connection line, the five stat chips (titles in the neutral grey, flowing 2 then 3), the health, 4K coverage and on-disk meters, then **In progress** (the operations feed: running commands, live downloads, runs, with the bulk Refresh & Scan grouped; "Nothing in progress.") and **Needs attention** (the unavailable-indexers group with its expandable per-indexer list and amber Manage → Settings › Indexers, then file, held-import and no-grab rows with their Replace / View / Review / Set type / Manual import / See why actions and per-row dismiss), then "View all activity ›". Polls every 2s while open.
 - **Library pulse:** a horizontally scrolling row of glass capsule chips in a `GlassEffectContainer`: All · Downloading · Missing · Upcoming · Complete · Needs attention. Each has a count, and the selected chip morphs with `glassEffectID`.

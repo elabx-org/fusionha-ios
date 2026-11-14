@@ -23,6 +23,10 @@ struct V2ComingUpRow: View {
     var headTrailing: CGFloat = 0
     /// The focused card's art, for the page's ground (nil while hidden).
     @Binding var leadArt: URL?
+    /// Tabletop (half folded, the fold side to side): the row lays Home's whole
+    /// page across both halves (`V2HomeTabletop`), or the plain page when
+    /// there is nothing coming up. Nil everywhere else.
+    var tabletop: V2TabletopContext?
     @Environment(AppModel.self) private var model
     @Environment(\.pagePalette) private var page
     @Environment(\.motionEnabled) private var motion
@@ -52,6 +56,42 @@ struct V2ComingUpRow: View {
     private var current: V2ComingUpCard? { cards.first { $0.id == focused } ?? cards.first }
 
     var body: some View {
+        Group {
+            if let tabletop { tabletopBody(tabletop) } else { inline }
+        }
+        .animation(motion ? .snappy : nil, value: cards)
+        // The page's ground follows the focused card once the swipe settles:
+        // set on every card passing the centre, it rebuilt the whole Home and
+        // re-blurred the ground several times a second, and a long swipe lagged.
+        .task(id: leadURL) {
+            if leadArt != nil, leadURL != nil {
+                try? await Task.sleep(for: .milliseconds(450))
+                guard !Task.isCancelled else { return }
+            }
+            if leadArt != leadURL { leadArt = leadURL }
+        }
+        .onChange(of: focused) {
+            guard let focused, opening == nil else { return }
+            keptFocus = focused
+            focusLog?.record(AnyHashable(focused))
+        }
+        .task(id: window) { await feed() }
+        .onChange(of: RebuildKey(entries: entries, kinds: kindsRaw, window: window, version: model.libraryVersion),
+                  initial: true) { rebuild() }
+    }
+
+    /// Tabletop: the stage and the bottom half with cards, else Home as usual.
+    @ViewBuilder
+    private func tabletopBody(_ context: V2TabletopContext) -> some View {
+        if let current {
+            V2HomeTabletop(space: context.space, cards: cards, current: current, focused: $focused, opening: $opening,
+                           kindsRaw: $kindsRaw, days: $days, rest: context.rest)
+        } else {
+            context.plain
+        }
+    }
+
+    private var inline: some View {
         // A real container even while empty: its feed task must still run.
         VStack(alignment: .leading, spacing: 0) {
             if !cards.isEmpty {
@@ -84,25 +124,6 @@ struct V2ComingUpRow: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .animation(motion ? .snappy : nil, value: cards)
-        // The page's ground follows the focused card once the swipe settles:
-        // set on every card passing the centre, it rebuilt the whole Home and
-        // re-blurred the ground several times a second, and a long swipe lagged.
-        .task(id: leadURL) {
-            if leadArt != nil, leadURL != nil {
-                try? await Task.sleep(for: .milliseconds(450))
-                guard !Task.isCancelled else { return }
-            }
-            if leadArt != leadURL { leadArt = leadURL }
-        }
-        .onChange(of: focused) {
-            guard let focused, opening == nil else { return }
-            keptFocus = focused
-            focusLog?.record(AnyHashable(focused))
-        }
-        .task(id: window) { await feed() }
-        .onChange(of: RebuildKey(entries: entries, kinds: kindsRaw, window: window, version: model.libraryVersion),
-                  initial: true) { rebuild() }
     }
 
     private func carousel(cardWidth: CGFloat, showsMeta: Bool) -> some View {

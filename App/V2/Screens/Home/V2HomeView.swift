@@ -43,6 +43,9 @@ struct V2HomeView: View {
     @State private var arrived: [V2TimelineEntry] = []
     @AppStorage("v2.home.recentPage") private var recentPageRaw = 0
     @State private var timelineShown = false
+    /// Half folded on a table (the fold side to side inside Home's container):
+    /// Home spans both halves (`V2HomeTabletop`). Nil in every other pose.
+    @State private var tabletop: V2TabletopSpace?
 
     /// Flat open beside an open title: the list pane takes the title's
     /// palette with no art of its own (the Library's rule, slice S5).
@@ -59,18 +62,81 @@ struct V2HomeView: View {
     /// glass. Book pose keeps its pages either side of the fold.
     private var fullWidth: Bool { tabs.on && !bookPose }
 
+    /// Home's sections; the tabletop's bottom half leaves out the heading and
+    /// Coming up (the stage), its plain page leaves out Coming up (the row
+    /// around it, `V2ComingUpRow`).
+    private func content(width: CGFloat, columnReserve: CGFloat, heading: Bool, comingUp: Bool) -> V2HomeContent {
+        V2HomeContent(data: data, held: held, width: width, columnReserve: columnReserve,
+                      comingUpArt: $comingUpArt,
+                      arrived: arrived, recentPage: recentPage, open: openAllTitles, openTimeline: { page in
+            recentPage.wrappedValue = page
+            timelineShown = true
+        }, showsHeading: heading, showsComingUp: comingUp)
+    }
+
+    /// Tabletop: the Coming up row is the page's root, so it owns the feed and
+    /// the focus and lays Home out across the two halves.
+    private func tabletopPage(_ space: V2TabletopSpace) -> some View {
+        V2ComingUpRow(width: space.size.width, gutter: 20, wide: false, leadArt: $comingUpArt,
+                      tabletop: V2TabletopContext(
+                        space: space,
+                        plain: AnyView(scrollPage(comingUp: false)),
+                        rest: AnyView(content(width: space.size.width, columnReserve: 0, heading: false, comingUp: false))))
+    }
+
+    @ViewBuilder
+    private var homePage: some View {
+        if let tabletop { tabletopPage(tabletop) } else { scrollPage(comingUp: true) }
+    }
+
     var body: some View {
         let _ = PerfCount.hit("V2HomeView.body")
+        homePage
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .onGeometryChange(for: V2TabletopSpace?.self) { V2TabletopSpace($0) } action: { tabletop = $0 }
+            .v2PageGround(art: besideArt ?? comingUpArt ?? data.groundArt, recipe: besideArt == nil ? .page : .listPane,
+                          showsArt: besideArt == nil, artHeight: 760, artOpacity: .ambient)
+            // The page draws "Home" with the mark itself (`V2HomeHeading`), so
+            // the bar has no title (on the folded Duo `.toolbar(removing: .title)`
+            // still drew a second "Home" above the page's, build 982).
+            // Collapsed tabs: no Add in the arrow's list; Search, listed
+            // there, is where you add (search + Add merge, owner 2026-11-12).
+            .shellPage("") { if !tabs.on { AddTitleToolbarItem(model: model) } }
+            // Home spans both pages of a Spread; All titles keeps the grid's rule.
+            .spreadSpansBothPages(.library, !model.allTitles.wanted || density != "compact")
+            // Tabletop: Home spans both halves until a title, All titles or the
+            // timeline is on top of it (then the shell splits at the fold).
+            .tabletopSpansBothHalves(.library, !model.allTitles.wanted && !timelineShown)
+            .navigationDestination(isPresented: allTitlesBinding) { V2LibraryView(entry: entry) }
+            .navigationDestination(isPresented: $timelineShown) { V2RecentTimelinePage(feed: arrivals, page: recentPage) }
+            .task { await arrivals.watch(model.client) }
+            .onChange(of: ArrivedKey(rows: arrivals.rows, version: model.libraryVersion), initial: true) {
+                let library = Dictionary(model.library.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+                arrived = V2TimelineEntries.arrived(arrivals.rows, library: library)
+            }
+            .task { await restoreKept() }
+            // While Home is on screen with the push kept (it went: the page covers Home).
+            .task(id: model.allTitles.wanted) { await keepPushed() }
+            .task { await model.loadLibraryIfNeeded() }
+            .onQueueChange(model, initial: true) { queue in
+                let next = Set(queue.filter { QueueProgress($0).held }.map(\.mediaItemId))
+                if next != held { held = next }
+            }
+            .onChange(of: DataKey(version: model.libraryVersion, held: held), initial: true) {
+                data = PerfCount.time("V2Home.data") { V2HomeData(library: model.library, held: held) }
+            }
+            // Routes that open the Library land in All titles (`takeRoute`).
+            .task(id: model.pendingAllTitles) { await takeRoute() }
+    }
+
+    /// The page of Home's sections, scrolling. `comingUp` false: the Coming up
+    /// row is outside it (the tabletop with nothing coming up).
+    private func scrollPage(comingUp: Bool) -> some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(spacing: 0) {
                     Color.clear.frame(height: 0).id("home-top")
-                    V2HomeContent(data: data, held: held, width: width, columnReserve: fullWidth ? column : 0,
-                                  comingUpArt: $comingUpArt,
-                                  arrived: arrived, recentPage: recentPage, open: openAllTitles) { page in
-                        recentPage.wrappedValue = page
-                        timelineShown = true
-                    }
+                    content(width: width, columnReserve: fullWidth ? column : 0, heading: true, comingUp: comingUp)
                 }
                 .padding(.top, 4)
                 .padding(.bottom, Theme.pageBottom)
@@ -108,37 +174,6 @@ struct V2HomeView: View {
             }
             #endif
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .v2PageGround(art: besideArt ?? comingUpArt ?? data.groundArt, recipe: besideArt == nil ? .page : .listPane,
-                      showsArt: besideArt == nil, artHeight: 760, artOpacity: .ambient)
-        // The page draws "Home" with the mark itself (`V2HomeHeading`), so
-        // the bar has no title (on the folded Duo `.toolbar(removing: .title)`
-        // still drew a second "Home" above the page's, build 982).
-        // Collapsed tabs: no Add in the arrow's list; Search, listed
-        // there, is where you add (search + Add merge, owner 2026-11-12).
-        .shellPage("") { if !tabs.on { AddTitleToolbarItem(model: model) } }
-        // Home spans both pages of a Spread; All titles keeps the grid's rule.
-        .spreadSpansBothPages(.library, !model.allTitles.wanted || density != "compact")
-        .navigationDestination(isPresented: allTitlesBinding) { V2LibraryView(entry: entry) }
-        .navigationDestination(isPresented: $timelineShown) { V2RecentTimelinePage(feed: arrivals, page: recentPage) }
-        .task { await arrivals.watch(model.client) }
-        .onChange(of: ArrivedKey(rows: arrivals.rows, version: model.libraryVersion), initial: true) {
-            let library = Dictionary(model.library.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-            arrived = V2TimelineEntries.arrived(arrivals.rows, library: library)
-        }
-        .task { await restoreKept() }
-        // While Home is on screen with the push kept (it went: the page covers Home).
-        .task(id: model.allTitles.wanted) { await keepPushed() }
-        .task { await model.loadLibraryIfNeeded() }
-        .onQueueChange(model, initial: true) { queue in
-            let next = Set(queue.filter { QueueProgress($0).held }.map(\.mediaItemId))
-            if next != held { held = next }
-        }
-        .onChange(of: DataKey(version: model.libraryVersion, held: held), initial: true) {
-            data = PerfCount.time("V2Home.data") { V2HomeData(library: model.library, held: held) }
-        }
-        // Routes that open the Library land in All titles (`takeRoute`).
-        .task(id: model.pendingAllTitles) { await takeRoute() }
     }
 
     /// The push lives on the window's model (`AppModel.allTitles`). The

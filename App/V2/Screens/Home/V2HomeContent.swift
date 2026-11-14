@@ -22,6 +22,11 @@ struct V2HomeContent: View {
     @Binding var recentPage: V2TimelinePage
     let open: (V2AllTitlesEntry) -> Void
     let openTimeline: (V2TimelinePage) -> Void
+    /// Tabletop: the heading and Coming up are the stage's (`V2HomeTabletop`),
+    /// or Coming up is the row around the page and not in it (`V2ComingUpRow`).
+    /// Narrow layout only (tabletop is 669 pt wide).
+    var showsHeading = true
+    var showsComingUp = true
     @Environment(\.pagePalette) private var page
 
     private var wide: Bool { width >= 700 }
@@ -48,16 +53,20 @@ struct V2HomeContent: View {
 
     private var narrowBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            heading.padding(.horizontal, gutter).padding(.top, 4)
-                .padding(.trailing, columnReserve)
-                .foldRow(FoldAnchorTop.header)
+            if showsHeading {
+                heading.padding(.horizontal, gutter).padding(.top, 4)
+                    .padding(.trailing, columnReserve)
+                    .foldRow(FoldAnchorTop.header)
+            }
             if !data.attention.isEmpty {
                 attention.padding(.horizontal, gutter).padding(.top, 14)
                     .padding(.trailing, columnReserve)
             }
-            V2ComingUpRow(width: width, gutter: gutter, wide: false, topGap: 22, headTrailing: columnReserve,
-                          leadArt: $comingUpArt)
-                .foldRow("home-comingup")
+            if showsComingUp {
+                V2ComingUpRow(width: width, gutter: gutter, wide: false, topGap: 22, headTrailing: columnReserve,
+                              leadArt: $comingUpArt)
+                    .foldRow("home-comingup")
+            }
             V2RecentSection(data: data, arrived: arrived, width: width, gutter: gutter, wide: false,
                             page: $recentPage, seeAll: openTimeline)
                 .padding(.top, 18)
