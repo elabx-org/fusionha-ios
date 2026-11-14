@@ -45,6 +45,14 @@ struct V2TabletopCarousel: View {
         .scrollTargetBehavior(.viewAligned)
         .scrollPosition(id: $focused, anchor: .center)
         .v2CarouselOpening($opening, focused: $focused)
+        // A row built again (a new poster size) starts at its first card: a
+        // position set in its first pass doesn't scroll a lazy row. Open it on
+        // the focused card the way the first row is opened.
+        .task {
+            guard let id = focused, cards.contains(where: { $0.id == id }) else { return }
+            focused = nil
+            opening = id
+        }
         .scrollClipDisabled()
         .sensoryFeedback(.selection, trigger: focused)
         .accessibilityLabel("Coming up")

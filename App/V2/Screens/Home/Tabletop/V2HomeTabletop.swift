@@ -20,7 +20,9 @@ struct V2HomeTabletop: View {
     let rest: AnyView
     @Environment(AppModel.self) private var model
 
-    /// How far the bar pushes the page's content down (the scroll view's top inset).
+    private static let space = "v2-tabletop-page"
+
+    /// How far the bar pushes the page's content down (where the content starts).
     @State private var top: CGFloat = 0
 
     var body: some View {
@@ -34,9 +36,12 @@ struct V2HomeTabletop: View {
                 Color.clear.frame(height: space.gapHeight)
                 floor.frame(height: space.floorHeight)
             }
+            // Where the content really starts, in the container's coordinates
+            // (the fold's): the scroll view's reported inset was not it.
+            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(Self.space)).minY } action: { top = $0 }
         }
         .scrollDisabled(true)
-        .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.top } action: { _, new in top = new }
+        .coordinateSpace(name: Self.space)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
