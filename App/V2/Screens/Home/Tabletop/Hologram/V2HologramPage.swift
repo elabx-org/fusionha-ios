@@ -11,6 +11,8 @@ import FusionhaKit
 /// it. The focus is the row's (`V2ComingUpRow`). `V2HomeTabletop` draws the
 /// scene behind this page and lifts it; until the lift is done (`live`) the
 /// page takes no touches and its controls are on their way in (`chrome`).
+/// Both, and the heading's fade, are applied inside the page's scroll views,
+/// whose own place in the page never changes.
 struct V2HologramPage: View {
     let space: V2TabletopSpace
     let cards: [V2ComingUpCard]
@@ -23,8 +25,10 @@ struct V2HologramPage: View {
     let hinge: Double
     /// The hologram stands: the page takes touches and the row's opening card.
     var live = true
-    /// How far the controls have come in (the lift's last stage).
+    /// How far the controls have come in (the lift), and the heading
+    /// (Reduce Motion's cross-fade; the lift shows it throughout).
     var chrome: Double = 1
+    var headingOpacity: Double = 1
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) private var motion
     @Environment(\.pagePalette) private var page
@@ -35,15 +39,14 @@ struct V2HologramPage: View {
         ZStack(alignment: .topLeading) {
             heading
             controls
-                .opacity(chrome)
             corners
                 .opacity(chrome)
+                .allowsHitTesting(live)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .contentShape(Rectangle())
         .onTapGesture(coordinateSpace: .local) { tapped($0) }
         .simultaneousGesture(swipe)
-        .allowsHitTesting(live)
         // The row hands its opening card to a carousel; with the hologram
         // standing there is none (during the lift the flat carousel takes it).
         .onChange(of: opening, initial: true) { takeOpening() }
@@ -81,6 +84,7 @@ struct V2HologramPage: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .opacity(headingOpacity)
         }
         .scrollDisabled(true)
         .allowsHitTesting(false)
@@ -92,6 +96,8 @@ struct V2HologramPage: View {
         ScrollView {
             V2HologramControls(cards: cards, current: current, focused: $focused)
                 .containerRelativeFrame(.vertical, alignment: .bottom)
+                .opacity(chrome)
+                .allowsHitTesting(live)
         }
         .scrollDisabled(true)
         .defaultScrollAnchor(.bottom)

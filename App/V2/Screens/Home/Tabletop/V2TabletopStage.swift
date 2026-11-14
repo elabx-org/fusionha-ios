@@ -13,8 +13,8 @@ struct V2TabletopStage: View {
     let cards: [V2ComingUpCard]
     @Binding var focused: Int?
     @Binding var opening: Int?
-    /// False while the scene draws in its place (the lift).
-    var shown = true
+    /// 0 while the scene draws in its place (the lift).
+    var shows: Double = 1
     @Environment(\.pagePalette) private var page
 
     /// The heading's line.
@@ -47,7 +47,7 @@ struct V2TabletopStage: View {
                 .frame(maxHeight: .infinity)
         }
         .frame(height: height, alignment: .top)
-        .opacity(shown ? 1 : 0)
-        .accessibilityHidden(!shown)
+        .opacity(shows)
+        .accessibilityHidden(shows <= 0)
     }
 }

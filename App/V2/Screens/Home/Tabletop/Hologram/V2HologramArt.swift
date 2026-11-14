@@ -80,7 +80,8 @@ struct V2HologramPlate: View {
         ZStack {
             Theme.panel2
             if let image {
-                Image(uiImage: image)
+                // Washed on Monochrome, as the carousel's posters are.
+                Image(uiImage: PosterWashRenderer.washed(image))
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: V2HologramArt.box.width, height: V2HologramArt.box.height)

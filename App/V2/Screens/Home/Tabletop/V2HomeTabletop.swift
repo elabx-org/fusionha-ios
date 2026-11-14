@@ -9,13 +9,13 @@ import FusionhaKit
 ///
 /// Two looks, chosen by the stored switch (`V2TabletopHologram`, off by
 /// default): the flat carousel over Home's sections (`V2TabletopFlat`) and
-/// the hologram (`V2HologramStage` under `V2HologramPage`). Changing the
-/// switch plays the lift (tabletop plan, slice 3; the approved mock's
-/// `holo`): one progress value, 0 flat and 1 hologram, linear over 1.3 s
-/// (`TabletopLift`). On the way the scene draws the carousel's posters from
-/// their own places into the scene, the flat page's bottom half fades and
-/// the hologram's controls come in last. Reduce Motion: the two looks
-/// cross-fade and nothing lifts.
+/// the hologram (`V2HologramPage` over the scene, `V2HologramStage`, which
+/// is the page's background). Changing the switch plays the lift (tabletop
+/// plan, slice 3; the approved mock's `holo`): one progress value, 0 flat
+/// and 1 hologram, linear over 1.3 s (`TabletopLift`). On the way the scene
+/// draws the carousel's posters from their own places into the scene and
+/// the flat page's bottom half fades into the hologram's controls. Reduce
+/// Motion: the two looks cross-fade and nothing lifts.
 struct V2HomeTabletop: View {
     let space: V2TabletopSpace
     let cards: [V2ComingUpCard]
@@ -46,13 +46,22 @@ struct V2HomeTabletop: View {
     }
 
     var body: some View {
-        V2TabletopLiftReader(progress: lift) { page(at: $0) }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        liftedPage
             .readsTabletopHinge($hinge)
             .onChange(of: focused, initial: true) {
                 if let focused { lastFocus = focused }
             }
             .onChange(of: on) { play() }
+            .v2TabletopProbe(top: top, space: space)
+    }
+
+    @ViewBuilder
+    private var liftedPage: some View {
+        if V2TabletopProbe.variant == "noreader" {
+            page(at: lift)
+        } else {
+            V2TabletopLiftReader(progress: lift) { page(at: $0) }
+        }
     }
 
     /// The switch changed: lift, or let down.
@@ -64,33 +73,59 @@ struct V2HomeTabletop: View {
         }
     }
 
-    /// The page with the lift at `progress`.
+    /// The page with the lift at `progress`: the flat page until the lift is
+    /// done, the hologram's page from its first frame, the scene behind both.
+    @ViewBuilder
     private func page(at progress: Double) -> some View {
-        // Reduce Motion: the hologram is whole and fades in over the flat page.
-        let staged = motion
-        let stages = TabletopLift.Stages(staged ? progress : 1)
-        let drawn: Double = staged ? progress : (progress > 0 ? 1 : 0)
-        let fade: Double = staged ? 1 : progress
-        return ZStack(alignment: .topLeading) {
-            if progress < 1 {
-                V2TabletopFlat(space: space, cards: cards, current: current, focused: $focused, opening: $opening,
-                               kindsRaw: $kindsRaw, days: $days, rest: rest, top: $top,
-                               stageShown: !staged || progress <= 0,
-                               floorOpacity: staged ? 1 - stages.floor : 1)
-                    .allowsHitTesting(progress <= 0)
-                    // Nothing fades of its own accord: the lift places everything.
-                    .transition(.identity)
+        if V2TabletopProbe.variant == "plain", progress <= 0 {
+            layers(at: progress)
+        } else if V2TabletopProbe.variant == "plain", progress >= 1 {
+            layers(at: progress)
+                .background(alignment: .topLeading) { scene(at: progress) }
+        } else if V2TabletopProbe.variant == "sibling" {
+            ZStack(alignment: .topLeading) {
+                layers(at: progress)
+                scene(at: progress)
             }
-            V2HologramStage(space: space, cards: cards, current: shown, hinge: hinge, lift: drawn,
-                            flat: space.flatCarousel(top: top), printsIn: printsIn)
-                .opacity(fade)
-            if progress > 0 {
-                V2HologramPage(space: space, cards: cards, current: shown, focused: $focused, opening: $opening,
-                               kindsRaw: $kindsRaw, days: $days, hinge: hinge, live: progress >= 1,
-                               chrome: stages.depth)
-                    .opacity(fade)
-                    .transition(.identity)
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        } else {
+            ZStack(alignment: .topLeading) { layers(at: progress) }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .background(alignment: .topLeading) { scene(at: progress) }
         }
+    }
+
+    @ViewBuilder
+    private func layers(at progress: Double) -> some View {
+        // Reduce Motion: the hologram is whole and the flat page fades over it.
+        let staged = motion
+        let floorOn: Double = TabletopLift.Stages(progress).floor
+        // The hologram's controls come in as the flat ones leave (0.25…0.6).
+        let chrome: Double = TabletopScene.smoothstep((progress - 0.25) / 0.35)
+        if progress < 1 {
+            V2TabletopFlat(space: space, cards: cards, current: current, focused: $focused, opening: $opening,
+                           kindsRaw: $kindsRaw, days: $days, rest: rest, top: $top,
+                           stageOpacity: staged ? (progress <= 0 ? 1 : 0) : 1 - progress,
+                           floorOpacity: staged ? 1 - floorOn : 1 - progress,
+                           live: progress <= 0)
+                // Nothing fades of its own accord: the lift places everything.
+                .transition(.identity)
+        }
+        if progress > 0 {
+            V2HologramPage(space: space, cards: cards, current: shown, focused: $focused, opening: $opening,
+                           kindsRaw: $kindsRaw, days: $days, hinge: hinge, live: progress >= 1,
+                           chrome: staged ? chrome : progress, headingOpacity: staged ? 1 : progress)
+                .transition(.identity)
+        }
+    }
+
+    /// The scene, behind the page: there for as long as Home is on a table
+    /// (drawing nothing while the flat look rests).
+    private func scene(at progress: Double) -> some View {
+        let staged = motion
+        return V2HologramStage(space: space, cards: cards, current: shown, hinge: hinge,
+                               lift: staged ? progress : (progress > 0 ? 1 : 0),
+                               flat: space.flatCarousel(top: top), printsIn: printsIn)
+            .opacity(staged ? 1 : progress)
     }
 }
