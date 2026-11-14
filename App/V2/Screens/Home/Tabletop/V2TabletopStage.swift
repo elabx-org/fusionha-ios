@@ -4,7 +4,8 @@ import FusionhaKit
 /// The tabletop's top half: "Coming up" at the top left and the flat
 /// carousel under it. It only shows; every control is on the bottom half.
 struct V2TabletopStage: View {
-    let space: V2TabletopSpace
+    /// The stage's height: from under the bar to 20 pt above the fold.
+    let height: CGFloat
     let cards: [V2ComingUpCard]
     @Binding var focused: Int?
     @Binding var opening: Int?
@@ -14,7 +15,7 @@ struct V2TabletopStage: View {
     private static let chrome: CGFloat = 44 + 28
 
     private var posterHeight: CGFloat {
-        min(360, max(140, space.stageHeight - Self.chrome))
+        min(360, max(140, height - Self.chrome))
     }
 
     var body: some View {
@@ -30,6 +31,6 @@ struct V2TabletopStage: View {
             V2TabletopCarousel(cards: cards, posterHeight: posterHeight, focused: $focused, opening: $opening)
                 .frame(maxHeight: .infinity)
         }
-        .frame(height: space.stageHeight, alignment: .top)
+        .frame(height: height, alignment: .top)
     }
 }

@@ -9,9 +9,6 @@ import SwiftUI
 struct V2TabletopSpace: Equatable {
     let size: CGSize
     let fold: ClosedRange<CGFloat>
-    /// The top safe area (the bar's height): the container runs under it, the
-    /// stage starts below it.
-    let topInset: CGFloat
 
     /// Nothing interactive sits closer to the fold than this.
     static let clearance: CGFloat = 20
@@ -21,11 +18,14 @@ struct V2TabletopSpace: Equatable {
               fold.lowerBound > 0, fold.upperBound < proxy.size.height else { return nil }
         self.size = proxy.size
         self.fold = fold
-        self.topInset = max(0, proxy.safeAreaInsets.top)
     }
 
-    /// The top half's height under the top safe area, kept clear of the fold: the stage.
-    var stageHeight: CGFloat { max(0, fold.lowerBound - Self.clearance - topInset) }
+    /// The top half's height, kept clear of the fold: the stage. `top` is how
+    /// far down the bar pushes the page's content (the scroll view's top
+    /// inset; the container itself runs under the bar).
+    func stageHeight(top: CGFloat) -> CGFloat { max(0, fold.lowerBound - Self.clearance - top) }
+    /// The fold and the clearance either side of it, between stage and floor.
+    var gapHeight: CGFloat { Self.clearance * 2 + fold.upperBound - fold.lowerBound }
     /// Where the bottom half's content starts (y), kept clear of the fold.
     var floorTop: CGFloat { fold.upperBound + Self.clearance }
     var floorHeight: CGFloat { max(0, size.height - floorTop) }

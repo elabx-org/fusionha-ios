@@ -20,15 +20,23 @@ struct V2HomeTabletop: View {
     let rest: AnyView
     @Environment(AppModel.self) private var model
 
+    /// How far the bar pushes the page's content down (the scroll view's top inset).
+    @State private var top: CGFloat = 0
+
     var body: some View {
-        VStack(spacing: 0) {
-            // The container runs under the bar: the stage starts below it.
-            Color.clear.frame(height: space.topInset)
-            V2TabletopStage(space: space, cards: cards, focused: $focused, opening: $opening)
-            // The fold and the clearance either side of it: empty.
-            Color.clear.frame(height: max(0, space.floorTop - space.topInset - space.stageHeight))
-            floor.frame(height: space.floorHeight)
+        // A scroll view that doesn't scroll: the system insets its content
+        // below the bar (and fades it under it) as on every other Home page;
+        // the container itself runs under the bar.
+        ScrollView {
+            VStack(spacing: 0) {
+                V2TabletopStage(height: space.stageHeight(top: top), cards: cards, focused: $focused, opening: $opening)
+                // The fold and the clearance either side of it: empty.
+                Color.clear.frame(height: space.gapHeight)
+                floor.frame(height: space.floorHeight)
+            }
         }
+        .scrollDisabled(true)
+        .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.top } action: { _, new in top = new }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
