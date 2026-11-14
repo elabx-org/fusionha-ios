@@ -22,9 +22,11 @@ struct V2HomeTabletop: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // The container runs under the bar: the stage starts below it.
+            Color.clear.frame(height: space.topInset)
             V2TabletopStage(space: space, cards: cards, focused: $focused, opening: $opening)
             // The fold and the clearance either side of it: empty.
-            Color.clear.frame(height: max(0, space.floorTop - space.stageHeight))
+            Color.clear.frame(height: max(0, space.floorTop - space.topInset - space.stageHeight))
             floor.frame(height: space.floorHeight)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
