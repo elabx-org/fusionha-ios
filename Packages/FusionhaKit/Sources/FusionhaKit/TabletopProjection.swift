@@ -26,18 +26,35 @@ public struct TabletopPoint: Equatable, Sendable {
 }
 
 /// The tabletop hologram's projection (the approved mock's `onScreen`,
-/// `onFloor` and `quad`): where one fixed eye sees a point of the scene on
-/// the standing top half and on the bottom half lying on the table. A thing
+/// `onFloor` and `quad`): where an eye sees a point of the scene on the
+/// standing top half and on the bottom half lying on the table. A thing
 /// standing in front of the hinge is drawn on both halves from the same
-/// eye, so its two pieces meet at the hinge.
+/// eye, so its two pieces meet at the hinge. They only line up from that
+/// eye, so the eye is the viewer's seat (`eye(elevation:)`, the seat mock,
+/// 2026-11-15): drawn for 34° up, the card creased at the hinge for a
+/// person at a table, who sees it from about 50°.
 public enum TabletopProjection {
     /// The display width every length is given for.
     public static let designWidth = 669.0
-    /// The eye: 34° above the table, 2400 pt from the hinge.
-    public static let eye: TabletopVec = {
-        let alpha = 34 * Double.pi / 180, distance = 2400.0
-        return TabletopVec(0, -distance * sin(alpha), distance * cos(alpha))
-    }()
+    /// How far the eye is from the hinge.
+    public static let eyeDistance = 2400.0
+    /// The seat: how high the eye is, in degrees above the table. It can be
+    /// set over `seatRange`; `defaultSeat` until it is.
+    public static let seatRange = 26.0...68.0
+    public static let defaultSeat = 50.0
+
+    /// A seat in degrees held inside `seatRange`; the default when it is not a number.
+    public static func heldSeat(_ degrees: Double) -> Double {
+        guard degrees.isFinite else { return defaultSeat }
+        return min(max(degrees, seatRange.lowerBound), seatRange.upperBound)
+    }
+
+    /// The eye `elevation` degrees above the table (held to `seatRange`),
+    /// `eyeDistance` from the hinge, straight in front of it.
+    public static func eye(elevation degrees: Double) -> TabletopVec {
+        let alpha = heldSeat(degrees) * Double.pi / 180
+        return TabletopVec(0, -eyeDistance * sin(alpha), eyeDistance * cos(alpha))
+    }
 
     /// The hinge angle the picture is drawn for when the device gives none.
     public static let restingHinge = 105.0
@@ -57,8 +74,8 @@ public enum TabletopProjection {
         (heldHinge(hingeDegrees) - 90) * Double.pi / 180
     }
 
-    /// Where the eye sees `p` on the top half, leaning back by `phi`.
-    public static func onScreen(_ p: TabletopVec, phi: Double) -> TabletopPoint {
+    /// Where `eye` sees `p` on the top half, leaning back by `phi`.
+    public static func onScreen(_ p: TabletopVec, phi: Double, eye: TabletopVec) -> TabletopPoint {
         let ny = -sin(phi), nz = cos(phi)
         let t = -(ny * eye.y + nz * eye.z) / (ny * (p.y - eye.y) + nz * (p.z - eye.z))
         let qx = eye.x + t * (p.x - eye.x)
@@ -67,8 +84,8 @@ public enum TabletopProjection {
         return TabletopPoint(qx, -qy * cos(phi) - qz * sin(phi))
     }
 
-    /// Where the eye sees `p` on the table (the bottom half).
-    public static func onFloor(_ p: TabletopVec) -> TabletopPoint {
+    /// Where `eye` sees `p` on the table (the bottom half).
+    public static func onFloor(_ p: TabletopVec, eye: TabletopVec) -> TabletopPoint {
         let t = eye.y / (eye.y - p.y)
         return TabletopPoint(eye.x + t * (p.x - eye.x), eye.z + t * (p.z - eye.z))
     }

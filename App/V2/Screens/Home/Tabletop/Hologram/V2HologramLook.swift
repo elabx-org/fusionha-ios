@@ -30,11 +30,6 @@ struct V2HologramLook: Equatable {
     var shade: Color { isLight ? Color(hex: 0xFAFAFC) : Color(hex: 0x08070C) }
     var shadeCore: Double { isLight ? 0.92 : 0.86 }
     var shadeMid: Double { isLight ? 0.55 : 0.5 }
-    /// The contact shadow on the table under the floating slab (the mock's
-    /// `.cshadow`): black on a dark room, the label colour on a light one.
-    var contact: Color { isLight ? Color(hex: 0x14161D) : .black }
-    var contactCore: Double { isLight ? 0.34 : 0.5 }
-    var contactMid: Double { isLight ? 0.16 : 0.26 }
     /// The emitter, the track and the posters' lit edge.
     var ring: Color { isLight ? tint.mix(with: Color(hex: 0x14161D), by: 0.18) : tint.mix(with: .white, by: 0.38) }
     /// The dial's fixed marker at the ring's far side (the label colour).

@@ -1,35 +1,39 @@
 import Foundation
 
 /// The tabletop hologram's layout (the approved mock's `drawHolo`, with the
-/// hinge fix's `FL` branches, mock "tabletop-float", 2026-11-15): the
-/// focused title floats over the emitter as a slab of glass and the others
-/// wait on the floor behind the hinge as small markers. Pure numbers in the
-/// rig's coordinates (`TabletopVec`); the app projects them with
+/// seat mock's changes, "tabletop-seat", 2026-11-15): the focused title
+/// stands over the emitter as a slab of glass across the hinge, and the
+/// others wait on the floor behind the hinge as small markers. Pure numbers
+/// in the rig's coordinates (`TabletopVec`); the app projects them with
 /// `TabletopProjection`.
 ///
-/// Nothing solid crosses the hinge (owner, on the device, 2026-11-15): a
-/// thing drawn on both halves from one fixed eye only lines up from that
-/// eye, and from where a person really sits it creases at the hinge. So
-/// the slab floats high enough to be seen wholly on the standing half, the
-/// waiting titles stand behind the hinge, and only the floor's own things
-/// (the ring, the grid, the contact shadow) and soft light are on the table.
-/// The numbers below are the mock's, each one named so it is easy to change.
+/// A card across the hinge is the illusion: its foot is drawn on the table,
+/// its head on the standing half, from the viewer's own eye (the seat,
+/// `TabletopProjection.eye(elevation:)`). Seen from higher than 34° an
+/// upright card looks squat, so it leans back toward the eye like a propped
+/// picture frame (`lean(seat:)`). Only the focused card crosses; the waiting
+/// titles stand behind the hinge, so a seat a little off shows on one
+/// object, not five. The numbers below are the mock's, each one named so
+/// it is easy to change.
 public enum TabletopScene {
     /// The ring's centre: this far in FRONT of the hinge, on the bottom
-    /// half. The slab floats over it.
-    public static let ringZ = 110.0
-    public static let emitterRadius = 120.0
+    /// half. The slab stands over it.
+    public static let ringZ = 130.0
+    /// The emitter's rim. With the dial round it (`TabletopDial`), nothing
+    /// of the ring comes within 20 pt of the hinge.
+    public static let emitterRadius = 100.0
     /// The round track the waiting titles stood on before the hinge fix; it
     /// is no longer drawn (`V2HologramRing`).
     public static let trackRadius = 172.0
-    /// How high the slab's foot floats over the floor (the mock's 22 before
-    /// the hinge fix): seen 26.8–31.4 pt over the hinge at the bob's lowest and
-    /// the sway's widest, 36–41 at rest, across the hinge range.
-    public static let slabLift = 125.0
-    /// A title's size against the 230 x 345 card: a marker's, and the
-    /// slab's (0.96 before the hinge fix).
+    /// How high the slab's foot floats over the floor.
+    public static let slabLift = 22.0
+    /// A title's size against the 230 x 345 card: a marker's, and the slab's.
     public static let markerScale = 0.34
-    public static let slabScale = 0.86
+    public static let slabScale = 0.96
+    /// The slab leans back by `leanRate` degrees a degree of seat above
+    /// `leanFrom` (none at or below it).
+    public static let leanFrom = 34.0
+    public static let leanRate = 0.9
     /// The waiting titles stand behind the hinge: across, `waitStep` a place
     /// for the nearest one either side, then `waitStepFar` a place; back,
     /// `waitDepth` plus `waitDepthStep` a place (held at `reach`).
@@ -62,16 +66,16 @@ public enum TabletopScene {
     public static var floorBehindWidth: Double { TabletopProjection.designWidth + 2 * floorOverhang }
     /// The square the beam and the halo are drawn in before projection.
     public static let lightSide = 200.0
-    /// How far up its mirror image a waiting title's reflection runs (0 its
-    /// feet, 1 its head), so no image reaches the controls on the table.
-    /// The slab has none (`Card.reflectionOpacity`).
+    /// How far up its mirror image a title's reflection runs (0 its feet,
+    /// 1 its head), so no image reaches the page dots and the controls.
     public static let reflectionReach = 0.31
-    /// The contact shadow under the slab: its width against the slab's,
-    /// its height against its width, and how it breathes with the bob.
-    public static let contactWidth = 1.12
-    public static let contactAspect = 0.34
     /// The beam's piece on the table, against its strength on the wall.
-    public static let tableBeam = 0.55
+    public static let tableBeam = 1.0
+
+    /// How far the slab leans back (radians) for a seat in degrees.
+    public static func lean(seat: Double) -> Double {
+        max(0, TabletopProjection.heldSeat(seat) - leanFrom) * leanRate * Double.pi / 180
+    }
 
     /// 0 below 0, 1 above 1, eased between (the mock's `ss`).
     public static func smoothstep(_ t: Double) -> Double {
@@ -92,21 +96,25 @@ public enum TabletopScene {
         public let centerX: Double
         public let centerZ: Double
         public let lift: Double
-        /// The idle bob in it (points, only as far as the card is focused).
-        public let bob: Double
+        /// How far it leans back toward the eye (radians, only as far as the
+        /// card is focused): its foot stays, its head comes back.
+        public let lean: Double
         public let opacity: Double
 
         /// How much of the focused title's light a marker takes (0 the slab).
         public var ghost: Double { 1 - focus }
         public var sliceOpacity: Double { opacity * focus }
-        /// The slab has no reflection: a floating card's would land under
-        /// the title and Open. The waiting titles keep theirs.
-        public var reflectionOpacity: Double { opacity * (0.22 + 0.6 * focus) * (1 - focus) }
+        public var reflectionOpacity: Double { opacity * (0.22 + 0.6 * focus) }
         public var beamOpacity: Double { focus * 0.95 }
         public var haloOpacity: Double { focus * 0.85 }
         public var shadeOpacity: Double { focus }
         /// Slices are drawn only for a card that is nearly the slab.
         public var hasSlices: Bool { focus >= 0.05 }
+
+        /// How high its head is over its foot, and how far back from it
+        /// (toward the hinge), leaned.
+        public var rise: Double { height * cos(lean) }
+        public var setBack: Double { height * sin(lean) }
 
         /// The poster's corners [top-left, top-right, bottom-right,
         /// bottom-left], `depth` along its facing (negative = behind it).
@@ -115,8 +123,8 @@ public enum TabletopScene {
             let sn = sin(yaw), cs = cos(yaw), m = mirrored ? -1.0 : 1.0
             let x0 = centerX - cs * width / 2 + sn * depth, z0 = centerZ + sn * width / 2 + cs * depth
             let x1 = centerX + cs * width / 2 + sn * depth, z1 = centerZ - sn * width / 2 + cs * depth
-            let top = m * (lift + height), bottom = m * lift
-            return [TabletopVec(x0, -top, z0), TabletopVec(x1, -top, z1),
+            let top = m * (lift + rise), bottom = m * lift, back = setBack
+            return [TabletopVec(x0, -top, z0 - back), TabletopVec(x1, -top, z1 - back),
                     TabletopVec(x1, -bottom, z1), TabletopVec(x0, -bottom, z0)]
         }
 
@@ -129,32 +137,27 @@ public enum TabletopScene {
         /// The print-in's scan bar across the slab, `reveal` of the way up
         /// it (0 its foot, 1 its top), `half` tall either side of the line.
         public func scanBar(reveal: Double, half: Double) -> [TabletopVec] {
-            let sn = sin(yaw), cs = cos(yaw), y = lift + height * reveal
+            let sn = sin(yaw), cs = cos(yaw), y = lift + rise * reveal, z = centerZ + 2 - setBack * reveal
             let hx = cs * width / 2, hz = -sn * width / 2
-            return [TabletopVec(centerX - hx, -y - half, centerZ - hz + 2), TabletopVec(centerX + hx, -y - half, centerZ + hz + 2),
-                    TabletopVec(centerX + hx, -y + half, centerZ + hz + 2), TabletopVec(centerX - hx, -y + half, centerZ - hz + 2)]
+            return [TabletopVec(centerX - hx, -y - half, z - hz), TabletopVec(centerX + hx, -y - half, z + hz),
+                    TabletopVec(centerX + hx, -y + half, z + hz), TabletopVec(centerX - hx, -y + half, z - hz)]
         }
 
         /// The beam: from the emitter's rim up to the slab's lower fifth.
         public var beam: [TabletopVec] {
-            let half = width * 0.46, top = lift + height * 0.2, rim = TabletopScene.emitterRadius * 0.9
-            return [TabletopVec(centerX - half, -top, centerZ), TabletopVec(centerX + half, -top, centerZ),
+            let half = width * 0.46, top = lift + rise * 0.2, z = centerZ - setBack * 0.2
+            let rim = TabletopScene.emitterRadius * 0.9
+            return [TabletopVec(centerX - half, -top, z), TabletopVec(centerX + half, -top, z),
                     TabletopVec(rim, 0, TabletopScene.ringZ), TabletopVec(-rim, 0, TabletopScene.ringZ)]
         }
 
-        /// The contact shadow on the table: an ellipse centred under the
-        /// ring's centre, a little smaller as the slab bobs up.
-        public var contact: Contact {
-            let across = width * (TabletopScene.contactWidth - bob * 0.012)
-            return Contact(centerX: centerX, centerZ: TabletopScene.ringZ, width: across,
-                           depth: across * TabletopScene.contactAspect)
-        }
-
-        public var contactOpacity: Double { focus * (0.9 - bob * 0.02) }
+        /// The upright plane the halo and the shade are drawn on: behind
+        /// the slab's head, however far it leans.
+        private var backZ: Double { centerZ - 46 - setBack }
 
         /// The soft light behind the slab.
         public var halo: [TabletopVec] {
-            let top = -(lift + height + 90), z = centerZ - 46
+            let top = -(lift + rise + 90), z = backZ
             return [TabletopVec(centerX - 300, top, z), TabletopVec(centerX + 300, top, z),
                     TabletopVec(centerX + 300, 20, z), TabletopVec(centerX - 300, 20, z)]
         }
@@ -163,19 +166,10 @@ public enum TabletopScene {
         /// and taller than it: it keeps the slab's edge against a room that
         /// has taken the poster's own colours.
         public var shade: [TabletopVec] {
-            let top = -(lift + height + 210), z = centerZ - 46
+            let top = -(lift + rise + 210), z = backZ
             return [TabletopVec(centerX - 470, top, z), TabletopVec(centerX + 470, top, z),
                     TabletopVec(centerX + 470, 150, z), TabletopVec(centerX - 470, 150, z)]
         }
-    }
-
-    /// The contact shadow, in the floor's plane (`centerZ` in front of the
-    /// hinge, `depth` its extent toward the viewer).
-    public struct Contact: Equatable, Sendable {
-        public let centerX: Double
-        public let centerZ: Double
-        public let width: Double
-        public let depth: Double
     }
 
     /// Where a waiting title stands, `offset` places from the focus: behind
@@ -186,44 +180,27 @@ public enum TabletopScene {
         return (x, -(waitDepth + waitDepthStep * min(away, reach)))
     }
 
-    /// How far the slab draws back toward the hinge at turn `yaw` (radians),
-    /// `halfWidth` and `sliceDepth` (its glass slices' full depth behind the
-    /// poster): exactly what the turn brings its nearest point forward of
-    /// where it is at the idle sway's widest. Turned, the near edge comes
-    /// forward by halfWidth·|sin yaw|; past a quarter turn the slices are in
-    /// front of the poster too, by sliceDepth·(−cos yaw). So spun (slice 6)
-    /// the slab is never nearer the viewer, and so never lower over the
-    /// hinge, than it is facing them; the ring, the contact shadow and the
-    /// beam's foot stay put.
-    public static func drawBack(yaw: Double, halfWidth: Double, sliceDepth: Double) -> Double {
-        func forward(_ turn: Double) -> Double {
-            halfWidth * abs(sin(turn)) + sliceDepth * max(0, -cos(turn))
-        }
-        return max(0, forward(yaw) - forward(swayReach))
-    }
-
     /// The card `offset` places from the focus, or nil when it is out of
-    /// reach. `sway` turns the slab and `bob` raises it (both only as far as
-    /// the card is focused). Between a waiting place and the slab's, a card
-    /// moves and grows with its focus.
-    public static func card(offset: Double, sway: Double = restingSway, bob: Double = 0) -> Card? {
+    /// reach, for an eye `seat` degrees up. `sway` turns the slab and `bob`
+    /// raises it (both, and the lean, only as far as the card is focused).
+    /// Between a waiting place and the slab's, a card moves and grows with
+    /// its focus.
+    public static func card(offset: Double, seat: Double, sway: Double = restingSway, bob: Double = 0) -> Card? {
         let away = abs(offset)
         guard away < reach else { return nil }
         let f = smoothstep(1 - away), angle = offset * spread
         let k = markerScale + (slabScale - markerScale) * f
         let wait = waiting(offset)
-        let width = posterWidth * k, yaw = angle * 0.5 * (1 - f) + sway * f
-        let back = drawBack(yaw: yaw, halfWidth: width / 2, sliceDepth: Double(sliceCount) * sliceGap * f)
         return Card(
             offset: offset,
             focus: f,
-            width: width,
+            width: posterWidth * k,
             height: posterHeight * k,
-            yaw: yaw,
+            yaw: angle * 0.5 * (1 - f) + sway * f,
             centerX: wait.x * (1 - f),
-            centerZ: wait.z * (1 - f) + (ringZ - back) * f,
+            centerZ: wait.z * (1 - f) + ringZ * f,
             lift: (slabLift + bob) * f,
-            bob: bob * f,
+            lean: lean(seat: seat) * f,
             opacity: min(1, max(0, (reach - away) / 0.5)) * (0.6 + 0.4 * f))
     }
 

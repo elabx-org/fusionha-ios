@@ -15,7 +15,10 @@ import FusionhaKit
 /// and 1 hologram, linear over 1.3 s (`TabletopLift`). On the way the scene
 /// draws the carousel's posters from their own places into the scene and
 /// the flat page's bottom half fades into the hologram's controls. Reduce
-/// Motion: the two looks cross-fade and nothing lifts.
+/// Motion: the two looks cross-fade and nothing lifts. The scene is drawn
+/// for the viewer's seat (`V2TabletopHologram.seatKey`); until one is
+/// stored, and whenever the Hologram button's "Adjust for my seat" asks,
+/// the page shows the line-up control (`V2HologramLineUp`).
 struct V2HomeTabletop: View {
     let space: V2TabletopSpace
     let cards: [V2ComingUpCard]
@@ -39,8 +42,34 @@ struct V2HomeTabletop: View {
     @State private var lastFocus: Int?
     /// A finger on the dial or the slab: the page writes it, the scene draws it.
     @State private var hand = V2HologramHand()
+    /// The stored seat (nil until the line-up control's Done) and the
+    /// slider's while the control is up after "Adjust for my seat".
+    @AppStorage(V2TabletopHologram.seatKey) private var storedSeat: Double?
+    @State private var draftSeat: Double?
 
     private var on: Bool { V2TabletopHologram.isOn(stored: stored) }
+
+    private var seat: Double { V2TabletopHologram.seat(draft: draftSeat, stored: storedSeat) }
+
+    /// The line-up control is up: no seat stored yet, or asked for again.
+    private var asksSeat: Bool {
+        on && !V2TabletopHologram.holdsStill && (draftSeat != nil || storedSeat == nil)
+    }
+
+    private var lineUp: Binding<Double>? {
+        guard asksSeat else { return nil }
+        return Binding(get: { seat }, set: { draftSeat = TabletopProjection.heldSeat($0) })
+    }
+
+    private func storeSeat() {
+        storedSeat = seat
+        draftSeat = nil
+    }
+
+    private func adjustSeat() {
+        draftSeat = seat
+        stored = true
+    }
 
     /// The card the hologram shows.
     private var shown: V2ComingUpCard {
@@ -74,6 +103,7 @@ struct V2HomeTabletop: View {
         ZStack(alignment: .topLeading) { layers(at: progress) }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .background(alignment: .topLeading) { scene(at: progress) }
+            .environment(\.adjustTabletopSeat, adjustSeat)
     }
 
     @ViewBuilder
@@ -94,7 +124,8 @@ struct V2HomeTabletop: View {
         }
         if progress > 0 {
             V2HologramPage(space: space, cards: cards, current: shown, focused: $focused, opening: $opening,
-                           kindsRaw: $kindsRaw, days: $days, hand: $hand, hinge: hinge, live: progress >= 1,
+                           kindsRaw: $kindsRaw, days: $days, hand: $hand, hinge: hinge, seat: seat,
+                           lineUp: lineUp, lineUpDone: storeSeat, live: progress >= 1,
                            chrome: staged ? chrome : progress, headingOpacity: staged ? 1 : progress)
                 .transition(.identity)
         }
@@ -104,7 +135,7 @@ struct V2HomeTabletop: View {
     /// (drawing nothing while the flat look rests).
     private func scene(at progress: Double) -> some View {
         let staged = motion
-        return V2HologramStage(space: space, cards: cards, current: shown, hinge: hinge,
+        return V2HologramStage(space: space, cards: cards, current: shown, hinge: hinge, seat: seat,
                                lift: staged ? progress : (progress > 0 ? 1 : 0),
                                flat: space.flatCarousel(top: top), printsIn: printsIn, hand: hand)
             .opacity(staged ? 1 : progress)

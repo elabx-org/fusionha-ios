@@ -2,8 +2,8 @@ import SwiftUI
 import FusionhaKit
 
 /// The hologram's floor, drawn flat in the scene's own points (669 wide):
-/// the grid, the pool of the focused title's light, the slab's contact
-/// shadow (in front) and the emitter ring. One plate
+/// the grid, the pool of the focused title's light and the emitter ring
+/// with its dial (in front). One plate
 /// is the bottom half itself (the table in front of the hinge); another is
 /// the floor behind the hinge, which the scene tips onto the top half so the
 /// grid and the ring carry on across the fold. Content, never glass.
@@ -23,9 +23,6 @@ struct V2HologramFloor: View {
     /// How far the ring has come on (the print-in) and the dashed ring's turn.
     var ring: Double = 1
     var spin: Double = 0
-    /// The floating slab's shadow on the table (front only), under the ring's glow.
-    var contact: TabletopScene.Contact?
-    var contactOpacity: Double = 0
     /// The dial on the ring's rim (front only): its turn, whether it is held,
     /// and the nearest title, whose change flashes the ring.
     var dialTurn: Double = 0
@@ -39,24 +36,12 @@ struct V2HologramFloor: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             ground.mask { fade }
-            if part == .front, let contact, contactOpacity > 0 { shadow(contact) }
             V2HologramRing(look: look, glows: part == .front, spin: spin, dialTurn: dialTurn, dialHeld: dialHeld, tick: tick)
                 .position(x: size.width / 2, y: ringY)
                 .opacity(ring)
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
         .clipped()
-    }
-
-    /// The mock's `.cshadow`: an ellipse, darkest at its centre.
-    private func shadow(_ contact: TabletopScene.Contact) -> some View {
-        EllipticalGradient(stops: [.init(color: look.contact.opacity(look.contactCore), location: 0),
-                                   .init(color: look.contact.opacity(look.contactMid), location: 0.55),
-                                   .init(color: look.contact.opacity(0), location: 1)],
-                           center: .center, startRadiusFraction: 0, endRadiusFraction: 0.5)
-            .frame(width: CGFloat(contact.width), height: CGFloat(contact.depth))
-            .position(x: size.width / 2 + CGFloat(contact.centerX), y: hingeY + CGFloat(contact.centerZ))
-            .opacity(contactOpacity)
     }
 
     private var ground: some View {

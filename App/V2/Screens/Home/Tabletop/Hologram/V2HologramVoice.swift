@@ -10,6 +10,8 @@ import FusionhaKit
 struct V2HologramVoice: View {
     let space: V2TabletopSpace
     let hinge: Double
+    /// The seat the scene is drawn for (`V2HologramRig.seat`).
+    let seat: Double
     let cards: [V2ComingUpCard]
     let current: V2ComingUpCard
     /// Turns the ring to the card at an index (`V2HologramPage`).
@@ -18,16 +20,17 @@ struct V2HologramVoice: View {
 
     private var index: Int { cards.firstIndex { $0.id == current.id } ?? 0 }
 
-    /// Where the focused slab is drawn: it floats wholly on the top half
-    /// (`TabletopScene.slabLift`).
+    /// Where the focused slab is drawn: its head on the wall down to its
+    /// foot on the table.
     private var slab: CGRect {
-        let rig = V2HologramRig(space: space, hingeDegrees: hinge)
-        guard let card = TabletopScene.card(offset: 0) else { return CGRect(origin: .zero, size: space.size) }
-        let seen = card.corners().map { rig.point($0, on: .top) }
-        let xs = seen.map(\.x), ys = seen.map(\.y)
+        let rig = V2HologramRig(space: space, hingeDegrees: hinge, seat: seat)
+        guard let card = TabletopScene.card(offset: 0, seat: seat) else { return CGRect(origin: .zero, size: space.size) }
+        let corners = card.corners()
+        let head = corners[0...1].map { rig.point($0, on: .top) }
+        let foot = corners[2...3].map { rig.point($0, on: .bottom) }
+        let xs = (head + foot).map(\.x), top = head.map(\.y).min() ?? 0, base = foot.map(\.y).max() ?? 0
         let left = xs.min() ?? 0, right = xs.max() ?? space.size.width
-        let head = ys.min() ?? 0, base = ys.max() ?? rig.hingeY
-        return CGRect(x: left, y: head, width: right - left, height: base - head)
+        return CGRect(x: left, y: top, width: right - left, height: rig.hingeY + base - top)
     }
 
     var body: some View {

@@ -11,8 +11,16 @@ public enum TabletopDial {
     public static let detent = 40 * Double.pi / 180
     /// The notches on the rim, every 20°.
     public static let notchStep = 20 * Double.pi / 180
-    /// The band that takes the finger: this far either side of the rim.
-    public static let band = 24.0
+    /// The dial's outer edge: this far past the rim (the seat mock's
+    /// `HER + 12`). The notches run 88.5%–98% of it, so they end at most 110
+    /// pt from the ring's centre, and the ring (`TabletopScene.ringZ` in
+    /// front of the hinge) keeps them 20 pt from it at any hinge angle.
+    public static let band = 12.0
+    /// The finger is also taken this far inside the rim.
+    public static let touchInside = 24.0
+    /// The notches' inner and outer ends, from the ring's centre.
+    public static var notchInner: Double { (TabletopScene.emitterRadius + band) * 0.885 }
+    public static var notchOuter: Double { (TabletopScene.emitterRadius + band) * 0.98 }
     /// Nothing takes touches this close to the fold.
     public static let foldClearance = 20.0
     /// How far past the first and last title the ring follows the finger.
@@ -31,15 +39,16 @@ public enum TabletopDial {
     /// focus, 40° a title, however it is turned.
     public static func turn(at position: Double) -> Double { position * detent }
 
-    /// Whether a finger at `point` takes the dial: within `band` of the rim
-    /// (radius `TabletopScene.emitterRadius`, both times `scale` on this
-    /// display) round `centre`, and at least `foldClearance` below the fold's
-    /// lower edge (`foldBottom`). Display points, y down.
+    /// Whether a finger at `point` takes the dial: from `touchInside` inside
+    /// the rim (radius `TabletopScene.emitterRadius`) to `band` past it, all
+    /// times `scale` on this display, round `centre`, and at least
+    /// `foldClearance` below the fold's lower edge (`foldBottom`). Display
+    /// points, y down.
     public static func accepts(_ point: TabletopPoint, centre: TabletopPoint, scale: Double, foldBottom: Double) -> Bool {
         guard point.y >= foldBottom + foldClearance else { return false }
         let r = hypot(point.x - centre.x, point.y - centre.y)
-        let rim = TabletopScene.emitterRadius * scale, reach = band * scale
-        return r >= rim - reach && r <= rim + reach
+        let rim = TabletopScene.emitterRadius * scale
+        return r >= rim - touchInside * scale && r <= rim + band * scale
     }
 
     /// The finger's angle round `centre` (radians; y down, so clockwise on

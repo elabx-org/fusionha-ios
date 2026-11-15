@@ -5,11 +5,12 @@ import FusionhaKit
 /// approved mock's B2): "Coming up" at the top left under the bar, and on
 /// the bottom half, which is the scene's floor, the Hologram switch (left)
 /// and the Mix menu (right) 30 pt below the fold and the focused title's
-/// controls at the front edge (`V2HologramControls`). Everything you tap is
-/// on the bottom half and clear of the fold. The emitter ring's rim is a
-/// dial, a sideways drag on the slab spins it, a swipe anywhere else turns
-/// the ring (`V2HologramGrip`), a tap on a waiting title centres it and a
-/// tap on the slab opens it; VoiceOver has the scene as one adjustable element
+/// controls at the front edge (`V2HologramControls`), with the line-up
+/// control above them while it asks for the seat (`V2HologramLineUp`).
+/// Everything you tap is on the bottom half and clear of the fold. The
+/// emitter ring's rim is a dial, a sideways drag on the slab (on either
+/// half) spins it, a swipe anywhere else turns the ring (`V2HologramGrip`),
+/// a tap on a waiting title centres it and a tap on the slab opens it; VoiceOver has the scene as one adjustable element
 /// (`V2HologramVoice`). The focus is the row's (`V2ComingUpRow`). `V2HomeTabletop` draws the
 /// scene behind this page and lifts it; until the lift is done (`live`) the
 /// page takes no touches and its controls are on their way in (`chrome`).
@@ -25,8 +26,13 @@ struct V2HologramPage: View {
     @Binding var days: Int
     /// The finger on the dial or the slab (`V2HomeTabletop` keeps it for the scene).
     @Binding var hand: V2HologramHand
-    /// The hinge angle the scene is drawn for (a tap finds its title with it).
+    /// The hinge angle and the seat the scene is drawn for (a tap finds its
+    /// title with them).
     let hinge: Double
+    let seat: Double
+    /// The line-up control's slider while it asks for the seat, and its Done.
+    var lineUp: Binding<Double>?
+    var lineUpDone: () -> Void = {}
     /// The hologram stands: the page takes touches and the row's opening card.
     var live = true
     /// How far the controls have come in (the lift), and the heading
@@ -35,17 +41,21 @@ struct V2HologramPage: View {
     var headingOpacity: Double = 1
     /// What the finger in play took hold of (`V2HologramGrip`).
     @State var grip: V2HologramGrip?
+    /// Where the line-up control is: no grip or tap starts on it.
+    @State var lineUpFrame = CGRect.null
     @GestureState var dragging = false
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) var motion
     @Environment(\.pagePalette) private var page
 
     var index: Int { cards.firstIndex { $0.id == current.id } ?? 0 }
+    /// The page's coordinates, the same as its gestures' `.local` ones.
+    static let coordinates = "hologramPage"
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             heading
-            V2HologramVoice(space: space, hinge: hinge, cards: cards, current: current,
+            V2HologramVoice(space: space, hinge: hinge, seat: seat, cards: cards, current: current,
                             turn: { turn(to: $0) }, open: { model.open(current.item.id) })
                 .accessibilityHidden(!live)
             controls
@@ -54,6 +64,7 @@ struct V2HologramPage: View {
                 .allowsHitTesting(live)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .coordinateSpace(.named(Self.coordinates))
         .contentShape(Rectangle())
         .onTapGesture(coordinateSpace: .local) { tapped($0) }
         .simultaneousGesture(drag)
@@ -110,10 +121,19 @@ struct V2HologramPage: View {
     /// above whatever the system keeps clear there (the downloads bar).
     private var controls: some View {
         ScrollView {
-            V2HologramControls(cards: cards, current: current, focused: $focused)
-                .containerRelativeFrame(.vertical, alignment: .bottom)
-                .opacity(chrome)
-                .allowsHitTesting(live)
+            VStack(spacing: 16) {
+                if let lineUp {
+                    V2HologramLineUp(seat: lineUp, done: lineUpDone)
+                        .onGeometryChange(for: CGRect.self) { proxy in
+                            proxy.frame(in: .named(Self.coordinates))
+                        } action: { lineUpFrame = $0 }
+                        .onDisappear { lineUpFrame = .null }
+                }
+                V2HologramControls(cards: cards, current: current, focused: $focused)
+            }
+            .containerRelativeFrame(.vertical, alignment: .bottom)
+            .opacity(chrome)
+            .allowsHitTesting(live)
         }
         .scrollDisabled(true)
         .defaultScrollAnchor(.bottom)
@@ -126,9 +146,9 @@ struct V2HologramPage: View {
 
     /// A tap on the scene: the title drawn there, if any.
     private func tapped(_ point: CGPoint) {
-        guard live else { return }
-        let rig = V2HologramRig(space: space, hingeDegrees: hinge)
-        let placed = V2HologramPlaced.all(cards, position: Double(index), art: [:])
+        guard live, !lineUpFrame.contains(point) else { return }
+        let rig = V2HologramRig(space: space, hingeDegrees: hinge, seat: seat)
+        let placed = V2HologramPlaced.all(cards, position: Double(index), art: [:], seat: seat)
         guard let id = V2HologramPlaced.hit(point, in: placed, rig: rig) else { return }
         if id == current.id {
             model.open(id)

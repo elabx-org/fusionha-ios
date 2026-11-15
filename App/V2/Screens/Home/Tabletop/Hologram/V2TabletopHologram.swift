@@ -10,6 +10,27 @@ import FusionhaKit
 /// (`V2ComingUpMenu`) and Settings › Appearance (`V2TabletopHologramSection`).
 enum V2TabletopHologram {
     static let key = "v2.home.tabletopHologram"
+    /// The viewer's seat, degrees above the table (`V2HologramLineUp`);
+    /// absent until it is first set, and the scene is then drawn for
+    /// `TabletopProjection.defaultSeat`.
+    static let seatKey = "v2.home.tabletopSeat"
+
+    /// The seat the scene is drawn for: the line-up slider's while it is
+    /// up, else the stored one, else the default (CI: the fixed one).
+    static func seat(draft: Double?, stored: Double?) -> Double {
+        TabletopProjection.heldSeat(fixedSeat ?? draft ?? stored ?? TabletopProjection.defaultSeat)
+    }
+
+    /// CI screenshots: `FUSIONHA_SCREENSHOT_TABLETOP_SEAT=<degrees>` draws
+    /// the scene for that seat; and the line-up control never shows while
+    /// the picture holds still (`holdsStill`).
+    static let fixedSeat: Double? = {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_TABLETOP_SEAT"].flatMap { Double($0) }
+        #else
+        return nil
+        #endif
+    }()
 
     /// The stored switch. CI screenshots:
     /// `FUSIONHA_SCREENSHOT_TABLETOP_HOLOGRAM=1` forces it on, and so does a

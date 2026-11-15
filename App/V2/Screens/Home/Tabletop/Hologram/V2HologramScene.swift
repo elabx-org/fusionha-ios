@@ -19,6 +19,9 @@ struct V2HologramScene: View, Animatable {
     let look: V2HologramLook
     var position: Double
     var hinge: Double
+    /// The seat it is drawn for, degrees above the table (not animated: the
+    /// line-up slider moves it directly).
+    var seat: Double
     /// The print-in: 0 nothing yet, 1 printed.
     var rise: Double = 1
     /// The lift: 0 the flat carousel's posters, 1 the hologram.
@@ -70,8 +73,8 @@ struct V2HologramScene: View, Animatable {
         moment.slabSpin = hand.spin(at: seconds)
         moment.dialTurn = TabletopDial.turn(at: position)
         moment.dialHeld = hand.dialHeld
-        let rig = V2HologramRig(space: space, hingeDegrees: hinge)
-        let placed = V2HologramPlaced.all(cards, position: position, art: art, moment: moment)
+        let rig = V2HologramRig(space: space, hingeDegrees: hinge, seat: seat)
+        let placed = V2HologramPlaced.all(cards, position: position, art: art, seat: seat, moment: moment)
         return VStack(spacing: 0) {
             V2HologramHalf(half: .top, rig: rig, placed: placed, look: look, moment: moment)
             V2HologramHalf(half: .bottom, rig: rig, placed: placed, look: look, moment: moment)

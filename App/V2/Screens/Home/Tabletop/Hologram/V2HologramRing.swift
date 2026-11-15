@@ -8,6 +8,8 @@ import FusionhaKit
 /// mock's `.dial`): notches every 20° that turn with the focus (40° a title,
 /// however it is turned), one fixed marker at the far side, and a short
 /// flash each time the nearest title changes (not under Reduce Motion).
+/// Nothing hard of it reaches past `TabletopDial.notchOuter` (110 pt), so it
+/// stays 20 pt clear of the hinge; its glow fades out 10 pt before it.
 struct V2HologramRing: View {
     let look: V2HologramLook
     /// The track's glow and the dial (only on the half the ring lies on).
@@ -27,8 +29,8 @@ struct V2HologramRing: View {
 
     private let emitter = CGFloat(TabletopScene.emitterRadius)
     private let track = CGFloat(TabletopScene.trackRadius)
-    /// The dial's outer edge (the mock's dial, 24 pt past the rim).
-    private var dial: CGFloat { emitter + CGFloat(TabletopDial.band) }
+    /// The emitter's glow: this far either side of the rim.
+    private let glowSpread: CGFloat = 20
 
     var body: some View {
         ZStack {
@@ -53,7 +55,7 @@ struct V2HologramRing: View {
 
     private var emitterRing: some View {
         ZStack {
-            glow(radius: emitter, spread: 30, opacity: look.isLight ? 0.5 : 0.75)
+            glow(radius: emitter, spread: glowSpread, opacity: look.isLight ? 0.5 : 0.75)
             Circle().strokeBorder(look.ring, lineWidth: 3.5)
                 .frame(width: emitter * 2, height: emitter * 2)
             Circle().strokeBorder(look.ring.opacity(0.8), style: StrokeStyle(lineWidth: 2.5, dash: [9, 7]))
@@ -67,20 +69,23 @@ struct V2HologramRing: View {
         }
     }
 
-    /// The notches (the mock's band 88.5%–98% of the dial's radius) and the
-    /// marker at the far side, 20 tall from 7 past the dial's edge.
+    /// The notches (the mock's band, 88.5%–98% of the dial's radius,
+    /// `TabletopDial.notchInner`…`notchOuter`) and the marker at the far
+    /// side, just inside the rim (the mock's ran 7 pt past the dial, into
+    /// the 20 pt by the hinge).
     private var notches: some View {
-        ZStack {
-            V2HologramNotches(inner: dial * 0.885, outer: dial * 0.98)
+        let outer = CGFloat(TabletopDial.notchOuter)
+        return ZStack {
+            V2HologramNotches(inner: CGFloat(TabletopDial.notchInner), outer: outer)
                 .stroke(look.ring, lineWidth: 5)
                 .opacity(dialHeld ? 1 : 0.75)
                 .rotationEffect(.radians(dialTurn))
-                .frame(width: dial * 2, height: dial * 2)
+                .frame(width: outer * 2, height: outer * 2)
             Capsule()
                 .fill(look.marker)
-                .frame(width: 4, height: 20)
+                .frame(width: 4, height: 12)
                 .shadow(color: look.tint.opacity(0.8), radius: 4)
-                .offset(y: -(dial + 7 - 10))
+                .offset(y: -(emitter - 10))
         }
     }
 

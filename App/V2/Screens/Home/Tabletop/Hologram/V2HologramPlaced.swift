@@ -43,14 +43,15 @@ struct V2HologramPlaced: Identifiable {
     var order: Double { (500 + card.centerZ).rounded() }
 
     /// The titles within reach of `position` (an index into `cards`,
-    /// fractional while the ring turns).
-    static func all(_ cards: [V2ComingUpCard], position: Double, art: [Int: V2HologramArt],
+    /// fractional while the ring turns), for an eye `seat` degrees up.
+    static func all(_ cards: [V2ComingUpCard], position: Double, art: [Int: V2HologramArt], seat: Double,
                     moment: V2HologramMoment = V2HologramMoment()) -> [V2HologramPlaced] {
         let stages = moment.stages
         let flat = stages.corners < 1 ? moment.flat : nil
         return cards.enumerated().compactMap { index, card in
             let offset = Double(index) - position
-            guard let placed = TabletopScene.card(offset: offset, sway: moment.sway * stages.depth + moment.slabSpin,
+            guard let placed = TabletopScene.card(offset: offset, seat: seat,
+                                                  sway: moment.sway * stages.depth + moment.slabSpin,
                                                   bob: moment.bob * stages.depth) else { return nil }
             let reveal = moment.print.reveal(away: abs(offset), focus: placed.focus)
             let from = flat?.opacity(offset) ?? placed.opacity
@@ -60,7 +61,8 @@ struct V2HologramPlaced: Identifiable {
         }
     }
 
-    /// The title drawn at `point` of the container, the nearest first.
+    /// The title drawn at `point` of the container, the nearest first. The
+    /// slab is found on either half: its foot is drawn on the table.
     static func hit(_ point: CGPoint, in placed: [V2HologramPlaced], rig: V2HologramRig) -> Int? {
         let at = rig.locate(point)
         return placed.sorted { $0.order > $1.order }.first {

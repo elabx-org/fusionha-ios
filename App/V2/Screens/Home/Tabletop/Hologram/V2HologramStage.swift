@@ -15,6 +15,8 @@ struct V2HologramStage: View {
     let cards: [V2ComingUpCard]
     let current: V2ComingUpCard
     let hinge: Double
+    /// The seat the scene is drawn for, degrees above the table.
+    let seat: Double
     /// The lift's progress: 0 draws nothing, 1 is the hologram.
     var lift: Double = 1
     /// The flat carousel the posters lift from.
@@ -56,11 +58,11 @@ struct V2HologramStage: View {
     var body: some View {
         let look = V2HologramLook(tint: V2HologramLook.tint(dominant, mono: page?.isMono ?? Theme.isMono),
                                   isLight: isLight, isDeep: PagePalette.isDeep(Theme.palette))
-        let rig = V2HologramRig(space: space, hingeDegrees: hinge)
+        let rig = V2HologramRig(space: space, hingeDegrees: hinge, seat: seat)
         ZStack(alignment: .topLeading) {
             if lift > 0 {
                 V2HologramScene(space: space, cards: cards, art: art, look: look, position: hand.dial ?? Double(index),
-                                hinge: hinge, rise: rise, lift: lift, flat: flat, idles: moves,
+                                hinge: hinge, seat: seat, rise: rise, lift: lift, flat: flat, idles: moves,
                                 paused: !onScreen || phase != .active, hand: hand)
                     // The room is drawn once, here, and carries on under the
                     // bars (the scene itself is Home's container): it comes

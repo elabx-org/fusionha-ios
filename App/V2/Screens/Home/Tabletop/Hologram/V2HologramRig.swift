@@ -3,8 +3,9 @@ import UIKit
 import FusionhaKit
 
 /// The hologram scene on this display: where the hinge runs through Home's
-/// container, the scale from the scene's 669-pt design width, and how far
-/// the top half leans back. It carries a point of the scene
+/// container, the scale from the scene's 669-pt design width, how far the
+/// top half leans back and the eye it is drawn for (the viewer's seat,
+/// degrees above the table). It carries a point of the scene
 /// (`TabletopVec`) to each half's own layer and builds the transform that
 /// draws a flat view onto four of them (`TabletopProjection.homography`).
 struct V2HologramRig: Equatable {
@@ -17,11 +18,15 @@ struct V2HologramRig: Equatable {
     /// The hinge line (the middle of the fold), in the container's coordinates.
     let hingeY: CGFloat
     let phi: Double
+    let seat: Double
+    let eye: TabletopVec
 
-    init(space: V2TabletopSpace, hingeDegrees: Double) {
+    init(space: V2TabletopSpace, hingeDegrees: Double, seat: Double) {
         size = space.size
         hingeY = (space.fold.lowerBound + space.fold.upperBound) / 2
         phi = TabletopProjection.phi(hingeDegrees: hingeDegrees)
+        self.seat = TabletopProjection.heldSeat(seat)
+        eye = TabletopProjection.eye(elevation: seat)
     }
 
     var scale: Double { Double(size.width) / TabletopProjection.designWidth }
@@ -34,10 +39,10 @@ struct V2HologramRig: Equatable {
         let middle = Double(size.width) / 2
         switch half {
         case .top:
-            let p = TabletopProjection.onScreen(v, phi: phi)
+            let p = TabletopProjection.onScreen(v, phi: phi, eye: eye)
             return CGPoint(x: middle + p.x * scale, y: Double(hingeY) - p.y * scale)
         case .bottom:
-            let p = TabletopProjection.onFloor(v)
+            let p = TabletopProjection.onFloor(v, eye: eye)
             return CGPoint(x: middle + p.x * scale, y: p.y * scale)
         }
     }
@@ -53,7 +58,7 @@ struct V2HologramRig: Equatable {
     /// it), drawn on `half`: on the top half, the floor behind the hinge.
     func floorQuad(_ corners: [TabletopVec], on half: Half) -> [TabletopPoint] {
         corners.map { v in
-            let hit = TabletopProjection.onFloor(v)
+            let hit = TabletopProjection.onFloor(v, eye: eye)
             let p = point(TabletopVec(hit.x, 0, hit.y), on: half)
             return TabletopPoint(Double(p.x), Double(p.y))
         }

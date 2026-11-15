@@ -4,7 +4,7 @@ import FusionhaKit
 /// What a finger on the hologram page took hold of, decided where it went
 /// down (tabletop plan, slice 6; the hinge-fix mock's pointer modes): the
 /// dial (the band round the emitter ring's rim, on the bottom half and clear
-/// of the fold), the slab (the focused title on the top half: it spins), or
+/// of the fold), the slab (the focused title, on either half: it spins), or
 /// anywhere else (a swipe turns the ring). Each excludes the others, so the
 /// dial's turn and the slab's spin never also swipe.
 enum V2HologramGrip: Equatable {
@@ -32,7 +32,7 @@ extension V2HologramPage {
             }
     }
 
-    private var rig: V2HologramRig { V2HologramRig(space: space, hingeDegrees: hinge) }
+    private var rig: V2HologramRig { V2HologramRig(space: space, hingeDegrees: hinge, seat: seat) }
 
     /// The emitter ring's centre in the page's coordinates.
     private var ringCentre: TabletopPoint {
@@ -40,13 +40,13 @@ extension V2HologramPage {
     }
 
     private func take(at start: CGPoint) -> V2HologramGrip {
-        guard live, !cards.isEmpty else { return .idle }
+        guard live, !cards.isEmpty, !lineUpFrame.contains(start) else { return .idle }
         let point = TabletopPoint(Double(start.x), Double(start.y))
         if TabletopDial.accepts(point, centre: ringCentre, scale: rig.scale, foldBottom: Double(space.fold.upperBound)) {
             return .dial(TabletopDial.Drag(position: Double(index), count: cards.count,
                                            angle: TabletopDial.angle(of: point, centre: ringCentre)))
         }
-        if start.y < rig.hingeY, onSlab(start) {
+        if onSlab(start) {
             guard motion else { return .idle }
             let now = Date().timeIntervalSinceReferenceDate
             let from = hand.spin(at: now)
@@ -58,7 +58,7 @@ extension V2HologramPage {
     }
 
     private func onSlab(_ point: CGPoint) -> Bool {
-        let placed = V2HologramPlaced.all(cards, position: Double(index), art: [:])
+        let placed = V2HologramPlaced.all(cards, position: Double(index), art: [:], seat: seat)
         return V2HologramPlaced.hit(point, in: placed, rig: rig) == current.id
     }
 

@@ -23,21 +23,21 @@ final class TabletopDialTests: XCTestCase {
     }
 
     func testOnlyTheBandRoundTheRimTakesTheFinger() {
-        // Half scale: the rim at 60, the band 12 either side.
+        // Half scale: the rim at 50, taken from 12 inside it to 6 past it.
         let centre = TabletopPoint(200, 300)
         let accepts = { (x: Double, y: Double, fold: Double) in
             TabletopDial.accepts(TabletopPoint(x, y), centre: centre, scale: 0.5, foldBottom: fold)
         }
-        XCTAssertTrue(accepts(260, 300, 100))
-        XCTAssertTrue(accepts(271, 300, 100))
-        XCTAssertTrue(accepts(249, 300, 100))
-        XCTAssertFalse(accepts(273, 300, 100))
-        XCTAssertFalse(accepts(247, 300, 100))
+        XCTAssertTrue(accepts(250, 300, 100))
+        XCTAssertTrue(accepts(255, 300, 100))
+        XCTAssertTrue(accepts(239, 300, 100))
+        XCTAssertFalse(accepts(257, 300, 100))
+        XCTAssertFalse(accepts(237, 300, 100))
         XCTAssertFalse(accepts(200, 300, 100), "the ring's middle")
-        // The far side of the rim, 60 above the centre: clipped within 20 of the fold.
-        XCTAssertTrue(accepts(200, 240, 220))
-        XCTAssertFalse(accepts(200, 240, 221))
-        XCTAssertFalse(accepts(200, 240, 235))
+        // The far side of the rim, 50 above the centre: clipped within 20 of the fold.
+        XCTAssertTrue(accepts(200, 250, 230))
+        XCTAssertFalse(accepts(200, 250, 231))
+        XCTAssertFalse(accepts(200, 250, 245))
     }
 
     func testClockwiseIsNext() {
