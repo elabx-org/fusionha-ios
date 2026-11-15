@@ -21,6 +21,9 @@ struct V2HologramStage: View {
     var flat: TabletopLift.Flat?
     /// The tabletop appeared with the hologram on: the scene prints in.
     var printsIn = false
+    /// A finger on the dial or the slab: while the dial is turned the ring
+    /// follows its fractional position instead of the focus.
+    var hand = V2HologramHand()
     @Environment(\.displayScale) private var displayScale
     @Environment(\.pagePalette) private var page
     @Environment(\.motionEnabled) private var motion
@@ -56,9 +59,9 @@ struct V2HologramStage: View {
         let rig = V2HologramRig(space: space, hingeDegrees: hinge)
         ZStack(alignment: .topLeading) {
             if lift > 0 {
-                V2HologramScene(space: space, cards: cards, art: art, look: look, position: Double(index), hinge: hinge,
-                                rise: rise, lift: lift, flat: flat, idles: moves,
-                                paused: !onScreen || phase != .active)
+                V2HologramScene(space: space, cards: cards, art: art, look: look, position: hand.dial ?? Double(index),
+                                hinge: hinge, rise: rise, lift: lift, flat: flat, idles: moves,
+                                paused: !onScreen || phase != .active, hand: hand)
                     // The room is drawn once, here, and carries on under the
                     // bars (the scene itself is Home's container): it comes
                     // on evenly with the lift's first stage, bar and all.

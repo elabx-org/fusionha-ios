@@ -13,6 +13,11 @@ struct V2HologramMoment: Equatable {
     var bob = 0.0
     /// The dashed inner ring's turn (radians).
     var spin = 0.0
+    /// The slab spun by a finger (radians, on top of the sway; `V2HologramHand`).
+    var slabSpin = 0.0
+    /// The dial's notches: their turn (40° a title) and whether a finger holds it.
+    var dialTurn = 0.0
+    var dialHeld = false
     /// The flat carousel's posters, in the container's coordinates.
     var flat: TabletopLift.Flat?
 }
@@ -45,7 +50,7 @@ struct V2HologramPlaced: Identifiable {
         let flat = stages.corners < 1 ? moment.flat : nil
         return cards.enumerated().compactMap { index, card in
             let offset = Double(index) - position
-            guard let placed = TabletopScene.card(offset: offset, sway: moment.sway * stages.depth,
+            guard let placed = TabletopScene.card(offset: offset, sway: moment.sway * stages.depth + moment.slabSpin,
                                                   bob: moment.bob * stages.depth) else { return nil }
             let reveal = moment.print.reveal(away: abs(offset), focus: placed.focus)
             let from = flat?.opacity(offset) ?? placed.opacity

@@ -5,7 +5,7 @@ import FusionhaKit
 /// half folded on a table is the flat carousel; on, Coming up stands on the
 /// bottom half as the hologram scene (`V2HomeTabletop` lifts one into the
 /// other). Kept on this device under `key`, off by default. Three controls
-/// write it: the glass capsule on the tabletop's bottom half
+/// write it: the round glass button on the tabletop's bottom half
 /// (`V2HologramSwitch`), the Coming up menu while on a table
 /// (`V2ComingUpMenu`) and Settings › Appearance (`V2TabletopHologramSection`).
 enum V2TabletopHologram {
@@ -33,6 +33,18 @@ enum V2TabletopHologram {
         return nil
         #endif
     }
+
+    /// CI screenshots: `FUSIONHA_SCREENSHOT_TABLETOP_SPIN=<degrees>` draws
+    /// the slab spun that far (radians here).
+    static let fixedSpin: Double? = {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_TABLETOP_SPIN"]
+            .flatMap { Double($0) }
+            .map { $0 * Double.pi / 180 }
+        #else
+        return nil
+        #endif
+    }()
 
     /// CI screenshots: `FUSIONHA_SCREENSHOT_TABLETOP_LIFT=<0…1>` holds the
     /// lift at that progress (0 the flat carousel drawn by the scene, 1 the

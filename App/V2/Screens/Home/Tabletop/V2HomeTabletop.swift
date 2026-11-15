@@ -37,6 +37,8 @@ struct V2HomeTabletop: View {
     /// The last focused card: a flat carousel built for the way down lets go
     /// of the focus for a moment while it opens on it.
     @State private var lastFocus: Int?
+    /// A finger on the dial or the slab: the page writes it, the scene draws it.
+    @State private var hand = V2HologramHand()
 
     private var on: Bool { V2TabletopHologram.isOn(stored: stored) }
 
@@ -92,7 +94,7 @@ struct V2HomeTabletop: View {
         }
         if progress > 0 {
             V2HologramPage(space: space, cards: cards, current: shown, focused: $focused, opening: $opening,
-                           kindsRaw: $kindsRaw, days: $days, hinge: hinge, live: progress >= 1,
+                           kindsRaw: $kindsRaw, days: $days, hand: $hand, hinge: hinge, live: progress >= 1,
                            chrome: staged ? chrome : progress, headingOpacity: staged ? 1 : progress)
                 .transition(.identity)
         }
@@ -104,7 +106,7 @@ struct V2HomeTabletop: View {
         let staged = motion
         return V2HologramStage(space: space, cards: cards, current: shown, hinge: hinge,
                                lift: staged ? progress : (progress > 0 ? 1 : 0),
-                               flat: space.flatCarousel(top: top), printsIn: printsIn)
+                               flat: space.flatCarousel(top: top), printsIn: printsIn, hand: hand)
             .opacity(staged ? 1 : progress)
     }
 }

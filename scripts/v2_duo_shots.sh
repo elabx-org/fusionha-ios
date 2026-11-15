@@ -219,6 +219,9 @@ WAIT=16 FRAME=portrait shoot home-tabletop-hologram-colour-daylight $DAY $TT $HO
 for pal in graphite frost eclipse noir; do
   WAIT=16 FRAME=portrait shoot "home-tabletop-hologram-$pal" $PAL=$pal $TT $HOLO $SECOND
 done
+# The slab spun 40° by a finger (tabletop plan, slice 6), with the dial's
+# notches on the ring's rim.
+WAIT=16 FRAME=portrait shoot home-tabletop-hologram-spin-40 $TT $HOLO $SECOND SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TABLETOP_SPIN=40
 # The lift between the two looks (tabletop plan, slice 3), held part of the
 # way: -start is the scene drawing the flat carousel's posters (they must sit
 # exactly where home-tabletop has them), then a quarter, half and three

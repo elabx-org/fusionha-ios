@@ -26,7 +26,7 @@ struct V2HologramHalf: View {
     /// The title nearest the focus: the one the beam and the halo belong to.
     private var lead: V2HologramPlaced? { placed.max { $0.card.focus < $1.card.focus } }
     private var stages: TabletopLift.Stages { moment.stages }
-    /// The pieces seen against the table come on last.
+    /// The beam's piece seen against the table comes on last.
     private var twin: Bool { half == .bottom }
 
     var body: some View {
@@ -106,7 +106,8 @@ struct V2HologramHalf: View {
         // The contact shadow lies under the ring's glow (the floor draws it).
         V2HologramFloor(part: .front, look: look, size: plate, ring: moment.print.ring, spin: moment.spin,
                         contact: lead?.card.contact,
-                        contactOpacity: (lead?.card.contactOpacity ?? 0) * moment.print.slab * stages.depth)
+                        contactOpacity: (lead?.card.contactOpacity ?? 0) * moment.print.slab * stages.depth,
+                        dialTurn: moment.dialTurn, dialHeld: moment.dialHeld, tick: lead?.id)
             .scaleEffect(scale, anchor: .topLeading)
             .frame(width: rig.size.width, height: rig.bottomHeight, alignment: .topLeading)
             .opacity(stages.floor)
@@ -165,21 +166,21 @@ struct V2HologramHalf: View {
         return LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom)
     }
 
-    /// Where a piece of a title is drawn on this half: where the eye sees
-    /// `corners`, and on the top half during the lift, that far from the
-    /// title's poster in the flat carousel.
+    /// Where a piece of a title is drawn on the top half (the only half
+    /// titles are drawn on): where the eye sees `corners`, and during the
+    /// lift, that far from the title's poster in the flat carousel.
     private func place(_ corners: [TabletopVec], of item: V2HologramPlaced) -> ProjectionTransform {
-        let scene = rig.quad(corners, on: half)
-        guard !twin, let flat = item.flatQuad else { return rig.transform(scene, from: box) }
+        let scene = rig.quad(corners, on: .top)
+        guard let flat = item.flatQuad else { return rig.transform(scene, from: box) }
         return rig.transform(TabletopLift.mix(flat, scene, stages.corners), from: box)
     }
 
-    /// A title's piece on this half: the slab's glass slices, then its poster.
+    /// A title on the top half: the slab's glass slices, then its poster.
     @ViewBuilder
     private func piece(_ item: V2HologramPlaced) -> some View {
         let card = item.card
-        let seen: Double = item.opacity * (twin ? stages.twins : 1)
-        let glass: Double = seen * card.focus * (twin ? 1 : stages.depth)
+        let seen: Double = item.opacity
+        let glass: Double = seen * card.focus * stages.depth
         if card.hasSlices {
             ForEach(0..<TabletopScene.sliceCount, id: \.self) { index in
                 V2HologramPlate(image: item.art?.poster, wash: look.slice, washOpacity: look.sliceOpacity,
@@ -190,15 +191,15 @@ struct V2HologramHalf: View {
             }
         }
         // A waiting title is drawn as light: the focused title's colour over
-        // its art. On the top half it takes the light as it leaves the carousel.
-        let arrived: Double = twin ? 1 : stages.corners
+        // its art. It takes the light as it leaves the carousel.
+        let arrived: Double = stages.corners
         let ghost: Double = card.ghost * arrived
         // The carousel card's look (its corner radius and shadow, at the
         // plate's size), while the poster is still partly in the carousel.
-        let carousel: CGFloat? = twin ? nil : item.flatWidth.map { box.width / CGFloat(max($0, 1)) }
+        let carousel: CGFloat? = item.flatWidth.map { box.width / CGFloat(max($0, 1)) }
         let grown: CGFloat = carousel ?? 1
         let radius: CGFloat = V2HologramArt.cornerRadius * (1 + (grown - 1) * CGFloat(1 - arrived))
-        let front: Double = !twin && stages.keepsCarouselOrder ? 700 - abs(card.offset) * 10 : item.order
+        let front: Double = stages.keepsCarouselOrder ? 700 - abs(card.offset) * 10 : item.order
         V2HologramPlate(image: item.art?.poster, wash: look.tint, washOpacity: ghost, washBlend: .color,
                         edge: look.ring.opacity(0.8 * arrived), reveal: item.reveal, radius: radius,
                         shadow: carousel == nil ? 0 : 1 - arrived, shadowScale: grown)

@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// The tabletop's "Hologram" switch: a glass capsule on the bottom half
-/// (the approved mock's `.hsw`), indigo when on. It writes the stored switch
-/// (`V2TabletopHologram.key`); `V2HomeTabletop` plays the lift when it
-/// changes. 36 pt tall with a 44 pt target.
+/// The tabletop's "Hologram" switch: a round glass button with the cube
+/// alone (tabletop plan, slice 6; the hinge-fix mock's `.hsw.ico`), filled
+/// indigo when on. It writes the stored switch (`V2TabletopHologram.key`);
+/// `V2HomeTabletop` plays the lift when it changes. 44 pt, its own target.
 struct V2HologramSwitch: View {
     @AppStorage(V2TabletopHologram.key) private var stored = false
     @Environment(\.pagePalette) private var page
@@ -14,19 +14,12 @@ struct V2HologramSwitch: View {
         Button {
             stored.toggle()
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "cube")
-                    .font(.system(size: 14, weight: .semibold))
-                Text("Hologram")
-                    .font(.system(size: 14, weight: .semibold))
-            }
-            .foregroundStyle(on ? Color.white : (page?.ink ?? Theme.txt))
-            .padding(.leading, 12)
-            .padding(.trailing, 14)
-            .frame(height: 36)
-            .glassEffect(on ? .regular.tint(Theme.indigo).interactive() : .regular.interactive(), in: Capsule())
-            .padding(.vertical, 4)
-            .contentShape(Rectangle())
+            Image(systemName: "cube")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(on ? Color.white : (page?.ink ?? Theme.txt))
+                .frame(width: 44, height: 44)
+                .glassEffect(on ? .regular.tint(Theme.indigo).interactive() : .regular.interactive(), in: Circle())
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Hologram")

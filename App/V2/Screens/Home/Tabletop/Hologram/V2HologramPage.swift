@@ -6,9 +6,10 @@ import FusionhaKit
 /// the bottom half, which is the scene's floor, the Hologram switch (left)
 /// and the Mix menu (right) 30 pt below the fold and the focused title's
 /// controls at the front edge (`V2HologramControls`). Everything you tap is
-/// on the bottom half and clear of the fold. A swipe anywhere turns the
-/// ring, a tap on a waiting title centres it and a tap on the slab opens
-/// it; VoiceOver has the scene as one adjustable element
+/// on the bottom half and clear of the fold. The emitter ring's rim is a
+/// dial, a sideways drag on the slab spins it, a swipe anywhere else turns
+/// the ring (`V2HologramGrip`), a tap on a waiting title centres it and a
+/// tap on the slab opens it; VoiceOver has the scene as one adjustable element
 /// (`V2HologramVoice`). The focus is the row's (`V2ComingUpRow`). `V2HomeTabletop` draws the
 /// scene behind this page and lifts it; until the lift is done (`live`) the
 /// page takes no touches and its controls are on their way in (`chrome`).
@@ -22,6 +23,8 @@ struct V2HologramPage: View {
     @Binding var opening: Int?
     @Binding var kindsRaw: String
     @Binding var days: Int
+    /// The finger on the dial or the slab (`V2HomeTabletop` keeps it for the scene).
+    @Binding var hand: V2HologramHand
     /// The hinge angle the scene is drawn for (a tap finds its title with it).
     let hinge: Double
     /// The hologram stands: the page takes touches and the row's opening card.
@@ -30,11 +33,14 @@ struct V2HologramPage: View {
     /// (Reduce Motion's cross-fade; the lift shows it throughout).
     var chrome: Double = 1
     var headingOpacity: Double = 1
+    /// What the finger in play took hold of (`V2HologramGrip`).
+    @State var grip: V2HologramGrip?
+    @GestureState var dragging = false
     @Environment(AppModel.self) private var model
-    @Environment(\.motionEnabled) private var motion
+    @Environment(\.motionEnabled) var motion
     @Environment(\.pagePalette) private var page
 
-    private var index: Int { cards.firstIndex { $0.id == current.id } ?? 0 }
+    var index: Int { cards.firstIndex { $0.id == current.id } ?? 0 }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -50,7 +56,13 @@ struct V2HologramPage: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .contentShape(Rectangle())
         .onTapGesture(coordinateSpace: .local) { tapped($0) }
-        .simultaneousGesture(swipe)
+        .simultaneousGesture(drag)
+        // A drag the system cancels never ends: let go of what it held.
+        .onChange(of: dragging) {
+            guard !dragging, grip != nil else { return }
+            letGo(nil)
+            grip = nil
+        }
         // The row hands its opening card to a carousel; with the hologram
         // standing there is none (during the lift the flat carousel takes it).
         .onChange(of: opening, initial: true) { takeOpening() }
@@ -64,8 +76,8 @@ struct V2HologramPage: View {
         opening = nil
     }
 
-    /// The Hologram switch and the Mix menu, 30 pt below the fold (the
-    /// switch's 44 pt target starts 25 pt below it).
+    /// The Hologram switch and the Mix menu below the fold (the switch's
+    /// round 44 pt button starts 25 pt below it).
     private var corners: some View {
         HStack {
             V2HologramSwitch()
@@ -107,16 +119,7 @@ struct V2HologramPage: View {
         .defaultScrollAnchor(.bottom)
     }
 
-    private var swipe: some Gesture {
-        DragGesture(minimumDistance: 24)
-            .onEnded { value in
-                let across = value.translation.width
-                guard live, abs(across) > abs(value.translation.height), abs(across) >= 40 else { return }
-                turn(to: index + (across < 0 ? 1 : -1))
-            }
-    }
-
-    private func turn(to target: Int) {
+    func turn(to target: Int) {
         guard cards.indices.contains(target) else { return }
         withAnimation(motion ? .smooth(duration: 0.4) : nil) { focused = cards[target].id }
     }

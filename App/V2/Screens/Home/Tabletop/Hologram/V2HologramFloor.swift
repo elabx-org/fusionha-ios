@@ -26,6 +26,11 @@ struct V2HologramFloor: View {
     /// The floating slab's shadow on the table (front only), under the ring's glow.
     var contact: TabletopScene.Contact?
     var contactOpacity: Double = 0
+    /// The dial on the ring's rim (front only): its turn, whether it is held,
+    /// and the nearest title, whose change flashes the ring.
+    var dialTurn: Double = 0
+    var dialHeld = false
+    var tick: Int?
 
     /// The hinge's y in the plate.
     private var hingeY: CGFloat { part == .front ? 0 : size.height }
@@ -35,7 +40,7 @@ struct V2HologramFloor: View {
         ZStack(alignment: .topLeading) {
             ground.mask { fade }
             if part == .front, let contact, contactOpacity > 0 { shadow(contact) }
-            V2HologramRing(look: look, glows: part == .front, spin: spin)
+            V2HologramRing(look: look, glows: part == .front, spin: spin, dialTurn: dialTurn, dialHeld: dialHeld, tick: tick)
                 .position(x: size.width / 2, y: ringY)
                 .opacity(ring)
         }
@@ -107,55 +112,5 @@ private struct V2HologramGrid: Shape {
             x += step
         }
         return path
-    }
-}
-
-/// The emitter the focused title stands over and the track the others wait
-/// on, centred on the ring's centre, lit in the title's colour. The glow is
-/// a gradient, not a blur. The dashed inner ring turns while the scene idles.
-struct V2HologramRing: View {
-    let look: V2HologramLook
-    /// The track's glow (only on the half the ring lies on).
-    let glows: Bool
-    /// The dashed inner ring's turn (radians): it goes slowly round.
-    var spin: Double = 0
-
-    /// The round track the waiting titles stood on. Since the hinge fix
-    /// they stand behind the hinge, so it is not drawn.
-    static let showsTrack = false
-
-    private let emitter = CGFloat(TabletopScene.emitterRadius)
-    private let track = CGFloat(TabletopScene.trackRadius)
-
-    var body: some View {
-        ZStack {
-            if Self.showsTrack {
-                if glows { glow(radius: track, spread: 26, opacity: 0.32) }
-                Circle().strokeBorder(look.ring.opacity(0.55), lineWidth: 1.5)
-                    .frame(width: track * 2, height: track * 2)
-            }
-            glow(radius: emitter, spread: 30, opacity: look.isLight ? 0.5 : 0.75)
-            Circle().strokeBorder(look.ring, lineWidth: 3.5)
-                .frame(width: emitter * 2, height: emitter * 2)
-            Circle().strokeBorder(look.ring.opacity(0.8), style: StrokeStyle(lineWidth: 2.5, dash: [9, 7]))
-                .frame(width: (emitter - 24) * 2, height: (emitter - 24) * 2)
-                .rotationEffect(.radians(spin))
-            RadialGradient(stops: [.init(color: look.core, location: 0),
-                                   .init(color: look.tint.opacity(look.isLight ? 0.4 : 0.7), location: 0.55),
-                                   .init(color: look.tint.opacity(0), location: 0.72)],
-                           center: .center, startRadius: 0, endRadius: emitter - 66)
-                .frame(width: (emitter - 66) * 2, height: (emitter - 66) * 2)
-        }
-        .frame(width: (track + 30) * 2, height: (track + 30) * 2)
-    }
-
-    /// A soft band of the title's light either side of a circle.
-    private func glow(radius: CGFloat, spread: CGFloat, opacity: Double) -> some View {
-        let outer = radius + spread
-        return RadialGradient(stops: [.init(color: look.tint.opacity(0), location: (radius - spread) / outer),
-                                      .init(color: look.tint.opacity(opacity), location: radius / outer),
-                                      .init(color: look.tint.opacity(0), location: 1)],
-                              center: .center, startRadius: 0, endRadius: outer)
-            .frame(width: outer * 2, height: outer * 2)
     }
 }

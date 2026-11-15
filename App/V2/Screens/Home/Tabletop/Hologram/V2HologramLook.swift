@@ -37,6 +37,8 @@ struct V2HologramLook: Equatable {
     var contactMid: Double { isLight ? 0.16 : 0.26 }
     /// The emitter, the track and the posters' lit edge.
     var ring: Color { isLight ? tint.mix(with: Color(hex: 0x14161D), by: 0.18) : tint.mix(with: .white, by: 0.38) }
+    /// The dial's fixed marker at the ring's far side (the label colour).
+    var marker: Color { isLight ? Color(hex: 0x14161D) : .white }
     /// The emitter's core.
     var core: Color { isLight ? tint.mix(with: .white, by: 0.3) : .white }
     /// The glass slices behind the focused poster.

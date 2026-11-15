@@ -10,8 +10,8 @@ import FusionhaKit
 /// frame. `lift` is the lift's progress (the page animates it,
 /// `V2TabletopLiftReader`). While it idles a timeline turns and bobs the
 /// slab and turns the dashed ring; nothing above the scene changes per
-/// frame. The scene only shows: it takes no touches (`V2HologramPage` reads
-/// them).
+/// frame, and a spun slab coasts home on the same timeline. The scene only
+/// shows: it takes no touches (`V2HologramPage` reads them).
 struct V2HologramScene: View, Animatable {
     let space: V2TabletopSpace
     let cards: [V2ComingUpCard]
@@ -30,6 +30,10 @@ struct V2HologramScene: View, Animatable {
     var idles = false
     /// The idle loop holds where it is (the scene is off screen).
     var paused = false
+    /// A finger on the dial or the slab (`V2HologramHand`): the slab's spin
+    /// and coast, and whether the dial is held. The dial's position comes in
+    /// as `position`.
+    var hand = V2HologramHand()
 
     var animatableData: AnimatablePair<AnimatablePair<Double, Double>, Double> {
         get { AnimatablePair(AnimatablePair(position, hinge), rise) }
@@ -63,6 +67,9 @@ struct V2HologramScene: View, Animatable {
             moment.bob = TabletopLift.bob(at: seconds)
             moment.spin = TabletopLift.spin(at: seconds)
         }
+        moment.slabSpin = hand.spin(at: seconds)
+        moment.dialTurn = TabletopDial.turn(at: position)
+        moment.dialHeld = hand.dialHeld
         let rig = V2HologramRig(space: space, hingeDegrees: hinge)
         let placed = V2HologramPlaced.all(cards, position: position, art: art, moment: moment)
         return VStack(spacing: 0) {
