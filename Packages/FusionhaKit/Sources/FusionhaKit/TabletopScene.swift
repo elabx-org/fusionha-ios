@@ -23,7 +23,7 @@ public enum TabletopScene {
     /// is no longer drawn (`V2HologramRing`).
     public static let trackRadius = 172.0
     /// How high the slab's foot floats over the floor (the mock's 22 before
-    /// the hinge fix): seen 27–31 pt over the hinge at the bob's lowest and
+    /// the hinge fix): seen 26.8–31.4 pt over the hinge at the bob's lowest and
     /// the sway's widest, 36–41 at rest, across the hinge range.
     public static let slabLift = 125.0
     /// A title's size against the 230 x 345 card: a marker's, and the
