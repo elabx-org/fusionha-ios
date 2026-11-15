@@ -32,7 +32,8 @@ public struct TabletopPoint: Equatable, Sendable {
 /// eye, so its two pieces meet at the hinge. They only line up from that
 /// eye, so the eye is the viewer's seat (`eye(elevation:)`, the seat mock,
 /// 2026-11-15): drawn for 34° up, the card creased at the hinge for a
-/// person at a table, who sees it from about 50°.
+/// person at a table, who sees it from higher. The default is 35° (owner,
+/// from the phone, 2026-11-15); a stored seat is kept.
 public enum TabletopProjection {
     /// The display width every length is given for.
     public static let designWidth = 669.0
@@ -41,7 +42,7 @@ public enum TabletopProjection {
     /// The seat: how high the eye is, in degrees above the table. It can be
     /// set over `seatRange`; `defaultSeat` until it is.
     public static let seatRange = 26.0...68.0
-    public static let defaultSeat = 50.0
+    public static let defaultSeat = 35.0
 
     /// A seat in degrees held inside `seatRange`; the default when it is not a number.
     public static func heldSeat(_ degrees: Double) -> Double {

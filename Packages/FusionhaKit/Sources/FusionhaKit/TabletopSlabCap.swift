@@ -1,13 +1,13 @@
 import Foundation
 
-/// The cap on the slab's size in "Across the fold" (2026-11-15): seen from a
+/// The cap on the slab's size (2026-11-15): seen from a
 /// high seat the full-size card's head is drawn far up the standing half
 /// (about 632 pt at seat 68, hinge 92) and runs under the top bar. So the
 /// slab is drawn just small enough that its head, the glass slices behind
 /// it included, at its resting turn and the top of its bob, stays at most
 /// `slabTopCap` up the standing half. Up to a seat of about 47 it fits at
-/// every hinge angle and keeps `slabScale` (0.96); at the default seat 50 it
-/// keeps it from a hinge of 95 open.
+/// every hinge angle and keeps `slabScale` (0.96), so at the default seat
+/// 35 it always does; at seat 50 it keeps it from a hinge of 95 open.
 extension TabletopScene {
     /// How far up the standing half the slab's head may be drawn.
     public static let slabTopCap = 420.0

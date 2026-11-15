@@ -37,6 +37,17 @@ struct V2HologramLook: Equatable {
     /// The reflection goes quiet on a light floor; on a dark one it is
     /// light on the floor (it adds), so a dark poster leaves no slab of black.
     var reflection: Double { isLight ? 0.45 : 1 }
+    /// The projection light (`V2HologramLight`): on a dark room the title's
+    /// colour toward white, added (`plusLighter`); on a light one additive
+    /// light would not show, so it is the title's colour laid over, quieter.
+    var beam: Color { isLight ? tint : tint.mix(with: .white, by: 0.5) }
+    /// The emitter's bright core.
+    var beamCore: Color { isLight ? tint.mix(with: Color(hex: 0x14161D), by: 0.1) : tint.mix(with: .white, by: 0.82) }
+    var beamBlend: BlendMode { isLight ? .normal : .plusLighter }
+    var beamStrength: Double { isLight ? 0.5 : 1 }
+    /// The card's contact shadow on the table: darker than the floor grid.
+    var contact: Color { isLight ? Color(hex: 0x14161D) : .black }
+    var contactStrength: Double { isLight ? 0.32 : 0.9 }
 
     /// The light for a title whose art's dominant colours are `dominant`
     /// (`ArtPaletteExtractor`, the colours Home's ground is built from): the

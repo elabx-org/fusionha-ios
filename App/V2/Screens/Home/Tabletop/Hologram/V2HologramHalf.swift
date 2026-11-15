@@ -11,13 +11,10 @@ import FusionhaKit
 /// table). The waiting titles stand behind the hinge and are drawn on the
 /// top half only. The top half also has the floor behind the hinge, the
 /// room's lines (`V2HologramRoomLines`) and the halo; the bottom half is the
-/// floor itself, with the ring (`V2HologramFloor`), the short beam to the
-/// slab's foot and the reflections, which fade out either side of the hinge
-/// (`hingeFade`).
-/// "At the fold" (`moment.glass`, `V2HologramStyle`) the slab stands on the
-/// upright half and that half is left black round it (no floor, room
-/// lines, reflections, halo or beam: the glass shows a real reflection of
-/// the table half), and the table half is only its floor, grid and ring.
+/// floor itself, with the ring (`V2HologramFloor`). Both halves have the
+/// slab's contact shadow and its faint reflection on the floor
+/// (`V2HologramContact`, `reflections`), and over everything the projection
+/// light, whose glare across the fold hides the join (`V2HologramLight`).
 /// `moment` is where the lift and the print-in have got to: during the lift
 /// the top half's posters are on their way from the flat carousel's places
 /// and the rest comes on in stages.
@@ -30,32 +27,29 @@ struct V2HologramHalf: View {
 
     private var box: CGSize { V2HologramArt.box }
     private var light: CGSize { CGSize(width: CGFloat(TabletopScene.lightSide), height: CGFloat(TabletopScene.lightSide)) }
-    /// The title nearest the focus: the one the beam and the halo belong to.
+    /// The title nearest the focus: the one the light and the halo belong to.
     private var lead: V2HologramPlaced? { placed.max { $0.card.focus < $1.card.focus } }
     private var stages: TabletopLift.Stages { moment.stages }
     /// The pieces seen against the table come on last.
     private var twin: Bool { half == .bottom }
-    /// How far toward "At the fold"; what it leaves out fades with it.
-    private var glass: Double { moment.glass }
-    private var drawn: Double { 1 - glass }
-    private var atFold: Bool { glass >= 1 }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             // The room itself is behind the scene (`V2HologramStage`).
             switch half {
             case .top:
-                backdrop
+                room
                 ForEach(placed) { piece($0) }
             case .bottom:
                 table
-                // Only a title on its way to or at the focus reaches the
-                // table; at the fold none does.
-                if !atFold { ForEach(placed.filter(\.card.hasSlices)) { piece($0) } }
+                // Only a title on its way to or at the focus reaches the table.
+                ForEach(placed.filter(\.card.hasSlices)) { piece($0) }
             }
             if let lead {
-                if !atFold { beam(lead) }
-                if stages.progress >= 1, lead.reveal > 0.02, lead.reveal < 0.98, !(atFold && twin) { scan(lead) }
+                V2HologramLight(half: half, rig: rig, look: look, card: lead.card, strength: lightStrength(lead),
+                                time: moment.beamTime)
+                    .zIndex(950)
+                if stages.progress >= 1, lead.reveal > 0.02, lead.reveal < 0.98 { scan(lead) }
             }
         }
         .frame(width: rig.size.width, height: rig.height(of: half), alignment: .topLeading)
@@ -64,13 +58,8 @@ struct V2HologramHalf: View {
 
     // MARK: The top half
 
-    @ViewBuilder
-    private var backdrop: some View {
-        if !atFold { room }
-    }
-
-    /// The floor behind the hinge, the room's lines, the reflections and the
-    /// halo ("Across the fold").
+    /// The floor behind the hinge, the room's lines, the contact shadow, the
+    /// reflections and the halo.
     @ViewBuilder
     private var room: some View {
         // As wide as the room and as deep as its back wall: its sides are
@@ -78,15 +67,16 @@ struct V2HologramHalf: View {
         let pad = CGSize(width: CGFloat(TabletopScene.floorBehindWidth), height: CGFloat(TabletopScene.floorDepth))
         V2HologramFloor(part: .behind, look: look, size: pad, ring: moment.print.ring, spin: moment.spin)
             .hologramPiece(rig.transform(TabletopScene.floorBehind, on: .top, from: pad), box: pad)
-            .opacity(stages.floor * drawn)
+            .opacity(stages.floor)
         V2HologramRoomLines(rig: rig, look: look)
-            .opacity(stages.floor * drawn)
+            .opacity(stages.floor)
+        contact
         reflections
         if let lead {
             RadialGradient(colors: [look.tint.opacity(look.haloGlow), look.tint.opacity(0)],
                            center: .center, startRadius: 0, endRadius: light.width / 2)
                 .hologramPiece(rig.transform(lead.card.halo, on: .top, from: light), box: light)
-                .opacity(lead.card.haloOpacity * moment.print.slab * stages.depth * drawn)
+                .opacity(lead.card.haloOpacity * moment.print.slab * stages.depth)
                 .blendMode(look.lightBlend)
                 .zIndex(lead.order - 8)
         }
@@ -99,31 +89,71 @@ struct V2HologramHalf: View {
         let scale = CGFloat(rig.scale)
         let plate = CGSize(width: CGFloat(TabletopProjection.designWidth), height: rig.bottomHeight / max(scale, 0.01))
         V2HologramFloor(part: .front, look: look, size: plate, ring: moment.print.ring, spin: moment.spin,
-                        dialTurn: moment.dialTurn, dialHeld: moment.dialHeld, tick: lead?.id, glass: glass)
+                        dialTurn: moment.dialTurn, dialHeld: moment.dialHeld, tick: lead?.id)
             .scaleEffect(scale, anchor: .topLeading)
             .frame(width: rig.size.width, height: rig.bottomHeight, alignment: .topLeading)
             .opacity(stages.floor)
-        if !atFold { reflections }
+        contact
+        reflections
+    }
+
+    /// The slab's contact shadow, under its foot, as it stands.
+    @ViewBuilder
+    private var contact: some View {
+        if let lead, lead.card.hasSlices {
+            V2HologramContact(half: half, rig: rig, look: look, card: lead.card,
+                              strength: lead.opacity * lead.card.focus * moment.print.slab * stages.depth)
+        }
+    }
+
+    /// The projection light's strength this frame: in over the lift's last
+    /// third and with the print-in, dipping while the ring turns, breathing.
+    private func lightStrength(_ lead: V2HologramPlaced) -> Double {
+        TabletopBeam.focus(lead.card.focus) * moment.print.beam * TabletopBeam.lift(stages.progress)
+            * moment.breath * look.beamStrength
     }
 
     /// The titles' reflections on the floor: the waiting ones' behind the
-    /// hinge on the top half, the slab's in front of it on the bottom one,
-    /// faded out either side of the hinge.
+    /// hinge on the top half, the slab's in front of it on the bottom one
+    /// (faint, and gone within 120 pt of its foot, `reachFade`), faded out
+    /// either side of the hinge.
     private var reflections: some View {
         ZStack(alignment: .topLeading) {
             ForEach(placed) { reflection($0) }
         }
         .frame(width: rig.size.width, height: rig.height(of: half), alignment: .topLeading)
         .mask { hingeFade }
+        .mask { reachFade }
         .blendMode(look.lightBlend)
-        .opacity(drawn)
     }
+
+    /// On the table, the slab's reflection is whole to its foot and gone
+    /// `slabReflectionReach` further out; the top half is untouched.
+    private var reachFade: some View {
+        let height = max(rig.height(of: half), 1)
+        let foot = lead.map { rig.point(TabletopVec($0.card.centerX, 0, $0.card.centerZ), on: .bottom).y } ?? 0
+        let start = min(max(foot / height, 0), 1)
+        let end = min(start + Self.slabReflectionReach * CGFloat(rig.scale) / height, 1)
+        let stops: [Gradient.Stop] = twin
+            ? [.init(color: .black, location: 0), .init(color: .black, location: start), .init(color: .clear, location: end)]
+            : [.init(color: .black, location: 0), .init(color: .black, location: 1)]
+        return LinearGradient(stops: stops, startPoint: .top, endPoint: .bottom)
+    }
+
+    /// How far out past its foot the slab's reflection reaches on the table.
+    static let slabReflectionReach: CGFloat = 120
+    /// The slab's reflection against a waiting title's: faint.
+    static let slabReflection = 0.55
 
     /// The title's mirror image where it lands on the table: the soft copy,
     /// strongest at its feet.
     @ViewBuilder
     private func reflection(_ item: V2HologramPlaced) -> some View {
         if let soft = item.art?.soft {
+            // `TabletopScene.Card.reflectionOpacity`, as it lifts and prints
+            // in; the slab's is fainter (`slabReflection`).
+            let faint: Double = 1 - (1 - Self.slabReflection) * item.card.focus
+            let shown: Double = item.opacity * item.reveal * (0.22 + 0.6 * item.card.focus) * faint
             Image(uiImage: soft)
                 .resizable()
                 .interpolation(.high)
@@ -141,9 +171,7 @@ struct V2HologramHalf: View {
                 }
                 .mask { softSides }
                 .hologramPiece(rig.transform(rig.floorQuad(item.card.corners(mirrored: true), on: half), from: box), box: box)
-                // `TabletopScene.Card.reflectionOpacity`, as it lifts and prints in.
-                .opacity(item.opacity * item.reveal * (0.22 + 0.6 * item.card.focus)
-                         * stages.reflection * look.reflection)
+                .opacity(shown * stages.reflection * look.reflection)
         }
     }
 
@@ -207,27 +235,6 @@ struct V2HologramHalf: View {
         LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.16),
                                .init(color: .black, location: 0.84), .init(color: .clear, location: 1)],
                        startPoint: .leading, endPoint: .trailing)
-    }
-
-    /// The beam from the emitter to the slab's foot and no further: a quiet
-    /// gradient with soft edges, almost all of it on the table (its piece
-    /// there at `tableBeam`), gone by the time it reaches the foot.
-    private func beam(_ item: V2HologramPlaced) -> some View {
-        let hot = look.isLight ? look.tint.opacity(0.7) : look.tint.mix(with: .white, by: 0.4)
-        let mid = look.tint.opacity(look.isLight ? 0.3 : 0.55)
-        return LinearGradient(stops: [.init(color: hot, location: 0), .init(color: mid, location: 0.34),
-                                      .init(color: look.tint.opacity(0), location: 1)],
-                              startPoint: .bottom, endPoint: .top)
-            .mask { softSides }
-            .mask {
-                LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.14),
-                                       .init(color: .black, location: 1)], startPoint: .bottom, endPoint: .top)
-            }
-            .hologramPiece(rig.transform(item.card.beam, on: half, from: light), box: light)
-            .opacity(item.card.beamOpacity * moment.print.beam
-                     * (twin ? stages.twins * TabletopScene.tableBeam : stages.depth) * drawn)
-            .blendMode(look.lightBlend)
-            .zIndex(item.order + 1)
     }
 
     /// The print-in's scan bar, across the slab at the height it is printed

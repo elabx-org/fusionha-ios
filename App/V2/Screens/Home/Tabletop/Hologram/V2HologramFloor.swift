@@ -6,19 +6,16 @@ import FusionhaKit
 /// with its dial (in front). One plate
 /// is the bottom half itself (the table in front of the hinge); another is
 /// the floor behind the hinge, the room's floor, which the scene tips onto
-/// the top half. The grid fades out either side of the fold so its lines
-/// never visibly meet there (the stage bench: a line across the fold kinks
-/// for one eye or the other). "At the fold" (`glass`) the front plate has
-/// no pool and its grid is near white at full strength right up to the
-/// fold: nothing stands across it there, and the black upright glass
-/// mirrors it. Content, never glass.
+/// the top half. The grid runs right up to the fold on both plates, so its
+/// lines meet there (owner, 2026-11-15; the projection light's glare lies
+/// over the join, `V2HologramLight`). Content, never glass.
 struct V2HologramFloor: View {
     enum Part {
-        /// In front of the hinge: the bottom half. Fades in from the fold and
+        /// In front of the hinge: the bottom half. Whole from the fold, fading
         /// out toward the viewer.
         case front
-        /// Behind the hinge, seen on the top half: the room's floor, out to
-        /// its back wall. Fades out toward the fold.
+        /// Behind the hinge, seen on the top half: the room's floor, from the
+        /// fold out to its back wall.
         case behind
     }
 
@@ -35,8 +32,6 @@ struct V2HologramFloor: View {
     var dialTurn: Double = 0
     var dialHeld = false
     var tick: Int?
-    /// How far toward "At the fold" (`V2HologramStyle`).
-    var glass: Double = 0
 
     /// The hinge's y in the plate.
     private var hingeY: CGFloat { part == .front ? 0 : size.height }
@@ -44,7 +39,7 @@ struct V2HologramFloor: View {
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            ground.mask { fade }
+            if part == .front { ground.mask { fade } } else { ground }
             V2HologramRing(look: look, glows: part == .front, spin: spin, dialTurn: dialTurn, dialHeld: dialHeld, tick: tick)
                 .position(x: size.width / 2, y: ringY)
                 .opacity(ring)
@@ -57,14 +52,9 @@ struct V2HologramFloor: View {
         ZStack {
             look.floor
             pool
-            V2HologramGrid(backEdge: part == .behind).stroke(grid, lineWidth: 1.5)
+            V2HologramGrid(backEdge: part == .behind).stroke(look.grid, lineWidth: 1.5)
         }
         .frame(width: size.width, height: size.height)
-    }
-
-    /// The grid's colour: "At the fold" near white at 0.9.
-    private var grid: Color {
-        glass <= 0 ? look.grid : look.grid.mix(with: look.tint.mix(with: .white, by: 0.85).opacity(0.9), by: glass)
     }
 
     /// The title's light on the floor: under the ring in front, spilling
@@ -73,30 +63,18 @@ struct V2HologramFloor: View {
         // As wide as the display on both plates.
         let across = CGFloat(TabletopProjection.designWidth) * 0.5
         let radius = part == .front ? CGSize(width: across, height: 200) : CGSize(width: across, height: size.height * 0.6)
-        let opacity = (part == .front ? look.floorGlow : look.padGlow) * (1 - glass)
+        let opacity = part == .front ? look.floorGlow : look.padGlow
         return EllipticalGradient(colors: [look.tint.opacity(opacity), look.tint.opacity(0)])
             .frame(width: radius.width * 2, height: radius.height * 2)
             .position(x: size.width / 2, y: part == .front ? ringY : hingeY)
     }
 
-    /// The stage bench's masks. In front: nothing at the fold, in from 1.5%
-    /// of the half's depth to 14% ("At the fold" whole from the fold), whole
-    /// to 55%, gone by 96%. Behind: whole
-    /// from the back wall to 64 pt before the fold, gone 9 pt before it.
+    /// The front plate's mask: whole from the fold to 55% of the half's
+    /// depth, gone by 96%. The plate behind is whole up to the fold.
     private var fade: LinearGradient {
-        switch part {
-        case .front:
-            let near = 1 - glass
-            return LinearGradient(stops: [.init(color: .black.opacity(glass), location: 0.015 * near),
-                                          .init(color: .black, location: 0.14 * near),
-                                          .init(color: .black, location: 0.55), .init(color: .clear, location: 0.96)],
-                                  startPoint: .top, endPoint: .bottom)
-        case .behind:
-            let depth = max(size.height, 1)
-            return LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 1 - 64 / depth),
-                                          .init(color: .clear, location: 1 - 9 / depth)],
-                                  startPoint: .top, endPoint: .bottom)
-        }
+        LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.55),
+                               .init(color: .clear, location: 0.96)],
+                       startPoint: .top, endPoint: .bottom)
     }
 }
 

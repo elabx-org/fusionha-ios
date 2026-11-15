@@ -58,9 +58,8 @@ extension V2HologramPage {
     }
 
     private func onSlab(_ point: CGPoint) -> Bool {
-        let placed = V2HologramPlaced.all(cards, position: Double(index), art: [:], seat: seat, hinge: hinge,
-                                          moment: V2HologramMoment(glass: style.amount))
-        return V2HologramPlaced.hit(point, in: placed, rig: rig, atFold: style == .glass) == current.id
+        let placed = V2HologramPlaced.all(cards, position: Double(index), art: [:], seat: seat, hinge: hinge)
+        return V2HologramPlaced.hit(point, in: placed, rig: rig) == current.id
     }
 
     private func follow(_ value: DragGesture.Value) {

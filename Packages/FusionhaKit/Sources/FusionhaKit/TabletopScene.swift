@@ -20,7 +20,8 @@ import Foundation
 /// so it is easy to change.
 public enum TabletopScene {
     /// The ring's centre: this far in FRONT of the hinge, on the bottom
-    /// half. The beam runs from it to the slab's foot.
+    /// half. The projection light's cone runs from it to the slab's foot
+    /// (`TabletopBeam`).
     public static let ringZ = 130.0
     /// The emitter's rim. With the dial round it (`TabletopDial`), nothing
     /// of the ring comes within 20 pt of the hinge.
@@ -78,14 +79,11 @@ public enum TabletopScene {
     public static let floorDepth = TabletopRoom.depth
     /// The floor behind the hinge's width: the display's.
     public static let floorBehindWidth = TabletopProjection.designWidth
-    /// The square the beam and the halo are drawn in before projection.
+    /// The square the light (`TabletopBeam`) and the halo are drawn in before projection.
     public static let lightSide = 200.0
     /// How far up its mirror image a title's reflection runs (0 its feet,
     /// 1 its head), so no image reaches the page dots and the controls.
     public static let reflectionReach = 0.31
-    /// The beam's piece on the table, against its strength on the wall:
-    /// kept quiet, a short glow from the ring to the slab's foot.
-    public static let tableBeam = 0.6
 
     /// How far the slab's nearest point comes forward of its centre at turn
     /// `yaw` (radians): its near edge by halfWidth·|sin yaw|, and past a
@@ -134,16 +132,11 @@ public enum TabletopScene {
         /// card is focused): its foot stays, its head comes back.
         public let lean: Double
         public let opacity: Double
-        /// How far the card is tipped back about its foot (radians): 0
-        /// standing on the table, the upright half's lean when it stands on
-        /// the glass (`TabletopGlass`).
-        public var tilt: Double = 0
 
         /// How much of the focused title's light a marker takes (0 the slab).
         public var ghost: Double { 1 - focus }
         public var sliceOpacity: Double { opacity * focus }
         public var reflectionOpacity: Double { opacity * (0.22 + 0.6 * focus) }
-        public var beamOpacity: Double { focus * 0.95 }
         public var haloOpacity: Double { focus * 0.85 }
         /// Slices are drawn only for a card that is nearly the slab.
         public var hasSlices: Bool { focus >= 0.05 }
@@ -166,10 +159,9 @@ public enum TabletopScene {
         }
 
         /// A point given from the foot's centre (x across, y down, z out of
-        /// the card's plane), tipped back by `tilt` about the foot, in the rig.
+        /// the card's plane), in the rig.
         func stood(_ x: Double, _ y: Double, _ z: Double, _ m: Double = 1) -> TabletopVec {
-            let c = cos(tilt), s = sin(tilt)
-            return TabletopVec(centerX + x, -m * lift + y * c - z * s, centerZ + y * s + z * c)
+            TabletopVec(centerX + x, -m * lift + y, centerZ + z)
         }
 
         /// The `index`-th glass slice behind the poster (0 the nearest);
@@ -185,15 +177,6 @@ public enum TabletopScene {
             let hx = cs * width / 2, hz = -sn * width / 2
             return [stood(-hx, -y - half, z - hz), stood(hx, -y - half, z + hz),
                     stood(hx, -y + half, z + hz), stood(-hx, -y + half, z - hz)]
-        }
-
-        /// The beam: from the emitter's rim to the slab's foot and no
-        /// further, as wide as the slab there, so it never runs up the card.
-        public var beam: [TabletopVec] {
-            let half = width * 0.5, top = lift, z = centerZ
-            let rim = TabletopScene.emitterRadius * 0.9
-            return [TabletopVec(centerX - half, -top, z), TabletopVec(centerX + half, -top, z),
-                    TabletopVec(rim, 0, TabletopScene.ringZ), TabletopVec(-rim, 0, TabletopScene.ringZ)]
         }
 
         /// The soft light behind the slab, on an upright plane behind its

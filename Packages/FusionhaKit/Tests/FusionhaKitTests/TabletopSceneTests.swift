@@ -8,7 +8,9 @@ import XCTest
 /// the ring and its dial clear of the fold.
 final class TabletopSceneTests: XCTestCase {
     private let tolerance = 1e-3
-    private let seat = TabletopProjection.defaultSeat
+    /// The seat mock's seat (the default is 35 since 2026-11-15; see
+    /// `testDefaultSeat`).
+    private let seat = 50.0
 
     private func phi(_ hinge: Double) -> Double { (hinge - 90) * Double.pi / 180 }
 
@@ -56,10 +58,13 @@ final class TabletopSceneTests: XCTestCase {
         let mirror = card.corners(mirrored: true)
         assertVec(mirror[0], -91.1171, 330.7947, -99.7026)
         assertVec(mirror[2], 91.1171, 10, 107.3365)
-        // The beam: from the emitter's rim to the slab's foot, no higher.
-        let beam = card.beam
-        assertVec(beam[0], -110.4, -10, 45)
-        assertVec(beam[2], 90, 0, 130)
+        // The projection light's cone: from the disc's inner ring to the
+        // slab's foot, a little wider than the card there.
+        let cone = TabletopBeam.cone(card)
+        assertVec(cone[0], -121.44, -10, 45)
+        assertVec(cone[1], 121.44, -10, 45)
+        assertVec(cone[2], 76, 0, 130)
+        assertVec(cone[3], -76, 0, 130)
         assertVec(card.halo[0], -300, -420.7947, -83.3661)
         assertVec(card.halo[2], 300, 20, -83.3661)
     }
@@ -164,6 +169,31 @@ final class TabletopSceneTests: XCTestCase {
                 }
             }
         }
+    }
+
+    /// The default seat, 35 (2026-11-15): full size, all but upright (0.9°),
+    /// and at hinge 105 its head 256–321 pt up the standing half, its feet
+    /// from 32 behind the fold to 94 out on the table; its middle meets the
+    /// fold about 21 pt up (a sixteenth of it on the table).
+    func testDefaultSeat() throws {
+        XCTAssertEqual(TabletopProjection.defaultSeat, 35)
+        let eye = TabletopProjection.eye(elevation: 35)
+        let card = try XCTUnwrap(TabletopScene.card(offset: 0, seat: TabletopProjection.defaultSeat))
+        XCTAssertEqual(card.width, 220.8, accuracy: tolerance)
+        XCTAssertEqual(card.lean * 180 / Double.pi, 0.9, accuracy: tolerance)
+        let corners = card.corners()
+        let head = corners[0...1].map { TabletopProjection.onScreen($0, phi: phi(105), eye: eye) }
+        let foot = corners[2...3].map { TabletopProjection.onFloor($0, eye: eye) }
+        assertPoint(head[0], -93.8866, 320.6115)
+        assertPoint(head[1], 99.353, 256.3013)
+        assertPoint(foot[0], 91.7838, 93.736)
+        assertPoint(foot[1], -91.7838, -31.8494)
+        func up(_ s: Double) -> TabletopVec {
+            TabletopVec(0, -(card.lift + s * cos(card.lean)), card.centerZ - s * sin(card.lean))
+        }
+        XCTAssertGreaterThan(TabletopProjection.onFloor(up(21), eye: eye).y, 0)
+        XCTAssertLessThan(TabletopProjection.onFloor(up(22), eye: eye).y, 0)
+        XCTAssertGreaterThan(TabletopProjection.onScreen(up(22), phi: phi(105), eye: eye).y, 0)
     }
 
     /// However it turns (the idle sway, a finger's spin) and bobs, at every

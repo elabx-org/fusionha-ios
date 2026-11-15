@@ -129,14 +129,10 @@ public enum TabletopLift {
 
     // MARK: Idle
 
-    /// The slab's turn (radians) `seconds` into the idle loop, "Across the
-    /// fold": ±0.15 about its resting turn (−0.60) at 0.5 rad/s.
+    /// The slab's turn (radians) `seconds` into the idle loop: ±0.15 about
+    /// its resting turn (−0.60) at 0.5 rad/s.
     public static func sway(at seconds: Double) -> Double {
         TabletopScene.restingSway + sin(seconds * TabletopScene.swayRate) * TabletopScene.swayReach
-    }
-    /// The same "At the fold": ±0.31 about facing straight on, at the same rate.
-    public static func glassSway(at seconds: Double) -> Double {
-        sin(seconds * TabletopScene.swayRate) * TabletopGlass.swayReach
     }
     /// The slab's rise and fall (points): ±5 at 1.15 rad/s.
     public static func bob(at seconds: Double) -> Double { sin(seconds * 1.15) * TabletopScene.bobReach }

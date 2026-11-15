@@ -7,7 +7,7 @@ import XCTest
 /// `TabletopSceneTests`.
 final class TabletopProjectionTests: XCTestCase {
     private let tolerance = 1e-3
-    /// The eye the first mocks were drawn for, and the default seat's.
+    /// The eye the first mocks were drawn for, and the seat mock's.
     private let low = TabletopProjection.eye(elevation: 34)
     private let seated = TabletopProjection.eye(elevation: 50)
 
@@ -32,13 +32,14 @@ final class TabletopProjectionTests: XCTestCase {
         // Held to the seat's range, and always 2400 pt from the hinge.
         assertVec(p.eye(elevation: 80), 0, -2225.2413, 899.0558)
         assertVec(p.eye(elevation: 10), 0, -1052.0908, 2157.1057)
-        assertVec(p.eye(elevation: .nan), 0, -1838.5067, 1542.6903)
+        // Not a number: the default seat, 35.
+        assertVec(p.eye(elevation: .nan), 0, -1376.5834, 1965.9649)
         for seat in stride(from: 26.0, through: 68, by: 7) {
             let eye = p.eye(elevation: seat)
             XCTAssertEqual(hypot(eye.y, eye.z), 2400, accuracy: tolerance)
             XCTAssertEqual(atan2(-eye.y, eye.z) * 180 / Double.pi, seat, accuracy: 1e-9)
         }
-        XCTAssertEqual(p.defaultSeat, 50)
+        XCTAssertEqual(p.defaultSeat, 35)
         XCTAssertEqual(p.heldSeat(20), 26)
         XCTAssertEqual(p.heldSeat(70), 68)
         XCTAssertEqual(p.heldSeat(52), 52)

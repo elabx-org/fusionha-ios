@@ -163,10 +163,6 @@ final class TabletopLiftTests: XCTestCase {
         XCTAssertEqual(TabletopLift.sway(at: 0), -0.6, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.sway(at: 1), -0.5281, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.sway(at: 2.5), -0.4577, accuracy: tolerance)
-        // At the fold: ±0.31 about facing out, at the same rate.
-        XCTAssertEqual(TabletopLift.glassSway(at: 0), 0, accuracy: tolerance)
-        XCTAssertEqual(TabletopLift.glassSway(at: 1), 0.1486, accuracy: tolerance)
-        XCTAssertEqual(TabletopLift.glassSway(at: 2.5), 0.2942, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.bob(at: 1), 4.5638, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.bob(at: 10), -4.3773, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.spin(at: 2.5), 0.6042, accuracy: tolerance)
@@ -174,7 +170,6 @@ final class TabletopLiftTests: XCTestCase {
         for t in stride(from: 0.0, to: 30, by: 0.37) {
             XCTAssertLessThanOrEqual(abs(TabletopLift.sway(at: t) + 0.6), 0.15 + 1e-9)
             XCTAssertGreaterThanOrEqual(abs(TabletopLift.sway(at: t)), 0.45 - 1e-9)
-            XCTAssertLessThanOrEqual(abs(TabletopLift.glassSway(at: t)), 0.31 + 1e-9)
             XCTAssertLessThanOrEqual(abs(TabletopLift.bob(at: t)), 5)
         }
         XCTAssertEqual(TabletopLift.easeOut(0.5), 0.875, accuracy: 1e-9)

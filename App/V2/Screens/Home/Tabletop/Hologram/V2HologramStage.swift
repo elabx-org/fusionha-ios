@@ -16,9 +16,6 @@ struct V2HologramStage: View {
     let hinge: Double
     /// The seat the scene is drawn for, degrees above the table.
     let seat: Double
-    /// How far toward "At the fold" (`V2HologramStyle`) it is drawn: there
-    /// the room is black on every palette.
-    var glass: Double = 0
     /// The lift's progress: 0 draws nothing, 1 is the hologram.
     var lift: Double = 1
     /// The flat carousel the posters lift from.
@@ -45,9 +42,6 @@ struct V2HologramStage: View {
     private var moves: Bool { motion && !V2TabletopHologram.holdsStill }
     /// Nothing is printed yet: only before the print-in, with the hologram standing.
     private var rise: Double { printsIn && !printed && moves && lift >= 1 ? 0 : 1 }
-    /// The change of style cross-fades instead of moving (Reduce Motion, CI).
-    private var fades: Bool { !moves }
-    private var atFold: Bool { glass >= 0.5 }
 
     private var sample: URL? {
         ArtPaletteExtractor.sampleURL(current.item.posterUrl ?? current.item.backdropUrl)
@@ -62,15 +56,12 @@ struct V2HologramStage: View {
 
     var body: some View {
         let look = V2HologramLook(tint: V2HologramLook.tint(dominant, mono: page?.isMono ?? Theme.isMono),
-                                  isLight: isLight && !atFold)
+                                  isLight: isLight)
         ZStack(alignment: .topLeading) {
             if lift > 0 {
                 V2HologramScene(space: space, cards: cards, art: art, look: look, position: hand.dial ?? Double(index),
-                                hinge: hinge, seat: seat, rise: rise, lift: lift, glass: fades ? (atFold ? 1 : 0) : glass,
+                                hinge: hinge, seat: seat, rise: rise, lift: lift,
                                 flat: flat, idles: moves, paused: !onScreen || phase != .active, hand: hand)
-                    // Reduce Motion: the two styles cross-fade.
-                    .transition(fades ? AnyTransition.opacity : .identity)
-                    .id(fades && atFold)
                     // The room (black, or Daylight's pale ground) is drawn
                     // once, here, and carries on under the bars (the scene
                     // itself is Home's container): it comes on evenly with
