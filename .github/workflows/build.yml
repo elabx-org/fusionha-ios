@@ -54,6 +54,8 @@ jobs:
       screenshots: ${{ steps.plan.outputs.screenshots }}
       duo: ${{ steps.plan.outputs.duo }}
       perf: ${{ steps.plan.outputs.perf }}
+      scope: ${{ steps.plan.outputs.scope }}
+      only: ${{ steps.plan.outputs.only }}
     steps:
       # Shallow: a full clone drags in the screenshots branch's PNG history.
       # A diff needs only the two trees, so the push case fetches `before`.
@@ -67,10 +69,11 @@ jobs:
           IN_SHOTS: ${{ inputs.screenshots }}
           IN_PERF: ${{ inputs.perf }}
           IN_ONLY: ${{ inputs.shots_only }}
+          IN_SCOPE: ${{ inputs.perf_scope }}
           IN_DUO: ${{ inputs.duo_only }}
           MSG: ${{ github.event.head_commit.message }}
         run: |
-          shots=false; duo=false; perf=false
+          shots=false; duo=false; perf=false; scope=; only=
           has() { echo "$LABELS" | grep -q "\"$1\""; }
           case "$EVENT" in
             pull_request)
@@ -78,7 +81,7 @@ jobs:
               has perf && perf=true ;;
             workflow_dispatch)
               [ "$IN_SHOTS" = true ] && { shots=true; duo=true; }
-              [ -n "$IN_ONLY" ] && { shots=true; duo=false; }
+              [ -n "$IN_ONLY" ] && [ "$IN_SCOPE" != v2shots ] && { shots=true; duo=false; }
               [ "$IN_PERF" = true ] && perf=true
               [ -n "$IN_DUO" ] && { shots=false; duo=true; perf=false; } ;;
             push)
@@ -90,10 +93,18 @@ jobs:
                   case "$MSG" in *"[screenshots]"*) shots=true ;; esac
                   case "$MSG" in *"[perf]"*) perf=true ;; esac
                 fi
+              elif [[ "$MSG" == *"[shots"* ]]; then
+                # A feature-branch push whose head commit says [shots] or
+                # [shots:<name regex>] also takes the v2 screenshots
+                # (scripts/v2_duo_shots.sh) in the same run as its IPA, so one
+                # run both checks the look and holds the build to promote
+                # (.github/workflows/promote.yml).
+                perf=true; scope=v2shots
+                only=$(printf '%s' "$MSG" | sed -n 's/.*\[shots:\([^]]*\)\].*/\1/p' | head -1)
               fi ;;
           esac
-          echo "screenshots=$shots duo=$duo perf=$perf" | tee -a "$GITHUB_STEP_SUMMARY"
-          { echo "screenshots=$shots"; echo "duo=$duo"; echo "perf=$perf"; } >> "$GITHUB_OUTPUT"
+          echo "screenshots=$shots duo=$duo perf=$perf scope=$scope only=$only" | tee -a "$GITHUB_STEP_SUMMARY"
+          { echo "screenshots=$shots"; echo "duo=$duo"; echo "perf=$perf"; echo "scope=$scope"; echo "only=$only"; } >> "$GITHUB_OUTPUT"
 
   test:
     name: FusionhaKit tests
@@ -224,7 +235,7 @@ jobs:
     # Main pushes and manual runs only: ~15 min of macOS runner per run.
     if: inputs.duo_only == '' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
     runs-on: xcode-27
-    timeout-minutes: 60
+    timeout-minutes: 25
     permissions:
       contents: read
     steps:
@@ -889,7 +900,7 @@ jobs:
     if: needs.plan.outputs.perf == 'true'
     runs-on: xcode-27
     env:
-      SCOPE: ${{ inputs.perf_scope || 'all' }}
+      SCOPE: ${{ inputs.perf_scope || needs.plan.outputs.scope || 'all' }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
@@ -969,7 +980,7 @@ jobs:
         timeout-minutes: 45
         # shots_only narrows the set (a name regex), as for the other shots.
         env:
-          ONLY: ${{ inputs.shots_only }}
+          ONLY: ${{ inputs.shots_only || needs.plan.outputs.only }}
         run: scripts/v2_duo_shots.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf/shots "${ONLY:-}"
 
       - name: v2 owner session report

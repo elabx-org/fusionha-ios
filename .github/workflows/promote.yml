@@ -1,0 +1,111 @@
+name: Promote
+
+# Publishes the IPAs a Build run already made, instead of building the same
+# commit a second time on main. The fast path for a feature branch:
+#   1. push the branch (its head commit may say [shots:<regex>] to take the v2
+#      screenshots in the same run);
+#   2. once that Build run is green and reviewed, run this with its run id.
+# It publishes build-<that run's number> from that run's IPAs, and moves main
+# to the commit when main only has to fast-forward. Moving main with the
+# workflow token starts no second Build run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "The Build run whose IPAs to publish (its tests and both IPA jobs must have passed)"
+        type: string
+        required: true
+      dry_run:
+        description: "Check and stage everything, but publish nothing and leave main alone"
+        type: boolean
+        default: false
+
+concurrency:
+  group: promote
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Publish a built run
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN: ${{ inputs.run_id }}
+    steps:
+      - name: Check the run
+        id: run
+        run: |
+          set -euo pipefail
+          [[ "$RUN" =~ ^[0-9]+$ ]] || { echo "::error::run_id must be a number"; exit 1; }
+          gh run view "$RUN" --repo "$GITHUB_REPOSITORY" --json number,headSha,workflowName,jobs > run.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, sys
+          run = json.load(open("run.json"))
+          if run["workflowName"] != "Build":
+              sys.exit("::error::Not a Build run")
+          done = {j["name"]: j["conclusion"] for j in run["jobs"]}
+          need = ["FusionhaKit tests", "Build unsigned IPA", "Build unsigned IPA (FusionhaV2)"]
+          bad = [n for n in need if done.get(n) != "success"]
+          if bad:
+              sys.exit("::error::These jobs did not pass in that run: " + ", ".join(bad))
+          print(f"number={run['number']}")
+          print(f"sha={run['headSha']}")
+          PY
+
+      # The scripts and the release's tag come from the commit that was built.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ steps.run.outputs.sha }}
+
+      - name: Stop if this build is already published
+        run: |
+          if gh release view "build-${{ steps.run.outputs.number }}" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "::error::build-${{ steps.run.outputs.number }} is already published"
+            exit 1
+          fi
+
+      - name: Fetch that run's IPAs
+        run: |
+          set -euo pipefail
+          gh run download "$RUN" --repo "$GITHUB_REPOSITORY" --pattern "*-unsigned-ipa" --dir artifacts
+          mkdir -p ipas
+          find artifacts -name "*.ipa" -exec mv {} ipas/ \;
+          ls -lh ipas
+          test -f ipas/Fusionha.ipa && test -f ipas/FusionhaV2.ipa
+
+      - name: Prepare release
+        id: release
+        run: bash scripts/release_source.sh ipas ${{ steps.run.outputs.number }} release
+
+      - name: Publish release
+        if: steps.release.outputs.tag != '' && !inputs.dry_run
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: ${{ steps.release.outputs.tag }}
+          name: ${{ steps.release.outputs.name }}
+          target_commitish: ${{ steps.run.outputs.sha }}
+          files: release/*
+          generate_release_notes: true
+          make_latest: true
+
+      # Only a fast-forward: when main has moved on, it is left alone and said so.
+      - name: Move main to the published commit
+        env:
+          SHA: ${{ steps.run.outputs.sha }}
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          status=$(gh api "repos/$GITHUB_REPOSITORY/compare/main...$SHA" -q .status)
+          echo "main...$SHA is $status" | tee -a "$GITHUB_STEP_SUMMARY"
+          case "$status" in
+            identical) echo "main is already there." ;;
+            ahead)
+              if [ "$DRY" = true ]; then echo "Dry run: main would fast-forward to $SHA."
+              else gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/heads/main" -f sha="$SHA" -F force=false > /dev/null
+                   echo "main fast-forwarded to $SHA" | tee -a "$GITHUB_STEP_SUMMARY"; fi ;;
+            *) echo "::warning::main is not behind this commit ($status); main was left alone. Merge it by hand." ;;
+          esac
