@@ -47,16 +47,26 @@ enum V2HologramStyle: String, CaseIterable, Identifiable {
 }
 
 /// The page's type and controls over "At the fold": the room is black on
-/// every palette, so they take light inks and the dark glass.
+/// every palette, so they take light inks, the dark glass and the HD/4K
+/// badges' dark-palette ink (a light palette's badges take Graphite's, its
+/// indigo on dark grey). Only views inside read it: the page's own body
+/// reads the palette from outside (`V2HologramHeading`).
 struct V2HologramOnBlack: ViewModifier {
     let on: Bool
     @Environment(\.colorScheme) private var scheme
     @Environment(\.pagePalette) private var page
+    @Environment(\.badgeInk) private var badge
 
     func body(content: Content) -> some View {
         content
             .environment(\.colorScheme, on ? .dark : scheme)
             .environment(\.pagePalette, on ? onBlack : page)
+            .environment(\.badgeInk, on ? BadgeInk.page(Self.darkTokens) : badge)
+    }
+
+    /// The active palette, or Graphite when it is a light one.
+    static var darkTokens: PaletteTokens {
+        Theme.palette.isLight ? .graphite : Theme.palette
     }
 
     private var onBlack: PagePalette {

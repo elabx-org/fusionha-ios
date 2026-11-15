@@ -6,7 +6,7 @@ import Foundation
 /// focused title stands on the glass itself: in the upright screen's plane,
 /// tipped back with it, its foot `footHeight` up the screen from the hinge,
 /// at `slabScale`, upright (no lean). Nothing of it is drawn on the table
-/// half. Its sway (half as wide as across, `swayShare`), bob and a finger's
+/// half. Its sway (`swayReach` about facing out), bob and a finger's
 /// spin turn it about its own upright axis. A turn would bring one edge out
 /// of the glass on the side the eye sees lower, so the card is moved along
 /// the glass's normal (`shift`) until that edge is back in the glass plane:
@@ -24,15 +24,17 @@ public enum TabletopGlass {
     /// Nothing of the slab is seen lower than this up the standing half.
     public static let foldClearance = 20.0
     public static let slabScale = 0.96
-    /// The idle sway's reach here, against across's (±0.31 rad).
-    public static let swayShare = 0.5
+    /// The idle sway's reach here (radians, about facing straight out).
+    public static let swayReach = 0.31
+    /// Its turn while still (radians), so its thickness shows.
+    public static let restingSway = 0.17
 
     /// The card `offset` places from the focus in this style, for an eye
     /// `seat` degrees up and a `hinge` angle in degrees, or nil out of
     /// reach. Between a waiting place and the glass it moves, grows and
     /// tips back with its focus.
     public static func card(offset: Double, seat: Double, hinge: Double = TabletopProjection.restingHinge,
-                            sway: Double = TabletopScene.restingSway, bob: Double = 0) -> TabletopScene.Card? {
+                            sway: Double = restingSway, bob: Double = 0) -> TabletopScene.Card? {
         let away = abs(offset)
         guard away < TabletopScene.reach else { return nil }
         let f = TabletopScene.smoothstep(1 - away), angle = offset * TabletopScene.spread
@@ -144,10 +146,11 @@ public enum TabletopGlass {
 
     /// The card for a style `amount` of the way from "Across the fold" (0)
     /// to "At the fold" (1): the change of style moves it between the two.
-    public static func card(offset: Double, seat: Double, hinge: Double, sway: Double, bob: Double,
-                            amount: Double) -> TabletopScene.Card? {
+    /// Each style turns by its own sway (`sway` across, `glassSway` here).
+    public static func card(offset: Double, seat: Double, hinge: Double, sway: Double, glassSway: Double,
+                            bob: Double, amount: Double) -> TabletopScene.Card? {
         let across = amount < 1 ? TabletopScene.card(offset: offset, seat: seat, hinge: hinge, sway: sway, bob: bob) : nil
-        let glass = amount > 0 ? card(offset: offset, seat: seat, hinge: hinge, sway: sway, bob: bob) : nil
+        let glass = amount > 0 ? card(offset: offset, seat: seat, hinge: hinge, sway: glassSway, bob: bob) : nil
         guard let across else { return glass }
         guard let glass else { return across }
         return .mix(across, glass, amount)

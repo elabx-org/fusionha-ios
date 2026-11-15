@@ -49,7 +49,6 @@ struct V2HologramPage: View {
     @GestureState var dragging = false
     @Environment(AppModel.self) private var model
     @Environment(\.motionEnabled) var motion
-    @Environment(\.pagePalette) private var page
 
     var index: Int { cards.firstIndex { $0.id == current.id } ?? 0 }
     /// The page's coordinates, the same as its gestures' `.local` ones.
@@ -107,11 +106,7 @@ struct V2HologramPage: View {
     /// below the bar as it does on Home's other pages.
     private var heading: some View {
         ScrollView {
-            Text("Coming up")
-                .font(.system(size: 21, weight: .bold))
-                .tracking(-0.4)
-                .foregroundStyle(page?.ink ?? Theme.txt)
-                .accessibilityAddTraits(.isHeader)
+            V2HologramHeading()
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -160,5 +155,20 @@ struct V2HologramPage: View {
         } else if let target = cards.firstIndex(where: { $0.id == id }) {
             turn(to: target)
         }
+    }
+}
+
+/// "Coming up" over the scene, in the ink of the palette it is drawn in: its
+/// own view, so it reads the light ink `hologramOnBlack` sets for the page's
+/// content ("At the fold" on a light palette was dark on black).
+private struct V2HologramHeading: View {
+    @Environment(\.pagePalette) private var page
+
+    var body: some View {
+        Text("Coming up")
+            .font(.system(size: 21, weight: .bold))
+            .tracking(-0.4)
+            .foregroundStyle(page?.ink ?? Theme.txt)
+            .accessibilityAddTraits(.isHeader)
     }
 }

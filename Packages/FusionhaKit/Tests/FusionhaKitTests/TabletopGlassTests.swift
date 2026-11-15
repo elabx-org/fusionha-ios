@@ -31,9 +31,9 @@ final class TabletopGlassTests: XCTestCase {
     /// goes back into the glass by that much (18.7 pt) and its foot stays 22 up.
     func testAtItsRestingTurnItGoesBackIntoTheGlass() throws {
         let card = try XCTUnwrap(TabletopGlass.card(offset: 0, seat: 50, hinge: 105))
-        XCTAssertEqual(TabletopGlass.footRise(yaw: TabletopScene.restingSway, width: 220.8, height: 331.2,
+        XCTAssertEqual(TabletopGlass.footRise(yaw: TabletopGlass.restingSway, width: 220.8, height: 331.2,
                                               seat: 50, hinge: 105), 22, accuracy: tolerance)
-        XCTAssertEqual(TabletopGlass.shift(yaw: TabletopScene.restingSway, width: 220.8, foot: 22, seat: 50, hinge: 105),
+        XCTAssertEqual(TabletopGlass.shift(yaw: TabletopGlass.restingSway, width: 220.8, foot: 22, seat: 50, hinge: 105),
                        -18.6777, accuracy: tolerance)
         XCTAssertEqual(card.centerZ, -23.7353, accuracy: tolerance)
         XCTAssertEqual(card.lift, 16.4162, accuracy: tolerance)
@@ -43,7 +43,8 @@ final class TabletopGlassTests: XCTestCase {
         XCTAssertEqual(seen[1].y, 372.2828, accuracy: tolerance)
         XCTAssertEqual(seen[2].y, 47.2586, accuracy: tolerance)
         XCTAssertEqual(seen[3].y, 22, accuracy: tolerance)
-        XCTAssertEqual(TabletopGlass.swayShare, 0.5)
+        XCTAssertEqual(TabletopGlass.swayReach, 0.31)
+        XCTAssertEqual(TabletopGlass.restingSway, 0.17)
     }
 
     /// Over a full turn, every seat and hinge and the bob, the foot stays
@@ -109,14 +110,16 @@ final class TabletopGlassTests: XCTestCase {
     func testTheChangeOfStyleMovesBetweenTheTwo() throws {
         let across = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 50, hinge: 105))
         let glass = try XCTUnwrap(TabletopGlass.card(offset: 0, seat: 50, hinge: 105))
+        // Each style turns by its own resting sway.
         let start = try XCTUnwrap(TabletopGlass.card(offset: 0, seat: 50, hinge: 105, sway: TabletopScene.restingSway,
-                                                     bob: 0, amount: 0))
+                                                     glassSway: TabletopGlass.restingSway, bob: 0, amount: 0))
         let end = try XCTUnwrap(TabletopGlass.card(offset: 0, seat: 50, hinge: 105, sway: TabletopScene.restingSway,
-                                                   bob: 0, amount: 1))
+                                                   glassSway: TabletopGlass.restingSway, bob: 0, amount: 1))
         XCTAssertEqual(start, across)
         XCTAssertEqual(end, glass)
         let half = try XCTUnwrap(TabletopGlass.card(offset: 0, seat: 50, hinge: 105, sway: TabletopScene.restingSway,
-                                                    bob: 0, amount: 0.5))
+                                                    glassSway: TabletopGlass.restingSway, bob: 0, amount: 0.5))
+        XCTAssertEqual(half.yaw, (across.yaw + glass.yaw) / 2, accuracy: tolerance)
         XCTAssertEqual(half.centerZ, (across.centerZ + glass.centerZ) / 2, accuracy: tolerance)
         XCTAssertEqual(half.tilt, glass.tilt / 2, accuracy: tolerance)
         XCTAssertEqual(half.lean, across.lean / 2, accuracy: tolerance)

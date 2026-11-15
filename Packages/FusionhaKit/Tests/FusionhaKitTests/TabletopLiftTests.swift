@@ -130,44 +130,51 @@ final class TabletopLiftTests: XCTestCase {
         assertQuad(try top(1, 0).quad, [[447.06, 164.84], [603.94, 164.84], [603.94, 400.16], [447.06, 400.16]])
         XCTAssertEqual(try top(1, 0).opacity, 0.8, accuracy: tolerance)
         XCTAssertEqual(try top(1, 1).opacity, 0.6, accuracy: tolerance)
-        // The lift ends on the slab's resting shape, leaned for seat 50: its
-        // foot is past the hinge (y 475.5), so the top half's piece ends there
-        // and the table's takes over.
-        assertQuad(try top(0, 1).quad, [[221.8189, 188.5887], [445.0793, 158.4382], [444.8814, 492.5111], [222.0244, 528.9448]])
+        // The lift ends on the slab's resting shape, turned and leaned for
+        // seat 50: its near right foot is past the hinge (y 475.5), so the top
+        // half's piece ends there and the table's takes over.
+        assertQuad(try top(0, 1).quad, [[243.8757, 124.5951], [431.0037, 225.3124], [430.8237, 573.3181], [244.0344, 451.6125]])
     }
 
     func testSlabGrowsItsThicknessAndItsTurn() throws {
         // Half the depth: half the resting turn, the slices half as far back.
-        let thin = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 50, sway: 0.17 * 0.5))
+        let thin = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 50, sway: TabletopScene.restingSway * 0.5))
         let slice = thin.slice(1, thickness: 0.5)
-        assertVec(slice[0], -110.7231, -330.7947, -27.1577)
-        assertVec(slice[2], 109.2798, -10, 36.463)
+        assertVec(slice[0], -102.9572, -330.7947, -63.1119)
+        assertVec(slice[2], 107.9811, -10, 84.5051)
         XCTAssertEqual(thin.slice(1, thickness: 0), thin.corners())
-        let swayed = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 50, sway: 0.2, bob: 4))
-        assertVec(swayed.corners()[0], -108.1994, -334.7947, -18.6884)
-        assertVec(swayed.corners()[2], 108.1994, -14, 19.8115)
+        let swayed = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 50, sway: -0.5, bob: 4))
+        assertVec(swayed.corners()[0], -96.8851, -334.7947, -80.8867)
+        assertVec(swayed.corners()[2], 96.8851, -14, 107.3365)
     }
 
     func testScanBar() throws {
         // Half way up the leaned slab (seat 50): half its rise, half its set-back.
         let bar = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 50)).scanBar(reveal: 0.5, half: 4)
-        assertVec(bar[0], -108.8086, -174.3974, 24.4947)
-        assertVec(bar[1], 108.8086, -174.3974, -12.8608)
-        assertVec(bar[2], 108.8086, -166.3974, -12.8608)
-        assertVec(bar[3], -108.8086, -166.3974, 24.4947)
+        assertVec(bar[0], -91.1171, -174.3974, -56.5196)
+        assertVec(bar[1], 91.1171, -174.3974, 68.1535)
+        assertVec(bar[2], 91.1171, -166.3974, 68.1535)
+        assertVec(bar[3], -91.1171, -166.3974, -56.5196)
     }
 
     func testIdle() {
-        XCTAssertEqual(TabletopLift.sway(at: 0), 0, accuracy: tolerance)
-        // ±0.62 rad at 0.5 rad/s (the stage bench's slower, wider turn).
-        XCTAssertEqual(TabletopLift.sway(at: 1), 0.2972, accuracy: tolerance)
-        XCTAssertEqual(TabletopLift.sway(at: 2.5), 0.5884, accuracy: tolerance)
+        // Across: ±0.15 rad about the resting −0.60, at 0.5 rad/s, so never
+        // nearer face-on than 0.45.
+        XCTAssertEqual(TabletopLift.sway(at: 0), -0.6, accuracy: tolerance)
+        XCTAssertEqual(TabletopLift.sway(at: 1), -0.5281, accuracy: tolerance)
+        XCTAssertEqual(TabletopLift.sway(at: 2.5), -0.4577, accuracy: tolerance)
+        // At the fold: ±0.31 about facing out, at the same rate.
+        XCTAssertEqual(TabletopLift.glassSway(at: 0), 0, accuracy: tolerance)
+        XCTAssertEqual(TabletopLift.glassSway(at: 1), 0.1486, accuracy: tolerance)
+        XCTAssertEqual(TabletopLift.glassSway(at: 2.5), 0.2942, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.bob(at: 1), 4.5638, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.bob(at: 10), -4.3773, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.spin(at: 2.5), 0.6042, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.spin(at: 36), TabletopLift.spin(at: 10), accuracy: 1e-9)
         for t in stride(from: 0.0, to: 30, by: 0.37) {
-            XCTAssertLessThanOrEqual(abs(TabletopLift.sway(at: t)), 0.62)
+            XCTAssertLessThanOrEqual(abs(TabletopLift.sway(at: t) + 0.6), 0.15 + 1e-9)
+            XCTAssertGreaterThanOrEqual(abs(TabletopLift.sway(at: t)), 0.45 - 1e-9)
+            XCTAssertLessThanOrEqual(abs(TabletopLift.glassSway(at: t)), 0.31 + 1e-9)
             XCTAssertLessThanOrEqual(abs(TabletopLift.bob(at: t)), 5)
         }
         XCTAssertEqual(TabletopLift.easeOut(0.5), 0.875, accuracy: 1e-9)

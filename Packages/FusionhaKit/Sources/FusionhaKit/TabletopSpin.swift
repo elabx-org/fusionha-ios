@@ -4,7 +4,7 @@ import Foundation
 /// `spin` mode and `coast`): a sideways drag that starts on the slab turns
 /// it about its upright axis, 0.011 rad a point. Let go, it keeps turning
 /// at the finger's speed, slows by 0.955 a frame (at 60 a second), then
-/// eases to the nearest whole turn so it ends facing the viewer. Pure
+/// eases to the nearest whole turn so it ends at its resting turn. Pure
 /// numbers as a function of time; the app draws them.
 public enum TabletopSpin {
     /// Radians of turn per point dragged (in the scene's 669-pt design width).

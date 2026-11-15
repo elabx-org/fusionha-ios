@@ -52,8 +52,9 @@ public enum TabletopScene {
     public static let waitStepFar = 104.0
     public static let waitDepth = 52.0
     public static let waitDepthStep = 44.0
-    /// The idle loop's reach and rate (`TabletopLift.sway`, `.bob`).
-    public static let swayReach = 0.62
+    /// The idle loop's reach about `restingSway` and its rate
+    /// (`TabletopLift.sway`, `.bob`): never nearer face-on than 0.45 rad.
+    public static let swayReach = 0.15
     public static let swayRate = 0.5
     public static let bobReach = 5.0
     /// The angle between neighbours on the ring (the waiting titles' turn).
@@ -64,8 +65,13 @@ public enum TabletopScene {
     public static let sliceGap = 8.5
     /// Cards further than this from the focus are not drawn.
     public static let reach = 2.6
-    /// The slab's resting turn (radians), so its thickness shows while still.
-    public static let restingSway = 0.17
+    /// The slab's resting turn (radians): a three-quarter turn with its
+    /// right edge (as the viewer sees it) toward the viewer, so its near
+    /// right foot lands furthest out on the table and its thickness shows
+    /// along its right side (owner, from build 1229 on the phone). A
+    /// positive turn brings the left edge forward (`Card.corners`), so it
+    /// is negative. Facing straight on, the card reads as a flat picture.
+    public static let restingSway = -0.60
     /// How far behind the hinge the floor is drawn on the top half: to the
     /// room's back wall (`TabletopRoom.depth`). It is as wide as the room,
     /// so its sides are the side walls' feet.

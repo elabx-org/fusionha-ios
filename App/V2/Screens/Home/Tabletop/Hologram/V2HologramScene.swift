@@ -71,8 +71,8 @@ struct V2HologramScene: View, Animatable {
     private func picture(at seconds: Double?) -> some View {
         var moment = V2HologramMoment(stages: TabletopLift.Stages(lift), print: TabletopLift.Print(rise), flat: flat)
         if let seconds {
-            // "At the fold" sways half as far (`TabletopGlass.swayShare`).
-            moment.sway = TabletopLift.sway(at: seconds) * (1 - (1 - TabletopGlass.swayShare) * glass)
+            moment.sway = TabletopLift.sway(at: seconds)
+            moment.glassSway = TabletopLift.glassSway(at: seconds)
             moment.bob = TabletopLift.bob(at: seconds)
             moment.spin = TabletopLift.spin(at: seconds)
         }

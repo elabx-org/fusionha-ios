@@ -8,8 +8,9 @@ import FusionhaKit
 struct V2HologramMoment: Equatable {
     var stages = TabletopLift.Stages.done
     var print = TabletopLift.Print.done
-    /// The slab's turn (radians) and how far it floats up (points).
+    /// The slab's turn (radians) in each style and how far it floats up (points).
     var sway = TabletopScene.restingSway
+    var glassSway = TabletopGlass.restingSway
     var bob = 0.0
     /// The dashed inner ring's turn (radians).
     var spin = 0.0
@@ -56,6 +57,7 @@ struct V2HologramPlaced: Identifiable {
             let offset = Double(index) - position
             guard let placed = TabletopGlass.card(offset: offset, seat: seat, hinge: hinge,
                                                   sway: moment.sway * stages.depth + moment.slabSpin,
+                                                  glassSway: moment.glassSway * stages.depth + moment.slabSpin,
                                                   bob: moment.bob * stages.depth, amount: moment.glass) else { return nil }
             let reveal = moment.print.reveal(away: abs(offset), focus: placed.focus)
             let from = flat?.opacity(offset) ?? placed.opacity
