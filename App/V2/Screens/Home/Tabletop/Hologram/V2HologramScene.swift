@@ -26,6 +26,10 @@ struct V2HologramScene: View, Animatable {
     var rise: Double = 1
     /// The lift: 0 the flat carousel's posters, 1 the hologram.
     var lift: Double = 1
+    /// How far toward "At the fold" (`V2HologramStyle`): 0 the card stands
+    /// across the fold, 1 on the upright half. It animates, so a change of
+    /// style moves the card from one place to the other.
+    var glass: Double = 0
     /// The flat carousel the posters lift from.
     var flat: TabletopLift.Flat?
     /// The idle loop: the slab sways and bobs and the dashed ring turns.
@@ -38,12 +42,13 @@ struct V2HologramScene: View, Animatable {
     /// as `position`.
     var hand = V2HologramHand()
 
-    var animatableData: AnimatablePair<AnimatablePair<Double, Double>, Double> {
-        get { AnimatablePair(AnimatablePair(position, hinge), rise) }
+    var animatableData: AnimatablePair<AnimatablePair<Double, Double>, AnimatablePair<Double, Double>> {
+        get { AnimatablePair(AnimatablePair(position, hinge), AnimatablePair(rise, glass)) }
         set {
             position = newValue.first.first
             hinge = newValue.first.second
-            rise = newValue.second
+            rise = newValue.second.first
+            glass = newValue.second.second
         }
     }
 
@@ -73,8 +78,10 @@ struct V2HologramScene: View, Animatable {
         moment.slabSpin = hand.spin(at: seconds)
         moment.dialTurn = TabletopDial.turn(at: position)
         moment.dialHeld = hand.dialHeld
+        moment.glass = glass
         let rig = V2HologramRig(space: space, hingeDegrees: hinge, seat: seat)
-        let placed = V2HologramPlaced.all(cards, position: position, art: art, seat: seat, moment: moment)
+        let placed = V2HologramPlaced.all(cards, position: position, art: art, seat: seat, hinge: hinge,
+                                              moment: moment)
         return VStack(spacing: 0) {
             V2HologramHalf(half: .top, rig: rig, placed: placed, look: look, moment: moment)
             V2HologramHalf(half: .bottom, rig: rig, placed: placed, look: look, moment: moment)

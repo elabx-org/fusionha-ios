@@ -18,7 +18,9 @@ import FusionhaKit
 /// Motion: the two looks cross-fade and nothing lifts. The scene is drawn
 /// for the viewer's seat (`V2TabletopHologram.seatKey`, the default until
 /// one is stored); when the Hologram button's "Adjust for my seat" asks,
-/// the page shows the line-up control (`V2HologramLineUp`).
+/// the page shows the line-up control (`V2HologramLineUp`). The stored
+/// style (`V2HologramStyle`) moves the card between its two places as it
+/// changes (Reduce Motion: the two pictures cross-fade).
 struct V2HomeTabletop: View {
     let space: V2TabletopSpace
     let cards: [V2ComingUpCard]
@@ -46,8 +48,12 @@ struct V2HomeTabletop: View {
     /// slider's while the control is up after "Adjust for my seat".
     @AppStorage(V2TabletopHologram.seatKey) private var storedSeat: Double?
     @State private var draftSeat: Double?
+    @AppStorage(V2HologramStyle.key) private var styleRaw = V2HologramStyle.across.rawValue
+    /// How far toward "At the fold" the scene is drawn; it rests at 0 or 1.
+    @State private var glass = V2HologramStyle.resting.amount
 
     private var on: Bool { V2TabletopHologram.isOn(stored: stored) }
+    private var style: V2HologramStyle { V2HologramStyle.current(stored: styleRaw) }
 
     private var seat: Double { V2TabletopHologram.seat(draft: draftSeat, stored: storedSeat) }
 
@@ -83,6 +89,9 @@ struct V2HomeTabletop: View {
                 if let focused { lastFocus = focused }
             }
             .onChange(of: on) { play() }
+            .onChange(of: style) {
+                withAnimation(motion ? .smooth(duration: 0.8) : .easeInOut(duration: 0.3)) { glass = style.amount }
+            }
     }
 
     /// The switch changed: lift, or let down.
@@ -124,7 +133,7 @@ struct V2HomeTabletop: View {
         }
         if progress > 0 {
             V2HologramPage(space: space, cards: cards, current: shown, focused: $focused, opening: $opening,
-                           kindsRaw: $kindsRaw, days: $days, hand: $hand, hinge: hinge, seat: seat,
+                           kindsRaw: $kindsRaw, days: $days, hand: $hand, hinge: hinge, seat: seat, style: style,
                            lineUp: lineUp, lineUpDone: storeSeat, live: progress >= 1,
                            chrome: staged ? chrome : progress, headingOpacity: staged ? 1 : progress)
                 .transition(.identity)
@@ -135,7 +144,7 @@ struct V2HomeTabletop: View {
     /// (drawing nothing while the flat look rests).
     private func scene(at progress: Double) -> some View {
         let staged = motion
-        return V2HologramStage(space: space, cards: cards, current: shown, hinge: hinge, seat: seat,
+        return V2HologramStage(space: space, cards: cards, current: shown, hinge: hinge, seat: seat, glass: glass,
                                lift: staged ? progress : (progress > 0 ? 1 : 0),
                                flat: space.flatCarousel(top: top), printsIn: printsIn, hand: hand)
             .opacity(staged ? 1 : progress)

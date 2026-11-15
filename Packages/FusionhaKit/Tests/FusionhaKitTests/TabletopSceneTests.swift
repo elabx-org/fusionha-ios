@@ -64,8 +64,12 @@ final class TabletopSceneTests: XCTestCase {
         XCTAssertEqual(TabletopScene.slabZ, 45)
         XCTAssertEqual(TabletopScene.slabLift, 10)
         XCTAssertEqual(TabletopScene.slabScale, 0.96)
-        // The same lift and size at every seat.
+        // The same lift at every seat, and full size up to the cap's seats
+        // (`TabletopSlabCapTests`).
         for seat in [20.0, 26, 50, 68, 90] {
+            XCTAssertEqual(try XCTUnwrap(TabletopScene.card(offset: 0, seat: seat)).lift, 10, accuracy: tolerance)
+        }
+        for seat in [20.0, 26, 50] {
             let card = try XCTUnwrap(TabletopScene.card(offset: 0, seat: seat))
             XCTAssertEqual(card.lift, 10, accuracy: tolerance)
             XCTAssertEqual(card.width, 220.8, accuracy: tolerance)

@@ -30,6 +30,9 @@ struct V2HologramPage: View {
     /// title with them).
     let hinge: Double
     let seat: Double
+    /// The style the scene is drawn in: "At the fold" puts the page's type
+    /// and controls on black (`hologramOnBlack`).
+    var style: V2HologramStyle = .across
     /// The line-up control's slider while it asks for the seat, and its Done.
     var lineUp: Binding<Double>?
     var lineUpDone: () -> Void = {}
@@ -55,7 +58,7 @@ struct V2HologramPage: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             heading
-            V2HologramVoice(space: space, hinge: hinge, seat: seat, cards: cards, current: current,
+            V2HologramVoice(space: space, hinge: hinge, seat: seat, atFold: style == .glass, cards: cards, current: current,
                             turn: { turn(to: $0) }, open: { model.open(current.item.id) })
                 .accessibilityHidden(!live)
             controls
@@ -64,6 +67,7 @@ struct V2HologramPage: View {
                 .allowsHitTesting(live)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .hologramOnBlack(style == .glass)
         .coordinateSpace(.named(Self.coordinates))
         .contentShape(Rectangle())
         .onTapGesture(coordinateSpace: .local) { tapped($0) }
@@ -148,8 +152,9 @@ struct V2HologramPage: View {
     private func tapped(_ point: CGPoint) {
         guard live, !lineUpFrame.contains(point) else { return }
         let rig = V2HologramRig(space: space, hingeDegrees: hinge, seat: seat)
-        let placed = V2HologramPlaced.all(cards, position: Double(index), art: [:], seat: seat)
-        guard let id = V2HologramPlaced.hit(point, in: placed, rig: rig) else { return }
+        let placed = V2HologramPlaced.all(cards, position: Double(index), art: [:], seat: seat, hinge: hinge,
+                                          moment: V2HologramMoment(glass: style.amount))
+        guard let id = V2HologramPlaced.hit(point, in: placed, rig: rig, atFold: style == .glass) else { return }
         if id == current.id {
             model.open(id)
         } else if let target = cards.firstIndex(where: { $0.id == id }) {

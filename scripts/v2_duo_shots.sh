@@ -222,6 +222,13 @@ done
 # The slab spun 40° by a finger (tabletop plan, slice 6), with the dial's
 # notches on the ring's rim.
 WAIT=16 FRAME=portrait shoot home-tabletop-hologram-spin-40 $TT $HOLO $SECOND SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TABLETOP_SPIN=40
+# "At the fold" (2026-11-15): the card stands on the upright half, which is
+# black on every palette (the glass shows the table half's real reflection);
+# the table half is its floor grid at full strength and the ring. The shots
+# above stay "Across the fold" (the default).
+STYLE=SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TABLETOP_STYLE
+WAIT=16 FRAME=portrait shoot home-tabletop-hologram-glass $TT $HOLO $STYLE=glass
+WAIT=16 FRAME=portrait shoot home-tabletop-hologram-glass-daylight $DAY $TT $HOLO $STYLE=glass
 # The lift between the two looks (tabletop plan, slice 3), held part of the
 # way: -start is the scene drawing the flat carousel's posters (they must sit
 # exactly where home-tabletop has them), then a quarter, half and three

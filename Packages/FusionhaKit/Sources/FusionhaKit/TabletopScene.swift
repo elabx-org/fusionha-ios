@@ -128,6 +128,10 @@ public enum TabletopScene {
         /// card is focused): its foot stays, its head comes back.
         public let lean: Double
         public let opacity: Double
+        /// How far the card is tipped back about its foot (radians): 0
+        /// standing on the table, the upright half's lean when it stands on
+        /// the glass (`TabletopGlass`).
+        public var tilt: Double = 0
 
         /// How much of the focused title's light a marker takes (0 the slab).
         public var ghost: Double { 1 - focus }
@@ -148,11 +152,18 @@ public enum TabletopScene {
         /// `mirrored` is its image under the floor.
         public func corners(depth: Double = 0, mirrored: Bool = false) -> [TabletopVec] {
             let sn = sin(yaw), cs = cos(yaw), m = mirrored ? -1.0 : 1.0
-            let x0 = centerX - cs * width / 2 + sn * depth, z0 = centerZ + sn * width / 2 + cs * depth
-            let x1 = centerX + cs * width / 2 + sn * depth, z1 = centerZ - sn * width / 2 + cs * depth
-            let top = m * (lift + rise), bottom = m * lift, back = setBack
-            return [TabletopVec(x0, -top, z0 - back), TabletopVec(x1, -top, z1 - back),
-                    TabletopVec(x1, -bottom, z1), TabletopVec(x0, -bottom, z0)]
+            let x0 = -cs * width / 2 + sn * depth, z0 = sn * width / 2 + cs * depth
+            let x1 = cs * width / 2 + sn * depth, z1 = -sn * width / 2 + cs * depth
+            let up = m * rise, back = setBack
+            return [stood(x0, -up, z0 - back, m), stood(x1, -up, z1 - back, m),
+                    stood(x1, 0, z1, m), stood(x0, 0, z0, m)]
+        }
+
+        /// A point given from the foot's centre (x across, y down, z out of
+        /// the card's plane), tipped back by `tilt` about the foot, in the rig.
+        func stood(_ x: Double, _ y: Double, _ z: Double, _ m: Double = 1) -> TabletopVec {
+            let c = cos(tilt), s = sin(tilt)
+            return TabletopVec(centerX + x, -m * lift + y * c - z * s, centerZ + y * s + z * c)
         }
 
         /// The `index`-th glass slice behind the poster (0 the nearest);
@@ -164,10 +175,10 @@ public enum TabletopScene {
         /// The print-in's scan bar across the slab, `reveal` of the way up
         /// it (0 its foot, 1 its top), `half` tall either side of the line.
         public func scanBar(reveal: Double, half: Double) -> [TabletopVec] {
-            let sn = sin(yaw), cs = cos(yaw), y = lift + rise * reveal, z = centerZ + 2 - setBack * reveal
+            let sn = sin(yaw), cs = cos(yaw), y = rise * reveal, z = 2 - setBack * reveal
             let hx = cs * width / 2, hz = -sn * width / 2
-            return [TabletopVec(centerX - hx, -y - half, z - hz), TabletopVec(centerX + hx, -y - half, z + hz),
-                    TabletopVec(centerX + hx, -y + half, z + hz), TabletopVec(centerX - hx, -y + half, z - hz)]
+            return [stood(-hx, -y - half, z - hz), stood(hx, -y - half, z + hz),
+                    stood(hx, -y + half, z + hz), stood(-hx, -y + half, z - hz)]
         }
 
         /// The beam: from the emitter's rim to the slab's foot and no
@@ -201,11 +212,19 @@ public enum TabletopScene {
     /// raises it (both, and the lean, only as far as the card is focused).
     /// Between a waiting place and the slab's, a card moves and grows with
     /// its focus. The slab's foot stands where `stand` puts it for its turn.
-    public static func card(offset: Double, seat: Double, sway: Double = restingSway, bob: Double = 0) -> Card? {
+    /// The slab's size is `cappedSlabScale(seat:hinge:)` for the `hinge` angle.
+    public static func card(offset: Double, seat: Double, hinge: Double = TabletopProjection.restingHinge,
+                            sway: Double = restingSway, bob: Double = 0) -> Card? {
+        let scale = abs(offset) < 1 ? cappedSlabScale(seat: seat, hinge: hinge) : slabScale
+        return card(offset: offset, seat: seat, sway: sway, bob: bob, scale: scale)
+    }
+
+    /// The card with the slab drawn at `scale` of the 230 x 345 card.
+    static func card(offset: Double, seat: Double, sway: Double, bob: Double, scale: Double) -> Card? {
         let away = abs(offset)
         guard away < reach else { return nil }
         let f = smoothstep(1 - away), angle = offset * spread
-        let k = markerScale + (slabScale - markerScale) * f
+        let k = markerScale + (scale - markerScale) * f
         let wait = waiting(offset)
         let width = posterWidth * k, yaw = angle * 0.5 * (1 - f) + sway * f
         let foot = stand(yaw: yaw, halfWidth: width / 2, sliceDepth: Double(sliceCount) * sliceGap * f)

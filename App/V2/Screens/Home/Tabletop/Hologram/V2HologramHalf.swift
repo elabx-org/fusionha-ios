@@ -14,6 +14,10 @@ import FusionhaKit
 /// floor itself, with the ring (`V2HologramFloor`), the short beam to the
 /// slab's foot and the reflections, which fade out either side of the hinge
 /// (`hingeFade`).
+/// "At the fold" (`moment.glass`, `V2HologramStyle`) the slab stands on the
+/// upright half and that half is left black round it (no floor, room
+/// lines, reflections, halo or beam: the glass shows a real reflection of
+/// the table half), and the table half is only its floor, grid and ring.
 /// `moment` is where the lift and the print-in have got to: during the lift
 /// the top half's posters are on their way from the flat carousel's places
 /// and the rest comes on in stages.
@@ -31,6 +35,10 @@ struct V2HologramHalf: View {
     private var stages: TabletopLift.Stages { moment.stages }
     /// The pieces seen against the table come on last.
     private var twin: Bool { half == .bottom }
+    /// How far toward "At the fold"; what it leaves out fades with it.
+    private var glass: Double { moment.glass }
+    private var drawn: Double { 1 - glass }
+    private var atFold: Bool { glass >= 1 }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -41,12 +49,13 @@ struct V2HologramHalf: View {
                 ForEach(placed) { piece($0) }
             case .bottom:
                 table
-                // Only a title on its way to or at the focus reaches the table.
-                ForEach(placed.filter(\.card.hasSlices)) { piece($0) }
+                // Only a title on its way to or at the focus reaches the
+                // table; at the fold none does.
+                if !atFold { ForEach(placed.filter(\.card.hasSlices)) { piece($0) } }
             }
             if let lead {
-                beam(lead)
-                if stages.progress >= 1, lead.reveal > 0.02, lead.reveal < 0.98 { scan(lead) }
+                if !atFold { beam(lead) }
+                if stages.progress >= 1, lead.reveal > 0.02, lead.reveal < 0.98, !(atFold && twin) { scan(lead) }
             }
         }
         .frame(width: rig.size.width, height: rig.height(of: half), alignment: .topLeading)
@@ -57,20 +66,27 @@ struct V2HologramHalf: View {
 
     @ViewBuilder
     private var backdrop: some View {
+        if !atFold { room }
+    }
+
+    /// The floor behind the hinge, the room's lines, the reflections and the
+    /// halo ("Across the fold").
+    @ViewBuilder
+    private var room: some View {
         // As wide as the room and as deep as its back wall: its sides are
         // the side walls' feet.
         let pad = CGSize(width: CGFloat(TabletopScene.floorBehindWidth), height: CGFloat(TabletopScene.floorDepth))
         V2HologramFloor(part: .behind, look: look, size: pad, ring: moment.print.ring, spin: moment.spin)
             .hologramPiece(rig.transform(TabletopScene.floorBehind, on: .top, from: pad), box: pad)
-            .opacity(stages.floor)
+            .opacity(stages.floor * drawn)
         V2HologramRoomLines(rig: rig, look: look)
-            .opacity(stages.floor)
+            .opacity(stages.floor * drawn)
         reflections
         if let lead {
             RadialGradient(colors: [look.tint.opacity(look.haloGlow), look.tint.opacity(0)],
                            center: .center, startRadius: 0, endRadius: light.width / 2)
                 .hologramPiece(rig.transform(lead.card.halo, on: .top, from: light), box: light)
-                .opacity(lead.card.haloOpacity * moment.print.slab * stages.depth)
+                .opacity(lead.card.haloOpacity * moment.print.slab * stages.depth * drawn)
                 .blendMode(look.lightBlend)
                 .zIndex(lead.order - 8)
         }
@@ -83,11 +99,11 @@ struct V2HologramHalf: View {
         let scale = CGFloat(rig.scale)
         let plate = CGSize(width: CGFloat(TabletopProjection.designWidth), height: rig.bottomHeight / max(scale, 0.01))
         V2HologramFloor(part: .front, look: look, size: plate, ring: moment.print.ring, spin: moment.spin,
-                        dialTurn: moment.dialTurn, dialHeld: moment.dialHeld, tick: lead?.id)
+                        dialTurn: moment.dialTurn, dialHeld: moment.dialHeld, tick: lead?.id, glass: glass)
             .scaleEffect(scale, anchor: .topLeading)
             .frame(width: rig.size.width, height: rig.bottomHeight, alignment: .topLeading)
             .opacity(stages.floor)
-        reflections
+        if !atFold { reflections }
     }
 
     /// The titles' reflections on the floor: the waiting ones' behind the
@@ -100,6 +116,7 @@ struct V2HologramHalf: View {
         .frame(width: rig.size.width, height: rig.height(of: half), alignment: .topLeading)
         .mask { hingeFade }
         .blendMode(look.lightBlend)
+        .opacity(drawn)
     }
 
     /// The title's mirror image where it lands on the table: the soft copy,
@@ -208,7 +225,7 @@ struct V2HologramHalf: View {
             }
             .hologramPiece(rig.transform(item.card.beam, on: half, from: light), box: light)
             .opacity(item.card.beamOpacity * moment.print.beam
-                     * (twin ? stages.twins * TabletopScene.tableBeam : stages.depth))
+                     * (twin ? stages.twins * TabletopScene.tableBeam : stages.depth) * drawn)
             .blendMode(look.lightBlend)
             .zIndex(item.order + 1)
     }

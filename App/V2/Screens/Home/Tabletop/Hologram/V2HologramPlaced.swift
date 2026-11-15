@@ -20,6 +20,9 @@ struct V2HologramMoment: Equatable {
     var dialHeld = false
     /// The flat carousel's posters, in the container's coordinates.
     var flat: TabletopLift.Flat?
+    /// How far toward "At the fold" (`V2HologramStyle`): 1 the card stands
+    /// on the upright half and nothing is drawn round it there.
+    var glass = 0.0
 }
 
 /// One title placed in the scene: its card, where it stands
@@ -43,16 +46,17 @@ struct V2HologramPlaced: Identifiable {
     var order: Double { (500 + card.centerZ).rounded() }
 
     /// The titles within reach of `position` (an index into `cards`,
-    /// fractional while the ring turns), for an eye `seat` degrees up.
+    /// fractional while the ring turns), for an eye `seat` degrees up and a
+    /// `hinge` angle, in the moment's style.
     static func all(_ cards: [V2ComingUpCard], position: Double, art: [Int: V2HologramArt], seat: Double,
-                    moment: V2HologramMoment = V2HologramMoment()) -> [V2HologramPlaced] {
+                    hinge: Double, moment: V2HologramMoment = V2HologramMoment()) -> [V2HologramPlaced] {
         let stages = moment.stages
         let flat = stages.corners < 1 ? moment.flat : nil
         return cards.enumerated().compactMap { index, card in
             let offset = Double(index) - position
-            guard let placed = TabletopScene.card(offset: offset, seat: seat,
+            guard let placed = TabletopGlass.card(offset: offset, seat: seat, hinge: hinge,
                                                   sway: moment.sway * stages.depth + moment.slabSpin,
-                                                  bob: moment.bob * stages.depth) else { return nil }
+                                                  bob: moment.bob * stages.depth, amount: moment.glass) else { return nil }
             let reveal = moment.print.reveal(away: abs(offset), focus: placed.focus)
             let from = flat?.opacity(offset) ?? placed.opacity
             return V2HologramPlaced(id: card.id, card: placed, art: art[card.id], reveal: reveal,
@@ -62,9 +66,11 @@ struct V2HologramPlaced: Identifiable {
     }
 
     /// The title drawn at `point` of the container, the nearest first. The
-    /// slab is found on either half: its foot is drawn on the table.
-    static func hit(_ point: CGPoint, in placed: [V2HologramPlaced], rig: V2HologramRig) -> Int? {
+    /// slab is found on either half: its foot is drawn on the table (but
+    /// not `atFold`, where all of it is on the upright half).
+    static func hit(_ point: CGPoint, in placed: [V2HologramPlaced], rig: V2HologramRig, atFold: Bool = false) -> Int? {
         let at = rig.locate(point)
+        guard !atFold || at.half == .top else { return nil }
         return placed.sorted { $0.order > $1.order }.first {
             TabletopProjection.contains(rig.quad($0.card.corners(), on: at.half), at.point)
         }?.id

@@ -4,10 +4,12 @@ import SwiftUI
 /// alone (tabletop plan, slice 6; the hinge-fix mock's `.hsw.ico`), filled
 /// indigo when on. It writes the stored switch (`V2TabletopHologram.key`);
 /// `V2HomeTabletop` plays the lift when it changes. 44 pt, its own target.
-/// A long press offers "Adjust for my seat", which turns the hologram on
+/// A long press offers the style (`V2HologramStyle`: "Across the fold" or
+/// "At the fold") and "Adjust for my seat", which turns the hologram on
 /// and shows the line-up control again (`V2HologramLineUp`).
 struct V2HologramSwitch: View {
     @AppStorage(V2TabletopHologram.key) private var stored = false
+    @AppStorage(V2HologramStyle.key) private var style = V2HologramStyle.across.rawValue
     @Environment(\.pagePalette) private var page
     @Environment(\.adjustTabletopSeat) private var adjustSeat
 
@@ -26,6 +28,10 @@ struct V2HologramSwitch: View {
         }
         .buttonStyle(.plain)
         .contextMenu {
+            Picker("Style", selection: $style) {
+                ForEach(V2HologramStyle.allCases) { Text($0.label).tag($0.rawValue) }
+            }
+            .pickerStyle(.inline)
             Button("Adjust for my seat", systemImage: "slider.horizontal.3") { adjustSeat() }
         }
         .accessibilityLabel("Hologram")
