@@ -52,6 +52,14 @@ public enum TabletopScene {
     public static let restingSway = 0.17
     /// How far behind the hinge the floor is drawn on the top half.
     public static let floorDepth = 440.0
+    /// How far the floor behind the hinge runs on past each side of the
+    /// display: three of the grid's twelve columns. As wide as the display,
+    /// its sides closed in toward the back (perspective) and read on the
+    /// wall as two slanted edges; this wide they stay off the display at
+    /// every hinge angle (at 92° its back corners are 412 pt out).
+    public static let floorOverhang = 3 * TabletopProjection.designWidth / 12
+    /// The floor behind the hinge's width: the display and the overhang either side.
+    public static var floorBehindWidth: Double { TabletopProjection.designWidth + 2 * floorOverhang }
     /// The square the beam and the halo are drawn in before projection.
     public static let lightSide = 200.0
     /// How far up its mirror image a waiting title's reflection runs (0 its
