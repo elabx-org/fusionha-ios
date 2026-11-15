@@ -3,21 +3,29 @@ import Foundation
 /// The hologram's "At the fold" style (2026-11-15): the upright half is
 /// black, and black glass mirrors what is bright on the table half at its
 /// true depth behind it, so the scene draws no reflection of its own. The
-/// focused title stands on the glass itself: in the upright screen's plane
-/// (depth 0), tipped back with it, its foot `footHeight` up the screen from
-/// the hinge, at `slabScale`, upright (no lean). Nothing of it is drawn on
-/// the table half. Its sway, bob and a finger's spin turn it about its own
-/// upright axis; a turn brings one edge out in front of the glass, which
-/// the eye sees lower, so the foot rises just enough that nothing of the
-/// card or its slices is seen below `foldClearance`. The waiting titles
+/// focused title stands on the glass itself: in the upright screen's plane,
+/// tipped back with it, its foot `footHeight` up the screen from the hinge,
+/// at `slabScale`, upright (no lean). Nothing of it is drawn on the table
+/// half. Its sway (half as wide as across, `swayShare`), bob and a finger's
+/// spin turn it about its own upright axis. A turn would bring one edge out
+/// of the glass on the side the eye sees lower, so the card is moved along
+/// the glass's normal (`shift`) until that edge is back in the glass plane:
+/// from a seat above the glass's normal (nearly always) it goes back into
+/// the glass. Its foot so stays put at every turn; only if a corner were
+/// still seen below `foldClearance` would the foot rise by the remainder
+/// (`footRise`). Seen from a high seat a card turned into the glass is drawn
+/// higher, so it is drawn just small enough that its head stays
+/// `TabletopScene.slabTopCap` up the half (`fitScale`). The waiting titles
 /// stand where they do in "Across the fold".
 public enum TabletopGlass {
     /// The centre of the slab's foot: this far up the standing half from
-    /// the hinge, facing straight out.
+    /// the hinge, at every turn (the bob lifts it up to `bobReach` more).
     public static let footHeight = 22.0
     /// Nothing of the slab is seen lower than this up the standing half.
     public static let foldClearance = 20.0
     public static let slabScale = 0.96
+    /// The idle sway's reach here, against across's (±0.31 rad).
+    public static let swayShare = 0.5
 
     /// The card `offset` places from the focus in this style, for an eye
     /// `seat` degrees up and a `hinge` angle in degrees, or nil out of
@@ -28,12 +36,18 @@ public enum TabletopGlass {
         let away = abs(offset)
         guard away < TabletopScene.reach else { return nil }
         let f = TabletopScene.smoothstep(1 - away), angle = offset * TabletopScene.spread
-        let k = TabletopScene.markerScale + (slabScale - TabletopScene.markerScale) * f
+        let yaw = angle * 0.5 * (1 - f) + sway * f
+        let full = f > 0 ? fitScale(yaw: yaw, seat: seat, hinge: hinge, bob: bob) : slabScale
+        let k = TabletopScene.markerScale + (full - TabletopScene.markerScale) * f
         let wait = TabletopScene.waiting(offset)
         let width = TabletopScene.posterWidth * k, height = TabletopScene.posterHeight * k
-        let yaw = angle * 0.5 * (1 - f) + sway * f
         let phi = TabletopProjection.phi(hingeDegrees: hinge)
-        let foot = f > 0 ? footRise(yaw: yaw, width: width, height: height, seat: seat, hinge: hinge, bob: bob) : 0
+        var stand = TabletopScene.Card(offset: 0, focus: 1, width: width, height: height, yaw: yaw, centerX: 0,
+                                       centerZ: 0, lift: 0, lean: 0, opacity: 1, tilt: phi)
+        if f > 0 {
+            let foot = footRise(yaw: yaw, width: width, height: height, seat: seat, hinge: hinge, bob: bob)
+            stand = slab(foot: foot, yaw: yaw, width: width, height: height, seat: seat, hinge: hinge)
+        }
         return TabletopScene.Card(
             offset: offset,
             focus: f,
@@ -41,25 +55,53 @@ public enum TabletopGlass {
             height: height,
             yaw: yaw,
             centerX: wait.x * (1 - f),
-            centerZ: wait.z * (1 - f) - foot * sin(phi) * f,
-            lift: foot * cos(phi) * f,
+            centerZ: wait.z * (1 - f) + stand.centerZ * f,
+            lift: stand.lift * f,
             lean: 0,
             opacity: min(1, max(0, (TabletopScene.reach - away) / 0.5)) * (0.6 + 0.4 * f),
             tilt: phi * f)
     }
 
+    /// The foot before any remainder: `footHeight`, and the bob only ever
+    /// lifts it (its upper half, 0…`bobReach`).
+    static func baseFoot(bob: Double) -> Double { footHeight + max(0, bob) }
+
+    /// How far along the glass's normal (toward the eye positive) the slab
+    /// moves at turn `yaw`, its foot `foot` up the half: so that its edge on
+    /// the side the eye sees lower, slices included, is in the glass plane.
+    public static func shift(yaw: Double, width: Double, foot: Double, seat: Double, hinge: Double) -> Double {
+        let depth = Double(TabletopScene.sliceCount) * TabletopScene.sliceGap, sn = abs(sin(yaw)), cs = cos(yaw)
+        let front = sn * width / 2 + depth * max(0, -cs), back = sn * width / 2 + depth * max(0, cs)
+        let phi = TabletopProjection.phi(hingeDegrees: hinge), eye = TabletopProjection.eye(elevation: seat)
+        // A point a step out of the glass from the foot: seen lower or higher?
+        let out = TabletopVec(0, -foot * cos(phi) - sin(phi), -foot * sin(phi) + cos(phi))
+        let frontSeenLower = TabletopProjection.onScreen(out, phi: phi, eye: eye).y < foot
+        return frontSeenLower ? -front : back
+    }
+
+    /// The slab with its foot `foot` up the half, moved along the normal by `shift`.
+    static func slab(foot: Double, yaw: Double, width: Double, height: Double,
+                     seat: Double, hinge: Double) -> TabletopScene.Card {
+        let phi = TabletopProjection.phi(hingeDegrees: hinge)
+        let d = shift(yaw: yaw, width: width, foot: foot, seat: seat, hinge: hinge)
+        return TabletopScene.Card(offset: 0, focus: 1, width: width, height: height, yaw: yaw, centerX: 0,
+                                  centerZ: -foot * sin(phi) + d * cos(phi), lift: foot * cos(phi) + d * sin(phi),
+                                  lean: 0, opacity: 1, tilt: phi)
+    }
+
     /// How far up the standing half the slab's foot stands at turn `yaw`:
-    /// `footHeight` (plus the bob), or just high enough that its lowest
-    /// corner, slices included, is seen `foldClearance` up the half.
+    /// `baseFoot`, or just high enough that its lowest corner, slices
+    /// included, is seen `foldClearance` up the half.
     public static func footRise(yaw: Double, width: Double, height: Double,
                                 seat: Double, hinge: Double, bob: Double = 0) -> Double {
-        let base = footHeight + bob
+        let base = baseFoot(bob: bob)
         func clears(_ s: Double) -> Bool {
-            lowest(foot: s, yaw: yaw, width: width, height: height, seat: seat, hinge: hinge) >= foldClearance
+            seen(slab(foot: s, yaw: yaw, width: width, height: height, seat: seat, hinge: hinge),
+                 seat: seat, hinge: hinge).low >= foldClearance
         }
         guard !clears(base) else { return base }
-        var low = base, high = base + 40
-        while !clears(high), high < base + 4000 { high += (high - low) * 2 }
+        var low = base, high = base + 10
+        while !clears(high), high < base + 2000 { high += (high - low) * 2 }
         for _ in 0..<32 {
             let mid = (low + high) / 2
             if clears(mid) { high = mid } else { low = mid }
@@ -67,20 +109,37 @@ public enum TabletopGlass {
         return high
     }
 
-    /// How far up the standing half the lowest corner of the slab (its
-    /// slices too) is seen, with its foot `foot` up the half.
-    public static func lowest(foot: Double, yaw: Double, width: Double, height: Double,
-                              seat: Double, hinge: Double) -> Double {
-        let phi = TabletopProjection.phi(hingeDegrees: hinge), eye = TabletopProjection.eye(elevation: seat)
-        let card = TabletopScene.Card(offset: 0, focus: 1, width: width, height: height, yaw: yaw, centerX: 0,
-                                      centerZ: -foot * sin(phi), lift: foot * cos(phi), lean: 0, opacity: 1, tilt: phi)
-        var low = Double.infinity
-        for depth in 0...TabletopScene.sliceCount {
-            for v in card.corners(depth: -Double(depth) * TabletopScene.sliceGap) {
-                low = min(low, TabletopProjection.onScreen(v, phi: phi, eye: eye).y)
-            }
+    /// The slab's size at turn `yaw`: `slabScale`, or just small enough that
+    /// its head stays `TabletopScene.slabTopCap` up the half.
+    public static func fitScale(yaw: Double, seat: Double, hinge: Double, bob: Double = 0) -> Double {
+        func fits(_ k: Double) -> Bool {
+            let w = TabletopScene.posterWidth * k, h = TabletopScene.posterHeight * k
+            let foot = footRise(yaw: yaw, width: w, height: h, seat: seat, hinge: hinge, bob: bob)
+            return seen(slab(foot: foot, yaw: yaw, width: w, height: h, seat: seat, hinge: hinge),
+                        seat: seat, hinge: hinge).high <= TabletopScene.slabTopCap
+        }
+        guard !fits(slabScale) else { return slabScale }
+        var low = TabletopScene.markerScale, high = slabScale
+        for _ in 0..<24 {
+            let mid = (low + high) / 2
+            if fits(mid) { low = mid } else { high = mid }
         }
         return low
+    }
+
+    /// How low and how high up the standing half the slab's corners, its
+    /// slices' too, are seen.
+    public static func seen(_ card: TabletopScene.Card, seat: Double, hinge: Double) -> (low: Double, high: Double) {
+        let phi = TabletopProjection.phi(hingeDegrees: hinge), eye = TabletopProjection.eye(elevation: seat)
+        var low = Double.infinity, high = -Double.infinity
+        for depth in 0...TabletopScene.sliceCount {
+            for v in card.corners(depth: -Double(depth) * TabletopScene.sliceGap) {
+                let y = TabletopProjection.onScreen(v, phi: phi, eye: eye).y
+                low = min(low, y)
+                high = max(high, y)
+            }
+        }
+        return (low, high)
     }
 
     /// The card for a style `amount` of the way from "Across the fold" (0)

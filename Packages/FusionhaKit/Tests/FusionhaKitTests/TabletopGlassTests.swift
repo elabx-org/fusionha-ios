@@ -2,8 +2,8 @@ import XCTest
 @testable import FusionhaKit
 
 /// "At the fold" (`TabletopGlass`): the slab stands in the upright screen's
-/// plane, its foot 22 pt up from the hinge, at 0.96, upright, and however it
-/// turns nothing of it is seen below 20 pt up the standing half.
+/// plane, its foot 22 pt up from the hinge, at 0.96, upright; a turn moves it
+/// back into the glass rather than up, and its head stays under the cap.
 final class TabletopGlassTests: XCTestCase {
     private let tolerance = 1e-3
 
@@ -27,18 +27,51 @@ final class TabletopGlassTests: XCTestCase {
         }
     }
 
-    func testAtItsRestingTurnTheFootRisesToClearTheFold() throws {
+    /// At its resting turn its near edge would come out of the glass, so it
+    /// goes back into the glass by that much (18.7 pt) and its foot stays 22 up.
+    func testAtItsRestingTurnItGoesBackIntoTheGlass() throws {
         let card = try XCTUnwrap(TabletopGlass.card(offset: 0, seat: 50, hinge: 105))
-        let foot = TabletopGlass.footRise(yaw: TabletopScene.restingSway, width: 220.8, height: 331.2, seat: 50, hinge: 105)
-        XCTAssertEqual(foot, 32.8883, accuracy: tolerance)
-        XCTAssertEqual(card.lift, foot * cos(phi(105)), accuracy: tolerance)
-        XCTAssertEqual(card.centerZ, -foot * sin(phi(105)), accuracy: tolerance)
+        XCTAssertEqual(TabletopGlass.footRise(yaw: TabletopScene.restingSway, width: 220.8, height: 331.2,
+                                              seat: 50, hinge: 105), 22, accuracy: tolerance)
+        XCTAssertEqual(TabletopGlass.shift(yaw: TabletopScene.restingSway, width: 220.8, foot: 22, seat: 50, hinge: 105),
+                       -18.6777, accuracy: tolerance)
+        XCTAssertEqual(card.centerZ, -23.7353, accuracy: tolerance)
+        XCTAssertEqual(card.lift, 16.4162, accuracy: tolerance)
         let eye = TabletopProjection.eye(elevation: 50)
         let seen = card.corners().map { TabletopProjection.onScreen($0, phi: phi(105), eye: eye) }
-        XCTAssertEqual(seen[0].y, 354.3768, accuracy: tolerance)
-        XCTAssertEqual(seen[1].y, 373.617, accuracy: tolerance)
-        XCTAssertEqual(seen[2].y, 45.534, accuracy: tolerance)
-        XCTAssertEqual(seen[3].y, 20, accuracy: tolerance)
+        XCTAssertEqual(seen[0].y, 353.2, accuracy: tolerance)
+        XCTAssertEqual(seen[1].y, 372.2828, accuracy: tolerance)
+        XCTAssertEqual(seen[2].y, 47.2586, accuracy: tolerance)
+        XCTAssertEqual(seen[3].y, 22, accuracy: tolerance)
+        XCTAssertEqual(TabletopGlass.swayShare, 0.5)
+    }
+
+    /// Over a full turn, every seat and hinge and the bob, the foot stays
+    /// 22…27 pt up (27 only at the top of the bob: no turn ever lifts it)
+    /// and the head stays at most 420 pt up (the card is drawn smaller
+    /// where it would go higher).
+    func testFootStaysPutAndTheHeadUnderTheCap() throws {
+        for seat in stride(from: 26.0, through: 68, by: 6) {
+            for hinge in stride(from: 92.0, through: 135, by: 7) {
+                for turn in stride(from: 0, to: 360, by: 10) {
+                    let yaw = Double(turn) * Double.pi / 180
+                    for bob in [-TabletopScene.bobReach, 0, TabletopScene.bobReach] {
+                        let k = TabletopGlass.fitScale(yaw: yaw, seat: seat, hinge: hinge, bob: bob)
+                        let foot = TabletopGlass.footRise(yaw: yaw, width: 230 * k, height: 345 * k,
+                                                          seat: seat, hinge: hinge, bob: bob)
+                        XCTAssertGreaterThanOrEqual(foot, 22 - tolerance)
+                        XCTAssertLessThanOrEqual(foot, 22 + max(0, bob) + tolerance)
+                        let card = try XCTUnwrap(TabletopGlass.card(offset: 0, seat: seat, hinge: hinge, sway: yaw, bob: bob))
+                        let seen = TabletopGlass.seen(card, seat: seat, hinge: hinge)
+                        XCTAssertLessThanOrEqual(seen.high, TabletopScene.slabTopCap + tolerance)
+                        XCTAssertGreaterThanOrEqual(seen.low, 22 - tolerance)
+                    }
+                }
+            }
+        }
+        // Facing out it is full size; turned edge-on from a high seat it shrinks.
+        XCTAssertEqual(TabletopGlass.fitScale(yaw: 0, seat: 68, hinge: 92), 0.96)
+        XCTAssertEqual(TabletopGlass.fitScale(yaw: Double.pi / 2, seat: 50, hinge: 105), 0.8711, accuracy: tolerance)
     }
 
     /// Every seat, hinge, turn and bob: nothing of the slab or its slices is
