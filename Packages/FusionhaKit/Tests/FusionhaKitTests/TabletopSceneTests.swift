@@ -2,10 +2,10 @@ import XCTest
 @testable import FusionhaKit
 
 /// The hologram scene's layout (`TabletopScene`) against the stage bench's
-/// numbers (its `drawHolo` and `pts`, with the draw-back and the per-seat
-/// size, run in Python): the focused card floating wholly on the standing
-/// half and leaning back toward the eye, the waiting titles behind the
-/// hinge, and the ring and its dial clear of the fold.
+/// numbers (its `drawHolo` and `pts`, with the draw-back, run in Python):
+/// the focused card standing on the table just in front of the hinge and
+/// leaning back toward the eye, the waiting titles behind the hinge, and
+/// the ring and its dial clear of the fold.
 final class TabletopSceneTests: XCTestCase {
     private let tolerance = 1e-3
     private let seat = TabletopProjection.defaultSeat
@@ -27,47 +27,58 @@ final class TabletopSceneTests: XCTestCase {
     func testFocusedSlab() throws {
         let card = try XCTUnwrap(TabletopScene.card(offset: 0, seat: seat))
         XCTAssertEqual(card.focus, 1, accuracy: tolerance)
-        // 0.6528 of the card at seat 50 (`heldSlabScale`).
-        XCTAssertEqual(card.width, 150.144, accuracy: tolerance)
-        XCTAssertEqual(card.height, 225.216, accuracy: tolerance)
+        // Full size (0.96 of the card) at every seat.
+        XCTAssertEqual(card.width, 220.8, accuracy: tolerance)
+        XCTAssertEqual(card.height, 331.2, accuracy: tolerance)
         XCTAssertEqual(card.yaw, 0.17, accuracy: tolerance)
-        // Its foot 40 in front of the hinge, drawn back by its resting turn;
-        // 40·tan 50° + 52 over the floor; leaning 14.4° at seat 50.
+        // Its foot 45 in front of the hinge, 10 over the table; leaning
+        // 14.4° at seat 50.
         XCTAssertEqual(card.centerX, 0, accuracy: tolerance)
-        XCTAssertEqual(card.centerZ, 27.2991, accuracy: tolerance)
-        XCTAssertEqual(card.lift, 99.6701, accuracy: tolerance)
+        XCTAssertEqual(card.centerZ, 45, accuracy: tolerance)
+        XCTAssertEqual(card.lift, 10, accuracy: tolerance)
         XCTAssertEqual(card.lean * 180 / Double.pi, 14.4, accuracy: tolerance)
         XCTAssertEqual(card.opacity, 1, accuracy: tolerance)
         XCTAssertEqual(card.ghost, 0, accuracy: tolerance)
         XCTAssertEqual(card.reflectionOpacity, 0.82, accuracy: tolerance)
         let front = card.corners()
-        assertVec(front[0], -73.9898, -317.8106, -16.0089)
-        assertVec(front[1], 73.9898, -317.8106, -41.4107)
-        assertVec(front[2], 73.9898, -99.6701, 14.5983)
-        // Its nearest point is exactly `slabZ` in front of the hinge.
-        assertVec(front[3], -73.9898, -99.6701, 40)
+        assertVec(front[0], -108.8086, -330.7947, -18.6884)
+        assertVec(front[1], 108.8086, -330.7947, -56.0438)
+        assertVec(front[2], 108.8086, -10, 26.3223)
+        assertVec(front[3], -108.8086, -10, 63.6777)
         let slice = card.slice(1)
-        assertVec(slice[0], -76.8659, -317.8106, -32.7639)
-        assertVec(slice[2], 71.1137, -99.6701, -2.1567)
+        assertVec(slice[0], -111.6847, -330.7947, -35.4433)
+        assertVec(slice[2], 105.9325, -10, 9.5673)
+        // The reflection is the card mirrored in the floor, from its foot.
         let mirror = card.corners(mirrored: true)
-        assertVec(mirror[0], -73.9898, 317.8106, -16.0089)
-        assertVec(mirror[2], 73.9898, 99.6701, 14.5983)
-        // The beam: as wide as the slab at its foot, down to the emitter's rim.
+        assertVec(mirror[0], -108.8086, 330.7947, -18.6884)
+        assertVec(mirror[2], 108.8086, 10, 26.3223)
+        // The beam: from the emitter's rim to the slab's foot, no higher.
         let beam = card.beam
-        assertVec(beam[0], -75.072, -106.2144, 25.6189)
+        assertVec(beam[0], -110.4, -10, 45)
         assertVec(beam[2], 90, 0, 130)
-        assertVec(card.halo[0], -300, -407.8106, -74.7098)
-        assertVec(card.halo[2], 300, 20, -74.7098)
+        assertVec(card.halo[0], -300, -420.7947, -83.3661)
+        assertVec(card.halo[2], 300, 20, -83.3661)
     }
 
-    func testLiftScaleAndDrawBack() {
-        XCTAssertEqual(TabletopScene.slabLift(seat: 50), 99.6701, accuracy: tolerance)
-        XCTAssertEqual(TabletopScene.slabLift(seat: 26), 71.5093, accuracy: tolerance)
-        XCTAssertEqual(TabletopScene.slabLift(seat: 90), TabletopScene.slabLift(seat: 68))
-        let scales = [20.0, 26, 30, 36, 50, 68, 90].map { TabletopScene.heldSlabScale(seat: $0) }
-        for (got, want) in zip(scales, [0.828, 0.828, 0.86, 0.86, 0.6528, 0.3864, 0.3864]) {
-            XCTAssertEqual(got, want, accuracy: 1e-9)
+    func testStandAndDrawBack() throws {
+        XCTAssertEqual(TabletopScene.slabZ, 45)
+        XCTAssertEqual(TabletopScene.slabLift, 10)
+        XCTAssertEqual(TabletopScene.slabScale, 0.96)
+        // The same lift and size at every seat.
+        for seat in [20.0, 26, 50, 68, 90] {
+            let card = try XCTUnwrap(TabletopScene.card(offset: 0, seat: seat))
+            XCTAssertEqual(card.lift, 10, accuracy: tolerance)
+            XCTAssertEqual(card.width, 220.8, accuracy: tolerance)
         }
+        // At its resting turn the foot is at `slabZ`; turned further it draws
+        // back toward the hinge, facing straight on it comes out, held 8…60.
+        let half = 110.4, slices = 34.0
+        XCTAssertEqual(TabletopScene.stand(yaw: TabletopScene.restingSway, halfWidth: half, sliceDepth: slices), 45, accuracy: tolerance)
+        XCTAssertEqual(TabletopScene.stand(yaw: 0, halfWidth: half, sliceDepth: slices), 60, accuracy: tolerance)
+        XCTAssertEqual(TabletopScene.stand(yaw: 0.4, halfWidth: half, sliceDepth: slices), 20.6859, accuracy: tolerance)
+        XCTAssertEqual(TabletopScene.stand(yaw: -0.62, halfWidth: half, sliceDepth: slices), 8, accuracy: tolerance)
+        XCTAssertEqual(TabletopScene.stand(yaw: Double.pi / 2, halfWidth: half, sliceDepth: slices), 8, accuracy: tolerance)
+        XCTAssertEqual(TabletopScene.stand(yaw: Double.pi, halfWidth: half, sliceDepth: slices), 29.6777, accuracy: tolerance)
         XCTAssertEqual(TabletopScene.forward(yaw: 0, halfWidth: 100, sliceDepth: 34), 0)
         XCTAssertEqual(TabletopScene.forward(yaw: Double.pi / 2, halfWidth: 100, sliceDepth: 34), 100, accuracy: tolerance)
         // Back to front, the slices are in front of the poster.
@@ -81,23 +92,23 @@ final class TabletopSceneTests: XCTestCase {
         XCTAssertEqual(TabletopScene.lean(seat: 52) * 180 / Double.pi, 16.2, accuracy: 1e-9)
         XCTAssertEqual(TabletopScene.lean(seat: 90), TabletopScene.lean(seat: 68))
 
-        // At seat 34 it stands upright, full size: its top edge straight over its foot.
+        // At seat 34 it stands upright: its top edge straight over its foot.
         let upright = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 34))
-        XCTAssertEqual(upright.height, 296.7, accuracy: tolerance)
+        XCTAssertEqual(upright.height, 331.2, accuracy: tolerance)
         XCTAssertEqual(upright.rise, upright.height, accuracy: tolerance)
         XCTAssertEqual(upright.setBack, 0, accuracy: tolerance)
-        assertVec(upright.corners()[0], -97.4743, -375.6803, 40)
+        assertVec(upright.corners()[0], -108.8086, -341.2, 63.6777)
 
         // At seat 52: the top edge at lift + h·cos 16.2° and h·sin 16.2° back
-        // toward the hinge; the bottom edge stays put.
+        // toward the hinge; the bottom edge where it was.
         let leaned = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 52))
-        XCTAssertEqual(leaned.rise, 206.467, accuracy: tolerance)
-        XCTAssertEqual(leaned.setBack, 59.9842, accuracy: tolerance)
-        let top = leaned.corners()
-        assertVec(top[0], -70.6349, -309.6646, -19.9842)
-        assertVec(top[1], 70.6349, -309.6646, -44.2341)
-        assertVec(top[2], 70.6349, -103.1977, 15.7501)
-        XCTAssertEqual(top[3].z, 40, accuracy: tolerance)
+        XCTAssertEqual(leaned.rise, 318.0493, accuracy: tolerance)
+        XCTAssertEqual(leaned.setBack, 92.4019, accuracy: tolerance)
+        let top = leaned.corners(), foot = upright.corners()
+        assertVec(top[0], -108.8086, -328.0493, -28.7241)
+        assertVec(top[1], 108.8086, -328.0493, -66.0796)
+        XCTAssertEqual(top[2], foot[2])
+        XCTAssertEqual(top[3], foot[3])
 
         // Half way to the focus it leans half as far.
         let turning = try XCTUnwrap(TabletopScene.card(offset: 0.5, seat: 52))
@@ -106,50 +117,60 @@ final class TabletopSceneTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(TabletopScene.card(offset: 1, seat: 68)).lean, 0)
     }
 
-    /// Nothing with an edge crosses the fold: at every seat and hinge angle,
-    /// with the bob at its lowest and over a whole turn (the idle sway and a
-    /// finger's spin), every corner of the slab and its slices is seen at
-    /// least 20 pt up the standing half (20.3 at the least: seat 68, hinge
-    /// 135, facing the viewer).
-    func testSlabStaysWhollyOnTheStandingHalf() throws {
-        var lowest = Double.infinity
-        for seat in stride(from: 26.0, through: 68, by: 1) {
-            let eye = TabletopProjection.eye(elevation: seat)
-            for degrees in stride(from: 92.0, through: 135, by: 1) {
-                for turn in stride(from: 0, to: 360, by: 2) {
-                    let card = try XCTUnwrap(TabletopScene.card(offset: 0, seat: seat, sway: Double(turn) * Double.pi / 180,
-                                                                bob: -TabletopScene.bobReach))
-                    let pieces = [card.corners()] + (0..<TabletopScene.sliceCount).map { card.slice($0) }
-                    for v in pieces.joined() {
-                        lowest = min(lowest, TabletopProjection.onScreen(v, phi: phi(degrees), eye: eye).y)
+    /// The card stands just in front of the fold: seen from the seat it is
+    /// drawn for (50, hinge 105), its foot lands on the table and its head
+    /// on the standing half, and the two pieces meet at the fold, about 35
+    /// pt up the card (a tenth of it on the table).
+    func testFocusedCardStandsJustInFrontOfTheFold() throws {
+        let eye = TabletopProjection.eye(elevation: 50)
+        let card = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 50))
+        let corners = card.corners()
+        let head = corners[0...1].map { TabletopProjection.onScreen($0, phi: phi(105), eye: eye) }
+        let foot = corners[2...3].map { TabletopProjection.onFloor($0, eye: eye) }
+        assertPoint(head[0], -112.6811, 286.9113)
+        assertPoint(head[1], 110.5793, 317.0618)
+        assertPoint(foot[0], 109.4036, 18.0293)
+        assertPoint(foot[1], -109.4036, 55.5891)
+        // Up its middle: still on the table 34 pt up, on the standing half by 36.
+        func up(_ s: Double) -> TabletopVec {
+            TabletopVec(0, -(card.lift + s * cos(card.lean)), card.centerZ - s * sin(card.lean))
+        }
+        XCTAssertGreaterThan(TabletopProjection.onFloor(up(34), eye: eye).y, 0)
+        XCTAssertLessThan(TabletopProjection.onScreen(up(34), phi: phi(105), eye: eye).y, 0)
+        XCTAssertLessThan(TabletopProjection.onFloor(up(36), eye: eye).y, 0)
+        XCTAssertGreaterThan(TabletopProjection.onScreen(up(36), phi: phi(105), eye: eye).y, 0)
+        // Over the hinge range, the sway and the bob, its head stays at
+        // least 240 pt up the standing half.
+        for degrees in stride(from: 92.0, through: 135, by: 1) {
+            for sway in [-TabletopScene.swayReach, 0, TabletopScene.restingSway, TabletopScene.swayReach] {
+                for bob in [-5.0, 0, 5] {
+                    let moving = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 50, sway: sway, bob: bob)).corners()
+                    for v in moving[0...1] {
+                        XCTAssertGreaterThan(TabletopProjection.onScreen(v, phi: phi(degrees), eye: eye).y, 240)
                     }
                 }
             }
         }
-        print("Slab clearance over the hinge: \(lowest) pt")
-        XCTAssertGreaterThanOrEqual(lowest, 20)
-        XCTAssertEqual(lowest, 20.338, accuracy: 0.01)
     }
 
-    /// Its top at rest (facing, at its still turn either way, bob up) stays
-    /// at most 400 pt up the standing half at every seat and hinge angle:
-    /// the slab is smaller away from 30°…36° for that (`heldSlabScale`).
-    func testSlabTopStaysUnder400() throws {
-        var highest = -Double.infinity
-        for seat in stride(from: 26.0, through: 68, by: 1) {
-            let eye = TabletopProjection.eye(elevation: seat)
-            for degrees in stride(from: 92.0, through: 135, by: 1) {
-                for sway in [-TabletopScene.restingSway, 0, TabletopScene.restingSway] {
-                    let card = try XCTUnwrap(TabletopScene.card(offset: 0, seat: seat, sway: sway, bob: TabletopScene.bobReach))
-                    let pieces = [card.corners()] + (0..<TabletopScene.sliceCount).map { card.slice($0) }
-                    for v in pieces.joined() {
-                        highest = max(highest, TabletopProjection.onScreen(v, phi: phi(degrees), eye: eye).y)
-                    }
+    /// However it turns (the idle sway, a finger's spin) and bobs, at every
+    /// seat, the centre of the slab's foot stays 8…60 pt in front of the
+    /// hinge: never behind the fold, never out over the ring.
+    func testFootStaysJustInFrontOfTheFold() throws {
+        var near = Double.infinity, far = -Double.infinity
+        for seat in stride(from: 26.0, through: 68, by: 2) {
+            for turn in stride(from: 0, to: 360, by: 2) {
+                for bob in [-TabletopScene.bobReach, 0, TabletopScene.bobReach] {
+                    let card = try XCTUnwrap(TabletopScene.card(offset: 0, seat: seat, sway: Double(turn) * Double.pi / 180,
+                                                                bob: bob))
+                    near = min(near, card.centerZ)
+                    far = max(far, card.centerZ)
+                    XCTAssertGreaterThanOrEqual(card.lift, 5 - tolerance)
                 }
             }
         }
-        print("Slab top at rest: \(highest) pt")
-        XCTAssertLessThanOrEqual(highest, 400)
+        XCTAssertEqual(near, TabletopScene.slabFootNear, accuracy: tolerance)
+        XCTAssertEqual(far, TabletopScene.slabFootFar, accuracy: tolerance)
     }
 
     /// Nothing hard of the ring or its dial comes within 20 pt of the hinge:
@@ -197,13 +218,13 @@ final class TabletopSceneTests: XCTestCase {
         XCTAssertEqual(card.focus, 0.5, accuracy: tolerance)
         XCTAssertEqual(card.yaw, 0.2115, accuracy: tolerance)
         XCTAssertEqual(card.centerX, 49, accuracy: tolerance)
-        XCTAssertEqual(card.centerZ, -22.993, accuracy: tolerance)
-        XCTAssertEqual(card.width, 114.172, accuracy: tolerance)
-        XCTAssertEqual(card.lift, 49.8351, accuracy: tolerance)
+        XCTAssertEqual(card.centerZ, -16.0241, accuracy: tolerance)
+        XCTAssertEqual(card.width, 149.5, accuracy: tolerance)
+        XCTAssertEqual(card.lift, 5, accuracy: tolerance)
         XCTAssertEqual(card.lean * 180 / Double.pi, 7.2, accuracy: tolerance)
         XCTAssertEqual(card.opacity, 0.8, accuracy: tolerance)
-        assertVec(card.corners()[0], -6.8135, -219.7427, -32.4714)
-        assertVec(card.slice(1)[0], -8.5982, -219.7427, -40.7819)
+        assertVec(card.corners()[0], -24.0838, -227.4817, -28.4354)
+        assertVec(card.slice(1)[0], -25.8685, -227.4817, -36.746)
     }
 
     func testFloorBehindTheHinge() {

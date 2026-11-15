@@ -4,7 +4,7 @@ import FusionhaKit
 /// What a finger on the hologram page took hold of, decided where it went
 /// down (tabletop plan, slice 6; the hinge-fix mock's pointer modes): the
 /// dial (the band round the emitter ring's rim, on the bottom half and clear
-/// of the fold), the slab (the focused title, on the top half: it spins), or
+/// of the fold), the slab (the focused title, on either half: it spins), or
 /// anywhere else (a swipe turns the ring). Each excludes the others, so the
 /// dial's turn and the slab's spin never also swipe.
 enum V2HologramGrip: Equatable {

@@ -61,14 +61,12 @@ struct V2HologramPlaced: Identifiable {
         }
     }
 
-    /// The title drawn at `point` of the container, the nearest first. Every
-    /// title, the slab too, is drawn wholly on the top half, so only that
-    /// half is searched.
+    /// The title drawn at `point` of the container, the nearest first. The
+    /// slab is found on either half: its foot is drawn on the table.
     static func hit(_ point: CGPoint, in placed: [V2HologramPlaced], rig: V2HologramRig) -> Int? {
         let at = rig.locate(point)
-        guard at.half == .top else { return nil }
         return placed.sorted { $0.order > $1.order }.first {
-            TabletopProjection.contains(rig.quad($0.card.corners(), on: .top), at.point)
+            TabletopProjection.contains(rig.quad($0.card.corners(), on: at.half), at.point)
         }?.id
     }
 }

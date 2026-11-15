@@ -32,7 +32,7 @@ public enum TabletopLift {
         public let corners: Double
         /// The slab's thickness, its turn and bob, the beam and the halo (0.58…1).
         public let depth: Double
-        /// The beam's piece on the table, across the fold (0.7…1).
+        /// The pieces seen against the table: the slab's foot and the beam (0.7…1).
         public let twins: Double
         /// The reflections on the table (0.5…1).
         public let reflection: Double
