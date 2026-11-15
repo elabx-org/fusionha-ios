@@ -133,9 +133,18 @@ public enum TabletopScene {
             opacity: min(1, max(0, (reach - away) / 0.5)) * (0.6 + 0.4 * f))
     }
 
-    /// The floor behind the hinge, as wide as the display, `floorDepth` deep.
+    /// How far the floor behind the hinge runs on past each side of the
+    /// display: three of the grid's twelve columns. As wide as the display,
+    /// its sides closed in toward the back (perspective) and read on the
+    /// wall as two slanted edges; this wide they stay off the display at
+    /// every hinge angle (at 92° its back corners are 412 pt out).
+    public static let floorOverhang = 3 * TabletopProjection.designWidth / 12
+    /// The floor behind the hinge's width: the display and the overhang either side.
+    public static var floorBehindWidth: Double { TabletopProjection.designWidth + 2 * floorOverhang }
+
+    /// The floor behind the hinge, `floorBehindWidth` wide and `floorDepth` deep.
     public static var floorBehind: [TabletopVec] {
-        let half = TabletopProjection.designWidth / 2
+        let half = floorBehindWidth / 2
         return [TabletopVec(-half, 0, -floorDepth), TabletopVec(half, 0, -floorDepth),
                 TabletopVec(half, 0, 0), TabletopVec(-half, 0, 0)]
     }

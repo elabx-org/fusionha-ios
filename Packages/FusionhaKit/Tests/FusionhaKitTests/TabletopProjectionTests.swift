@@ -180,11 +180,23 @@ final class TabletopProjectionTests: XCTestCase {
 
     func testFloorBehindTheHinge() {
         let seen = TabletopScene.floorBehind.map { TabletopProjection.onScreen($0, phi: phi(105)) }
-        assertPoint(seen[0], -281.734, 219.1732)
-        assertPoint(seen[1], 281.734, 219.1732)
-        assertPoint(seen[2], 334.5, 0)
-        assertPoint(seen[3], -334.5, 0)
+        assertPoint(seen[0], -422.601, 219.1732)
+        assertPoint(seen[1], 422.601, 219.1732)
+        assertPoint(seen[2], 501.75, 0)
+        assertPoint(seen[3], -501.75, 0)
         let wide = TabletopScene.floorBehind.map { TabletopProjection.onScreen($0, phi: phi(130)) }
-        assertPoint(wide[0], -293.1086, 216.7866)
+        assertPoint(wide[0], -439.663, 216.7866)
+    }
+
+    /// The floor behind the hinge runs off both sides of the display at every
+    /// hinge angle, so its sides never draw an edge on the wall.
+    func testFloorBehindOutrunsTheDisplay() {
+        XCTAssertEqual(TabletopScene.floorBehindWidth, 1003.5, accuracy: tolerance)
+        let display = TabletopProjection.designWidth / 2
+        for degrees in [92.0, 105, 120, 135] {
+            let back = TabletopScene.floorBehind.map { TabletopProjection.onScreen($0, phi: phi(degrees)) }
+            XCTAssertLessThan(back[0].x, -display - 60, "\(degrees)°")
+            XCTAssertGreaterThan(back[1].x, display + 60, "\(degrees)°")
+        }
     }
 }

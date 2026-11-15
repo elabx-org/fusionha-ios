@@ -52,7 +52,9 @@ struct V2HologramHalf: View {
             .frame(width: rig.size.width * 1.24, height: rig.hingeY * 1.48)
             .position(x: rig.size.width / 2, y: rig.hingeY)
             .opacity(stages.floor)
-        let pad = CGSize(width: CGFloat(TabletopProjection.designWidth), height: CGFloat(TabletopScene.floorDepth))
+        // Wider than the display, so its sides are off it and only its
+        // soft back edge is on the wall.
+        let pad = CGSize(width: CGFloat(TabletopScene.floorBehindWidth), height: CGFloat(TabletopScene.floorDepth))
         V2HologramFloor(part: .behind, look: look, size: pad, ring: moment.print.ring, spin: moment.spin)
             .hologramPiece(rig.transform(TabletopScene.floorBehind, on: .top, from: pad), box: pad)
             .opacity(stages.floor)

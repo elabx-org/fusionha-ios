@@ -17,7 +17,7 @@ struct V2HologramFloor: View {
     let part: Part
     let look: V2HologramLook
     /// The plate's size in the scene's points; the hinge is its top edge
-    /// (front) or its bottom edge (behind).
+    /// (front) or its bottom edge (behind). Both are centred on the display.
     let size: CGSize
     /// How far the ring has come on (the print-in) and the dashed ring's turn.
     var ring: Double = 1
@@ -50,7 +50,9 @@ struct V2HologramFloor: View {
     /// The title's light on the floor: under the ring in front, spilling
     /// back from the hinge behind.
     private var pool: some View {
-        let radius = part == .front ? CGSize(width: size.width * 0.5, height: 200) : CGSize(width: size.width * 0.5, height: size.height * 0.6)
+        // As wide as the display on both plates (the plate behind runs past it).
+        let across = CGFloat(TabletopProjection.designWidth) * 0.5
+        let radius = part == .front ? CGSize(width: across, height: 200) : CGSize(width: across, height: size.height * 0.6)
         let opacity = part == .front ? look.floorGlow : look.padGlow
         return EllipticalGradient(colors: [look.tint.opacity(opacity), look.tint.opacity(0)])
             .frame(width: radius.width * 2, height: radius.height * 2)
@@ -70,7 +72,8 @@ struct V2HologramFloor: View {
 }
 
 /// The floor's grid: a line every 44 pt going back and twelve columns across
-/// the 669-pt display, so the two plates' lines meet at the hinge.
+/// the 669-pt display, so the two plates' lines meet at the hinge (the plate
+/// behind is whole columns wider either side, `TabletopScene.floorOverhang`).
 private struct V2HologramGrid: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()

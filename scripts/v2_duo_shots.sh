@@ -211,6 +211,11 @@ WAIT=16 FRAME=portrait shoot home-tabletop-hologram-oled $PAL=oled $TT $HOLO
 WAIT=16 FRAME=portrait shoot home-tabletop-hologram-monochrome $PAL=monochrome $TT $HOLO
 WAIT=16 FRAME=portrait shoot home-tabletop-hologram-colour $TT $HOLO $SECOND
 WAIT=16 FRAME=portrait shoot home-tabletop-hologram-colour-daylight $DAY $TT $HOLO $SECOND
+# The other four palettes (tabletop plan, slice 5), on the same colourful
+# poster: Graphite, Frost and Eclipse keep a hue, Noir is true black and hue-less.
+for pal in graphite frost eclipse noir; do
+  WAIT=16 FRAME=portrait shoot "home-tabletop-hologram-$pal" $PAL=$pal $TT $HOLO $SECOND
+done
 # The lift between the two looks (tabletop plan, slice 3), held part of the
 # way: -start is the scene drawing the flat carousel's posters (they must sit
 # exactly where home-tabletop has them), then a quarter, half and three
