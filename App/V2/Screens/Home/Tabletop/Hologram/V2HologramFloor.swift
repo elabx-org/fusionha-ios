@@ -2,7 +2,8 @@ import SwiftUI
 import FusionhaKit
 
 /// The hologram's floor, drawn flat in the scene's own points (669 wide):
-/// the grid, the pool of the focused title's light and the ring. One plate
+/// the grid, the pool of the focused title's light, the slab's contact
+/// shadow (in front) and the emitter ring. One plate
 /// is the bottom half itself (the table in front of the hinge); another is
 /// the floor behind the hinge, which the scene tips onto the top half so the
 /// grid and the ring carry on across the fold. Content, never glass.
@@ -22,6 +23,9 @@ struct V2HologramFloor: View {
     /// How far the ring has come on (the print-in) and the dashed ring's turn.
     var ring: Double = 1
     var spin: Double = 0
+    /// The floating slab's shadow on the table (front only), under the ring's glow.
+    var contact: TabletopScene.Contact?
+    var contactOpacity: Double = 0
 
     /// The hinge's y in the plate.
     private var hingeY: CGFloat { part == .front ? 0 : size.height }
@@ -30,12 +34,24 @@ struct V2HologramFloor: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             ground.mask { fade }
+            if part == .front, let contact, contactOpacity > 0 { shadow(contact) }
             V2HologramRing(look: look, glows: part == .front, spin: spin)
                 .position(x: size.width / 2, y: ringY)
                 .opacity(ring)
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
         .clipped()
+    }
+
+    /// The mock's `.cshadow`: an ellipse, darkest at its centre.
+    private func shadow(_ contact: TabletopScene.Contact) -> some View {
+        EllipticalGradient(stops: [.init(color: look.contact.opacity(look.contactCore), location: 0),
+                                   .init(color: look.contact.opacity(look.contactMid), location: 0.55),
+                                   .init(color: look.contact.opacity(0), location: 1)],
+                           center: .center, startRadiusFraction: 0, endRadiusFraction: 0.5)
+            .frame(width: CGFloat(contact.width), height: CGFloat(contact.depth))
+            .position(x: size.width / 2 + CGFloat(contact.centerX), y: hingeY + CGFloat(contact.centerZ))
+            .opacity(contactOpacity)
     }
 
     private var ground: some View {
@@ -104,14 +120,20 @@ struct V2HologramRing: View {
     /// The dashed inner ring's turn (radians): it goes slowly round.
     var spin: Double = 0
 
+    /// The round track the waiting titles stood on. Since the hinge fix
+    /// they stand behind the hinge, so it is not drawn.
+    static let showsTrack = false
+
     private let emitter = CGFloat(TabletopScene.emitterRadius)
     private let track = CGFloat(TabletopScene.trackRadius)
 
     var body: some View {
         ZStack {
-            if glows { glow(radius: track, spread: 26, opacity: 0.32) }
-            Circle().strokeBorder(look.ring.opacity(0.55), lineWidth: 1.5)
-                .frame(width: track * 2, height: track * 2)
+            if Self.showsTrack {
+                if glows { glow(radius: track, spread: 26, opacity: 0.32) }
+                Circle().strokeBorder(look.ring.opacity(0.55), lineWidth: 1.5)
+                    .frame(width: track * 2, height: track * 2)
+            }
             glow(radius: emitter, spread: 30, opacity: look.isLight ? 0.5 : 0.75)
             Circle().strokeBorder(look.ring, lineWidth: 3.5)
                 .frame(width: emitter * 2, height: emitter * 2)

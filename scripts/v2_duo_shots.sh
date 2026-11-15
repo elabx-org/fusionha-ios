@@ -202,6 +202,9 @@ for theme in dark daylight; do
   WAIT=16 FRAME=portrait shoot "home-tabletop-hologram$SUF" $T $TT $HOLO
 done
 WAIT=16 FRAME=portrait shoot home-tabletop-hologram-130 $TT $HOLO SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TABLETOP_HINGE=130
+# The lowest hinge angle the picture follows (slice 5: the floating slab
+# clears the hinge at both ends of the range).
+WAIT=16 FRAME=portrait shoot home-tabletop-hologram-92 $TT $HOLO SIMCTL_CHILD_FUSIONHA_SCREENSHOT_TABLETOP_HINGE=92
 # The coloured room (tabletop plan, slice 4) on the hue-less palettes (a grey
 # room; OLED's is black underneath), and on a title with a colourful poster
 # (the second card; the mock server's third, Game of Thrones, is near black).

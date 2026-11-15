@@ -49,6 +49,16 @@ struct V2HologramRig: Equatable {
         }
     }
 
+    /// Where the eye sees `corners` land on the floor (a mirror image under
+    /// it), drawn on `half`: on the top half, the floor behind the hinge.
+    func floorQuad(_ corners: [TabletopVec], on half: Half) -> [TabletopPoint] {
+        corners.map { v in
+            let hit = TabletopProjection.onFloor(v)
+            let p = point(TabletopVec(hit.x, 0, hit.y), on: half)
+            return TabletopPoint(Double(p.x), Double(p.y))
+        }
+    }
+
     /// The transform that draws a `box`-sized view (at the layer's top-left)
     /// onto `corners` as the eye sees them on `half`.
     func transform(_ corners: [TabletopVec], on half: Half, from box: CGSize) -> ProjectionTransform {

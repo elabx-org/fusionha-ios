@@ -94,71 +94,111 @@ final class TabletopProjectionTests: XCTestCase {
     func testFocusedSlab() throws {
         let card = try XCTUnwrap(TabletopScene.card(offset: 0))
         XCTAssertEqual(card.focus, 1, accuracy: tolerance)
-        XCTAssertEqual(card.width, 220.8, accuracy: tolerance)
-        XCTAssertEqual(card.height, 331.2, accuracy: tolerance)
+        XCTAssertEqual(card.width, 197.8, accuracy: tolerance)
+        XCTAssertEqual(card.height, 296.7, accuracy: tolerance)
         XCTAssertEqual(card.yaw, 0.17, accuracy: tolerance)
-        XCTAssertEqual(card.lift, 22, accuracy: tolerance)
+        // Floating over the ring's centre (the hinge-fix mock: 125 over the floor).
+        XCTAssertEqual(card.centerX, 0, accuracy: tolerance)
+        XCTAssertEqual(card.centerZ, 110, accuracy: tolerance)
+        XCTAssertEqual(card.lift, 125, accuracy: tolerance)
         XCTAssertEqual(card.opacity, 1, accuracy: tolerance)
-        XCTAssertEqual(card.reflectionOpacity, 0.82, accuracy: tolerance)
+        // The slab has no reflection; the shadow under it replaces it.
+        XCTAssertEqual(card.reflectionOpacity, 0, accuracy: tolerance)
         XCTAssertEqual(card.ghost, 0, accuracy: tolerance)
         let front = card.corners()
-        assertVec(front[0], -108.8086, -353.2, 128.6777)
-        assertVec(front[1], 108.8086, -353.2, 91.3223)
-        assertVec(front[2], 108.8086, -22, 91.3223)
-        assertVec(front[3], -108.8086, -22, 128.6777)
+        assertVec(front[0], -97.4743, -421.7, 126.7321)
+        assertVec(front[1], 97.4743, -421.7, 93.2679)
+        assertVec(front[2], 97.4743, -125, 93.2679)
+        assertVec(front[3], -97.4743, -125, 126.7321)
         let slice = card.slice(1)
-        assertVec(slice[0], -111.6847, -353.2, 111.9228)
-        assertVec(slice[2], 105.9325, -22, 74.5673)
+        assertVec(slice[0], -100.3504, -421.7, 109.9772)
+        assertVec(slice[2], 94.5982, -125, 76.5129)
         let mirror = card.corners(mirrored: true)
-        assertVec(mirror[0], -108.8086, 353.2, 128.6777)
-        assertVec(mirror[2], 108.8086, 22, 91.3223)
+        assertVec(mirror[0], -97.4743, 421.7, 126.7321)
+        assertVec(mirror[2], 97.4743, 125, 93.2679)
         let beam = card.beam
-        assertVec(beam[0], -101.568, -88.24, 110)
+        assertVec(beam[0], -90.988, -184.34, 110)
         assertVec(beam[2], 108, 0, 110)
-        // Seen at a 105° hinge: its top on the standing half, its foot on the table.
+        // Seen at a 105° hinge: the whole slab on the standing half, its foot
+        // 37 pt over the hinge.
         let seen = front.map { TabletopProjection.onScreen($0, phi: phi(105)) }
-        assertPoint(seen[0], -120.2381, 258.123)
-        assertPoint(seen[1], 118.1618, 277.6575)
-        assertPoint(seen[2], 113.5056, -36.2183)
-        let floor = front.map(TabletopProjection.onFloor)
-        assertPoint(floor[2], 110.6219, 59.6843)
-        assertPoint(floor[3], -110.6219, 97.6623)
+        assertPoint(seen[0], -108.5511, 328.2987)
+        assertPoint(seen[1], 106.856, 344.8683)
+        assertPoint(seen[2], 103.0338, 57.546)
+        assertPoint(seen[3], -104.6088, 37.1859)
         let halo = card.halo.map { TabletopProjection.onScreen($0, phi: phi(105)) }
-        assertPoint(halo[0], -325.306, 380.3375)
+        assertPoint(halo[0], -328.0855, 449.2713)
         assertPoint(halo[2], 307.68, -56.8045)
         // The pool of shadow: the halo's plane, 470 either side, 210 over the slab's head.
         let shade = card.shade
-        assertVec(shade[0], -470, -563.2, 64)
+        assertVec(shade[0], -470, -631.7, 64)
         assertVec(shade[2], 470, 150, 64)
         XCTAssertEqual(card.shadeOpacity, 1, accuracy: tolerance)
+        // The contact shadow on the table, under the ring's centre, breathing with the bob.
+        XCTAssertEqual(card.contact.centerX, 0, accuracy: tolerance)
+        XCTAssertEqual(card.contact.centerZ, 110, accuracy: tolerance)
+        XCTAssertEqual(card.contact.width, 221.536, accuracy: tolerance)
+        XCTAssertEqual(card.contact.depth, 75.3222, accuracy: tolerance)
+        XCTAssertEqual(card.contactOpacity, 0.9, accuracy: tolerance)
+        let up = try XCTUnwrap(TabletopScene.card(offset: 0, bob: 5))
+        XCTAssertEqual(up.contact.width, 209.668, accuracy: tolerance)
+        XCTAssertEqual(up.contactOpacity, 0.8, accuracy: tolerance)
     }
 
-    /// The reflection ends before the page dots: the eye sees the last of
-    /// the slab's mirror image on the table short of 297 pt from the hinge.
-    func testReflectionEndsBeforeTheDots() throws {
-        let card = try XCTUnwrap(TabletopScene.card(offset: 0, sway: 0))
-        let depth = card.lift + card.height * TabletopScene.reflectionReach
-        let end = TabletopProjection.onFloor(TabletopVec(0, depth, card.centerZ))
-        XCTAssertGreaterThan(end.y, 240)
-        XCTAssertLessThan(end.y, 285)
+    /// Nothing solid crosses the hinge: every title, at every place, the
+    /// sway's widest, the bob's lowest and every hinge angle, is seen over
+    /// the hinge on the standing half (the slab's slices too); the slab's
+    /// head stays under the bar (400 pt at most).
+    func testNothingSolidCrossesTheHinge() throws {
+        var lowest = Double.infinity, slabTop = -Double.infinity
+        for degrees in stride(from: 92.0, through: 135, by: 1) {
+            let p = phi(degrees)
+            for step in -50...50 {
+                let offset = Double(step) / 20
+                for sway in [-0.24, 0, 0.17, 0.24] {
+                    for bob in [-5.0, 0, 5] {
+                        guard let card = TabletopScene.card(offset: offset, sway: sway, bob: bob) else { continue }
+                        let slices = card.hasSlices ? (0..<TabletopScene.sliceCount).map { card.slice($0) } : []
+                        for v in ([card.corners()] + slices).joined() {
+                            let y = TabletopProjection.onScreen(v, phi: p).y
+                            lowest = min(lowest, y)
+                            if step == 0 { slabTop = max(slabTop, y) }
+                        }
+                    }
+                }
+            }
+        }
+        XCTAssertGreaterThan(lowest, 27)
+        XCTAssertLessThan(slabTop, 400)
+        // The slab's foot at the bob's lowest and the sway's widest, at each
+        // end of the range and the resting angle.
+        let low = try XCTUnwrap(TabletopScene.card(offset: 0, sway: TabletopScene.swayReach, bob: -TabletopScene.bobReach))
+        for (degrees, least) in [(92.0, 31.4), (105, 28.25), (135, 27.37)] {
+            let feet = low.corners()[2...3].map { TabletopProjection.onScreen($0, phi: phi(degrees)).y }
+            XCTAssertEqual(feet.min() ?? 0, least, accuracy: 0.01, "\(degrees)°")
+        }
     }
 
-    func testMarkersOnTheRing() throws {
+    func testWaitingTitlesStandBehindTheHinge() throws {
         let next = try XCTUnwrap(TabletopScene.card(offset: 1))
         XCTAssertEqual(next.focus, 0, accuracy: tolerance)
         XCTAssertEqual(next.yaw, 0.5061, accuracy: tolerance)
-        XCTAssertEqual(next.centerX, 145.8643, accuracy: tolerance)
-        XCTAssertEqual(next.centerZ, 18.8539, accuracy: tolerance)
+        XCTAssertEqual(next.centerX, 196, accuracy: tolerance)
+        XCTAssertEqual(next.centerZ, -96, accuracy: tolerance)
+        XCTAssertEqual(next.lift, 0, accuracy: tolerance)
         XCTAssertEqual(next.opacity, 0.6, accuracy: tolerance)
         XCTAssertEqual(next.reflectionOpacity, 0.132, accuracy: tolerance)
         XCTAssertFalse(next.hasSlices)
-        assertVec(next.corners()[0], 111.6666, -117.3, 37.8099)
-        assertVec(next.corners()[2], 180.0619, 0, -0.1022)
+        assertVec(next.corners()[0], 161.8024, -117.3, -77.0439)
+        assertVec(next.corners()[2], 230.1976, 0, -114.9561)
 
         let back = try XCTUnwrap(TabletopScene.card(offset: -2))
-        XCTAssertEqual(back.centerX, -154.5926, accuracy: tolerance)
-        XCTAssertEqual(back.centerZ, 185.3998, accuracy: tolerance)
-        assertVec(back.corners()[1], -133.8727, -117.3, 218.5585)
+        XCTAssertEqual(back.centerX, -300, accuracy: tolerance)
+        XCTAssertEqual(back.centerZ, -140, accuracy: tolerance)
+        assertVec(back.corners()[1], -279.2802, -117.3, -106.8413)
+        let far = TabletopScene.waiting(2.6)
+        XCTAssertEqual(far.x, 362.4, accuracy: tolerance)
+        XCTAssertEqual(far.z, -166.4, accuracy: tolerance)
 
         let fading = try XCTUnwrap(TabletopScene.card(offset: 2.3))
         XCTAssertEqual(fading.opacity, 0.36, accuracy: tolerance)
@@ -170,12 +210,13 @@ final class TabletopProjectionTests: XCTestCase {
         let card = try XCTUnwrap(TabletopScene.card(offset: 0.5))
         XCTAssertEqual(card.focus, 0.5, accuracy: tolerance)
         XCTAssertEqual(card.yaw, 0.2115, accuracy: tolerance)
-        XCTAssertEqual(card.centerX, 41.6936, accuracy: tolerance)
-        XCTAssertEqual(card.centerZ, 34.7827, accuracy: tolerance)
-        XCTAssertEqual(card.lift, 11, accuracy: tolerance)
+        XCTAssertEqual(card.centerX, 49, accuracy: tolerance)
+        XCTAssertEqual(card.centerZ, 18, accuracy: tolerance)
+        XCTAssertEqual(card.width, 138, accuracy: tolerance)
+        XCTAssertEqual(card.lift, 62.5, accuracy: tolerance)
         XCTAssertEqual(card.opacity, 0.8, accuracy: tolerance)
-        assertVec(card.corners()[0], -31.3902, -235.25, 50.4774)
-        assertVec(card.slice(1)[0], -33.1748, -235.25, 42.1669)
+        assertVec(card.corners()[0], -18.462, -269.5, 32.4874)
+        assertVec(card.slice(1)[0], -20.2466, -269.5, 24.1769)
     }
 
     func testFloorBehindTheHinge() {
