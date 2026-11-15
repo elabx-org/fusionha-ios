@@ -8,7 +8,7 @@ import FusionhaKit
 /// controls at the front edge (`V2HologramControls`), with the line-up
 /// control above them while it asks for the seat (`V2HologramLineUp`).
 /// Everything you tap is on the bottom half and clear of the fold. The
-/// emitter ring's rim is a dial, a sideways drag on the slab (on either
+/// emitter ring's rim is a dial, a sideways drag on the slab (on the top
 /// half) spins it, a swipe anywhere else turns the ring (`V2HologramGrip`),
 /// a tap on a waiting title centres it and a tap on the slab opens it; VoiceOver has the scene as one adjustable element
 /// (`V2HologramVoice`). The focus is the row's (`V2ComingUpRow`). `V2HomeTabletop` draws the

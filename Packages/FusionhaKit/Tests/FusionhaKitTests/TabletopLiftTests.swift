@@ -94,8 +94,7 @@ final class TabletopLiftTests: XCTestCase {
 
     /// A poster part of the way up: its corners between the carousel's and
     /// the scene's (a 105° hinge at y 475.5 of a 669-pt page, seat 50). The
-    /// slab's foot ends below the hinge: the top half's layer clips it there
-    /// and its piece on the table comes on with the `twins` stage.
+    /// slab ends wholly above the hinge.
     func testCornersMidLift() throws {
         let phi = 15 * Double.pi / 180, eye = TabletopProjection.eye(elevation: 50)
         func top(_ offset: Double, _ progress: Double) throws -> (quad: [TabletopPoint], opacity: Double, ghost: Double) {
@@ -111,11 +110,11 @@ final class TabletopLiftTests: XCTestCase {
                     card.ghost * stages.corners)
         }
         var got = try top(0, 0.25)
-        assertQuad(got.quad, [[227.165, 135.3379], [441.835, 135.3379], [441.8111, 457.0403], [227.1889, 457.0403]])
+        assertQuad(got.quad, [[231.5157, 131.8523], [437.4843, 131.8523], [437.474, 440.6272], [231.526, 440.6272]])
         XCTAssertEqual(got.opacity, 1, accuracy: tolerance)
         XCTAssertEqual(got.ghost, 0, accuracy: tolerance)
         got = try top(0, 0.5)
-        assertQuad(got.quad, [[221.4788, 185.7585], [447.5212, 185.7585], [447.3956, 523.2306], [221.6044, 523.2306]])
+        assertQuad(got.quad, [[244.3603, 167.427], [424.6397, 167.427], [424.5856, 436.9097], [244.4144, 436.9097]])
         got = try top(1, 0.5)
         assertQuad(got.quad, [[472.6806, 249.0329], [576.8498, 231.5483], [575.0376, 385.3492], [471.3603, 403.4786]])
         XCTAssertEqual(got.opacity, 0.6879, accuracy: tolerance)
@@ -131,42 +130,43 @@ final class TabletopLiftTests: XCTestCase {
         assertQuad(try top(1, 0).quad, [[447.06, 164.84], [603.94, 164.84], [603.94, 400.16], [447.06, 400.16]])
         XCTAssertEqual(try top(1, 0).opacity, 0.8, accuracy: tolerance)
         XCTAssertEqual(try top(1, 1).opacity, 0.6, accuracy: tolerance)
-        // The lift ends on the slab's resting shape across the hinge: its head
-        // on the top half, its foot below the hinge (y 475.5), leaned for seat 50.
-        assertQuad(try top(0, 1).quad, [[216.5236, 251.0825], [450.1745, 218.3233], [449.958, 567.6486], [216.7488, 607.2836]])
+        // The lift ends on the slab's resting shape, its foot above the hinge
+        // (y 475.5), leaned for seat 50.
+        assertQuad(try top(0, 1).quad, [[257.908, 201.8462], [410.1151, 181.0599], [410.0225, 409.6035], [258.003, 433.313]])
     }
 
     func testSlabGrowsItsThicknessAndItsTurn() throws {
         // Half the depth: half the resting turn, the slices half as far back.
         let thin = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 50, sway: 0.17 * 0.5))
         let slice = thin.slice(1, thickness: 0.5)
-        assertVec(slice[0], -110.7231, -342.7947, 48.5373)
-        assertVec(slice[2], 109.2798, -22, 112.158)
+        assertVec(slice[0], -75.5226, -317.8106, -24.4783)
+        assertVec(slice[2], 74.0793, -99.6701, 18.7838)
         XCTAssertEqual(thin.slice(1, thickness: 0), thin.corners())
         let swayed = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 50, sway: 0.2, bob: 4))
-        assertVec(swayed.corners()[0], -108.1994, -346.7947, 69.567)
-        assertVec(swayed.corners()[2], 108.1994, -26, 108.0669)
+        assertVec(swayed.corners()[0], -73.5756, -321.8106, -16.0089)
+        assertVec(swayed.corners()[2], 73.5756, -103.6701, 10.171)
     }
 
     func testScanBar() throws {
         // Half way up the leaned slab (seat 50): half its rise, half its set-back.
         let bar = try XCTUnwrap(TabletopScene.card(offset: 0, seat: 50)).scanBar(reveal: 0.5, half: 4)
-        assertVec(bar[0], -108.8086, -186.3974, 109.4947)
-        assertVec(bar[1], 108.8086, -186.3974, 72.1392)
-        assertVec(bar[2], 108.8086, -178.3974, 72.1392)
-        assertVec(bar[3], -108.8086, -178.3974, 109.4947)
+        assertVec(bar[0], -73.9898, -212.7404, 13.9955)
+        assertVec(bar[1], 73.9898, -212.7404, -11.4062)
+        assertVec(bar[2], 73.9898, -204.7404, -11.4062)
+        assertVec(bar[3], -73.9898, -204.7404, 13.9955)
     }
 
     func testIdle() {
         XCTAssertEqual(TabletopLift.sway(at: 0), 0, accuracy: tolerance)
-        XCTAssertEqual(TabletopLift.sway(at: 1), 0.1636, accuracy: tolerance)
-        XCTAssertEqual(TabletopLift.sway(at: 2.5), 0.229, accuracy: tolerance)
+        // ±0.62 rad at 0.5 rad/s (the stage bench's slower, wider turn).
+        XCTAssertEqual(TabletopLift.sway(at: 1), 0.2972, accuracy: tolerance)
+        XCTAssertEqual(TabletopLift.sway(at: 2.5), 0.5884, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.bob(at: 1), 4.5638, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.bob(at: 10), -4.3773, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.spin(at: 2.5), 0.6042, accuracy: tolerance)
         XCTAssertEqual(TabletopLift.spin(at: 36), TabletopLift.spin(at: 10), accuracy: 1e-9)
         for t in stride(from: 0.0, to: 30, by: 0.37) {
-            XCTAssertLessThanOrEqual(abs(TabletopLift.sway(at: t)), 0.24)
+            XCTAssertLessThanOrEqual(abs(TabletopLift.sway(at: t)), 0.62)
             XCTAssertLessThanOrEqual(abs(TabletopLift.bob(at: t)), 5)
         }
         XCTAssertEqual(TabletopLift.easeOut(0.5), 0.875, accuracy: 1e-9)

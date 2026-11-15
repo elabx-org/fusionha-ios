@@ -16,8 +16,8 @@ import FusionhaKit
 /// draws the carousel's posters from their own places into the scene and
 /// the flat page's bottom half fades into the hologram's controls. Reduce
 /// Motion: the two looks cross-fade and nothing lifts. The scene is drawn
-/// for the viewer's seat (`V2TabletopHologram.seatKey`); until one is
-/// stored, and whenever the Hologram button's "Adjust for my seat" asks,
+/// for the viewer's seat (`V2TabletopHologram.seatKey`, the default until
+/// one is stored); when the Hologram button's "Adjust for my seat" asks,
 /// the page shows the line-up control (`V2HologramLineUp`).
 struct V2HomeTabletop: View {
     let space: V2TabletopSpace
@@ -51,9 +51,9 @@ struct V2HomeTabletop: View {
 
     private var seat: Double { V2TabletopHologram.seat(draft: draftSeat, stored: storedSeat) }
 
-    /// The line-up control is up: no seat stored yet, or asked for again.
+    /// The line-up control is up: only once "Adjust for my seat" asks for it.
     private var asksSeat: Bool {
-        on && !V2TabletopHologram.holdsStill && (draftSeat != nil || storedSeat == nil)
+        on && !V2TabletopHologram.holdsStill && draftSeat != nil
     }
 
     private var lineUp: Binding<Double>? {

@@ -2,12 +2,14 @@ import SwiftUI
 import FusionhaKit
 
 /// "Line it up" (the seat mock, 2026-11-15): the scene is drawn for the
-/// viewer's eye height, which the phone cannot measure, so the first time
-/// the hologram stands with no stored seat a glass capsule on the bottom
-/// half asks for it. The slider moves the seat over 26°…68° and the scene
-/// redraws as it moves (direct manipulation, also under Reduce Motion);
-/// Done stores it (`V2TabletopHologram.seatKey`) and the capsule goes. The
-/// Hologram button's long press brings it back (`V2HologramSwitch`). It
+/// viewer's eye height, which the phone cannot measure. It is drawn for
+/// `TabletopProjection.defaultSeat` until set; the Hologram button's long
+/// press, "Adjust for my seat" (`V2HologramSwitch`), brings up this glass
+/// capsule on the bottom half (since the stage room, 2026-11-15, it no
+/// longer asks on its own the first time). The slider moves the seat over
+/// 26°…68° and the scene redraws as it moves (direct manipulation, also
+/// under Reduce Motion); Done stores it (`V2TabletopHologram.seatKey`) and
+/// the capsule goes. It
 /// sits above the page dots (`V2HologramPage`), clear of the ring and the
 /// title's row. A control, so glass; its words in the page's ink on every
 /// palette.
@@ -18,7 +20,7 @@ struct V2HologramLineUp: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            Text("Slide until the card stands straight")
+            Text("Slide until the floor lines look straight")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(page?.ink ?? Theme.txt)
                 .lineLimit(2)
@@ -29,7 +31,7 @@ struct V2HologramLineUp: View {
                 .tint(Theme.indigo)
                 .accessibilityLabel("Seat height")
                 .accessibilityValue("\(Int(seat.rounded())) degrees")
-                .accessibilityHint("Slide until the card stands straight")
+                .accessibilityHint("Slide until the floor lines look straight")
             Button("Done", action: done)
                 .buttonStyle(.glassProminent)
                 .tint(Theme.indigo)

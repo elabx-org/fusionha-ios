@@ -32,7 +32,7 @@ public enum TabletopLift {
         public let corners: Double
         /// The slab's thickness, its turn and bob, the beam and the halo (0.58…1).
         public let depth: Double
-        /// The pieces seen against the bottom half (0.7…1).
+        /// The beam's piece on the table, across the fold (0.7…1).
         public let twins: Double
         /// The reflections on the table (0.5…1).
         public let reflection: Double
@@ -129,8 +129,10 @@ public enum TabletopLift {
 
     // MARK: Idle
 
-    /// The slab's turn (radians) `seconds` into the idle loop: ±0.24 at 0.75 rad/s.
-    public static func sway(at seconds: Double) -> Double { sin(seconds * 0.75) * TabletopScene.swayReach }
+    /// The slab's turn (radians) `seconds` into the idle loop: ±0.62 at 0.5 rad/s.
+    public static func sway(at seconds: Double) -> Double {
+        sin(seconds * TabletopScene.swayRate) * TabletopScene.swayReach
+    }
     /// The slab's rise and fall (points): ±5 at 1.15 rad/s.
     public static func bob(at seconds: Double) -> Double { sin(seconds * 1.15) * TabletopScene.bobReach }
     /// The dashed inner ring's turn (radians): once round every 26 s.

@@ -1,13 +1,12 @@
 import SwiftUI
 import FusionhaKit
 
-/// Feeds the scene: loads the cards' posters (the focused one first), the
-/// room's colours (`V2HologramRoom`) and the focused title's light, the lead
-/// colour of its art (`ArtPaletteExtractor`, the colours Home's ground is
-/// built from). It is
-/// there for as long as Home is on a table, also while the flat carousel
-/// shows (`lift` 0, nothing drawn), so the posters are ready the moment the
-/// lift starts. It plays the print-in once, when the tabletop appears with
+/// Feeds the scene: loads the cards' posters (the focused one first) and
+/// the focused title's light, the lead colour of its art
+/// (`ArtPaletteExtractor`, the colours Home's ground is built from), and
+/// lays the room (`V2HologramLook.room`) behind it. It is there for as
+/// long as Home is on a table, also while the flat carousel shows (`lift`
+/// 0, nothing drawn), so the posters are ready the moment the lift starts. It plays the print-in once, when the tabletop appears with
 /// the hologram already on (`printsIn`), and runs the idle loop only while
 /// the scene is on screen and the app is active.
 struct V2HologramStage: View {
@@ -57,22 +56,21 @@ struct V2HologramStage: View {
 
     var body: some View {
         let look = V2HologramLook(tint: V2HologramLook.tint(dominant, mono: page?.isMono ?? Theme.isMono),
-                                  isLight: isLight, isDeep: PagePalette.isDeep(Theme.palette))
-        let rig = V2HologramRig(space: space, hingeDegrees: hinge, seat: seat)
+                                  isLight: isLight)
         ZStack(alignment: .topLeading) {
             if lift > 0 {
                 V2HologramScene(space: space, cards: cards, art: art, look: look, position: hand.dial ?? Double(index),
                                 hinge: hinge, seat: seat, rise: rise, lift: lift, flat: flat, idles: moves,
                                 paused: !onScreen || phase != .active, hand: hand)
-                    // The room is drawn once, here, and carries on under the
-                    // bars (the scene itself is Home's container): it comes
-                    // on evenly with the lift's first stage, bar and all.
+                    // The room (black, or Daylight's pale ground) is drawn
+                    // once, here, and carries on under the bars (the scene
+                    // itself is Home's container): it comes on evenly with
+                    // the lift's first stage, bar and all.
                     .background {
-                        V2HologramRoom(hingeY: rig.hingeY, floorHeight: rig.bottomHeight, look: look, art: sample)
+                        look.room
                             .opacity(TabletopLift.Stages(lift).floor)
                             .ignoresSafeArea()
                     }
-                    .coordinateSpace(name: V2HologramRoom.space)
                     .transition(.identity)
             }
         }
@@ -109,12 +107,6 @@ struct V2HologramStage: View {
         for card in order where art[card.id] == nil {
             guard let loaded = await V2HologramArt.load(card.item, scale: displayScale), !Task.isCancelled else { continue }
             art[card.id] = loaded
-        }
-        // The room's colours for every card, so a turn of the ring cross-fades at once.
-        let spec = V2HologramRoom.spec
-        for card in order {
-            guard !Task.isCancelled, let url = ArtPaletteExtractor.sampleURL(card.item.posterUrl ?? card.item.backdropUrl) else { continue }
-            _ = await ArtBlurCache.shared.image(for: url, spec: spec)
         }
     }
 
