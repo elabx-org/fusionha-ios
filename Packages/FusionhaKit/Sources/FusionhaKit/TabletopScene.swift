@@ -186,6 +186,22 @@ public enum TabletopScene {
         return (x, -(waitDepth + waitDepthStep * min(away, reach)))
     }
 
+    /// How far the slab draws back toward the hinge at turn `yaw` (radians),
+    /// `halfWidth` and `sliceDepth` (its glass slices' full depth behind the
+    /// poster): exactly what the turn brings its nearest point forward of
+    /// where it is at the idle sway's widest. Turned, the near edge comes
+    /// forward by halfWidth·|sin yaw|; past a quarter turn the slices are in
+    /// front of the poster too, by sliceDepth·(−cos yaw). So spun (slice 6)
+    /// the slab is never nearer the viewer, and so never lower over the
+    /// hinge, than it is facing them; the ring, the contact shadow and the
+    /// beam's foot stay put.
+    public static func drawBack(yaw: Double, halfWidth: Double, sliceDepth: Double) -> Double {
+        func forward(_ turn: Double) -> Double {
+            halfWidth * abs(sin(turn)) + sliceDepth * max(0, -cos(turn))
+        }
+        return max(0, forward(yaw) - forward(swayReach))
+    }
+
     /// The card `offset` places from the focus, or nil when it is out of
     /// reach. `sway` turns the slab and `bob` raises it (both only as far as
     /// the card is focused). Between a waiting place and the slab's, a card
@@ -196,14 +212,16 @@ public enum TabletopScene {
         let f = smoothstep(1 - away), angle = offset * spread
         let k = markerScale + (slabScale - markerScale) * f
         let wait = waiting(offset)
+        let width = posterWidth * k, yaw = angle * 0.5 * (1 - f) + sway * f
+        let back = drawBack(yaw: yaw, halfWidth: width / 2, sliceDepth: Double(sliceCount) * sliceGap * f)
         return Card(
             offset: offset,
             focus: f,
-            width: posterWidth * k,
+            width: width,
             height: posterHeight * k,
-            yaw: angle * 0.5 * (1 - f) + sway * f,
+            yaw: yaw,
             centerX: wait.x * (1 - f),
-            centerZ: wait.z * (1 - f) + ringZ * f,
+            centerZ: wait.z * (1 - f) + (ringZ - back) * f,
             lift: (slabLift + bob) * f,
             bob: bob * f,
             opacity: min(1, max(0, (reach - away) / 0.5)) * (0.6 + 0.4 * f))

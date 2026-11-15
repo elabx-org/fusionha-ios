@@ -35,32 +35,51 @@ final class TabletopSpinTests: XCTestCase {
         XCTAssertEqual(TabletopSpin.Coast(start: -0.5, velocity: -0.2).home, -2 * Double.pi, accuracy: tolerance)
     }
 
-    /// Over a whole turn the slab is edge-on at 90° and 270°, and then its
-    /// near edge reaches past the hinge as the eye sees it: the turn is not
-    /// clear of the hinge the way the slab facing the viewer is (26.8 pt,
-    /// `testNothingSolidCrossesTheHinge`). Measured, not changed (slice 6
-    /// keeps `slabLift`): the least is about 27 pt below the hinge, at 92°.
-    func testASpinDipsBelowTheHinge() {
+    /// Over a whole turn the slab is edge-on at 90° and 270°: undrawn, its
+    /// near edge reached 27 pt below the hinge as the eye sees it. It draws
+    /// back toward the hinge by what the turn brings it forward
+    /// (`TabletopScene.drawBack`), so at every hinge angle and every turn it
+    /// is never lower over the hinge than facing the viewer (26.8 pt, at
+    /// 123°). Its far top corner goes higher while it is edge-on (the slab's
+    /// whole width is then depth): about 450 pt up at 92°, against 395 facing.
+    func testASpinNeverDipsBelowTheSlabFacingTheViewer() {
         var lowest = Double.infinity, facing = Double.infinity
+        var top = -Double.infinity, facingTop = -Double.infinity
         for degrees in stride(from: 92.0, through: 135, by: 1) {
             let phi = (degrees - 90) * Double.pi / 180
             for turn in 0..<360 {
                 for sway in [-0.24, 0, 0.24] {
-                    for bob in [-5.0, 5] {
+                    for bob in [-5.0, 0, 5] {
                         let spin = Double(turn) * Double.pi / 180
                         guard let card = TabletopScene.card(offset: 0, sway: sway + spin, bob: bob) else { continue }
                         let slices = (0..<TabletopScene.sliceCount).map { card.slice($0) }
                         for v in ([card.corners()] + slices).joined() {
                             let y = TabletopProjection.onScreen(v, phi: phi).y
                             lowest = min(lowest, y)
-                            if turn == 0 { facing = min(facing, y) }
+                            top = max(top, y)
+                            if turn == 0 {
+                                facing = min(facing, y)
+                                facingTop = max(facingTop, y)
+                            }
                         }
                     }
                 }
             }
         }
-        print("Spin clearance over a whole turn: \(lowest) pt (facing: \(facing) pt)")
+        print("Spin over a whole turn: least \(lowest) pt over the hinge (facing \(facing)); top \(top) pt (facing \(facingTop))")
         XCTAssertGreaterThan(facing, 26.5)
-        XCTAssertEqual(lowest, -27.1, accuracy: 1)
+        XCTAssertGreaterThanOrEqual(lowest, facing - 0.01)
+        XCTAssertLessThan(facingTop, 400)
+        XCTAssertEqual(top, 449.9, accuracy: 1)
+    }
+
+    func testDrawsBackOnlyPastTheIdleSway() {
+        let hw = 100.0, depth = 34.0
+        XCTAssertEqual(TabletopScene.drawBack(yaw: 0, halfWidth: hw, sliceDepth: depth), 0)
+        XCTAssertEqual(TabletopScene.drawBack(yaw: -0.24, halfWidth: hw, sliceDepth: depth), 0)
+        let near = hw * sin(0.24)
+        XCTAssertEqual(TabletopScene.drawBack(yaw: Double.pi / 2, halfWidth: hw, sliceDepth: depth), hw - near, accuracy: tolerance)
+        // Back to front, the slices are in front of the poster.
+        XCTAssertEqual(TabletopScene.drawBack(yaw: Double.pi, halfWidth: hw, sliceDepth: depth), depth - near, accuracy: tolerance)
     }
 }
