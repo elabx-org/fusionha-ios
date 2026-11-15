@@ -20,17 +20,15 @@ struct V2HologramVoice: View {
 
     private var index: Int { cards.firstIndex { $0.id == current.id } ?? 0 }
 
-    /// Where the focused slab is drawn: its head on the wall down to its
-    /// foot on the table.
+    /// Where the focused slab is drawn: wholly on the top half.
     private var slab: CGRect {
         let rig = V2HologramRig(space: space, hingeDegrees: hinge, seat: seat)
         guard let card = TabletopScene.card(offset: 0, seat: seat) else { return CGRect(origin: .zero, size: space.size) }
-        let corners = card.corners()
-        let head = corners[0...1].map { rig.point($0, on: .top) }
-        let foot = corners[2...3].map { rig.point($0, on: .bottom) }
-        let xs = (head + foot).map(\.x), top = head.map(\.y).min() ?? 0, base = foot.map(\.y).max() ?? 0
+        let seen = card.corners().map { rig.point($0, on: .top) }
+        let xs = seen.map(\.x), ys = seen.map(\.y)
         let left = xs.min() ?? 0, right = xs.max() ?? space.size.width
-        return CGRect(x: left, y: top, width: right - left, height: rig.hingeY + base - top)
+        let top = ys.min() ?? 0, base = ys.max() ?? rig.hingeY
+        return CGRect(x: left, y: top, width: right - left, height: base - top)
     }
 
     var body: some View {
