@@ -177,6 +177,13 @@ final class ItemActionsTests: XCTestCase {
         XCTAssertEqual(NumberingCopy.sourceGuess(provider: nil), "tvmaze")
     }
 
+    func testHeldEpisodeShowsItsOriginalNumber() throws {
+        let json = #"[{"id": 1, "episode_number": 3}, {"id": 2, "episode_number": 100004}, {"id": 3, "episode_number": 300006}]"#
+        let eps = try JSONDecoder.snake.decode([Episode].self, from: Data(json.utf8))
+        XCTAssertEqual(eps.map(\.shownNumber), [3, 4, 6])
+        XCTAssertEqual(eps.map(\.isHeldForReview), [false, true, true])
+    }
+
     func testCodedRefusalShowsItsDetail() {
         let body = #"{"detail": {"code": "review_required", "detail": "This would hold or remove episodes.", "counts": {}}}"#
         XCTAssertEqual(APIError.http(status: 409, body: body).serverMessage, "This would hold or remove episodes.")

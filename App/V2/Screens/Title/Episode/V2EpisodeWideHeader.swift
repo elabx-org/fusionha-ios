@@ -17,7 +17,7 @@ struct V2EpisodeWideHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Season \(seasonNumber) · Episode \(episode.episodeNumber)")
+            Text("Season \(seasonNumber) · Episode \(episode.shownNumber)\(episode.isHeldForReview ? " · Held for review" : "")")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(muted)
             HStack(spacing: 12) {
@@ -26,7 +26,7 @@ struct V2EpisodeWideHeader: View {
                     .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(episode.title ?? "Episode \(episode.episodeNumber)")
+                    Text(episode.title ?? "Episode \(episode.shownNumber)")
                         .font(.system(size: 24, weight: .bold))
                         .tracking(-0.4)
                         .foregroundStyle(ink)

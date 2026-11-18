@@ -52,21 +52,23 @@ struct V2EpisodeState {
 enum V2EpisodeText {
     /// "E4 · 48m · Oct 20" (anime adds "#52").
     static func meta(_ episode: Episode, anime: Bool) -> String {
-        var parts = ["E\(episode.episodeNumber)"]
+        var parts = ["E\(episode.shownNumber)"]
         if anime, let abs = episode.absoluteNumber { parts[0] += " · #\(abs)" }
         if let runtime = episode.runtime, runtime > 0 { parts.append("\(runtime)m") }
         if let date = episode.airInstant { parts.append(date.formatted(.dateTime.month(.abbreviated).day())) }
+        if episode.isHeldForReview { parts.append("Held for review") }
         return parts.joined(separator: " · ")
     }
 
     /// "S1 · E4 · Oct 20 '26 · 48m" (the episode page).
     static func pageMeta(_ episode: Episode, season: Int) -> String {
-        var parts = ["S\(season)", "E\(episode.episodeNumber)"]
+        var parts = ["S\(season)", "E\(episode.shownNumber)"]
         if let date = episode.airInstant {
             let year = date.formatted(.dateTime.year(.twoDigits))
             parts.append("\(date.formatted(.dateTime.month(.abbreviated).day())) ’\(year)")
         }
         if let runtime = episode.runtime, runtime > 0 { parts.append("\(runtime)m") }
+        if episode.isHeldForReview { parts.append("Held for review") }
         return parts.joined(separator: " · ")
     }
 

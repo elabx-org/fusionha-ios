@@ -12,7 +12,7 @@ struct V2TitleNextUp {
     /// The episode after it that has not aired yet.
     let then: Episode?
 
-    var code: String { "E\(episode.episodeNumber)" }
+    var code: String { "E\(episode.shownNumber)" }
     var title: String { [code, episode.title].compactMap { $0 }.joined(separator: " · ") }
 
     @MainActor
@@ -103,7 +103,7 @@ struct V2TitleNextUpCard: View {
             .padding(10)
             .background { ModuleSurface(radius: 20) }
             if let then = next.then, let when = V2TitleNextUp.when(then, aired: false) {
-                Label("Then \(["E\(then.episodeNumber)", then.title].compactMap { $0 }.joined(separator: " ")) · \(when.replacingOccurrences(of: "Airs ", with: ""))",
+                Label("Then \(["E\(then.shownNumber)", then.title].compactMap { $0 }.joined(separator: " ")) · \(when.replacingOccurrences(of: "Airs ", with: ""))",
                       systemImage: "clock")
                     .font(.system(size: 12.5))
                     .foregroundStyle(muted)
@@ -152,7 +152,7 @@ struct V2TitleNextUpCard: View {
     private var activity: SearchActivity? { store.activity(.episode(next.episode.id)) }
 
     private func search() {
-        let code = EpisodeCode.episode(season: next.season, episode: next.episode.episodeNumber)
+        let code = EpisodeCode.episode(season: next.season, episode: next.episode.shownNumber)
         store.v2Search(.episode(next.episode.id), label: "\(detail.title) \(code)", episodeId: next.episode.id)
     }
 }

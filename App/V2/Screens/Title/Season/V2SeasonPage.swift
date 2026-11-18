@@ -116,7 +116,7 @@ struct V2SeasonPage: View {
         if canSearch {
             let activity = store.activity(.episode(episode.id))
             Button {
-                let code = EpisodeCode.episode(season: seasonNumber, episode: episode.episodeNumber)
+                let code = EpisodeCode.episode(season: seasonNumber, episode: episode.shownNumber)
                 store.v2Search(.episode(episode.id), label: "\(detail.title) \(code)", episodeId: episode.id)
             } label: {
                 // A swipe action shows only text and a symbol: the row shows the spinner.

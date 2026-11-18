@@ -54,7 +54,7 @@ struct V2EpisodeRow: View {
         HStack(alignment: .top, spacing: Self.leadSpacing) {
             lead
             VStack(alignment: .leading, spacing: 0) {
-                Text(episode.title ?? "Episode \(episode.episodeNumber)")
+                Text(episode.title ?? "Episode \(episode.shownNumber)")
                     .font(.system(size: 15.5, weight: .bold))
                     .foregroundStyle(ink)
                     .lineLimit(1)
@@ -124,7 +124,7 @@ struct V2EpisodeRow: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .accessibilityHidden(true)
         } else {
-            Text(verbatim: "E\(episode.episodeNumber)")
+            Text(verbatim: "E\(episode.shownNumber)")
                 .font(.system(size: 14, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .minimumScaleFactor(0.6)
@@ -157,7 +157,7 @@ struct V2EpisodeRow: View {
     }
 
     private var spokenLabel: String {
-        let title = episode.title ?? "Episode \(episode.episodeNumber)"
+        let title = episode.title ?? "Episode \(episode.shownNumber)"
         let badges = state.badges.map { "\($0.tier.badgeLetters) \($0.state.spoken)" }.joined(separator: ", ")
         return "\(V2EpisodeText.meta(episode, anime: detail.isAnime == true)), \(title). \(state.spoken). \(badges)"
             + (monitored ? "" : ". Not monitored") + (search.map { ". \($0.label)" } ?? "")

@@ -155,7 +155,7 @@ struct V2EpisodePage: View {
             ?? editions.first { episode.file(for: $0.id) == nil } ?? shown
         return InteractiveSearchModel(store: store, target: InteractiveTarget(
             editionIds: pick.map { [$0.id] } ?? [], episodeId: episode.id,
-            subtitle: "S\(seasonNumber)·E\(episode.episodeNumber)"))
+            subtitle: "S\(seasonNumber)·E\(episode.shownNumber)"))
     }
 }
 
@@ -190,7 +190,7 @@ struct V2EpisodeHero: View {
             }
             .overlay(alignment: .bottomLeading) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(episode.title ?? "Episode \(episode.episodeNumber)")
+                    Text(episode.title ?? "Episode \(episode.shownNumber)")
                         .font(.system(size: 32, weight: .bold))
                         .tracking(-0.6)
                         .lineLimit(2)

@@ -12,7 +12,7 @@ struct V2EpisodeContextMenu: View {
 
     private var canEdit: Bool { model.me?.can("edit") ?? true }
     private var canSearch: Bool { canEdit && (model.me?.can("search") ?? true) }
-    private var code: String { EpisodeCode.episode(season: seasonNumber, episode: episode.episodeNumber) }
+    private var code: String { EpisodeCode.episode(season: seasonNumber, episode: episode.shownNumber) }
 
     var body: some View {
         if canSearch {

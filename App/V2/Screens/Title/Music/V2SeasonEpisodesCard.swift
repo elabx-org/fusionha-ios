@@ -74,13 +74,13 @@ struct V2SeasonEpisodeLine: View {
 
     var body: some View {
         HStack(spacing: V2EpisodeRow.leadSpacing) {
-            Text(verbatim: String(episode.episodeNumber))
+            Text(verbatim: String(episode.shownNumber))
                 .font(.system(size: 13, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(muted)
                 .frame(width: V2EpisodeRow.numberSide)
             VStack(alignment: .leading, spacing: 1) {
-                Text(episode.title ?? "Episode \(episode.episodeNumber)")
+                Text(episode.title ?? "Episode \(episode.shownNumber)")
                     .font(.system(size: 14.5, weight: .semibold))
                     .foregroundStyle(ink)
                     .lineLimit(1)

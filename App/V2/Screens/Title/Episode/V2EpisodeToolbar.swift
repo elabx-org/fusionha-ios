@@ -30,7 +30,7 @@ struct V2EpisodeToolbar: ToolbarContent {
                             seasonNumber: Int, version: DetailEdition?,
                             confirm: Binding<V2EpisodeFileMenu.Confirm?>) -> [ColumnAction?] {
         let canSearch = (model.me?.can("edit") ?? true) && (model.me?.can("search") ?? true)
-        let code = EpisodeCode.episode(season: seasonNumber, episode: episode.episodeNumber)
+        let code = EpisodeCode.episode(season: seasonNumber, episode: episode.shownNumber)
         let searching = store.activity(.episode(episode.id))?.isSearching == true
         return [
             canSearch ? .button("Automatic search", "magnifyingglass", disabled: searching) {
@@ -38,7 +38,7 @@ struct V2EpisodeToolbar: ToolbarContent {
             } : nil,
             canSearch ? .button("Interactive search", "person") {
                 store.interactive = InteractiveTarget(editionIds: detail.orderedEditions.map(\.id), episodeId: episode.id,
-                                                      subtitle: "S\(seasonNumber)·E\(episode.episodeNumber)")
+                                                      subtitle: "S\(seasonNumber)·E\(episode.shownNumber)")
             } : nil,
             .control("File actions", stamp: "\(version?.id ?? 0)|\(episode.id)") {
                 V2EpisodeFileMenu(detail: detail, episode: episode, seasonNumber: seasonNumber, version: version,
@@ -58,7 +58,7 @@ private struct V2EpisodeSearchButtons: View {
     let seasonNumber: Int
 
     private var activity: SearchActivity? { store.activity(.episode(episode.id)) }
-    private var code: String { EpisodeCode.episode(season: seasonNumber, episode: episode.episodeNumber) }
+    private var code: String { EpisodeCode.episode(season: seasonNumber, episode: episode.shownNumber) }
     private var canSearch: Bool { (model.me?.can("edit") ?? true) && (model.me?.can("search") ?? true) }
 
     var body: some View {
@@ -71,7 +71,7 @@ private struct V2EpisodeSearchButtons: View {
             .disabled(activity?.isSearching == true)
             Button {
                 store.interactive = InteractiveTarget(editionIds: detail.orderedEditions.map(\.id), episodeId: episode.id,
-                                                      subtitle: "S\(seasonNumber)·E\(episode.episodeNumber)")
+                                                      subtitle: "S\(seasonNumber)·E\(episode.shownNumber)")
             } label: {
                 Label("Interactive search", systemImage: "person")
             }

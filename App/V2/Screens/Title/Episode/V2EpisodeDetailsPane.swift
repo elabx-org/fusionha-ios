@@ -132,7 +132,7 @@ private struct V2EpisodeNoFileCard: View {
                 HStack(spacing: 8) {
                     let activity = store.searchActivity.activity(any: [own, .episode(episode.id)])
                     Button {
-                        let code = EpisodeCode.episode(season: seasonNumber, episode: episode.episodeNumber)
+                        let code = EpisodeCode.episode(season: seasonNumber, episode: episode.shownNumber)
                         store.v2Search(own, label: "\(detail.title) \(code) · \(version.label)", editionId: version.id,
                                        episodeId: episode.id)
                     } label: {
@@ -141,7 +141,7 @@ private struct V2EpisodeNoFileCard: View {
                     .disabled(activity?.isSearching == true)
                     Button("Choose", systemImage: "person") {
                         store.interactive = InteractiveTarget(editionIds: [version.id], episodeId: episode.id,
-                                                              subtitle: "S\(seasonNumber)·E\(episode.episodeNumber)")
+                                                              subtitle: "S\(seasonNumber)·E\(episode.shownNumber)")
                     }
                 }
                 .font(.system(size: 14, weight: .semibold))
