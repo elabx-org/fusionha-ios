@@ -6,6 +6,7 @@
 #   scripts/claim_build.sh <sha>             the next free number (claimed)
 #   scripts/claim_build.sh <sha> --dry-run   the number it would claim (nothing pushed)
 #   scripts/claim_build.sh <sha> --exact N   N itself, or fail if it is taken
+#   scripts/claim_build.sh <sha> --existing  the highest N already claimed at <sha> (or nothing)
 #
 # The tags are the counter: N is one past the highest build-N on the remote.
 # A push of a tag that already exists is refused by the server, so two runs
@@ -42,7 +43,17 @@ claim() {
   return 1
 }
 
+# The build-N tags at <sha>: annotated tags list their commit on a peeled
+# `build-N^{}` line, plain ones on their own.
+existing() {
+  git ls-remote --tags "$remote" 'refs/tags/build-*' | awk -v sha="$sha" '
+    $1 == sha { t = $2; sub(/^refs\/tags\/build-/, "", t); sub(/\^[{][}]$/, "", t); if (t ~ /^[0-9]+$/) print t }' \
+    | sort -n | tail -1
+}
+
 case "$mode" in
+  --existing)
+    existing; exit 0 ;;
   --exact)
     if claim "$exact"; then echo "$exact"; exit 0; fi
     echo "claim_build.sh: build-$exact is taken (or the push failed)." >&2; exit 1 ;;

@@ -7,7 +7,12 @@
 # Without --publish it is a dry run: it checks, tests, builds and stages
 # build/local-release/<tag>/ (Fusionha.ipa + source.json) and prints the
 # `gh release create` it would run, under the number it would claim. With
-# --publish it claims the number and publishes.
+# --publish it claims the number, publishes, then fast-forwards main to the
+# released commit.
+#
+# This is the release path (owner, 2026-11-18): about 4 minutes to Feather.
+# Main moves last, so when CI runs on that push it finds the commit already
+# released and only builds and tests it (the backstop), publishing nothing.
 #
 # Build number: claimed from the same counter as CI's release runs
 # (scripts/claim_build.sh: the tag build-N pushed at HEAD, one past the
@@ -18,7 +23,7 @@
 #
 # Checks before anything is claimed (the stand-in for "green CI first"):
 #   - a clean working tree (nothing uncommitted is ever released; CLAUDE.md aside);
-#   - HEAD is on origin, so the release tag points at a pushed commit;
+#   - main can fast-forward to HEAD (HEAD contains origin/main);
 #   - `swift test` on FusionhaKit passes.
 # Needs Xcode (DEVELOPER_DIR is set to /Applications/Xcode.app when unset),
 # xcodegen and gh.
@@ -57,8 +62,8 @@ if [ -n "$dirty" ]; then
 fi
 sha=$(git rev-parse HEAD)
 git fetch -q origin
-if ! git branch -r --contains "$sha" | grep -q .; then
-  echo "HEAD ${sha:0:8} is not on origin: push it first." >&2
+if ! git merge-base --is-ancestor origin/main "$sha"; then
+  echo "HEAD ${sha:0:8} does not contain origin/main: main could not fast-forward to it. Rebase or merge first." >&2
   [ "$publish" = 1 ] && exit 1 || echo "(dry run: going on anyway)"
 fi
 
@@ -114,8 +119,16 @@ if [ "$publish" = 1 ]; then
   step "Publish"
   "${cmd[@]}"
   echo "Feather: https://github.com/$repo/releases/latest/download/source.json"
+  step "Main"
+  # Last: CI's run on this push finds the release and only checks the commit.
+  if git push -q origin "$sha:refs/heads/main"; then
+    echo "main is at ${sha:0:8}; CI checks it and publishes nothing."
+  else
+    echo "Released, but main did not move (it changed meanwhile?): fast-forward it to ${sha:0:8} by hand." >&2
+  fi
 else
   step "Dry run: would run"
   printf '%q ' "${cmd[@]}"; echo
+  echo "git push origin ${sha:0:8}:main"
 fi
 printf '   (%ss)\n\nTotal: %ss\n' $(( SECONDS - lap )) $(( SECONDS - started ))

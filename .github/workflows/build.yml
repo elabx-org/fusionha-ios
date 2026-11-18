@@ -163,6 +163,11 @@ jobs:
   # (scripts/claim_build.sh); scripts/local_release.sh claims the same way, so
   # CI and a Mac never hand out one number twice. Branch and PR builds are
   # never released and keep the run number.
+  #
+  # Releases are normally made on the Mac (scripts/local_release.sh, owner
+  # 2026-11-18): it claims build-N, publishes, then moves main. CI then finds
+  # this commit already released and only builds and tests it (the
+  # backstop); it publishes only for a commit pushed to main without one.
   number:
     name: Claim build number
     if: inputs.duo_only == '' && github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -171,10 +176,20 @@ jobs:
       contents: write
     outputs:
       build: ${{ steps.claim.outputs.build }}
+      released: ${{ steps.claim.outputs.released }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
       - id: claim
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          done=$(bash scripts/claim_build.sh "$GITHUB_SHA" --existing)
+          if [ -n "$done" ] && gh release view "build-$done" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "build-$done is already released from this commit (a local release): CI builds and tests it and publishes nothing."
+            echo "build=$done" >> "$GITHUB_OUTPUT"
+            echo "released=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           build=$(bash scripts/claim_build.sh "$GITHUB_SHA")
           echo "Claimed build-$build"
           echo "build=$build" >> "$GITHUB_OUTPUT"
@@ -326,6 +341,7 @@ jobs:
     # `!cancelled()` would also run after failed tests, so they are required explicitly.
     if: >-
       !cancelled() && github.event_name == 'push' && needs.test.result == 'success' &&
+      needs.number.outputs.released != 'true' &&
       (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     permissions:
