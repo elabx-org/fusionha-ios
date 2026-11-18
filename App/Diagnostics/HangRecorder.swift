@@ -70,6 +70,11 @@ enum HangRecorder {
         trail.append("\(stamp) \(line)")
         if trail.count > 40 { trail.removeFirst(trail.count - 40) }
         lock.unlock()
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["FUSIONHA_PERF"] != nil {
+            FileHandle.standardError.write(Data("TRAIL \(line)\n".utf8))
+        }
+        #endif
     }
 
     /// A safety net rescued a stuck title (no freeze, so no stacks): keeps

@@ -19,7 +19,12 @@ final class DuoSeamDrag {
     /// springing; nil at rest.
     var live: CGFloat?
     /// The title v2's handle last slid in on opening, so it slides once.
-    @ObservationIgnored var slidIn: Int?
+    /// Observed: the shell's `slidePending` reads it. Unobserved, a title
+    /// opened with the list remembered hidden (after going full width and
+    /// closing) landed with nothing else the shell watches changing, so the
+    /// stale "slide pending" put it back off the trailing edge: the owner's
+    /// title stuck at the right, 10% showing (builds 1237-1243).
+    var slidIn: Int?
     /// The seam is carrying a title in as it opens, or out as Close closes
     /// it (`V2SplitHandle`): the list is laid out at the full width it has
     /// with no title.
@@ -37,7 +42,7 @@ final class DuoSeamDrag {
     #if DEBUG
     /// The shell's seam, for the perf stress script's stuck-seam check.
     static weak var debugCurrent: DuoSeamDrag?
-    init() { Self.debugCurrent = self }
+
     #endif
 }
 

@@ -278,6 +278,11 @@ struct RootView: View {
                 .presentationDragIndicator(.visible)
                 .presentationBackground(Theme.bg)
         }
+        #if DEBUG
+        // The perf scripts read the seam the shell keeps (`@State` builds and
+        // drops a fresh instance on every RootView init).
+        .onAppear { DuoSeamDrag.debugCurrent = seam }
+        #endif
         .modifier(ShellPresentations(model: model, reduceMotion: reduceMotion, scenePhase: scenePhase,
                                      duoOpen: fold.isDuoOpen, accountOnPages: fold.isDuoOpen && duoLayout == .spread,
                                      measured: fold.size != .zero))
