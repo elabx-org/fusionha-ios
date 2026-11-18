@@ -67,6 +67,10 @@ struct WatchlistsPage: View {
 
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
+        // v2: Sync now is the lede's line (`V2WatchlistsLede`): with Follow
+        // and the Duo's column, the bar's two buttons cut the title
+        // ("Watchlists & li…", owner, 2026-11-18).
+        #if !V2
         ToolbarItem(placement: .primaryAction) {
             Button(AutomaticRequestsCopy.syncNow, systemImage: "arrow.clockwise") {
                 Task { await store.syncAll(model) }
@@ -74,6 +78,7 @@ struct WatchlistsPage: View {
             .symbolEffect(.rotate, options: .repeat(.continuous), isActive: busy && !reduceMotion)
             .disabled(busy || unavailable)
         }
+        #endif
         ToolbarItem(placement: .primaryAction) {
             Button(AutomaticRequestsCopy.follow, systemImage: "plus") { following = true }
                 .disabled(unavailable || store.letterboxd.map { !LetterboxdLogic.allowed($0) } ?? true)
@@ -86,7 +91,7 @@ struct WatchlistsPage: View {
                 Text(AutomaticRequestsCopy.unavailable).foregroundStyle(Theme.mut).listRowBackground(AccountStyle.cell)
             } else if let views = store.views {
                 #if V2
-                V2WatchlistsLede()
+                V2WatchlistsLede(syncing: busy) { Task { await store.syncAll(model) } }
                 #endif
                 WatchlistsSourceList(views: views, selectedId: nil,
                                      admin: admin, remembered: store.matches.count,

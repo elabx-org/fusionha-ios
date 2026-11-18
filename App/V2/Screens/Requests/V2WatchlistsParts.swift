@@ -3,8 +3,14 @@ import FusionhaKit
 
 /// The lede under "Watchlists & lists" on v2 (approved mock `rq-lists`):
 /// what the page is for, and that pulling down syncs. A plain list row on the
-/// page ground, not a card.
+/// page ground, not a card. The sync line is also the page's Sync now (the
+/// bar keeps only Follow): tap to sync; it spins and reads "Syncing…" while
+/// a pass runs.
 struct V2WatchlistsLede: View {
+    let syncing: Bool
+    let sync: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         Section {
             VStack(alignment: .leading, spacing: 8) {
@@ -12,12 +18,18 @@ struct V2WatchlistsLede: View {
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.mut)
                     .fixedSize(horizontal: false, vertical: true)
-                Label {
-                    Text("Pull down to sync").fontWeight(.semibold).foregroundStyle(Theme.txt)
-                } icon: {
-                    Image(systemName: "arrow.clockwise").foregroundStyle(Theme.mut)
+                Button(action: sync) {
+                    Label {
+                        Text(syncing ? "Syncing…" : "Pull down to sync").fontWeight(.semibold).foregroundStyle(Theme.txt)
+                    } icon: {
+                        Image(systemName: "arrow.clockwise").foregroundStyle(Theme.mut)
+                            .symbolEffect(.rotate, options: .repeat(.continuous), isActive: syncing && !reduceMotion)
+                    }
+                    .font(.system(size: 13))
                 }
-                .font(.system(size: 13))
+                .buttonStyle(.plain)
+                .disabled(syncing)
+                .accessibilityLabel(syncing ? "Syncing" : AutomaticRequestsCopy.syncNow)
             }
             // The list's own side insets (in line with the section headings):
             // narrower ones fell inside the margins the list keeps in the

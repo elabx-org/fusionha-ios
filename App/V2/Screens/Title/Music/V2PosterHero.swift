@@ -81,17 +81,17 @@ struct V2PosterHeroArt: View {
 
     private var light: Bool { page?.isLight ?? Theme.isLight }
 
-    /// The poster at its own 2:3 across the width, its top at the hero's
-    /// top: beside the list the hero is shorter than the poster, and a
-    /// centred crop cut the heads off (owner, 2026-11-18: top crop).
+    /// The poster at its own 2:3 across the width. Beside the list the hero
+    /// is shorter than the poster: the crop starts a quarter of the way down
+    /// the part that doesn't fit (owner, 2026-11-18, mock "Hero Crop
+    /// Options"): a centred crop cut the heads off, a top crop left the
+    /// subject low in the frost.
     private var art: some View {
         GeometryReader { proxy in
             let full = max(proxy.size.height, proxy.size.width * 1.5)
             PosterImage(url: Self.url(poster, backdrop))
                 .frame(width: proxy.size.width, height: full)
-                // Mock (2026-11-18): start the crop a quarter of the way down
-                // the poster's overflow instead of at its top.
-                .offset(y: MockFlag.value("HERO_CROP") == "quarter" ? -(full - proxy.size.height) * 0.25 : 0)
+                .offset(y: -(full - proxy.size.height) * 0.25)
         }
         .clipped()
     }
