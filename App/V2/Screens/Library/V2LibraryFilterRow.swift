@@ -44,7 +44,7 @@ struct V2LibraryFilterRow: View {
                 }
             }
         }
-        .scrollClipDisabled()
+        .v2ClipsAtColumn()
         .task(id: "\(model.libraryVersion)|\(filters.network)") {
             let next = V2LibraryServices.from(model.library, keeping: filters.network)
             if next != services { services = next }

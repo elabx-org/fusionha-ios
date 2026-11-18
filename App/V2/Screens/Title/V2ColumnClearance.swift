@@ -21,3 +21,20 @@ private struct V2ClearsColumn: ViewModifier {
         content.padding(.trailing, clearance)
     }
 }
+
+extension View {
+    /// A sideways row of controls (chips, scopes, filters) drawn past its
+    /// edge (`scrollClipDisabled`): with the Duo's column beside it, it clips
+    /// at the column's edge instead, so a chip never sits under the clock or
+    /// the arrow (owner's review, 2026-11-18: Activity's and All titles'
+    /// chips ran under the folded column). It still scrolls in full.
+    func v2ClipsAtColumn() -> some View { modifier(V2ClipsAtColumn()) }
+}
+
+private struct V2ClipsAtColumn: ViewModifier {
+    @Environment(\.v2ColumnClearance) private var clearance
+
+    func body(content: Content) -> some View {
+        content.scrollClipDisabled(clearance == 0)
+    }
+}

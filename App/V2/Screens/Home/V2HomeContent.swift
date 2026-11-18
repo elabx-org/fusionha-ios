@@ -68,12 +68,12 @@ struct V2HomeContent: View {
                     .foldRow("home-comingup")
             }
             V2RecentSection(data: data, arrived: arrived, width: width, gutter: gutter, wide: false,
-                            page: $recentPage, seeAll: openTimeline)
+                            page: $recentPage, seeAll: openTimeline, headTrailing: columnReserve)
                 .padding(.top, 18)
                 .foldRow("home-recent")
             VStack(alignment: .leading, spacing: 26) {
                 ForEach(data.kinds) { kind in
-                    V2KindStrip(kind: kind, gutter: gutter) { open(.kind(kind.kind)) }
+                    V2KindStrip(kind: kind, gutter: gutter, headTrailing: columnReserve) { open(.kind(kind.kind)) }
                 }
             }
             .padding(.top, 26)

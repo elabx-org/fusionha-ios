@@ -42,6 +42,7 @@ extension V2QueueView {
         } else {
             SixCountPipelineStrip(counts: counts, today: feed.summary?.history.today, items: store.items,
                                   showsHeld: splits)
+                .v2ClearsColumn()
             V2QueueSections(store: store, summary: feed.summary, selecting: selecting, selected: $selected,
                             openHeld: splits ? openHeld?.id : nil, review: openDecision,
                             reviewAll: { router.manualImport(rescue: $0) }, actions: rowActions,

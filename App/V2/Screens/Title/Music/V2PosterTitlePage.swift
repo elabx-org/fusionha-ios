@@ -16,12 +16,9 @@ struct V2PosterTitlePage: View {
         VStack(alignment: .leading, spacing: 0) {
             V2PosterHero(detail: detail, width: width)
             VStack(alignment: .leading, spacing: 0) {
-                V2TitleSummary(detail: detail, small: width < 400)
+                V2TitleSummary(detail: detail, small: width < 400, creditOnHero: true)
                 V2TitleTabs(detail: detail)
                     .padding(.top, detail.isSeries ? 22 : 20)
-                if detail.isSeries {
-                    V2TitleCredit(detail: detail).font(.system(size: 13)).padding(.top, 32)
-                }
             }
             .padding(.horizontal, gutter)
             .padding(.top, 16)

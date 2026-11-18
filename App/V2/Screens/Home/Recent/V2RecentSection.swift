@@ -17,6 +17,8 @@ struct V2RecentSection: View {
     let wide: Bool
     @Binding var page: V2TimelinePage
     let seeAll: (V2TimelinePage) -> Void
+    /// The Duo's column (collapsed tabs): "See all" stops short of it.
+    var headTrailing: CGFloat = 0
     @Environment(\.motionEnabled) private var motion
     @State private var scrolled: Int?
 
@@ -50,6 +52,7 @@ struct V2RecentSection: View {
                                  accessibilityAction: "See all \(current.title.lowercased())") { seeAll(current) }
             .contentTransition(.opacity)
             .animation(motion ? .smooth(duration: 0.25) : nil, value: current)
+            .padding(.trailing, headTrailing)
     }
 
     private var pager: some View {

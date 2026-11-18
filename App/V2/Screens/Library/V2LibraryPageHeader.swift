@@ -95,7 +95,7 @@ struct V2LibraryKindControl: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 SegmentedPills(options: options, selection: $kind)
             }
-            .scrollClipDisabled()
+            .v2ClipsAtColumn()
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Kind")

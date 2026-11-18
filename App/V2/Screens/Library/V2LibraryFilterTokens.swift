@@ -28,7 +28,7 @@ struct V2LibraryFilterTokens: View {
                     }
                 }
             }
-            .scrollClipDisabled()
+            .v2ClipsAtColumn()
             .transition(.opacity)
         }
     }

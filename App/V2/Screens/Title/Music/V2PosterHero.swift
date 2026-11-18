@@ -11,6 +11,7 @@ struct V2PosterHero: View {
     let width: CGFloat
 
     @Environment(\.detailInColumn) private var inColumn
+    @Environment(\.pagePalette) private var page
 
     /// The poster's own 2:3, never taller than 680pt. Beside the list on the
     /// open Duo it also stops at 68% of the page, so the summary shows under
@@ -28,12 +29,37 @@ struct V2PosterHero: View {
                 Self.height(width: width, container: length, inColumn: inColumn)
             }
             .background { V2PosterHeroArt(poster: detail.posterUrl, backdrop: detail.backdropUrl) }
+            // The hero's foot colour carried 140 pt down into the page, top to
+            // bottom, so the art ends in a blend, not a hard line (owner,
+            // 2026-11-18, mock "Poster Look Options" d).
+            .overlay(alignment: .bottom) {
+                LinearGradient(colors: [foot.opacity(footEnd), foot.opacity(0)], startPoint: .top, endPoint: .bottom)
+                    .frame(height: Self.fade)
+                    .offset(y: Self.fade)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+            // On the hero's bottom edge: the title, the meta line and "Metadata
+            // via", for a movie and a series alike (same mock).
             .overlay(alignment: .bottomLeading) {
-                V2TitleHeading(detail: detail, size: 30)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 20)
+                VStack(alignment: .leading, spacing: 10) {
+                    V2TitleHeading(detail: detail, size: 30)
+                    V2TitleCredit(detail: detail).font(.system(size: 12, weight: .semibold))
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 8)
             }
             .duoTitleSwipe(id: detail.id)
+    }
+
+    static let fade: CGFloat = 140
+
+    /// How strong the foot's colour is at the hero's bottom (`V2PosterFoot`'s last stop).
+    private var footEnd: Double { (page?.isLight ?? Theme.isLight) ? 0.62 : 0.96 }
+
+    /// The colour the hero's foot ends in (`V2PosterFoot`).
+    private var foot: Color {
+        (page?.isLight ?? Theme.isLight) ? Color(red: 30 / 255, green: 18 / 255, blue: 12 / 255) : (page?.tint ?? Theme.bg)
     }
 }
 
@@ -62,8 +88,14 @@ struct V2PosterHeroArt: View {
 
     var body: some View {
         ZStack {
-            PosterImage(url: Self.url(poster, backdrop))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // The poster at its own 2:3 across the width, its top at the
+            // hero's top: beside the list the hero is shorter than the poster,
+            // and a centred crop cut the heads off (owner, 2026-11-18: top crop).
+            GeometryReader { proxy in
+                PosterImage(url: Self.url(poster, backdrop))
+                    .frame(width: proxy.size.width,
+                           height: max(proxy.size.height, proxy.size.width * 1.5))
+            }
                 .clipped()
                 .scaleEffect(shown || !motion ? 1 : 1.04)
                 .opacity(shown || !motion ? 1 : 0)
@@ -100,9 +132,9 @@ struct V2PosterFoot: View {
         let foot = light ? Color(red: 30 / 255, green: 18 / 255, blue: 12 / 255) : (tint ?? Theme.bg)
         LinearGradient(stops: [
             .init(color: foot.opacity(0), location: 0.42),
-            .init(color: foot.opacity(light ? 0.35 : 0.6), location: 0.6),
-            .init(color: foot.opacity(light ? 0.55 : 0.88), location: 0.8),
-            .init(color: foot.opacity(light ? 0.6 : 0.96), location: 1),
+            .init(color: foot.opacity(light ? 0.38 : 0.66), location: 0.6),
+            .init(color: foot.opacity(light ? 0.6 : 0.94), location: 0.8),
+            .init(color: foot.opacity(light ? 0.62 : 0.96), location: 1),
         ], startPoint: .top, endPoint: .bottom)
     }
 }

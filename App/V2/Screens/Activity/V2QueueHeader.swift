@@ -73,7 +73,7 @@ struct V2ActivityScopes: View {
             .padding(.vertical, 2)
         }
         .scrollIndicators(.hidden)
-        .scrollClipDisabled()
+        .v2ClipsAtColumn()
     }
 
     private func chip(_ tab: ActivityTab) -> some View {

@@ -175,6 +175,8 @@ final class AppModel {
             UserDefaults.standard.set(collapsedTabs != nil, forKey: TabsLook.collapsedKey)
             UserDefaults.standard.set(collapsedTabs != nil, forKey: TabsLook.confirmedKey)
             UserDefaults.standard.set(collapsedTabs == "bottom", forKey: TabsLook.bottomKey)
+            // `=1`: the poster title page (Account › This iPhone).
+            UserDefaults.standard.set(env["FUSIONHA_SCREENSHOT_POSTER"] == "1", forKey: TitleLook.posterKey)
             if let toast = env["FUSIONHA_SCREENSHOT_TOAST"] {
                 toasts = [ToastMessage(message: toast, duration: 60)]
             }

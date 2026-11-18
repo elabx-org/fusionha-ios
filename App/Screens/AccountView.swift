@@ -226,8 +226,10 @@ struct AccountSheet: View {
                 .navigationTitle("Account")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        SheetDoneButton(escapeCloses: true) { dismiss() }
+                    // Close, not Done: Account changes nothing to confirm, and
+                    // iOS 26 draws a confirming button as a tick (owner, 2026-11-18).
+                    ToolbarItem(placement: .cancellationAction) {
+                        SheetCancelButton(title: "Close") { dismiss() }
                     }
                 }
                 .closeOnlyBars()

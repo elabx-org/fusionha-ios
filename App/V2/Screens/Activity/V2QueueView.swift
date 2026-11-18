@@ -92,6 +92,7 @@ struct V2QueueView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
         .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }
+        .environment(\.v2ColumnClearance, splits ? 0 : columnReserve)
         .v2PageGround(art: groundArt)
         .searchable(text: $chrome.searchInput, placement: .navigationBarDrawer(displayMode: .automatic),
                     prompt: "Search titles")

@@ -15,6 +15,8 @@ struct V2TitleSummary: View {
     let detail: ItemDetail
     /// Narrow columns: the smaller version cards.
     var small = false
+    /// The poster hero carries "Metadata via" (`V2PosterHero`), so the summary leaves it out.
+    var creditOnHero = false
     @State private var overviewOpen = false
 
     private var ink: Color { page?.ink ?? Theme.txt }
@@ -26,7 +28,7 @@ struct V2TitleSummary: View {
                 V2SetupStrip(setup: setup)
                     .padding(.bottom, 10)
             }
-            if !detail.isSeries {
+            if !detail.isSeries, !creditOnHero {
                 // The movie's credit opens the page (browse-title.js `moviePhone`);
                 // the alt title beside it waits on the API.
                 V2TitleCredit(detail: detail).font(.system(size: 12, weight: .semibold))

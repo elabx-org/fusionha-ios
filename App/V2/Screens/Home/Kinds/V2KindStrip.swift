@@ -7,6 +7,9 @@ import FusionhaKit
 struct V2KindStrip: View {
     let kind: V2HomeKind
     let gutter: CGFloat
+    /// The Duo's column (collapsed tabs): the shelf runs under it, its
+    /// heading's "N ›" stops short of it (owner, 2026-11-18).
+    var headTrailing: CGFloat = 0
     let open: () -> Void
     @Environment(\.motionEnabled) private var motion
 
@@ -16,6 +19,7 @@ struct V2KindStrip: View {
         VStack(alignment: .leading, spacing: 10) {
             V2KindHead(kind: kind, open: open)
                 .padding(.horizontal, gutter)
+                .padding(.trailing, headTrailing)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: 12) {
                     ForEach(Array(kind.items.enumerated()), id: \.element.id) { i, item in
