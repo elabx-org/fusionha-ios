@@ -79,12 +79,7 @@ extension AppModel {
         let url = anonymous.baseURL
         let creds: Credentials
         do {
-            // v2's token gets its own name so Settings › API tokens tells the installs apart.
-            #if V2
-            let tokenName = "fusionha v2 iOS · \(UIDevice.current.name)"
-            #else
             let tokenName = "fusionha iOS · \(UIDevice.current.name)"
-            #endif
             let mint = try await anonymous.mintToken(name: tokenName)
             creds = Credentials(serverURL: url, token: mint.token, tokenId: mint.id)
         } catch APIError.http(403, _) {

@@ -4,14 +4,14 @@
 Usage:
   make_source.py <ipa> <tag> <version> <build> <out.json>          (v1 only)
   make_source.py --tag <tag> --out <out.json> --app v1=<ipa>:<version>:<build>
-                 [--app v2=<ipa>:<version>:<build>] [--carry <previous source.json>]
+                 [--carry <previous source.json>]
 
 The feed URL users add is .../releases/latest/download/source.json, so each
-release carries its own source.json pointing at its own IPAs. One source lists
-both apps (v1 "fusionha" and "fusionha v2"); the source's identifier and URL
-never change, so Feather just shows the second app. When this run built no v2
-IPA, --carry copies the v2 entry from the previous release's source.json, so v2
-never disappears from Feather because one build failed.
+release carries its own source.json pointing at its own IPA. Since the v2
+cutover the source lists one app, "fusionha" (org.elabx.fusionha), carrying the
+v2 build: Feather offers it as an update to v1. The separate "fusionha v2" app
+(org.elabx.fusionha.v2) is no longer listed. --carry copies entries for apps
+this run did not build from a previous source.json (none are left today).
 """
 import argparse
 import datetime
@@ -29,18 +29,9 @@ APPS = {
         "bundleIdentifier": "org.elabx.fusionha",
         "ipa": "Fusionha.ipa",
         "subtitle": "Movies, series and anime, in 1080p and 4K",
-        "localizedDescription": "SwiftUI client for your self-hosted fusionha server: library, queue, calendar, widgets and Live Activities.",
+        "localizedDescription": "SwiftUI client for your self-hosted fusionha server: library, queue, calendar, requests, widgets, Live Activities and push, built for iPhone Duo.",
         "icon": f"{RAW}/App/Assets.xcassets/AppIcon.appiconset/icon-1024.png",
         "tintColor": "6366F1",
-    },
-    "v2": {
-        "name": "fusionha v2",
-        "bundleIdentifier": "org.elabx.fusionha.v2",
-        "ipa": "FusionhaV2.ipa",
-        "subtitle": "The next fusionha, installed beside v1",
-        "localizedDescription": "fusionha v2, built screen by screen beside v1: its own sign-in, widgets and links. Push stays on v1 for now.",
-        "icon": f"{RAW}/App/Assets.xcassets/AppIconV2.appiconset/icon-1024.png",
-        "tintColor": "F59E0B",
     },
 }
 
@@ -121,7 +112,7 @@ def parse_app(value):
     key, sep, rest = value.partition("=")
     parts = rest.rsplit(":", 2)
     if not sep or key not in APPS or len(parts) != 3 or not all(parts):
-        raise argparse.ArgumentTypeError(f"expected v1|v2=<ipa>:<version>:<build>, got {value!r}")
+        raise argparse.ArgumentTypeError(f"expected v1=<ipa>:<version>:<build>, got {value!r}")
     return key, parts
 
 
@@ -135,7 +126,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description="Write the Feather/AltStore source for one release.")
     parser.add_argument("--tag", required=True)
     parser.add_argument("--out", required=True)
-    parser.add_argument("--app", action="append", type=parse_app, default=[], help="v1|v2=<ipa>:<version>:<build>")
+    parser.add_argument("--app", action="append", type=parse_app, default=[], help="v1=<ipa>:<version>:<build>")
     parser.add_argument("--carry", help="a previous source.json to copy apps from that this run did not build")
     args = parser.parse_args(argv)
     built = dict(args.app)

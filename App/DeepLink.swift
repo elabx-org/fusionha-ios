@@ -11,7 +11,7 @@ import FusionhaKit
 /// "Block release group?" on that download; `activity/tasks?focus={runId}`
 /// opens that run's decision trail.
 ///
-/// A link is received at the app's root (`FusionhaApp`), which exists from the
+/// A link is received at the app's root (`FusionhaV2App`), which exists from the
 /// first frame of a cold launch, and kept in `pendingLink` until the shell is on
 /// screen and signed in; `RootView` then applies it. Anything presented over
 /// the shell (Add, Account, Settings, the omni search, another title) is closed

@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// The app's window content, shared by v1's `FusionhaApp` and v2's
-/// `FusionhaV2App`: the CI screenshot galleries, the sign-in gate, then `root`
+/// The app's window content (`FusionhaV2App` builds one per window): the CI screenshot galleries, the sign-in gate, then `root`
 /// (the signed-in shell), with the iPhone Duo harness, the window-size and
 /// palette roots, deep links and the launch probes around it. Each `@main`
 /// passes only its own shell, so both apps keep the same CI and link behaviour.

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Which product's look a shared screen draws: v2 (the FusionhaV2 target,
+/// Which product's look a shared screen draws: v2 (the Fusionha app since the cutover,
 /// compiled with `V2`) or v1. For shared sheets with no look override in
 /// the environment (the Request sheet, sign-in); browse pages use
 /// `\.browseLook` instead.

@@ -9,7 +9,7 @@ struct V2AccountFooter: View {
     @State private var showingGround = false
 
     var body: some View {
-        AccountSectionHeading("fusionha v2")
+        AccountSectionHeading("Design checks")
         Section {
             row("Badge gallery", hint: "Every badge and rail state in every palette") { showingGallery = true }
                 .sheet(isPresented: $showingGallery) { BadgeGallerySheet() }

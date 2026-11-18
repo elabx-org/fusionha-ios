@@ -4,7 +4,7 @@
 # Same harness as perf_v2_open.sh, with the simulator's hardware keyboard off
 # as on the phone (PERF_HW_KEYBOARD=1 keeps it on: UIKit's focus system is then
 # active, and its focus-map walks show up in the samples). Like scripts/perf_library.sh: the DEBUG
-# FusionhaV2 app renders itself in a Duo-sized frame on a 13-inch iPad
+# fusionha app renders itself in a Duo-sized frame on a 13-inch iPad
 # simulator, against the mock's 3,785-title library (one poster URL per title,
 # 20 live downloads).
 #
@@ -16,7 +16,7 @@
 set -u
 APP=$1
 OUT=$2
-BUNDLE=org.elabx.fusionha.v2
+BUNDLE=org.elabx.fusionha
 PORT=${PERF_PORT:-8768}
 SCRIPT=${PERF_SCRIPT:-v2session}
 S=http://127.0.0.1:$PORT

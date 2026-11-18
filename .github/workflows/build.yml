@@ -22,7 +22,7 @@ on:
       perf_scope:
         description: "Which perf scripts run when perf is on"
         type: choice
-        # v2open (opt-in, not in all): v2 (FusionhaV2) opening titles from
+        # v2open (opt-in, not in all): v2 (the Fusionha app) opening titles from
         # the Library on the iPhone Duo's open inner display. v2session: v2's
         # owner session there (Library, titles, the split handle, tabs, Search).
         # v2frames: window captures while titles open and close there.
@@ -158,12 +158,10 @@ jobs:
             tests.log
           retention-days: 14
 
-  # One leg per app: v1 (Fusionha) and v2 (FusionhaV2, docs/v2.md). A failed
-  # v2 leg never blocks v1's release (fail-fast off; the release job carries
-  # v2's previous entry forward).
+  # One app since the cutover (docs/v2.md): the v2 app, as Fusionha under v1's ids.
   build:
-    # v1's check keeps its pre-v2 name (branch protection, pollers); only v2's leg gets a suffix.
-    name: ${{ matrix.scheme == 'Fusionha' && 'Build unsigned IPA' || 'Build unsigned IPA (FusionhaV2)' }}
+    # The check keeps its pre-v2 name (branch protection, pollers).
+    name: Build unsigned IPA
     if: inputs.duo_only == ''
     runs-on: xcode-27
     permissions:
@@ -171,7 +169,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scheme: [Fusionha, FusionhaV2]
+        scheme: [Fusionha]
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
@@ -188,8 +186,8 @@ jobs:
           xcodegen generate
 
       # Feather only offers an update when the version string changes, so the
-      # patch number is the CI run number: v1's 1.1.0 in project.yml ships as
-      # 1.1.<run>, v2 as 2.0.<run> (scripts/app_version.sh).
+      # patch number is the CI run number: project.yml's 2.0.0 ships as
+      # 2.0.<run> (scripts/app_version.sh).
       - name: Set version
         run: |
           echo "APP_VERSION=$(bash scripts/app_version.sh ${{ matrix.scheme }} ${{ github.run_number }})" >> "$GITHUB_ENV"
@@ -251,28 +249,25 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
-      # The v2 app with its scene probe, and v1's UI-test runner, which
-      # drives v2 by bundle id from the Home Screen (UITests/SceneRelaunchDriver).
-      - name: Build v2 and the UI-test driver for the simulator (Debug)
+      # The app with its scene probe, and the UI-test runner, which drives
+      # it by bundle id from the Home Screen (UITests/SceneRelaunchDriver).
+      - name: Build the app and the UI-test driver for the simulator (Debug)
         timeout-minutes: 25
         run: |
           set -o pipefail
-          for scheme in FusionhaV2 Fusionha; do
-            action=build; [ "$scheme" = Fusionha ] && action=build-for-testing
-            xcodebuild \
-              -project Fusionha.xcodeproj \
-              -scheme $scheme \
-              -configuration Debug \
-              -sdk iphonesimulator \
-              -destination 'generic/platform=iOS Simulator' \
-              -derivedDataPath build \
-              CODE_SIGNING_ALLOWED=NO \
-              $action > xcodebuild.log 2>&1 || {
-              grep -E ": error: " xcodebuild.log | sort -u | head -40 | sed 's/^/::error::/'
-              tail -20 xcodebuild.log
-              exit 1
-            }
-          done
+          xcodebuild \
+            -project Fusionha.xcodeproj \
+            -scheme Fusionha \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build-for-testing > xcodebuild.log 2>&1 || {
+            grep -E ": error: " xcodebuild.log | sort -u | head -40 | sed 's/^/::error::/'
+            tail -20 xcodebuild.log
+            exit 1
+          }
 
       # Bounded: each simctl call and each driver case has its own limit inside
       # the script, so a stuck simulator fails here instead of at the job timeout.
@@ -294,13 +289,11 @@ jobs:
           perl -e 'alarm 300; exec @ARGV' xcrun simctl bootstatus "$UDID" -b || {
             echo "::error::simulator $UDID did not boot within 5 min"; exit 1; }
           sleep 15
-          scripts/v2_scene_check.sh "$UDID" build/Build/Products/Debug-iphonesimulator/FusionhaV2.app
+          scripts/v2_scene_check.sh "$UDID" build/Build/Products/Debug-iphonesimulator/Fusionha.app
 
   # Every push to main (and every v* tag) becomes a GitHub release carrying
-  # both IPAs plus one Feather/AltStore source listing both apps. Feed URL to add in Feather:
+  # the IPA plus a Feather/AltStore source listing the app. Feed URL to add in Feather:
   #   https://github.com/elabx-org/fusionha-ios/releases/latest/download/source.json
-  # Runs when v1 built, whatever v2 did: without FusionhaV2.ipa the previous
-  # release's v2 entry is carried forward (scripts/release_source.sh).
   release:
     name: Publish release
     needs: [build, test]
@@ -314,7 +307,7 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      # Each leg's IPA, if it built (Fusionha.ipa, FusionhaV2.ipa).
+      # The IPA, if it built (Fusionha.ipa).
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         continue-on-error: true
         with:
@@ -339,11 +332,11 @@ jobs:
           generate_release_notes: true
           make_latest: true
 
-      # v1 is what the release exists for: no Fusionha.ipa fails this job.
-      - name: Require v1
+      # No Fusionha.ipa fails this job.
+      - name: Require the IPA
         if: steps.release.outputs.tag == ''
         run: |
-          echo "::error::The v1 (Fusionha) leg produced no IPA; nothing was released."
+          echo "::error::The build produced no Fusionha.ipa; nothing was released."
           exit 1
 
   # Screenshots of every screen from the simulator, against a mock server that
@@ -892,7 +885,7 @@ jobs:
   # hitches, main-thread hangs, CPU and the heaviest symbols per phase.
   # Optimised build (Release) with DEBUG set so the probe and mock hooks exist.
   # `perf_scope` (manual runs) picks activity, library or all; v2open builds
-  # FusionhaV2 instead and opens and closes titles from its Library on the
+  # the app instead and opens and closes titles from its Library on the
   # Duo harness (scripts/perf_v2_open.sh, App/Debug/PerfProbe+Open.swift).
   perf:
     name: Perf
@@ -939,7 +932,7 @@ jobs:
           set -o pipefail
           xcodebuild \
             -project Fusionha.xcodeproj \
-            -scheme FusionhaV2 \
+            -scheme Fusionha \
             -configuration Release \
             -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' \
@@ -955,7 +948,7 @@ jobs:
       - name: v2 title open perf on the iPhone Duo harness
         if: env.SCOPE == 'v2open'
         timeout-minutes: 15
-        run: scripts/perf_v2_open.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf
+        run: scripts/perf_v2_open.sh build/Build/Products/Release-iphonesimulator/Fusionha.app perf
 
       - name: v2 title open report
         if: always() && env.SCOPE == 'v2open'
@@ -968,12 +961,12 @@ jobs:
       - name: v2 owner session perf on the iPhone Duo harness
         if: env.SCOPE == 'v2session'
         timeout-minutes: 20
-        run: scripts/perf_v2_session.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf
+        run: scripts/perf_v2_session.sh build/Build/Products/Release-iphonesimulator/Fusionha.app perf
 
       - name: v2 open / close frame captures on the iPhone Duo harness
         if: env.SCOPE == 'v2frames'
         timeout-minutes: 15
-        run: PERF_SCRIPT=v2frames scripts/perf_v2_session.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf
+        run: PERF_SCRIPT=v2frames scripts/perf_v2_session.sh build/Build/Products/Release-iphonesimulator/Fusionha.app perf
 
       - name: v2 screenshots on the iPhone Duo harness
         if: env.SCOPE == 'v2shots'
@@ -981,7 +974,7 @@ jobs:
         # shots_only narrows the set (a name regex), as for the other shots.
         env:
           ONLY: ${{ inputs.shots_only || needs.plan.outputs.only }}
-        run: scripts/v2_duo_shots.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf/shots "${ONLY:-}"
+        run: scripts/v2_duo_shots.sh build/Build/Products/Release-iphonesimulator/Fusionha.app perf/shots "${ONLY:-}"
 
       - name: v2 owner session report
         if: always() && env.SCOPE == 'v2session'
@@ -994,7 +987,7 @@ jobs:
       - name: v2 owner session perf, poster title page on
         if: always() && env.SCOPE == 'v2session'
         timeout-minutes: 20
-        run: PERF_POSTER=1 PERF_PORT=8769 scripts/perf_v2_session.sh build/Build/Products/Release-iphonesimulator/FusionhaV2.app perf/poster
+        run: PERF_POSTER=1 PERF_PORT=8769 scripts/perf_v2_session.sh build/Build/Products/Release-iphonesimulator/Fusionha.app perf/poster
 
       - name: v2 owner session report, poster title page on
         if: always() && env.SCOPE == 'v2session'
