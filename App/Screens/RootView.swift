@@ -55,11 +55,8 @@ struct RootView: View {
         split.primaryHidden = split.axis == .horizontal && (episodeBeside(split, spread: spread) || remembered)
         split.primaryParked = listParked && split.axis == .horizontal && remembered
         applyFlatOpenShare(&split)
-        if let live = seam.live, let context = seamContext(split) {
-            split.seam = context.seam(live: live)
-        } else if slidePending(), let context = seamContext(split) {
-            split.seam = context.slideInStart()
-        }
+        // The moving seam is not part of it: `ShellSplitHost` reads
+        // `seam.live`, so a drag never re-runs this view.
         return split
     }
 
@@ -223,20 +220,16 @@ struct RootView: View {
         let _ = PerfCount.hit("RootView.body")
         let split = split
         let spread = spreadContext(fold, hasItem: model.rightPageHasItem)
-        FoldSplitLayout(axis: split.axis, primary: split.primary, gap: split.gap, primaryHidden: split.primaryHidden,
-                        primaryParked: split.primaryParked, seam: split.seam) {
+        ShellSplitHost(split: split, context: seamContext(split), slidePending: slidePending(), drag: seam,
+                       closeWithHandle: titlePage?.seamHandle != nil, detailTransition: detailTransition) {
             // Hidden (the sidebar button), the list keeps its width off screen.
             ShellTabs(fold: fold, splitShown: split.shown, listBesideTitle: split.shown && !split.primaryHidden,
                       downloadsBar: downloadsBar,
                       downloadsBarAllowed: !tabsCrossFold && !selectBars.isShowing)
                 .allowsHitTesting(!split.primaryHidden)
                 .accessibilityHidden(split.primaryHidden)
-            if split.shown {
-                ShellDetailColumn()
-                    .modifier(DuoSeamCloseEffect(enabled: titlePage?.seamHandle != nil,
-                                                 progress: split.seam?.closeProgress ?? 0))
-                    .transition(detailTransition)
-            }
+        } detail: {
+            ShellDetailColumn()
         }
         // Gesture 4: swipe in from the content's trailing edge for the page just closed.
         .overlay(alignment: .trailing) {
