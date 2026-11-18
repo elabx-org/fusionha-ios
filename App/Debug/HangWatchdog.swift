@@ -25,6 +25,9 @@ enum HangWatchdog {
     nonisolated(unsafe) private static var started = false
     nonisolated(unsafe) private static var sentAt: Double?
     nonisolated(unsafe) private static var reported = false
+    /// Called on the watchdog's thread when a hang is reported (the perf
+    /// stress script prints the sampler's stall stacks from here).
+    nonisolated(unsafe) static var onHang: (() -> Void)?
 
     /// Starts the watchdog thread (once).
     static func start() {
@@ -57,6 +60,7 @@ enum HangWatchdog {
                 if !reported, now - sent > limit {
                     reported = true
                     mark(String(format: "HANG main thread has not answered for %.1fs", now - sent))
+                    onHang?()
                 }
                 lock.unlock()
                 continue

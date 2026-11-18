@@ -37,6 +37,12 @@ struct V2TitleBand: View {
                 .clipped()
                 .accessibilityHidden(true)
             }
+            // The art and its shade are sized by the art's aspect fill (about
+            // 950 x 535 pt for a backdrop across the display), not by the
+            // band, so the band itself is the clip: unclipped, the art and
+            // shade ran ~300 pt down behind the tabs and columns (owner's
+            // screenshot, 2026-11-18).
+            .clipped()
             .overlay(alignment: .bottomLeading) {
                 V2TitleHeading(detail: detail, size: 30, showsTagline: false)
                     .padding(.horizontal, V2TitleWide.gutter)

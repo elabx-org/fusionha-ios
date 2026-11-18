@@ -117,6 +117,7 @@ final class PerfProbe: NSObject {
         if env["FUSIONHA_PERF_SCRIPT"] == "v2open" { return await runOpen(warmup: warmup) }
         if env["FUSIONHA_PERF_SCRIPT"] == "v2session" { return await runSession(warmup: warmup) }
         if env["FUSIONHA_PERF_SCRIPT"] == "v2frames" { return await runFrames(warmup: warmup) }
+        if env["FUSIONHA_PERF_SCRIPT"] == "v2stress" { return await runStress(warmup: warmup) }
         await phase("warmup", warmup)
 
         model.tab = .activity

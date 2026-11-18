@@ -29,6 +29,12 @@ final class DuoSeamDrag {
     var closeRequests = 0
     /// The handle is on screen to take `closeRequests`.
     @ObservationIgnored var handleShown = false
+
+    #if DEBUG
+    /// The shell's seam, for the perf stress script's stuck-seam check.
+    static weak var debugCurrent: DuoSeamDrag?
+    init() { Self.debugCurrent = self }
+    #endif
 }
 
 /// What the shell hands v2's handle: where the seam rests and what each stop does.
