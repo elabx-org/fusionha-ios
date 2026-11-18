@@ -65,7 +65,7 @@ struct ShellPage: ViewModifier {
                 StatusClusterItems(model: model, shown: showsCluster, open: $clusterPanel)
                 DuoLayoutToolbarItem(shown: duoOpen && Self.offersLayoutSwitch, layout: $duoLayout)
                 // Collapsed, Account is the last entry in the tabs' list.
-                if !accountInPage && !tabs.on { AccountToolbarItem(model: model) }
+                if !accountInPage && !tabs.on && !tabs.besideTitle { AccountToolbarItem(model: model) }
             }
             .onPreferenceChange(ColumnActionsKey.self) { pageActions = $0 }
             // Tabs arrow: Bottom. On the page, not over the tabs: each page lists its own buttons.

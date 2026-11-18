@@ -11,6 +11,11 @@ struct V2LibraryPageTop: View {
     let derived: LibraryDerived
     let filters: V2LibraryFilters
     let paneWidth: CGFloat
+    /// The Duo's column (collapsed tabs, full width): the header and the
+    /// grid's heading stop short of it; the shelves' posters run under it to
+    /// the display's edge, as Home's strips do (owner, 2026-11-18: folded,
+    /// the rails stopped at the column after three posters).
+    var columnReserve: CGFloat = 0
     @Environment(\.motionEnabled) private var motion
     @Environment(AppModel.self) private var model
 
@@ -18,11 +23,14 @@ struct V2LibraryPageTop: View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear.frame(height: 0).id("library-top")
             V2LibraryPageHeader(derived: derived, filters: filters, paneWidth: paneWidth)
-            V2WantedShelves(kind: filters.kind, gutter: paneWidth >= 700 ? 24 : 20, hidden: hidesShelves)
+                .padding(.trailing, columnReserve)
+            V2WantedShelves(kind: filters.kind, gutter: paneWidth >= 700 ? 24 : 20, hidden: hidesShelves,
+                            headTrailing: columnReserve)
             if derived.titleCount > 0 {
                 V2LibrarySectionHead(title: sectionTitle, count: derived.titleCount, filters: filters)
                     .padding(.top, 16)
                     .padding(.bottom, 6)
+                    .padding(.trailing, columnReserve)
                     .id("library-grid")
             }
         }

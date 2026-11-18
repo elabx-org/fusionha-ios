@@ -13,6 +13,8 @@ struct V2WantedShelves: View {
     let gutter: CGFloat
     /// Searching or selecting: no rows (the loaded pages stay).
     var hidden = false
+    /// A shelf's heading stops short of the Duo's column; its posters don't.
+    var headTrailing: CGFloat = 0
     @Environment(AppModel.self) private var model
     @State private var pages: [WantedShelf.Source: WantedPage] = [:]
     @State private var shelves: [WantedShelf] = []
@@ -27,7 +29,7 @@ struct V2WantedShelves: View {
             if !hidden, !shelves.isEmpty {
                 VStack(alignment: .leading, spacing: 22) {
                     ForEach(shelves) { shelf in
-                        V2WantedShelfRow(shelf: shelf, gutter: gutter)
+                        V2WantedShelfRow(shelf: shelf, gutter: gutter, headTrailing: headTrailing)
                     }
                 }
                 .padding(.top, 16)

@@ -101,7 +101,7 @@ struct V2HomeView: View {
             // still drew a second "Home" above the page's, build 982).
             // Collapsed tabs: no Add in the arrow's list; Search, listed
             // there, is where you add (search + Add merge, owner 2026-11-12).
-            .shellPage("") { if !tabs.on { AddTitleToolbarItem(model: model) } }
+            .shellPage("") { if !tabs.on && !tabs.besideTitle { AddTitleToolbarItem(model: model) } }
             // Home spans both pages of a Spread; All titles keeps the grid's rule.
             .spreadSpansBothPages(.library, !model.allTitles.wanted || density != "compact")
             // Tabletop: Home spans both halves until a title, All titles or the

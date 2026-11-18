@@ -55,7 +55,9 @@ struct ShellTabs: View {
     private var onDuo: Bool { fold.isDuoOpen || OuterDisplay.isFoldedDuo(sizeClass: sizeClass) }
 
     private var tabsState: CollapsedTabsState {
-        CollapsedTabsState(on: collapsed, bottom: arrowAtBottom, activity: activityBadge, requests: model.requestsBadge)
+        CollapsedTabsState(on: collapsed, bottom: arrowAtBottom, activity: activityBadge, requests: model.requestsBadge,
+                           besideTitle: chrome != nil && collapsedPref && listBesideTitle
+                               && MockFlag.value("SPLIT_BAR") == "clean")
     }
 
     /// A tab's title: empty in the narrow column, where the icon stands alone

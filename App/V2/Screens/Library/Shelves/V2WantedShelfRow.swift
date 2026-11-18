@@ -9,6 +9,8 @@ import FusionhaKit
 struct V2WantedShelfRow: View {
     let shelf: WantedShelf
     let gutter: CGFloat
+    /// The Duo's column: the heading keeps clear of it, the rail runs under it.
+    var headTrailing: CGFloat = 0
     @Environment(\.motionEnabled) private var motion
     @Environment(\.pagePalette) private var page
 
@@ -16,7 +18,7 @@ struct V2WantedShelfRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            head
+            head.padding(.trailing, headTrailing)
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(alignment: .top, spacing: 12) {
                     ForEach(Array(shelf.items.enumerated()), id: \.element.id) { i, item in

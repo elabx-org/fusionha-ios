@@ -185,8 +185,8 @@ struct V2LibraryView: View {
     private func scroll(_ proxy: ScrollViewProxy) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                V2LibraryPageTop(derived: derived, filters: filters, paneWidth: pane.width - columnReserve)
-                    .padding(.trailing, columnReserve)
+                V2LibraryPageTop(derived: derived, filters: filters, paneWidth: pane.width - columnReserve,
+                                 columnReserve: columnReserve)
                 // The grid runs to the page gutter; the A–Z thumb floats over
                 // its trailing edge only while scrolling (Photos' scroller), so
                 // no width is kept for it (owner, build 854).

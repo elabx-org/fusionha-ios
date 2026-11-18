@@ -41,6 +41,11 @@ struct CollapsedTabsState: Equatable {
     var activity = 0
     /// Discover's badge (requests that need you).
     var requests = 0
+    /// Collapsed tabs chosen, with the list beside an open title: the list
+    /// pane keeps its tab bar, and the title's column holds the arrow (with
+    /// Account and Search under it). Mock (2026-11-18): the pane's bar then
+    /// drops its own Account and Add.
+    var besideTitle = false
 }
 
 extension EnvironmentValues {
