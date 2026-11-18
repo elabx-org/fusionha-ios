@@ -271,8 +271,11 @@ jobs:
   # Open in New Window must still add one (scripts/v2_scene_check.sh).
   v2-windows:
     name: v2 windows (iPad)
-    # Main pushes and manual runs only: ~15 min of macOS runner per run.
-    if: inputs.duo_only == '' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
+    # Manual runs only: on the hosted runner the two cases never finished in
+    # the job's 30 minutes (builds 1235, 1239, 1240), while on the Mac they
+    # take ~3 min, so scripts/local_release.sh runs them before every release
+    # (owner, 2026-11-18).
+    if: inputs.duo_only == '' && github.event_name == 'workflow_dispatch'
     runs-on: xcode-27
     timeout-minutes: 25
     permissions:
