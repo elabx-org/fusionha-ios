@@ -51,7 +51,11 @@ struct V2TitleHero: View {
                 .ignoresSafeArea(.container, edges: .horizontal)
                 .onSteadyGeometryChange(for: CGSize.self, isReal: { $0.width > 0 && $0.height > 0 },
                                         isResize: isColumnResize) { $0.size }
-                    action: { artBox = $0 }
+                    action: { next in
+                        // A refit after the first crossfades (`ShellCover`), so the crop never snaps.
+                        guard artBox != .zero, motion else { artBox = next; return }
+                        ShellCover.crossfade(duration: 0.3, motion: true) { artBox = next }
+                    }
                 // And to the hero's own top and bottom (`HeroBleedClip`).
                 .clipShape(HeroBleedClip())
                 .accessibilityHidden(true)

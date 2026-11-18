@@ -141,6 +141,13 @@ struct V2HomeView: View {
                 .padding(.top, 4)
                 .padding(.bottom, Theme.pageBottom)
             }
+            // Measured without a width (a safe-area inset sizing the shell
+            // asks for the minimum), a scroll view answers its content's
+            // width, and the content is laid out from `width` below: the two
+            // chased each other forever, the app frozen at 100% CPU (owner's
+            // hang, builds 1237-1239; Duo stress run, 31,925 width changes).
+            // An ideal width of 0 answers that ask without the content.
+            .frame(minWidth: 0, idealWidth: 0, maxWidth: .infinity)
             .ignoresSafeArea(.container, edges: fullWidth ? .trailing : [])
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
             .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { column = $0 } }

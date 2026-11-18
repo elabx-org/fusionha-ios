@@ -58,6 +58,11 @@ struct V2ComingUpCarousel: View {
         .scrollPosition(id: $focused, anchor: .center)
         .v2CarouselOpening($opening, focused: $focused)
         .scrollClipDisabled(!clips)
+        // Asked for its natural width, the row answered its content plus the
+        // margins set from `width`, 40 pt more each time: `width` grew without
+        // end and froze the app (owner's hang, builds 1237-1239; Duo stress
+        // run, 30,329 -> 99,969 pt). An ideal width of 0 answers that ask.
+        .frame(minWidth: 0, idealWidth: 0, maxWidth: .infinity)
         .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
         .sensoryFeedback(.selection, trigger: focused)
         .accessibilityLabel("Coming up")

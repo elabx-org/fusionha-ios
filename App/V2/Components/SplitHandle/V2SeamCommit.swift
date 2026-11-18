@@ -14,19 +14,34 @@ enum V2SeamCommit {
     /// seam holds where it landed, the Library still full width under the
     /// title, for two frames; then the shell takes over with nothing moving.
     /// A drag begun in between takes the seam and the hand-over is dropped.
-    static func commit(_ stop: DuoSeam.Stop, context: DuoSeamContext, share: Double? = nil, at landed: CGFloat) {
+    static func commit(_ stop: DuoSeam.Stop, context: DuoSeamContext, share: Double? = nil, at landed: CGFloat,
+                       motion: Bool) {
         PerfCount.mark("seam.commit")
         HangRecorder.note("seam lands \(stop) at \(Int(landed)) listFull \(context.drag.listFull)")
-        guard context.drag.listFull, stop != .closed else { return restAt(stop, context: context, share: share) }
+        guard context.drag.listFull, stop != .closed else { return restAt(stop, context: context, share: share, motion: motion) }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(34))
             guard context.drag.live == landed, context.drag.listFull else { return }
-            restAt(stop, context: context, share: share)
+            restAt(stop, context: context, share: share, motion: motion)
         }
     }
 
-    private static func restAt(_ stop: DuoSeam.Stop, context: DuoSeamContext, share: Double?) {
+    /// The shell takes over at rest. A title landing beside the full-width
+    /// Library re-flows the grid: it crossfades (`ShellCover`). Going full
+    /// width or back blurs through in the shell's list toggle, which
+    /// `setFullWidth` calls (`RootView.listToggle`).
+    private static func restAt(_ stop: DuoSeam.Stop, context: DuoSeamContext, share: Double?, motion: Bool) {
         HangRecorder.note("seam at rest \(stop)")
+        let swapsLayout = stop != .closed && (stop == .fullWidth) != context.fullWidth
+        let reflows = stop == .split && context.drag.listFull
+        if reflows, !swapsLayout {
+            ShellCover.crossfade(motion: motion) { apply(stop, context: context, share: share) }
+        } else {
+            apply(stop, context: context, share: share)
+        }
+    }
+
+    private static func apply(_ stop: DuoSeam.Stop, context: DuoSeamContext, share: Double?) {
         var instant = Transaction()
         instant.disablesAnimations = true
         withTransaction(instant) {

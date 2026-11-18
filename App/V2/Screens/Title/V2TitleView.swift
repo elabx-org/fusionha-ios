@@ -174,7 +174,8 @@ struct V2TitleView: View {
                 }
             }
             .pinnedToProposedWidth()
-            .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: wide)
+            // No crossfade between the two layouts: the shell blurs through
+            // the swap (`ShellCover.blurThrough`; two layouts at once ghosted).
         }
         .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
         .scrollIndicators(.hidden)

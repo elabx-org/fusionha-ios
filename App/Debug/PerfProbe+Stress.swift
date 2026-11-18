@@ -1,5 +1,6 @@
 import SwiftUI
 import QuartzCore
+import FusionhaKit
 
 // The perf probe's stress script (FUSIONHA_PERF_SCRIPT=v2stress): on the
 // iPhone Duo's flat open inner display, random opens, swaps (a title opened
@@ -19,7 +20,12 @@ extension PerfProbe {
 
     func runStress(warmup: Double) async {
         UserDefaults.standard.set(true, forKey: "v2.splitHandle.used")
-        model.pendingAllTitles = true
+        // FUSIONHA_STRESS_LIST=hidden: the owner's case (build 1239): every
+        // list hidden, titles opened from Home over the full width.
+        let hidden = ProcessInfo.processInfo.environment["FUSIONHA_STRESS_LIST"] == "hidden"
+        UserDefaults.standard.set(hidden ? "library,discover,search,calendar,activity,requests,you,home" : "",
+                                  forKey: DuoListMemory.storageKey)
+        model.pendingAllTitles = !hidden
         model.tab = .library
         let start = CACurrentMediaTime()
         while !(model.libraryLoaded && model.library.count > 100), CACurrentMediaTime() - start < 60 {
@@ -48,6 +54,12 @@ extension PerfProbe {
             #endif
             let action = stressAction()
             HangWatchdog.mark("STRESS \(n) \(action) open=\(model.presentedItem?.id ?? 0) live=\(stressLive())")
+            if action.hasPrefix("open") {
+                try? await Task.sleep(for: .seconds(1.2))
+                if let live = DuoSeamDrag.debugCurrent?.live {
+                    HangWatchdog.mark("STUCK seam live=\(live) listFull=\(DuoSeamDrag.debugCurrent?.listFull ?? false) 1.2 s after \(action)")
+                }
+            }
             let gap = Double.random(in: 0...1) < 0.33 ? Double.random(in: 0...0.06) : Double.random(in: 0.2...1.4)
             try? await Task.sleep(for: .seconds(gap))
             // Every 25 steps, sit still and check the seam came to rest.

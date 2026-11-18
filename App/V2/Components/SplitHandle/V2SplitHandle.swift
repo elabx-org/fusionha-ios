@@ -67,6 +67,9 @@ struct V2SplitHandle: View {
             Task { @MainActor in if start != nil { release(velocity: 0) } }
         }
         .task { await firstTimeHint() }
+        // The safety net: a seam left mid-move with no finger on it and
+        // nothing moving it comes to rest (`unstick`).
+        .task(id: seam.live) { await unstick() }
         .onAppear {
             seam.handleShown = true
             slideIn()
@@ -194,7 +197,7 @@ struct V2SplitHandle: View {
         spring.run(from: from, velocity: velocity, to: target,
                    dampingRatio: motion ? DuoSeam.dampingRatio : 1, deferred: deferred,
                    step: { PerfCount.hit("V2SeamSpring.step"); drag.live = CGFloat($0) },
-                   done: { V2SeamCommit.commit(stop, context: shell, share: share, at: CGFloat(target)) })
+                   done: { V2SeamCommit.commit(stop, context: shell, share: share, at: CGFloat(target), motion: motion) })
     }
 
     /// A title just opened: it slides in from the trailing edge to its stop
@@ -215,9 +218,20 @@ struct V2SplitHandle: View {
         let art = V2OpenReadiness.art(store, seed: model.library.first { $0.id == id })
         Task { @MainActor in
             await V2OpenReadiness.wait(for: store, art: art)
-            guard seam.slidIn == id, start == nil, seam.live == CGFloat(width) else { return }
+            // Another title or a finger owns the seam now; else slide in from wherever it is (it used
+            // to need the seam exactly where parked, else left it parked: owner, build 1239).
+            guard seam.slidIn == id, start == nil, seam.live != nil else { return }
             settle(restingStop, velocity: 0, tick: false)
         }
+    }
+
+    /// The seam sat mid-move 2 s with no finger on it: settle it (a seam left there dead-ends the shell).
+    private func unstick() async {
+        guard seam.live != nil else { return }
+        try? await Task.sleep(for: .seconds(2))
+        guard !Task.isCancelled, seam.live != nil, start == nil else { return }
+        HangRecorder.note("seam unstuck at \(Int(x))")
+        settle(restingStop, velocity: 0, tick: false)
     }
 
     /// Close: the title slides off the trailing edge over the Library at its

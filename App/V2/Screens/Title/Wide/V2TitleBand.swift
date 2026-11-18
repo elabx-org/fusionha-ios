@@ -41,14 +41,17 @@ struct V2TitleBand: View {
                     }
                 }
                 .clipped()
+                // Under the Duo's column to the display's edge, as the split
+                // view's hero does (owner, 2026-11-18).
+                .ignoresSafeArea(.container, edges: .horizontal)
                 .accessibilityHidden(true)
             }
             // The art and its shade are sized by the art's aspect fill (about
             // 950 x 535 pt for a backdrop across the display), not by the
-            // band, so the band itself is the clip: unclipped, the art and
-            // shade ran ~300 pt down behind the tabs and columns (owner's
-            // screenshot, 2026-11-18).
-            .clipped()
+            // band, so the band clips them to its top and bottom (unclipped
+            // they ran ~300 pt down behind the tabs and columns, owner's
+            // screenshot); its sides stay open for the bleed (`HeroBleedClip`).
+            .clipShape(HeroBleedClip())
             .overlay(alignment: .bottomLeading) {
                 V2TitleHeading(detail: detail, size: 30, showsTagline: false)
                     .padding(.horizontal, V2TitleWide.gutter)

@@ -134,10 +134,16 @@ struct RootView: View {
             instant.disablesAnimations = true
             let wasParked = listParked
             withTransaction(instant) { listParked = false }
+            // The title swaps layouts (one column, or the band over two): it
+            // blurs through rather than crossfading two layouts (`ShellCover`;
+            // the seam's landing comes through here too).
+            let motion = !reduceMotion && model.animationsEnabled
             let flip = {
-                var memory = DuoListMemory(raw: hiddenLists)
-                memory.toggle(key)
-                hiddenLists = memory.raw
+                ShellCover.blurThrough(motion: motion) {
+                    var memory = DuoListMemory(raw: hiddenLists)
+                    memory.toggle(key)
+                    hiddenLists = memory.raw
+                }
             }
             // The handle's own commit lands in one frame; the button waits a
             // frame for the un-parked list to lay out before it slides in.
