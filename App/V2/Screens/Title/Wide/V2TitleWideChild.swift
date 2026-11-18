@@ -37,7 +37,7 @@ struct V2TitleWideChild: View {
     var body: some View {
         VStack(spacing: 0) {
             if let detail = store.detail {
-                V2TitleBand(detail: detail, height: V2TitleWide.bandHeight(barInset: barInset))
+                V2TitleBand(detail: detail, barInset: barInset)
             }
             HStack(alignment: .top, spacing: 0) {
                 left

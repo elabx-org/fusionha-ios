@@ -25,6 +25,7 @@ final class AppModel {
             if tab == .search { searchFocusTick += 1 }
             // Tapping the tab you are on scrolls it back to the top, as on iOS.
             if tab == oldValue { scrollToTopTick += 1 }
+            HangRecorder.note("tab \(tab)")
             AppStartTab.remember(tab)
         }
     }
@@ -41,6 +42,7 @@ final class AppModel {
     /// The open title. Its store is kept while it stays open (AppModel+Detail.swift).
     var presentedItem: ItemRef? {
         didSet {
+            HangRecorder.note("title \(oldValue?.id ?? 0) -> \(presentedItem?.id ?? 0)")
             cardFlags.pick(presentedItem?.id)
             detailSlot.keep(only: presentedItem?.id)
             if presentedItem != nil, spreadPreview != nil { spreadPreview = nil }

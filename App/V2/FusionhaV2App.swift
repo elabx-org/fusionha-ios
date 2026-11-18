@@ -19,6 +19,8 @@ struct FusionhaV2App: App {
         // CI's iPhone Duo harness: its launch settings land before any view reads them.
         DuoHarness.prepare()
         #endif
+        // A frozen main thread is recorded for the owner (`HangRecorder`).
+        HangRecorder.start()
         _session = State(initialValue: AppSession())
     }
 

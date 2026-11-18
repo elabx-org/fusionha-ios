@@ -25,6 +25,8 @@ struct AppSceneContent<Root: View>: View {
                 root()
             }
         }
+        // The launch after a freeze offers its report (`HangRecorder`).
+        .overlay(alignment: .topLeading) { HangReportBanner() }
         // CI screenshots only: the app inside an iPhone Duo frame with a fake fold.
         .duoHarness()
         .environment(model)

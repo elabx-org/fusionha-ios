@@ -24,11 +24,6 @@ enum V2TitleWide {
     static func leftWidth(_ total: CGFloat) -> CGFloat {
         min(380, max(296, (total * 0.34).rounded()))
     }
-
-    /// The header band (mock 132): the bar's reach plus the heading.
-    static func bandHeight(barInset: CGFloat) -> CGFloat {
-        max(140, barInset + 96)
-    }
 }
 
 extension EnvironmentValues {

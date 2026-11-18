@@ -15,7 +15,7 @@ struct V2TitleWidePage: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            V2TitleBand(detail: detail, height: V2TitleWide.bandHeight(barInset: barInset))
+            V2TitleBand(detail: detail, barInset: barInset)
                 .duoTitleSwipe(id: detail.id)
             HStack(alignment: .top, spacing: V2TitleWide.columnGap) {
                 VStack(alignment: .leading, spacing: 0) {

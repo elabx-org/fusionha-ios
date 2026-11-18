@@ -2,13 +2,17 @@ import SwiftUI
 import FusionhaKit
 
 /// The title's art as one header band across the whole flat open display
-/// (mock browse-title.js `tabWide`, `heroBlock(132)`): the textless art,
-/// the hero's shade, and on its foot the title in white with the meta line.
+/// (mock browse-title.js `tabWide`): the textless art, the hero's shade, and
+/// on its foot the title in white with the meta line. As tall as the split
+/// view's hero (`V2TitleHero.height`; owner 2026-11-18, replacing the mock's
+/// 132 pt `heroBlock`, which looked tiny across the display), so the art
+/// keeps its size when the title goes full width.
 /// The title filling the display and its pushed seasons and episodes
 /// (`V2TitleWideChild`) share it. Content, not glass.
 struct V2TitleBand: View {
     let detail: ItemDetail
-    let height: CGFloat
+    /// The bar's reach: the heading always clears it.
+    let barInset: CGFloat
     @Environment(\.pagePalette) private var page
     @Environment(\.motionEnabled) private var motion
     @State private var shown = false
@@ -19,7 +23,9 @@ struct V2TitleBand: View {
     var body: some View {
         Color.clear
             .frame(maxWidth: .infinity)
-            .frame(height: height)
+            .containerRelativeFrame(.vertical) { length, _ in
+                max(V2TitleHero.height(for: length, series: detail.isSeries), barInset + 96)
+            }
             .background {
                 ZStack {
                     PosterImage(url: art)

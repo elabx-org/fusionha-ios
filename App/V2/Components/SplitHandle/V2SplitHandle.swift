@@ -187,6 +187,7 @@ struct V2SplitHandle: View {
                         share: Double? = nil) {
         if tick { ticks += 1 }
         let from = x
+        HangRecorder.note("seam settles \(stop) from \(Int(from)) v \(Int(velocity))")
         let target = share.map { ($0 * width).rounded() } ?? DuoSeam.position(of: stop, width: width, split: rest)
         let drag = context.drag
         let shell = context
@@ -206,6 +207,7 @@ struct V2SplitHandle: View {
         guard seam.slidIn != id else { return }
         seam.slidIn = id
         guard motion, seam.live == nil, let id else { return }
+        HangRecorder.note("seam slides in \(id)")
         seam.listFull = true
         seam.live = CGFloat(width)
         // The page slides in once its detail and colours are there (`V2OpenReadiness`).
@@ -222,6 +224,7 @@ struct V2SplitHandle: View {
     /// full width, then closes (at once under Reduce Motion).
     private func slideOut() {
         PerfCount.mark("seam.slideOut")
+        HangRecorder.note("seam slides out")
         guard motion else {
             context.close()
             return

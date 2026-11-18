@@ -16,6 +16,7 @@ enum V2SeamCommit {
     /// A drag begun in between takes the seam and the hand-over is dropped.
     static func commit(_ stop: DuoSeam.Stop, context: DuoSeamContext, share: Double? = nil, at landed: CGFloat) {
         PerfCount.mark("seam.commit")
+        HangRecorder.note("seam lands \(stop) at \(Int(landed)) listFull \(context.drag.listFull)")
         guard context.drag.listFull, stop != .closed else { return restAt(stop, context: context, share: share) }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(34))
@@ -25,6 +26,7 @@ enum V2SeamCommit {
     }
 
     private static func restAt(_ stop: DuoSeam.Stop, context: DuoSeamContext, share: Double?) {
+        HangRecorder.note("seam at rest \(stop)")
         var instant = Transaction()
         instant.disablesAnimations = true
         withTransaction(instant) {
