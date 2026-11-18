@@ -1,18 +1,18 @@
 #!/bin/bash
 # v2 windows on an iPad simulator. A UI-test driver (UITests/SceneRelaunchDriver)
-# launches fusionha v2, goes to the Home Screen and taps its icon twice, then
-# opens a fusionha2:// link; the app's DEBUG scene probe
+# launches fusionha, goes to the Home Screen and taps its icon twice, then
+# opens a fusionha:// link; the app's DEBUG scene probe
 # (App/V2/Windows/V2SceneProbe.swift) logs its connected scenes each time a
 # window comes forward, in Library/Caches/deeplink-log.txt in its container.
 #   1. one window: every line must say 1 scene;
 #   2. after Open in New Window: 2 scenes, and never a third.
 # Exits 1 on a miss. Every simctl and xcodebuild call is bounded, so a stuck
 # simulator or test runner fails the case instead of hanging the job.
-#   scripts/v2_scene_check.sh <udid> <FusionhaV2.app>
+#   scripts/v2_scene_check.sh <udid> <Fusionha.app>
 set -u
 UDID=$1
 APP_PATH=$2
-APP=org.elabx.fusionha.v2
+APP=org.elabx.fusionha
 CASE_SECS=${V2_SCENE_CASE_SECS:-600}
 failed=0
 report=""

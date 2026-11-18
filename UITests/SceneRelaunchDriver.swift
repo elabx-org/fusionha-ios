@@ -14,7 +14,7 @@ final class SceneRelaunchDriver: XCTestCase {
 
     func testRelaunchFromHomeScreen() {
         executionTimeAllowance = 300
-        let app = XCUIApplication(bundleIdentifier: "org.elabx.fusionha.v2")
+        let app = XCUIApplication(bundleIdentifier: "org.elabx.fusionha")
         app.launchEnvironment = ["FUSIONHA_SCENE_PROBE": "1"]
         if ProcessInfo.processInfo.environment["SCENE_NEW_WINDOW"] != nil {
             app.launchEnvironment["FUSIONHA_SCENE_PROBE_NEW_WINDOW"] = "1"
@@ -26,13 +26,13 @@ final class SceneRelaunchDriver: XCTestCase {
         for round in 1...2 {
             XCUIDevice.shared.press(.home)
             sleep(3)
-            step("tap icon \(round): \(tapIcon("fusionha v2"))")
+            step("tap icon \(round): \(tapIcon("fusionha"))")
             sleep(8)
         }
         XCUIDevice.shared.press(.home)
         sleep(3)
         step("open link")
-        XCUIDevice.shared.system.open(URL(string: "fusionha2://library")!)
+        XCUIDevice.shared.system.open(URL(string: "fusionha://library")!)
         let open = springboard.alerts.buttons["Open"]
         if open.waitForExistence(timeout: 5) { open.tap() }
         sleep(8)

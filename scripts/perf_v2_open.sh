@@ -1,7 +1,7 @@
 #!/bin/bash
 # v2 title-open perf on the iPhone Duo's flat open inner display (the CI
 # "Perf" job, perf_scope v2open). Like scripts/perf_library.sh: the DEBUG
-# FusionhaV2 app renders itself in a Duo-sized frame on a 13-inch iPad
+# fusionha app renders itself in a Duo-sized frame on a 13-inch iPad
 # simulator, against the mock's 3,785-title library (one poster URL per title,
 # 20 live downloads). The perf probe (FUSIONHA_PERF_SCRIPT=v2open,
 # App/Debug/PerfProbe+Open.swift) opens titles from the Library the way a
@@ -13,7 +13,7 @@
 set -u
 APP=$1
 OUT=$2
-BUNDLE=org.elabx.fusionha.v2
+BUNDLE=org.elabx.fusionha
 PORT=8767
 S=http://127.0.0.1:$PORT
 mkdir -p "$OUT"

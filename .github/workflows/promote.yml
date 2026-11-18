@@ -48,7 +48,7 @@ jobs:
           if run["workflowName"] != "Build":
               sys.exit("::error::Not a Build run")
           done = {j["name"]: j["conclusion"] for j in run["jobs"]}
-          need = ["FusionhaKit tests", "Build unsigned IPA", "Build unsigned IPA (FusionhaV2)"]
+          need = ["FusionhaKit tests", "Build unsigned IPA"]
           bad = [n for n in need if done.get(n) != "success"]
           if bad:
               sys.exit("::error::These jobs did not pass in that run: " + ", ".join(bad))
@@ -75,7 +75,7 @@ jobs:
           mkdir -p ipas
           find artifacts -name "*.ipa" -exec mv {} ipas/ \;
           ls -lh ipas
-          test -f ipas/Fusionha.ipa && test -f ipas/FusionhaV2.ipa
+          test -f ipas/Fusionha.ipa
 
       - name: Prepare release
         id: release

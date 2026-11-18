@@ -1,5 +1,5 @@
 #!/bin/bash
-# v2 (FusionhaV2) screenshots on the iPhone Duo harness's flat open inner
+# v2 (the Fusionha app) screenshots on the iPhone Duo harness's flat open inner
 # display (the CI "Perf" job, perf_scope v2shots): the DEBUG app renders
 # itself in a Duo-sized frame on a 13-inch iPad simulator against the mock
 # server, and each shot is cropped to that frame (as scripts/duo_harness_shots.sh
@@ -10,7 +10,7 @@ set -u
 APP=$1
 OUT=$2
 ONLY=${3:-}
-BUNDLE=org.elabx.fusionha.v2
+BUNDLE=org.elabx.fusionha
 PORT=8769
 S=http://127.0.0.1:$PORT
 mkdir -p "$OUT"

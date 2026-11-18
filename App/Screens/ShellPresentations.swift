@@ -72,7 +72,7 @@ struct ShellPresentations: ViewModifier {
         }
         .onChange(of: model.pendingLink, initial: true) {
             // fusionha://activity, calendar, item/{id}… from the widgets, the
-            // Live Activity and notifications (received in FusionhaApp).
+            // Live Activity and notifications (received in FusionhaV2App).
             Task { await model.applyPendingLink() }
         }
         .onChange(of: model.tab) {

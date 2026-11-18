@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// fusionha v2: a second app beside v1 (`docs/v2.md`), with its own bundle id,
-/// App Group, keychain namespace and URL scheme (`AppIdentity`, from this
-/// target's Info.plist). Built only into the FusionhaV2 target, which leaves out
-/// `App/FusionhaApp.swift`; the window content is the same `AppSceneContent`.
+/// fusionha's `@main`. Since the cutover (owner, 2026-11-18) the v2 app ships
+/// under v1's bundle ids, App Group, keychain group and URL scheme
+/// (`docs/v2.md`, Cutover), so it upgrades v1 in place. The window content is
+/// `AppSceneContent`.
 ///
 /// v2 supports multiple windows (split screen): the app owns the one
 /// `AppSession` (data and pollers), and every window builds its own
