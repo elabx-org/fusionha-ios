@@ -183,10 +183,12 @@ struct V2TitleView: View {
         .scrollPosition($position)
         .duoColumnPullSource()
         .ignoresSafeArea(.container, edges: edgeToEdge ? [.top, .trailing] : .top)
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { columnWidth = $0 } }
+        // Steady: a landing or a moving seam re-lays out the page once (`SteadyGeometry`).
+        .onSteadyGeometryChange(for: CGFloat.self, isReal: { $0 > 0 }) { $0.safeAreaInsets.trailing } action: { if $0 > 0 { columnWidth = $0 } }
         .environment(\.v2ColumnClearance, edgeToEdge ? columnWidth : 0)
-        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
-        .onGeometryChange(for: CGFloat.self) { $0.safeAreaInsets.top } action: { barInset = $0 }
+        .onSteadyGeometryChange(for: CGFloat.self, isReal: { $0 > 0 }, isResize: isColumnResize) { $0.size.width }
+            action: { width = $0 }
+        .onSteadyGeometryChange(for: CGFloat.self, isReal: { $0 > 0 }) { $0.safeAreaInsets.top } action: { barInset = $0 }
         .environment(\.v2TitleBarInset, barInset)
         .onScrollGeometryChange(for: CGFloat.self) { geo in
             geo.contentOffset.y + geo.contentInsets.top

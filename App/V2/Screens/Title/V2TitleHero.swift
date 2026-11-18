@@ -13,6 +13,11 @@ struct V2TitleHero: View {
     @Environment(\.pagePalette) private var page
     @Environment(\.motionEnabled) private var motion
     @State private var shown = false
+    /// The art's box once it holds still (`SteadyGeometry`): while the column
+    /// lands or the seam moves, the art keeps this size and the live frame
+    /// only crops it, so it never zooms (approved mock "Title art that holds
+    /// still", 2026-11-18).
+    @State private var artBox: CGSize = .zero
 
     private var light: Bool { page?.isLight ?? Theme.isLight }
     private var art: URL? { ItemDetailArt.hero(backdrop: detail.backdropUrl, poster: detail.posterUrl) }
@@ -25,7 +30,9 @@ struct V2TitleHero: View {
             .background {
                 ZStack {
                     PosterImage(url: art)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(width: artBox.width > 0 ? artBox.width : nil,
+                               height: artBox.height > 0 ? artBox.height : nil)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                         .clipped()
                         .scaleEffect(shown || !motion ? 1 : 1.05)
                         .opacity(shown || !motion ? 1 : 0)
@@ -42,6 +49,9 @@ struct V2TitleHero: View {
                 // c3c9e0d8: clipping the hero's own frame left a dark strip).
                 .clipped()
                 .ignoresSafeArea(.container, edges: .horizontal)
+                .onSteadyGeometryChange(for: CGSize.self, isReal: { $0.width > 0 && $0.height > 0 },
+                                        isResize: isColumnResize) { $0.size }
+                    action: { artBox = $0 }
                 // And to the hero's own top and bottom (`HeroBleedClip`).
                 .clipShape(HeroBleedClip())
                 .accessibilityHidden(true)

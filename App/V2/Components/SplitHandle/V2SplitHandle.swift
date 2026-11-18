@@ -193,24 +193,7 @@ struct V2SplitHandle: View {
         spring.run(from: from, velocity: velocity, to: target,
                    dampingRatio: motion ? DuoSeam.dampingRatio : 1, deferred: deferred,
                    step: { PerfCount.hit("V2SeamSpring.step"); drag.live = CGFloat($0) },
-                   done: { Self.commit(stop, context: shell, share: share) })
-    }
-
-    /// The seam is at `stop`: the shell takes over at rest, in one frame.
-    private static func commit(_ stop: DuoSeam.Stop, context: DuoSeamContext, share: Double? = nil) {
-        PerfCount.mark("seam.commit")
-        var instant = Transaction()
-        instant.disablesAnimations = true
-        withTransaction(instant) {
-            if let share { context.setShare(share) }
-            switch stop {
-            case .fullWidth: context.setFullWidth(true)
-            case .split: context.setFullWidth(false)
-            case .closed: context.close()
-            }
-            context.drag.live = nil
-            context.drag.listFull = false
-        }
+                   done: { V2SeamCommit.commit(stop, context: shell, share: share, at: CGFloat(target)) })
     }
 
     /// A title just opened: it slides in from the trailing edge to its stop
