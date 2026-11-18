@@ -37,7 +37,7 @@ SHOTS=(
 )
 for pose in "Open" "Closed" "Partially Open"; do
   echo "$pose" | grep -qE "$POSES" || continue
-  # A pose that can't be pressed stops the run: shots in the wrong pose mislead.
+  # Shots in the wrong pose mislead: a pose press is verified before any shot.
   r=$(osascript -l JavaScript scripts/duo_pose.js press "$pose" 2>&1)
   case "$r" in pressed*) ;; *)
     # Device Hub drops the device's window now and then (seen after fresh
@@ -46,7 +46,14 @@ for pose in "Open" "Closed" "Partially Open"; do
       p.menuBars[0].menuBarItems.byName("File").menus[0].menuItems.byName("New Window").click(); delay(4);' > /dev/null 2>&1
     r=$(osascript -l JavaScript scripts/duo_pose.js press "$pose" 2>&1) ;;
   esac
-  case "$r" in pressed*) ;; *) echo "POSE FAILED: $pose ($r). Is an app in full screen? Device Hub's window must be in the current Space."; exit 1 ;; esac
+  # A pose that can't be pressed (the Mac locked, or Device Hub in another
+  # Space behind a full-screen app) is skipped, never shot in the wrong pose:
+  # the run carries on with the poses it can reach and says what it skipped.
+  case "$r" in pressed*) ;; *)
+    echo "POSE SKIPPED: $pose ($r). Is the Mac locked, or an app in full screen? Device Hub's window must be in the current Space."
+    SKIPPED="$SKIPPED $pose;"
+    continue ;;
+  esac
   sleep 4
   tag=$(echo "$pose" | tr 'A-Z ' 'a-z-')
   for entry in "${SHOTS[@]}"; do
@@ -68,3 +75,4 @@ for pose in "Open" "Closed" "Partially Open"; do
   done
 done
 osascript -l JavaScript scripts/duo_pose.js press Open > /dev/null
+[ -n "${SKIPPED:-}" ] && echo "NOT COVERED (pose could not be pressed):$SKIPPED"

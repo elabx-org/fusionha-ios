@@ -82,6 +82,9 @@ function menus(p, visit) {
 function run(argv) {
   const mode = argv[0] || "dump";
   const want = (argv[1] || "").toLowerCase();
+  // Optional third argument: only a window whose label contains it (a device
+  // name, e.g. "Duo Closed"), so each of several booted Duos gets its own pose.
+  const only = (argv[2] || "").toLowerCase();
   const se = Application("System Events");
   const procs = processes(se);
   if (procs.length === 0) {
@@ -92,6 +95,7 @@ function run(argv) {
     const pname = safe(() => p.name(), "?");
     for (const w of safe(() => p.windows(), [])) {
       if (mode === "dump") console.log(`[${pname}] window: ${label(w)}`);
+      if (only && !label(w).toLowerCase().includes(only)) continue;
       const hit = walk(w, (el, r, l) => {
         if (mode === "dump") {
           if (/Button|CheckBox|RadioButton|PopUp|MenuButton|Segment|Tab/.test(r)) console.log(`  ${r}: ${l}`);
@@ -105,6 +109,7 @@ function run(argv) {
       });
       if (hit) return;
     }
+    if (only) continue;  // menus act on the front window, not a chosen one
     const hit = menus(p, (item, path, name) => {
       if (mode === "dump") { console.log(`  menu: ${path}`); return false; }
       if (name.toLowerCase() !== want) return false;
