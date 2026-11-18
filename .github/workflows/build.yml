@@ -160,8 +160,9 @@ jobs:
 
   # One app since the cutover (docs/v2.md): the v2 app, as Fusionha under v1's ids.
   build:
-    # The check keeps its pre-v2 name (branch protection, pollers).
-    name: Build unsigned IPA
+    # The check keeps its pre-v2 name (branch protection, pollers). The name
+    # names the matrix value, or GitHub would append "(Fusionha)" to it.
+    name: ${{ matrix.scheme == 'Fusionha' && 'Build unsigned IPA' || matrix.scheme }}
     if: inputs.duo_only == ''
     runs-on: xcode-27
     permissions:
