@@ -21,7 +21,9 @@ final class MainSampler: @unchecked Sendable {
     private var stacks: [[UInt]: (all: Int, stall: Int)] = [:]
     private var total = 0
     private var stallTotal = 0
+    /// Read and written on `reportQueue` only.
     private var symbols: [UInt: (name: String, image: String)] = [:]
+    private let reportQueue = DispatchQueue(label: "fusionha.perf.sampler-report", qos: .utility)
 
     // Written by the main run loop observer, read by the sampler (benign races).
     nonisolated(unsafe) private static var lastActivity: Double = 0
@@ -105,11 +107,33 @@ final class MainSampler: @unchecked Sendable {
 
     /// Top self and inclusive symbols since the last reset, for the perf report.
     func report(limit: Int = 45) -> [String: Any] {
-        lock.lock()
-        let snapshot = stacks
-        let all = total
-        let stall = stallTotal
-        lock.unlock()
+        let snap = snapshot()
+        return reportQueue.sync { build(snap, limit: limit) }
+    }
+
+    /// `report`, with the samples taken now and symbolicated on a background
+    /// queue, where `done` gets the result. On the main thread, `dladdr`
+    /// stalled each phase end by up to 53 ms (8% of the main thread's samples
+    /// in a Time Profiler trace of the v2 session, 2026-11-18), and those
+    /// stalls landed in the measured phases.
+    func reportAsync(limit: Int = 45, _ done: @escaping ([String: Any]) -> Void) {
+        let snap = snapshot()
+        reportQueue.async { done(self.build(snap, limit: limit)) }
+    }
+
+    /// Waits for the reports `reportAsync` has queued.
+    func drain() { reportQueue.sync {} }
+
+    private typealias Snapshot = (stacks: [[UInt]: (all: Int, stall: Int)], all: Int, stall: Int)
+
+    private func snapshot() -> Snapshot {
+        lock.lock(); defer { lock.unlock() }
+        return (stacks, total, stallTotal)
+    }
+
+    /// On `reportQueue` (it owns `symbols`).
+    private func build(_ snap: Snapshot, limit: Int) -> [String: Any] {
+        let snapshot = snap.stacks, all = snap.all, stall = snap.stall
         let appImage = (Bundle.main.executablePath as NSString?)?.lastPathComponent ?? "Fusionha"
         var selfAll: [String: Int] = [:], selfStall: [String: Int] = [:]
         var inclAll: [String: Int] = [:], inclStall: [String: Int] = [:]

@@ -222,10 +222,13 @@ final class PerfProbe: NSObject {
             "times_ms": times,
         ])
         #if arch(arm64)
-        var stacks = MainSampler.shared.report()
-        stacks["event"] = "stacks"
-        stacks["phase"] = phaseName
-        emit(stacks)
+        let name = phaseName
+        MainSampler.shared.reportAsync { stacks in
+            var stacks = stacks
+            stacks["event"] = "stacks"
+            stacks["phase"] = name
+            PerfProbe.write(stacks)
+        }
         #endif
     }
 
@@ -296,11 +299,6 @@ final class PerfProbe: NSObject {
 
     private func round1(_ v: Double) -> Double { (v * 10).rounded() / 10 }
     private func round3(_ v: Double) -> Double { (v * 1000).rounded() / 1000 }
-
-    func emit(_ object: [String: Any]) {
-        guard let data = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys]) else { return }
-        FileHandle.standardError.write(Data("PERF ".utf8) + data + Data("\n".utf8))
-    }
 }
 #else
 @MainActor
