@@ -1,7 +1,7 @@
 import SwiftUI
 import FusionhaKit
 
-// MARK: - Collapsed tabs (owner-approved 2026-11-10, v2, on trial)
+// MARK: - Collapsed tabs (owner-approved 2026-11-10, v2; the default since 2026-11-18)
 //
 // On the iPhone Duo the system keeps a column on the trailing edge for the
 // clock, the page's buttons and the tabs. With this on, the tabs leave the
@@ -13,7 +13,10 @@ import FusionhaKit
 // iPhone and iPad keep their tab bar.
 
 enum TabsLook {
-    /// Device-local: the Duo's tabs collapse into the arrow button.
+    /// Device-local: the Duo's tabs collapse into the arrow button. On
+    /// unless turned off (default since 2026-11-18, the owner's plan), and
+    /// counted as kept (`confirmedKey`), so no "keep this look?" prompt for
+    /// a default nobody chose.
     static let collapsedKey = "v2.shell.collapsedTabs"
     /// The owner kept the look after turning it on (`CollapsedTabsConfirm`).
     static let confirmedKey = "v2.shell.collapsedTabs.confirmed"
@@ -43,8 +46,8 @@ struct CollapsedTabsState: Equatable {
     var requests = 0
     /// Collapsed tabs chosen, with the list beside an open title: the list
     /// pane keeps its tab bar, and the title's column holds the arrow (with
-    /// Account and Search under it). Mock (2026-11-18): the pane's bar then
-    /// drops its own Account and Add.
+    /// Account and Search under it), so the pane's bar drops its own Account
+    /// and Add (owner's pick, mock "Split Bar Options", 2026-11-18).
     var besideTitle = false
 }
 
@@ -125,8 +128,8 @@ struct CollapsedTabsFloatingButton: View {
 /// Until the owner keeps the look, a way back that doesn't depend on it:
 /// if the arrow were missing there would be no route to Account's switch.
 struct CollapsedTabsConfirm: ViewModifier {
-    @AppStorage(TabsLook.collapsedKey) private var on = false
-    @AppStorage(TabsLook.confirmedKey) private var confirmed = false
+    @AppStorage(TabsLook.collapsedKey) private var on = true
+    @AppStorage(TabsLook.confirmedKey) private var confirmed = true
     @Environment(\.shellChrome) private var chrome
     @Environment(\.horizontalSizeClass) private var sizeClass
     /// The Duo is open (the folded Duo is read from the screen).

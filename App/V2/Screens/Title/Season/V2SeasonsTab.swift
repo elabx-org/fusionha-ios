@@ -9,7 +9,7 @@ struct V2SeasonsTab: View {
     @Environment(DetailStore.self) private var store
     @Environment(AppModel.self) private var model
     @Environment(\.pagePalette) private var page
-    @AppStorage(TitleLook.posterKey) private var posterLook = false
+    @AppStorage(TitleLook.posterKey) private var posterLook = true
     let detail: ItemDetail
     var compact = false
 

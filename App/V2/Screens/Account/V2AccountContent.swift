@@ -28,9 +28,9 @@ struct V2AccountContent: View {
     @Environment(\.openURL) private var openURL
     @AppStorage(AppStartTab.key) private var openOn = AppStartTab.library.rawValue
     @AppStorage(LiveActivityPrefs.enabledKey) private var liveActivity = true
-    @AppStorage(TitleLook.posterKey) private var posterLook = false
-    @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = false
-    @AppStorage(TabsLook.confirmedKey) private var collapsedTabsKept = false
+    @AppStorage(TitleLook.posterKey) private var posterLook = true
+    @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = true
+    @AppStorage(TabsLook.confirmedKey) private var collapsedTabsKept = true
     @AppStorage(TabsLook.bottomKey) private var tabsArrowAtBottom = false
 
     var body: some View {

@@ -170,13 +170,18 @@ final class AppModel {
                 selectMode = true
                 selection = [1, 3]
             }
-            // `=1` collapsed and kept, `=open` also with the tabs' list showing (`ShellPage`).
+            // `=1` collapsed and kept, `=open` also with the tabs' list showing (`ShellPage`);
+            // `=default` leaves the app's own default (a fresh install's look).
             let collapsedTabs = env["FUSIONHA_SCREENSHOT_COLLAPSED_TABS"]
-            UserDefaults.standard.set(collapsedTabs != nil, forKey: TabsLook.collapsedKey)
-            UserDefaults.standard.set(collapsedTabs != nil, forKey: TabsLook.confirmedKey)
-            UserDefaults.standard.set(collapsedTabs == "bottom", forKey: TabsLook.bottomKey)
-            // `=1`: the poster title page (Account › This iPhone).
-            UserDefaults.standard.set(env["FUSIONHA_SCREENSHOT_POSTER"] == "1", forKey: TitleLook.posterKey)
+            if collapsedTabs != "default" {
+                UserDefaults.standard.set(collapsedTabs != nil, forKey: TabsLook.collapsedKey)
+                UserDefaults.standard.set(collapsedTabs != nil, forKey: TabsLook.confirmedKey)
+                UserDefaults.standard.set(collapsedTabs == "bottom", forKey: TabsLook.bottomKey)
+            }
+            // `=1`: the poster title page (Account › This iPhone); `=default` as above.
+            if env["FUSIONHA_SCREENSHOT_POSTER"] != "default" {
+                UserDefaults.standard.set(env["FUSIONHA_SCREENSHOT_POSTER"] == "1", forKey: TitleLook.posterKey)
+            }
             if let toast = env["FUSIONHA_SCREENSHOT_TOAST"] {
                 toasts = [ToastMessage(message: toast, duration: 60)]
             }

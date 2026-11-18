@@ -170,7 +170,7 @@ struct ShellDetailColumn: View {
     @Environment(\.titleSpread) private var titleSpread
     @Environment(\.titlePage) private var titlePage
     @Environment(\.bookPose) private var bookPose
-    @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = false
+    @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = true
     /// The page following a swipe from its leading edge (`DuoPageEdge`).
     @State private var dragOffset: CGFloat = 0
     @State private var width: CGFloat = 0

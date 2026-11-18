@@ -93,9 +93,12 @@ function run(argv) {
   }
   for (const p of procs) {
     const pname = safe(() => p.name(), "?");
-    for (const w of safe(() => p.windows(), [])) {
-      if (mode === "dump") console.log(`[${pname}] window: ${label(w)}`);
-      if (only && !label(w).toLowerCase().includes(only)) continue;
+    const wins = safe(() => p.windows(), []);
+    for (let wi = 0; wi < wins.length; wi++) {
+      const w = wins[wi];
+      if (mode === "dump") console.log(`[${pname}] window #${wi}: ${label(w)}`);
+      // "#N" picks the Nth window (Device Hub titles every Duo's window alike).
+      if (only && (only.startsWith("#") ? `#${wi}` !== only : !label(w).toLowerCase().includes(only))) continue;
       const hit = walk(w, (el, r, l) => {
         if (mode === "dump") {
           if (/Button|CheckBox|RadioButton|PopUp|MenuButton|Segment|Tab/.test(r)) console.log(`  ${r}: ${l}`);

@@ -22,7 +22,7 @@ struct ShellTabs: View {
     /// The tabs' own width (the list pane's on the open Duo).
     @State private var width: CGFloat = 0
     /// v2, on trial (Account): the Duo's tabs collapse into an arrow button.
-    @AppStorage(TabsLook.collapsedKey) private var collapsedPref = false
+    @AppStorage(TabsLook.collapsedKey) private var collapsedPref = true
     @AppStorage(TabsLook.bottomKey) private var arrowAtBottom = false
     /// The Duo's column: the trailing safe-area inset.
     @State private var column: CGFloat = 0
@@ -56,8 +56,7 @@ struct ShellTabs: View {
 
     private var tabsState: CollapsedTabsState {
         CollapsedTabsState(on: collapsed, bottom: arrowAtBottom, activity: activityBadge, requests: model.requestsBadge,
-                           besideTitle: chrome != nil && collapsedPref && listBesideTitle
-                               && MockFlag.value("SPLIT_BAR") == "clean")
+                           besideTitle: chrome != nil && collapsedPref && listBesideTitle)
     }
 
     /// A tab's title: empty in the narrow column, where the icon stands alone

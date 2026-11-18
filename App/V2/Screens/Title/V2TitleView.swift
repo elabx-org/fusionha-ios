@@ -30,8 +30,8 @@ struct V2TitleView: View {
     /// The Duo's column width, kept while the page runs under it.
     @State private var columnWidth: CGFloat = 0
     /// The poster-led page on trial (Account › This iPhone).
-    @AppStorage(TitleLook.posterKey) private var posterLook = false
-    @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = false
+    @AppStorage(TitleLook.posterKey) private var posterLook = true
+    @AppStorage(TabsLook.collapsedKey) private var collapsedTabs = true
 
     /// Collapsed tabs (owner, build 1129): the page runs under the Duo's
     /// column to the display's edge. Since the column rule (2026-11-10) the

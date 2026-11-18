@@ -92,7 +92,8 @@ struct V2LibraryToolbar: ViewModifier {
                     .barPriority(false)
             }
         } else {
-            AddTitleToolbarItem(model: model)
+            // Beside an open title, Add is under the column's arrow (Search).
+            if !tabs.besideTitle { AddTitleToolbarItem(model: model) }
             filterItem
             if !model.selectMode {
                 ToolbarItem(placement: .topBarTrailing) {
