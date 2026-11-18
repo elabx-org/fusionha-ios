@@ -158,15 +158,40 @@ jobs:
             tests.log
           retention-days: 14
 
+  # A release's build number (main pushes), claimed before it is built: it is
+  # baked into the IPA. The claim is the tag build-N pushed at this commit
+  # (scripts/claim_build.sh); scripts/local_release.sh claims the same way, so
+  # CI and a Mac never hand out one number twice. Branch and PR builds are
+  # never released and keep the run number.
+  number:
+    name: Claim build number
+    if: inputs.duo_only == '' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      build: ${{ steps.claim.outputs.build }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - id: claim
+        run: |
+          build=$(bash scripts/claim_build.sh "$GITHUB_SHA")
+          echo "Claimed build-$build"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+
   # One app since the cutover (docs/v2.md): the v2 app, as Fusionha under v1's ids.
   build:
     # The check keeps its pre-v2 name (branch protection, pollers). The name
     # names the matrix value, or GitHub would append "(Fusionha)" to it.
     name: ${{ matrix.scheme == 'Fusionha' && 'Build unsigned IPA' || matrix.scheme }}
-    if: inputs.duo_only == ''
+    needs: number
+    # `number` is skipped off main; a skipped need would skip this job too.
+    if: ${{ !cancelled() && inputs.duo_only == '' && needs.number.result != 'failure' }}
     runs-on: xcode-27
     permissions:
       contents: read
+    env:
+      BUILD_NUMBER: ${{ needs.number.outputs.build || github.run_number }}
     strategy:
       fail-fast: false
       matrix:
@@ -187,11 +212,11 @@ jobs:
           xcodegen generate
 
       # Feather only offers an update when the version string changes, so the
-      # patch number is the CI run number: project.yml's 2.0.0 ships as
-      # 2.0.<run> (scripts/app_version.sh).
+      # patch number is the build number: project.yml's 2.0.0 ships as
+      # 2.0.<build> (scripts/app_version.sh).
       - name: Set version
         run: |
-          echo "APP_VERSION=$(bash scripts/app_version.sh ${{ matrix.scheme }} ${{ github.run_number }})" >> "$GITHUB_ENV"
+          echo "APP_VERSION=$(bash scripts/app_version.sh ${{ matrix.scheme }} "$BUILD_NUMBER")" >> "$GITHUB_ENV"
 
       - name: Build (unsigned)
         run: |
@@ -205,7 +230,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             MARKETING_VERSION="$APP_VERSION" \
             build 2>&1 | tee xcodebuild.log || {
             # Compile errors as annotations, readable from the checks API without the raw log.
@@ -297,7 +322,7 @@ jobs:
   #   https://github.com/elabx-org/fusionha-ios/releases/latest/download/source.json
   release:
     name: Publish release
-    needs: [build, test]
+    needs: [number, build, test]
     # `!cancelled()` would also run after failed tests, so they are required explicitly.
     if: >-
       !cancelled() && github.event_name == 'push' && needs.test.result == 'success' &&
@@ -320,7 +345,7 @@ jobs:
         id: release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/release_source.sh ipas ${{ github.run_number }} release
+        run: bash scripts/release_source.sh ipas ${{ needs.number.outputs.build || github.run_number }} release
 
       - name: Publish release
         if: steps.release.outputs.tag != ''
@@ -331,7 +356,8 @@ jobs:
           target_commitish: ${{ github.sha }}
           files: release/*
           generate_release_notes: true
-          make_latest: true
+          # Not when a higher build-N is already out (scripts/release_source.sh).
+          make_latest: ${{ steps.release.outputs.latest }}
 
       # No Fusionha.ipa fails this job.
       - name: Require the IPA
