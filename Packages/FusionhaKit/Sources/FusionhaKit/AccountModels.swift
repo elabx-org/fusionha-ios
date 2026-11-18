@@ -93,9 +93,13 @@ extension APIError {
     public var serverMessage: String {
         if case .http(_, let body) = self,
            let data = body.data(using: .utf8),
-           let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let detail = object["detail"] as? String {
-            return detail
+           let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let detail = object["detail"] as? String { return detail }
+            // Coded refusals nest it: {"detail": {"code": "review_required", "detail": "…"}}.
+            if let nested = object["detail"] as? [String: Any],
+               let detail = (nested["detail"] ?? nested["message"]) as? String {
+                return detail
+            }
         }
         return errorDescription ?? "Something went wrong."
     }

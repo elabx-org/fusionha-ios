@@ -95,14 +95,18 @@ public struct NumberingFileRef: Decodable, Sendable, Hashable {
     public let reason: String?
 }
 
-/// `POST /api/v1/library/{id}/numbering/apply` body. The hash pins the previewed diff.
+/// `POST /api/v1/library/{id}/numbering/apply` body. The preview's
+/// `plan_hash` pins the reviewed plan; the legacy `expected_hash` is sent only
+/// when a server is too old to give a plan hash.
 public struct NumberingApplyBody: Encodable, Sendable, Hashable {
     public let source: String?
-    public let expectedHash: String
+    public let planHash: String?
+    public let expectedHash: String?
 
-    public init(source: String?, expectedHash: String) {
+    public init(source: String?, planHash: String?, expectedHash: String?) {
         self.source = source
-        self.expectedHash = expectedHash
+        self.planHash = planHash
+        self.expectedHash = planHash == nil ? expectedHash : nil
     }
 }
 

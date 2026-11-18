@@ -186,6 +186,11 @@ public struct TagCreate: Encodable, Sendable {
 public struct NumberingPreview: Decodable, Sendable {
     public let source: String?
     public let agrees: Bool?
+    /// What apply echoes (fusionha #180 P4): the reviewed plan, holds and
+    /// removals included.
+    public let planHash: String?
+    /// The legacy hash (one release): never stands in for a review, so a plan
+    /// that removes episodes always refused it with 409 `review_required`.
     public let diffHash: String?
     public let activeQueueBlocked: Bool?
     public let rows: [NumberingDiffRow]?

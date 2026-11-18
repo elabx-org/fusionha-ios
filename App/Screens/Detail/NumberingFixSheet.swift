@@ -115,11 +115,12 @@ struct NumberingFixSheet: View {
     }
 
     private func apply() async {
-        guard let client = store.client, let preview, let hash = preview.diffHash else { return }
+        guard let client = store.client, let preview, preview.planHash != nil || preview.diffHash != nil else { return }
         applying = true
         defer { applying = false }
         do {
-            let dispatch = try await client.applyNumbering(itemId: detail.id, source: preview.source, expectedHash: hash)
+            let dispatch = try await client.applyNumbering(itemId: detail.id, source: preview.source,
+                                                           planHash: preview.planHash, expectedHash: preview.diffHash)
             let run = await store.waitForRun(dispatch.runId)
             await store.reload()
             if run?.status == "completed" {

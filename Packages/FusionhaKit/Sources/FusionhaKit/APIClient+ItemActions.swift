@@ -49,8 +49,9 @@ extension APIClient {
     }
 
     /// Dispatches the fix as a background run; poll `commandRun(id:)` for its summary.
-    public func applyNumbering(itemId: Int, source: String?, expectedHash: String) async throws -> NumberingApplyDispatch {
+    public func applyNumbering(itemId: Int, source: String?, planHash: String?,
+                               expectedHash: String?) async throws -> NumberingApplyDispatch {
         try await send("POST", "/api/v1/library/\(itemId)/numbering/apply",
-                       body: NumberingApplyBody(source: source, expectedHash: expectedHash))
+                       body: NumberingApplyBody(source: source, planHash: planHash, expectedHash: expectedHash))
     }
 }

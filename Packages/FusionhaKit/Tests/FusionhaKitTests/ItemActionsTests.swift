@@ -177,11 +177,22 @@ final class ItemActionsTests: XCTestCase {
         XCTAssertEqual(NumberingCopy.sourceGuess(provider: nil), "tvmaze")
     }
 
+    func testCodedRefusalShowsItsDetail() {
+        let body = #"{"detail": {"code": "review_required", "detail": "This would hold or remove episodes.", "counts": {}}}"#
+        XCTAssertEqual(APIError.http(status: 409, body: body).serverMessage, "This would hold or remove episodes.")
+        XCTAssertEqual(APIError.http(status: 409, body: #"{"detail": "busy"}"#).serverMessage, "busy")
+    }
+
     func testApplyNumberingBodyAndRunSummary() async throws {
         let api = client(#"{"run_id": 42}"#)
-        let dispatch = try await api.applyNumbering(itemId: 7, source: "tvmaze", expectedHash: "abc")
+        // The preview's plan_hash is what apply checks; the legacy hash isn't
+        // sent alongside it (it never stands in for a review: the owner's 409).
+        let dispatch = try await api.applyNumbering(itemId: 7, source: "tvmaze", planHash: "p1", expectedHash: "abc")
         XCTAssertEqual(dispatch.runId, 42)
         XCTAssertEqual(sent?.url?.path, "/api/v1/library/7/numbering/apply")
+        XCTAssertEqual(try sentJSON() as? [String: String], ["source": "tvmaze", "plan_hash": "p1"])
+        // A server too old to give a plan hash still gets the legacy one.
+        _ = try await api.applyNumbering(itemId: 7, source: "tvmaze", planHash: nil, expectedHash: "abc")
         XCTAssertEqual(try sentJSON() as? [String: String], ["source": "tvmaze", "expected_hash": "abc"])
 
         let run = try JSONDecoder.snake.decode(CommandRun.self, from: Data("""
