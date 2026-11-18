@@ -55,6 +55,7 @@ private struct NumberingRowView: View {
         switch row.kind {
         case "added": return Theme.done
         case "removed": return Theme.danger
+        case "keep_for_review": return Theme.stuck
         default: return Theme.edition
         }
     }

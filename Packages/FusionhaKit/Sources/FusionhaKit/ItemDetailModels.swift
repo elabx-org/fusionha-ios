@@ -159,6 +159,11 @@ public struct Episode: Decodable, Sendable, Hashable, Identifiable {
     /// The episode's still, absolute (TMDB w300, or TVmaze/TVDB as stored);
     /// nil until the series' next metadata refresh (0.4.238).
     public let stillUrl: String?
+    /// Held for review (fusionha, feat/ios-held-flag-preview-wording): parked,
+    /// or stamped without a parked number. Nil from an older server.
+    public let heldForReview: Bool?
+    /// A parked row's original number; nil when not parked.
+    public let parkedOrigin: Int?
 }
 
 public struct EpisodeDownload: Decodable, Sendable, Hashable {

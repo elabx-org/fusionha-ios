@@ -66,7 +66,8 @@ public struct EditionAliasCreate: Encodable, Sendable, Hashable {
 /// One season-scoped row of the numbering diff.
 public struct NumberingDiffRow: Decodable, Sendable, Hashable {
     public let season: Int
-    /// `unchanged` · `renumbered` · `retitled` · `added` · `removed`.
+    /// `unchanged` · `renumbered` · `retitled` · `added` · `removed` ·
+    /// `keep_for_review` (held, files kept). Unknown kinds decode as-is.
     public let kind: String
     public let currentNumber: Int?
     public let alternateNumber: Int?

@@ -70,6 +70,7 @@ private struct V2NumberingRow: View {
         switch row.kind {
         case "added": return Theme.doneText
         case "removed": return Theme.dangerText
+        case "keep_for_review": return Theme.stuckText
         default: return nil
         }
     }

@@ -8,9 +8,14 @@ import Foundation
 public extension Episode {
     static let parkBase = 100_000
 
-    /// Held for review: never wanted or searched until a plan places it.
-    var isHeldForReview: Bool { episodeNumber >= Self.parkBase }
+    /// Held for review: never wanted or searched until a plan places it. The
+    /// server's flag when it sends one (it also covers a stamped row that
+    /// isn't parked), else read from a parked number.
+    var isHeldForReview: Bool { heldForReview ?? (episodeNumber >= Self.parkBase) }
 
-    /// The number to show: a held row's original number, else its own.
-    var shownNumber: Int { isHeldForReview ? episodeNumber % Self.parkBase : episodeNumber }
+    /// The number to show: a parked row's original number (the server's
+    /// `parked_origin`, else read from the number), else its own.
+    var shownNumber: Int {
+        parkedOrigin ?? (episodeNumber >= Self.parkBase ? episodeNumber % Self.parkBase : episodeNumber)
+    }
 }

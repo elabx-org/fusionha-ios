@@ -100,7 +100,9 @@ public struct NumberingSeasonGroup: Sendable, Hashable, Identifiable {
 
 public enum NumberingCopy {
     /// `NOTABLE_NUMBERING_KINDS`: the rows that propose an actual change.
-    public static let notableKinds: Set<String> = ["renumbered", "added", "removed"]
+    /// `keep_for_review` (fusionha, 2026-11-18): a filed row the source lacks,
+    /// held with its files (it used to read "removed").
+    public static let notableKinds: Set<String> = ["renumbered", "added", "removed", "keep_for_review"]
 
     /// `numberingPreviewHasChanges`.
     public static func hasChanges(_ rows: [NumberingDiffRow]) -> Bool {
@@ -121,6 +123,7 @@ public enum NumberingCopy {
         case "retitled": return "Retitled"
         case "added": return "New"
         case "removed": return "Removed"
+        case "keep_for_review": return "Held for review"
         default: return kind
         }
     }

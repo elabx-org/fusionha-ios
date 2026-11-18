@@ -182,6 +182,23 @@ final class ItemActionsTests: XCTestCase {
         let eps = try JSONDecoder.snake.decode([Episode].self, from: Data(json.utf8))
         XCTAssertEqual(eps.map(\.shownNumber), [3, 4, 6])
         XCTAssertEqual(eps.map(\.isHeldForReview), [false, true, true])
+        // The server's flags win (fusionha feat/ios-held-flag-preview-wording):
+        // a stamped row that isn't parked shows its own number, held.
+        let flagged = #"[{"id": 4, "episode_number": 200005, "held_for_review": true, "parked_origin": 5},"#
+            + #" {"id": 5, "episode_number": 7, "held_for_review": true, "parked_origin": null}]"#
+        let f = try JSONDecoder.snake.decode([Episode].self, from: Data(flagged.utf8))
+        XCTAssertEqual(f.map(\.shownNumber), [5, 7])
+        XCTAssertEqual(f.map(\.isHeldForReview), [true, true])
+    }
+
+    func testHeldRowsInTheNumberingPreview() throws {
+        let json = #"[{"season": 1, "kind": "keep_for_review", "current_number": 4, "alternate_number": null},"#
+            + #" {"season": 1, "kind": "unchanged", "current_number": 1, "alternate_number": 1},"#
+            + #" {"season": 1, "kind": "something_new", "current_number": 9, "alternate_number": null}]"#
+        let rows = try JSONDecoder.snake.decode([NumberingDiffRow].self, from: Data(json.utf8))
+        XCTAssertTrue(NumberingCopy.hasChanges(Array(rows.prefix(2))))
+        XCTAssertEqual(NumberingCopy.notableBySeason(rows).first?.rows.map(\.kind), ["keep_for_review"])
+        XCTAssertEqual(NumberingCopy.kindLabel("keep_for_review"), "Held for review")
     }
 
     func testCodedRefusalShowsItsDetail() {
