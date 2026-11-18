@@ -187,7 +187,12 @@ struct DiscoverView: View {
     }
 
     private var browseControls: some View {
+        // Under the tabs, still within the Duo column's reach: the kind control
+        // and search stop at its edge (owner's review, 2026-11-18: "Anime" ran
+        // under the folded column's arrow). Inside the span row the column is
+        // the row's own trailing reserve, so nothing more is kept there.
         DiscoverBrowseControls(kind: $kind, query: $query, canAdd: canAdd, canRequest: canRequest)
+            .padding(.trailing, fullWidth && !spansBrowse ? column : 0)
     }
 
     @ViewBuilder
@@ -284,22 +289,4 @@ struct DiscoverView: View {
         }
     }
     #endif
-}
-
-/// Round-robin two lists (the web's `kind=all` merge).
-func interleave<T>(_ a: [T], _ b: [T]) -> [T] {
-    var out: [T] = []
-    out.reserveCapacity(a.count + b.count)
-    for i in 0..<max(a.count, b.count) {
-        if i < a.count { out.append(a[i]) }
-        if i < b.count { out.append(b[i]) }
-    }
-    return out
-}
-
-/// Requester "My requests" tab: the Discover page with the Requests tab on.
-struct RequestsView: View {
-    var body: some View {
-        DiscoverView(initialTab: .requests, title: "My requests")
-    }
 }

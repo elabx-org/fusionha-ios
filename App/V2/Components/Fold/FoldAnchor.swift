@@ -15,11 +15,33 @@ extension EnvironmentValues {
 @MainActor
 final class FoldAnchorTracker {
     var log = FoldAnchorLog<AnyHashable>()
+    /// Each marked row's height, so a restore can place the row's top.
+    var heights: [AnyHashable: CGFloat] = [:]
+    /// The list is at its very top: a resize keeps it there, whatever row
+    /// sits under the eye line (owner's review, 2026-11-18: the open Duo's
+    /// list column came up on "Movies", its heading under the bar's pill).
+    var atTop = true
+    /// The bars over the list (its content insets): `scrollTo` places rows
+    /// in the area between them, the eye line is measured from the top.
+    var insetTop: CGFloat = 0
+    var insetBottom: CGFloat = 0
+
+    /// The eye's line, from the scroll view's top: below the bars, a fifth
+    /// of the way down (120 pt at most) or 40 pt under the bar if lower.
+    func line(height: CGFloat) -> CGFloat {
+        max(min(120, height * 0.2), insetTop + 40)
+    }
+
+    /// How far into the row the line falls once a row is restored.
+    static let restoreDepth: CGFloat = 16
 
     func record(_ id: AnyHashable) {
         log.record(id, at: ProcessInfo.processInfo.systemUptime)
     }
 }
+
+/// The 1 pt mark at the top of a `foldRow`.
+struct FoldRowTop: Hashable { let id: AnyHashable }
 
 /// The id of a list's header row: an anchor on it keeps a list that was at
 /// its top at its top.
@@ -35,6 +57,11 @@ extension View {
     /// `.id(id)` and `.foldAnchor(id)` together: a list row kept across a fold.
     func foldRow<ID: Hashable>(_ id: ID) -> some View {
         self.id(id).foldAnchor(id)
+            // A point at the row's top: a row taller than the list scrolls
+            // back by it (`FoldAnchorScroll.scroll(to:)`).
+            .background(alignment: .top) {
+                Color.clear.frame(height: 1).id(FoldRowTop(id: AnyHashable(id)))
+            }
     }
 
     /// The scroll view keeps its top row across a resize (inside a
@@ -51,10 +78,11 @@ private struct FoldAnchorRow: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if let tracker {
-            content.onGeometryChange(for: Bool.self) { geo in
+            content
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { tracker.heights[id] = $0 }
+                .onGeometryChange(for: Bool.self) { geo in
                 guard let visible = geo.bounds(of: .scrollView) else { return false }
-                // The eye's line: under the bars, a fifth of the way down at most.
-                let line = visible.minY + min(120, visible.height * 0.2)
+                let line = visible.minY + tracker.line(height: visible.height)
                 return line >= 0 && line < geo.size.height
             } action: { atTop in
                 if atTop { tracker.record(id) }
@@ -75,11 +103,18 @@ private struct FoldAnchorScroll: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environment(\.foldAnchor, tracker)
+            .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top <= 2 } action: {
+                tracker.atTop = $1
+            }
+            .onScrollGeometryChange(for: EdgeInsets.self) { $0.contentInsets } action: {
+                tracker.insetTop = $1.top
+                tracker.insetBottom = $1.bottom
+            }
             .onGeometryChange(for: CGFloat.self) { $0.size.height.rounded() } action: { height = $0 }
             .onGeometryChange(for: CGFloat.self) { $0.size.width.rounded() } action: { new in
                 let old = width
                 width = new
-                guard active, old > 0, abs(new - old) > 1,
+                guard active, old > 0, abs(new - old) > 1, !tracker.atTop,
                       let anchor = tracker.log.anchor(before: ProcessInfo.processInfo.systemUptime) else { return }
                 Task { @MainActor in
                     // Once the re-flowed rows are laid out.
@@ -92,11 +127,25 @@ private struct FoldAnchorScroll: ViewModifier {
             }
     }
 
-    /// The row goes back under the eye line, not to the very top: with the
-    /// top at the line, the next fold would find the row below it.
+    /// The row's top goes back just above the eye line (`restoreDepth`),
+    /// below the bars: the next fold still finds the row there. `scrollTo`
+    /// works in the area between the bars (height H) and lines up the same
+    /// unit point of the row and that area, so a row of height h has its top
+    /// at y·(H − h): y = top / (H − h). A row too tall for that (Home's
+    /// shelves, the folded timeline) would need a negative y, which
+    /// `scrollTo` doesn't honour: its 1 pt top mark (`FoldRowTop`) goes there.
+    /// (A plain 0.2 put a tall row's middle at the line and its heading under
+    /// the bar; measuring the line from the screen's top and the restore from
+    /// the bar's bottom drifted a section up on every fold.)
     private func scroll(to anchor: AnyHashable) {
-        guard let id = anchor.base as? any Hashable else { return }
-        let line = height > 0 ? min(120, height * 0.2) / height : 0.2
-        proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: line))
+        let visible = height - tracker.insetTop - tracker.insetBottom
+        guard visible > 0, let id = anchor.base as? any Hashable else { return }
+        let top = max(0, tracker.line(height: height) - FoldAnchorTracker.restoreDepth - tracker.insetTop)
+        let span = visible - (tracker.heights[anchor] ?? 0)
+        if span > top + 1 {
+            proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: top / span))
+        } else {
+            proxy.scrollTo(FoldRowTop(id: anchor), anchor: UnitPoint(x: 0.5, y: top / visible))
+        }
     }
 }

@@ -55,9 +55,20 @@ extension PerfProbe {
             let action = stressAction()
             HangWatchdog.mark("STRESS \(n) \(action) open=\(model.presentedItem?.id ?? 0) live=\(stressLive())")
             if action.hasPrefix("open") {
-                try? await Task.sleep(for: .seconds(1.2))
-                if let live = DuoSeamDrag.debugCurrent?.live {
-                    HangWatchdog.mark("STUCK seam live=\(live) listFull=\(DuoSeamDrag.debugCurrent?.listFull ?? false) 1.2 s after \(action)")
+                try? await Task.sleep(for: .seconds(1.0))
+                let seam = DuoSeamDrag.debugCurrent
+                if let live = seam?.live {
+                    HangWatchdog.mark("STUCK seam live=\(live) listFull=\(seam?.listFull ?? false) 1 s after \(action)")
+                }
+                // The shell's own parking (`RootView.slidePending`): a title
+                // open with no handle to slide it in, the seam never set.
+                if let id = model.presentedItem?.id, seam?.live == nil, seam?.handleShown == false,
+                   seam?.slidIn != id {
+                    HangWatchdog.mark("PARKED title \(id) with no handle 1 s after \(action)")
+                }
+                if let released = seam?.parkedReleased {
+                    HangWatchdog.mark("PARKED-RELEASED title \(released) (the shell's safety net)")
+                    seam?.parkedReleased = nil
                 }
             }
             let gap = Double.random(in: 0...1) < 0.33 ? Double.random(in: 0...0.06) : Double.random(in: 0.2...1.4)

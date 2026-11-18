@@ -19,6 +19,8 @@ struct ShellSplitHost<Tabs: View, Detail: View>: View {
     let context: DuoSeamContext?
     /// A title just opened that the handle will slide in (`RootView.slidePending`).
     let slidePending: Bool
+    /// The open title, for the parked-title release below.
+    let openId: Int?
     let drag: DuoSeamDrag
     /// Close slides the title out with the handle (`DuoSeamCloseEffect`).
     let closeWithHandle: Bool
@@ -36,6 +38,16 @@ struct ShellSplitHost<Tabs: View, Detail: View>: View {
                     .modifier(DuoSeamCloseEffect(enabled: closeWithHandle, progress: seam?.closeProgress ?? 0))
                     .transition(detailTransition)
             }
+        }
+        // A title parked for its slide-in whose handle never came (the owner's
+        // "opens only partly, stuck at the right", builds 1239-1241): after
+        // 1.2 s the shell stops waiting and shows it at rest.
+        .task(id: slidePending ? openId : nil) {
+            guard slidePending, let openId else { return }
+            try? await Task.sleep(for: .milliseconds(1200))
+            guard !Task.isCancelled, drag.live == nil, !drag.handleShown else { return }
+            HangRecorder.stuck("title \(openId) parked for its slide-in with no handle; shown at rest")
+            drag.parkedReleased = openId
         }
     }
 

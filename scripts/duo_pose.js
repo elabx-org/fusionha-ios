@@ -26,6 +26,10 @@ function label(e) {
     const v = safe(() => e[k](), null);
     if (v) parts.push(String(v));
   }
+  // Device Hub (Xcode 27.2) names its pose buttons only in AXHelp
+  // ("Closed", "Partially Open", "Open", "Rotate Right").
+  const help = safe(() => e.attributes.byName("AXHelp").value(), null);
+  if (help) parts.push(String(help));
   return parts.join(" | ");
 }
 

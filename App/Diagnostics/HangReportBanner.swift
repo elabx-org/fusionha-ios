@@ -16,7 +16,8 @@ struct HangReportBanner: View {
                         .foregroundStyle(.orange)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("fusionha froze last time").font(.subheadline.weight(.semibold))
+                        Text(report.hasPrefix("fusionha rescued") ? "A title got stuck last time" : "fusionha froze last time")
+                            .font(.subheadline.weight(.semibold))
                         Text(copied ? "Report copied to the clipboard" : "A report of where it got stuck is ready")
                             .font(.caption)
                             .foregroundStyle(.secondary)

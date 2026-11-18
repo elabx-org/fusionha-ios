@@ -13,17 +13,17 @@ import FusionhaKit
 
 struct V2SplitHandle: View {
     let context: DuoSeamContext
-    @Environment(\.motionEnabled) private var motion
+    @Environment(\.motionEnabled) var motion
     @Environment(AppModel.self) private var model
     /// Set once the handle has been touched: the tip never shows again.
-    @AppStorage("v2.splitHandle.used") private var used = false
+    @AppStorage("v2.splitHandle.used") var used = false
     /// Where the seam was when the finger went down, and whether it has moved.
     @State private var start: (x: Double, moved: Bool)?
     @State private var zone: DuoSeam.Stop = .split
     @State private var ticks = 0
     @State private var spring = V2SeamSpring()
-    @State private var tipShown = false
-    @State private var nudge: CGFloat = 0
+    @State var tipShown = false
+    @State var nudge: CGFloat = 0
     @GestureState private var gripTouched = false
     @GestureState private var stripTouched = false
 
@@ -160,6 +160,7 @@ struct V2SplitHandle: View {
 
     /// The finger went down: catch the seam where it is (even mid-snap).
     private func begin() -> (x: Double, moved: Bool) {
+        HangRecorder.note("seam touched at \(Int(x))\(spring.isRunning ? " mid-spring" : "")")
         spring.cancel()
         hideHint()
         // From full width over a parked list: the list keeps its width under
@@ -174,6 +175,7 @@ struct V2SplitHandle: View {
     private func release(velocity: Double) {
         guard let touch = start else { return }
         start = nil
+        HangRecorder.note("seam let go at \(Int(x)) v \(Int(velocity))\(touch.moved ? "" : " (a tap)")")
         guard touch.moved else {
             settle(DuoSeam.tapTarget(x: touch.x, split: rest), velocity: 0)
             return
@@ -229,8 +231,16 @@ struct V2SplitHandle: View {
     private func unstick() async {
         guard seam.live != nil else { return }
         try? await Task.sleep(for: .seconds(2))
-        guard !Task.isCancelled, seam.live != nil, start == nil else { return }
-        HangRecorder.note("seam unstuck at \(Int(x))")
+        guard !Task.isCancelled, seam.live != nil else { return }
+        if start != nil {
+            // A finger down 5 s without moving the seam: a touch the system
+            // ended without telling the gesture (owner, build 1241: a title
+            // stuck at the closed edge until the app was backgrounded).
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, seam.live != nil else { return }
+            start = nil
+        }
+        HangRecorder.stuck("the seam sat mid-move at \(Int(x)); settled at \(restingStop)")
         settle(restingStop, velocity: 0, tick: false)
     }
 
@@ -257,42 +267,5 @@ struct V2SplitHandle: View {
             try? await Task.sleep(for: .milliseconds(16))
         }
         release(velocity: velocity)
-    }
-
-    // MARK: First time
-
-    private func hideHint() {
-        used = true
-        tipShown = false
-        nudge = 0
-    }
-
-    /// Shown until the handle is first touched: the tip for about four
-    /// seconds, and two nudges (none under Reduce Motion).
-    private func firstTimeHint() async {
-        guard !used else { return }
-        try? await Task.sleep(for: .milliseconds(900))
-        guard !used, !Task.isCancelled else { return }
-        withAnimation(.easeOut(duration: 0.35)) { tipShown = true }
-        let clock = ContinuousClock()
-        let shownAt = clock.now
-        if motion {
-            for _ in 0..<2 where !used {
-                await nudgeOnce()
-            }
-        }
-        try? await Task.sleep(until: shownAt + .milliseconds(4200), clock: clock)
-        guard !used else { return }
-        withAnimation(.easeOut(duration: 0.35)) { tipShown = false }
-    }
-
-    /// One nudge (the mock's 1.1s keyframes: left, right, home).
-    private func nudgeOnce() async {
-        let steps: [(CGFloat, Double)] = [(-15, 0.33), (11, 0.33), (0, 0.44)]
-        for (offset, duration) in steps {
-            guard !used, !Task.isCancelled else { return }
-            withAnimation(.easeInOut(duration: duration)) { nudge = offset }
-            try? await Task.sleep(for: .seconds(duration))
-        }
     }
 }

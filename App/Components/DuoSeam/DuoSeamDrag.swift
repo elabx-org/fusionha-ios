@@ -29,6 +29,10 @@ final class DuoSeamDrag {
     var closeRequests = 0
     /// The handle is on screen to take `closeRequests`.
     @ObservationIgnored var handleShown = false
+    /// A title left parked off the trailing edge with no handle to slide it
+    /// in: the shell shows it at rest instead (`ShellSplitHost`). Observed, so
+    /// the shell re-lays out when it is set.
+    var parkedReleased: Int?
 
     #if DEBUG
     /// The shell's seam, for the perf stress script's stuck-seam check.

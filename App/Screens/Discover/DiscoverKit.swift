@@ -246,3 +246,14 @@ struct DiscoverIconButton: View {
         .accessibilityLabel(label)
     }
 }
+
+/// Round-robin two lists (the web's `kind=all` merge).
+func interleave<T>(_ a: [T], _ b: [T]) -> [T] {
+    var out: [T] = []
+    out.reserveCapacity(a.count + b.count)
+    for i in 0..<max(a.count, b.count) {
+        if i < a.count { out.append(a[i]) }
+        if i < b.count { out.append(b[i]) }
+    }
+    return out
+}

@@ -72,6 +72,23 @@ enum HangRecorder {
         lock.unlock()
     }
 
+    /// A safety net rescued a stuck title (no freeze, so no stacks): keeps
+    /// the trail for the next launch's banner, unless a report is waiting.
+    static func stuck(_ what: String) {
+        note("RESCUE: \(what)")
+        guard !FileManager.default.fileExists(atPath: reportURL.path) else { return }
+        lock.lock()
+        let lines = trail
+        lock.unlock()
+        let info = Bundle.main.infoDictionary
+        var text = "fusionha rescued a stuck title: \(what)\n"
+        text += "app \(info?["CFBundleShortVersionString"] ?? "?") (\(info?["CFBundleVersion"] ?? "?"))\n"
+        text += "at \(ISO8601DateFormatter().string(from: Date()))\n\nRecent:\n"
+        text += lines.map { "  \($0)\n" }.joined()
+        try? FileManager.default.createDirectory(at: reportURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? text.write(to: reportURL, atomically: true, encoding: .utf8)
+    }
+
     private static let clock: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "HH:mm:ss.SSS"

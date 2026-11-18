@@ -19,7 +19,12 @@ struct V2WatchlistsLede: View {
                 }
                 .font(.system(size: 13))
             }
-            .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 4, trailing: 4))
+            // The list's own side insets (in line with the section headings):
+            // narrower ones fell inside the margins the list keeps in the
+            // Duo's book pose, and the text was cut on both sides
+            // ("…equests", "list…"; owner's review, 2026-11-18).
+            .padding(.top, -6)
+            .padding(.bottom, -2)
             .listRowBackground(Color.clear)
         }
     }

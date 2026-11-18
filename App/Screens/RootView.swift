@@ -9,10 +9,10 @@ import FusionhaKit
 /// sheets, and toasts drop in at the top of the page (on the trailing column
 /// when the shell is split).
 struct RootView: View {
-    @Environment(AppModel.self) private var model
+    @Environment(AppModel.self) var model
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var fold = FoldInfo()
+    @Environment(\.accessibilityReduceMotion) var reduceMotion
+    @State var fold = FoldInfo()
     /// Bulk-select bars on screen: the downloads bar steps aside for them.
     @State private var selectBars = SelectBarPresence()
     /// iPhone Duo open: Spread (two pages at the fold) or the Web layout. Per device.
@@ -22,22 +22,22 @@ struct RootView: View {
     /// The downloads pill's frame, for the tabs' bottom reserve (D3).
     @State private var pillSpace = DownloadsPillSpace()
     /// The tabs whose list the sidebar button hid (`DuoListMemory`). Per device.
-    @AppStorage(DuoListMemory.storageKey) private var hiddenLists = ""
+    @AppStorage(DuoListMemory.storageKey) var hiddenLists = ""
     /// The remembered-hidden list is parked at full width (`ShellSplit.primaryParked`):
     /// on whenever the right page empties, off once the list has been shown.
-    @State private var listParked = true
+    @State var listParked = true
     /// v2: the list's share of the flat open Duo beside a title, chosen with
     /// the split handle (a third or a half); 0 = the default.
     @AppStorage("v2.duo.listShare") private var listShare = 0.0
     /// v2's title page (`TitlePageHost`); nil in v1.
     @Environment(\.titlePage) private var titlePage
     /// v2's split handle moving the seam (`DuoSeamDrag`); never set in v1.
-    @State private var seam = DuoSeamDrag()
+    @State var seam = DuoSeamDrag()
     /// v2's badge and downloads capsule (`ShellChromeOverride`); nil in v1.
     @Environment(\.shellChrome) private var chrome
 
     /// The Spread, when the Duo is open and the setting says so (else `.off`).
-    private func spreadContext(_ fold: FoldInfo, hasItem: Bool) -> SpreadContext {
+    func spreadContext(_ fold: FoldInfo, hasItem: Bool) -> SpreadContext {
         SpreadContext(fold: fold, layout: duoLayout, spanRequested: spanRequests.spans(model.tab), hasItem: hasItem)
     }
 
@@ -69,7 +69,7 @@ struct RootView: View {
     private func slidePending() -> Bool {
         guard !reduceMotion, model.animationsEnabled, !seam.handleShown,
               let id = model.presentedItem?.id else { return false }
-        return seam.slidIn != id
+        return seam.slidIn != id && seam.parkedReleased != id
     }
 
     /// v2 (`TitlePageOverride.flatOpenListShare`): the flat open Duo is one
@@ -101,7 +101,7 @@ struct RootView: View {
 
     /// A Spread with an episode open from the title: the title's tabs on the
     /// left page, the episode on the right, the list hidden until it closes.
-    private func episodeBeside(_ split: ShellSplit, spread: SpreadContext) -> Bool {
+    func episodeBeside(_ split: ShellSplit, spread: SpreadContext) -> Bool {
         // v2's title page is one column: an episode never takes the list's place.
         guard titlePage == nil, split.shown, let ref = model.presentedItem,
               TitleSpread.pages(fold: fold, spread: spread) != nil else { return false }
@@ -114,48 +114,6 @@ struct RootView: View {
         guard titlePage == nil, split.shown, split.axis == .horizontal, model.presentedItem != nil,
               let pages = TitleSpread.pages(fold: fold, spread: spread) else { return nil }
         return TitleSpread(pages: pages, fillsDisplay: split.primaryHidden)
-    }
-
-    /// The sidebar button's action for the detail column: offered flat open
-    /// with a title or preview beside the list (`DuoSplit.hidesList`).
-    private func listToggle(_ split: ShellSplit) -> DuoListToggle? {
-        guard split.shown, split.axis == .horizontal, fold.posture?.canHideList == true,
-              model.rightPageHasItem,
-              !episodeBeside(split, spread: spreadContext(fold, hasItem: true)) else { return nil }
-        let key = model.tab.listMemoryKey
-        let showing = split.primaryHidden
-        return DuoListToggle(hidden: split.primaryHidden, key: key) {
-            // The list slides in and out at its split width: un-park it first,
-            // unanimated (off screen). It is parked again only when the right
-            // page empties (below): parking it after each hide re-flowed the
-            // grid once more than before (perf runs 42810163466 / 42810167912,
-            // seam.full hang 449 -> 979 ms).
-            var instant = Transaction()
-            instant.disablesAnimations = true
-            let wasParked = listParked
-            withTransaction(instant) { listParked = false }
-            // The title swaps layouts (one column, or the band over two): it
-            // blurs through rather than crossfading two layouts (`ShellCover`;
-            // the seam's landing comes through here too).
-            let motion = !reduceMotion && model.animationsEnabled
-            let flip = {
-                ShellCover.blurThrough(motion: motion) {
-                    var memory = DuoListMemory(raw: hiddenLists)
-                    memory.toggle(key)
-                    hiddenLists = memory.raw
-                }
-            }
-            // The handle's own commit lands in one frame; the button waits a
-            // frame for the un-parked list to lay out before it slides in.
-            guard showing, wasParked, seam.live == nil else {
-                flip()
-                return
-            }
-            Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(40))
-                flip()
-            }
-        }
     }
 
     /// The tabs' column runs across the Duo's fold in book pose (a Spread
@@ -226,7 +184,7 @@ struct RootView: View {
         let _ = PerfCount.hit("RootView.body")
         let split = split
         let spread = spreadContext(fold, hasItem: model.rightPageHasItem)
-        ShellSplitHost(split: split, context: seamContext(split), slidePending: slidePending(), drag: seam,
+        ShellSplitHost(split: split, context: seamContext(split), slidePending: slidePending(), openId: model.presentedItem?.id, drag: seam,
                        closeWithHandle: titlePage?.seamHandle != nil, detailTransition: detailTransition) {
             // Hidden (the sidebar button), the list keeps its width off screen.
             ShellTabs(fold: fold, splitShown: split.shown, listBesideTitle: split.shown && !split.primaryHidden,
@@ -323,43 +281,5 @@ struct RootView: View {
         .modifier(ShellPresentations(model: model, reduceMotion: reduceMotion, scenePhase: scenePhase,
                                      duoOpen: fold.isDuoOpen, accountOnPages: fold.isDuoOpen && duoLayout == .spread,
                                      measured: fold.size != .zero))
-    }
-}
-
-/// Wraps a tab's content in the page background. The title, the Account item
-/// and the page's actions are in the system bar (`.shellPage(_:)`); where the
-/// web shows its mobile "+" it is `AddTitleToolbarItem` there.
-struct Screen<Content: View>: View {
-    @Environment(AppModel.self) private var model
-    /// Kept for source compatibility: pages that add place `AddTitleToolbarItem`.
-    var showsAdd = false
-    /// Kept for source compatibility: Library filters in place through the
-    /// top-bar pill, every other tab opens the omni search.
-    var filtersInPlace = false
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        content
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .overlay(alignment: .top) {
-                if !model.requestScoped { SetupProgressPill(barHeight: 0) }
-            }
-            .webBackground()
-    }
-}
-
-/// The "+" of Library, Discover and Wanted as a toolbar item (D1; it replaced
-/// the title row's glass "+"). Opens the Add sheet. Absent for request-scoped
-/// sessions, without the add capability, and while selecting.
-struct AddTitleToolbarItem: ToolbarContent {
-    let model: AppModel
-
-    var body: some ToolbarContent {
-        if !model.requestScoped && model.me?.can("add") != false && !model.selectMode {
-            ToolbarItem(placement: .primaryAction) {
-                Button("Add", systemImage: "plus") { model.openAddSearch() }
-            }
-            .barPriority(true)
-        }
     }
 }

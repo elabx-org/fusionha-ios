@@ -21,6 +21,12 @@ extension V2QueueView {
                 .padding(.bottom, 24)
             }
             .scrollDismissesKeyboard(.immediately)
+            // Asked for its ideal width, a scroll view answers its content's,
+            // and the content is laid out from the page's measured width:
+            // with the counts strip clearing the Duo's column the two chased
+            // each other, folded Activity frozen at 100% CPU (owner's review,
+            // 2026-11-18; the Home freeze of builds 1237-1239 was the same).
+            .frame(minWidth: 0, idealWidth: 0, maxWidth: .infinity)
             .keepsFoldAnchor(anchor, proxy: proxy, active: dragShare == nil)
             .onChange(of: model.pendingQueueScroll, initial: true) { consumeFocus(proxy) }
             .onChange(of: store.items.map(\.id)) { consumeFocus(proxy) }

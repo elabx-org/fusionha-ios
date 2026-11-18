@@ -112,12 +112,15 @@ struct V2HeroShade: View {
     }
 }
 
-/// The block on the art's foot: white in every palette.
+/// The block on the art's foot: white, or `ink` where the art has
+/// dissolved into a light page (the poster hero's frost on light palettes).
 struct V2TitleHeading: View {
     let detail: ItemDetail
     var size: CGFloat = 34
     /// The movie's tagline under the meta line (not on the short wide band).
     var showsTagline = true
+    /// Nil: white over art. Set: the page's ink, no shadow.
+    var ink: Color?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -129,17 +132,17 @@ struct V2TitleHeading: View {
                     .minimumScaleFactor(0.7)
                     .accessibilityAddTraits(.isHeader)
             }
-            .shadow(color: .black.opacity(0.45), radius: 9, y: 2)
-            V2TitleMetaLine(detail: detail)
+            .shadow(color: .black.opacity(ink == nil ? 0.45 : 0), radius: 9, y: 2)
+            V2TitleMetaLine(detail: detail, ink: ink)
             if showsTagline, !detail.isSeries, let tagline = detail.tagline, !tagline.isEmpty {
                 Text(tagline)
                     .font(.system(size: 14, weight: .medium).italic())
-                    .foregroundStyle(.white.opacity(0.86))
+                    .foregroundStyle((ink ?? .white).opacity(0.86))
                     .lineLimit(2)
                     .padding(.top, -2)
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(ink ?? .white)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
@@ -149,21 +152,39 @@ struct V2TitleHeading: View {
 /// runtime · ★ rating · two genres.
 struct V2TitleMetaLine: View {
     let detail: ItemDetail
+    /// Where a second line sits when one doesn't fit (centred under a cover).
+    var alignment: HorizontalAlignment = .leading
+    /// Nil: white over art; else the page's ink (`V2TitleHeading.ink`).
+    var ink: Color?
 
     var body: some View {
         V2NetworkMarkLine(studio: detail.networkMark) {
-            HStack(spacing: 7) {
-                ForEach(Array(parts.enumerated()), id: \.offset) { index, part in
-                    if index > 0 { Text(verbatim: "·").opacity(0.6).accessibilityHidden(true) }
-                    part
+            // One line when it fits, else the last part (a movie's genres)
+            // on a second line: under the open Duo's cover it was cut
+            // ("Action, Science Ficti…", owner's review, 2026-11-18).
+            ViewThatFits(in: .horizontal) {
+                row(parts)
+                VStack(alignment: alignment, spacing: 4) {
+                    row(Array(parts.dropLast()))
+                    parts.last
                 }
             }
         }
         .font(.system(size: 13.5, weight: .medium))
-        .foregroundStyle(.white.opacity(0.9))
+        .foregroundStyle((ink ?? .white).opacity(0.9))
         .lineLimit(1)
         .minimumScaleFactor(0.8)
         .accessibilityElement(children: .combine)
+    }
+
+    private func row(_ items: [AnyView]) -> some View {
+        HStack(spacing: 7) {
+            ForEach(Array(items.enumerated()), id: \.offset) { index, part in
+                if index > 0 { Text(verbatim: "·").opacity(0.6).accessibilityHidden(true) }
+                part
+            }
+        }
+        .fixedSize()
     }
 
     private var parts: [AnyView] {

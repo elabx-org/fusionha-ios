@@ -30,6 +30,10 @@ struct V2PosterWidePage: View {
             .padding(.bottom, 22)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background { V2PosterWideHero(backdrop: detail.backdropUrl, poster: detail.posterUrl) }
+            // The hero's own clip trims to the art's aspect-filled size, not to
+            // the band, so the art ran on under the tabs (owner, 2026-11-18):
+            // the band clips it, top and bottom only (`HeroBleedClip`).
+            .clipShape(HeroBleedClip())
             .duoTitleSwipe(id: detail.id)
             HStack(alignment: .top, spacing: V2TitleWide.columnGap) {
                 VStack(alignment: .leading, spacing: 0) {
@@ -87,7 +91,7 @@ struct V2PosterCoverHeading: View {
                     .minimumScaleFactor(0.7)
                     .accessibilityAddTraits(.isHeader)
             }
-            V2TitleMetaLine(detail: detail)
+            V2TitleMetaLine(detail: detail, alignment: .center)
         }
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity)
@@ -114,21 +118,23 @@ struct V2PosterWideHero: View {
     private var light: Bool { page?.isLight ?? Theme.isLight }
     private var ground: Color { page?.tint ?? Theme.bg }
 
+    private var art: some View {
+        PosterImage(url: ItemDetailArt.hero(backdrop: backdrop, poster: poster))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
+    }
+
     var body: some View {
         ZStack {
-            PosterImage(url: ItemDetailArt.hero(backdrop: backdrop, poster: poster))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+            art.opacity(shown || !motion ? 1 : 0)
+            // The split hero's frost (`V2HeroFrost`): the art's foot blurs and
+            // dissolves into the page instead of ending in a line.
+            art.blur(radius: 26, opaque: true)
+                .mask(V2HeroFrost.blurMask)
                 .opacity(shown || !motion ? 1 : 0)
             V2HeroShade(light: light, tint: page?.tint)
-            // Ends like today's band: a short fade into the page tint on dark
-            // palettes, the shade's warm dark edge on light ones (white title).
-            if !light {
-                LinearGradient(colors: [ground.opacity(0), ground.opacity(0.7)], startPoint: .top, endPoint: .bottom)
-                    .frame(height: 22)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-            }
         }
+        .mask(V2HeroFrost.dissolveMask)
         .clipped()
         .ignoresSafeArea(.container, edges: .horizontal)
         // And to the band's own top and bottom: inside the extended frame
