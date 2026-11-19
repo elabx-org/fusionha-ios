@@ -1,10 +1,10 @@
 import SwiftUI
 import FusionhaKit
 
-/// The top of the v2 queue (mock `phoneHead` + `scopes`): the live caption
-/// ("5 in the queue · 2 need you · 1 downloading · 1 importing") and the
-/// Activity scopes as glass chips, the Queue chip carrying its count. The
-/// title search is the bar's pull-down field, not a row here.
+/// The top of the v2 queue (mock `phoneHead`): the live caption ("5 in the
+/// queue · 2 need you · 1 downloading · 1 importing"). The scopes are pinned
+/// above the list (`V2ActivityScopes`); the title search is the bar's
+/// pull-down field, not a row here.
 struct V2QueueHeader: View {
     let counts: V2QueueCounts
     let loaded: Bool
@@ -12,10 +12,7 @@ struct V2QueueHeader: View {
     @Environment(\.pagePalette) private var page
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            caption
-            V2ActivityScopes(queueCount: counts.total)
-        }
+        caption
     }
 
     private var caption: some View {
@@ -55,6 +52,9 @@ struct V2ActivityScopes: View {
     let queueCount: Int
     @Environment(AppModel.self) private var model
     @Environment(ActChrome.self) private var chrome
+    @Environment(\.motionEnabled) private var motion
+    /// Whether more chips lie past the leading / trailing edge.
+    @State private var fades = [false, true]
 
     private var tabs: [ActivityTab] {
         var tabs: [ActivityTab] = [.queue, .history, .wanted, .blocklist, .tasks]
@@ -64,16 +64,38 @@ struct V2ActivityScopes: View {
     }
 
     var body: some View {
+        ScrollViewReader { proxy in
+            row
+                .onScrollGeometryChange(for: [Bool].self) { g in
+                    [g.contentOffset.x > 1, g.contentOffset.x + g.containerSize.width < g.contentSize.width - 1]
+                } action: { _, edges in fades = edges }
+                // A soft edge where more chips lie past it: the row reads as
+                // one you swipe, never as a chip cut off (owner, 2026-11-19).
+                .mask {
+                    HStack(spacing: 0) {
+                        LinearGradient(colors: [fades[0] ? .clear : .black, .black],
+                                       startPoint: .leading, endPoint: .trailing).frame(width: 16)
+                        Rectangle()
+                        LinearGradient(colors: [.black, fades[1] ? .clear : .black],
+                                       startPoint: .leading, endPoint: .trailing).frame(width: 16)
+                    }
+                }
+                .onChange(of: chrome.tab, initial: true) {
+                    withAnimation(motion ? .snappy(duration: 0.3) : nil) { proxy.scrollTo(chrome.tab, anchor: .center) }
+                }
+        }
+    }
+
+    private var row: some View {
         ScrollView(.horizontal) {
             GlassEffectContainer(spacing: 8) {
                 HStack(spacing: 8) {
-                    ForEach(tabs, id: \.self) { chip($0) }
+                    ForEach(tabs, id: \.self) { chip($0).id($0) }
                 }
             }
             .padding(.vertical, 2)
         }
         .scrollIndicators(.hidden)
-        .v2ClipsAtColumn()
     }
 
     private func chip(_ tab: ActivityTab) -> some View {

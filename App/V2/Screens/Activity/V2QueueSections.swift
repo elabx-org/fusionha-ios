@@ -49,6 +49,7 @@ struct V2QueueSections: View {
                     .foregroundStyle(Theme.accentText)
                     .buttonStyle(.plain)
                     .accessibilityLabel("Review all \(held.count) in Manual Import")
+                    .v2ClearsColumn()
             }
         } content: {
             ForEach(entries) { entry in

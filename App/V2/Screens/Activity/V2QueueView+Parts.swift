@@ -5,13 +5,18 @@ import FusionhaKit
 // the row actions, the `?focus=` link and select mode.
 
 extension V2QueueView {
-    /// The scrolling list: caption and scopes, then the state's content.
+    /// The scrolling list: the caption, then the state's content, under the
+    /// pinned scopes. Folded with collapsed tabs it runs the full width,
+    /// under the Duo's column: the caption keeps clear of the clock, the
+    /// first block starts below the arrow, and buttons stop at the column
+    /// (`v2ClearsColumn`) (owner's pick E, 2026-11-19).
     var list: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     V2QueueHeader(counts: counts, loaded: store.loaded)
                         .padding(.trailing, splits ? 0 : columnReserve)
+                        .v2ClearsColumnArrow(column: splits ? 0 : columnReserve, contentTop: scopesBottom, spacing: 14)
                         .id(FoldAnchorTop.header)
                         .foldAnchor(FoldAnchorTop.header)
                     content
@@ -19,8 +24,21 @@ extension V2QueueView {
                 .padding(.horizontal, gutter)
                 .padding(.top, 8)
                 .padding(.bottom, 24)
+                .coordinateSpace(.named(v2QueueContentSpace))
             }
             .scrollDismissesKeyboard(.immediately)
+            // The scopes stay in reach at any scroll: one row you swipe
+            // across, pinned under the title (the list blurs under it).
+            .safeAreaBar(edge: .top, spacing: 0) {
+                V2ActivityScopes(queueCount: counts.total)
+                    .padding(.leading, gutter)
+                    // Beside the Duo's column the column is the margin.
+                    .padding(.trailing, !splits && columnReserve > 0 ? columnReserve : gutter)
+                    .padding(.vertical, 6)
+                    .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).maxY } action: { scopesBottom = $0 }
+            }
+            .scrollPosition($shotScroll)
+            .task { await scrollForScreenshot() }
             // Asked for its ideal width, a scroll view answers its content's,
             // and the content is laid out from the page's measured width:
             // with the counts strip clearing the Duo's column the two chased
@@ -48,7 +66,6 @@ extension V2QueueView {
         } else {
             SixCountPipelineStrip(counts: counts, today: feed.summary?.history.today, items: store.items,
                                   showsHeld: splits)
-                .v2ClearsColumn()
             V2QueueSections(store: store, summary: feed.summary, selecting: selecting, selected: $selected,
                             openHeld: splits ? openHeld?.id : nil, review: openDecision,
                             reviewAll: { router.manualImport(rescue: $0) }, actions: rowActions,
@@ -154,5 +171,16 @@ extension V2QueueView {
             await ops.regrab(items)
             busy = false
         }
+    }
+
+    /// Screenshots (DEBUG): scroll the list by `FUSIONHA_SCREENSHOT_QUEUE_OFFSET`
+    /// points once it has loaded, as a finger would (the focus hook jumps).
+    func scrollForScreenshot() async {
+        #if DEBUG
+        guard let y = ProcessInfo.processInfo.environment["FUSIONHA_SCREENSHOT_QUEUE_OFFSET"].flatMap(Double.init)
+        else { return }
+        try? await Task.sleep(for: .seconds(4))
+        shotScroll.scrollTo(y: y)
+        #endif
     }
 }

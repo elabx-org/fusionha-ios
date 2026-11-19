@@ -56,6 +56,8 @@ struct SixCountPipelineStrip: View {
             .padding(.bottom, 8)
             stagesDisclosure
                 .padding(.horizontal, 14)
+                // The box runs under the Duo's column; its chevron stops short of it.
+                .v2ClearsColumn()
                 .padding(.bottom, 8)
         }
         .background { ModuleSurface() }

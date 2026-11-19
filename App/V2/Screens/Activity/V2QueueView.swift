@@ -47,6 +47,10 @@ struct V2QueueView: View {
     @State var heldDraft = HeldDecisionDraft()
     /// The Duo's column: the trailing safe-area inset.
     @State var column: CGFloat = 0
+    /// The pinned scopes' bottom edge (global): where the list starts at rest.
+    @State var scopesBottom: CGFloat?
+    /// Screenshots (DEBUG): the list scrolled by `FUSIONHA_SCREENSHOT_QUEUE_OFFSET` points.
+    @State var shotScroll = ScrollPosition()
 
     /// Collapsed tabs (v2, the full-width rule): the queue runs under the
     /// Duo's column. Alone, its header keeps clear of the clock and the

@@ -42,8 +42,8 @@ struct V2ScopeColumns<List: View, Right: View>: View {
     }
 }
 
-/// The scrolling list: caption and scopes, then the scope's rows as direct
-/// children of one lazy stack (blocks pad themselves; module rows touch).
+/// The scrolling list under the pinned scopes: the caption, then the
+/// scope's rows as direct children of one lazy stack (blocks pad themselves; module rows touch).
 /// Fold continuity: the row at the list's top stays there across a fold
 /// (`FoldAnchor`, as the queue): rows mark themselves with `.foldRow(id)`.
 struct V2ScopeList<Caption: View, Content: View>: View {
@@ -57,13 +57,10 @@ struct V2ScopeList<Caption: View, Content: View>: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        caption()
-                            .font(.system(size: 13).monospacedDigit())
-                            .lineLimit(3)
-                        V2ActivityScopes(queueCount: model.queueTotal)
-                    }
-                    .padding(.bottom, 14)
+                    caption()
+                        .font(.system(size: 13).monospacedDigit())
+                        .lineLimit(3)
+                        .padding(.bottom, 14)
                     .foldRow(FoldAnchorTop.header)
                     content()
                 }
@@ -72,6 +69,12 @@ struct V2ScopeList<Caption: View, Content: View>: View {
                 .padding(.bottom, 24)
             }
             .scrollDismissesKeyboard(.immediately)
+            // The scopes pinned under the title, as the queue's.
+            .safeAreaBar(edge: .top, spacing: 0) {
+                V2ActivityScopes(queueCount: model.queueTotal)
+                    .padding(.horizontal, gutter)
+                    .padding(.vertical, 6)
+            }
             .keepsFoldAnchor(anchor, proxy: proxy)
         }
     }
